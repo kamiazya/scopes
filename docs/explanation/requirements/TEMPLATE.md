@@ -45,7 +45,7 @@ command example --option value
 ### Required By
 - [List requirements that depend on this one]
 
-### Depends On  
+### Depends On
 - [List requirements this one depends on]
 
 ## Implementation Notes
