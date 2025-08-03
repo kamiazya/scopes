@@ -40,7 +40,7 @@ class ListCommand(
                     }
                     echo()
                 }
-            } catch (e: Exception) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 echo("❌ Error listing scopes: ${e.message}", err = true)
             }
         }

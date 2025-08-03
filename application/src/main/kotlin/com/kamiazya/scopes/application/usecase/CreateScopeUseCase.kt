@@ -24,9 +24,8 @@ class CreateScopeUseCase(
         // Validate parent exists if specified
         val parentId = scope.parentId
         if (parentId != null) {
-            val parent =
-                scopeRepository.findById(parentId)
-                    ?: throw IllegalArgumentException("Parent scope not found: $parentId")
+            scopeRepository.findById(parentId)
+                ?: throw IllegalArgumentException("Parent scope not found: $parentId")
         }
 
         val createdScope = scopeRepository.save(scope)

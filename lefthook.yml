@@ -35,6 +35,13 @@ pre-commit:
         - merge
         - rebase
 
+    detekt:
+      glob: "*.kt"
+      run: ./gradlew detekt --daemon
+      skip:
+        - merge
+        - rebase
+
     kotlin-test:
       glob: "*.kt"
       run: ./gradlew test --daemon

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 }
 
 group = "com.kamiazya.scopes"
@@ -20,6 +21,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "io.gitlab.arturbosch.detekt")
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
@@ -55,4 +57,12 @@ ktlint {
         exclude("**/generated/**")
         include("**/src/**/*.kt")
     }
+}
+
+detekt {
+    source.setFrom("src/main/kotlin")
+    config.setFrom("$rootDir/detekt.yml")
+    buildUponDefaultConfig = true
+    allRules = false
+    parallel = true
 }

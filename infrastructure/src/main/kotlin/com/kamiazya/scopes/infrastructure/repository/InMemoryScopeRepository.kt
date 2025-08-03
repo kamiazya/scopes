@@ -22,12 +22,13 @@ class InMemoryScopeRepository : ScopeRepository {
 
     override suspend fun findAll(): List<Scope> = scopes.values.toList()
 
-    override suspend fun findByParentId(parentId: ScopeId): List<Scope> = scopes.values.filter { it.parentId == parentId }
+    override suspend fun findByParentId(parentId: ScopeId): List<Scope> =
+        scopes.values.filter { it.parentId == parentId }
 
     override suspend fun delete(id: ScopeId): Boolean = scopes.remove(id) != null
 
     override suspend fun update(scope: Scope): Scope? {
-        val existing = scopes[scope.id] ?: return null
+        scopes[scope.id] ?: return null
         val updated = scope.copy(updatedAt = Instant.now())
         scopes[scope.id] = updated
         return updated

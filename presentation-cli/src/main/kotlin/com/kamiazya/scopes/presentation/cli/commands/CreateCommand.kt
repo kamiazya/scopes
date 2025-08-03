@@ -37,7 +37,7 @@ class CreateCommand(
                 if (response.scope.parentId != null) {
                     echo("   Parent: ${response.scope.parentId}")
                 }
-            } catch (e: Exception) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 echo("❌ Error creating scope: ${e.message}", err = true)
             }
         }

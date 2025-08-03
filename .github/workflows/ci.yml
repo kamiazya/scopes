@@ -38,6 +38,9 @@ jobs:
     - name: Run Kotlin lint
       run: ./gradlew ktlintCheck
 
+    - name: Run Detekt static analysis
+      run: ./gradlew detekt
+
     - name: Run tests
       run: ./gradlew test
 
