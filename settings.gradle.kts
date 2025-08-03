@@ -6,3 +6,10 @@ pluginManagement {
         mavenCentral()
     }
 }
+
+include(
+    ":domain",
+    ":application",
+    ":infrastructure",
+    ":presentation-cli",
+)
