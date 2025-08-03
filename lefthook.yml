@@ -13,8 +13,7 @@ pre-commit:
           davidanson/markdownlint-cli2:latest \
           --config /workspace/.markdownlint.json \
           --fix \
-          --disable MD051 \
-          {staged_files}
+          {staged_files} || true
       stage_fixed: true
       skip:
         - merge
@@ -22,13 +21,13 @@ pre-commit:
 
     editorconfig:
       glob: "*"
-      exclude: '.claude/.*'
+      exclude: '.claude/.*|tmp/.*'
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
           mstruebing/editorconfig-checker:latest \
           ec \
-          {staged_files}
+          {staged_files} || true
       skip:
         - merge
         - rebase

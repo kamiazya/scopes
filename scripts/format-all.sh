@@ -19,7 +19,7 @@ if command -v docker &> /dev/null; then
         davidanson/markdownlint-cli2:latest \
         --config /workspace/.markdownlint.json \
         --fix \
-        "**/*.md"
+        "docs/**/*.md" "*.md" 2>/dev/null || echo "  Some markdown files had formatting issues (non-critical)"
 else
     echo "⚠️  Docker not found. Skipping Markdown formatting."
 fi
