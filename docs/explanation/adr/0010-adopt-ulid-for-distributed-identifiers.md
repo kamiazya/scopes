@@ -30,7 +30,7 @@ This decision is made before the initial release, eliminating concerns about bac
 
 ## Decision
 
-**We adopt ULID (Universally Unique Lexicographically Sortable Identifier) as the standard identifier format for all domain entities (Scope, Scope, Project) in Scopes.**
+**We adopt ULID (Universally Unique Lexicographically Sortable Identifier) as the standard identifier format for all domain entities (e.g., Scope) in Scopes.**
 
 ### Key Properties of ULID
 
@@ -96,8 +96,8 @@ This decision is made before the initial release, eliminating concerns about bac
 
 - **Bounded Context**: Scope Management Context (primary impact)
 - **Components**:
-  - All domain entities (Scope, Scope, Project)
-  - Value objects (ScopeId, ScopeId, ProjectId)
+  - All domain entities (Scope)
+  - Value objects (ScopeId)
   - Repository implementations
   - Database schemas
   - API responses and CLI output
