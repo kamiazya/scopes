@@ -68,7 +68,8 @@ These standards are adopted by this ADR and should be followed unless superseded
 - **Configuration**: XDG Base Directory specification for file locations
 - **Semantic Versioning**: SemVer 2.0.0 for version numbering
 - **Commit Messages**: Conventional Commits specification
-- **Code Style**: Language-specific community standards (ESLint/Prettier for JS/TS)
+- **Code Style**: Language-specific community standards
+  - Kotlin: [Official Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html)
 - **Documentation**: CommonMark for Markdown files
 - **Licensing**: SPDX license identifiers
 
