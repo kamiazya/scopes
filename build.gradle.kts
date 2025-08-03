@@ -63,6 +63,26 @@ graalvmNative {
     toolchainDetection.set(false)
 }
 
+// Custom task to check if GraalVM is available
+tasks.register("checkGraalVM") {
+    doLast {
+        try {
+            val nativeImagePath = file("${System.getProperty("java.home")}/bin/native-image")
+            if (!nativeImagePath.exists()) {
+                throw GradleException("GraalVM with native-image is not installed. Please install GraalVM or run CI tests.")
+            }
+            println("✅ GraalVM native-image found at: ${nativeImagePath}")
+        } catch (e: Exception) {
+            throw GradleException("❌ GraalVM native-image not found. Install GraalVM for local native compilation.")
+        }
+    }
+}
+
+// Make nativeCompile depend on checkGraalVM
+tasks.named("nativeCompile") {
+    dependsOn("checkGraalVM")
+}
+
 ktlint {
     version.set("1.5.0")
     outputToConsole.set(true)
