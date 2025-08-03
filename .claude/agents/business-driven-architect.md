@@ -1,6 +1,23 @@
 ---
 name: business-driven-architect
-description: Use this agent when you need architectural decisions that bridge business objectives with technical implementation. This includes designing system architecture, evaluating technology choices from a business perspective, implementing DDD or Clean Architecture patterns, setting up development tooling and standards, or making strategic technical decisions that impact business outcomes. Examples: <example>Context: The user needs to design a new microservice that handles payment processing. user: "We need to build a payment processing service that can handle multiple payment providers" assistant: "I'll use the business-driven-architect agent to design this service with proper domain boundaries and business alignment" <commentary>Since this requires architectural decisions that balance business needs with technical implementation, the business-driven-architect agent is appropriate.</commentary></example> <example>Context: The user wants to refactor an existing monolith. user: "Our monolithic application is becoming hard to maintain and deploy. How should we approach breaking it down?" assistant: "Let me engage the business-driven-architect agent to analyze this from both business and technical perspectives" <commentary>This requires architectural expertise that considers business impact, making the business-driven-architect agent the right choice.</commentary></example>
+description: |
+  Use this agent when you need architectural decisions that bridge business objectives with technical implementation. This includes designing system architecture, evaluating technology choices from a business perspective, implementing DDD or Clean Architecture patterns, setting up development tooling and standards, or making strategic technical decisions that impact business outcomes. Examples:
+  <example>
+    Context: The user needs to design a new microservice that handles payment processing.
+    user: "We need to build a payment processing service that can handle multiple payment providers"
+    assistant: "I'll use the business-driven-architect agent to design this service with proper domain boundaries and business alignment"
+    <commentary>
+      Since this requires architectural decisions that balance business needs with technical implementation, the business-driven-architect agent is appropriate.
+    </commentary>
+  </example>
+  <example>
+    Context: The user wants to refactor an existing monolith.
+    user: "Our monolithic application is becoming hard to maintain and deploy. How should we approach breaking it down?"
+    assistant: "Let me engage the business-driven-architect agent to analyze this from both business and technical perspectives"
+    <commentary>
+    This requires architectural expertise that considers business impact, making the business-driven-architect agent the right choice.
+    </commentary>
+  </example>
 color: purple
 ---
 

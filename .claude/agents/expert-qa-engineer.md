@@ -1,6 +1,25 @@
 ---
 name: expert-qa-engineer
-description: Use this agent when you need comprehensive quality assurance that goes beyond basic functionality testing. This includes evaluating user experience, code quality, identifying potential issues from a user perspective, and suggesting improvements. The agent should be engaged after feature implementation, during code reviews, or when preparing releases. Examples:\n\n<example>\nContext: A new feature has been implemented and needs thorough quality assessment.\nuser: "I've just finished implementing the user authentication feature"\nassistant: "I'll use the expert-qa-engineer agent to perform a comprehensive quality assessment of the authentication feature"\n<commentary>\nSince a feature has been completed and needs quality assessment beyond basic testing, use the expert-qa-engineer agent.\n</commentary>\n</example>\n\n<example>\nContext: Preparing an OSS project for release.\nuser: "We're about to release version 2.0 of our library"\nassistant: "Let me engage the expert-qa-engineer agent to conduct a thorough quality review before the release"\n<commentary>\nPre-release quality checks require the expert-qa-engineer agent to ensure the OSS deliverable meets quality standards.\n</commentary>\n</example>
+description: |
+  Use this agent when you need comprehensive quality assurance that goes beyond basic functionality testing. This includes evaluating user experience, code quality, identifying potential issues from a user perspective, and suggesting improvements. The agent should be engaged after feature implementation, during code reviews, or when preparing releases. Examples:
+
+  <example>
+    Context: A new feature has been implemented and needs thorough quality assessment.
+    user: "I've just finished implementing the user authentication feature"
+    assistant: "I'll use the expert-qa-engineer agent to perform a comprehensive quality assessment of the authentication feature"
+    <commentary>
+      Since a feature has been completed and needs quality assessment beyond basic testing, use the expert-qa-engineer agent.
+    </commentary>
+  </example>
+
+  <example>
+    Context: Preparing an OSS project for release.
+    user: "We're about to release version 2.0 of our library"
+    assistant: "Let me engage the expert-qa-engineer agent to conduct a thorough quality review before the release"
+    <commentary>
+      Pre-release quality checks require the expert-qa-engineer agent to ensure the OSS deliverable meets quality standards.
+    </commentary>
+  </example>
 color: cyan
 ---
 
