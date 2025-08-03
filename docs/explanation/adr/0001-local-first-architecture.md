@@ -99,12 +99,20 @@ Key requirements driving this decision:
 
 ### Architecture Overview
 
-```
-[Local Storage] ← [Lock Mechanism] ← [CLI/AI Operations]
-       ↓
-[Conflict Detection] → [User Notification] → [AI-Assisted Resolution] → [User Confirmation]
-       ↓
-[External Sync] → [Existing Task Management Tools]
+```mermaid
+graph TD
+    CLI[CLI/AI Operations] --> LM[Lock Mechanism]
+    LM --> LS[Local Storage]
+    LS --> CD[Conflict Detection]
+    CD --> UN[User Notification]
+    UN --> AIR[AI-Assisted Resolution]
+    AIR --> UC[User Confirmation]
+    LS --> ES[External Sync]
+    ES --> ETM[Existing Task Management Tools]
+    
+    style CLI fill:#e1f5fe
+    style LS fill:#fff9c4
+    style ETM fill:#f3e5f5
 ```
 
 ### Implementation Priority
