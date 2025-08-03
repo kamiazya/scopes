@@ -38,15 +38,15 @@ Our target users and their key characteristics:
 ### Getting Started Stories
 Stories covering initial tool adoption and setup.
 
-- [US-001: First-Time Installation and Setup](us-001-first-time-installation-and-setup.md) - Initial user experience with OSS CLI tool
+- [US-001: First-Time Installation and Setup](0001-first-time-installation-and-setup.md) - Initial user experience with OSS CLI tool
 
 ### Core Workflow Stories
 Stories covering fundamental Scopes usage patterns.
 
-- [US-002: Create First Scope Hierarchy](us-002-create-first-scope-hierarchy.md) - Understanding the unified Scope concept
-- [US-003: Aspect-Based Scope Classification](us-003-aspect-based-scope-classification.md) - Personal workflow organization with flexible metadata
-- [US-004: Named Context Views](us-004-personal-context-switching.md) - Persistent filtered views for work organization
-- [US-005: Focus Management](us-005-focus-management.md) - Hierarchical focus on specific scopes for deep work
+- [US-002: Create First Scope Hierarchy](0002-create-first-scope-hierarchy.md) - Understanding the unified Scope concept
+- [US-003: Aspect-Based Scope Classification](0003-aspect-based-scope-classification.md) - Personal workflow organization with flexible metadata
+- [US-004: Named Context Views](0004-personal-context-switching.md) - Persistent filtered views for work organization
+- [US-005: Focus Management](0005-focus-management.md) - Hierarchical focus on specific scopes for deep work
 
 ### AI Integration Stories
 Stories focused on human-AI collaboration features.
@@ -56,7 +56,7 @@ Stories focused on human-AI collaboration features.
 ### Productivity Stories
 Stories about efficiency and workflow optimization.
 
-- **US-006**: Scope Alias System - User-friendly ID management for easier scope reference
+- [US-006: Scope Alias System](0006-scope-alias-system.md) - User-friendly ID management for easier scope reference
 - **US-012**: SQL-Based Analysis (Future) - Direct SQL queries for scope data analysis
 - **US-013**: Audit and Log Analysis (Future) - Activity tracking and audit trails
 
