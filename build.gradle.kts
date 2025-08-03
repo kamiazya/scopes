@@ -46,11 +46,15 @@ graalvmNative {
             useFatJar.set(true)
 
             buildArgs.addAll(
+                "-Os",
                 "--no-fallback",
+                "--gc=serial",
                 "--enable-http",
                 "--enable-url-protocols=https",
                 "--report-unsupported-elements-at-runtime",
                 "-H:+ReportExceptionStackTraces",
+                "-H:+StripDebugInfo",
+                "-H:+ReduceImplicitExceptionStackTraceInformation",
                 "-H:IncludeResources=.*",
                 "-H:+InstallExitHandlers",
                 "--initialize-at-build-time=kotlin",

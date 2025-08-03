@@ -75,6 +75,17 @@ native-image --version
     org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
     ```
 
+### Optimizing Binary Size
+
+The project is configured with size optimization flags:
+
+- `-Os`: Enables size optimization over performance
+- `--gc=serial`: Uses Serial GC with smaller memory footprint
+- `-H:+StripDebugInfo`: Removes debug information from binary
+- `-H:+ReduceImplicitExceptionStackTraceInformation`: Reduces exception metadata
+
+These flags significantly reduce the native binary size while maintaining functionality.
+
 ## CI/CD
 
 GitHub Actions automatically uses GraalVM for native image compilation. Local GraalVM installation is optional for development.
