@@ -1,17 +1,15 @@
 plugins {
-    kotlin("jvm")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 dependencies {
     implementation(project(":domain"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.ext["kotlinCoroutines"]}")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlinx.coroutines.core)
 
-    testImplementation("io.kotest:kotest-runner-junit5:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-assertions-core:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-property:${project.ext["kotest"]}")
-    testImplementation("io.mockk:mockk:${project.ext["mockk"]}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${project.ext["kotlinCoroutines"]}")
+    testImplementation(libs.bundles.kotest)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.test {

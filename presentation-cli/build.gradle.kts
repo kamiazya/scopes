@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm")
-    id("org.graalvm.buildtools.native")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.graalvm.native)
     application
 }
 
@@ -8,14 +8,12 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":application"))
     implementation(project(":infrastructure"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    implementation("com.github.ajalt.clikt:clikt:${project.ext["clikt"]}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${project.ext["kotlinCoroutines"]}")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.clikt)
+    implementation(libs.kotlinx.coroutines.core)
 
-    testImplementation("io.kotest:kotest-runner-junit5:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-assertions-core:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-property:${project.ext["kotest"]}")
-    testImplementation("io.mockk:mockk:${project.ext["mockk"]}")
+    testImplementation(libs.bundles.kotest)
+    testImplementation(libs.mockk)
 }
 
 application {

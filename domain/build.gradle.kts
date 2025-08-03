@@ -1,16 +1,14 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${project.ext["kotlinSerialization"]}")
-    implementation("com.github.guepardoapps:kulid:${project.ext["kulid"]}")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kulid)
 
-    testImplementation("io.kotest:kotest-runner-junit5:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-assertions-core:${project.ext["kotest"]}")
-    testImplementation("io.kotest:kotest-property:${project.ext["kotest"]}")
+    testImplementation(libs.bundles.kotest)
 }
 
 tasks.test {

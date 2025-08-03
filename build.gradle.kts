@@ -1,8 +1,8 @@
 plugins {
-    kotlin("jvm") version "2.2.0" apply false
-    kotlin("plugin.serialization") version "2.2.0" apply false
-    id("org.graalvm.buildtools.native") version "0.11.0" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.graalvm.native) apply false
+    alias(libs.plugins.ktlint)
 }
 
 group = "com.kamiazya.scopes"
@@ -25,16 +25,6 @@ subprojects {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
-    }
-
-    // Version catalog for dependencies
-    ext {
-        set("kotlinCoroutines", "1.10.2")
-        set("kotlinSerialization", "1.9.0")
-        set("clikt", "4.4.0")
-        set("kulid", "2.0.0.0")
-        set("kotest", "5.9.1")
-        set("mockk", "1.13.12")
     }
 }
 
