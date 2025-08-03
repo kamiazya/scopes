@@ -134,27 +134,14 @@ graph TD
 
 ### CLI Command Structure
 
-Following industry-standard CLI conventions as per ADR-0003. The specific commands below are examples and will be finalized during detailed design:
+Following industry-standard CLI conventions as per ADR-0003:
 
-```bash
-# Resource-oriented commands (examples)
-pm scope create --title "Feature: Add user authentication"
-pm scope list --status in_progress --assignee @current
-pm scope show SCOPE-123
+- **Resource-oriented design**: Commands organized around resources (scopes, contexts, etc.)
+- **Consistent option patterns**: Standard flags for common operations
+- **Clear verb-noun structure**: Intuitive command composition
+- **Structured output formats**: Support for both human-readable and machine-parseable output
 
-# Scope management (examples)
-pm scope create --title "Q1 Authentication Features"
-pm scope add-scope SCOPE-001 SCOPE-123
-pm scope status SCOPE-001
-
-# Configuration-based synchronization (examples)
-pm sync pull  # Uses configured provider
-pm sync push --dry-run
-pm config set sync.provider github
-pm config set sync.repository owner/repo
-```
-
-**Note**: The above command syntax is illustrative. Final command structure, naming conventions, and parameters will be determined during detailed CLI design phase.
+The specific command structure, naming conventions, and parameters will be determined during the detailed CLI design phase. See the [CLI Quick Reference](../../reference/cli-quick-reference.md) for the current command specification.
 
 ## Consequences
 
@@ -180,24 +167,6 @@ pm config set sync.repository owner/repo
 - Need for comprehensive CLI documentation
 - Requirement for structured output formats
 - Investment in CLI testing and stability
-
-## Implementation Notes
-
-1. **Standards Compliance** - All interfaces must follow industry standards as defined in ADR-0003
-2. **CLI Implementation** - Follow CLI standards (GNU, POSIX, clig.dev guidelines)
-3. **API Design** - Mirror CLI command structure for consistency (if RESTful API is implemented)
-4. **Configuration Management** - Use cross-platform directory conventions
-5. **Error Handling** - Consistent across all interfaces
-6. **Help System** - Comprehensive and discoverable
-7. **Long-Running Operations** - Implement appropriate patterns for each interface type:
-   - CLI: Support both synchronous (with progress) and asynchronous (job-based) modes
-   - GUI: Use non-blocking async patterns with visual feedback (if implemented)
-   - API: Provide async endpoints with status polling capabilities (if implemented)
-8. **Data Management** - Support for both global and project-specific contexts:
-   - **Global Context**: Default global configuration and data store in platform-appropriate user directory
-   - **Project Context**: When run within a directory containing project markers (e.g., `.pm/config`), use project-specific configuration and data
-   - **Consistency**: All interfaces (CLI, TUI, SDK, etc.) must respect this context-switching behavior
-   - **Configuration Precedence**: Project-specific settings override global settings when available
 
 ## Related ADRs
 

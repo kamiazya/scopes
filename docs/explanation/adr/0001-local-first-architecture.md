@@ -95,40 +95,6 @@ Key requirements driving this decision:
 - **Components**: File storage layer, lock mechanism, conflict detection
 - **External Systems**: Task management tools (GitHub Issues, Jira, etc.)
 
-## Implementation Notes
-
-### Architecture Overview
-
-```mermaid
-graph TD
-    CLI[CLI/AI Operations] --> LM[Lock Mechanism]
-    LM --> LS[Local Storage]
-    LS --> CD[Conflict Detection]
-    CD --> UN[User Notification]
-    UN --> AIR[AI-Assisted Resolution]
-    AIR --> UC[User Confirmation]
-    LS --> ES[External Sync]
-    ES --> ETM[Existing Task Management Tools]
-    
-    style CLI fill:#e1f5fe
-    style LS fill:#fff9c4
-    style ETM fill:#f3e5f5
-```
-
-### Implementation Priority
-
-1. **Phase 1**: Local CRUD operations and file-based storage
-2. **Phase 2**: Basic lock functionality
-3. **Phase 3**: Conflict detection and user notification
-4. **Phase 4**: AI-assisted conflict resolution suggestions
-5. **Phase 5**: External tool synchronization
-
-### Technical Constraints
-
-- **File system**: Depends on standard file operations
-- **Platform**: Cross-platform support required
-- **Permissions**: Depends on OS-level file permissions
-
 ## Tags
 
 `architecture`, `local-first`, `offline`, `data-management`, `synchronization`

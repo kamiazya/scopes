@@ -97,23 +97,6 @@ These standards are adopted by this ADR and should be followed unless superseded
 - Standards knowledge becomes prerequisite
 - Dependency on external standard bodies
 
-## Implementation Notes
-
-1. **Standard Compliance Checking**
-   - Use automated tools where available (linters, validators)
-   - Include standard compliance in code review checklist
-   - Add CI/CD checks for standard adherence
-
-2. **Contribution Guidelines**
-   - Update CONTRIBUTING.md to reference this ADR
-   - Provide links to relevant standards
-   - Include examples of standard-compliant code
-
-3. **Deviation Process**
-   - Deviations must be documented in code comments
-   - Major deviations may require their own ADR
-   - Track deviations for potential future standardization
-
 ## Related ADRs
 
 - Future ADRs should reference relevant standards defined here

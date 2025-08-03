@@ -42,14 +42,6 @@ The project's official license will be changed from the MIT License to the Apach
 - **Components:** All source code, documentation, and other assets within the repository.
 - **External Systems:** Affects all downstream consumers and contributors to the project.
 
-## Implementation Notes
-
-- The `LICENSE` file in the repository root must be replaced with the full text of the Apache License 2.0.
-- A `NOTICE` file must be created in the repository root, containing the project's copyright statement and any required notices from dependencies.
-- **License headers will be added to distributed files during the build process, not directly into the source code.** This approach is chosen to keep the source code clean and minimize potential noise for AI tools that analyze the code, which is a key consideration for this AI-native project. This will require configuring the build tools (e.g., Vite) to prepend the license header to output files.
-- The `README.md` and `CONTRIBUTING.md` files must be updated to reflect the new license.
-- The repository settings on GitHub should be updated to identify the license as Apache 2.0.
-
 ## Tags
 
 `license`, `legal`, `governance`, `community`

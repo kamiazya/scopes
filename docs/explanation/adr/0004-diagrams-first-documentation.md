@@ -130,7 +130,7 @@ sequenceDiagram
     participant Core
     participant Storage
 
-    User->>CLI: pm scope create
+    User->>CLI: Create scope command
     CLI->>Core: Create scope
     Core->>Storage: Save scope
     Storage-->>Core: Scope saved
