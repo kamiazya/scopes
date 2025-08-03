@@ -80,7 +80,7 @@ stateDiagram-v2
 
     note right of ADRPhase
         Location: Git Repository
-        docs/architecture/adr/
+        docs/explanation/adr/
     end note
 
     note left of Accepted
