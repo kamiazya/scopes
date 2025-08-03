@@ -28,6 +28,20 @@ pre-commit:
         - merge
         - rebase
 
+    ktlint:
+      glob: "*.kt"
+      run: ./gradlew ktlintCheck --daemon
+      skip:
+        - merge
+        - rebase
+
+    kotlin-test:
+      glob: "*.kt"
+      run: ./gradlew test --daemon
+      skip:
+        - merge
+        - rebase
+
 # Skip hooks during CI/CD
 skip_output:
   - meta
