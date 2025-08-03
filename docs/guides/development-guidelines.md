@@ -25,17 +25,17 @@ flowchart TD
         APP[application]
         DOM[domain]
         INF[infrastructure]
-        
+
         CLI --> APP
         CLI --> INF
         APP --> DOM
         INF --> DOM
-        
+
         classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
         classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
         classDef infrastructure fill:#fff3e0,stroke:#ff9800,stroke-width:3px
         classDef presentation fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px
-        
+
         class DOM domain
         class APP application
         class INF infrastructure
@@ -89,13 +89,13 @@ flowchart LR
             C[Explicit Error Handling with Result Types]
             D[Function Composition]
             E[Domain Events as Data]
-            
+
             A --> B
             B --> C
             C --> D
             D --> E
         end
-        
+
         classDef principle fill:#f1f8e9,stroke:#689f38,stroke-width:2px
         class A,B,C,D,E principle
       ```typescript
@@ -123,7 +123,7 @@ data class Scope(
         // Pure functions for business logic
         fun updateTitle(newTitle: String): Scope =
             copy(title = newTitle, updatedAt = Clock.System.now())
-        
+
         fun addChild(childId: ScopeId): ScopeCreated =
             ScopeCreated(parentId = id, childId = childId)
 }
@@ -147,7 +147,7 @@ value class ScopeId private constructor(private val value: String) {
             fun generate(): ScopeId = ScopeId(Ulid.fast().toString())
             fun from(value: String): ScopeId = ScopeId(value)
         }
-        
+
         override fun toString(): String = value
 }
       ```typescript
@@ -190,7 +190,7 @@ object ScopeValidationService {
 // ❌ Bad: Service with side effects
 class ScopeValidationService {
         private val logger = LoggerFactory.getLogger(this::class.java)
-        
+
         fun validateTitle(title: String): Boolean {
             logger.info("Validating title: $title") // Side effect
             return title.isNotBlank()
@@ -223,7 +223,7 @@ sealed class Err
 fun createScope(request: CreateScopeRequest): Result<Scope, DomainError> =
         validateTitle(request.title)
             .flatMap { title -> validateParent(request.parentId) }
-            .map { _ -> 
+            .map { _ ->
                 Scope(
                     id = ScopeId.generate(),
                     title = request.title,
@@ -260,65 +260,65 @@ sealed class DomainError {
 flowchart TD
         subgraph "Project Structure"
             ROOT[scopes/]
-            
+
             subgraph DOCS["docs/"]
                 DOCS_EXP[explanation/<br/>ADRs, Architecture]
                 DOCS_GUIDES[guides/<br/>Implementation guides]
                 DOCS_REF[reference/<br/>CLI reference]
             end
-            
+
             subgraph DOM["domain/"]
                 DOM_ENT[entity/<br/>Scope.kt, ScopeId.kt]
                 DOM_REP[repository/<br/>ScopeRepository.kt]
             end
-            
+
             subgraph APP["application/"]
                 APP_USE[usecase/<br/>CreateScopeUseCase.kt]
                 APP_SRV[service/<br/>ScopeService.kt]
             end
-            
+
             subgraph INF["infrastructure/"]
                 INF_REP[repository/<br/>InMemoryScopeRepository.kt]
             end
-            
+
             subgraph CLI["presentation-cli/"]
                 CLI_MAIN[Main.kt, ScopesCommand.kt]
                 CLI_CMD[commands/<br/>CreateCommand.kt, ListCommand.kt]
             end
-            
+
             subgraph CONFIG["Configuration"]
                 GRADLE[build.gradle.kts<br/>libs.versions.toml]
                 QUALITY[detekt.yml<br/>lefthook.yml]
                 SCRIPTS[scripts/<br/>check-*.sh]
             end
-            
+
             ROOT --> DOCS
             ROOT --> DOM
             ROOT --> APP
             ROOT --> INF
             ROOT --> CLI
             ROOT --> CONFIG
-            
+
             DOCS --> DOCS_EXP
             DOCS --> DOCS_GUIDES
             DOCS --> DOCS_REF
-            
+
             DOM --> DOM_ENT
             DOM --> DOM_REP
-            
+
             APP --> APP_USE
             APP --> APP_SRV
-            
+
             INF --> INF_REP
-            
+
             CLI --> CLI_MAIN
             CLI --> CLI_CMD
-            
+
             CONFIG --> GRADLE
             CONFIG --> QUALITY
             CONFIG --> SCRIPTS
         end
-        
+
         classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
         classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
         classDef infrastructure fill:#fff3e0,stroke:#ff9800,stroke-width:2px
@@ -326,7 +326,7 @@ flowchart TD
         classDef docs fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
         classDef config fill:#f5f5f5,stroke:#666,stroke-width:2px
         classDef root fill:#fff8e1,stroke:#f57f17,stroke-width:3px
-        
+
         class DOM,DOM_ENT,DOM_REP domain
         class APP,APP_USE,APP_SRV application
         class INF,INF_REP infrastructure
@@ -353,7 +353,7 @@ dependencies {
         implementation(libs.kotlin.stdlib)
         implementation(libs.kotlinx.datetime)
         implementation(libs.ulid.creator)
-        
+
         testImplementation(libs.bundles.kotest)
 }
       ```typescript
@@ -364,7 +364,7 @@ dependencies {
 dependencies {
         implementation(project(":domain"))
         implementation(libs.kotlinx.coroutines.core)
-        
+
         testImplementation(libs.bundles.kotest)
         testImplementation(libs.mockk)
 }
@@ -397,18 +397,18 @@ flowchart LR
             A[Input] --> B{Operation}
             B -->|Success| C[Result.Success&lt;T&gt;]
             B -->|Failure| D[Result.Failure&lt;E&gt;]
-            
+
             C --> E[map/flatMap]
             D --> F[Error Propagation]
-            
+
             E --> G[Next Operation]
             F --> G
         end
-        
+
         classDef success fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
         classDef failure fill:#ffebee,stroke:#f44336,stroke-width:2px
         classDef operation fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-        
+
         class C,E success
         class D,F failure
         class A,B,G operation
@@ -442,7 +442,7 @@ classDiagram
         class RepositoryError {
             <<sealed>>
         }
-        
+
         class ScopeNotFound {
             object
         }
@@ -453,14 +453,14 @@ classDiagram
         class BusinessRuleViolation {
             +rule: String
         }
-        
+
         class DomainErrorWrapper {
             +error: DomainError
         }
         class InfrastructureError {
             +message: String
         }
-        
+
         class ConnectionError {
             +cause: Throwable
         }
@@ -470,33 +470,33 @@ classDiagram
         class NotFound {
             object
         }
-        
+
         DomainError <|-- ScopeNotFound
         DomainError <|-- ValidationFailed
         DomainError <|-- BusinessRuleViolation
-        
+
         ApplicationError <|-- DomainErrorWrapper
         ApplicationError <|-- InfrastructureError
-        
+
         RepositoryError <|-- ConnectionError
         RepositoryError <|-- DataIntegrityError
         RepositoryError <|-- NotFound
-        
+
         DomainErrorWrapper --> DomainError : contains
-        
+
         classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
         classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
         classDef infrastructure fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-        
+
         class DomainError domain
         class ScopeNotFound domain
         class ValidationFailed domain
         class BusinessRuleViolation domain
-        
+
         class ApplicationError application
         class DomainErrorWrapper application
         class InfrastructureError application
-        
+
         class RepositoryError infrastructure
         class ConnectionError infrastructure
         class DataIntegrityError infrastructure
@@ -531,16 +531,16 @@ class CreateScopeUseCaseTest : FunSpec({
                 description = "Test Description"
             )
             val mockRepository = mockk<ScopeRepository>()
-            
+
             every { mockRepository.save(any()) } returns Result.Success(
                 // ... scope object
             )
-            
+
             val useCase = CreateScopeUseCase(mockRepository)
-            
+
             // When
             val result = useCase.execute(request)
-            
+
             // Then
             result shouldBe instanceOf<Result.Success<*>>()
         }
@@ -579,17 +579,17 @@ flowchart LR
             C --> D[Static Analysis<br/>detekt]
             D --> E[Tests<br/>kotest]
         end
-        
+
         subgraph "CI/CD Pipeline"
             F[Build] --> G[Quality Gate]
             G --> H[GraalVM Native<br/>Compilation]
         end
-        
+
         E --> F
-        
+
         classDef quality fill:#f1f8e9,stroke:#689f38,stroke-width:2px
         classDef build fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-        
+
         class A,B,C,D,E quality
         class F,G,H build
       ```typescript
@@ -651,7 +651,7 @@ lefthook run pre-commit
      ```bash
      # Format all files at once
      ./scripts/format-all.sh
-     
+
      # Or format individually:
      ./gradlew ktlintFormat    # Kotlin files
      ```

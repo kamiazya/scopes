@@ -130,13 +130,13 @@ fun createScopeWithValidation(title: String, description: String?, parentId: Sco
 
       ```typescript
 // ✅ Good: Expression body for simple functions
-fun isValidTitle(title: String): Boolean = 
+fun isValidTitle(title: String): Boolean =
         title.isNotBlank() && title.length <= MAX_TITLE_LENGTH
 
 // ✅ Good: Block body for complex functions
 fun createScope(request: CreateScopeRequest): Result<Scope, DomainError> {
         return validateTitle(request.title)
-            .flatMap { title -> 
+            .flatMap { title ->
                 validateParent(request.parentId)
                     .map { _ -> title }
             }
@@ -165,29 +165,29 @@ flowchart TD
             C[Function Composition]
             D[No Side Effects]
             E[Explicit State Management]
-            
+
             A --> B
             B --> C
             C --> D
             D --> E
             E --> A
         end
-        
+
         subgraph "Benefits"
             F[Predictable Behavior]
             G[Easy Testing]
             H[Concurrent Safety]
             I[Better Reasoning]
         end
-        
+
         A --> F
         B --> G
         C --> H
         D --> I
-        
+
         classDef principle fill:#f1f8e9,stroke:#689f38,stroke-width:3px
         classDef benefit fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-        
+
         class A,B,C,D,E principle
         class F,G,H,I benefit
       ```typescript
@@ -206,7 +206,7 @@ data class Scope(
         val createdAt: Instant,
         val updatedAt: Instant
 ) {
-        fun updateTitle(newTitle: String): Scope = 
+        fun updateTitle(newTitle: String): Scope =
             copy(title = newTitle, updatedAt = Clock.System.now())
 }
 
@@ -235,14 +235,14 @@ value class ScopeId private constructor(private val value: String) {
                 return ScopeId(value)
             }
         }
-        
+
         override fun toString(): String = value
 }
 
 // ❌ Bad: Mutable value object
 class ScopeId {
         var value: String = ""
-        
+
         fun setValue(newValue: String) {
             value = newValue
         }
@@ -256,12 +256,12 @@ class ScopeId {
       ```typescript
 // ✅ BEST: Pure function with Either for error handling
 fun calculateScopeDepth(
-        scopeId: ScopeId, 
+        scopeId: ScopeId,
         allScopes: List<Scope>
 ): Either<ScopeError, Int> = either {
         val scope = allScopes.find { it.id == scopeId }
             ?: raise(ScopeError.NotFound(scopeId))
-        
+
         tailrec fun calculateDepth(currentScope: Scope?, depth: Int): Int =
             when (currentScope?.parentId) {
                 null -> depth
@@ -270,11 +270,11 @@ fun calculateScopeDepth(
                     calculateDepth(parent, depth + 1)
                 }
             }
-        
-        ensure(calculateDepth(scope, 0) <= MAX_DEPTH) { 
-            ScopeError.DepthExceeded 
+
+        ensure(calculateDepth(scope, 0) <= MAX_DEPTH) {
+            ScopeError.DepthExceeded
         }
-        
+
         calculateDepth(scope, 0)
 }
 
@@ -285,7 +285,7 @@ fun isValidHierarchy(child: ScopeId, parent: ScopeId): Boolean =
 // ❌ Bad: Impure function - has side effects
 class ScopeService {
         private val logger = LoggerFactory.getLogger(this::class.java)
-        
+
         fun calculateScopeDepth(scope: Scope): Int {
             logger.info("Calculating depth for scope: ${scope.id}") // Side effect
             var depth = 0
@@ -338,13 +338,13 @@ sealed class ScopeCommand {
             val description: String?,
             val parentId: ScopeId?
         ) : ScopeCommand()
-        
+
         data class UpdateScope(
             val id: ScopeId,
             val title: String?,
             val description: String?
         ) : ScopeCommand()
-        
+
         data class ArchiveScope(val id: ScopeId) : ScopeCommand()
 }
 
@@ -374,25 +374,25 @@ flowchart TD
                 CLI[CLI Commands]
                 WEB[Web Controllers]
             end
-            
+
             subgraph "Application Layer"
                 UC[Use Cases]
                 AS[Application Services]
             end
-            
+
             subgraph "Domain Layer"
                 ENT[Entities]
                 VO[Value Objects]
                 DOM_SRV[Domain Services]
                 REPO_INT[Repository Interfaces]
             end
-            
+
             subgraph "Infrastructure Layer"
                 REPO_IMPL[Repository Implementations]
                 DB[Database]
                 EXT[External Services]
             end
-            
+
             CLI --> UC
             WEB --> UC
             UC --> ENT
@@ -403,12 +403,12 @@ flowchart TD
             REPO_IMPL --> DB
             REPO_IMPL --> EXT
         end
-        
+
         classDef presentation fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
         classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
         classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
         classDef infrastructure fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-        
+
         class CLI,WEB presentation
         class UC,AS application
         class ENT,VO,DOM_SRV,REPO_INT domain
@@ -429,9 +429,9 @@ data class Scope(
         val createdAt: Instant,
         val updatedAt: Instant
 ) {
-        fun isChildOf(potentialParent: Scope): Boolean = 
+        fun isChildOf(potentialParent: Scope): Boolean =
             parentId == potentialParent.id
-        
+
         fun canBeParentOf(potentialChild: Scope): Boolean =
             potentialChild.parentId != id && id != potentialChild.id
 }
@@ -457,20 +457,20 @@ class CreateScopeUseCase(
             val validRequest = validateRequest(request)
                 .mapLeft { ApplicationError.DomainError(it) }
                 .bind()
-            
+
             val scope = createScope(validRequest).bind()
             val savedScope = saveScope(scope).bind()
-            
+
             publishEvent(ScopeCreated(savedScope))
             CreateScopeResponse(savedScope)
         }
-        
+
         private fun validateRequest(request: CreateScopeRequest): Either<DomainError, CreateScopeRequest> = either {
-            ensure(request.title.isNotBlank()) { 
-                DomainError.InvalidTitle("Title cannot be blank") 
+            ensure(request.title.isNotBlank()) {
+                DomainError.InvalidTitle("Title cannot be blank")
             }
-            ensure(request.title.length <= MAX_TITLE_LENGTH) { 
-                DomainError.InvalidTitle("Title too long") 
+            ensure(request.title.length <= MAX_TITLE_LENGTH) {
+                DomainError.InvalidTitle("Title too long")
             }
             request
         }
@@ -517,9 +517,9 @@ sequenceDiagram
         participant Function
         participant Either
         participant NextFunction
-        
+
         Client->>Function: Input
-        
+
         alt Right Path (Success)
             Function->>Either: Right(value)
             Either->>Client: map/flatMap
@@ -552,7 +552,7 @@ fun registerUser(request: RegistrationRequest): Either<RegistrationError, User> 
         val email = validateEmail(request.email).bind()
         val age = validateAge(request.age).bind()
         val username = checkUsernameAvailable(request.username).bind()
-        
+
         createUser(email, age, username)
 }
 
@@ -604,12 +604,12 @@ suspend fun processScopeCreation(request: CreateScopeRequest): Either<Applicatio
         val validRequest = validateRequest(request)
             .mapLeft { ApplicationError.DomainError(it) }
             .bind()
-        
+
         checkParentExists(validRequest.parentId).bind()
-        
+
         val scope = createScopeEntity(request).bind()
         val savedScope = saveScope(scope).bind()
-        
+
         ScopeCreated(savedScope)
 }
 
@@ -627,7 +627,7 @@ suspend fun processScopeCreation(request: CreateScopeRequest): ScopeCreated {
         if (request.title.isBlank()) {
             throw ValidationException("Title cannot be blank")
         }
-        
+
         val scope = createScopeEntity(request)
         return try {
             val savedScope = saveScope(scope)
@@ -653,10 +653,10 @@ class CreateScopeUseCaseTest : FunSpec({
                     description = "Valid description",
                     parentId = null
                 )
-                
+
                 val mockRepository = mockk<ScopeRepository>()
                 val mockPublisher = mockk<DomainEventPublisher>()
-                
+
                 every { mockRepository.save(any()) } returns Either.Right(
                     Scope(
                         id = ScopeId.generate(),
@@ -667,30 +667,30 @@ class CreateScopeUseCaseTest : FunSpec({
                         updatedAt = Clock.System.now()
                     )
                 )
-                
+
                 val useCase = CreateScopeUseCase(mockRepository, mockPublisher)
-                
+
                 // When
                 val result = runBlocking { useCase.execute(request) }
-                
+
                 // Then
                 result.isRight() shouldBe true
                 verify { mockRepository.save(any()) }
             }
-            
+
             test("should fail when title is blank") {
                 // Given
                 val request = CreateScopeRequest(title = "", description = null, parentId = null)
                 val useCase = CreateScopeUseCase(mockk(), mockk())
-                
+
                 // When
                 val result = runBlocking { useCase.execute(request) }
-                
+
                 // Then
                 result.isLeft() shouldBe true
                 result.fold(
-                    ifLeft = { error -> 
-                        error shouldBe instanceOf<ApplicationError.DomainError>() 
+                    ifLeft = { error ->
+                        error shouldBe instanceOf<ApplicationError.DomainError>()
                     },
                     ifRight = { fail("Expected Left but got Right") }
                 )
@@ -711,15 +711,15 @@ class ScopeIdTest : FunSpec({
                 id1 shouldNotBe id2
             }
         }
-        
+
         test("ScopeId.from should round-trip correctly") {
             checkAll<String> { validUlid ->
                 assume(Ulid.isValid(validUlid))
-                
+
                 val scopeId = ScopeId.from(validUlid)
                 val stringRepresentation = scopeId.toString()
                 val reconstructed = ScopeId.from(stringRepresentation)
-                
+
                 reconstructed shouldBe scopeId
             }
         }
@@ -734,16 +734,16 @@ class ScopeServiceTest : FunSpec({
         test("should handle repository failure gracefully") {
             val mockRepository = mockk<ScopeRepository>()
             val service = ScopeService(mockRepository)
-            
+
             // Mock specific behavior
             every { mockRepository.save(any()) } returns Either.Left(
                 RepositoryError.ConnectionError(Exception("Database unavailable"))
             )
-            
-            val result = runBlocking { 
+
+            val result = runBlocking {
                 service.createScope(CreateScopeRequest("Test", null, null))
             }
-            
+
             result.isLeft() shouldBe true
             verify(exactly = 1) { mockRepository.save(any()) }
         }
@@ -756,12 +756,12 @@ class ScopeServiceTest : FunSpec({
             val mockValidator = mockk<ScopeValidator>()
             val mockPublisher = mockk<EventPublisher>()
             val mockLogger = mockk<Logger>()
-            
+
             every { mockRepo.save(any()) } returns mockk()
             every { mockValidator.validate(any()) } returns true
             every { mockPublisher.publish(any()) } just Runs
             every { mockLogger.info(any()) } just Runs
-            
+
             // Test becomes unclear due to excessive mocking
         }
 })
@@ -775,17 +775,17 @@ class ScopeServiceTest : FunSpec({
 // ✅ Good: Comprehensive KDoc with examples
 /**
  * Creates a new scope with the provided information.
- * 
+ *
  * This function validates the input, creates a new scope entity with a generated ULID,
  * and returns a Result indicating success or failure.
- * 
+ *
  * @param title The scope title, must be non-blank and <= 200 characters
  * @param description Optional description for the scope
  * @param parentId Optional parent scope identifier for hierarchical organization
  * @return Result containing the created Scope on success, or DomainError on failure
- * 
+ *
  * @throws IllegalArgumentException if title is blank (in validation layer)
- * 
+ *
  * @sample
  * ```kotlin
  * val result = createScope(
@@ -793,7 +793,7 @@ class ScopeServiceTest : FunSpec({
  *     description = "Planning phase for new project",
  *     parentId = ScopeId.from("01ARZ3NDEKTSV4RRFFQ69G5FAV")
  * )
- * 
+ *
  * when (result) {
  *     is Result.Success -> println("Created scope: ${result.value.id}")
  *     is Result.Failure -> println("Error: ${result.error}")
@@ -821,7 +821,7 @@ fun calculateScopeDepth(scope: Scope, allScopes: List<Scope>): Int {
                     calculateDepthRecursive(parent, depth + 1)
                 }
             }
-        
+
         return calculateDepthRecursive(scope.parentId, 0)
 }
 
@@ -839,7 +839,7 @@ fun calculateScopeDepth(scope: Scope, allScopes: List<Scope>): Int {
                     calculateDepthRecursive(parent, depth + 1)
                 }
             }
-        
+
         // Call the recursive function with scope's parent ID and depth 0
         return calculateDepthRecursive(scope.parentId, 0)
 }
@@ -855,34 +855,34 @@ flowchart LR
             A[Code Writing] --> B[Pre-commit Hooks]
             B --> C[CI/CD Pipeline]
             C --> D[Deployment]
-            
+
             subgraph "Pre-commit Tools"
                 E[EditorConfig]
                 F[ktlint]
                 G[Detekt]
                 H[Prettier]
             end
-            
+
             subgraph "CI Tools"
                 I[Build]
                 J[Test]
                 K[Quality Gate]
             end
-            
+
             B --> E
             B --> F
             B --> G
             B --> H
-            
+
             C --> I
             C --> J
             C --> K
         end
-        
+
         classDef development fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
         classDef precommit fill:#f1f8e9,stroke:#689f38,stroke-width:2px
         classDef ci fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-        
+
         class A,B,C,D development
         class E,F,G,H precommit
         class I,J,K ci
@@ -954,17 +954,17 @@ pre-commit:
         format-markdown:
           glob: "*.md"
           run: docker run --rm -v "${PWD}:/work" tmknom/prettier --write {staged_files}
-        
+
         check-editorconfig:
           run: docker run --rm -v "${PWD}:/check" mstruebing/editorconfig-checker
-        
+
         ktlint:
           glob: "*.kt"
           run: ./gradlew ktlintCheck
-        
+
         detekt:
           run: ./gradlew detekt
-        
+
         test:
           run: ./gradlew test
       ```typescript

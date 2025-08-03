@@ -32,7 +32,7 @@ $ scopes list
 Found 12 scopes:
 
 quiet-river-a4f7    Implement authentication          priority=high status=ready
-wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo  
+wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo
 swift-mountain-c9x4 Fix critical security bug        priority=high status=done
 brave-star-e5n3     Optimize database queries        priority=medium status=ready
 gentle-cloud-f8p6   Update documentation             priority=low status=todo
@@ -136,7 +136,7 @@ $ scopes list -a priority=high
 Found 3 scopes with priority=high:
 
 quiet-river-a4f7    Implement authentication          priority=high status=ready
-wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo  
+wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo
 swift-mountain-c9x4 Fix critical security bug        priority=high status=done
 
 # Comparison operator
@@ -425,7 +425,7 @@ Error: Invalid aspect query syntax in 'priority=>high'
 ├── config.json     # User settings
 └── focus.json      # User-level focus state
 
-project/.scopes/     # Workspace configuration  
+project/.scopes/     # Workspace configuration
 ├── workspace.json  # Workspace settings
 └── focus.json      # Workspace focus state
       ```typescript

@@ -16,7 +16,7 @@ Our current documentation structure has several issues:
 The project has grown to include various types of documentation:
 
 - Architectural decisions and design documents
-- Domain models and business requirements  
+- Domain models and business requirements
 - Development guides and setup instructions
 - API references and technical specifications
 
