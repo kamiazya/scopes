@@ -26,16 +26,16 @@ All ADRs in this project follow a standardized format defined in [`TEMPLATE.md`]
 
 **Background:** In a Git-managed environment, the traditional "Proposed" status creates ambiguity. When an ADR is committed to the repository, it implies that a decision to document the architecture has already been made. Therefore, we adopt a simplified status model:
 
-**Status Values:**
+#### Status Values
 
 - **Accepted**: The decision has been agreed upon and should be implemented. This is the initial status for all new ADRs.
 - **Superseded by ADR-XXXX**: The decision has been replaced by another ADR. Include a reference to the new ADR.
 
-**Important Principle: Separation of Decision and Implementation**
+#### Important Principle: Separation of Decision and Implementation
 
 ADRs track architectural decisions, not implementation status. The lifecycle of a decision (Accepted → Superseded) is independent from the implementation lifecycle (planned → in-progress → completed → migrating → retired). Implementation status should be tracked through task management tools, not ADR statuses.
 
-**Workflow:**
+#### Workflow
 
 1. **Pre-ADR Discussion**: Architecture proposals are discussed in GitHub Issues, Pull Requests, or team meetings.
 2. **ADR Creation**: Once a decision is reached, create an ADR with status "Accepted".
@@ -89,7 +89,7 @@ stateDiagram-v2
     end note
 ```
 
-**Phase Descriptions:**
+#### Phase Descriptions
 
 1. **Pre-ADR Phase** (Outside Git Repository):
    - **Discussion**: Initial problem identification and exploration
@@ -102,7 +102,7 @@ stateDiagram-v2
    - **Accepted**: Default status for all new ADRs
    - **Superseded**: Decision replaced by a new ADR
 
-**Key Points:**
+#### Key Points
 
 - The "Proposed" status is eliminated from the Git-managed ADR workflow
 - All architectural proposals and discussions happen before ADR creation
@@ -212,7 +212,7 @@ graph TD
 | [0009](./0009-adopt-apache-license-2.0.md) | Accepted | Adopt Apache License 2.0 | Change project license to Apache 2.0 for better legal protection |
 | [0010](./0010-adopt-ulid-for-distributed-identifiers.md) | Accepted | Adopt ULID for Distributed Identifiers | Replace hex IDs with ULID for multi-device synchronization support |
 
-**Legend:**
+#### Legend
 
 - 📋 Process and workflow decisions
 - 🏠 Core architectural principles

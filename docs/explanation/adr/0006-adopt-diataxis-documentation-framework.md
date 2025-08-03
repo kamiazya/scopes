@@ -27,7 +27,7 @@ Without a clear framework, documentation becomes:
 - Prone to duplication (same information in multiple places)
 - Inconsistent in style and purpose
 
-**Specific problem scenarios:**
+### Specific problem scenarios
 
 - New developers struggle to find setup instructions, as they are scattered across multiple documents
 - Contributors looking for specific API details have to search through explanatory documents
@@ -56,14 +56,14 @@ Our documentation will be reorganized into four main categories:
 
 Each category serves a specific purpose and audience need, making it clear where to find and place documentation.
 
-**Existing document classification examples:**
+### Existing document classification examples
 
 - **Tutorials**: New `docs/tutorials/getting-started.md` for new developers
 - **How-to guides**: `docs/TEST_STRATEGY.md` → `docs/guides/testing-strategy.md`
 - **Reference**: `docs/architecture/ARCHITECTURE.md` + `docs/architecture/DESIGN.md` → `docs/reference/architecture.md` (merged)
 - **Explanation**: `docs/domain/REQUIREMENTS.md` → `docs/explanation/domain-overview.md`, `docs/architecture/adr/` → `docs/explanation/adr/`
 
-**Documents remaining in current locations:**
+### Documents remaining in current locations
 
 - `CONTRIBUTING.md`: Stays at project root (OSS community best practice)
 - `docs/README.md`: Remains as navigation guide
