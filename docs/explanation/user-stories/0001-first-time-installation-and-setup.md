@@ -59,6 +59,27 @@ Scenario: Get help when stuck
   Then I can find answers to common questions
   And I can find examples of basic usage
   And I know where to get additional support
+
+Scenario: Handle missing package manager
+  Given I am on a system without npm/homebrew/cargo installed
+  When I try to install Scopes using instructions
+  Then I see a clear error message about missing dependencies
+  And I receive guidance on alternative installation methods
+  And I am directed to platform-specific installation instructions
+
+Scenario: Handle installation permission errors
+  Given I have npm installed but no global install permissions
+  When I run 'npm install -g scopes' without sudo
+  Then I see a clear permission error message
+  And I receive suggestions for resolving the issue
+  And I am informed about npx usage as an alternative
+
+Scenario: Handle corrupted installation
+  Given I have a partially installed or corrupted Scopes installation
+  When I run 'scopes --version'
+  Then I see an error indicating the installation is broken
+  And I receive instructions for clean reinstallation
+  And I am provided troubleshooting resources
 ```
 
 ## User Journey
