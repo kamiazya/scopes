@@ -1,9 +1,7 @@
 package com.kamiazya.scopes.domain.usecase
 
-import com.kamiazya.scopes.domain.entity.Priority
 import com.kamiazya.scopes.domain.entity.Scope
 import com.kamiazya.scopes.domain.entity.ScopeId
-import com.kamiazya.scopes.domain.entity.ScopeStatus
 import com.kamiazya.scopes.domain.repository.ScopeRepository
 
 /**
@@ -19,8 +17,6 @@ class CreateScopeUseCase(
                 id = request.id ?: ScopeId.generate(),
                 title = request.title,
                 description = request.description,
-                status = request.status,
-                priority = request.priority,
                 parentId = request.parentId,
                 metadata = request.metadata,
             )
@@ -41,8 +37,6 @@ data class CreateScopeRequest(
     val id: ScopeId? = null,
     val title: String,
     val description: String? = null,
-    val status: ScopeStatus = ScopeStatus.ACTIVE,
-    val priority: Priority = Priority.MEDIUM,
     val parentId: ScopeId? = null,
     val metadata: Map<String, String> = emptyMap(),
 )

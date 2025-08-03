@@ -1,11 +1,9 @@
 package com.kamiazya.scopes.presentation.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.kamiazya.scopes.application.service.ScopeService
-import com.kamiazya.scopes.domain.entity.Priority
 import com.kamiazya.scopes.domain.entity.ScopeId
 import com.kamiazya.scopes.domain.usecase.CreateScopeRequest
 import kotlinx.coroutines.runBlocking
@@ -18,8 +16,6 @@ class CreateCommand(
 ) : CliktCommand(name = "create") {
     private val title by option("-t", "--title", help = "Scope title").required()
     private val description by option("-d", "--description", help = "Scope description")
-    private val priority by option("-p", "--priority", help = "Priority level (LOW, MEDIUM, HIGH, CRITICAL)")
-        .default("MEDIUM")
     private val parentId by option("--parent", help = "Parent scope ID")
 
     override fun run() =
@@ -29,14 +25,12 @@ class CreateCommand(
                     CreateScopeRequest(
                         title = title,
                         description = description,
-                        priority = Priority.valueOf(priority.uppercase()),
                         parentId = parentId?.let { ScopeId.from(it) },
                     )
 
                 val response = scopeService.createScope(request)
                 echo("✅ Created scope: ${response.scope.id}")
                 echo("   Title: ${response.scope.title}")
-                echo("   Priority: ${response.scope.priority}")
                 if (response.scope.description != null) {
                     echo("   Description: ${response.scope.description}")
                 }

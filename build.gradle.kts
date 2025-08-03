@@ -11,6 +11,7 @@ version = "0.0.1"
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("com.github.ajalt.clikt:clikt:4.4.0")
+    implementation("com.github.guepardoapps:kulid:2.0.0.0")
 
     testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
     testImplementation("io.kotest:kotest-assertions-core:5.9.1")
@@ -75,7 +77,7 @@ tasks.register("checkGraalVM") {
             if (!nativeImagePath.exists()) {
                 throw GradleException("GraalVM with native-image is not installed. Please install GraalVM or run CI tests.")
             }
-            println("✅ GraalVM native-image found at: ${nativeImagePath}")
+            println("✅ GraalVM native-image found at: $nativeImagePath")
         } catch (e: Exception) {
             throw GradleException("❌ GraalVM native-image not found. Install GraalVM for local native compilation.")
         }

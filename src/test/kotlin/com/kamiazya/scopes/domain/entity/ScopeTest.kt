@@ -15,8 +15,6 @@ class ScopeTest :
                 )
 
             scope.title shouldBe "Test Scope"
-            scope.status shouldBe ScopeStatus.ACTIVE
-            scope.priority shouldBe Priority.MEDIUM
             scope.parentId shouldBe null
             scope.description shouldBe null
             scope.metadata shouldBe emptyMap()
@@ -48,8 +46,6 @@ class ScopeTest :
                     id = id,
                     title = "Test Scope",
                     description = "Test Description",
-                    status = ScopeStatus.COMPLETED,
-                    priority = Priority.HIGH,
                     parentId = parentId,
                     metadata = metadata,
                 )
@@ -57,8 +53,6 @@ class ScopeTest :
             scope.id shouldBe id
             scope.title shouldBe "Test Scope"
             scope.description shouldBe "Test Description"
-            scope.status shouldBe ScopeStatus.COMPLETED
-            scope.priority shouldBe Priority.HIGH
             scope.parentId shouldBe parentId
             scope.metadata shouldBe metadata
             scope.createdAt shouldNotBe null

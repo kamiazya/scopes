@@ -1,10 +1,10 @@
 package com.kamiazya.scopes.domain.entity
 
+import com.github.guepardoapps.kulid.ULID
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 /**
- * Type-safe identifier for Scope entities using UUID for distributed system compatibility.
+ * Type-safe identifier for Scope entities using ULID for lexicographically sortable distributed system compatibility.
  */
 @Serializable
 @JvmInline
@@ -13,10 +13,11 @@ value class ScopeId(
 ) {
     init {
         require(value.isNotBlank()) { "ScopeId cannot be blank" }
+        require(ULID.isValid(value)) { "ScopeId must be a valid ULID format" }
     }
 
     companion object {
-        fun generate(): ScopeId = ScopeId(UUID.randomUUID().toString())
+        fun generate(): ScopeId = ScopeId(ULID.random())
 
         fun from(value: String): ScopeId = ScopeId(value)
     }

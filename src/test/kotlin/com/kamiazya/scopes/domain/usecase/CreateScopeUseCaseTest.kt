@@ -1,6 +1,5 @@
 package com.kamiazya.scopes.domain.usecase
 
-import com.kamiazya.scopes.domain.entity.Priority
 import com.kamiazya.scopes.domain.entity.Scope
 import com.kamiazya.scopes.domain.entity.ScopeId
 import com.kamiazya.scopes.domain.repository.ScopeRepository
@@ -26,7 +25,6 @@ class CreateScopeUseCaseTest :
                 CreateScopeRequest(
                     title = "Test Scope",
                     description = "Test Description",
-                    priority = Priority.HIGH,
                 )
 
             val savedScope =
@@ -34,7 +32,6 @@ class CreateScopeUseCaseTest :
                     id = ScopeId.generate(),
                     title = "Test Scope",
                     description = "Test Description",
-                    priority = Priority.HIGH,
                 )
             coEvery { mockRepository.save(any()) } returns savedScope
 
@@ -43,7 +40,6 @@ class CreateScopeUseCaseTest :
             response.scope shouldNotBe null
             response.scope.title shouldBe "Test Scope"
             response.scope.description shouldBe "Test Description"
-            response.scope.priority shouldBe Priority.HIGH
 
             coVerify { mockRepository.save(any()) }
         }

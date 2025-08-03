@@ -32,7 +32,6 @@ class ListCommand(
                 echo("📋 Scopes:")
                 scopes.forEach { scope ->
                     echo("  ${scope.id} - ${scope.title}")
-                    echo("    Status: ${scope.status}, Priority: ${scope.priority}")
                     if (scope.description != null) {
                         echo("    Description: ${scope.description}")
                     }
