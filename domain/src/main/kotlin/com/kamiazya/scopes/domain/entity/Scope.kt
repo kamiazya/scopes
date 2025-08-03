@@ -1,5 +1,9 @@
 package com.kamiazya.scopes.domain.entity
 
+import arrow.core.Either
+import arrow.core.raise.either
+import com.kamiazya.scopes.domain.error.DomainError
+import com.kamiazya.scopes.domain.service.ScopeValidationService
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -23,6 +27,32 @@ data class Scope(
     companion object {
         /**
          * Create a new scope with generated timestamps.
+         * This is the safe factory method that validates input.
+         */
+        fun create(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            metadata: Map<String, String> = emptyMap()
+        ): Either<DomainError.ValidationError, Scope> = either {
+            val validatedTitle = ScopeValidationService.validateTitle(title).bind()
+            val validatedDescription = ScopeValidationService.validateDescription(description).bind()
+
+            val now = Clock.System.now()
+            Scope(
+                id = ScopeId.generate(),
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+                createdAt = now,
+                updatedAt = now,
+                metadata = metadata
+            )
+        }
+
+        /**
+         * Create a new scope with explicit ID and generated timestamps.
+         * This is used internally when you already have a validated ID.
          */
         fun create(
             id: ScopeId,
