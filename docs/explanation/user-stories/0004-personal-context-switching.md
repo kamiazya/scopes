@@ -16,7 +16,7 @@
 
 A developer works on several distinct contexts throughout their day:
 - **Morning**: Personal open-source project (creative, exploratory work)
-- **Afternoon**: Client project (focused, deadline-driven work)  
+- **Afternoon**: Client project (focused, deadline-driven work)
 - **Evening**: Learning new technology (experimental, educational work)
 - **Weekend**: Home automation project (hobby, low-pressure work)
 
@@ -87,7 +87,7 @@ journey
       Start day, choose view       : 3: User
       Apply "personal-projects"    : 4: User, System
       See only personal scopes     : 5: User, System
-    section Work Transition  
+    section Work Transition
       Finish personal work         : 4: User
       Apply "client-work" view     : 4: User, System
       See client-filtered scopes   : 5: User, System

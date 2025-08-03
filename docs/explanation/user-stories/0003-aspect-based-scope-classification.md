@@ -110,7 +110,7 @@ journey
 
 ### Enables
 - Personal workspace and context management
-- Efficient scope filtering and discovery  
+- Efficient scope filtering and discovery
 - Individual productivity optimizations
 - AI-assisted scope recommendations based on personal patterns
 
@@ -167,7 +167,7 @@ $ scopes list -a priority=high
 Found 3 scopes with priority=high:
 
 quiet-river-a4f7    Implement authentication          priority=high status=ready
-wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo  
+wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo
 swift-mountain-c9x4 Fix critical security bug        priority=high status=done
 
 # Complex queries show matching criteria

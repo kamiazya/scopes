@@ -23,7 +23,7 @@ A developer manages multiple scopes throughout their workflow:
 
 Current pain points:
 - Need to constantly look up scope IDs
-- Risk of typos when manually entering IDs  
+- Risk of typos when manually entering IDs
 - Difficulty communicating about scopes verbally
 - Scripts become unreadable with hardcoded ULIDs
 
@@ -236,7 +236,7 @@ Please use a longer prefix or exact alias.
 ```bash
 # Dynamic completion for all aliases
 $ scopes show qu<TAB>
-quiet-river-a4f7   quiet-mountain-b8e2   
+quiet-river-a4f7   quiet-mountain-b8e2
 
 $ scopes focus auth<TAB>
 auth-feature   authentication   auth-api-v2
