@@ -1,0 +1,34 @@
+# Lefthook configuration for Scopes project
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    markdownlint:
+      glob: "*.md"
+      run: |
+        docker run --rm -v "$(pwd):/workspace" \
+          -w /workspace \
+          davidanson/markdownlint-cli2:latest \
+          --config /workspace/.markdownlint.json \
+          {staged_files}
+      skip:
+        - merge
+        - rebase
+
+    editorconfig:
+      glob: "*"
+      run: |
+        docker run --rm -v "$(pwd):/workspace" \
+          -w /workspace \
+          mstruebing/editorconfig-checker:latest \
+          ec \
+          {staged_files}
+      skip:
+        - merge
+        - rebase
+
+# Skip hooks during CI/CD
+skip_output:
+  - meta
+  - success

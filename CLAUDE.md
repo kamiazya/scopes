@@ -54,13 +54,13 @@ Create a unified, recursive task management system where AI and human developers
 We adopt the **Diátaxis framework** for organizing documentation:
 
 ### Documentation Categories
-- **Tutorials** (`/docs/tutorials/`) - Learning-oriented guides for newcomers
-- **How-to Guides** (`/docs/guides/`) - Task-oriented recipes for specific goals
-- **Reference** (`/docs/reference/`) - Information-oriented technical descriptions
-- **Explanation** (`/docs/explanation/`) - Understanding-oriented discussions
+- **Tutorials** @/docs/tutorials/ - Learning-oriented guides for newcomers
+- **How-to Guides** @/docs/guides/ - Task-oriented recipes for specific goals
+- **Reference** @/docs/reference/ - Information-oriented technical descriptions
+- **Explanation** @/docs/explanation/ - Understanding-oriented discussions
 
 ### ADR (Architecture Decision Records)
-- Location: `/docs/explanation/adr/`
+- Location: @/docs/explanation/adr/
 - Purpose: Document architectural decisions with context and rationale
 - Review: Include ADR review in design validation phase
 

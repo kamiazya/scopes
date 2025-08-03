@@ -28,3 +28,6 @@ replay_pid*
 
 tmp/
 .claude/settings.local.json
+
+# Lefthook
+.lefthook-local/
