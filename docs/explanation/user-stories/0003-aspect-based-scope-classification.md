@@ -37,29 +37,29 @@ Current pain points:
 Feature: Aspect-based scope classification
 
 Scenario: Use development presets
-  Given I have created several scopes in my project
-  When I assign standard development aspects to scopes
-  Then I can categorize work by priority, type, and status
-  And these aspects provide sensible defaults for development workflows
+    Given I have created several scopes in my project
+    When I assign standard development aspects to scopes
+    Then I can categorize work by priority, type, and status
+    And these aspects provide sensible defaults for development workflows
 
 Scenario: Create custom aspects for personal workflow
-  Given I need project-specific classification
-  When I define custom aspects that match my workflow
-  Then I can categorize scopes using my own terminology
-  And these custom aspects work just like standard ones
+    Given I need project-specific classification
+    When I define custom aspects that match my workflow
+    Then I can categorize scopes using my own terminology
+    And these custom aspects work just like standard ones
 
 Scenario: Query with comparison operators
-  Given I have scopes with numeric or ordered aspects
-  When I query with comparison operators like >= or <=
-  Then I can find scopes based on relative values
-  And I can filter by ranges or thresholds effectively
+    Given I have scopes with numeric or ordered aspects
+    When I query with comparison operators like >= or <=
+    Then I can find scopes based on relative values
+    And I can filter by ranges or thresholds effectively
 
 Scenario: Combine multiple criteria
-  Given I have a complex project with many scopes
-  When I need to find specific combinations of characteristics
-  Then I can combine multiple aspects with logical operators
-  And get exactly the scopes that match all my criteria
-```
+    Given I have a complex project with many scopes
+    When I need to find specific combinations of characteristics
+    Then I can combine multiple aspects with logical operators
+    And get exactly the scopes that match all my criteria
+      ```typescript
 
 ## User Journey
 
@@ -75,23 +75,23 @@ Scenario: Combine multiple criteria
 title: Learning Aspect-Based Personal Organization
 ---
 journey
-    title Personal Scope Organization with Aspects
-    section Recognition
-      Need better organization : 2: User
-      Learn about aspects     : 3: User
-    section Basic Usage
-      Use development presets : 4: User, System
-      Add aspects to scopes   : 4: User, System
-      Query by single aspect  : 4: User, System
-    section Personalization
-      Define custom aspects   : 5: User, System
-      Use comparison operators: 5: User, System
-      Combine multiple aspects: 5: User, System
-    section Mastery
-      Create complex queries  : 5: User, System
-      Integrate into routine  : 5: User
-      Refine personal system  : 5: User
-```
+        title Personal Scope Organization with Aspects
+        section Recognition
+          Need better organization : 2: User
+          Learn about aspects     : 3: User
+        section Basic Usage
+          Use development presets : 4: User, System
+          Add aspects to scopes   : 4: User, System
+          Query by single aspect  : 4: User, System
+        section Personalization
+          Define custom aspects   : 5: User, System
+          Use comparison operators: 5: User, System
+          Combine multiple aspects: 5: User, System
+        section Mastery
+          Create complex queries  : 5: User, System
+          Integrate into routine  : 5: User
+          Refine personal system  : 5: User
+      ```typescript
 
 ## Success Metrics
 
@@ -135,7 +135,7 @@ scopes list -a blocked=false
 # Complex personal queries
 scopes list -a "priority>=high AND type=implementation"
 scopes list -a "ready=true AND estimate<=4h"
-```
+      ```typescript
 
 ### Aspect Management
 ```bash
@@ -152,15 +152,15 @@ scopes list -a "priority>=high AND status=ready"
 scopes aspect define priority --type ordered --values low,medium,high
 scopes aspect define status --type text --values todo,ready,done
 scopes aspect list --definitions
-```
+      ```typescript
 
 ### Command Output Examples
 ```bash
 # Setting aspects with visual feedback
 $ scopes aspect set quiet-river-a4f7 priority=high status=ready
 ✓ Set aspects on scope 'quiet-river-a4f7':
-  priority: high
-  status: ready
+    priority: high
+    status: ready
 
 # Querying with filtered results
 $ scopes list -a priority=high
@@ -179,7 +179,7 @@ quiet-river-a4f7    Implement authentication         priority=high   status=read
 wise-ocean-b2k8     Redesign user dashboard         priority=high   status=todo
 brave-star-e5n3     Optimize database queries       priority=medium status=ready
 gentle-cloud-f8p6   Update documentation            priority=low    status=todo
-```
+      ```typescript
 
 ## Related Stories
 
@@ -187,3 +187,4 @@ gentle-cloud-f8p6   Update documentation            priority=low    status=todo
 - **Future**: Personal Context Management (uses aspects for context switching)
 - **Future**: AI Integration (learns from personal aspect patterns)
 - **Future**: Personal Productivity Analytics (analyzes aspect usage patterns)
+

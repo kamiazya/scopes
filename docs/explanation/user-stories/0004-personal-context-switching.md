@@ -40,33 +40,33 @@ The developer wants named context views that persist filter definitions, allowin
 Feature: Named context views
 
 Scenario: Create named contexts with aspect filters
-  Given I have scopes with various aspects across different projects
-  When I create a context called "client-work" with filter "project=acme AND type=feature"
-  And I create a context called "learning" with filter "category=education"
-  Then each context becomes a persistent named view
-  And I can access these views repeatedly
+    Given I have scopes with various aspects across different projects
+    When I create a context called "client-work" with filter "project=acme AND type=feature"
+    And I create a context called "learning" with filter "category=education"
+    Then each context becomes a persistent named view
+    And I can access these views repeatedly
 
 Scenario: Use context views to filter scopes
-  Given I have defined multiple contexts
-  When I apply the "client-work" context view
-  Then I only see scopes matching the client-work filter
-  And all other scopes are hidden from view
-  And the view remains until I change it
+    Given I have defined multiple contexts
+    When I apply the "client-work" context view
+    Then I only see scopes matching the client-work filter
+    And all other scopes are hidden from view
+    And the view remains until I change it
 
 Scenario: Manage context definitions
-  Given I have created several context views
-  When I need to modify or remove contexts
-  Then I can edit context filter definitions
-  And I can delete contexts I no longer need
-  And I can list all available contexts
+    Given I have created several context views
+    When I need to modify or remove contexts
+    Then I can edit context filter definitions
+    And I can delete contexts I no longer need
+    And I can list all available contexts
 
 Scenario: Work within context views persistently
-  Given I am using a "learning" context view
-  When I create new scopes or modify existing ones
-  Then the operations work normally
-  And the view continues showing only matching scopes
-  And new scopes that match the filter appear automatically
-```
+    Given I am using a "learning" context view
+    When I create new scopes or modify existing ones
+    Then the operations work normally
+    And the view continues showing only matching scopes
+    And new scopes that match the filter appear automatically
+      ```typescript
 
 ## User Journey
 
@@ -82,23 +82,23 @@ Scenario: Work within context views persistently
 title: Named Context Views Workflow
 ---
 journey
-    title Daily Context View Usage
-    section Morning Setup
-      Start day, choose view       : 3: User
-      Apply "personal-projects"    : 4: User, System
-      See only personal scopes     : 5: User, System
-    section Work Transition
-      Finish personal work         : 4: User
-      Apply "client-work" view     : 4: User, System
-      See client-filtered scopes   : 5: User, System
-    section Evening Learning
-      Complete client tasks        : 4: User
-      Apply "learning" view        : 4: User, System
-      See educational scopes       : 5: User, System
-    section View Management
-      Review context definitions   : 4: User, System
-      Refine or remove old views   : 4: User
-```
+        title Daily Context View Usage
+        section Morning Setup
+          Start day, choose view       : 3: User
+          Apply "personal-projects"    : 4: User, System
+          See only personal scopes     : 5: User, System
+        section Work Transition
+          Finish personal work         : 4: User
+          Apply "client-work" view     : 4: User, System
+          See client-filtered scopes   : 5: User, System
+        section Evening Learning
+          Complete client tasks        : 4: User
+          Apply "learning" view        : 4: User, System
+          See educational scopes       : 5: User, System
+        section View Management
+          Review context definitions   : 4: User, System
+          Refine or remove old views   : 4: User
+      ```typescript
 
 ## Success Metrics
 
@@ -134,7 +134,7 @@ scopes context create "maintenance" --filter "type=bug OR type=chore"
 scopes context list
 scopes context list --global    # Only global contexts
 scopes context list --local     # Only workspace-local contexts
-```
+      ```typescript
 
 ### Context Switching
 ```bash
@@ -151,7 +151,7 @@ scopes context switch --local project-specific
 scopes context current
 scopes context current --global  # Show global context
 scopes context current --local   # Show workspace context
-```
+      ```typescript
 
 ### Context Management
 ```bash
@@ -174,7 +174,7 @@ scopes context show client-work
 
 # Reset to default context
 scopes context switch default
-```
+      ```typescript
 
 ### Personal Workflow Patterns
 - **Time-based contexts**: Morning creative work, afternoon focused work
@@ -200,3 +200,4 @@ scopes context switch default
 - **Future**: Directory-Based Workspace Management (contexts can be workspace-specific)
 - **Future**: AI Integration (AI understands current context for better assistance)
 - **Future**: Personal Analytics (track time and productivity across contexts)
+

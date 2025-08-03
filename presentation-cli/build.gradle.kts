@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.clikt)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.arrow.core)
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)

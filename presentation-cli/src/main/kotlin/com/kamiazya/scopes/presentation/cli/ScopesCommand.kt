@@ -30,3 +30,4 @@ class ScopesCommand : CliktCommand(name = "scopes") {
         // Main command logic - show help if no subcommand
     }
 }
+

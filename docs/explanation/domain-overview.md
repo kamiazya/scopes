@@ -10,31 +10,31 @@ Unlike traditional project management tools that use separate concepts (projects
 
 ```mermaid
 graph TB
-    subgraph "Traditional Approach"
-        P1[Project] --> E1[Epic]
-        P1 --> E2[Epic]
-        E1 --> T1[Task]
-        E1 --> T2[Task]
-        E2 --> T3[Task]
-    end
+        subgraph "Traditional Approach"
+            P1[Project] --> E1[Epic]
+            P1 --> E2[Epic]
+            E1 --> T1[Task]
+            E1 --> T2[Task]
+            E2 --> T3[Task]
+        end
 
-    subgraph "Scopes Approach"
-        S1[Scope: Project Level] --> S2[Scope: Feature Level]
-        S1 --> S3[Scope: Feature Level]
-        S2 --> S4[Scope: Task Level]
-        S2 --> S5[Scope: Task Level]
-        S3 --> S6[Scope: Task Level]
+        subgraph "Scopes Approach"
+            S1[Scope: Project Level] --> S2[Scope: Feature Level]
+            S1 --> S3[Scope: Feature Level]
+            S2 --> S4[Scope: Task Level]
+            S2 --> S5[Scope: Task Level]
+            S3 --> S6[Scope: Task Level]
 
-        S4 --> S7[Scope: Subtask Level]
-        S4 --> S8[Scope: Subtask Level]
-    end
+            S4 --> S7[Scope: Subtask Level]
+            S4 --> S8[Scope: Subtask Level]
+        end
 
-    classDef traditional fill:#ffcccc
-    classDef scopes fill:#ccffcc
+        classDef traditional fill:#ffcccc
+        classDef scopes fill:#ccffcc
 
-    class P1,E1,E2,T1,T2,T3 traditional
-    class S1,S2,S3,S4,S5,S6,S7,S8 scopes
-```
+        class P1,E1,E2,T1,T2,T3 traditional
+        class S1,S2,S3,S4,S5,S6,S7,S8 scopes
+      ```typescript
 
 **Benefits:**
 - **Conceptual Simplicity**: Learn one concept, use everywhere
@@ -56,16 +56,16 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
 
 **Examples:**
-```
+      ```typescript
 Scope: "Authentication System"
 ├── Scope: "User Login"
 │   ├── Scope: "Login UI Design"
 │   ├── Scope: "Backend Auth API"
 │   └── Scope: "Integration Tests"
 └── Scope: "Password Recovery"
-    ├── Scope: "Email Templates"
-    └── Scope: "Recovery Flow Logic"
-```
+        ├── Scope: "Email Templates"
+        └── Scope: "Recovery Flow Logic"
+      ```typescript
 
 ### 2. Aspect System
 
@@ -88,7 +88,7 @@ Scope: "Authentication System"
 scopes list -a priority>=high -a status=in_progress
 scopes list -a "assignee=alice|bob AND type=bug"
 scopes list -a estimate<8h -a component=frontend
-```
+      ```typescript
 
 ### 3. Workspace + Focus Management
 
@@ -98,40 +98,40 @@ scopes list -a estimate<8h -a component=frontend
 
 ```mermaid
 graph LR
-    subgraph "File System"
-        D1[/projects/api-service/]
-        D2[/projects/mobile-app/]
-        D3[/personal/blog/]
-    end
+        subgraph "File System"
+            D1[/projects/api-service/]
+            D2[/projects/mobile-app/]
+            D3[/personal/blog/]
+        end
 
-    subgraph "Workspaces"
-        W1[API Service Workspace]
-        W2[Mobile App Workspace]
-        W3[Personal Blog Workspace]
-    end
+        subgraph "Workspaces"
+            W1[API Service Workspace]
+            W2[Mobile App Workspace]
+            W3[Personal Blog Workspace]
+        end
 
-    subgraph "Focus States"
-        F1[Focus: auth-feature-123]
-        F2[Focus: ui-redesign-456]
-        F3[Focus: blog-post-789]
-    end
+        subgraph "Focus States"
+            F1[Focus: auth-feature-123]
+            F2[Focus: ui-redesign-456]
+            F3[Focus: blog-post-789]
+        end
 
-    D1 --> W1
-    D2 --> W2
-    D3 --> W3
+        D1 --> W1
+        D2 --> W2
+        D3 --> W3
 
-    W1 --> F1
-    W2 --> F2
-    W3 --> F3
+        W1 --> F1
+        W2 --> F2
+        W3 --> F3
 
-    classDef directory fill:#e1f5fe
-    classDef workspace fill:#f3e5f5
-    classDef focus fill:#fff3e0
+        classDef directory fill:#e1f5fe
+        classDef workspace fill:#f3e5f5
+        classDef focus fill:#fff3e0
 
-    class D1,D2,D3 directory
-    class W1,W2,W3 workspace
-    class F1,F2,F3 focus
-```
+        class D1,D2,D3 directory
+        class W1,W2,W3 workspace
+        class F1,F2,F3 focus
+      ```typescript
 
 **Benefits:**
 - **Automatic Context**: No manual workspace switching
@@ -243,3 +243,4 @@ Designed from the ground up for human-AI collaboration:
 - **Offline Capability**: 100% feature availability without network
 - **Response Time**: Sub-100ms for common operations
 - **Data Integrity**: Zero data loss across device synchronization
+

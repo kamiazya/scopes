@@ -35,47 +35,47 @@ The developer wants a flexible alias system that provides short, memorable ident
 Feature: User-friendly scope identification
 
 Scenario: Default canonical alias generation
-  Given I create a new scope with ULID "01H8XGJWBWBAQ1J3T3B8A0V0A8"
-  When the scope is created without specifying an alias
-  Then a canonical alias like "quiet-river-a4f7" is automatically assigned
-  And this alias uses ULID-seeded Haikunator pattern for uniqueness
-  And I can reference the scope using this canonical alias
+    Given I create a new scope with ULID "01H8XGJWBWBAQ1J3T3B8A0V0A8"
+    When the scope is created without specifying an alias
+    Then a canonical alias like "quiet-river-a4f7" is automatically assigned
+    And this alias uses ULID-seeded Haikunator pattern for uniqueness
+    And I can reference the scope using this canonical alias
 
 Scenario: Custom alias on creation
-  Given I want to create a new scope with a specific alias
-  When I create the scope with --alias "feature-auth"
-  Then "feature-auth" becomes the canonical alias
-  And no Haikunator alias is generated
-  And the scope can be referenced by this alias
+    Given I want to create a new scope with a specific alias
+    When I create the scope with --alias "feature-auth"
+    Then "feature-auth" becomes the canonical alias
+    And no Haikunator alias is generated
+    And the scope can be referenced by this alias
 
 Scenario: Custom alias assignment
-  Given I have a scope with canonical alias "quiet-river-a4f7"
-  When I assign a custom alias "feature-auth"
-  Then I can reference the scope using "feature-auth"
-  And the canonical alias remains available
-  And the ULID remains the internal identifier
+    Given I have a scope with canonical alias "quiet-river-a4f7"
+    When I assign a custom alias "feature-auth"
+    Then I can reference the scope using "feature-auth"
+    And the canonical alias remains available
+    And the ULID remains the internal identifier
 
 Scenario: Canonical alias replacement
-  Given I have a scope with canonical alias "quiet-river-a4f7"
-  When I set a new canonical alias "authentication-module"
-  Then "authentication-module" becomes the canonical alias
-  And "quiet-river-a4f7" remains as a regular alias
-  And both aliases resolve to the same scope
+    Given I have a scope with canonical alias "quiet-river-a4f7"
+    When I set a new canonical alias "authentication-module"
+    Then "authentication-module" becomes the canonical alias
+    And "quiet-river-a4f7" remains as a regular alias
+    And both aliases resolve to the same scope
 
 Scenario: Multiple aliases per scope
-  Given I have a scope for authentication work
-  When I assign aliases "auth", "login-feature", and "sprint-42-auth"
-  Then I can use any of these aliases to reference the same scope
-  And all aliases resolve to the same ULID internally
-  And I can see which one is canonical
+    Given I have a scope for authentication work
+    When I assign aliases "auth", "login-feature", and "sprint-42-auth"
+    Then I can use any of these aliases to reference the same scope
+    And all aliases resolve to the same ULID internally
+    And I can see which one is canonical
 
 Scenario: Alias management
-  Given I have scopes with various aliases
-  When I need to organize my aliases
-  Then I can list all aliases for a scope
-  And I can rename or remove aliases
-  And I can see which alias is canonical
-```
+    Given I have scopes with various aliases
+    When I need to organize my aliases
+    Then I can list all aliases for a scope
+    And I can rename or remove aliases
+    And I can see which alias is canonical
+      ```typescript
 
 ## User Journey
 
@@ -91,24 +91,24 @@ Scenario: Alias management
 title: Alias System Usage Flow
 ---
 journey
-    title Using Scope Aliases
-    section Scope Creation
-      Create scope with custom alias : 5: User
-      Or create with auto alias      : 4: User
-      See readable alias result      : 5: User, System
-    section Custom Naming
-      Identify important scope       : 4: User
-      Add additional aliases         : 5: User
-      Use aliases in commands        : 5: User
-    section Daily Usage
-      Reference scope by alias       : 5: User
-      Tab completion helps           : 5: System
-      Work flows smoothly            : 5: User
-    section Alias Management
-      Review all aliases             : 4: User
-      Change canonical alias         : 4: User
-      Remove unused aliases          : 4: User
-```
+        title Using Scope Aliases
+        section Scope Creation
+          Create scope with custom alias : 5: User
+          Or create with auto alias      : 4: User
+          See readable alias result      : 5: User, System
+        section Custom Naming
+          Identify important scope       : 4: User
+          Add additional aliases         : 5: User
+          Use aliases in commands        : 5: User
+        section Daily Usage
+          Reference scope by alias       : 5: User
+          Tab completion helps           : 5: System
+          Work flows smoothly            : 5: User
+        section Alias Management
+          Review all aliases             : 4: User
+          Change canonical alias         : 4: User
+          Remove unused aliases          : 4: User
+      ```typescript
 
 ## Success Metrics
 
@@ -137,17 +137,17 @@ journey
 
 The canonical alias combines human-readable words with ULID-derived uniqueness:
 
-```
+      ```typescript
 Format: <adjective>-<noun>-<ulid-token>
 Example: quiet-river-a4f7
-```
+      ```typescript
 
 Where:
 - **Adjective & Noun**: Selected from curated word lists
 - **ULID Token**: Extracted from the random portion of ULID (not timestamp)
-  - Uses last 20 bits (4 Base32 characters) from ULID's random section
-  - Provides 1,048,576 unique combinations
-  - Combined with word variety, collision probability is negligible
+      - Uses last 20 bits (4 Base32 characters) from ULID's random section
+      - Provides 1,048,576 unique combinations
+      - Combined with word variety, collision probability is negligible
 
 ### Canonical Alias Properties
 
@@ -168,7 +168,7 @@ Aliases for scope 01H8XGJWBWBAQ1J3T3B8A0V0A8:
 - quiet-river-a4f7 (canonical)
 - auth-feature (custom)
 - sprint-42 (custom)
-```
+      ```typescript
 
 ### Alias Commands
 
@@ -202,7 +202,7 @@ Aliases for scope 01H8XGJWBWBAQ1J3T3B8A0V0A8:
 # Remove alias
 $ scopes alias rm sprint-42
 Removed alias 'sprint-42'
-```
+      ```typescript
 
 ### Word List Design Principles
 
@@ -229,7 +229,7 @@ Error: Prefix 'quiet' matches multiple scopes:
 - quiet-mountain-b8e2 "Fix login bug"
 
 Please use a longer prefix or exact alias.
-```
+      ```typescript
 
 ### Tab Completion
 
@@ -240,7 +240,7 @@ quiet-river-a4f7   quiet-mountain-b8e2
 
 $ scopes focus auth<TAB>
 auth-feature   authentication   auth-api-v2
-```
+      ```typescript
 
 ## Future Considerations
 
@@ -261,3 +261,4 @@ auth-feature   authentication   auth-api-v2
 - **US-005**: Focus Management (aliases make focus commands easier)
 - **Future**: Cross-Device Sync (alias synchronization)
 - **Future**: External Tool Integration (expose aliases to other tools)
+

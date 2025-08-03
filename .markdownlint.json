@@ -1,5 +1,9 @@
 {
   "extends": "markdownlint/style/prettier",
+  "ignores": [
+    ".claude/**",
+    "tmp/**"
+  ],
   "rules": {
     "MD001": true,
     "MD003": {
@@ -19,6 +23,11 @@
     "MD033": {
       "allowed_elements": ["details", "summary", "sup", "sub"]
     },
-    "MD041": false
+    "MD041": false,
+    "MD036": false,
+    "MD046": {
+      "style": "fenced"
+    },
+    "MD051": false
   }
 }

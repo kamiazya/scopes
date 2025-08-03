@@ -15,16 +15,16 @@ The project's official license will be changed from the MIT License to the Apach
 ## Consequences
 
 - **Positive:**
-  - **Enhanced Patent Protection:** Provides an explicit grant of patent rights from contributors to users, significantly reducing legal risks for the community.
-  - **Increased Enterprise Adoption:** The license is well-known and trusted by corporate legal teams, lowering the barrier to adoption for commercial use.
-  - **Brand Protection:** The explicit trademark clause protects the project's name and identity.
-  - **Improved Legal Clarity:** Offers a more detailed and robust legal framework compared to the MIT license.
+     - **Enhanced Patent Protection:** Provides an explicit grant of patent rights from contributors to users, significantly reducing legal risks for the community.
+     - **Increased Enterprise Adoption:** The license is well-known and trusted by corporate legal teams, lowering the barrier to adoption for commercial use.
+     - **Brand Protection:** The explicit trademark clause protects the project's name and identity.
+     - **Improved Legal Clarity:** Offers a more detailed and robust legal framework compared to the MIT license.
 
 - **Negative:**
-  - **Increased Complexity:** The Apache 2.0 license text is longer and more complex than MIT, which could be a minor hurdle for some individual developers.
+     - **Increased Complexity:** The Apache 2.0 license text is longer and more complex than MIT, which could be a minor hurdle for some individual developers.
 
 - **Neutral:**
-  - Requires the inclusion of a `NOTICE` file for attribution.
+     - Requires the inclusion of a `NOTICE` file for attribution.
 
 ## Alternatives Considered
 
@@ -45,3 +45,4 @@ The project's official license will be changed from the MIT License to the Apach
 ## Tags
 
 `license`, `legal`, `governance`, `community`
+

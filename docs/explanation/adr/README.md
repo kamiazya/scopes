@@ -53,54 +53,54 @@ title: ADR Lifecycle and Status Transitions
 ---
 %%{init: {"theme": "neutral", "themeVariables": {"primaryColor": "#4caf50", "primaryTextColor": "#000", "primaryBorderColor": "#2e7d32"}}}%%
 stateDiagram-v2
-    [*] --> Discussion: Architecture Need Identified
+       [*] --> Discussion: Architecture Need Identified
 
-    state "Pre-ADR Phase" as PreADR {
-        Discussion --> Proposal: Draft Solution
-        Proposal --> Review: Community Review
-        Review --> Consensus: Agreement Reached
-        Review --> Discussion: Needs Revision
-        Consensus --> [*]: Decision Made
-    }
+       state "Pre-ADR Phase" as PreADR {
+           Discussion --> Proposal: Draft Solution
+           Proposal --> Review: Community Review
+           Review --> Consensus: Agreement Reached
+           Review --> Discussion: Needs Revision
+           Consensus --> [*]: Decision Made
+       }
 
-    PreADR --> ADR_Created: Create ADR Document
+       PreADR --> ADR_Created: Create ADR Document
 
-    state "ADR Management" as ADRPhase {
-        ADR_Created --> Accepted: Initial Status
-        Accepted --> Superseded: Replaced by New ADR
-    }
+       state "ADR Management" as ADRPhase {
+           ADR_Created --> Accepted: Initial Status
+           Accepted --> Superseded: Replaced by New ADR
+       }
 
-    Superseded --> [*]: End of Lifecycle
+       Superseded --> [*]: End of Lifecycle
 
-    note right of PreADR
-        Location: GitHub Issues,
-        Pull Requests, Meetings,
-        Architecture Channels
-    end note
+       note right of PreADR
+           Location: GitHub Issues,
+           Pull Requests, Meetings,
+           Architecture Channels
+       end note
 
-    note right of ADRPhase
-        Location: Git Repository
-        docs/explanation/adr/
-    end note
+       note right of ADRPhase
+           Location: Git Repository
+           docs/explanation/adr/
+       end note
 
-    note left of Accepted
-        All new ADRs start
-        with "Accepted" status
-    end note
-```
+       note left of Accepted
+           All new ADRs start
+           with "Accepted" status
+       end note
+     ```typescript
 
 #### Phase Descriptions
 
 1. **Pre-ADR Phase** (Outside Git Repository):
-   - **Discussion**: Initial problem identification and exploration
-   - **Proposal**: Concrete solution proposals are drafted
-   - **Review**: Community evaluates proposals through various channels
-   - **Consensus**: Agreement reached on the architectural decision
+        - **Discussion**: Initial problem identification and exploration
+        - **Proposal**: Concrete solution proposals are drafted
+        - **Review**: Community evaluates proposals through various channels
+        - **Consensus**: Agreement reached on the architectural decision
 
 2. **ADR Management Phase** (In Git Repository):
-   - **ADR Created**: Document created following the template
-   - **Accepted**: Default status for all new ADRs
-   - **Superseded**: Decision replaced by a new ADR
+        - **ADR Created**: Document created following the template
+        - **Accepted**: Default status for all new ADRs
+        - **Superseded**: Decision replaced by a new ADR
 
 #### Key Points
 
@@ -113,9 +113,9 @@ stateDiagram-v2
 
 ADRs are named using the following pattern:
 
-```
+     ```typescript
 NNNN-short-decision-title.md
-```
+     ```typescript
 
 Where:
 
@@ -134,68 +134,73 @@ title: ADR Relationship and Evolution
 ---
 %%{init: {"theme": "neutral", "themeVariables": {"primaryColor": "#4caf50", "primaryTextColor": "#2e7d32", "primaryBorderColor": "#2e7d32"}}}%%
 graph TD
-    %% Foundation ADRs
-    ADR_001[ADR-0001: Local-First Architecture<br/>🏠 Core Architecture]
+       %% Foundation ADRs
+       ADR_001[ADR-0001: Local-First Architecture<br/>🏠 Core Architecture]
 
-    %% Standards and Principles
-    ADR_002[ADR-0002: AI-Driven Development<br/>🤖 AI Integration]
-    ADR_003[ADR-0003: Adopt Industry Standards<br/>📐 Standards-First]
+       %% Standards and Principles
+       ADR_002[ADR-0002: AI-Driven Development<br/>🤖 AI Integration]
+       ADR_003[ADR-0003: Adopt Industry Standards<br/>📐 Standards-First]
 
-    %% Implementation Approach
-    ADR_004[ADR-0004: Diagrams-First Documentation<br/>📊 Visual Communication]
-    ADR_005[ADR-0005: CLI-First Interface Architecture<br/>💻 Interface Design]
+       %% Implementation Approach
+       ADR_004[ADR-0004: Diagrams-First Documentation<br/>📊 Visual Communication]
+       ADR_005[ADR-0005: CLI-First Interface Architecture<br/>💻 Interface Design]
 
-    %% Process and Organization
-    ADR_006[ADR-0006: Adopt Diátaxis Documentation Framework<br/>📋 Documentation Organization]
-    ADR_009[ADR-0009: Adopt Apache License 2.0<br/>⚖️ Governance]
-
-
-    %% Architecture Design
-    ADR_007[ADR-0007: Domain-Driven Design<br/>🎯 Domain Modeling]
-    ADR_008[ADR-0008: Clean Architecture Adoption<br/>🏗️ Architectural Structure]
-    ADR_0010[ADR-0010: Adopt ULID for Distributed Identifiers<br/>🔢 Distributed Systems]
-
-    %% Dependencies
-    ADR_003 --> ADR_004
-    ADR_003 --> ADR_005
-    ADR_001 --> ADR_002
-    ADR_003 --> ADR_006
-    ADR_004 --> ADR_005
-    ADR_001 --> ADR_007
-    ADR_003 --> ADR_007
-    ADR_007 --> ADR_008
-    ADR_002 --> ADR_009
-    ADR_003 --> ADR_009
-    ADR_001 --> ADR_0010
-    ADR_003 --> ADR_0010
+       %% Process and Organization
+       ADR_006[ADR-0006: Adopt Diátaxis Documentation Framework<br/>📋 Documentation Organization]
+       ADR_009[ADR-0009: Adopt Apache License 2.0<br/>⚖️ Governance]
 
 
-    %% Influences (dotted lines)
-    ADR_002 -.-> ADR_005
-    ADR_001 -.-> ADR_005
-    ADR_002 -.-> ADR_007
-    ADR_008 -.-> ADR_0010
+       %% Architecture Design
+       ADR_007[ADR-0007: Domain-Driven Design<br/>🎯 Domain Modeling]
+       ADR_008[ADR-0008: Clean Architecture Adoption<br/>🏗️ Architectural Structure]
+       ADR_0010[ADR-0010: Adopt ULID for Distributed Identifiers<br/>🔢 Distributed Systems]
+       ADR_0011[ADR-0011: Functional DDD Adoption<br/>⚡ Functional Programming]
 
-    %% Styling
-    classDef foundation fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    classDef standards fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
-    classDef implementation fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-    classDef process fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
-    classDef architecture fill:#fce4ec,stroke:#e91e63,stroke-width:2px
-    classDef governance fill:#ede7f6,stroke:#673ab7,stroke-width:2px
-    classDef distributed fill:#ffecb3,stroke:#f57f17,stroke-width:2px
-    classDef structural fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+       %% Dependencies
+       ADR_003 --> ADR_004
+       ADR_003 --> ADR_005
+       ADR_001 --> ADR_002
+       ADR_003 --> ADR_006
+       ADR_004 --> ADR_005
+       ADR_001 --> ADR_007
+       ADR_003 --> ADR_007
+       ADR_007 --> ADR_008
+       ADR_002 --> ADR_009
+       ADR_003 --> ADR_009
+       ADR_001 --> ADR_0010
+       ADR_003 --> ADR_0010
+       ADR_007 --> ADR_0011
+       ADR_008 --> ADR_0011
 
 
-    class ADR_001,ADR_002 foundation
-    class ADR_003,ADR_004 standards
-    class ADR_005 implementation
-    class ADR_006 process
-    class ADR_007 architecture
-    class ADR_008 structural
-    class ADR_009 governance
-    class ADR_0010 distributed
-```
+       %% Influences (dotted lines)
+       ADR_002 -.-> ADR_005
+       ADR_001 -.-> ADR_005
+       ADR_002 -.-> ADR_007
+       ADR_008 -.-> ADR_0010
+
+       %% Styling
+       classDef foundation fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+       classDef standards fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+       classDef implementation fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+       classDef process fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+       classDef architecture fill:#fce4ec,stroke:#e91e63,stroke-width:2px
+       classDef governance fill:#ede7f6,stroke:#673ab7,stroke-width:2px
+       classDef distributed fill:#ffecb3,stroke:#f57f17,stroke-width:2px
+       classDef structural fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+       classDef functional fill:#f1f8e9,stroke:#689f38,stroke-width:2px
+
+
+       class ADR_001,ADR_002 foundation
+       class ADR_003,ADR_004 standards
+       class ADR_005 implementation
+       class ADR_006 process
+       class ADR_007 architecture
+       class ADR_008 structural
+       class ADR_009 governance
+       class ADR_0010 distributed
+       class ADR_0011 functional
+     ```typescript
 
 ### ADR Index
 
@@ -211,6 +216,7 @@ graph TD
 | [0008](./0008-clean-architecture-adoption.md) | Accepted | Clean Architecture Adoption | Implement Clean Architecture patterns with explicit layer separation |
 | [0009](./0009-adopt-apache-license-2.0.md) | Accepted | Adopt Apache License 2.0 | Change project license to Apache 2.0 for better legal protection |
 | [0010](./0010-adopt-ulid-for-distributed-identifiers.md) | Accepted | Adopt ULID for Distributed Identifiers | Replace hex IDs with ULID for multi-device synchronization support |
+| [0011](./0011-functional-ddd-adoption.md) | Accepted | Functional Domain-Driven Design Adoption | Adopt functional programming paradigms within DDD for improved code quality |
 
 #### Legend
 
@@ -224,6 +230,7 @@ graph TD
 - 🏗️ Architectural structure and organization
 - ⚖️ Governance and legal decisions
 - 🔢 Distributed systems and data consistency
+- ⚡ Functional programming and domain modeling
 
 ## Tools and Resources
 
@@ -242,3 +249,4 @@ To create a new ADR:
 - [Architecture Decision Records by Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
 - [Architecture Overview](../architecture-overview.md) - Architecture concepts and principles
 - [CONTRIBUTING.md](../../../CONTRIBUTING.md) - ADR creation guidelines and workflow integration
+

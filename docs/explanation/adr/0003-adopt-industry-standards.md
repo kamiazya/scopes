@@ -27,37 +27,37 @@ We will adopt a "Standards-First" approach across all technical decisions:
 ### Implementation Guidelines
 
 1. **Research Standards First**
-   - Before implementing any feature, research existing standards
-   - Document available standards and their trade-offs
-   - Only deviate when standards cannot meet core requirements
+        - Before implementing any feature, research existing standards
+        - Document available standards and their trade-offs
+        - Only deviate when standards cannot meet core requirements
 
 2. **Standard Selection Criteria**
-   - **Maturity**: Prefer stable, widely-adopted standards
-   - **Community**: Active maintenance and community support
-   - **Documentation**: Comprehensive and accessible documentation
-   - **Tooling**: Availability of implementation libraries and tools
-   - **License**: Compatible with our open-source license
+        - **Maturity**: Prefer stable, widely-adopted standards
+        - **Community**: Active maintenance and community support
+        - **Documentation**: Comprehensive and accessible documentation
+        - **Tooling**: Availability of implementation libraries and tools
+        - **License**: Compatible with our open-source license
 
 3. **Areas of Standardization**
 
-   The following are examples of standards to consider. The specific choice should be made based on project requirements and context:
+      The following are examples of standards to consider. The specific choice should be made based on project requirements and context:
 
-   - **APIs**: REST, GraphQL, JSON-RPC, OpenAPI
-   - **CLI**: POSIX, GNU conventions, modern CLI guidelines
-   - **Configuration**: XDG Base Directory, dotenv, TOML/YAML/JSON
-   - **Documentation**: Markdown, JSDoc, OpenAPI
-   - **Testing**: TAP, JUnit XML, coverage formats
-   - **Packaging**: npm, Docker, OS-specific standards
-   - **Protocols**: HTTP/REST, WebSocket, gRPC
-   - **Security**: OAuth 2.0, JWT, OWASP guidelines
-   - **Accessibility**: WCAG for any UI components
-   - **Internationalization**: ICU, CLDR, gettext
+        - **APIs**: REST, GraphQL, JSON-RPC, OpenAPI
+        - **CLI**: POSIX, GNU conventions, modern CLI guidelines
+        - **Configuration**: XDG Base Directory, dotenv, TOML/YAML/JSON
+        - **Documentation**: Markdown, JSDoc, OpenAPI
+        - **Testing**: TAP, JUnit XML, coverage formats
+        - **Packaging**: npm, Docker, OS-specific standards
+        - **Protocols**: HTTP/REST, WebSocket, gRPC
+        - **Security**: OAuth 2.0, JWT, OWASP guidelines
+        - **Accessibility**: WCAG for any UI components
+        - **Internationalization**: ICU, CLDR, gettext
 
 4. **Documentation Requirements**
-   - Document which standard is being followed
-   - Link to official standard documentation
-   - Explain any necessary deviations with justification
-   - Provide examples of standard compliance
+        - Document which standard is being followed
+        - Link to official standard documentation
+        - Explain any necessary deviations with justification
+        - Provide examples of standard compliance
 
 ### Specific Standards Adopted
 
@@ -69,7 +69,7 @@ These standards are adopted by this ADR and should be followed unless superseded
 - **Semantic Versioning**: SemVer 2.0.0 for version numbering
 - **Commit Messages**: Conventional Commits specification
 - **Code Style**: Language-specific community standards
-  - Kotlin: [Official Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html)
+     - Kotlin: [Official Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html)
 - **Documentation**: CommonMark for Markdown files
 - **Licensing**: SPDX license identifiers
 
@@ -107,3 +107,4 @@ These standards are adopted by this ADR and should be followed unless superseded
 - [Open Source Best Practices](https://opensource.guide/best-practices/)
 - [12 Factor App](https://12factor.net/) - Standard for cloud-native applications
 - [CNCF Projects](https://www.cncf.io/projects/) - Examples of standard-driven projects
+

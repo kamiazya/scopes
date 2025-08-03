@@ -53,56 +53,56 @@ title: Requirements Dependencies and Relationships
 ---
 %%{init: {"theme": "neutral", "themeVariables": {"primaryColor": "#4caf50", "primaryTextColor": "#2e7d32", "primaryBorderColor": "#2e7d32"}}}%%
 graph TB
-    %% Core Infrastructure
-    FR006[FR-006: Local-First Storage<br/>📁 Data Foundation]
-    FR002[FR-002: Workspace Context<br/>🏠 Directory-Based Context]
+        %% Core Infrastructure
+        FR006[FR-006: Local-First Storage<br/>📁 Data Foundation]
+        FR002[FR-002: Workspace Context<br/>🏠 Directory-Based Context]
 
-    %% Core Functionality
-    FR001[FR-001: Unified Scope Management<br/>🎯 Core Entity Management]
-    FR003[FR-003: Focus Management<br/>🔍 Single Scope Focus]
-    FR004[FR-004: Aspect Classification<br/>🏷️ Metadata & Querying]
+        %% Core Functionality
+        FR001[FR-001: Unified Scope Management<br/>🎯 Core Entity Management]
+        FR003[FR-003: Focus Management<br/>🔍 Single Scope Focus]
+        FR004[FR-004: Aspect Classification<br/>🏷️ Metadata & Querying]
 
-    %% AI Integration
-    FR005[FR-005: AI Integration<br/>🤖 MCP & Co-authorship]
+        %% AI Integration
+        FR005[FR-005: AI Integration<br/>🤖 MCP & Co-authorship]
 
-    %% Enhanced Features
-    FR007[FR-007: External Sync<br/>🔗 Tool Integration]
-    FR008[FR-008: Cross-Cutting Features<br/>✨ Rich Content]
+        %% Enhanced Features
+        FR007[FR-007: External Sync<br/>🔗 Tool Integration]
+        FR008[FR-008: Cross-Cutting Features<br/>✨ Rich Content]
 
-    %% Non-Functional Requirements
-    NFR001[NFR-001: Performance<br/>⚡ Response Times]
-    NFR002[NFR-002: Offline Capability<br/>📶 Network Independence]
-    NFR003[NFR-003: Data Integrity<br/>🔒 Zero Data Loss]
+        %% Non-Functional Requirements
+        NFR001[NFR-001: Performance<br/>⚡ Response Times]
+        NFR002[NFR-002: Offline Capability<br/>📶 Network Independence]
+        NFR003[NFR-003: Data Integrity<br/>🔒 Zero Data Loss]
 
-    %% Dependencies
-    FR006 --> FR001
-    FR006 --> FR002
-    FR002 --> FR003
-    FR001 --> FR003
-    FR001 --> FR004
-    FR003 --> FR005
-    FR001 --> FR005
+        %% Dependencies
+        FR006 --> FR001
+        FR006 --> FR002
+        FR002 --> FR003
+        FR001 --> FR003
+        FR001 --> FR004
+        FR003 --> FR005
+        FR001 --> FR005
 
-    FR001 --> FR007
-    FR001 --> FR008
+        FR001 --> FR007
+        FR001 --> FR008
 
-    %% Non-functional impacts
-    FR006 -.-> NFR002
-    FR006 -.-> NFR003
-    FR001 -.-> NFR001
-    FR004 -.-> NFR001
+        %% Non-functional impacts
+        FR006 -.-> NFR002
+        FR006 -.-> NFR003
+        FR001 -.-> NFR001
+        FR004 -.-> NFR001
 
-    %% Styling
-    classDef core fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
-    classDef enhanced fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef nonfunctional fill:#2196f3,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef infrastructure fill:#9c27b0,stroke:#6a1b9a,stroke-width:2px,color:#fff
+        %% Styling
+        classDef core fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
+        classDef enhanced fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
+        classDef nonfunctional fill:#2196f3,stroke:#1565c0,stroke-width:2px,color:#fff
+        classDef infrastructure fill:#9c27b0,stroke:#6a1b9a,stroke-width:2px,color:#fff
 
-    class FR001,FR003,FR004,FR005 core
-    class FR007,FR008 enhanced
-    class NFR001,NFR002,NFR003 nonfunctional
-    class FR002,FR006 infrastructure
-```
+        class FR001,FR003,FR004,FR005 core
+        class FR007,FR008 enhanced
+        class NFR001,NFR002,NFR003 nonfunctional
+        class FR002,FR006 infrastructure
+      ```typescript
 
 ## Implementation Priority
 
@@ -181,3 +181,4 @@ When adding or modifying requirements:
 5. **Update this README**: Keep the index and diagrams current
 
 For detailed contribution guidelines, see the main [CONTRIBUTING.md](../../../CONTRIBUTING.md) document.
+

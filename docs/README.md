@@ -5,22 +5,26 @@ Welcome to the Scopes project documentation. This documentation follows the [Di�
 ## Documentation Categories
 
 ### 📚 [Tutorials](./tutorials/)
-*Learning-oriented guides for newcomers*
+
+Learning-oriented guides for newcomers
 
 Step-by-step learning materials to get you started with Scopes.
 
 ### 📖 [How-to Guides](./guides/)
-*Task-oriented recipes for specific goals*
+
+Task-oriented recipes for specific goals
 
 Practical guides for accomplishing specific tasks and solving problems.
 
 ### 📋 [Reference](./reference/)
-*Information-oriented technical descriptions*
+
+Information-oriented technical descriptions
 
 Technical reference materials for quick lookup and detailed specifications.
 
 ### 💡 [Explanation](./explanation/)
-*Understanding-oriented conceptual discussions*
+
+Understanding-oriented conceptual discussions
 
 In-depth explanations of concepts, architecture decisions, and design rationale.
 
@@ -42,3 +46,4 @@ Please follow the Diátaxis framework when adding documentation:
 - **Guides**: Step-by-step solutions to problems
 - **Reference**: Factual, structured information
 - **Explanation**: Context, alternatives, and reasoning
+

@@ -30,29 +30,29 @@ We will adopt Domain-Driven Design (DDD) as our primary approach for modeling th
 ### Core DDD Elements to Adopt
 
 1. **Entities**: Rich domain objects with identity and lifecycle
-    - Encapsulate business rules and enforce invariants
-    - Use static factory methods for controlled instance creation
-    - Maintain clear identity and lifecycle management
+         - Encapsulate business rules and enforce invariants
+         - Use static factory methods for controlled instance creation
+         - Maintain clear identity and lifecycle management
 
 2. **Value Objects**: Immutable objects without identity
-    - Replace primitive obsession with domain-specific types
-    - Enforce immutability through language features
-    - Encapsulate validation and business constraints
+         - Replace primitive obsession with domain-specific types
+         - Enforce immutability through language features
+         - Encapsulate validation and business constraints
 
 3. **Domain Services**: Business logic that doesn't naturally fit in entities
-    - Handle cross-entity operations and calculations
-    - Maintain stateless behavior focused on domain logic
-    - Keep infrastructure concerns separate
+         - Handle cross-entity operations and calculations
+         - Maintain stateless behavior focused on domain logic
+         - Keep infrastructure concerns separate
 
 4. **Repositories**: Abstractions for data persistence
-    - Define domain-focused persistence operations
-    - Handle mapping between domain model and persistence format
-    - Shield domain layer from infrastructure details
+         - Define domain-focused persistence operations
+         - Handle mapping between domain model and persistence format
+         - Shield domain layer from infrastructure details
 
 5. **Use Cases (Application Services)**: Orchestration of domain operations
-    - Coordinate domain objects to fulfill business scenarios
-    - Maintain clear separation from delivery mechanisms (UI, API, CLI)
-    - Handle transaction boundaries and cross-cutting concerns
+         - Coordinate domain objects to fulfill business scenarios
+         - Maintain clear separation from delivery mechanisms (UI, API, CLI)
+         - Handle transaction boundaries and cross-cutting concerns
 
 ## Options Considered
 
@@ -95,7 +95,7 @@ We will adopt Domain-Driven Design (DDD) as our primary approach for modeling th
 - **Learning Curve**: Team members need to understand DDD concepts and patterns
 - **Initial Complexity**: More sophisticated than simple CRUD operations
 - **Potential Over-Engineering**: Risk of creating unnecessary abstractions
-  - Mitigation: Start with simple value objects and entities, introduce aggregates only when transaction consistency becomes necessary
+     - Mitigation: Start with simple value objects and entities, introduce aggregates only when transaction consistency becomes necessary
 
 ### Neutral
 
@@ -146,3 +146,4 @@ As the system grows, consider introducing:
 - [Domain-Driven Design by Eric Evans](https://domainlanguage.com/ddd/)
 - [Implementing Domain-Driven Design by Vaughn Vernon](https://vaughnvernon.co/?page_id=168)
 - [Clean Architecture by Robert Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+

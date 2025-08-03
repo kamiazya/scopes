@@ -45,14 +45,14 @@ We will adopt the **Diátaxis framework** for organizing our documentation. Diá
 
 Our documentation will be reorganized into four main categories:
 
-```
+     ```typescript
 /docs/
 ├── README.md          # Navigation and overview
 ├── tutorials/         # Learning-oriented guides
 ├── guides/            # Task-oriented how-to guides
 ├── reference/         # Information-oriented technical descriptions
 └── explanation/       # Understanding-oriented conceptual discussions
-```
+     ```typescript
 
 Each category serves a specific purpose and audience need, making it clear where to find and place documentation.
 
@@ -123,3 +123,4 @@ This decision applies to all documentation in the `/docs` directory. It does not
 - [Diátaxis Technical Documentation Framework](https://diataxis.fr/)
 - [Write the Docs - Diátaxis](https://www.writethedocs.org/videos/eu/2017/the-four-kinds-of-documentation-and-why-you-need-to-understand-what-they-are-daniele-procida/)
 - [Django's documentation](https://docs.djangoproject.com/) - Example of Diátaxis in practice
+

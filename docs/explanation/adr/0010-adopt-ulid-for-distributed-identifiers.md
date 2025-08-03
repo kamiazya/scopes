@@ -96,13 +96,14 @@ This decision is made before the initial release, eliminating concerns about bac
 
 - **Bounded Context**: Scope Management Context (primary impact)
 - **Components**:
-  - All domain entities (Scope)
-  - Value objects (ScopeId)
-  - Repository implementations
-  - Database schemas
-  - API responses and CLI output
+     - All domain entities (Scope)
+     - Value objects (ScopeId)
+     - Repository implementations
+     - Database schemas
+     - API responses and CLI output
 - **External Systems**: Future external sync will map ULID internal IDs to external system IDs.
 
 ## Tags
 
 `architecture`, `domain-design`, `performance`, `distributed-systems`, `local-first`, `identifiers`
+

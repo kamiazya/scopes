@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.arrow.core)
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)

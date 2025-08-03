@@ -6,18 +6,23 @@ pre-commit:
   commands:
     markdownlint:
       glob: "*.md"
+      exclude: '.claude/.*|tmp/.*'
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
           davidanson/markdownlint-cli2:latest \
           --config /workspace/.markdownlint.json \
+          --fix \
+          --disable MD051 \
           {staged_files}
+      stage_fixed: true
       skip:
         - merge
         - rebase
 
     editorconfig:
       glob: "*"
+      exclude: '.claude/.*'
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
@@ -30,7 +35,8 @@ pre-commit:
 
     ktlint:
       glob: "*.kt"
-      run: ./gradlew ktlintCheck --daemon
+      run: ./gradlew ktlintFormat --daemon
+      stage_fixed: true
       skip:
         - merge
         - rebase

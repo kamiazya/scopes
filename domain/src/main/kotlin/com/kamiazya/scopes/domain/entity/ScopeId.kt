@@ -24,3 +24,4 @@ value class ScopeId(
 
     override fun toString(): String = value
 }
+
