@@ -13,25 +13,25 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Set up GraalVM
-      uses: graalvm/setup-graalvm@v1
+      uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1
       with:
         java-version: '21'
         distribution: 'graalvm'
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@42ebad84b0585498c0413b0967cf4e80ec0e1d19 # v4
 
     - name: Run Markdown lint
-      uses: docker://davidanson/markdownlint-cli2:latest
+      uses: docker://davidanson/markdownlint-cli2@sha256:173cb697a255a8a985f2c6a83b4f7a8b3c98f4fb382c71c45f1c52e4d4fed63a # latest
       with:
         args: --config .markdownlint.json "**/*.md"
 
     - name: Run EditorConfig check
-      uses: docker://mstruebing/editorconfig-checker:latest
+      uses: docker://mstruebing/editorconfig-checker@sha256:a04d1bf7c8c7e01534e11ce9253d66721d7b039722ce514910c59bb68ce14f50 # latest
       with:
         args: ec .
 
