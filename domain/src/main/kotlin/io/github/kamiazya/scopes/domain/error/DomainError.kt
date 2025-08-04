@@ -38,6 +38,5 @@ sealed class DomainError {
         data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : BusinessRuleViolation()
         data class MaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : BusinessRuleViolation()
         data class DuplicateTitle(val title: String, val parentId: ScopeId?) : BusinessRuleViolation()
-        data class DatabaseError(val message: String) : BusinessRuleViolation()
     }
 }
