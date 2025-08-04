@@ -93,11 +93,11 @@ The need for clear visual communication becomes even more critical when:
 
 ```mermaid
 graph LR
-       A[Requirement] --> B[Design with Diagram]
-       B --> C[Implement]
-       C --> D[Document with Diagram]
-       D --> E[Review]
-       E --> B
+  A[Requirement] --> B[Design with Diagram]
+  B --> C[Implement]
+  C --> D[Document with Diagram]
+  D --> E[Review]
+  E --> B
 ```
 
 ### Example Templates
@@ -106,36 +106,36 @@ graph LR
 
 ```mermaid
 erDiagram
-       SCOPE {
-           string id PK
-           string title
-           string status
-           string priority
-           datetime createdAt
-       }
-       USER {
-           string id PK
-           string name
-           string email
-       }
-       SCOPE ||--o{ USER : "assigned to"
+  SCOPE {
+    string id PK
+    string title
+    string status
+    string priority
+    datetime createdAt
+  }
+  USER {
+    string id PK
+    string name
+    string email
+  }
+  SCOPE ||--o{ USER : "assigned to"
 ```
 
 **Workflow Example**:
 
 ```mermaid
 sequenceDiagram
-       participant User
-       participant CLI
-       participant Core
-       participant Storage
+  participant User
+  participant CLI
+  participant Core
+  participant Storage
 
-       User->>CLI: Create scope command
-       CLI->>Core: Create scope
-       Core->>Storage: Save scope
-       Storage-->>Core: Scope saved
-       Core-->>CLI: Scope created
-       CLI-->>User: Display scope ID
+  User->>CLI: Create scope command
+  CLI->>Core: Create scope
+  Core->>Storage: Save scope
+  Storage-->>Core: Scope saved
+  Core-->>CLI: Scope created
+  CLI-->>User: Display scope ID
 ```
 
 ### Documentation Standards
