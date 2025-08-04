@@ -45,7 +45,7 @@ We will adopt the **Diátaxis framework** for organizing our documentation. Diá
 
 Our documentation will be reorganized into four main categories:
 
-```
+```text
 /docs/
 ├── README.md          # Navigation and overview
 ├── tutorials/         # Learning-oriented guides

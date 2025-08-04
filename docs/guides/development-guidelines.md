@@ -109,7 +109,7 @@ flowchart LR
 
 #### 1. Immutable Entities
 
-```
+```kotlin
 // ✅ Good: Immutable data class
 data class Scope(
         val id: ScopeId,
@@ -138,7 +138,7 @@ class Scope {
 
 #### 2. Value Objects with ULID
 
-```
+```kotlin
 // ✅ Good: Immutable value object with ULID
 @JvmInline
 value class ScopeId private constructor(private val value: String) {
@@ -499,7 +499,7 @@ classDiagram
         class NotFound infrastructure
 ```
 
-```
+```kotlin
 sealed class DomainError {
         object ScopeNotFound : DomainError()
         data class ValidationFailed(val field: String, val message: String) : DomainError()
@@ -551,7 +551,7 @@ class CreateScopeUseCaseTest : FunSpec({
 
 ### Property-Based Testing
 
-```
+```kotlin
 class ScopeIdTest : FunSpec({
         test("ULID generation should be unique") {
             checkAll<String> { _ ->
@@ -671,7 +671,7 @@ lefthook run pre-commit
      git push origin feature/your-feature-name
      ```
 
-### Pre-commit Hooks
+### Automated Git Hooks
 
 Pre-commit hooks are configured via `lefthook.yml` and will automatically:
 - **Auto-format** Kotlin code with `ktlintFormat`

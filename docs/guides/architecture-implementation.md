@@ -155,7 +155,7 @@ flowchart TD
 
 ### Step 1: Create Domain Entities
 
-```
+```kotlin
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/entity/Scope.kt
 package io.github.kamiazya.scopes.domain.entity
 
@@ -205,7 +205,7 @@ data class Scope(
 
 ### Step 2: Create Value Objects
 
-```
+```kotlin
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/valueobject/ScopeId.kt
 package io.github.kamiazya.scopes.domain.valueobject
 
@@ -246,7 +246,7 @@ value class ScopeId private constructor(private val value: String) {
 
 ### Step 3: Define Domain Services
 
-```
+```kotlin
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/service/ScopeValidationService.kt
 package io.github.kamiazya.scopes.domain.service
 
@@ -341,7 +341,7 @@ sealed class ValidationError {
 
 ### Step 4: Create Repository Interfaces
 
-```
+```kotlin
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/repository/ScopeRepository.kt
 package io.github.kamiazya.scopes.domain.repository
 
@@ -438,7 +438,7 @@ sequenceDiagram
 
 ### Step 1: Create Use Cases
 
-```
+```kotlin
 // application/src/main/kotlin/com/kamiazya/scopes/application/usecase/CreateScopeUseCase.kt
 package io.github.kamiazya.scopes.application.usecase
 
@@ -546,7 +546,7 @@ sealed class ApplicationError {
 
 ### Step 2: Create Application Services
 
-```
+```kotlin
 // application/src/main/kotlin/com/kamiazya/scopes/application/service/ScopeService.kt
 package io.github.kamiazya.scopes.application.service
 
@@ -592,7 +592,7 @@ class ScopeService(
 
 ### Step 1: Implement Repository
 
-```
+```kotlin
 // infrastructure/src/main/kotlin/com/kamiazya/scopes/infrastructure/repository/InMemoryScopeRepository.kt
 package io.github.kamiazya.scopes.infrastructure.repository
 
@@ -684,7 +684,7 @@ class InMemoryScopeRepository : ScopeRepository {
 
 ### Step 2: Create Configuration
 
-```
+```kotlin
 // infrastructure/src/main/kotlin/com/kamiazya/scopes/infrastructure/config/DependencyConfiguration.kt
 package io.github.kamiazya.scopes.infrastructure.config
 
@@ -719,7 +719,7 @@ object DependencyConfiguration {
 
 ### Step 1: Create CLI Commands
 
-```
+```kotlin
 // presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/commands/CreateCommand.kt
 package io.github.kamiazya.scopes.presentation.cli.commands
 
@@ -814,7 +814,7 @@ class CreateCommand(
 
 ### Step 2: Create Application Entry Point
 
-```
+```kotlin
 // presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/ScopesApplication.kt
 package io.github.kamiazya.scopes.presentation.cli
 
@@ -929,7 +929,7 @@ flowchart TD
 
 ### Step 1: Domain Layer Tests
 
-```
+```kotlin
 // domain/src/test/kotlin/com/kamiazya/scopes/domain/entity/ScopeTest.kt
 package io.github.kamiazya.scopes.domain.entity
 
@@ -1018,7 +1018,7 @@ class ScopeTest : FunSpec({
 
 ### Step 2: Application Layer Tests
 
-```
+```kotlin
 // application/src/test/kotlin/com/kamiazya/scopes/application/usecase/CreateScopeUseCaseTest.kt
 package io.github.kamiazya.scopes.application.usecase
 
@@ -1136,7 +1136,7 @@ class CreateScopeUseCaseTest : FunSpec({
 
 ### Step 3: Integration Tests
 
-```
+```kotlin
 // integration-test/src/test/kotlin/com/kamiazya/scopes/integration/ScopeManagementIntegrationTest.kt
 package io.github.kamiazya.scopes.integration
 
@@ -1411,7 +1411,7 @@ flowchart TD
 **Problem**: Kotlin can't infer Result type parameters.
 
 **Solution**:
-```
+```kotlin
 // Be explicit with type parameters
 fun createScope(): Result<Scope, DomainError> = // ...
 
@@ -1423,7 +1423,7 @@ typealias ScopeResult = Result<Scope, DomainError>
 **Problem**: MockK not working with suspending functions.
 
 **Solution**:
-```
+```kotlin
 // Use coEvery for suspending functions
 coEvery { repository.save(any()) } returns Result.success(scope)
 
@@ -1435,7 +1435,7 @@ coVerify { repository.save(any()) }
 **Problem**: Invalid ULID format errors.
 
 **Solution**:
-```
+```kotlin
 // Always validate ULID format
 fun from(value: String): ScopeId {
         require(isValidUlid(value)) { "Invalid ULID format: $value" }
@@ -1457,7 +1457,7 @@ private fun isValidUlid(value: String): Boolean =
 
 Use ArchUnit or similar tools to validate architectural constraints:
 
-```
+```kotlin
 class ArchitectureTest : FunSpec({
         test("domain layer should not depend on other layers") {
             // Validate dependency rules

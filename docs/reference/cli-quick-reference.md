@@ -388,7 +388,7 @@ All commands support dynamic tab completion:
 ## Output Conventions
 
 ### Standard Listing Format
-```
+```text
 alias-name           Title/Description                   aspects...
 quiet-river-a4f7     Implement authentication           priority=high status=ready
     ├── login-ui       Design login interface            priority=medium
@@ -420,7 +420,7 @@ Error: Invalid aspect query syntax in 'priority=>high'
 ## Configuration
 
 ### Directory Structure
-```
+```text
 ~/.scopes/           # Global configuration
 ├── config.json     # User settings
 └── focus.json      # User-level focus state

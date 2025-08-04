@@ -160,7 +160,7 @@ scopes list --no-focus  # Alternative syntax
 ```
 
 ### Focus Hierarchy
-```
+```text
 User Focus (Global)
         ↓ (applies everywhere)
 Workspace Focus (Directory-specific)
@@ -169,7 +169,7 @@ Active Focus (What user sees)
 ```
 
 ### Focus State Storage
-```
+```text
 ~/.scopes/
 ├── config.json
 ├── focus.json          # User-level focus state

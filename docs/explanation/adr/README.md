@@ -113,7 +113,7 @@ stateDiagram-v2
 
 ADRs are named using the following pattern:
 
-```
+```text
 NNNN-short-decision-title.md
 ```
 

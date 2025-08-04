@@ -137,7 +137,7 @@ journey
 
 The canonical alias combines human-readable words with ULID-derived uniqueness:
 
-```
+```text
 Format: <adjective>-<noun>-<ulid-token>
 Example: quiet-river-a4f7
 ```

@@ -224,7 +224,7 @@ data class Scope(
 
 #### Value Objects
 
-```
+```kotlin
 // ✅ Good: Immutable value object with inline class
 @JvmInline
 value class ScopeId private constructor(private val value: String) {

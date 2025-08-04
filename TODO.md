@@ -62,7 +62,7 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 ### Phase 3: Repository Interfaces
 
 - [ ] `ScopeRepository`
-```
+```text
         - save(scope: Scope): Promise<void>
         - findById(id: ScopeId): Promise<Scope?>
         - findByParent(parentId: ScopeId): Promise<Scope[]>
@@ -71,7 +71,7 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
       ```
 
 - [ ] `AspectRepository`
-```
+```text
         - saveAspects(scopeId: ScopeId, aspects: Aspect[]): Promise<void>
         - findByScopeId(scopeId: ScopeId): Promise<Aspect[]>
         - removeAspect(scopeId: ScopeId, key: AspectKey): Promise<void>

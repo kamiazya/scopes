@@ -56,7 +56,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
 
 **Examples:**
-```
+```text
 Scope: "Authentication System"
 ├── Scope: "User Login"
 │   ├── Scope: "Login UI Design"

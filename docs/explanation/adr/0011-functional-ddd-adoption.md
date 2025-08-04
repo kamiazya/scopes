@@ -33,7 +33,7 @@ We will adopt **Functional Domain-Driven Design (Functional DDD)** principles wi
 ### Implementation Strategy
 
 - **Sealed Classes for Domain Modeling**: Use Kotlin's sealed classes for representing domain states and commands
-- **Arrow Core Types**: Use Arrow's Either<L, R> and Option<T> types for explicit error handling and null safety
+- **Arrow Core Types**: Use Arrow's Either types and Option types for explicit error handling and null safety
 - **Flow for Collections**: Use Kotlin Flow for streaming collections instead of List for better memory efficiency
 - **Pure Domain Services**: Domain services will be stateless functions that operate on immutable data
 - **Functional Repository Patterns**: Repository operations will return Either types instead of throwing exceptions
