@@ -6,12 +6,12 @@ pre-commit:
   commands:
     editorconfig:
       glob: "*"
-      exclude: '.claude/.*|tmp/.*'
+      exclude: '.claude/.*|tmp/.*|LICENSE'
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
           mstruebing/editorconfig-checker:latest \
-          ec \
+          ec --exclude LICENSE \
           {staged_files} || true
       skip:
         - merge
