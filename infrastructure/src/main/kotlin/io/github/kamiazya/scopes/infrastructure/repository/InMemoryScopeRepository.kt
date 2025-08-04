@@ -58,7 +58,7 @@ class InMemoryScopeRepository : ScopeRepository {
                     null -> depth
                     else -> {
                         val scope = scopes[currentId]
-                        if (scope == null) depth else calculateDepth(scope.parentId, depth + 1)
+                        if (scope == null) depth + 1 else calculateDepth(scope.parentId, depth + 1)
                     }
                 }
             calculateDepth(scopeId, 0)

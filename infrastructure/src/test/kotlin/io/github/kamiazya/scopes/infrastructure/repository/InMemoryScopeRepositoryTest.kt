@@ -152,4 +152,33 @@ class InMemoryScopeRepositoryTest : StringSpec({
             depth shouldBe 3
         }
     }
+
+    "should return incremented depth when scopeId does not exist" {
+        runTest {
+            val repository = InMemoryScopeRepository()
+            val nonExistentId = ScopeId.generate()
+
+            // Test with empty repository - should return 1 (0 + 1)
+            val emptyDepthResult = repository.findHierarchyDepth(nonExistentId)
+            val emptyDepth = emptyDepthResult.shouldBeRight()
+            emptyDepth shouldBe 1
+
+            // Add a root scope and test with non-existent child
+            val rootId = ScopeId.generate()
+            val root = Scope(
+                id = rootId,
+                title = "Root",
+                description = null,
+                parentId = null,
+                createdAt = kotlinx.datetime.Clock.System.now(),
+                updatedAt = kotlinx.datetime.Clock.System.now()
+            )
+            repository.save(root)
+
+            // Test with non-existent scope - should still return 1 (0 + 1)
+            val nonExistentDepthResult = repository.findHierarchyDepth(nonExistentId)
+            val nonExistentDepth = nonExistentDepthResult.shouldBeRight()
+            nonExistentDepth shouldBe 1
+        }
+    }
 })
