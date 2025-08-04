@@ -472,8 +472,7 @@ style:
       - 'kotlin.io.print'
       - 'kotlin.io.println'
   ForbiddenPublicDataClass:
-    active: true
-    excludes: ['**']
+    active: false
     ignorePackages:
       - '*.internal'
       - '*.internal.*'
@@ -487,8 +486,7 @@ style:
     ignoreActualFunction: true
     excludedFunctions: []
   LibraryCodeMustSpecifyReturnType:
-    active: true
-    excludes: ['**']
+    active: false
   LibraryEntitiesShouldNotBePublic:
     active: false
     excludes: ['**']

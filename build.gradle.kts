@@ -6,11 +6,11 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
-group = "com.kamiazya.scopes"
+group = "io.github.kamiazya"
 version = "0.0.1"
 
 allprojects {
-    group = "com.kamiazya.scopes"
+    group = "io.github.kamiazya"
     version = "0.0.1"
 
     repositories {

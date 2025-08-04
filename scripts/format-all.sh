@@ -27,12 +27,12 @@ fi
 # Fix EditorConfig issues
 echo "⚙️  Fixing EditorConfig issues..."
 # Remove trailing whitespace
-find . -name "*.kt" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" | \
-    xargs sed -i '' 's/[[:space:]]*$//'
+find . -name "*.kt" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" -print0 | \
+    xargs -0 sed -i '' 's/[[:space:]]*$//'
 
 # Ensure final newline
-find . -name "*.kt" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" | \
-    xargs -I {} sh -c 'if [ -s "{}" ] && [ "$(tail -c1 "{}")" != "" ]; then echo "" >> "{}"; fi'
+find . -name "*.kt" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.json" -print0 | \
+    xargs -0 -I {} sh -c 'if [ -s "{}" ] && [ "$(tail -c1 "{}")" != "" ]; then echo "" >> "{}"; fi'
 
 echo "✅ All formatting complete!"
 echo ""
