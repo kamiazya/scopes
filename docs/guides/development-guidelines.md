@@ -27,7 +27,6 @@ flowchart TD
         INF[infrastructure]
 
         CLI --> APP
-        CLI --> INF
         APP --> DOM
         INF --> DOM
 
@@ -40,14 +39,14 @@ flowchart TD
         class APP application
         class INF infrastructure
         class CLI presentation
-      ```typescript
+```
 
 ### Dependency Rules
 
 - **Domain Layer**: No dependencies on other layers
 - **Application Layer**: Depends only on Domain
 - **Infrastructure Layer**: Depends only on Domain
-- **Presentation Layer**: Depends on Application and Infrastructure
+- **Presentation Layer**: Depends only on Application
 
 ### Layer Responsibilities
 
@@ -98,7 +97,7 @@ flowchart LR
 
         classDef principle fill:#f1f8e9,stroke:#689f38,stroke-width:2px
         class A,B,C,D,E principle
-      ```typescript
+```
 
 1. **Immutable Domain Objects**
 2. **Pure Functions for Business Logic**
@@ -110,7 +109,7 @@ flowchart LR
 
 #### 1. Immutable Entities
 
-      ```typescript
+```
 // ✅ Good: Immutable data class
 data class Scope(
         val id: ScopeId,
@@ -135,11 +134,11 @@ class Scope {
             this.title = newTitle
         }
 }
-      ```typescript
+```
 
 #### 2. Value Objects with ULID
 
-      ```typescript
+```
 // ✅ Good: Immutable value object with ULID
 @JvmInline
 value class ScopeId private constructor(private val value: String) {
@@ -150,21 +149,19 @@ value class ScopeId private constructor(private val value: String) {
 
         override fun toString(): String = value
 }
-      ```typescript
+```
 
-#### 3. Result Types for Error Handling
+#### 3. Arrow Either for Error Handling
 
-      ```typescript
-// Define Result type
-sealed class Result<out T, out E> {
-        data class Success<T>(val value: T) : Result<T, Nothing>()
-        data class Failure<E>(val error: E) : Result<Nothing, E>()
-}
+```kotlin
+// Import Arrow Either
+import arrow.core.Either
+import arrow.core.raise.either
 
-// ✅ Good: Use Result types
+// ✅ Good: Use Either types from Arrow
 interface ScopeRepository {
-        suspend fun findById(id: ScopeId): Result<Scope?, RepositoryError>
-        suspend fun save(scope: Scope): Result<Scope, RepositoryError>
+        suspend fun findById(id: ScopeId): Either<RepositoryError, Scope?>
+        suspend fun save(scope: Scope): Either<RepositoryError, Scope>
 }
 
 // ❌ Bad: Exception-based approach
@@ -172,19 +169,18 @@ interface ScopeRepository {
         @Throws(RepositoryException::class)
         suspend fun findById(id: ScopeId): Scope?
 }
-      ```typescript
+```
 
 #### 4. Pure Domain Services
 
-      ```typescript
-// ✅ Good: Pure function domain service
+```kotlin
+// ✅ Good: Pure function domain service with Arrow Either
 object ScopeValidationService {
-        fun validateTitle(title: String): Result<String, ValidationError> =
-            when {
-                title.isBlank() -> Result.Failure(ValidationError.EmptyTitle)
-                title.length > 200 -> Result.Failure(ValidationError.TitleTooLong)
-                else -> Result.Success(title.trim())
-            }
+        fun validateTitle(title: String): Either<ValidationError, String> = either {
+            ensure(title.isNotBlank()) { ValidationError.EmptyTitle }
+            ensure(title.length <= 200) { ValidationError.TitleTooLong }
+            title.trim()
+        }
 }
 
 // ❌ Bad: Service with side effects
@@ -196,7 +192,7 @@ class ScopeValidationService {
             return title.isNotBlank()
         }
 }
-      ```typescript
+```
 
 ## Coding Standards
 
@@ -204,7 +200,7 @@ class ScopeValidationService {
 
 #### 1. Naming Conventions
 
-      ```typescript
+```kotlin
 // ✅ Good: Clear, descriptive names
 class CreateScopeUseCase
 data class ScopeCreationRequest
@@ -214,13 +210,13 @@ sealed class DomainError
 class CSUseCase
 data class ScopeReq
 sealed class Err
-      ```typescript
+```
 
 #### 2. Function Composition
 
-      ```typescript
-// ✅ Good: Function composition with Result types
-fun createScope(request: CreateScopeRequest): Result<Scope, DomainError> =
+```kotlin
+// ✅ Good: Function composition with Arrow Either
+fun createScope(request: CreateScopeRequest): Either<DomainError, Scope> =
         validateTitle(request.title)
             .flatMap { title -> validateParent(request.parentId) }
             .map { _ ->
@@ -233,11 +229,11 @@ fun createScope(request: CreateScopeRequest): Result<Scope, DomainError> =
                     updatedAt = Clock.System.now()
                 )
             }
-      ```typescript
+```
 
 #### 3. Sealed Classes for Domain Modeling
 
-      ```typescript
+```kotlin
 // ✅ Good: Sealed classes for domain states
 sealed class ScopeCommand {
         data class Create(val title: String, val description: String?) : ScopeCommand()
@@ -250,7 +246,7 @@ sealed class DomainError {
         data class ValidationFailed(val message: String) : DomainError()
         data class RepositoryError(val cause: Throwable) : DomainError()
 }
-      ```typescript
+```
 
 ### Code Organization
 
@@ -334,7 +330,7 @@ flowchart TD
         class DOCS,DOCS_EXP,DOCS_GUIDES,DOCS_REF docs
         class CONFIG,GRADLE,QUALITY,SCRIPTS config
         class ROOT root
-      ```typescript
+```
 
 #### 2. File Naming
 
@@ -347,7 +343,7 @@ flowchart TD
 ### Dependencies in `build.gradle.kts`
 
 #### Domain Module
-      ```typescript
+```kotlin
 // domain/build.gradle.kts
 dependencies {
         implementation(libs.kotlin.stdlib)
@@ -356,10 +352,10 @@ dependencies {
 
         testImplementation(libs.bundles.kotest)
 }
-      ```typescript
+```
 
 #### Application Module
-      ```typescript
+```kotlin
 // application/build.gradle.kts
 dependencies {
         implementation(project(":domain"))
@@ -368,7 +364,7 @@ dependencies {
         testImplementation(libs.bundles.kotest)
         testImplementation(libs.mockk)
 }
-      ```typescript
+```
 
 ### Version Management
 
@@ -385,7 +381,7 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 
 [bundles]
 kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-property"]
-      ```typescript
+```
 
 ## Error Handling
 
@@ -412,9 +408,9 @@ flowchart LR
         class C,E success
         class D,F failure
         class A,B,G operation
-      ```typescript
+```
 
-      ```typescript
+```kotlin
 // Result type extensions for composition
 inline fun <T, E, R> Result<T, E>.map(transform: (T) -> R): Result<R, E> =
         when (this) {
@@ -427,7 +423,7 @@ inline fun <T, E, R> Result<T, E>.flatMap(transform: (T) -> Result<R, E>): Resul
             is Result.Success -> transform(value)
             is Result.Failure -> this
         }
-      ```typescript
+```
 
 ### Error Hierarchy
 
@@ -501,9 +497,9 @@ classDiagram
         class ConnectionError infrastructure
         class DataIntegrityError infrastructure
         class NotFound infrastructure
-      ```typescript
+```
 
-      ```typescript
+```
 sealed class DomainError {
         object ScopeNotFound : DomainError()
         data class ValidationFailed(val field: String, val message: String) : DomainError()
@@ -511,10 +507,10 @@ sealed class DomainError {
 }
 
 sealed class ApplicationError {
-        data class DomainError(val error: com.kamiazya.scopes.domain.DomainError) : ApplicationError()
+        data class DomainError(val error: io.github.kamiazya.scopes.domain.DomainError) : ApplicationError()
         data class InfrastructureError(val message: String) : ApplicationError()
 }
-      ```typescript
+```
 
 ## Testing Guidelines
 
@@ -522,7 +518,7 @@ sealed class ApplicationError {
 
 Use **Kotest** framework following our architectural decisions:
 
-      ```typescript
+```kotlin
 class CreateScopeUseCaseTest : FunSpec({
         test("should create scope with valid data") {
             // Given
@@ -545,7 +541,7 @@ class CreateScopeUseCaseTest : FunSpec({
             result shouldBe instanceOf<Result.Success<*>>()
         }
 })
-      ```typescript
+```
 
 ### Test Categories
 
@@ -555,7 +551,7 @@ class CreateScopeUseCaseTest : FunSpec({
 
 ### Property-Based Testing
 
-      ```typescript
+```
 class ScopeIdTest : FunSpec({
         test("ULID generation should be unique") {
             checkAll<String> { _ ->
@@ -565,7 +561,7 @@ class ScopeIdTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ## Code Quality Tools
 
@@ -592,7 +588,7 @@ flowchart LR
 
         class A,B,C,D,E quality
         class F,G,H build
-      ```typescript
+```
 
 ### Detekt Configuration
 
@@ -624,7 +620,7 @@ Lefthook runs automatically:
 
 # Pre-commit hook simulation
 lefthook run pre-commit
-      ```typescript
+```
 
 ## Development Workflow
 

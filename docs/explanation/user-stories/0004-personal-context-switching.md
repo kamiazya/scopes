@@ -66,7 +66,7 @@ Scenario: Work within context views persistently
     Then the operations work normally
     And the view continues showing only matching scopes
     And new scopes that match the filter appear automatically
-      ```typescript
+```
 
 ## User Journey
 
@@ -98,7 +98,7 @@ journey
         section View Management
           Review context definitions   : 4: User, System
           Refine or remove old views   : 4: User
-      ```typescript
+```
 
 ## Success Metrics
 
@@ -134,7 +134,7 @@ scopes context create "maintenance" --filter "type=bug OR type=chore"
 scopes context list
 scopes context list --global    # Only global contexts
 scopes context list --local     # Only workspace-local contexts
-      ```typescript
+```
 
 ### Context Switching
 ```bash
@@ -151,7 +151,7 @@ scopes context switch --local project-specific
 scopes context current
 scopes context current --global  # Show global context
 scopes context current --local   # Show workspace context
-      ```typescript
+```
 
 ### Context Management
 ```bash
@@ -174,7 +174,7 @@ scopes context show client-work
 
 # Reset to default context
 scopes context switch default
-      ```typescript
+```
 
 ### Personal Workflow Patterns
 - **Time-based contexts**: Morning creative work, afternoon focused work

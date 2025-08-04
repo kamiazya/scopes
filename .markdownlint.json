@@ -5,7 +5,6 @@
     "tmp/**"
   ],
   "rules": {
-    "MD001": true,
     "MD003": {
       "style": "atx"
     },

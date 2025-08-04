@@ -45,14 +45,14 @@ We will adopt the **Diátaxis framework** for organizing our documentation. Diá
 
 Our documentation will be reorganized into four main categories:
 
-     ```typescript
+```
 /docs/
 ├── README.md          # Navigation and overview
 ├── tutorials/         # Learning-oriented guides
 ├── guides/            # Task-oriented how-to guides
 ├── reference/         # Information-oriented technical descriptions
 └── explanation/       # Understanding-oriented conceptual discussions
-     ```typescript
+```
 
 Each category serves a specific purpose and audience need, making it clear where to find and place documentation.
 

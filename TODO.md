@@ -23,7 +23,6 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 - [ ] `ScopeId`: ULID-based identifier
 - [ ] `ScopeTitle`: Title with validation rules
 - [ ] `ScopeDescription`: Rich text description
-- [ ] `ScopeStatus`: Lifecycle states (pending → in_progress → completed → logged)
 - [ ] `Timestamp`: Creation and modification timestamps
 
 #### 1.2 Core Entities
@@ -63,7 +62,7 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 ### Phase 3: Repository Interfaces
 
 - [ ] `ScopeRepository`
-      ```typescript
+```
         - save(scope: Scope): Promise<void>
         - findById(id: ScopeId): Promise<Scope?>
         - findByParent(parentId: ScopeId): Promise<Scope[]>
@@ -72,7 +71,7 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
       ```
 
 - [ ] `AspectRepository`
-      ```typescript
+```
         - saveAspects(scopeId: ScopeId, aspects: Aspect[]): Promise<void>
         - findByScopeId(scopeId: ScopeId): Promise<Aspect[]>
         - removeAspect(scopeId: ScopeId, key: AspectKey): Promise<void>

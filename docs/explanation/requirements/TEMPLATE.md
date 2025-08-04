@@ -18,7 +18,7 @@
 Given [initial condition]
 When [action occurs]
 Then [expected outcome]
-      ```typescript
+```
 
 ### FR-XXX.2: [Another Sub-requirement]
 [Continue with additional sub-requirements as needed]
@@ -29,7 +29,7 @@ Then [expected outcome]
 
 ```mermaid
 [Include relevant diagrams - entity relationships, data flow, etc.]
-      ```typescript
+```
 
 ## User Interface
 
@@ -38,7 +38,7 @@ Then [expected outcome]
 ```bash
 # Example commands or usage
 command example --option value
-      ```typescript
+```
 
 ## Dependencies
 

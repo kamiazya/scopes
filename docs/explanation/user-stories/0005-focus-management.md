@@ -68,7 +68,7 @@ Scenario: Focus hierarchy resolution
     Then workspace focus takes precedence
     And user focus applies when no workspace focus exists
     And I can see which focus is active
-      ```typescript
+```
 
 ## User Journey
 
@@ -101,7 +101,7 @@ journey
           Clear completed focus        : 4: User
           Set new focus target         : 4: User, System
           Continue productive work     : 5: User, System
-      ```typescript
+```
 
 ## Success Metrics
 
@@ -146,7 +146,7 @@ scopes focus clear
 scopes focus --user auth-feature      # Set global focus
 scopes focus --workspace bug-fix-ui   # Set workspace focus
 scopes focus --user clear            # Clear global focus
-      ```typescript
+```
 
 ### Focus Display
 ```bash
@@ -157,19 +157,19 @@ scopes tree  # Shows only focused hierarchy
 # Bypass focus temporarily
 scopes list --all  # Show all scopes ignoring focus
 scopes list --no-focus  # Alternative syntax
-      ```typescript
+```
 
 ### Focus Hierarchy
-      ```typescript
+```
 User Focus (Global)
         ↓ (applies everywhere)
 Workspace Focus (Directory-specific)
         ↓ (overrides user focus in this directory)
 Active Focus (What user sees)
-      ```typescript
+```
 
 ### Focus State Storage
-      ```typescript
+```
 ~/.scopes/
 ├── config.json
 ├── focus.json          # User-level focus state
@@ -178,7 +178,7 @@ Active Focus (What user sees)
 /project/.scopes/
 ├── workspace.json
 └── focus.json          # Workspace-level focus state
-      ```typescript
+```
 
 ### Focus with Contexts
 ```bash
@@ -190,7 +190,7 @@ scopes focus auth-feature  # Focus within client-work context
 # Context: "project=alpha"
 # Focus: "auth-feature" (and children)
 # Result: Only auth-feature tree within project alpha
-      ```typescript
+```
 
 ### Command Output Examples
 ```bash
@@ -232,7 +232,7 @@ Current focus: auth-feature (workspace-level, recursive)
 Current context: client-work
 Visible scopes: 5 of 247 total
 Focus set: 2 minutes ago
-      ```typescript
+```
 
 ## Future Considerations
 

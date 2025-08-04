@@ -87,7 +87,7 @@ graph TB
        class CTRL,GATE,PRES,REPO_IMPL adapter
        class APP,REPO_INT,PORTS usecase
        class ENT,VO,DS,DR entity
-     ```typescript
+```
 
 ### Dependency Rules
 

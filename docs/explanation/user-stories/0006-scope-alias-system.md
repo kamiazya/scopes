@@ -75,7 +75,7 @@ Scenario: Alias management
     Then I can list all aliases for a scope
     And I can rename or remove aliases
     And I can see which alias is canonical
-      ```typescript
+```
 
 ## User Journey
 
@@ -108,7 +108,7 @@ journey
           Review all aliases             : 4: User
           Change canonical alias         : 4: User
           Remove unused aliases          : 4: User
-      ```typescript
+```
 
 ## Success Metrics
 
@@ -137,10 +137,10 @@ journey
 
 The canonical alias combines human-readable words with ULID-derived uniqueness:
 
-      ```typescript
+```
 Format: <adjective>-<noun>-<ulid-token>
 Example: quiet-river-a4f7
-      ```typescript
+```
 
 Where:
 - **Adjective & Noun**: Selected from curated word lists
@@ -168,7 +168,7 @@ Aliases for scope 01H8XGJWBWBAQ1J3T3B8A0V0A8:
 - quiet-river-a4f7 (canonical)
 - auth-feature (custom)
 - sprint-42 (custom)
-      ```typescript
+```
 
 ### Alias Commands
 
@@ -202,7 +202,7 @@ Aliases for scope 01H8XGJWBWBAQ1J3T3B8A0V0A8:
 # Remove alias
 $ scopes alias rm sprint-42
 Removed alias 'sprint-42'
-      ```typescript
+```
 
 ### Word List Design Principles
 
@@ -229,7 +229,7 @@ Error: Prefix 'quiet' matches multiple scopes:
 - quiet-mountain-b8e2 "Fix login bug"
 
 Please use a longer prefix or exact alias.
-      ```typescript
+```
 
 ### Tab Completion
 
@@ -240,7 +240,7 @@ quiet-river-a4f7   quiet-mountain-b8e2
 
 $ scopes focus auth<TAB>
 auth-feature   authentication   auth-api-v2
-      ```typescript
+```
 
 ## Future Considerations
 

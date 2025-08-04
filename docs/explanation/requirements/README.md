@@ -102,7 +102,7 @@ graph TB
         class FR007,FR008 enhanced
         class NFR001,NFR002,NFR003 nonfunctional
         class FR002,FR006 infrastructure
-      ```typescript
+```
 
 ## Implementation Priority
 

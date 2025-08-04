@@ -33,9 +33,10 @@ We will adopt **Functional Domain-Driven Design (Functional DDD)** principles wi
 ### Implementation Strategy
 
 - **Sealed Classes for Domain Modeling**: Use Kotlin's sealed classes for representing domain states and commands
-- **Result Types**: Implement Result<T, E> or Either<L, R> types for explicit error handling
+- **Arrow Core Types**: Use Arrow's Either<L, R> and Option<T> types for explicit error handling and null safety
+- **Flow for Collections**: Use Kotlin Flow for streaming collections instead of List for better memory efficiency
 - **Pure Domain Services**: Domain services will be stateless functions that operate on immutable data
-- **Functional Repository Patterns**: Repository operations will return Result types instead of throwing exceptions
+- **Functional Repository Patterns**: Repository operations will return Either types instead of throwing exceptions
 - **Event Sourcing Preparation**: Domain events will be designed as immutable data structures suitable for event sourcing
 
 ## Consequences
@@ -98,35 +99,6 @@ Keeping mutable entities but implementing services functionally. Rejected becaus
 ### External Systems
 - **Database Operations**: Repository implementations will use Result types for database operations
 - **File System**: Any file operations will use functional error handling patterns
-
-## Implementation Notes
-
-### Phase 1: Foundation
-1. Implement Result<T, E> or Either<L, R> type
-2. Create functional error handling utilities
-3. Establish patterns for function composition
-
-### Phase 2: Domain Refactoring
-1. Convert domain services to pure functions
-2. Implement functional repository interfaces
-3. Update use cases to use Result types
-
-### Phase 3: Integration
-1. Update presentation layer to handle Result types
-2. Migrate infrastructure implementations
-3. Update error handling throughout the application
-
-### Phase 4: Advanced Patterns
-1. Implement domain event handling functionally
-2. Explore functional reactive patterns for complex workflows
-3. Consider functional state management approaches
-
-### Code Style Guidelines
-- Use `data class` for immutable domain objects
-- Prefer `sealed class` for domain states and commands
-- Use extension functions for domain behavior
-- Implement operators for Result type composition
-- Follow railway-oriented programming patterns for error handling
 
 ## Tags
 

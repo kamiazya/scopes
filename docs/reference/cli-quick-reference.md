@@ -23,7 +23,7 @@ Canonical alias: quiet-river-a4f7
 $ scopes create "Fix login bug" --alias fix-login
 Created scope with ULID: 01H8XGJWCDEFG2K4L5M6N7P8Q9
 Canonical alias: fix-login
-      ```typescript
+```
 
 ### Listing and Viewing
 ```bash
@@ -68,7 +68,7 @@ quiet-river-a4f7    Implement authentication          priority=high
     │   └── form-val  Add form validation              priority=low
     └── password-val  Add password validation          priority=high
           └── hash-impl Implement password hashing       priority=medium
-      ```typescript
+```
 
 ### Editing Scopes
 ```bash
@@ -81,7 +81,7 @@ $ scopes update quiet-river-a4f7 --title "Enhanced authentication system"
 $ scopes update quiet-river-a4f7 --status completed
 ✓ Updated scope 'quiet-river-a4f7':
     status: ready → completed
-      ```typescript
+```
 
 ## Alias Management
 
@@ -106,7 +106,7 @@ $ scopes alias set-canonical quiet-river-a4f7 authentication
 # Remove alias
 $ scopes alias rm sprint-42
 ✓ Removed alias 'sprint-42'
-      ```typescript
+```
 
 ### Resolution
 - Exact match: `auth-feature` → specific scope
@@ -127,7 +127,7 @@ $ scopes aspect set quiet-river-a4f7 priority=high status=ready
 ✓ Set aspects on scope 'quiet-river-a4f7':
     priority: high
     status: ready
-      ```typescript
+```
 
 ### Querying by Aspects
 ```bash
@@ -153,7 +153,7 @@ Found 2 scopes matching criteria:
 
 quiet-river-a4f7    Implement authentication         priority=high status=ready
 brave-star-e5n3     Optimize database queries       priority=high status=ready
-      ```typescript
+```
 
 ### Aspect Definitions
 ```bash
@@ -168,7 +168,7 @@ Defined aspects:
 - status (text): any text value
 - complexity (ordered): low < medium < high < large
 - estimate (duration): time values (1h, 2d, etc.)
-      ```typescript
+```
 
 ## Context Management (Named Views)
 
@@ -220,7 +220,7 @@ $ scopes context edit client-work --filter "project=acme AND status!=completed"
 # Remove context
 $ scopes context rm old-context
 ✓ Removed context 'old-context'
-      ```typescript
+```
 
 ### Context Scopes
 - **Global**: Available everywhere (`--global`)
@@ -262,7 +262,7 @@ $ scopes focus
 Current focus: auth-feature (workspace-level, recursive)
 Visible scopes: 5 of 247 total
 Focus set: 2 minutes ago
-      ```typescript
+```
 
 ### Focus Display
 - When focused, all commands respect the focus filter
@@ -306,7 +306,7 @@ OPTIONS:
           --workspace         Set workspace-specific focus
           --clear             Clear current focus
           -h, --help          Print help information
-      ```typescript
+```
 
 ## Common Workflows
 
@@ -348,7 +348,7 @@ $ scopes context switch personal-projects
 $ scopes focus blog-engine
 ✓ Focused on scope 'blog-engine': Build personal blog
     Including 3 child scopes
-      ```typescript
+```
 
 ### Project Organization
 ```bash
@@ -364,7 +364,7 @@ scopes aspect set pwd-val priority=high estimate=2h
 
 # Create focused context
 scopes context create "auth-work" --filter "parent=auth-system OR alias=auth-system"
-      ```typescript
+```
 
 ### Advanced Filtering
 ```bash
@@ -376,7 +376,7 @@ scopes list -a "blocked=false AND (type=feature OR type=bug)"
 scopes context switch sprint-current
 scopes focus high-priority-items --recursive
 scopes list                           # Shows intersection of both filters
-      ```typescript
+```
 
 ## Tab Completion
 
@@ -388,12 +388,12 @@ All commands support dynamic tab completion:
 ## Output Conventions
 
 ### Standard Listing Format
-      ```typescript
+```
 alias-name           Title/Description                   aspects...
 quiet-river-a4f7     Implement authentication           priority=high status=ready
     ├── login-ui       Design login interface            priority=medium
     └── password-val   Add password validation           priority=high
-      ```typescript
+```
 
 ### Status Indicators
 - `[FOCUS: alias]` - Active focus
@@ -415,12 +415,12 @@ Error: No scope found with alias 'unknown-alias'
 
 # Invalid aspect query
 Error: Invalid aspect query syntax in 'priority=>high'
-      ```typescript
+```
 
 ## Configuration
 
 ### Directory Structure
-      ```typescript
+```
 ~/.scopes/           # Global configuration
 ├── config.json     # User settings
 └── focus.json      # User-level focus state
@@ -428,7 +428,7 @@ Error: Invalid aspect query syntax in 'priority=>high'
 project/.scopes/     # Workspace configuration
 ├── workspace.json  # Workspace settings
 └── focus.json      # Workspace focus state
-      ```typescript
+```
 
 ## See Also
 

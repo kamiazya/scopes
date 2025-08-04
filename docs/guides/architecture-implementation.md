@@ -85,7 +85,7 @@ flowchart TD
         class DOCS,DOCS_EXP,DOCS_GUIDES,DOCS_REF docs
         class CONFIG,GRADLE,QUALITY,SCRIPTS config
         class ROOT root
-      ```typescript
+```
 
 ### Development Workflow
 
@@ -142,7 +142,7 @@ flowchart TD
         class C,C1,C2 infrastructure
         class D,D1,D2 presentation
         class E,F workflow
-      ```typescript
+```
 
 1. **Start with Domain**: Define entities, value objects, and business rules
 2. **Add Application Logic**: Implement use cases and application services
@@ -155,11 +155,11 @@ flowchart TD
 
 ### Step 1: Create Domain Entities
 
-      ```typescript
+```
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/entity/Scope.kt
-package com.kamiazya.scopes.domain.entity
+package io.github.kamiazya.scopes.domain.entity
 
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
 /**
@@ -201,13 +201,13 @@ data class Scope(
         fun moveToParent(newParentId: ScopeId?, timestamp: Instant): Scope =
             copy(parentId = newParentId, updatedAt = timestamp)
 }
-      ```typescript
+```
 
 ### Step 2: Create Value Objects
 
-      ```typescript
+```
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/valueobject/ScopeId.kt
-package com.kamiazya.scopes.domain.valueobject
+package io.github.kamiazya.scopes.domain.valueobject
 
 import com.github.guepardoapps.kulid.ULID
 
@@ -242,16 +242,24 @@ value class ScopeId private constructor(private val value: String) {
 
         override fun toString(): String = value
 }
-      ```typescript
+```
 
 ### Step 3: Define Domain Services
 
-      ```typescript
+```
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/service/ScopeValidationService.kt
-package com.kamiazya.scopes.domain.service
+package io.github.kamiazya.scopes.domain.service
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import arrow.core.Either
+import arrow.core.Option
+import arrow.core.some
+import arrow.core.none
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.error.DomainError
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Domain service for scope validation logic.
@@ -266,24 +274,29 @@ object ScopeValidationService {
         /**
          * Validate scope title according to business rules.
          */
-        fun validateTitle(title: String): Result<String, ValidationError> =
-            when {
-                title.isBlank() -> Result.failure(ValidationError.EmptyTitle)
-                title.length < MIN_TITLE_LENGTH -> Result.failure(ValidationError.TitleTooShort)
-                title.length > MAX_TITLE_LENGTH -> Result.failure(ValidationError.TitleTooLong(MAX_TITLE_LENGTH))
-                else -> Result.success(title.trim())
+        fun validateTitle(title: String): Either<DomainError.ValidationError, String> = either {
+            ensure(title.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
+            ensure(title.length >= MIN_TITLE_LENGTH) { DomainError.ValidationError.TitleTooShort }
+            ensure(title.length <= MAX_TITLE_LENGTH) {
+                DomainError.ValidationError.TitleTooLong(MAX_TITLE_LENGTH, title.length)
             }
+            title.trim()
+        }
 
         /**
          * Validate scope description according to business rules.
          */
-        fun validateDescription(description: String?): Result<String?, ValidationError> =
-            when {
-                description == null -> Result.success(null)
-                description.length > MAX_DESCRIPTION_LENGTH ->
-                    Result.failure(ValidationError.DescriptionTooLong(MAX_DESCRIPTION_LENGTH))
-                else -> Result.success(description.trim().ifBlank { null })
+        fun validateDescription(description: String?): Either<DomainError.ValidationError, String?> = either {
+            when (description) {
+                null -> null
+                else -> {
+                    ensure(description.length <= MAX_DESCRIPTION_LENGTH) {
+                        DomainError.ValidationError.DescriptionTooLong(MAX_DESCRIPTION_LENGTH, description.length)
+                    }
+                    description.trim().ifBlank { null }
+                }
             }
+        }
 
         /**
          * Validate that a scope can be moved to a new parent.
@@ -324,16 +337,16 @@ sealed class ValidationError {
         object SelfParenting : ValidationError()
         object CircularReference : ValidationError()
 }
-      ```typescript
+```
 
 ### Step 4: Create Repository Interfaces
 
-      ```typescript
+```
 // domain/src/main/kotlin/com/kamiazya/scopes/domain/repository/ScopeRepository.kt
-package com.kamiazya.scopes.domain.repository
+package io.github.kamiazya.scopes.domain.repository
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Repository interface for Scope persistence operations.
@@ -344,37 +357,37 @@ interface ScopeRepository {
         /**
          * Find scope by its identifier.
          */
-        suspend fun findById(id: ScopeId): Result<Scope?, RepositoryError>
+        suspend fun findById(id: ScopeId): Either<RepositoryError, Option<Scope>>
 
         /**
          * Find all scopes that have the specified parent.
          */
-        suspend fun findByParentId(parentId: ScopeId): Result<List<Scope>, RepositoryError>
+        suspend fun findByParentId(parentId: ScopeId): Either<RepositoryError, Flow<Scope>>
 
         /**
          * Find all root scopes (no parent).
          */
-        suspend fun findRootScopes(): Result<List<Scope>, RepositoryError>
+        suspend fun findRootScopes(): Either<RepositoryError, Flow<Scope>>
 
         /**
          * Get all scopes in the system.
          */
-        suspend fun findAll(): Result<List<Scope>, RepositoryError>
+        suspend fun findAll(): Either<RepositoryError, Flow<Scope>>
 
         /**
          * Save a scope (create or update).
          */
-        suspend fun save(scope: Scope): Result<Scope, RepositoryError>
+        suspend fun save(scope: Scope): Either<RepositoryError, Scope>
 
         /**
          * Delete a scope by ID.
          */
-        suspend fun deleteById(id: ScopeId): Result<Unit, RepositoryError>
+        suspend fun deleteById(id: ScopeId): Either<RepositoryError, Unit>
 
         /**
          * Check if a scope exists.
          */
-        suspend fun existsById(id: ScopeId): Result<Boolean, RepositoryError>
+        suspend fun existsById(id: ScopeId): Either<RepositoryError, Boolean>
 }
 
 /**
@@ -387,7 +400,7 @@ sealed class RepositoryError {
         data class ConflictError(val conflictingId: String) : RepositoryError()
         data class UnknownError(val cause: Throwable) : RepositoryError()
 }
-      ```typescript
+```
 
 ## Application Layer Implementation
 
@@ -421,18 +434,18 @@ sequenceDiagram
         else Validation Failed
             UC-->>CLI: Failure(validationError)
         end
-      ```typescript
+```
 
 ### Step 1: Create Use Cases
 
-      ```typescript
+```
 // application/src/main/kotlin/com/kamiazya/scopes/application/usecase/CreateScopeUseCase.kt
-package com.kamiazya.scopes.application.usecase
+package io.github.kamiazya.scopes.application.usecase
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.repository.ScopeRepository
-import com.kamiazya.scopes.domain.service.ScopeValidationService
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.service.ScopeValidationService
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
@@ -514,32 +527,32 @@ data class CreateScopeResponse(
 sealed class DomainError {
         data class ValidationFailed(val validationError: ValidationError) : DomainError()
         data class ParentScopeNotFound(val parentId: ScopeId) : DomainError()
-        data class RepositoryError(val repositoryError: com.kamiazya.scopes.domain.repository.RepositoryError) : DomainError()
+        data class RepositoryError(val repositoryError: io.github.kamiazya.scopes.domain.repository.RepositoryError) : DomainError()
 }
 
 /**
  * Application-level errors with conversion from domain errors.
  */
 sealed class ApplicationError {
-        data class DomainError(val domainError: com.kamiazya.scopes.application.usecase.DomainError) : ApplicationError()
+        data class DomainError(val domainError: io.github.kamiazya.scopes.application.usecase.DomainError) : ApplicationError()
         data class InfrastructureError(val message: String, val cause: Throwable? = null) : ApplicationError()
 
         companion object {
-            fun fromDomainError(domainError: com.kamiazya.scopes.application.usecase.DomainError): ApplicationError =
+            fun fromDomainError(domainError: io.github.kamiazya.scopes.application.usecase.DomainError): ApplicationError =
                 DomainError(domainError)
         }
 }
-      ```typescript
+```
 
 ### Step 2: Create Application Services
 
-      ```typescript
+```
 // application/src/main/kotlin/com/kamiazya/scopes/application/service/ScopeService.kt
-package com.kamiazya.scopes.application.service
+package io.github.kamiazya.scopes.application.service
 
-import com.kamiazya.scopes.application.usecase.*
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.application.usecase.*
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Application service that coordinates multiple use cases.
@@ -573,20 +586,20 @@ class ScopeService(
         suspend fun getRootScopes(): Result<List<Scope>, ApplicationError> =
             getScopesUseCase.getRoots()
 }
-      ```typescript
+```
 
 ## Infrastructure Layer Implementation
 
 ### Step 1: Implement Repository
 
-      ```typescript
+```
 // infrastructure/src/main/kotlin/com/kamiazya/scopes/infrastructure/repository/InMemoryScopeRepository.kt
-package com.kamiazya.scopes.infrastructure.repository
+package io.github.kamiazya.scopes.infrastructure.repository
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.repository.RepositoryError
-import com.kamiazya.scopes.domain.repository.ScopeRepository
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.repository.RepositoryError
+import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -599,53 +612,36 @@ class InMemoryScopeRepository : ScopeRepository {
         private val scopes = mutableMapOf<ScopeId, Scope>()
         private val mutex = Mutex()
 
-        override suspend fun findById(id: ScopeId): Result<Scope?, RepositoryError> =
+        override suspend fun findById(id: ScopeId): Either<RepositoryError, Option<Scope>> = either {
             mutex.withLock {
-                try {
-                    Result.success(scopes[id])
-                } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
-                }
+                scopes[id]?.some() ?: none()
             }
+        }
 
-        override suspend fun findByParentId(parentId: ScopeId): Result<List<Scope>, RepositoryError> =
+        override suspend fun findByParentId(parentId: ScopeId): Either<RepositoryError, Flow<Scope>> = either {
             mutex.withLock {
-                try {
-                    val childScopes = scopes.values.filter { it.parentId == parentId }
-                    Result.success(childScopes)
-                } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
-                }
+                scopes.values.filter { it.parentId == parentId }.asFlow()
             }
+        }
 
-        override suspend fun findRootScopes(): Result<List<Scope>, RepositoryError> =
+        override suspend fun findRootScopes(): Either<RepositoryError, Flow<Scope>> = either {
             mutex.withLock {
-                try {
-                    val rootScopes = scopes.values.filter { it.parentId == null }
-                    Result.success(rootScopes)
-                } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
-                }
+                scopes.values.filter { it.parentId == null }.asFlow()
             }
+        }
 
-        override suspend fun findAll(): Result<List<Scope>, RepositoryError> =
+        override suspend fun findAll(): Either<RepositoryError, Flow<Scope>> = either {
             mutex.withLock {
-                try {
-                    Result.success(scopes.values.toList())
-                } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
-                }
+                scopes.values.toList().asFlow()
             }
+        }
 
-        override suspend fun save(scope: Scope): Result<Scope, RepositoryError> =
+        override suspend fun save(scope: Scope): Either<RepositoryError, Scope> = either {
             mutex.withLock {
-                try {
-                    scopes[scope.id] = scope
-                    Result.success(scope)
-                } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
-                }
+                scopes[scope.id] = scope
+                scope
             }
+        }
 
         override suspend fun deleteById(id: ScopeId): Result<Unit, RepositoryError> =
             mutex.withLock {
@@ -684,18 +680,18 @@ class InMemoryScopeRepository : ScopeRepository {
             scopes.size
         }
 }
-      ```typescript
+```
 
 ### Step 2: Create Configuration
 
-      ```typescript
+```
 // infrastructure/src/main/kotlin/com/kamiazya/scopes/infrastructure/config/DependencyConfiguration.kt
-package com.kamiazya.scopes.infrastructure.config
+package io.github.kamiazya.scopes.infrastructure.config
 
-import com.kamiazya.scopes.application.service.ScopeService
-import com.kamiazya.scopes.application.usecase.*
-import com.kamiazya.scopes.domain.repository.ScopeRepository
-import com.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
+import io.github.kamiazya.scopes.application.service.ScopeService
+import io.github.kamiazya.scopes.application.usecase.*
+import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 
 /**
  * Dependency injection configuration.
@@ -717,23 +713,23 @@ object DependencyConfiguration {
         private fun createScopeRepository(): ScopeRepository =
             InMemoryScopeRepository()
 }
-      ```typescript
+```
 
 ## Presentation Layer Implementation
 
 ### Step 1: Create CLI Commands
 
-      ```typescript
+```
 // presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/commands/CreateCommand.kt
-package com.kamiazya.scopes.presentation.cli.commands
+package io.github.kamiazya.scopes.presentation.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import com.kamiazya.scopes.application.service.ScopeService
-import com.kamiazya.scopes.application.usecase.ApplicationError
-import com.kamiazya.scopes.application.usecase.CreateScopeRequest
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.application.service.ScopeService
+import io.github.kamiazya.scopes.application.usecase.ApplicationError
+import io.github.kamiazya.scopes.application.usecase.CreateScopeRequest
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -794,13 +790,13 @@ class CreateCommand(
                 is ApplicationError.InfrastructureError -> "Infrastructure error: ${error.message}"
             }
 
-        private fun formatDomainError(error: com.kamiazya.scopes.application.usecase.DomainError): String =
+        private fun formatDomainError(error: io.github.kamiazya.scopes.application.usecase.DomainError): String =
             when (error) {
-                is com.kamiazya.scopes.application.usecase.DomainError.ValidationFailed ->
+                is io.github.kamiazya.scopes.application.usecase.DomainError.ValidationFailed ->
                     "Validation failed: ${formatValidationError(error.validationError)}"
-                is com.kamiazya.scopes.application.usecase.DomainError.ParentScopeNotFound ->
+                is io.github.kamiazya.scopes.application.usecase.DomainError.ParentScopeNotFound ->
                     "Parent scope not found: ${error.parentId}"
-                is com.kamiazya.scopes.application.usecase.DomainError.RepositoryError ->
+                is io.github.kamiazya.scopes.application.usecase.DomainError.RepositoryError ->
                     "Repository error: ${error.repositoryError}"
             }
 
@@ -814,20 +810,20 @@ class CreateCommand(
                 is ValidationError.CircularReference -> "Circular reference detected in scope hierarchy"
             }
 }
-      ```typescript
+```
 
 ### Step 2: Create Application Entry Point
 
-      ```typescript
+```
 // presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/ScopesApplication.kt
-package com.kamiazya.scopes.presentation.cli
+package io.github.kamiazya.scopes.presentation.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.MordantHelpFormatter
-import com.kamiazya.scopes.infrastructure.config.DependencyConfiguration
-import com.kamiazya.scopes.presentation.cli.commands.*
+import io.github.kamiazya.scopes.infrastructure.config.DependencyConfiguration
+import io.github.kamiazya.scopes.presentation.cli.commands.*
 
 /**
  * Main CLI application for Scopes.
@@ -862,7 +858,7 @@ fun main(args: Array<String>) {
             )
             .main(args)
 }
-      ```typescript
+```
 
 ## Testing Implementation
 
@@ -929,15 +925,15 @@ flowchart TD
         class A1,A2 application
         class I1,I2 infrastructure
         class P1,P2 presentation
-      ```typescript
+```
 
 ### Step 1: Domain Layer Tests
 
-      ```typescript
+```
 // domain/src/test/kotlin/com/kamiazya/scopes/domain/entity/ScopeTest.kt
-package com.kamiazya.scopes.domain.entity
+package io.github.kamiazya.scopes.domain.entity
 
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -1018,18 +1014,18 @@ class ScopeTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ### Step 2: Application Layer Tests
 
-      ```typescript
+```
 // application/src/test/kotlin/com/kamiazya/scopes/application/usecase/CreateScopeUseCaseTest.kt
-package com.kamiazya.scopes.application.usecase
+package io.github.kamiazya.scopes.application.usecase
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.repository.RepositoryError
-import com.kamiazya.scopes.domain.repository.ScopeRepository
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.repository.RepositoryError
+import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -1136,17 +1132,17 @@ class CreateScopeUseCaseTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ### Step 3: Integration Tests
 
-      ```typescript
+```
 // integration-test/src/test/kotlin/com/kamiazya/scopes/integration/ScopeManagementIntegrationTest.kt
-package com.kamiazya.scopes.integration
+package io.github.kamiazya.scopes.integration
 
-import com.kamiazya.scopes.application.service.ScopeService
-import com.kamiazya.scopes.application.usecase.CreateScopeRequest
-import com.kamiazya.scopes.infrastructure.config.DependencyConfiguration
+import io.github.kamiazya.scopes.application.service.ScopeService
+import io.github.kamiazya.scopes.application.usecase.CreateScopeRequest
+import io.github.kamiazya.scopes.infrastructure.config.DependencyConfiguration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -1214,7 +1210,7 @@ class ScopeManagementIntegrationTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ## Common Patterns
 
@@ -1222,25 +1218,41 @@ class ScopeManagementIntegrationTest : FunSpec({
 
 ```mermaid
 flowchart LR
-        subgraph "Function Composition Pattern"
-            A[Input] --> B[validate]
-            B --> C[transform]
-            C --> D[persist]
-            D --> E[Output]
+        subgraph "Arrow Core Function Composition"
+            A[Input] --> B[validate: Either]
+            B --> C[transform: Either]
+            C --> D[persist: Either]
+            D --> E[Output: Either]
 
-            B -->|Failure| F[Error]
-            C -->|Failure| F
-            D -->|Failure| F
+            B -->|Left| F[ValidationError]
+            C -->|Left| F
+            D -->|Left| F
 
             F --> G[Error Handling]
         end
 
-        subgraph "Result Type Operations"
-            H[map: Transform Success]
+        subgraph "Either Type Operations"
+            H[map: Transform Right]
             I[flatMap: Chain Operations]
-            J[mapError: Transform Errors]
-            K[onSuccess: Side Effects]
-            L[onFailure: Error Handling]
+            J[mapLeft: Transform Left]
+            K[fold: Handle Both Cases]
+            L[tap: Side Effects]
+        end
+
+        subgraph "Option Type Operations"
+            M[map: Transform Some]
+            N[flatMap: Chain Options]
+            O[getOrElse: Default Value]
+            P[fold: Handle Both Cases]
+            Q[filter: Conditional Keep]
+        end
+
+        subgraph "Flow Type Operations"
+            R[map: Transform Elements]
+            S[filter: Conditional Keep]
+            T[collect: Terminal Operation]
+            U[toList: Convert to List]
+            V[asFlow: Convert from Collection]
         end
 
         E --> H
@@ -1252,55 +1264,102 @@ flowchart LR
         classDef success fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
         classDef failure fill:#ffebee,stroke:#f44336,stroke-width:2px
         classDef operation fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+        classDef flow fill:#fff3e0,stroke:#ff9800,stroke-width:2px
 
         class A,B,C,D,E success
         class F,G failure
-        class H,I,J,K,L operation
-      ```typescript
+        class H,I,J,K,L,M,N,O,P,Q operation
+        class R,S,T,U,V flow
+```
 
-### Result Type Extensions
+### Arrow Core Type Extensions
 
-      ```typescript
-// Create utility extensions for Result type
-inline fun <T, E, R> Result<T, E>.map(transform: (T) -> R): Result<R, E> =
-        when (this) {
-            is Result.Success -> Result.Success(transform(value))
-            is Result.Failure -> this
-        }
-
-inline fun <T, E, R> Result<T, E>.flatMap(transform: (T) -> Result<R, E>): Result<R, E> =
-        when (this) {
-            is Result.Success -> transform(value)
-            is Result.Failure -> this
-        }
-
-inline fun <T, E, R> Result<T, E>.mapError(transform: (E) -> R): Result<T, R> =
-        when (this) {
-            is Result.Success -> Result.Success(value)
-            is Result.Failure -> Result.Failure(transform(error))
-        }
-      ```typescript
-
-### Validation Composition
-
-      ```typescript
-// Compose multiple validations
-fun validateCreateScopeRequest(request: CreateScopeRequest): Result<CreateScopeRequest, List<ValidationError>> {
-        val errors = mutableListOf<ValidationError>()
-
-        ScopeValidationService.validateTitle(request.title)
-            .onFailure { errors.add(it) }
-
-        ScopeValidationService.validateDescription(request.description)
-            .onFailure { errors.add(it) }
-
-        return if (errors.isEmpty()) {
-            Result.success(request)
-        } else {
-            Result.failure(errors)
-        }
+```kotlin
+// Either type usage examples
+suspend fun findScopeById(id: ScopeId): Either<RepositoryError, Option<Scope>> = either {
+    val scope = scopeRepository.findById(id).bind()
+    scope
 }
-      ```typescript
+
+// Option type usage examples
+fun processScope(scopeOption: Option<Scope>): String =
+    scopeOption.fold(
+        ifEmpty = { "No scope found" },
+        ifSome = { scope -> "Found scope: ${scope.title}" }
+    )
+
+// Flow type usage examples
+suspend fun getAllScopeTitles(): Either<RepositoryError, Flow<String>> = either {
+    val scopesFlow = scopeRepository.findAll().bind()
+    scopesFlow.map { it.title }
+}
+
+// Combining Either and Flow
+suspend fun processAllScopes(): Either<ApplicationError, List<String>> = either {
+    val scopesFlow = scopeRepository.findAll()
+        .mapLeft { ApplicationError.fromRepositoryError(it) }
+        .bind()
+    
+    scopesFlow.map { it.title }.toList()
+}
+
+// Option with null safety
+fun getScopeTitle(scope: Option<Scope>): Option<String> =
+    scope.map { it.title }
+
+// Flow with filtering
+suspend fun getActiveScopeTitles(): Either<RepositoryError, Flow<String>> = either {
+    val scopesFlow = scopeRepository.findAll().bind()
+    scopesFlow
+        .filter { it.metadata["status"] != "archived" }
+        .map { it.title }
+}
+```
+
+### Validation Composition with Either
+
+```kotlin
+// Compose multiple validations using Either
+fun validateCreateScopeRequest(request: CreateScopeRequest): Either<NonEmptyList<DomainError.ValidationError>, CreateScopeRequest> = either {
+    val validatedTitle = ScopeValidationService.validateTitle(request.title).bind()
+    val validatedDescription = ScopeValidationService.validateDescription(request.description).bind()
+    
+    request.copy(
+        title = validatedTitle,
+        description = validatedDescription
+    )
+}
+
+// Alternative: Accumulate all validation errors
+suspend fun validateCreateScopeRequestWithAccumulation(
+    request: CreateScopeRequest,
+    repository: ScopeRepository
+): Either<NonEmptyList<DomainError>, CreateScopeRequest> {
+    val validations = listOf(
+        ScopeValidationService.validateTitle(request.title).mapLeft { DomainError.ValidationError(it) },
+        ScopeValidationService.validateDescription(request.description).mapLeft { DomainError.ValidationError(it) },
+        validateParentExists(request.parentId, repository)
+    )
+    
+    return validations.traverse { it }.map { request }
+}
+
+// Helper function for parent validation
+suspend fun validateParentExists(
+    parentId: ScopeId?,
+    repository: ScopeRepository
+): Either<DomainError, Unit> = either {
+    if (parentId == null) return@either
+    
+    val exists = repository.existsById(parentId)
+        .mapLeft { DomainError.RepositoryError(it) }
+        .bind()
+    
+    ensure(exists) {
+        DomainError.ScopeError.ScopeNotFound
+    }
+}
+```
 
 ## Troubleshooting
 
@@ -1336,7 +1395,7 @@ flowchart TD
         class A,B problem
         class C,D,E,F,G,H,I,J process
         class K,L,M,N solution
-      ```typescript
+```
 
 ### Common Issues
 
@@ -1352,31 +1411,31 @@ flowchart TD
 **Problem**: Kotlin can't infer Result type parameters.
 
 **Solution**:
-      ```typescript
+```
 // Be explicit with type parameters
 fun createScope(): Result<Scope, DomainError> = // ...
 
 // Use type aliases for complex Result types
 typealias ScopeResult = Result<Scope, DomainError>
-      ```typescript
+```
 
 #### 3. Test MockK Issues
 **Problem**: MockK not working with suspending functions.
 
 **Solution**:
-      ```typescript
+```
 // Use coEvery for suspending functions
 coEvery { repository.save(any()) } returns Result.success(scope)
 
 // Use coVerify for verification
 coVerify { repository.save(any()) }
-      ```typescript
+```
 
 #### 4. ULID Generation Errors
 **Problem**: Invalid ULID format errors.
 
 **Solution**:
-      ```typescript
+```
 // Always validate ULID format
 fun from(value: String): ScopeId {
         require(isValidUlid(value)) { "Invalid ULID format: $value" }
@@ -1385,7 +1444,7 @@ fun from(value: String): ScopeId {
 
 private fun isValidUlid(value: String): Boolean =
         value.length == 26 && value.all { it.isLetterOrDigit() }
-      ```typescript
+```
 
 ### Performance Considerations
 
@@ -1398,7 +1457,7 @@ private fun isValidUlid(value: String): Boolean =
 
 Use ArchUnit or similar tools to validate architectural constraints:
 
-      ```typescript
+```
 class ArchitectureTest : FunSpec({
         test("domain layer should not depend on other layers") {
             // Validate dependency rules
@@ -1408,6 +1467,6 @@ class ArchitectureTest : FunSpec({
             // Validate Clean Architecture constraints
         }
 })
-      ```typescript
+```
 
 This guide provides a comprehensive foundation for implementing features within the Scopes architecture. Follow these patterns consistently to maintain code quality and architectural integrity.

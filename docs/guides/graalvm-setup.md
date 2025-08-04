@@ -21,20 +21,24 @@ sdk use java 21.0.6-graal
 # Verify installation
 java -version
 native-image --version
-      ```typescript
+```
 
 ### Option 2: Manual Installation
 
 1. Download GraalVM from [https://www.graalvm.org/downloads/](https://www.graalvm.org/downloads/)
 2. Extract and set JAVA_HOME:
+
         ```bash
         export JAVA_HOME=/path/to/graalvm
         export PATH=$JAVA_HOME/bin:$PATH
-      ```typescript
-3. Install Native Image component (if not included):
+        ```
+
+4. Install Native Image component (if not included):
+
         ```bash
         gu install native-image
-      ```typescript
+        ```
+
 
 ### Option 3: Using Homebrew (macOS)
 
@@ -44,7 +48,7 @@ brew install --cask graalvm/tap/graalvm-jdk21
 
 # Set JAVA_HOME (add to your shell profile)
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-jdk-21/Contents/Home
-      ```typescript
+```
 
 ## Verification
 
@@ -59,7 +63,7 @@ native-image --version
 
 # Test native compilation
 ./gradlew nativeCompile
-      ```typescript
+```
 
 ## Troubleshooting
 
@@ -71,9 +75,10 @@ native-image --version
 ### Memory Issues During Compilation
 
 - Increase heap size in `gradle.properties`:
+
         ```properties
         org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
-      ```typescript
+        ```
 
 ### Optimizing Binary Size
 

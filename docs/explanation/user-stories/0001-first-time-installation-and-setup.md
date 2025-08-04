@@ -80,7 +80,7 @@ Scenario: Handle corrupted installation
     Then I see an error indicating the installation is broken
     And I receive instructions for clean reinstallation
     And I am provided troubleshooting resources
-      ```typescript
+```
 
 ## User Journey
 
@@ -112,7 +112,7 @@ journey
           See scope created      : 5: User, System
           Understand next steps  : 4: User
           Feel confident         : 5: User
-      ```typescript
+```
 
 ## Success Metrics
 

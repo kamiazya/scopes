@@ -87,7 +87,7 @@ stateDiagram-v2
            All new ADRs start
            with "Accepted" status
        end note
-     ```typescript
+```
 
 #### Phase Descriptions
 
@@ -113,9 +113,9 @@ stateDiagram-v2
 
 ADRs are named using the following pattern:
 
-     ```typescript
+```
 NNNN-short-decision-title.md
-     ```typescript
+```
 
 Where:
 
@@ -200,7 +200,7 @@ graph TD
        class ADR_009 governance
        class ADR_0010 distributed
        class ADR_0011 functional
-     ```typescript
+```
 
 ### ADR Index
 

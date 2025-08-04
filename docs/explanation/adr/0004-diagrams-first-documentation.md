@@ -98,7 +98,7 @@ graph LR
        C --> D[Document with Diagram]
        D --> E[Review]
        E --> B
-     ```typescript
+```
 
 ### Example Templates
 
@@ -119,7 +119,7 @@ erDiagram
            string email
        }
        SCOPE ||--o{ USER : "assigned to"
-     ```typescript
+```
 
 **Workflow Example**:
 
@@ -136,7 +136,7 @@ sequenceDiagram
        Storage-->>Core: Scope saved
        Core-->>CLI: Scope created
        CLI-->>User: Display scope ID
-     ```typescript
+```
 
 ### Documentation Standards
 

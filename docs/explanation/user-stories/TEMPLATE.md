@@ -34,7 +34,7 @@ Scenario: [Alternative scenario if applicable]
     Given [different context]
     When [different action]
     Then [different outcome]
-      ```typescript
+```
 
 ## User Journey
 
@@ -49,7 +49,7 @@ Scenario: [Alternative scenario if applicable]
 title: [Title of the diagram]
 ---
 
-      ```typescript
+```
 
 [Use sequenceDiagram, journey, flowchart, etc. as appropriate for the context.]
 

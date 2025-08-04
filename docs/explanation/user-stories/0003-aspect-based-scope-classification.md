@@ -59,7 +59,7 @@ Scenario: Combine multiple criteria
     When I need to find specific combinations of characteristics
     Then I can combine multiple aspects with logical operators
     And get exactly the scopes that match all my criteria
-      ```typescript
+```
 
 ## User Journey
 
@@ -91,7 +91,7 @@ journey
           Create complex queries  : 5: User, System
           Integrate into routine  : 5: User
           Refine personal system  : 5: User
-      ```typescript
+```
 
 ## Success Metrics
 
@@ -135,7 +135,7 @@ scopes list -a blocked=false
 # Complex personal queries
 scopes list -a "priority>=high AND type=implementation"
 scopes list -a "ready=true AND estimate<=4h"
-      ```typescript
+```
 
 ### Aspect Management
 ```bash
@@ -152,7 +152,7 @@ scopes list -a "priority>=high AND status=ready"
 scopes aspect define priority --type ordered --values low,medium,high
 scopes aspect define status --type text --values todo,ready,done
 scopes aspect list --definitions
-      ```typescript
+```
 
 ### Command Output Examples
 ```bash
@@ -179,7 +179,7 @@ quiet-river-a4f7    Implement authentication         priority=high   status=read
 wise-ocean-b2k8     Redesign user dashboard         priority=high   status=todo
 brave-star-e5n3     Optimize database queries       priority=medium status=ready
 gentle-cloud-f8p6   Update documentation            priority=low    status=todo
-      ```typescript
+```
 
 ## Related Stories
 

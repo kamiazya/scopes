@@ -25,7 +25,7 @@ This document defines the coding standards and conventions for the Scopes projec
 
 #### Classes and Interfaces
 
-      ```typescript
+```kotlin
 // ✅ Good: PascalCase with descriptive names
 class ScopeRepository
 interface DomainEventHandler
@@ -37,11 +37,11 @@ class ScopeRepo
 interface Handler
 data class CSReq
 sealed class ValErr
-      ```typescript
+```
 
 #### Functions and Variables
 
-      ```typescript
+```kotlin
 // ✅ Good: camelCase with verb-noun pattern
 fun createScope(request: CreateScopeRequest): Result<Scope, DomainError>
 fun validateScopeTitle(title: String): Result<String, ValidationError>
@@ -51,11 +51,11 @@ val currentTimestamp: Instant = Clock.System.now()
 fun create(req: Any): Any
 fun validate(s: String): Boolean
 val ts: Long = System.currentTimeMillis()
-      ```typescript
+```
 
 #### Constants and Enums
 
-      ```typescript
+```kotlin
 // ✅ Good: SCREAMING_SNAKE_CASE for constants
 object ScopeConstants {
         const val MAX_TITLE_LENGTH = 200
@@ -73,26 +73,26 @@ enum class ScopeStatus {
 object ScopeConstants {
         const val maxTitleLength = 200
 }
-      ```typescript
+```
 
 ### File Organization
 
 #### Package Structure
 
-      ```typescript
+```kotlin
 // ✅ Good: Clear package hierarchy
-package com.kamiazya.scopes.domain.entity
-package com.kamiazya.scopes.application.usecase
-package com.kamiazya.scopes.infrastructure.repository.impl
+package io.github.kamiazya.scopes.domain.entity
+package io.github.kamiazya.scopes.application.usecase
+package io.github.kamiazya.scopes.infrastructure.repository.impl
 
 // ❌ Bad: Flat or unclear structure
-package com.kamiazya.scopes
-package com.kamiazya.scopes.stuff
-      ```typescript
+package io.github.kamiazya.scopes
+package io.github.kamiazya.scopes.stuff
+```
 
 #### Import Organization
 
-      ```typescript
+```kotlin
 // ✅ Good: Organized imports
 import java.time.Instant
 import kotlin.collections.List
@@ -100,19 +100,19 @@ import kotlin.collections.List
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 
-import com.kamiazya.scopes.domain.entity.Scope
-import com.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 // ❌ Bad: Wildcard imports in production code
 import kotlin.collections.*
-import com.kamiazya.scopes.domain.*
-      ```typescript
+import io.github.kamiazya.scopes.domain.*
+```
 
 ### Code Formatting
 
 #### Line Length and Wrapping
 
-      ```typescript
+```kotlin
 // ✅ Good: Respect 120 character limit
 fun createScopeWithValidation(
         title: String,
@@ -124,11 +124,11 @@ fun createScopeWithValidation(
 
 // ❌ Bad: Long lines without proper wrapping
 fun createScopeWithValidation(title: String, description: String?, parentId: ScopeId?): Result<Scope, ValidationError> = validateInput(title, description).flatMap { createScope(it, parentId) }.map { scope -> scope.copy(createdAt = Clock.System.now()) }
-      ```typescript
+```
 
 #### Function Declarations
 
-      ```typescript
+```kotlin
 // ✅ Good: Expression body for simple functions
 fun isValidTitle(title: String): Boolean =
         title.isNotBlank() && title.length <= MAX_TITLE_LENGTH
@@ -151,7 +151,7 @@ fun createScope(request: CreateScopeRequest): Result<Scope, DomainError> {
                 )
             }
 }
-      ```typescript
+```
 
 ## Functional Programming Standards
 
@@ -190,13 +190,13 @@ flowchart TD
 
         class A,B,C,D,E principle
         class F,G,H,I benefit
-      ```typescript
+```
 
 ### Immutability
 
 #### Data Classes
 
-      ```typescript
+```kotlin
 // ✅ Good: Immutable data class
 data class Scope(
         val id: ScopeId,
@@ -220,11 +220,11 @@ data class Scope(
             title = newTitle
         }
 }
-      ```typescript
+```
 
 #### Value Objects
 
-      ```typescript
+```
 // ✅ Good: Immutable value object with inline class
 @JvmInline
 value class ScopeId private constructor(private val value: String) {
@@ -247,13 +247,13 @@ class ScopeId {
             value = newValue
         }
 }
-      ```typescript
+```
 
 ### Pure Functions
 
 #### Function Purity
 
-      ```typescript
+```kotlin
 // ✅ BEST: Pure function with Either for error handling
 fun calculateScopeDepth(
         scopeId: ScopeId,
@@ -294,11 +294,11 @@ class ScopeService {
             return depth
         }
 }
-      ```typescript
+```
 
 #### Function Composition with Arrow Either
 
-      ```typescript
+```kotlin
 // ✅ BEST: Using either DSL for clean, sequential code
 fun createValidatedScope(request: CreateScopeRequest): Either<DomainError, Scope> = either {
         val title = validateTitle(request.title).bind()
@@ -326,11 +326,11 @@ fun processScope(id: ScopeId): Either<DomainError, ProcessedScope> =
 // - Use `ensure` for validations within either blocks
 // - Use `bind()` to unwrap Either values
 // - Avoid nested flatMap chains when either DSL is clearer
-      ```typescript
+```
 
 ### Sealed Classes for Domain Modeling
 
-      ```typescript
+```kotlin
 // ✅ Good: Sealed classes for domain states
 sealed class ScopeCommand {
         data class CreateScope(
@@ -361,7 +361,7 @@ fun handleCommand(command: ScopeCommand): Result<ScopeEvent, DomainError> =
             is ScopeCommand.UpdateScope -> updateScope(command)
             is ScopeCommand.ArchiveScope -> archiveScope(command)
         }
-      ```typescript
+```
 
 ## Architecture Patterns
 
@@ -413,13 +413,13 @@ flowchart TD
         class UC,AS application
         class ENT,VO,DOM_SRV,REPO_INT domain
         class REPO_IMPL,DB,EXT infrastructure
-      ```typescript
+```
 
 ### Clean Architecture Layer Separation
 
 #### Domain Layer
 
-      ```typescript
+```kotlin
 // ✅ Good: Domain entity with business logic
 data class Scope(
         val id: ScopeId,
@@ -436,18 +436,19 @@ data class Scope(
             potentialChild.parentId != id && id != potentialChild.id
 }
 
-// ✅ Good: Repository interface with Arrow Either
+// ✅ Good: Repository interface with Arrow Either, Option, and Flow
 interface ScopeRepository {
-        suspend fun findById(id: ScopeId): Either<RepositoryError, Scope?>
-        suspend fun findByParentId(parentId: ScopeId): Either<RepositoryError, List<Scope>>
+        suspend fun findById(id: ScopeId): Either<RepositoryError, Option<Scope>>
+        suspend fun findByParentId(parentId: ScopeId): Either<RepositoryError, Flow<Scope>>
+        suspend fun findAll(): Either<RepositoryError, Flow<Scope>>
         suspend fun save(scope: Scope): Either<RepositoryError, Scope>
         suspend fun delete(id: ScopeId): Either<RepositoryError, Unit>
 }
-      ```typescript
+```
 
 #### Application Layer
 
-      ```typescript
+```kotlin
 // ✅ Good: Use case with single responsibility and Arrow Either
 class CreateScopeUseCase(
         private val scopeRepository: ScopeRepository,
@@ -475,11 +476,11 @@ class CreateScopeUseCase(
             request
         }
 }
-      ```typescript
+```
 
 ### Dependency Injection Patterns
 
-      ```typescript
+```kotlin
 // ✅ Good: Constructor injection with interfaces
 class ScopeService(
         private val scopeRepository: ScopeRepository,
@@ -505,7 +506,7 @@ object ScopeServiceFactory {
             eventPublisher = publisher
         )
 }
-      ```typescript
+```
 
 ## Error Handling
 
@@ -530,11 +531,11 @@ sequenceDiagram
             Either->>Client: Error propagation
             Note over Client: Short-circuit evaluation
         end
-      ```typescript
+```
 
 ### Arrow Either Implementation
 
-      ```typescript
+```kotlin
 // ✅ BEST: Arrow Either with DSL for explicit error handling
 import arrow.core.Either
 import arrow.core.raise.either
@@ -569,11 +570,11 @@ fun handleRegistration(request: RegistrationRequest) {
 // 2. Use `ensure` for simple validations
 // 3. Use `.bind()` to unwrap Either values
 // 4. Keep either blocks focused and readable
-      ```typescript
+```
 
 ### Error Hierarchy
 
-      ```typescript
+```kotlin
 // ✅ Good: Structured error hierarchy
 sealed class DomainError {
         data class ValidationError(val field: String, val message: String) : DomainError()
@@ -583,7 +584,7 @@ sealed class DomainError {
 }
 
 sealed class ApplicationError {
-        data class DomainError(val error: com.kamiazya.scopes.domain.DomainError) : ApplicationError()
+        data class DomainError(val error: io.github.kamiazya.scopes.domain.DomainError) : ApplicationError()
         data class InfrastructureError(val message: String, val cause: Throwable? = null) : ApplicationError()
         data class AuthorizationError(val operation: String) : ApplicationError()
 }
@@ -594,11 +595,11 @@ sealed class RepositoryError {
         object NotFound : RepositoryError()
         data class ConflictError(val conflictingId: String) : RepositoryError()
 }
-      ```typescript
+```
 
 ### Error Handling Patterns
 
-      ```typescript
+```kotlin
 // ✅ Good: Railway-oriented programming with Arrow Either
 suspend fun processScopeCreation(request: CreateScopeRequest): Either<ApplicationError, ScopeCreated> = either {
         val validRequest = validateRequest(request)
@@ -636,13 +637,13 @@ suspend fun processScopeCreation(request: CreateScopeRequest): ScopeCreated {
             throw ApplicationException("Failed to save scope", e)
         }
 }
-      ```typescript
+```
 
 ## Testing Standards
 
 ### Test Structure with Kotest
 
-      ```typescript
+```kotlin
 // ✅ Good: Kotest FunSpec with descriptive test names
 class CreateScopeUseCaseTest : FunSpec({
         context("CreateScopeUseCase") {
@@ -697,11 +698,11 @@ class CreateScopeUseCaseTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ### Property-Based Testing
 
-      ```typescript
+```kotlin
 // ✅ Good: Property-based testing with Kotest
 class ScopeIdTest : FunSpec({
         test("generated ScopeIds should always be unique") {
@@ -724,11 +725,11 @@ class ScopeIdTest : FunSpec({
             }
         }
 })
-      ```typescript
+```
 
 ### Mock Usage Guidelines
 
-      ```typescript
+```kotlin
 // ✅ Good: Focused mocking with clear behavior
 class ScopeServiceTest : FunSpec({
         test("should handle repository failure gracefully") {
@@ -765,13 +766,13 @@ class ScopeServiceTest : FunSpec({
             // Test becomes unclear due to excessive mocking
         }
 })
-      ```typescript
+```
 
 ## Documentation Standards
 
 ### KDoc Comments
 
-      ```typescript
+~~~kotlin
 // ✅ Good: Comprehensive KDoc with examples
 /**
  * Creates a new scope with the provided information.
@@ -805,11 +806,11 @@ fun createScope(
         description: String?,
         parentId: ScopeId?
 ): Result<Scope, DomainError>
-      ```typescript
+~~~
 
 ### Code Comments
 
-      ```typescript
+~~~kotlin
 // ✅ Good: Comments explain "why", not "what"
 fun calculateScopeDepth(scope: Scope, allScopes: List<Scope>): Int {
         // Use tail recursion to prevent stack overflow for deeply nested hierarchies
@@ -843,7 +844,7 @@ fun calculateScopeDepth(scope: Scope, allScopes: List<Scope>): Int {
         // Call the recursive function with scope's parent ID and depth 0
         return calculateDepthRecursive(scope.parentId, 0)
 }
-      ```typescript
+~~~
 
 ## Tool Configuration
 
@@ -886,7 +887,7 @@ flowchart LR
         class A,B,C,D development
         class E,F,G,H precommit
         class I,J,K ci
-      ```typescript
+```
 
 ### EditorConfig
 
@@ -908,7 +909,7 @@ trim_trailing_whitespace = false
 
 [*.yml,*.yaml]
 indent_size = 2
-      ```typescript
+```
 
 ### Detekt Rules
 
@@ -925,7 +926,7 @@ Key enforced rules from `detekt.yml`:
 
 In `build.gradle.kts`:
 
-      ```typescript
+```kotlin
 ktlint {
         version.set("1.5.0")
         outputToConsole.set(true)
@@ -939,7 +940,7 @@ ktlint {
             include("**/src/**/*.kt")
         }
 }
-      ```typescript
+```
 
 ## Enforcement
 
@@ -967,7 +968,7 @@ pre-commit:
 
         test:
           run: ./gradlew test
-      ```typescript
+```
 
 ### CI/CD Integration
 
@@ -979,7 +980,7 @@ GitHub Actions verify all standards:
         ./gradlew ktlintCheck
         ./gradlew detekt
         ./gradlew test
-      ```typescript
+```
 
 ### IDE Integration
 
@@ -988,11 +989,11 @@ Recommended IntelliJ IDEA plugins:
 - **EditorConfig**: Automatic formatting
 - **Kotest**: Enhanced test support
 
-## Arrow Either Best Practices
+## Arrow Core Best Practices
 
-### Quick Reference
+### Arrow Either Quick Reference
 
-      ```typescript
+```kotlin
 // 1. ALWAYS prefer either DSL for new functions
 fun doSomething(input: String): Either<Error, Result> = either {
         // validations, operations, transformations
@@ -1013,37 +1014,151 @@ fun process(data: Data): Either<Error, ProcessedData> = either {
         val transformed = transform(validated).bind()
         save(transformed).bind()
 }
-      ```typescript
+```
+
+### Arrow Option Quick Reference
+
+```kotlin
+// 1. Use Option instead of nullable types for better composition
+fun findUser(id: UserId): Either<RepositoryError, Option<User>> = either {
+        userDb.find(id)?.some() ?: none()
+}
+
+// 2. Use fold for handling both cases
+fun processUser(userOption: Option<User>): String =
+    userOption.fold(
+        ifEmpty = { "No user found" },
+        ifSome = { user -> "Processing ${user.name}" }
+    )
+
+// 3. Use map for transformations
+fun getUserName(userOption: Option<User>): Option<String> =
+    userOption.map { it.name }
+
+// 4. Use getOrElse for default values
+fun getUserDisplayName(userOption: Option<User>): String =
+    userOption.map { it.name }.getOrElse { "Anonymous" }
+
+// 5. Chain operations with flatMap
+fun getUserEmail(userOption: Option<User>): Option<Email> =
+    userOption.flatMap { it.email }
+```
+
+### Kotlin Flow Quick Reference
+
+```kotlin
+// 1. Return Flow from repository methods for collections
+suspend fun findAllScopes(): Either<RepositoryError, Flow<Scope>> = either {
+    database.getAllScopes().asFlow()
+}
+
+// 2. Use Flow for streaming operations
+suspend fun processAllScopes(): Either<ApplicationError, Unit> = either {
+    val scopesFlow = scopeRepository.findAll().bind()
+    scopesFlow
+        .filter { it.isActive }
+        .map { process(it) }
+        .collect { result -> handleResult(result) }
+}
+
+// 3. Convert to List when needed
+suspend fun getScopeList(): Either<RepositoryError, List<Scope>> = either {
+    val scopesFlow = scopeRepository.findAll().bind()
+    scopesFlow.toList()
+}
+
+// 4. Use Flow for reactive UI updates
+fun observeScopes(): Flow<List<Scope>> =
+    scopeRepository.findAll()
+        .fold(
+            ifLeft = { emptyFlow() },
+            ifRight = { flow -> flow.map { listOf(it) } }
+        )
+```
 
 ### Common Patterns
 
-      ```typescript
-// Repository pattern
-suspend fun save(entity: Entity): Either<RepositoryError, Entity> = either {
+```kotlin
+// Repository pattern with Option
+suspend fun findById(id: EntityId): Either<RepositoryError, Option<Entity>> = either {
         try {
-            database.save(entity)
+            database.find(id)?.some() ?: none()
         } catch (e: Exception) {
-            raise(RepositoryError.SaveFailed(e))
+            raise(RepositoryError.FindFailed(e))
         }
 }
 
-// Validation pattern
+// Repository pattern with Flow
+suspend fun findAll(): Either<RepositoryError, Flow<Entity>> = either {
+        try {
+            database.findAll().asFlow()
+        } catch (e: Exception) {
+            raise(RepositoryError.QueryFailed(e))
+        }
+}
+
+// Validation pattern with Either
 fun validate(input: Input): Either<ValidationError, ValidInput> = either {
         ensure(input.name.isNotBlank()) { ValidationError.EmptyName }
         ensure(input.age > 0) { ValidationError.InvalidAge }
         ValidInput(input.name.trim(), input.age)
 }
 
-// Use case pattern
+// Use case pattern combining Either, Option, and Flow
 suspend fun execute(request: Request): Either<UseCaseError, Response> = either {
         val validated = validate(request).bind()
-        val entity = createEntity(validated).bind()
+        
+        // Handle optional parent lookup
+        val parent = if (validated.parentId != null) {
+            repository.findById(validated.parentId)
+                .mapLeft { UseCaseError.RepositoryError(it) }
+                .bind()
+        } else {
+            none()
+        }
+        
+        val entity = createEntity(validated, parent).bind()
         val saved = repository.save(entity)
             .mapLeft { UseCaseError.RepositoryError(it) }
             .bind()
+            
         Response(saved)
 }
-      ```typescript
+
+// Service pattern with Flow processing
+suspend fun processAllEntities(): Either<ServiceError, Unit> = either {
+        val entitiesFlow = repository.findAll()
+            .mapLeft { ServiceError.RepositoryError(it) }
+            .bind()
+            
+        entitiesFlow
+            .filter { it.needsProcessing }
+            .map { processEntity(it) }
+            .collect { result ->
+                result.fold(
+                    ifLeft = { error -> logger.warn("Processing failed: $error") },
+                    ifRight = { processed -> logger.info("Processed: ${processed.id}") }
+                )
+            }
+}
+
+// Testing pattern with Option assertions
+test("should find existing entity") {
+    val result = repository.findById(existingId)
+    
+    result shouldBe Right(existingEntity.some())
+    
+    result.fold(
+        ifLeft = { fail("Expected Right but got Left: $it") },
+        ifRight = { option ->
+            option.fold(
+                ifEmpty = { fail("Expected Some but got None") },
+                ifSome = { entity -> entity.id shouldBe existingId }
+            )
+        }
+    )
+}
+```
 
 ## Summary
 

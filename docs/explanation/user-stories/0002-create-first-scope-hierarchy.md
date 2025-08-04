@@ -65,7 +65,7 @@ Scenario: Understand unified concept
     Then it has the same properties and capabilities
     And I can perform the same operations
     And the interface is consistent throughout
-      ```typescript
+```
 
 ## User Journey
 
@@ -96,7 +96,7 @@ journey
           Create nested levels       : 5: User, System
           Realize consistency        : 5: User
           Appreciate simplicity      : 5: User
-      ```typescript
+```
 
 ## Success Metrics
 
@@ -137,7 +137,7 @@ scopes create "User Login" --parent auth-01HBQ...
 scopes list auth-01HBQ...          # Show children
 scopes tree auth-01HBQ...          # Show full tree
 scopes show login-01HBR...         # Show any scope
-      ```typescript
+```
 
 ### User Mental Model Transition
 Help users transition from:

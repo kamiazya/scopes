@@ -130,7 +130,7 @@ graph TD
        class Core_Business_Logic primary
        class TUI,MCP_Server,SDK secondary
        class RESTful_API,Web_UI,IDE_Extension tbd
-     ```typescript
+```
 
 ### CLI Command Structure
 
