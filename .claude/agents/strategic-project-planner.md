@@ -4,21 +4,21 @@ description: |
   Use this agent when you need to plan a new project, gather requirements, conduct stakeholder interviews, validate assumptions about user needs, or translate complex domain requirements into clear development specifications. This agent excels at the critical pre-implementation phase where project success is largely determined.
 
   <example>
-       Context: The user is starting a new project and needs to ensure proper planning before implementation.
-       user: "We need to build a new inventory management system for our warehouse"
-       assistant: "I'll use the strategic-project-planner agent to help us properly plan this project and understand the real needs before we start implementation"
-       <commentary>
-          Since this is about planning a new system and understanding requirements, the strategic-project-planner agent should be used to ensure thorough planning and stakeholder alignment.
-       </commentary>
+    Context: The user is starting a new project and needs to ensure proper planning before implementation.
+    user: "We need to build a new inventory management system for our warehouse"
+    assistant: "I'll use the strategic-project-planner agent to help us properly plan this project and understand the real needs before we start implementation"
+    <commentary>
+    Since this is about planning a new system and understanding requirements, the strategic-project-planner agent should be used to ensure thorough planning and stakeholder alignment.
+    </commentary>
   </example>
 
   <example>
-       Context: The user has received vague requirements and needs to clarify them.
-       user: "The client says they want 'better reporting' but I'm not sure what that means"
-       assistant: "Let me engage the strategic-project-planner agent to help us uncover the real needs behind this request"
-       <commentary>
-          The vague requirement needs careful analysis and stakeholder engagement, which is exactly what the strategic-project-planner agent specializes in.
-       </commentary>
+    Context: The user has received vague requirements and needs to clarify them.
+    user: "The client says they want 'better reporting' but I'm not sure what that means"
+    assistant: "Let me engage the strategic-project-planner agent to help us uncover the real needs behind this request"
+    <commentary>
+    The vague requirement needs careful analysis and stakeholder engagement, which is exactly what the strategic-project-planner agent specializes in.
+    </commentary>
   </example>
 color: red
 ---

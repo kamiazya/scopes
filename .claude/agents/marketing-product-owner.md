@@ -4,20 +4,20 @@ description: |
   Use this agent when you need strategic marketing insights for product decisions, user acquisition strategies, or when evaluating features from a market perspective. This agent excels at identifying the marketing core of any decision and ensuring products reach their target audience effectively.
   Examples:
   <example>
-       Context: The user is developing a new feature and wants to ensure it will resonate with users.
-       user: "We're thinking of adding a dark mode to our app"
-       assistant: "Let me consult the marketing-product-owner agent to analyze this from a market perspective"
-       <commentary>
-          Since this is a product decision that needs marketing insight, use the marketing-product-owner agent to evaluate the market appeal and user acquisition potential.
-       </commentary>
+    Context: The user is developing a new feature and wants to ensure it will resonate with users.
+    user: "We're thinking of adding a dark mode to our app"
+    assistant: "Let me consult the marketing-product-owner agent to analyze this from a market perspective"
+    <commentary>
+    Since this is a product decision that needs marketing insight, use the marketing-product-owner agent to evaluate the market appeal and user acquisition potential.
+    </commentary>
   </example>
   <example>
-       Context: The user needs help prioritizing features based on market impact.
-       user: "Which feature should we build first: social sharing or offline mode?"
-       assistant: "I'll use the marketing-product-owner agent to analyze which feature has better market potential"
-       <commentary>
-          Feature prioritization requires understanding market dynamics and user acquisition potential, making this perfect for the marketing-product-owner agent.
-       </commentary>
+    Context: The user needs help prioritizing features based on market impact.
+    user: "Which feature should we build first: social sharing or offline mode?"
+    assistant: "I'll use the marketing-product-owner agent to analyze which feature has better market potential"
+    <commentary>
+    Feature prioritization requires understanding market dynamics and user acquisition potential, making this perfect for the marketing-product-owner agent.
+    </commentary>
   </example>
 color: pink
 ---
