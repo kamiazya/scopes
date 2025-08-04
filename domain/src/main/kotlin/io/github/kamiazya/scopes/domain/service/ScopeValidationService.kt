@@ -137,7 +137,7 @@ object ScopeValidationService {
                 // Repository errors should be handled at application layer
                 // For now, treat as max depth exceeded to maintain business rule context
                 DomainError.BusinessRuleViolation.MaxDepthExceeded(
-                    MAX_HIERARCHY_DEPTH, 
+                    MAX_HIERARCHY_DEPTH,
                     MAX_HIERARCHY_DEPTH + 1
                 )
             }
@@ -162,7 +162,7 @@ object ScopeValidationService {
                 // Repository errors should be handled at application layer
                 // For now, treat as max children exceeded to maintain business rule context
                 DomainError.BusinessRuleViolation.MaxChildrenExceeded(
-                    MAX_CHILDREN_PER_PARENT, 
+                    MAX_CHILDREN_PER_PARENT,
                     MAX_CHILDREN_PER_PARENT + 1
                 )
             }
