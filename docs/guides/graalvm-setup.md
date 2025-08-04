@@ -28,16 +28,16 @@ native-image --version
 1. Download GraalVM from [https://www.graalvm.org/downloads/](https://www.graalvm.org/downloads/)
 2. Extract and set JAVA_HOME:
 
-        ```bash
-        export JAVA_HOME=/path/to/graalvm
-        export PATH=$JAVA_HOME/bin:$PATH
-        ```
+```bash
+export JAVA_HOME=/path/to/graalvm
+export PATH=$JAVA_HOME/bin:$PATH
+```
 
 4. Install Native Image component (if not included):
 
-        ```bash
-        gu install native-image
-        ```
+```bash
+gu install native-image
+```
 
 
 ### Option 3: Using Homebrew (macOS)
@@ -76,9 +76,9 @@ native-image --version
 
 - Increase heap size in `gradle.properties`:
 
-        ```properties
-        org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
-        ```
+```properties
+org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
+```
 
 ### Optimizing Binary Size
 
