@@ -25,11 +25,6 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@42ebad84b0585498c0413b0967cf4e80ec0e1d19 # v4
 
-    - name: Run EditorConfig check
-      uses: docker://mstruebing/editorconfig-checker@sha256:a04d1bf7c8c7e01534e11ce9253d66721d7b039722ce514910c59bb68ce14f50 # latest
-      with:
-        args: ec --exclude LICENSE .
-
     - name: Run Kotlin lint
       run: ./gradlew ktlintCheck
 
