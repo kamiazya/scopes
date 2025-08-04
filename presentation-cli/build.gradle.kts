@@ -20,7 +20,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.kamiazya.scopes.presentation.cli.MainKt")
+    mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
 }
 
 tasks.test {
@@ -31,7 +31,7 @@ graalvmNative {
     binaries {
         named("main") {
             imageName.set("scopes")
-            mainClass.set("com.kamiazya.scopes.presentation.cli.MainKt")
+            mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
             useFatJar.set(true)
 
             buildArgs.addAll(
