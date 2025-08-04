@@ -81,7 +81,7 @@ class InMemoryScopeRepositoryTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepository()
             val parentId = ScopeId.generate()
-            
+
             val child1 = Scope(
                 id = ScopeId.generate(),
                 title = "Child 1",
@@ -90,7 +90,7 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 createdAt = kotlinx.datetime.Clock.System.now(),
                 updatedAt = kotlinx.datetime.Clock.System.now()
             )
-            
+
             val child2 = Scope(
                 id = ScopeId.generate(),
                 title = "Child 2",
@@ -115,7 +115,7 @@ class InMemoryScopeRepositoryTest : StringSpec({
             val rootId = ScopeId.generate()
             val child1Id = ScopeId.generate()
             val child2Id = ScopeId.generate()
-            
+
             val root = Scope(
                 id = rootId,
                 title = "Root",
@@ -124,7 +124,7 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 createdAt = kotlinx.datetime.Clock.System.now(),
                 updatedAt = kotlinx.datetime.Clock.System.now()
             )
-            
+
             val child1 = Scope(
                 id = child1Id,
                 title = "Child 1",
@@ -133,7 +133,7 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 createdAt = kotlinx.datetime.Clock.System.now(),
                 updatedAt = kotlinx.datetime.Clock.System.now()
             )
-            
+
             val child2 = Scope(
                 id = child2Id,
                 title = "Child 2",

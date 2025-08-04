@@ -627,49 +627,49 @@ lefthook run pre-commit
 ### Daily Development
 
 1. **Setup Local Environment**
-     ```bash
-     git clone <repository>
-     cd scopes
-     ./gradlew build  # Verify everything works
-     ```
+  ```bash
+  git clone <repository>
+  cd scopes
+  ./gradlew build  # Verify everything works
+  ```
 
 2. **Create Feature Branch**
-     ```bash
-     git checkout -b feature/your-feature-name
-     ```
+  ```bash
+  git checkout -b feature/your-feature-name
+  ```
 
 3. **Make Changes**
-       - Follow coding standards
-       - Write tests for new functionality
-       - Update documentation as needed
+  - Follow coding standards
+  - Write tests for new functionality
+  - Update documentation as needed
 
 4. **Auto-format Code** (recommended before commit)
-     ```bash
-     # Format all files at once
-     ./scripts/format-all.sh
+  ```bash
+  # Format all files at once
+  ./scripts/format-all.sh
 
-     # Or format individually:
-     ./gradlew ktlintFormat    # Kotlin files
-     ```
+  # Or format individually:
+  ./gradlew ktlintFormat    # Kotlin files
+  ```
 
 5. **Test Your Changes**
-     ```bash
-     ./gradlew test           # Run all tests
-     ./gradlew detekt         # Static analysis
-     ./gradlew ktlintCheck    # Code formatting check
-     ```
+  ```bash
+  ./gradlew test           # Run all tests
+  ./gradlew detekt         # Static analysis
+  ./gradlew ktlintCheck    # Code formatting check
+  ```
 
 6. **Commit Changes**
-     ```bash
-     git add .
-     git commit -m "feat: your descriptive message"
-     # Note: Pre-commit hooks will auto-format and stage fixes
-     ```
+  ```bash
+  git add .
+  git commit -m "feat: your descriptive message"
+  # Note: Pre-commit hooks will auto-format and stage fixes
+  ```
 
 7. **Push and Create PR**
-     ```bash
-     git push origin feature/your-feature-name
-     ```
+  ```bash
+  git push origin feature/your-feature-name
+  ```
 
 ### Automated Git Hooks
 

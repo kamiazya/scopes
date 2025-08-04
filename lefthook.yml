@@ -4,21 +4,6 @@
 pre-commit:
   parallel: true
   commands:
-    markdownlint:
-      glob: "*.md"
-      exclude: '.claude/.*|tmp/.*'
-      run: |
-        docker run --rm -v "$(pwd):/workspace" \
-          -w /workspace \
-          davidanson/markdownlint-cli2:latest \
-          --config /workspace/.markdownlint.json \
-          --fix \
-          {staged_files} || true
-      stage_fixed: true
-      skip:
-        - merge
-        - rebase
-
     editorconfig:
       glob: "*"
       exclude: '.claude/.*|tmp/.*'
