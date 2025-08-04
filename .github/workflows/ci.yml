@@ -25,6 +25,9 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@42ebad84b0585498c0413b0967cf4e80ec0e1d19 # v4
 
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
     - name: Run Kotlin lint
       run: ./gradlew ktlintCheck
 
