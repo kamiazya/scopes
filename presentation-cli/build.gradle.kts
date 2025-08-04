@@ -13,6 +13,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
@@ -44,6 +46,7 @@ graalvmNative {
                 "-H:+InstallExitHandlers",
                 "--initialize-at-build-time=kotlin",
                 "--initialize-at-build-time=kotlinx.coroutines",
+                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
         }
     }

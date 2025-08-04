@@ -267,63 +267,63 @@ import kotlinx.coroutines.flow.Flow
  */
 object ScopeValidationService {
 
-        const val MAX_TITLE_LENGTH = 200
-        const val MIN_TITLE_LENGTH = 1
-        const val MAX_DESCRIPTION_LENGTH = 1000
+  const val MAX_TITLE_LENGTH = 200
+  const val MIN_TITLE_LENGTH = 1
+  const val MAX_DESCRIPTION_LENGTH = 1000
 
-        /**
-         * Validate scope title according to business rules.
-         */
-        fun validateTitle(title: String): Either<DomainError.ValidationError, String> = either {
-            ensure(title.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
-            ensure(title.length >= MIN_TITLE_LENGTH) { DomainError.ValidationError.TitleTooShort }
-            ensure(title.length <= MAX_TITLE_LENGTH) {
-                DomainError.ValidationError.TitleTooLong(MAX_TITLE_LENGTH, title.length)
-            }
-            title.trim()
-        }
+  /**
+    * Validate scope title according to business rules.
+    */
+  fun validateTitle(title: String): Either<DomainError.ValidationError, String> = either {
+      ensure(title.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
+      ensure(title.length >= MIN_TITLE_LENGTH) { DomainError.ValidationError.TitleTooShort }
+      ensure(title.length <= MAX_TITLE_LENGTH) {
+          DomainError.ValidationError.TitleTooLong(MAX_TITLE_LENGTH, title.length)
+      }
+      title.trim()
+  }
 
-        /**
-         * Validate scope description according to business rules.
-         */
-        fun validateDescription(description: String?): Either<DomainError.ValidationError, String?> = either {
-            when (description) {
-                null -> null
-                else -> {
-                    ensure(description.length <= MAX_DESCRIPTION_LENGTH) {
-                        DomainError.ValidationError.DescriptionTooLong(MAX_DESCRIPTION_LENGTH, description.length)
-                    }
-                    description.trim().ifBlank { null }
-                }
-            }
-        }
+  /**
+    * Validate scope description according to business rules.
+    */
+  fun validateDescription(description: String?): Either<DomainError.ValidationError, String?> = either {
+      when (description) {
+          null -> null
+          else -> {
+              ensure(description.length <= MAX_DESCRIPTION_LENGTH) {
+                  DomainError.ValidationError.DescriptionTooLong(MAX_DESCRIPTION_LENGTH, description.length)
+              }
+              description.trim().ifBlank { null }
+          }
+      }
+  }
 
-        /**
-         * Validate that a scope can be moved to a new parent.
-         * Prevents circular references in the hierarchy.
-         */
-        fun validateParentRelationship(
-            scope: Scope,
-            newParentId: ScopeId?,
-            allScopes: List<Scope>
-        ): Result<Unit, ValidationError> {
-            if (newParentId == null) return Result.success(Unit)
+  /**
+    * Validate that a scope can be moved to a new parent.
+    * Prevents circular references in the hierarchy.
+    */
+  fun validateParentRelationship(
+      scope: Scope,
+      newParentId: ScopeId?,
+      allScopes: List<Scope>
+  ): Either<ValidationError, Unit> {
+    if (newParentId == null) return Either.Right(Unit)
 
-            if (newParentId == scope.id) {
-                return Result.failure(ValidationError.SelfParenting)
-            }
+    if (newParentId == scope.id) {
+      return Either.Left(ValidationError.SelfParenting)
+    }
 
-            // Check for circular reference
-            val ancestors = generateSequence(newParentId) { currentId ->
-                allScopes.find { it.id == currentId }?.parentId
-            }
+    // Check for circular reference
+    val ancestors = generateSequence(newParentId) { currentId ->
+      allScopes.find { it.id == currentId }?.parentId
+    }
 
-            return if (scope.id in ancestors) {
-                Result.failure(ValidationError.CircularReference)
-            } else {
-                Result.success(Unit)
-            }
-        }
+    return if (scope.id in ancestors) {
+      Either.Left(ValidationError.CircularReference)
+    } else {
+      Either.Right(Unit)
+    }
+  }
 }
 
 /**
@@ -456,39 +456,39 @@ class CreateScopeUseCase(
         private val scopeRepository: ScopeRepository
 ) {
 
-        suspend fun execute(request: CreateScopeRequest): Result<CreateScopeResponse, ApplicationError> =
-            validateRequest(request)
-                .flatMap { validRequest -> checkParentExists(validRequest.parentId) }
-                .flatMap { _ -> createScopeEntity(request) }
-                .flatMap { scope -> saveScopeEntity(scope) }
-                .map { savedScope -> CreateScopeResponse(savedScope) }
-                .mapError { error -> ApplicationError.fromDomainError(error) }
-
-        private fun validateRequest(request: CreateScopeRequest): Result<CreateScopeRequest, DomainError> =
-            ScopeValidationService.validateTitle(request.title)
-                .flatMap { _ ->
-                    ScopeValidationService.validateDescription(request.description)
-                        .map { _ -> request }
-                }
-                .mapError { validationError -> DomainError.ValidationFailed(validationError) }
-
-        private suspend fun checkParentExists(parentId: ScopeId?): Result<Unit, DomainError> {
-            if (parentId == null) return Result.success(Unit)
-
-            return scopeRepository.existsById(parentId)
-                .mapError { repositoryError -> DomainError.RepositoryError(repositoryError) }
-                .flatMap { exists ->
-                    if (exists) {
-                        Result.success(Unit)
-                    } else {
-                        Result.failure(DomainError.ParentScopeNotFound(parentId))
-                    }
-                }
+        suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
+            val validRequest = validateRequest(request).bind()
+            checkParentExists(validRequest.parentId).bind()
+            val scope = createScopeEntity(request).bind()
+            val savedScope = saveScopeEntity(scope).bind()
+            CreateScopeResponse(savedScope)
         }
 
-        private fun createScopeEntity(request: CreateScopeRequest): Result<Scope, DomainError> {
+        private fun validateRequest(request: CreateScopeRequest): Either<ApplicationError, CreateScopeRequest> = either {
+            ScopeValidationService.validateTitle(request.title)
+                .mapLeft { ApplicationError.fromDomainError(it) }
+                .bind()
+            ScopeValidationService.validateDescription(request.description)
+                .mapLeft { ApplicationError.fromDomainError(it) }
+                .bind()
+            request
+        }
+
+        private suspend fun checkParentExists(parentId: ScopeId?): Either<ApplicationError, Unit> = either {
+            if (parentId == null) return@either
+
+            val exists = scopeRepository.existsById(parentId)
+                .mapLeft { ApplicationError.fromRepositoryError(it) }
+                .bind()
+            
+            if (!exists) {
+                raise(ApplicationError.ParentScopeNotFound(parentId))
+            }
+        }
+
+        private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> {
             val now = Clock.System.now()
-            return Result.success(
+            return Either.Right(
                 Scope(
                     id = ScopeId.generate(),
                     title = request.title,
@@ -500,9 +500,9 @@ class CreateScopeUseCase(
             )
         }
 
-        private suspend fun saveScopeEntity(scope: Scope): Result<Scope, DomainError> =
+        private suspend fun saveScopeEntity(scope: Scope): Either<ApplicationError, Scope> =
             scopeRepository.save(scope)
-                .mapError { repositoryError -> DomainError.RepositoryError(repositoryError) }
+                .mapLeft { ApplicationError.fromRepositoryError(it) }
 }
 
 /**
@@ -643,26 +643,26 @@ class InMemoryScopeRepository : ScopeRepository {
             }
         }
 
-        override suspend fun deleteById(id: ScopeId): Result<Unit, RepositoryError> =
+        override suspend fun deleteById(id: ScopeId): Either<RepositoryError, Unit> =
             mutex.withLock {
                 try {
                     val removed = scopes.remove(id)
                     if (removed != null) {
-                        Result.success(Unit)
+                        Either.Right(Unit)
                     } else {
-                        Result.failure(RepositoryError.NotFound)
+                        Either.Left(RepositoryError.NotFound)
                     }
                 } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
+                    Either.Left(RepositoryError.UnknownError(e))
                 }
             }
 
-        override suspend fun existsById(id: ScopeId): Result<Boolean, RepositoryError> =
+        override suspend fun existsById(id: ScopeId): Either<RepositoryError, Boolean> =
             mutex.withLock {
                 try {
-                    Result.success(scopes.containsKey(id))
+                    Either.Right(scopes.containsKey(id))
                 } catch (e: Exception) {
-                    Result.failure(RepositoryError.UnknownError(e))
+                    Either.Left(RepositoryError.UnknownError(e))
                 }
             }
 
