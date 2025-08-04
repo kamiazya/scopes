@@ -29,7 +29,9 @@ jobs:
       run: chmod +x gradlew
 
     - name: Run Kotlin lint
-      run: ./gradlew ktlintCheck
+      run: |
+        ./gradlew --version
+        ./gradlew ktlintCheck
 
     - name: Run Detekt static analysis
       run: ./gradlew detekt
