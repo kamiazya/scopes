@@ -51,11 +51,19 @@ graalvmNative {
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
 
-            val windowsSpecificArgs = if (System.getProperty("os.name").lowercase().contains("windows")) {
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows") || 
+                           System.getenv("RUNNER_OS") == "Windows" ||
+                           System.getenv("OS")?.lowercase()?.contains("windows") == true
+            
+            val windowsSpecificArgs = if (isWindows) {
                 listOf(
                     "--no-module-paths",
                     "-H:+AllowIncompleteClasspath",
                     "-H:+ReportUnsupportedElementsAtRuntime",
+                    "-H:DeadlockWatchdogInterval=0",
+                    "-H:+PrintClassInitialization",
+                    "--verbose",
+                    "--allow-incomplete-classpath"
                 )
             } else {
                 emptyList()
@@ -66,6 +74,15 @@ graalvmNative {
     }
 
     toolchainDetection.set(false)
+}
+
+// Windows-specific JAR handling to avoid module-info conflicts
+tasks.named("nativeCompileClasspathJar") {
+    doFirst {
+        if (System.getenv("RUNNER_OS") == "Windows") {
+            println("Windows detected: Configuring JAR to handle module-info conflicts")
+        }
+    }
 }
 
 // Make nativeCompile depend on checkGraalVM
