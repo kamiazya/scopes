@@ -129,8 +129,10 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ runner.os }}" == "Windows" ]]; then
-          HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
-          HASH=$(echo $HASH | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          # On Windows, certutil outputs in a specific format, we need to extract just the hash
+          HASH_OUTPUT=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256)
+          # Extract the second line which contains the hash
+          HASH=$(echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
         elif [[ "${{ runner.os }}" == "macOS" ]]; then
           HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         else
