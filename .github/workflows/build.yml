@@ -39,14 +39,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Setup Visual Studio Build Tools (Windows only)
+    - name: Setup MSBuild (Windows only)
       if: matrix.platform == 'win32'
       uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
-
-    - name: Setup Visual C++ Tools (Windows only)
-      if: matrix.platform == 'win32'
-      run: |
-        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional --passive --locale en-US"
 
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
@@ -57,9 +52,15 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      env:
+        # Fix cross-drive path issues on Windows by using C: drive for cache
+        GRADLE_USER_HOME: ${{ matrix.platform == 'win32' && 'C:\\gradle-cache' || '' }}
 
     - name: Build Native Image
       run: ./gradlew nativeCompile
+      env:
+        # Fix cross-drive path issues on Windows by using C: drive for cache
+        GRADLE_USER_HOME: ${{ matrix.platform == 'win32' && 'C:\\gradle-cache' || '' }}
 
     - name: Prepare binary for security check
       shell: bash

@@ -60,9 +60,8 @@ graalvmNative {
                     "-H:+AllowIncompleteClasspath",
                     "-H:+ReportUnsupportedElementsAtRuntime",
                     "-H:DeadlockWatchdogInterval=0",
-                    "-H:+PrintClassInitialization",
-                    "--verbose",
-                    "--allow-incomplete-classpath"
+                    "--allow-incomplete-classpath",
+                    "-H:+StaticExecutableWithDynamicLibC"
                 )
             } else {
                 emptyList()
