@@ -50,8 +50,21 @@ jobs:
         dependency-graph: generate-and-submit
 
     - name: Generate SBOM (CycloneDX)
+      id: sbom_generation
       run: ./gradlew presentation-cli:cycloneDxBom
-      continue-on-error: true
+      continue-on-error: ${{ github.event_name == 'pull_request' }}
+
+    - name: Handle SBOM generation failure
+      if: failure() && steps.sbom_generation.outcome == 'failure'
+      run: |
+        echo "SBOM generation failed"
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "::warning::SBOM generation failed - this is non-blocking for PRs but should be investigated"
+          exit 0
+        else
+          echo "::error::SBOM generation failed on main branch - this will fail the workflow"
+          exit 1
+        fi
 
 
     - name: Upload SBOM artifacts
