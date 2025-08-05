@@ -18,7 +18,7 @@ jobs:
   cross-platform-build:
     name: Cross-Platform Native Build
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +81,7 @@ jobs:
         else
           HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         fi
-        
+
         echo "Hash: $HASH"
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
@@ -90,17 +90,17 @@ jobs:
       run: |
         echo "=== Binary Security Analysis ==="
         echo "File: ${{ steps.binary.outputs.binary_name }}"
-        
+
         # File size check (reasonable size limits)
         SIZE=$(ls -la "${{ steps.binary.outputs.binary_name }}" | awk '{print $5}')
         echo "Size: $SIZE bytes"
-        
+
         # Basic file type verification
         if command -v file >/dev/null 2>&1; then
           echo "File type:"
           file "${{ steps.binary.outputs.binary_name }}"
         fi
-        
+
         # Check if binary is executable
         if [ "${{ matrix.platform }}" != "win32" ]; then
           if [ -x "${{ steps.binary.outputs.binary_name }}" ]; then
@@ -110,7 +110,7 @@ jobs:
             exit 1
           fi
         fi
-        
+
         # Check for suspicious strings (basic malware detection)
         if command -v strings >/dev/null 2>&1; then
           echo "Checking for suspicious strings..."
@@ -152,7 +152,7 @@ jobs:
       run: |
         # Install Grype for vulnerability scanning
         curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-        
+
         # Install Syft for SBOM generation and analysis
         curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
@@ -189,11 +189,11 @@ jobs:
           if [ -f "$hash_file" ]; then
             echo "Verifying: $hash_file"
             cat "$hash_file"
-            
+
             # Extract binary name and expected hash
             BINARY_NAME=$(cut -d':' -f1 "$hash_file")
             EXPECTED_HASH=$(cut -d':' -f2 "$hash_file")
-            
+
             if [ -f "$BINARY_NAME" ]; then
               ACTUAL_HASH=$(sha256sum "$BINARY_NAME" | awk '{print $1}')
               if [ "$ACTUAL_HASH" = "$EXPECTED_HASH" ]; then

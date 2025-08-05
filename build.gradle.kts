@@ -47,14 +47,15 @@ tasks.register("checkGraalVM") {
             val isWindows = System.getProperty("os.name").lowercase().contains("windows")
             val nativeImageExecutable = if (isWindows) "native-image.cmd" else "native-image"
             val nativeImagePath = file("${System.getProperty("java.home")}/bin/$nativeImageExecutable")
-            
+
             if (!nativeImagePath.exists()) {
                 // Try alternative paths for different GraalVM installations
-                val altPaths = listOf(
-                    "${System.getProperty("java.home")}/../bin/$nativeImageExecutable",
-                    "${System.getProperty("java.home")}/bin/$nativeImageExecutable"
-                )
-                
+                val altPaths =
+                    listOf(
+                        "${System.getProperty("java.home")}/../bin/$nativeImageExecutable",
+                        "${System.getProperty("java.home")}/bin/$nativeImageExecutable",
+                    )
+
                 val foundPath = altPaths.find { file(it).exists() }
                 if (foundPath == null) {
                     println("⚠️ GraalVM native-image not found in expected locations")
