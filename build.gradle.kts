@@ -4,14 +4,16 @@ plugins {
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+    id("org.cyclonedx.bom") version "2.3.1"
+    id("org.spdx.sbom") version "0.9.0"
 }
 
 group = "io.github.kamiazya"
-version = "0.0.1"
+version = project.findProperty("version")?.toString() ?: "0.0.0-SNAPSHOT"
 
 allprojects {
     group = "io.github.kamiazya"
-    version = "0.0.1"
+    version = project.findProperty("version")?.toString() ?: "0.0.0-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -66,3 +68,6 @@ detekt {
     allRules = false
     parallel = true
 }
+
+
+// SBOM Configuration will be added to subprojects that need it
