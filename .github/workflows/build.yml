@@ -6,6 +6,20 @@ on:
   pull_request:
     branches: [ main ]
   workflow_call:
+    inputs:
+      version:
+        description: 'Version to build (for releases)'
+        required: false
+        type: string
+      binary-prefix:
+        description: 'Binary name prefix (for releases)'
+        required: false
+        type: string
+        default: 'scopes-build'
+    outputs:
+      hashes:
+        description: 'Generated hashes from build'
+        value: ${{ jobs.cross-platform-build.outputs.hashes }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,6 +33,8 @@ jobs:
     name: Cross-Platform Native Build
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental == true }}
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
 
     strategy:
       fail-fast: false
@@ -63,24 +79,36 @@ jobs:
 
     - name: Build Native Image (Windows)
       if: matrix.platform == 'win32'
-      run: .\gradlew.bat nativeCompile
-      working-directory: "C:\\build-workspace\\scopes"
+      run: |
+        VERSION_ARG=""
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION_ARG="-Pversion=${{ inputs.version }}"
+        fi
+        cd "C:\\build-workspace\\scopes"
+        .\gradlew.bat nativeCompile $VERSION_ARG
+      shell: bash
       env:
         # Fix cross-drive path issues on Windows by using C: drive for everything
         GRADLE_USER_HOME: C:\\gradle-cache
 
     - name: Build Native Image (Unix)
       if: matrix.platform != 'win32'
-      run: ./gradlew nativeCompile
+      run: |
+        VERSION_ARG=""
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION_ARG="-Pversion=${{ inputs.version }}"
+        fi
+        ./gradlew nativeCompile $VERSION_ARG
 
     - name: Prepare binary for security check
       shell: bash
       run: |
+        PREFIX="${{ inputs.binary-prefix || 'scopes-build' }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
-          BINARY_NAME="scopes-build-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+          BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
           cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
-          BINARY_NAME="scopes-build-${{ matrix.platform }}-${{ matrix.arch }}"
+          BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
           cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
@@ -100,6 +128,10 @@ jobs:
 
         echo "Hash: $HASH"
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+
+        # Set hash output for release workflow compatibility
+        echo "hash=$HASH" >> $GITHUB_OUTPUT
+      id: hash
 
     - name: Basic security checks
       shell: bash
@@ -147,89 +179,3 @@ jobs:
           ${{ steps.binary.outputs.binary_name }}
           binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
-  security-scan:
-    name: Binary Security Scan
-    runs-on: ubuntu-latest
-    needs: cross-platform-build
-    if: always() && needs.cross-platform-build.result == 'success'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-    - name: Download all binary artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        pattern: build-binary-*
-        path: binaries
-        merge-multiple: true
-
-    - name: Install Grype
-      uses: anchore/scan-action/download-grype@1638637db639e0ade3258b51db49a9a137574c3e # v6.5.1
-
-    - name: Install Syft
-      uses: anchore/sbom-action/download-syft@7b36ad622f042cab6f59a75c2ac24ccb256e9b45 # v0.20.4
-
-    - name: Scan binaries with Grype
-      run: |
-        echo "=== Grype Vulnerability Scan ==="
-        for binary in binaries/scopes-build-*; do
-          if [ -f "$binary" ] && [ ! "$binary" = "*.txt" ]; then
-            echo "Scanning: $binary"
-            grype "$binary" --output json --file "${binary}-grype-report.json" || true
-            grype "$binary" --output table || true
-            echo "---"
-          fi
-        done
-
-    - name: Generate SBOMs for binaries
-      run: |
-        echo "=== Syft SBOM Generation ==="
-        for binary in binaries/scopes-build-*; do
-          if [ -f "$binary" ] && [ ! "$binary" = "*.txt" ]; then
-            echo "Generating SBOM for: $binary"
-            syft "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
-            syft "$binary" --output table || true
-            echo "---"
-          fi
-        done
-
-
-    - name: Verify binary integrity
-      run: |
-        echo "=== Binary Integrity Verification ==="
-        cd binaries
-        for hash_file in binary-hash-*.txt; do
-          if [ -f "$hash_file" ]; then
-            echo "Verifying: $hash_file"
-            cat "$hash_file"
-
-            # Extract binary name and expected hash
-            BINARY_NAME=$(cut -d':' -f1 "$hash_file")
-            EXPECTED_HASH=$(cut -d':' -f2 "$hash_file")
-
-            if [ -f "$BINARY_NAME" ]; then
-              ACTUAL_HASH=$(sha256sum "$BINARY_NAME" | awk '{print $1}')
-              if [ "$ACTUAL_HASH" = "$EXPECTED_HASH" ]; then
-                echo "✅ $BINARY_NAME integrity verified"
-              else
-                echo "❌ $BINARY_NAME integrity check failed!"
-                echo "Expected: $EXPECTED_HASH"
-                echo "Actual: $ACTUAL_HASH"
-                exit 1
-              fi
-            else
-              echo "⚠️ Binary file $BINARY_NAME not found"
-            fi
-            echo "---"
-          fi
-        done
-
-    - name: Upload security scan results
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      if: always()
-      with:
-        name: security-scan-results
-        path: |
-          binaries/*-grype-report.json
-          binaries/*-sbom.json

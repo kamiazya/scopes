@@ -21,24 +21,40 @@ permissions:
   attestations: write
 
 jobs:
+  extract-version:
+    name: Extract Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_version: ${{ steps.version.outputs.tag_version }}
+
+    steps:
+    - name: Extract version from tag
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ inputs.tag }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
+        CLEAN_VERSION=${VERSION#v}
+        echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+        echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
+
   build-release:
     name: Build Release Artifacts
-    runs-on: ${{ matrix.os }}
-    outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
+    needs: extract-version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.extract-version.outputs.version }}
+      binary-prefix: scopes-${{ needs.extract-version.outputs.tag_version }}
 
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-          - os: macos-latest
-            platform: darwin
-            arch: x64
-          - os: windows-latest
-            platform: win32
-            arch: x64
+  generate-sbom:
+    name: Generate SBOM for Release
+    runs-on: ubuntu-latest
+    needs: [extract-version, build-release]
 
     steps:
     - name: Checkout code
@@ -54,110 +70,31 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
 
-    - name: Extract version from tag
-      id: version
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          VERSION="${{ inputs.tag }}"
-        else
-          VERSION="${{ github.ref_name }}"
-        fi
-        # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-        CLEAN_VERSION=${VERSION#v}
-        echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-        echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
-
-    - name: Build native binary
-      run: ./gradlew nativeCompile -Pversion=${{ steps.version.outputs.version }}
-
-    - name: Prepare binary for upload
-      shell: bash
-      run: |
-        if [ "${{ matrix.platform }}" = "win32" ]; then
-          BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          cp presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
-        else
-          BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
-          cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
-        fi
-        echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
-      id: binary
-
     - name: Generate SBOM (CycloneDX)
       run: ./gradlew presentation-cli:cycloneDxBom
-
-
-    - name: Generate hash for SLSA provenance
-      shell: bash
-      id: hash
-      run: |
-        set -euo pipefail
-        echo "Generating hash for: ${{ steps.binary.outputs.binary_name }}"
-
-        # Generate SHA256 hash for binary
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
-          HASH=$(echo $HASH | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-        else
-          HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
-        fi
-
-        echo "Hash: $HASH"
-        echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
-
-        # Generate hashes for SBOM files
-        if [ -f "presentation-cli/build/reports/bom.json" ]; then
-          SBOM_JSON_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.json" | awk '{print $1}')
-          echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
-        fi
-
-        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
-          SBOM_XML_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
-          echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
-        fi
-
-        # Create base64 encoded hash for SLSA (portable across Linux and macOS)
-        echo "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' >> hashes-b64.txt
-
-        # Set output variable for downstream steps
-        ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
-        echo "hashes=$ALL_HASHES" >> $GITHUB_OUTPUT
-
-    - name: Upload binary artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: binary-${{ matrix.platform }}-${{ matrix.arch }}
-        path: ${{ steps.binary.outputs.binary_name }}
 
     - name: Prepare SBOM files for upload
       shell: bash
       run: |
-        # Copy SBOM files with platform-specific names
-        if [ -f "presentation-cli/build/reports/bom.json" ]; then
-          cp "presentation-cli/build/reports/bom.json" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
-        fi
-
-        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
-          cp "presentation-cli/build/reports/bom.xml" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
-        fi
+        # Copy SBOM files with platform-specific names for each platform
+        for platform in linux darwin win32; do
+          for arch in x64; do
+            if [ -f "presentation-cli/build/reports/bom.json" ]; then
+              cp "presentation-cli/build/reports/bom.json" "sbom-${platform}-${arch}.json"
+            fi
+            if [ -f "presentation-cli/build/reports/bom.xml" ]; then
+              cp "presentation-cli/build/reports/bom.xml" "sbom-${platform}-${arch}.xml"
+            fi
+          done
+        done
 
     - name: Upload SBOM artifacts
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: sbom-${{ matrix.platform }}-${{ matrix.arch }}
+        name: release-sbom
         path: |
-          sbom-${{ matrix.platform }}-${{ matrix.arch }}.json
-          sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml
-
-
-    - name: Upload hash artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: hashes-${{ matrix.platform }}-${{ matrix.arch }}
-        path: |
-          hashes.txt
-          hashes-b64.txt
+          sbom-*.json
+          sbom-*.xml
 
   collect-hashes:
     name: Collect Hashes for SLSA
@@ -167,10 +104,11 @@ jobs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
     steps:
-    - name: Download all hash artifacts
+    - name: Download all binary artifacts
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
-        pattern: hashes-*
+        pattern: build-binary-*
+        path: binaries
         merge-multiple: true
 
     - name: Collect all hashes
@@ -179,15 +117,32 @@ jobs:
         set -euo pipefail
         echo "Collecting hashes from all platforms..."
 
-        # Combine all hash files
-        cat hashes-b64.txt > combined-hashes-b64.txt || echo "" > combined-hashes-b64.txt
+        cd binaries
 
-        # Create a single base64 encoded string with all hashes
-        HASHES_B64=$(cat combined-hashes-b64.txt | tr '\n' ',' | sed 's/,$//')
-        echo "hashes=$HASHES_B64" >> $GITHUB_OUTPUT
+        # Generate base64 encoded hashes for SLSA
+        COMBINED_HASHES=""
+        for hash_file in binary-hash-*.txt; do
+          if [ -f "$hash_file" ]; then
+            echo "Processing: $hash_file"
+            cat "$hash_file"
 
-        echo "Collected hashes:"
-        cat hashes.txt || echo "No hashes.txt found"
+            # Extract binary name and hash
+            BINARY_NAME=$(cut -d':' -f1 "$hash_file")
+            HASH=$(cut -d':' -f2 "$hash_file")
+
+            # Create base64 encoded entry for SLSA
+            B64_ENTRY=$(echo "${BINARY_NAME}:sha256:${HASH}" | base64 | tr -d '\n')
+
+            if [ -z "$COMBINED_HASHES" ]; then
+              COMBINED_HASHES="$B64_ENTRY"
+            else
+              COMBINED_HASHES="${COMBINED_HASHES},$B64_ENTRY"
+            fi
+          fi
+        done
+
+        echo "hashes=$COMBINED_HASHES" >> $GITHUB_OUTPUT
+        echo "Combined hashes: $COMBINED_HASHES"
 
   provenance:
     name: Generate SLSA Provenance
@@ -204,37 +159,23 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-release, provenance]
+    needs: [extract-version, build-release, generate-sbom, provenance]
     if: always() && needs.build-release.result == 'success'
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Extract version from tag
-      id: version
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          VERSION="${{ inputs.tag }}"
-        else
-          VERSION="${{ github.ref_name }}"
-        fi
-        # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-        CLEAN_VERSION=${VERSION#v}
-        echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-        echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
-
     - name: Download all artifacts
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         path: artifacts
 
-    - name: Download all SBOM artifacts
+    - name: Download SBOM artifacts
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
-        pattern: sbom-*
+        name: release-sbom
         path: sbom-artifacts
-        merge-multiple: true
 
 
     - name: Download SLSA provenance
@@ -254,7 +195,7 @@ jobs:
         if [ -z "$LAST_TAG" ]; then
           CHANGELOG="Initial release"
         else
-          CHANGELOG=$(git log --pretty=format:'- %s (%h)' $LAST_TAG..${{ steps.version.outputs.tag_version }} | head -20)
+          CHANGELOG=$(git log --pretty=format:'- %s (%h)' $LAST_TAG..${{ needs.extract-version.outputs.tag_version }} | head -20)
           if [ -z "$CHANGELOG" ]; then
             CHANGELOG="Bug fixes and improvements"
           fi
@@ -266,8 +207,8 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
       with:
-        tag_name: ${{ steps.version.outputs.tag_version }}
-        name: Release ${{ steps.version.outputs.tag_version }}
+        tag_name: ${{ needs.extract-version.outputs.tag_version }}
+        name: Release ${{ needs.extract-version.outputs.tag_version }}
         body: |
           ## Changes
           ${{ steps.changelog.outputs.changelog }}
@@ -295,7 +236,7 @@ jobs:
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
           # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-v${{ steps.version.outputs.tag_version }}-linux-x64 \
+          slsa-verifier verify-artifact scopes-v${{ needs.extract-version.outputs.tag_version }}-linux-x64 \
             --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
@@ -327,5 +268,5 @@ jobs:
           sbom-artifacts/sbom-*.json
           sbom-artifacts/sbom-*.xml
         draft: false
-        prerelease: ${{ contains(steps.version.outputs.tag_version, '-') }}
+        prerelease: ${{ contains(needs.extract-version.outputs.tag_version, '-') }}
         generate_release_notes: true
