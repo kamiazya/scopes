@@ -80,20 +80,25 @@ jobs:
     - name: Comment PR with vulnerability summary
       if: github.event_name == 'pull_request' && failure()
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        SERVER_URL: ${{ github.server_url }}
+        REPOSITORY: ${{ github.repository }}
+        RUN_ID: ${{ github.run_id }}
       with:
         script: |
           const comment = `## ⚠️ Security Issues Detected
 
           The security check found issues during SBOM generation or dependency analysis.
 
-          Please review the [security check workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+          Please review the [security check workflow](${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}) for details.
 
           **Next steps:**
           1. Check the Security tab for Dependabot alerts
           2. Review any failed SBOM generation steps
           3. Update vulnerable dependencies as needed
 
-          For more information, see [Security Policy](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.head_ref || github.ref_name }}/SECURITY.md).`;
+          For more information, see [Security Policy](${process.env.SERVER_URL}/${process.env.REPOSITORY}/blob/${process.env.HEAD_REF}/SECURITY.md).`;
 
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
