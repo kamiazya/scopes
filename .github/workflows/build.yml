@@ -56,9 +56,9 @@ jobs:
     - name: Copy project to C: drive (Windows only)
       if: matrix.platform == 'win32'
       run: |
-        New-Item -ItemType Directory -Path "C:\build-workspace" -Force
-        Copy-Item -Path "." -Destination "C:\build-workspace\scopes" -Recurse -Force
-        Write-Host "Project copied to C:\build-workspace\scopes"
+        New-Item -ItemType Directory -Path "C:\\build-workspace" -Force
+        Copy-Item -Path "." -Destination "C:\\build-workspace\\scopes" -Recurse -Force
+        Write-Host "Project copied to C:\\build-workspace\\scopes"
       shell: powershell
 
     - name: Build Native Image (Windows)
