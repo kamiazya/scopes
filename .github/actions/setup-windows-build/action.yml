@@ -16,7 +16,6 @@ runs:
   steps:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
-      shell: bash
 
     - name: "Copy project to C: drive"
       run: |
