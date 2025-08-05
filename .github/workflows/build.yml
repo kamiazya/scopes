@@ -81,11 +81,11 @@ jobs:
       if: matrix.platform == 'win32'
       run: |
         $VERSION_ARG = ""
-        if ("${{ inputs.version }}" -ne "") {
+        if (-not [string]::IsNullOrEmpty("${{ inputs.version }}")) {
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
         }
-        cd "C:\build-workspace\scopes"
-        .\gradlew.bat nativeCompile $VERSION_ARG
+        Set-Location "C:\build-workspace\scopes"
+        & .\gradlew.bat nativeCompile $VERSION_ARG
       shell: powershell
       env:
         # Fix cross-drive path issues on Windows by using C: drive for everything
