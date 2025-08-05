@@ -100,7 +100,7 @@ jobs:
           HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
           HASH=$(echo $HASH | tr -d '[:space:]')
         else
-          HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
+          HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         fi
 
         echo "Hash: $HASH"
