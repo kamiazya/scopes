@@ -34,7 +34,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental == true }}
     outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
+      hashes: ${{ steps.hash.outputs.hash }}
 
     strategy:
       fail-fast: false
