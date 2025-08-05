@@ -44,3 +44,4 @@ jobs:
         path: |
           **/build/test-results/
           **/build/reports/tests/
+        if-no-files-found: warn
