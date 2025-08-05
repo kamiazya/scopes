@@ -45,7 +45,7 @@ Scopes includes several security measures:
 
 ### Supply Chain Security
 - **SLSA Level 3 Compliance**: All releases include cryptographic provenance
-- **Automated Dependency Scanning**: OWASP Dependency Check in CI/CD
+- **Automated Dependency Scanning**: Via GitHub Dependabot and Dependency Review  
 - **Software Bill of Materials (SBOM)**: Complete dependency transparency
 
 For detailed usage instructions, see our security guides:
