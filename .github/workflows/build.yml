@@ -55,9 +55,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Setup MSBuild (Windows only)
+    - name: Setup Windows Build Environment
       if: matrix.platform == 'win32'
-      uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
+      uses: ./.github/actions/setup-windows-build
+      with:
+        version: ${{ inputs.version }}
 
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
@@ -68,28 +70,6 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
-
-    - name: "Copy project to C: drive (Windows only)"
-      if: matrix.platform == 'win32'
-      run: |
-        New-Item -ItemType Directory -Path "C:\\build-workspace" -Force
-        Copy-Item -Path "." -Destination "C:\\build-workspace\\scopes" -Recurse -Force
-        Write-Host "Project copied to C:\\build-workspace\\scopes"
-      shell: powershell
-
-    - name: Build Native Image (Windows)
-      if: matrix.platform == 'win32'
-      run: |
-        $VERSION_ARG = ""
-        if (-not [string]::IsNullOrEmpty("${{ inputs.version }}")) {
-          $VERSION_ARG = "-Pversion=${{ inputs.version }}"
-        }
-        Set-Location "C:\build-workspace\scopes"
-        & .\gradlew.bat nativeCompile $VERSION_ARG
-      shell: powershell
-      env:
-        # Fix cross-drive path issues on Windows by using C: drive for everything
-        GRADLE_USER_HOME: C:\\gradle-cache
 
     - name: Build Native Image (Unix)
       if: matrix.platform != 'win32'

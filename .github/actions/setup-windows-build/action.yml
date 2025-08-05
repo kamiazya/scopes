@@ -1,6 +1,12 @@
 name: 'Setup Windows Build Environment'
 description: 'Sets up Windows-specific build environment for GraalVM native compilation'
 
+inputs:
+  version:
+    description: 'Version to build (for releases)'
+    required: false
+    type: string
+
 outputs:
   workspace-path:
     description: 'Path to the Windows build workspace'
@@ -13,7 +19,7 @@ runs:
       uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
       shell: bash
 
-    - name: Copy project to C: drive
+    - name: "Copy project to C: drive"
       run: |
         New-Item -ItemType Directory -Path "C:\\build-workspace" -Force
         Copy-Item -Path "." -Destination "C:\\build-workspace\\scopes" -Recurse -Force
@@ -25,3 +31,16 @@ runs:
         echo "GRADLE_USER_HOME=C:\\gradle-cache" >> $GITHUB_ENV
         echo "Windows build environment configured"
       shell: bash
+
+    - name: Build Native Image
+      run: |
+        $VERSION_ARG = ""
+        if (-not [string]::IsNullOrEmpty("${{ inputs.version }}")) {
+          $VERSION_ARG = "-Pversion=${{ inputs.version }}"
+        }
+        Set-Location "C:\build-workspace\scopes"
+        & .\gradlew.bat nativeCompile $VERSION_ARG
+      shell: powershell
+      env:
+        # Fix cross-drive path issues on Windows by using C: drive for everything
+        GRADLE_USER_HOME: C:\\gradle-cache
