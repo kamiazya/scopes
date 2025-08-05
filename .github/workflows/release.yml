@@ -108,18 +108,18 @@ jobs:
 
         # Generate hashes for SBOM files
         if [ -f "presentation-cli/build/reports/bom.json" ]; then
-          SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+          SBOM_JSON_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.json" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
         fi
 
         if [ -f "presentation-cli/build/reports/bom.xml" ]; then
-          SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+          SBOM_XML_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
         fi
 
         # Create base64 encoded hash for SLSA (portable across Linux and macOS)
         echo "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' >> hashes-b64.txt
-        
+
         # Set output variable for downstream steps
         ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
         echo "hashes=$ALL_HASHES" >> $GITHUB_OUTPUT
