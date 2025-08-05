@@ -23,13 +23,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Skip duplicate actions
-      uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
-      with:
-        concurrent_skipping: 'same_content_newer'
-        skip_after_successful_duplicate: 'true'
-        do_not_skip: '["workflow_dispatch", "schedule"]'
-
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
