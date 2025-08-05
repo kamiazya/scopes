@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.detekt)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
 }
