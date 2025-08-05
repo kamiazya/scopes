@@ -26,9 +26,9 @@ runs:
 
     - name: Set Windows build environment
       run: |
-        echo "GRADLE_USER_HOME=C:\\gradle-cache" >> $GITHUB_ENV
-        echo "Windows build environment configured"
-      shell: bash
+        Add-Content -Path $env:GITHUB_ENV -Value "GRADLE_USER_HOME=C:\gradle-cache"
+        Write-Host "Windows build environment configured"
+      shell: powershell
 
     - name: Build Native Image
       run: |
