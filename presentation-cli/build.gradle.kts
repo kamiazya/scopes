@@ -50,7 +50,7 @@ graalvmNative {
                 "--initialize-at-build-time=kotlinx.coroutines",
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
-            
+
             val windowsSpecificArgs = if (System.getProperty("os.name").lowercase().contains("windows")) {
                 listOf(
                     "--no-module-paths",
@@ -60,7 +60,7 @@ graalvmNative {
             } else {
                 emptyList()
             }
-            
+
             buildArgs.addAll(commonArgs + windowsSpecificArgs)
         }
     }
