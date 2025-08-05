@@ -64,7 +64,7 @@ jobs:
     - name: Build Native Image (Windows)
       if: matrix.platform == 'win32'
       run: .\gradlew.bat nativeCompile
-      working-directory: C:\build-workspace\scopes
+      working-directory: "C:\\build-workspace\\scopes"
       env:
         # Fix cross-drive path issues on Windows by using C: drive for everything
         GRADLE_USER_HOME: C:\\gradle-cache
