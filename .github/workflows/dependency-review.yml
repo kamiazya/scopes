@@ -26,7 +26,7 @@ jobs:
         fetch-depth: 0
 
     - name: Dependency Review
-      uses: actions/dependency-review-action@4081bf99e2866ebe428fc0477b69eb4fcda7220a # v4.4.0
+      uses: actions/dependency-review-action@da24556b548a50705dd671f47852072ea4c105d9 # v4.7.1
       with:
         # Fail the build if vulnerabilities with CVSS >= 7.0 are found
         fail-on-severity: high
