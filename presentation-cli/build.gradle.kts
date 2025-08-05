@@ -56,7 +56,6 @@ graalvmNative {
                 System.getenv("OS")?.lowercase()?.contains("windows") == true
             val windowsSpecificArgs = if (isWindows) {
                 listOf(
-                    "--no-module-paths",
                     "-H:+AllowIncompleteClasspath",
                     "-H:+ReportUnsupportedElementsAtRuntime",
                     "-H:DeadlockWatchdogInterval=0",
