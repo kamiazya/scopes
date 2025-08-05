@@ -5,7 +5,6 @@ inputs:
   version:
     description: 'Version to build (for releases)'
     required: false
-    type: string
 
 outputs:
   workspace-path:
