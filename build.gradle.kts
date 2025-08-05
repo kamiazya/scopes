@@ -39,6 +39,7 @@ subprojects {
         buildUponDefaultConfig = true
         allRules = false
         parallel = true
+        baseline = file("detekt-baseline.xml")
     }
 }
 

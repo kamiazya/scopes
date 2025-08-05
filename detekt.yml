@@ -1,6 +1,7 @@
 build:
-  maxIssues: 100
+  maxIssues: 0
   excludeCorrectable: false
+  # Note: baseline is configured in build.gradle.kts
   weights:
     # complexity: 2
     # LongParameterList: 1
