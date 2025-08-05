@@ -1,0 +1,139 @@
+name: Quarterly Suppression Audit
+
+on:
+  schedule:
+    # Run on the first day of each quarter at 10:00 AM UTC
+    # January 1, April 1, July 1, October 1
+    - cron: '0 10 1 1,4,7,10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit-suppressions:
+    name: Audit OWASP Suppressions
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Analyze suppressions
+      id: audit
+      run: |
+        # Count total suppressions
+        TOTAL=$(grep -c "<suppress>" etc/owasp-suppression.xml || echo "0")
+
+        # Count suppressions with 'until' attribute (temporary)
+        TEMP=$(grep -c 'until=' etc/owasp-suppression.xml || echo "0")
+
+        # Count permanent suppressions
+        PERM=$((TOTAL - TEMP))
+
+        # Extract and check expiration dates
+        TODAY=$(date +%Y-%m-%d)
+        EXPIRED=0
+        NEAR_EXPIRY=0
+
+        # Extract until dates and check them
+        grep 'until=' etc/owasp-suppression.xml | sed 's/.*until="\([^"]*\)".*/\1/' | while read -r date; do
+          if [[ "$date" < "$TODAY" ]]; then
+            EXPIRED=$((EXPIRED + 1))
+          elif [[ "$date" < "$(date -d '+30 days' +%Y-%m-%d 2>/dev/null || date -v+30d +%Y-%m-%d)" ]]; then
+            NEAR_EXPIRY=$((NEAR_EXPIRY + 1))
+          fi
+        done
+
+        echo "total=$TOTAL" >> $GITHUB_OUTPUT
+        echo "permanent=$PERM" >> $GITHUB_OUTPUT
+        echo "temporary=$TEMP" >> $GITHUB_OUTPUT
+        echo "expired=$EXPIRED" >> $GITHUB_OUTPUT
+        echo "near_expiry=$NEAR_EXPIRY" >> $GITHUB_OUTPUT
+
+    - name: Create or update audit issue
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          const total = '${{ steps.audit.outputs.total }}';
+          const permanent = '${{ steps.audit.outputs.permanent }}';
+          const temporary = '${{ steps.audit.outputs.temporary }}';
+          const expired = '${{ steps.audit.outputs.expired }}';
+          const nearExpiry = '${{ steps.audit.outputs.near_expiry }}';
+
+          const quarter = Math.floor((new Date().getMonth() / 3)) + 1;
+          const year = new Date().getFullYear();
+          const title = `📊 Q${quarter} ${year} OWASP Suppression Audit Required`;
+
+          let body = `## 📊 Q${quarter} ${year} OWASP Suppression Audit Report\n\n`;
+          body += `*Last updated: ${new Date().toISOString()}*\n\n`;
+
+          body += `### Summary\n`;
+          body += `- **Total Suppressions**: ${total}\n`;
+          body += `- **Permanent**: ${permanent}\n`;
+          body += `- **Temporary**: ${temporary}\n`;
+          body += `- **Expired**: ${expired} ⚠️\n`;
+          body += `- **Expiring Soon**: ${nearExpiry}\n\n`;
+
+          if (parseInt(expired) > 0) {
+            body += `### 🚨 Action Required\n`;
+            body += `There are ${expired} expired suppressions that need immediate review.\n\n`;
+          }
+
+          if (parseInt(nearExpiry) > 0) {
+            body += `### ⏰ Upcoming Expirations\n`;
+            body += `${nearExpiry} suppressions will expire within 30 days.\n\n`;
+          }
+
+          if (parseInt(permanent) > 0) {
+            body += `### 📌 Permanent Suppressions\n`;
+            body += `Found ${permanent} suppressions without expiration dates.\n`;
+            body += `Consider if these should have time limits.\n\n`;
+          }
+
+          body += `### Required Actions\n`;
+          body += `1. Review all expired suppressions in \`etc/owasp-suppression.xml\`\n`;
+          body += `2. Either remove or extend expired suppressions with justification\n`;
+          body += `3. Review permanent suppressions and add expiry dates where appropriate\n`;
+          body += `4. Update dependencies to remove suppressions where possible\n\n`;
+
+          body += `### Next Steps\n`;
+          body += `- [ ] Create PR to address expired suppressions\n`;
+          body += `- [ ] Review and update near-expiry suppressions\n`;
+          body += `- [ ] Document any permanent suppressions that remain\n`;
+
+          // Search for existing issue
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'quarterly-review',
+            per_page: 100
+          });
+
+          const existingIssue = issues.data.find(issue =>
+            issue.title.includes(`Q${quarter} ${year}`) &&
+            issue.title.includes('OWASP Suppression Audit')
+          );
+
+          if (existingIssue) {
+            // Update existing issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: body
+            });
+            console.log(`Updated existing issue #${existingIssue.number}`);
+          } else {
+            // Create new issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'audit', 'quarterly-review']
+            });
+            console.log('Created new audit issue');
+          }

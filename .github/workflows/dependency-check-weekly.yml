@@ -1,0 +1,113 @@
+name: Weekly Dependency Check
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  dependency-check:
+    name: Weekly Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
+      with:
+        java-version: '21'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4.4.1
+
+    - name: Run dependency check
+      env:
+        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      run: ./gradlew dependencyCheckAnalyze
+
+    - name: Upload dependency check report
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        name: dependency-check-report-${{ github.run_id }}
+        path: build/reports/dependency-check-report.html
+
+    - name: Create or update issue for vulnerabilities
+      if: failure()
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          const weekNumber = Math.ceil((new Date() - new Date(new Date().getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));
+          const year = new Date().getFullYear();
+          const title = `🚨 Weekly Security Scan: Vulnerabilities Found - Week ${weekNumber} ${year}`;
+
+          const body = `## Weekly Dependency Check Report
+
+          *Last updated: ${new Date().toISOString()}*
+
+          The weekly security scan has detected vulnerabilities in project dependencies.
+
+          ### Action Required
+          1. Review the [dependency check report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          2. Update vulnerable dependencies or add suppressions as needed
+          3. Create a PR with fixes
+
+          ### Report
+          - Run ID: ${{ github.run_id }}
+          - [View full report artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          cc: @${{ github.repository_owner }}`;
+
+          // Search for existing issue from this week
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'security,dependencies',
+            per_page: 100
+          });
+
+          const existingIssue = issues.data.find(issue =>
+            issue.title.includes(`Week ${weekNumber} ${year}`) &&
+            issue.title.includes('Weekly Security Scan')
+          );
+
+          if (existingIssue) {
+            // Update existing issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: body
+            });
+
+            // Add a comment about the new run
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: `🔄 Updated with new scan results from [Run #${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+            });
+
+            console.log(`Updated existing issue #${existingIssue.number}`);
+          } else {
+            // Create new issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'dependencies', 'automated']
+            });
+            console.log('Created new security issue');
+          }
