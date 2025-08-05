@@ -38,7 +38,7 @@ graalvmNative {
             mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
             useFatJar.set(true)
 
-            buildArgs.addAll(
+            val commonArgs = listOf(
                 "-O2",
                 "--no-fallback",
                 "--gc=serial",
@@ -50,6 +50,18 @@ graalvmNative {
                 "--initialize-at-build-time=kotlinx.coroutines",
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
+            
+            val windowsSpecificArgs = if (System.getProperty("os.name").lowercase().contains("windows")) {
+                listOf(
+                    "--no-module-paths",
+                    "-H:+AllowIncompleteClasspath",
+                    "-H:+ReportUnsupportedElementsAtRuntime",
+                )
+            } else {
+                emptyList()
+            }
+            
+            buildArgs.addAll(commonArgs + windowsSpecificArgs)
         }
     }
 
