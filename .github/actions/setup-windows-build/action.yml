@@ -30,15 +30,3 @@ runs:
         Write-Host "Windows build environment configured"
       shell: powershell
 
-    - name: Build Native Image
-      run: |
-        $VERSION_ARG = ""
-        if (-not [string]::IsNullOrEmpty("${{ inputs.version }}")) {
-          $VERSION_ARG = "-Pversion=${{ inputs.version }}"
-        }
-        Set-Location "C:\build-workspace\scopes"
-        & .\gradlew.bat nativeCompile $VERSION_ARG
-      shell: powershell
-      env:
-        # Fix cross-drive path issues on Windows by using C: drive for everything
-        GRADLE_USER_HOME: C:\\gradle-cache
