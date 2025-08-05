@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.graalvm.native) apply false
+    alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
@@ -29,9 +30,11 @@ subprojects {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
     }
+}
 
-    // Configure detekt for each subproject
-    detekt {
+// Configure detekt for all subprojects
+subprojects {
+    configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
         config.setFrom("$rootDir/detekt.yml")
         buildUponDefaultConfig = true
         allRules = false
