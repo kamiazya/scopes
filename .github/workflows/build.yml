@@ -52,15 +52,17 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
-      env:
-        # Fix cross-drive path issues on Windows by using C: drive for cache
-        GRADLE_USER_HOME: ${{ matrix.platform == 'win32' && 'C:\\gradle-cache' || '' }}
 
-    - name: Build Native Image
+    - name: Build Native Image (Windows)
+      if: matrix.platform == 'win32'
       run: ./gradlew nativeCompile
       env:
         # Fix cross-drive path issues on Windows by using C: drive for cache
-        GRADLE_USER_HOME: ${{ matrix.platform == 'win32' && 'C:\\gradle-cache' || '' }}
+        GRADLE_USER_HOME: C:\\gradle-cache
+
+    - name: Build Native Image (Unix)
+      if: matrix.platform != 'win32'
+      run: ./gradlew nativeCompile
 
     - name: Prepare binary for security check
       shell: bash
