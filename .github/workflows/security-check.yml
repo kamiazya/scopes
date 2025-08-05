@@ -14,6 +14,8 @@ concurrency:
 permissions:
   contents: read
   pull-requests: write
+  actions: read
+  id-token: write
 
 jobs:
   dependency-check:
@@ -57,8 +59,8 @@ jobs:
       with:
         name: sbom-cyclonedx
         path: |
-          presentation-cli/build/reports/bom.json
-          presentation-cli/build/reports/bom.xml
+          presentation-cli/build/reports/
+        if-no-files-found: warn
 
 
     - name: Comment PR with vulnerability summary
