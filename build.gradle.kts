@@ -30,6 +30,14 @@ subprojects {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
     }
+
+    // Configure detekt for each subproject
+    detekt {
+        config.setFrom("$rootDir/detekt.yml")
+        buildUponDefaultConfig = true
+        allRules = false
+        parallel = true
+    }
 }
 
 // Custom task to check if GraalVM is available
@@ -58,16 +66,8 @@ ktlint {
     filter {
         exclude("**/generated/**")
         include("**/src/**/*.kt")
+        exclude("**/build/**")
     }
 }
-
-detekt {
-    source.setFrom("src/main/kotlin")
-    config.setFrom("$rootDir/detekt.yml")
-    buildUponDefaultConfig = true
-    allRules = false
-    parallel = true
-}
-
 
 // SBOM Configuration will be added to subprojects that need it

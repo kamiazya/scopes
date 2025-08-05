@@ -76,10 +76,10 @@ jobs:
       run: |
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          cp app/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
-          cp app/build/native/nativeCompile/scopes "$BINARY_NAME"
+          cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
@@ -111,7 +111,7 @@ jobs:
           SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
         fi
-        
+
         if [ -f "presentation-cli/build/reports/bom.xml" ]; then
           SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
@@ -133,7 +133,7 @@ jobs:
         if [ -f "presentation-cli/build/reports/bom.json" ]; then
           cp "presentation-cli/build/reports/bom.json" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
         fi
-        
+
         if [ -f "presentation-cli/build/reports/bom.xml" ]; then
           cp "presentation-cli/build/reports/bom.xml" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
         fi
@@ -297,16 +297,16 @@ jobs:
           ```
 
           ### SBOM (Software Bill of Materials)
-          
+
           Each platform includes SBOM files in both industry-standard formats:
           - **CycloneDX** (JSON/XML): Security-focused with vulnerability tracking capabilities
           - Download: `sbom-{platform}-{arch}.json` or `sbom-{platform}-{arch}.xml`
-          
+
           #### SBOM Usage Examples
           ```bash
           # Analyze dependencies with CycloneDX tools
           cyclonedx-cli analyze sbom-linux-x64.json
-          
+
           # Import into OWASP Dependency-Track
           curl -X POST "http://dtrack-server/api/v1/bom" \
             -H "X-API-Key: your-api-key" \

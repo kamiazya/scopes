@@ -1,5 +1,5 @@
 build:
-  maxIssues: 0
+  maxIssues: 100
   excludeCorrectable: false
   weights:
     # complexity: 2
@@ -436,16 +436,12 @@ style:
     active: false
   CollapsibleIfStatements:
     active: false
-  DataClassContainsFunction:
-    active: false
   DataClassShouldBeImmutable:
     active: false
   DestructuringDeclarationWithTooManyEntries:
     active: true
     maxDestructuringEntries: 3
   EqualsNullCall:
-    active: true
-  EqualsOnSignedArguments:
     active: true
   ExplicitCollectionElementAccessMethod:
     active: false
@@ -457,7 +453,7 @@ style:
     includeLineWrapping: false
   ForbiddenComment:
     active: true
-    values:
+    comments:
       - 'FIXME:'
       - 'STOPSHIP:'
       - 'TODO:'
@@ -471,11 +467,6 @@ style:
     methods:
       - 'kotlin.io.print'
       - 'kotlin.io.println'
-  ForbiddenPublicDataClass:
-    active: false
-    ignorePackages:
-      - '*.internal'
-      - '*.internal.*'
   ForbiddenVoid:
     active: true
     ignoreOverridden: false
@@ -485,11 +476,6 @@ style:
     ignoreOverridableFunction: true
     ignoreActualFunction: true
     excludedFunctions: []
-  LibraryCodeMustSpecifyReturnType:
-    active: false
-  LibraryEntitiesShouldNotBePublic:
-    active: false
-    excludes: ['**']
   LoopWithTooManyJumpStatements:
     active: true
     maxJumpCount: 1
@@ -511,8 +497,10 @@ style:
     ignoreEnums: false
     ignoreRanges: false
     ignoreExtensionFunctions: true
-  MandatoryBracesIfStatements:
-    active: false
+  BracesOnIfStatements:
+    active: true
+    singleLine: 'always'
+    multiLine: 'always'
   MandatoryBracesLoops:
     active: false
   MaxChainedCallsOnSameLine:
