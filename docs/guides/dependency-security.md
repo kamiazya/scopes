@@ -55,10 +55,10 @@ The Dependency Review Action analyzes dependency changes in pull requests.
 ```yaml
 # .github/workflows/dependency-review.yml
 - name: Dependency Review
-  uses: actions/dependency-review-action@v4
+  uses: actions/dependency-review-action@4081bf99e2866ebe428fc0477b69eb4fcda7220a # v4.4.0
   with:
     fail-on-severity: high
-    allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC
+    allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, UPL-1.0
 ```
 
 ## Working with Security Alerts
