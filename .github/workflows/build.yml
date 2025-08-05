@@ -80,13 +80,13 @@ jobs:
     - name: Build Native Image (Windows)
       if: matrix.platform == 'win32'
       run: |
-        VERSION_ARG=""
-        if [ -n "${{ inputs.version }}" ]; then
-          VERSION_ARG="-Pversion=${{ inputs.version }}"
-        fi
-        cd "C:\\build-workspace\\scopes"
+        $VERSION_ARG = ""
+        if ("${{ inputs.version }}" -ne "") {
+          $VERSION_ARG = "-Pversion=${{ inputs.version }}"
+        }
+        cd "C:\build-workspace\scopes"
         .\gradlew.bat nativeCompile $VERSION_ARG
-      shell: bash
+      shell: powershell
       env:
         # Fix cross-drive path issues on Windows by using C: drive for everything
         GRADLE_USER_HOME: C:\\gradle-cache
