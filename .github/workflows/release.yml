@@ -119,6 +119,10 @@ jobs:
 
         # Create base64 encoded hash for SLSA
         echo "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 -w 0 >> hashes-b64.txt
+        
+        # Set output variable for downstream steps
+        ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
+        echo "hashes=$ALL_HASHES" >> $GITHUB_OUTPUT
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
