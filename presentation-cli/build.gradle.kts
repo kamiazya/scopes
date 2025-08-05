@@ -51,10 +51,9 @@ graalvmNative {
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
 
-            val isWindows = System.getProperty("os.name").lowercase().contains("windows") || 
-                           System.getenv("RUNNER_OS") == "Windows" ||
-                           System.getenv("OS")?.lowercase()?.contains("windows") == true
-            
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
+                System.getenv("RUNNER_OS") == "Windows" ||
+                System.getenv("OS")?.lowercase()?.contains("windows") == true
             val windowsSpecificArgs = if (isWindows) {
                 listOf(
                     "--no-module-paths",
