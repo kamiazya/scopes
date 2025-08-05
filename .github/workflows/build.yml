@@ -77,7 +77,7 @@ jobs:
       run: |
         if [[ "${{ runner.os }}" == "Windows" ]]; then
           HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
-          HASH=$(echo $HASH | tr -d '[:space:]')
+          HASH=$(echo $HASH | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
         elif [[ "${{ runner.os }}" == "macOS" ]]; then
           HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         else
