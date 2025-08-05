@@ -1,0 +1,45 @@
+# Lefthook configuration for Scopes project
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    editorconfig:
+      glob: "*"
+      exclude: '.claude/.*|tmp/.*|LICENSE'
+      run: |
+        docker run --rm -v "$(pwd):/workspace" \
+          -w /workspace \
+          mstruebing/editorconfig-checker:latest \
+          ec --exclude LICENSE \
+          {staged_files} || true
+      skip:
+        - merge
+        - rebase
+
+    ktlint:
+      glob: "*.kt"
+      run: ./gradlew ktlintFormat --daemon
+      stage_fixed: true
+      skip:
+        - merge
+        - rebase
+
+    detekt:
+      glob: "*.kt"
+      run: ./gradlew detekt --daemon
+      skip:
+        - merge
+        - rebase
+
+    kotlin-test:
+      glob: "*.kt"
+      run: ./gradlew test --daemon
+      skip:
+        - merge
+        - rebase
+
+# Skip hooks during CI/CD
+skip_output:
+  - meta
+  - success

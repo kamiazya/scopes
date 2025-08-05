@@ -4,9 +4,16 @@
       "type": "http",
       "url": "https://mcp.deepwiki.com/mcp"
     },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
     "sequential-thinking": {
-      "command": "pnpm",
-      "args": ["dlx", "@modelcontextprotocol/server-sequential-thinking"]
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking@2025.7.1"
+      ]
     }
   }
 }

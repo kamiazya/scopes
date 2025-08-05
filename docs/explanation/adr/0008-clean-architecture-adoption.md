@@ -33,60 +33,60 @@ title: Clean Architecture Layers
 ---
 %%{init: {"theme": "neutral", "themeVariables": {"primaryColor": "#4caf50", "primaryTextColor": "#2e7d32", "primaryBorderColor": "#2e7d32"}}}%%
 graph TB
-    subgraph "Frameworks & Drivers"
-        UI[User Interfaces]
-        EXT[External Interfaces]
-        DB[Database/Storage]
-        WEB[Web Framework]
-    end
+  subgraph "Frameworks & Drivers"
+    UI[User Interfaces]
+    EXT[External Interfaces]
+    DB[Database/Storage]
+    WEB[Web Framework]
+  end
 
-    subgraph "Interface Adapters"
-        CTRL[Controllers]
-        GATE[Gateways]
-        PRES[Presenters]
-        REPO_IMPL[Repository Implementations]
-    end
+  subgraph "Interface Adapters"
+    CTRL[Controllers]
+    GATE[Gateways]
+    PRES[Presenters]
+    REPO_IMPL[Repository Implementations]
+  end
 
-    subgraph "Use Cases"
-        APP[Application Services]
-        REPO_INT[Repository Interfaces]
-        PORTS[Ports/Boundaries]
-    end
+  subgraph "Use Cases"
+    APP[Application Services]
+    REPO_INT[Repository Interfaces]
+    PORTS[Ports/Boundaries]
+  end
 
-    subgraph "Entities"
-        ENT[Domain Entities]
-        VO[Value Objects]
-        DS[Domain Services]
-        DR[Domain Rules]
-    end
+  subgraph "Entities"
+    ENT[Domain Entities]
+    VO[Value Objects]
+    DS[Domain Services]
+    DR[Domain Rules]
+  end
 
-    %% Dependencies flow inward
-    UI --> CTRL
-    EXT --> GATE
-    DB --> REPO_IMPL
-    WEB --> PRES
+  %% Dependencies flow inward
+  UI --> CTRL
+  EXT --> GATE
+  DB --> REPO_IMPL
+  WEB --> PRES
 
-    CTRL --> APP
-    GATE --> APP
-    PRES --> APP
-    REPO_IMPL --> REPO_INT
+  CTRL --> APP
+  GATE --> APP
+  PRES --> APP
+  REPO_IMPL --> REPO_INT
 
-    APP --> ENT
-    APP --> VO
-    APP --> DS
-    REPO_INT --> ENT
-    PORTS --> ENT
+  APP --> ENT
+  APP --> VO
+  APP --> DS
+  REPO_INT --> ENT
+  PORTS --> ENT
 
-    %% Styling
-    classDef outer fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-    classDef adapter fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef usecase fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
-    classDef entity fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
+  %% Styling
+  classDef outer fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+  classDef adapter fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+  classDef usecase fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+  classDef entity fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
 
-    class UI,EXT,DB,WEB outer
-    class CTRL,GATE,PRES,REPO_IMPL adapter
-    class APP,REPO_INT,PORTS usecase
-    class ENT,VO,DS,DR entity
+  class UI,EXT,DB,WEB outer
+  class CTRL,GATE,PRES,REPO_IMPL adapter
+  class APP,REPO_INT,PORTS usecase
+  class ENT,VO,DS,DR entity
 ```
 
 ### Dependency Rules
@@ -184,3 +184,4 @@ Clean Architecture layers align with DDD concepts:
 ## Tags
 
 `architecture`, `domain-design`, `clean-architecture`, `dependency-injection`, `testing`, `maintainability`
+

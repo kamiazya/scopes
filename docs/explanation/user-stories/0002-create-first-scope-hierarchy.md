@@ -38,33 +38,33 @@ Current pain points with traditional tools:
 Feature: Unified Scope hierarchy creation
 
 Scenario: Create a top-level scope
-  Given I have Scopes installed and running
-  When I create a scope called "Authentication System"
-  Then a new scope is created with a unique ID
-  And I can see it in my scope list
-  And it has the same properties as any other scope
+    Given I have Scopes installed and running
+    When I create a scope called "Authentication System"
+    Then a new scope is created with a unique ID
+    And I can see it in my scope list
+    And it has the same properties as any other scope
 
 Scenario: Add child scopes naturally
-  Given I have a scope "Authentication System"
-  When I create a child scope "User Login" under it
-  Then "User Login" becomes a child of "Authentication System"
-  And I can navigate from parent to child
-  And both scopes have identical capabilities
+    Given I have a scope "Authentication System"
+    When I create a child scope "User Login" under it
+    Then "User Login" becomes a child of "Authentication System"
+    And I can navigate from parent to child
+    And both scopes have identical capabilities
 
 Scenario: Create unlimited hierarchy depth
-  Given I have "Authentication System" > "User Login"
-  When I create "Login UI" under "User Login"
-  And I create "Input Validation" under "Login UI"
-  Then I can create arbitrarily deep hierarchies
-  And all levels work exactly the same way
-  And navigation works at all levels
+    Given I have "Authentication System" > "User Login"
+    When I create "Login UI" under "User Login"
+    And I create "Input Validation" under "Login UI"
+    Then I can create arbitrarily deep hierarchies
+    And all levels work exactly the same way
+    And navigation works at all levels
 
 Scenario: Understand unified concept
-  Given I have created a multi-level hierarchy
-  When I examine any scope at any level
-  Then it has the same properties and capabilities
-  And I can perform the same operations
-  And the interface is consistent throughout
+    Given I have created a multi-level hierarchy
+    When I examine any scope at any level
+    Then it has the same properties and capabilities
+    And I can perform the same operations
+    And the interface is consistent throughout
 ```
 
 ## User Journey
@@ -81,21 +81,21 @@ Scenario: Understand unified concept
 title: Learning the Unified Scope Concept
 ---
 journey
-    title First Scope Hierarchy Creation
-    section Understanding
-      Learn "everything is Scope" : 3: User
-      Compare to traditional tools: 2: User
-    section First Creation
-      Create top-level scope      : 4: User, System
-      See scope properties        : 4: User, System
-    section Building Hierarchy
-      Add child scope            : 5: User, System
-      See parent-child relation   : 5: User, System
-      Add more children          : 5: User, System
-    section Deep Understanding
-      Create nested levels       : 5: User, System
-      Realize consistency        : 5: User
-      Appreciate simplicity      : 5: User
+        title First Scope Hierarchy Creation
+        section Understanding
+          Learn "everything is Scope" : 3: User
+          Compare to traditional tools: 2: User
+        section First Creation
+          Create top-level scope      : 4: User, System
+          See scope properties        : 4: User, System
+        section Building Hierarchy
+          Add child scope            : 5: User, System
+          See parent-child relation   : 5: User, System
+          Add more children          : 5: User, System
+        section Deep Understanding
+          Create nested levels       : 5: User, System
+          Realize consistency        : 5: User
+          Appreciate simplicity      : 5: User
 ```
 
 ## Success Metrics
@@ -150,3 +150,4 @@ Help users transition from:
 - **Future**: Workspace management (builds on hierarchy)
 - **Future**: AI integration (uses hierarchical context)
 - **Future**: Focus management (operates on any scope level)
+

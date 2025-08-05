@@ -25,15 +25,15 @@
 Feature: [Feature name]
 
 Scenario: [Main scenario name]
-  Given [initial state/context]
-  When [user action]
-  Then [expected outcome]
-  And [additional outcomes]
+    Given [initial state/context]
+    When [user action]
+    Then [expected outcome]
+    And [additional outcomes]
 
 Scenario: [Alternative scenario if applicable]
-  Given [different context]
-  When [different action]
-  Then [different outcome]
+    Given [different context]
+    When [different action]
+    Then [different outcome]
 ```
 
 ## User Journey
@@ -75,3 +75,4 @@ title: [Title of the diagram]
 
 - [Links to related user stories]
 - [Cross-references to requirements that emerge from this story]
+

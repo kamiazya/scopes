@@ -23,124 +23,123 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 - [ ] `ScopeId`: ULID-based identifier
 - [ ] `ScopeTitle`: Title with validation rules
 - [ ] `ScopeDescription`: Rich text description
-- [ ] `ScopeStatus`: Lifecycle states (pending → in_progress → completed → logged)
 - [ ] `Timestamp`: Creation and modification timestamps
 
 #### 1.2 Core Entities
 - [ ] `Scope` Entity
-  - [ ] Basic properties (id, title, description, status, timestamps)
-  - [ ] Parent-child relationships
-  - [ ] Factory methods for controlled creation
-  - [ ] Business rule enforcement
-  - [ ] State transition validation
+      - [ ] Basic properties (id, title, description, status, timestamps)
+      - [ ] Parent-child relationships
+      - [ ] Factory methods for controlled creation
+      - [ ] Business rule enforcement
+      - [ ] State transition validation
 
 #### 1.3 Aspect System
 - [ ] `AspectKey` and `AspectValue` value objects
 - [ ] `Aspect` entity for key-value metadata
 - [ ] Built-in aspects:
-  - [ ] `priority`: high | medium | low
-  - [ ] `status`: pending | in_progress | completed | logged
-  - [ ] `type`: feature | bug | task | research | design
+      - [ ] `priority`: high | medium | low
+      - [ ] `status`: pending | in_progress | completed | logged
+      - [ ] `type`: feature | bug | task | research | design
 - [ ] Custom aspect support
 
 ### Phase 2: Domain Services
 
 - [ ] `ScopeHierarchyService`
-  - [ ] Parent-child relationship management
-  - [ ] Hierarchy validation rules
-  - [ ] Tree traversal operations
+      - [ ] Parent-child relationship management
+      - [ ] Hierarchy validation rules
+      - [ ] Tree traversal operations
 
 - [ ] `AspectValidator`
-  - [ ] Aspect value validation
-  - [ ] Type checking for custom aspects
-  - [ ] Constraint enforcement
+      - [ ] Aspect value validation
+      - [ ] Type checking for custom aspects
+      - [ ] Constraint enforcement
 
 - [ ] `AspectQueryService`
-  - [ ] Query parsing logic
-  - [ ] Comparison operators (>=, <=, =, !=)
-  - [ ] Logical operators (AND, OR)
+      - [ ] Query parsing logic
+      - [ ] Comparison operators (>=, <=, =, !=)
+      - [ ] Logical operators (AND, OR)
 
 ### Phase 3: Repository Interfaces
 
 - [ ] `ScopeRepository`
-  ```
-  - save(scope: Scope): Promise<void>
-  - findById(id: ScopeId): Promise<Scope?>
-  - findByParent(parentId: ScopeId): Promise<Scope[]>
-  - findAll(): Promise<Scope[]>
-  - delete(id: ScopeId): Promise<void>
-  ```
+```text
+        - save(scope: Scope): Promise<void>
+        - findById(id: ScopeId): Promise<Scope?>
+        - findByParent(parentId: ScopeId): Promise<Scope[]>
+        - findAll(): Promise<Scope[]>
+        - delete(id: ScopeId): Promise<void>
+      ```
 
 - [ ] `AspectRepository`
-  ```
-  - saveAspects(scopeId: ScopeId, aspects: Aspect[]): Promise<void>
-  - findByScopeId(scopeId: ScopeId): Promise<Aspect[]>
-  - removeAspect(scopeId: ScopeId, key: AspectKey): Promise<void>
-  ```
+```text
+        - saveAspects(scopeId: ScopeId, aspects: Aspect[]): Promise<void>
+        - findByScopeId(scopeId: ScopeId): Promise<Aspect[]>
+        - removeAspect(scopeId: ScopeId, key: AspectKey): Promise<void>
+      ```
 
 - [ ] Specification Pattern
-  - [ ] `ScopeSpecification` interface
-  - [ ] `AspectSpecification` for complex queries
+      - [ ] `ScopeSpecification` interface
+      - [ ] `AspectSpecification` for complex queries
 
 ### Phase 4: Application Layer (Use Cases)
 
 #### 4.1 Basic Scope Management
 - [ ] `CreateScopeUseCase`
-  - [ ] Input validation
-  - [ ] Scope creation with factory
-  - [ ] Repository persistence
-  - [ ] Response mapping
+      - [ ] Input validation
+      - [ ] Scope creation with factory
+      - [ ] Repository persistence
+      - [ ] Response mapping
 
 - [ ] `UpdateScopeUseCase`
-  - [ ] Scope retrieval
-  - [ ] Update validation
-  - [ ] State transition rules
-  - [ ] Persistence
+      - [ ] Scope retrieval
+      - [ ] Update validation
+      - [ ] State transition rules
+      - [ ] Persistence
 
 - [ ] `GetScopeUseCase`
-  - [ ] Single scope retrieval
-  - [ ] Include children option
-  - [ ] Include aspects option
+      - [ ] Single scope retrieval
+      - [ ] Include children option
+      - [ ] Include aspects option
 
 - [ ] `ListScopesUseCase`
-  - [ ] Pagination support
-  - [ ] Basic filtering
-  - [ ] Sorting options
+      - [ ] Pagination support
+      - [ ] Basic filtering
+      - [ ] Sorting options
 
 - [ ] `DeleteScopeUseCase`
-  - [ ] Soft delete implementation
-  - [ ] Cascade options for children
+      - [ ] Soft delete implementation
+      - [ ] Cascade options for children
 
 #### 4.2 Hierarchy Management
 - [ ] `AddChildScopeUseCase`
-  - [ ] Parent validation
-  - [ ] Hierarchy depth checks
-  - [ ] Circular reference prevention
+      - [ ] Parent validation
+      - [ ] Hierarchy depth checks
+      - [ ] Circular reference prevention
 
 - [ ] `MoveScopeUseCase`
-  - [ ] Valid move validation
-  - [ ] Update parent references
-  - [ ] Maintain child relationships
+      - [ ] Valid move validation
+      - [ ] Update parent references
+      - [ ] Maintain child relationships
 
 - [ ] `GetScopeTreeUseCase`
-  - [ ] Recursive tree building
-  - [ ] Depth limiting
-  - [ ] Performance optimization
+      - [ ] Recursive tree building
+      - [ ] Depth limiting
+      - [ ] Performance optimization
 
 #### 4.3 Aspect Management
 - [ ] `SetAspectUseCase`
-  - [ ] Aspect validation
-  - [ ] Overwrite vs append logic
-  - [ ] Built-in aspect handling
+      - [ ] Aspect validation
+      - [ ] Overwrite vs append logic
+      - [ ] Built-in aspect handling
 
 - [ ] `RemoveAspectUseCase`
-  - [ ] Aspect removal
-  - [ ] Cascade effects
+      - [ ] Aspect removal
+      - [ ] Cascade effects
 
 - [ ] `QueryByAspectUseCase`
-  - [ ] Query parsing
-  - [ ] Complex criteria support
-  - [ ] Result mapping
+      - [ ] Query parsing
+      - [ ] Complex criteria support
+      - [ ] Result mapping
 
 ### Phase 5: Context Management
 
@@ -164,15 +163,15 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 ### Phase 6: DTO and Interface Definitions
 
 - [ ] Request/Response DTOs
-  - [ ] `CreateScopeRequest/Response`
-  - [ ] `UpdateScopeRequest/Response`
-  - [ ] `AspectQueryRequest/Response`
-  - [ ] `WorkspaceContextDTO`
+      - [ ] `CreateScopeRequest/Response`
+      - [ ] `UpdateScopeRequest/Response`
+      - [ ] `AspectQueryRequest/Response`
+      - [ ] `WorkspaceContextDTO`
 
 - [ ] Use Case Interface
-  - [ ] `UseCase<TRequest, TResponse>` base interface
-  - [ ] Error handling standardization
-  - [ ] Validation patterns
+      - [ ] `UseCase<TRequest, TResponse>` base interface
+      - [ ] Error handling standardization
+      - [ ] Validation patterns
 
 ## Testing Strategy
 
@@ -251,3 +250,4 @@ This document outlines the implementation roadmap for Scopes, following Clean Ar
 ---
 
 *This roadmap is a living document and will be updated as implementation progresses and new insights emerge.*
+

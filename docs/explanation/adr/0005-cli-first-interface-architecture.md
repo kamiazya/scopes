@@ -43,93 +43,93 @@ We will adopt a CLI-first interface architecture with the following components:
 ### Design Principles
 
 1. **CLI as Primary Interface**
-   - CLI serves as the primary and complete interface to core business logic
-   - Core business logic implemented as a separate layer accessed by interfaces
-   - MCP server and TUI launched via CLI flags
-   - SDK provides direct programmatic access to the same core logic
-   - Other interfaces may delegate to CLI commands or access core directly
-   - Ensures consistency through shared core logic
+  - CLI serves as the primary and complete interface to core business logic
+  - Core business logic implemented as a separate layer accessed by interfaces
+  - MCP server and TUI launched via CLI flags
+  - SDK provides direct programmatic access to the same core logic
+  - Other interfaces may delegate to CLI commands or access core directly
+  - Ensures consistency through shared core logic
 
 2. **Unified Command Model**
-   - Same conceptual operations across all interfaces
-   - CLI commands generally map 1:1 to GUI actions and API endpoints
-   - Consistent naming and behavior patterns
-   - Interface-specific adaptations allowed when UI characteristics require different interaction patterns
+  - Same conceptual operations across all interfaces
+  - CLI commands generally map 1:1 to GUI actions and API endpoints
+  - Consistent naming and behavior patterns
+  - Interface-specific adaptations allowed when UI characteristics require different interaction patterns
 
 3. **Progressive Enhancement**
-   - Basic functionality works in all interfaces
-   - Advanced features may be interface-specific
-   - Graceful degradation when features unavailable
+  - Basic functionality works in all interfaces
+  - Advanced features may be interface-specific
+  - Graceful degradation when features unavailable
 
 4. **Configuration-Driven Integration**
-   - External system connections managed through configuration
-   - No hard-coded providers or endpoints
-   - Support for multiple integration patterns
+  - External system connections managed through configuration
+  - No hard-coded providers or endpoints
+  - Support for multiple integration patterns
 
 5. **UI-Appropriate Interaction Patterns**
-   - Choose appropriate patterns based on interface characteristics and user expectations
-   - Long-running operations should use patterns suitable for each interface type
-   - Examples:
-     - CLI: Synchronous with progress indicators, or async with job tracking
-     - GUI: Async with progress bars, notifications, or background processing
-     - API: Async endpoints returning job IDs for polling or webhook callbacks
+  - Choose appropriate patterns based on interface characteristics and user expectations
+  - Long-running operations should use patterns suitable for each interface type
+  - Examples:
+    - CLI: Synchronous with progress indicators, or async with job tracking
+    - GUI: Async with progress bars, notifications, or background processing
+    - API: Async endpoints returning job IDs for polling or webhook callbacks
 
 6. **Interface Launch Strategy**
-   - MCP server and TUI launched via CLI commands
-   - SDK provides direct library access to core business logic
-   - External interfaces coordinate through shared core configuration
-   - All interfaces access the same core business logic layer for consistency
+  - MCP server and TUI launched via CLI commands
+  - SDK provides direct library access to core business logic
+  - External interfaces coordinate through shared core configuration
+  - All interfaces access the same core business logic layer for consistency
 
 ### Architecture Diagram
 
 ```mermaid
 graph TD
-    subgraph "User/Client Interfaces"
-        CLI
-        TUI
-        IDE_Extension[IDE Extension - TBD]
-        Web_UI[Web UI - TBD]
-    end
+  subgraph "User/Client Interfaces"
+    CLI
+    TUI
+    IDE_Extension[IDE Extension - TBD]
+    Web_UI[Web UI - TBD]
+  end
 
-    subgraph "Programmatic Interfaces"
-        MCP_Server[MCP Server]
-        SDK
-        RESTful_API[RESTful API - TBD]
-    end
+  subgraph "Programmatic Interfaces"
+    MCP_Server[MCP Server]
+    SDK
+    RESTful_API[RESTful API - TBD]
+  end
 
-    subgraph "Core Logic"
-        Core_Business_Logic[Core Business Logic]
-    end
+  subgraph "Core Logic"
+    Core_Business_Logic[Core Business Logic]
+  end
 
-    subgraph "Data & Configuration"
-        Data_Store[Local Data Store]
-        Config_Files[Configuration Files]
-    end
+  subgraph "Data & Configuration"
+    Data_Store[Local Data Store]
+    Config_Files[Configuration Files]
+  end
 
-    %% Interface Connections
-    CLI --> Core_Business_Logic
-    TUI -- "Launched by" --> CLI
-    MCP_Server -- "Launched by" --> CLI
+  %% Interface Connections
+  CLI --> Core_Business_Logic
+  TUI -- "Launched by" --> CLI
+  MCP_Server -- "Launched by" --> CLI
 
-    IDE_Extension -- "Uses" --> SDK
-    Web_UI -- "Launched by" --> CLI
-    RESTful_API -- "Launched by" --> CLI
-    RESTful_API -- "Uses" --> SDK
+  IDE_Extension -- "Uses" --> SDK
+  Web_UI -- "Launched by" --> CLI
+  RESTful_API -- "Launched by" --> CLI
+  RESTful_API -- "Uses" --> SDK
 
-    %% Core and Data Access
-    Core_Business_Logic <--> Data_Store
-    Core_Business_Logic <--> Config_Files
-    SDK -- "Direct Access" --> Core_Business_Logic
+  %% Core and Data Access
+  Core_Business_Logic <--> Data_Store
+  Core_Business_Logic <--> Config_Files
+  SDK -- "Direct Access" --> Core_Business_Logic
 
-    %% Styling
-    classDef primary fill:#4caf50,stroke:#2e7d32,stroke-width:2px
-    classDef secondary fill:#2196f3,stroke:#1565c0,stroke-width:2px
-    classDef tbd fill:#ff9800,stroke:#e65100,stroke-width:1px,stroke-dasharray: 5 5
+  %% Styling
+  classDef primary fill:#4caf50,stroke:#2e7d32,stroke-width:2px
+  classDef secondary fill:#2196f3,stroke:#1565c0,stroke-width:2px
+  classDef tbd fill:#ff9800,stroke:#e65100,stroke-width:1px,stroke-dasharray: 5 5
 
-    class CLI primary
-    class Core_Business_Logic primary
-    class TUI,MCP_Server,SDK secondary
-    class RESTful_API,Web_UI,IDE_Extension tbd
+  class CLI primary
+  class Core_Business_Logic primary
+  class TUI,MCP_Server,SDK secondary
+  class RESTful_API,Web_UI,IDE_Extension tbd
 ```
 
 ### CLI Command Structure
@@ -179,3 +179,4 @@ The specific command structure, naming conventions, and parameters will be deter
 - [Command Line Interface Guidelines](https://clig.dev/)
 - [GNU Coding Standards - Command Line Interfaces](https://www.gnu.org/prep/standards/html_node/Command_002dLine-Interfaces.html)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
+

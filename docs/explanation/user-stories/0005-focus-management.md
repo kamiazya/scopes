@@ -35,39 +35,39 @@ The developer wants a focus system that works at both user (global) and workspac
 Feature: Hierarchical focus management
 
 Scenario: Focus on a single scope
-  Given I have many scopes in my system
-  When I focus on scope "scope-123"
-  Then I see only that scope and its context
-  And I can work without seeing other scopes
-  And focus state persists across commands
+    Given I have many scopes in my system
+    When I focus on scope "scope-123"
+    Then I see only that scope and its context
+    And I can work without seeing other scopes
+    And focus state persists across commands
 
 Scenario: Focus on parent scope with children
-  Given I have a parent scope with multiple child scopes
-  When I focus on the parent scope
-  Then I see the parent and all its descendants
-  And sibling scopes are hidden from view
-  And I can navigate within the focused hierarchy
+    Given I have a parent scope with multiple child scopes
+    When I focus on the parent scope
+    Then I see the parent and all its descendants
+    And sibling scopes are hidden from view
+    And I can navigate within the focused hierarchy
 
 Scenario: User-level focus management
-  Given I am working globally across directories
-  When I set a user-level focus on "scope-456"
-  Then this focus applies everywhere I work
-  And it persists across directory changes
-  Until I explicitly change or clear it
+    Given I am working globally across directories
+    When I set a user-level focus on "scope-456"
+    Then this focus applies everywhere I work
+    And it persists across directory changes
+    Until I explicitly change or clear it
 
 Scenario: Workspace-level focus management
-  Given I am in a specific project directory
-  When I set a workspace focus on "scope-789"
-  Then this focus applies only in this workspace
-  And it overrides any user-level focus
-  And other directories maintain their own focus
+    Given I am in a specific project directory
+    When I set a workspace focus on "scope-789"
+    Then this focus applies only in this workspace
+    And it overrides any user-level focus
+    And other directories maintain their own focus
 
 Scenario: Focus hierarchy resolution
-  Given I have both user and workspace focus set
-  When I run scopes commands
-  Then workspace focus takes precedence
-  And user focus applies when no workspace focus exists
-  And I can see which focus is active
+    Given I have both user and workspace focus set
+    When I run scopes commands
+    Then workspace focus takes precedence
+    And user focus applies when no workspace focus exists
+    And I can see which focus is active
 ```
 
 ## User Journey
@@ -84,23 +84,23 @@ Scenario: Focus hierarchy resolution
 title: Focus Management Workflow
 ---
 journey
-    title Daily Focus Management
-    section Morning Start
-      Check current focus          : 3: User
-      Set user focus on priority   : 4: User, System
-      Work on focused scope        : 5: User, System
-    section Project Switch
-      Navigate to project dir      : 4: User
-      Workspace focus activates    : 5: User, System
-      Work in project context      : 5: User, System
-    section Deep Work Session
-      Focus on specific subtask    : 4: User, System
-      Hidden distractions          : 5: User, System
-      Complete focused work        : 5: User
-    section Focus Management
-      Clear completed focus        : 4: User
-      Set new focus target         : 4: User, System
-      Continue productive work     : 5: User, System
+        title Daily Focus Management
+        section Morning Start
+          Check current focus          : 3: User
+          Set user focus on priority   : 4: User, System
+          Work on focused scope        : 5: User, System
+        section Project Switch
+          Navigate to project dir      : 4: User
+          Workspace focus activates    : 5: User, System
+          Work in project context      : 5: User, System
+        section Deep Work Session
+          Focus on specific subtask    : 4: User, System
+          Hidden distractions          : 5: User, System
+          Complete focused work        : 5: User
+        section Focus Management
+          Clear completed focus        : 4: User
+          Set new focus target         : 4: User, System
+          Continue productive work     : 5: User, System
 ```
 
 ## Success Metrics
@@ -160,16 +160,16 @@ scopes list --no-focus  # Alternative syntax
 ```
 
 ### Focus Hierarchy
-```
+```text
 User Focus (Global)
-    ↓ (applies everywhere)
+        ↓ (applies everywhere)
 Workspace Focus (Directory-specific)
-    ↓ (overrides user focus in this directory)
+        ↓ (overrides user focus in this directory)
 Active Focus (What user sees)
 ```
 
 ### Focus State Storage
-```
+```text
 ~/.scopes/
 ├── config.json
 ├── focus.json          # User-level focus state
@@ -197,7 +197,7 @@ scopes focus auth-feature  # Focus within client-work context
 # Setting focus with confirmation
 $ scopes focus auth-feature
 ✓ Focused on scope 'auth-feature': Implement user authentication
-  Including 2 child scopes
+    Including 2 child scopes
 
 # Current focus status
 $ scopes focus current
@@ -210,8 +210,8 @@ $ scopes list
 [FOCUS: auth-feature] [CONTEXT: client-work]
 
 auth-feature         Implement user authentication      priority=high
-  ├── login-ui       Design login interface            priority=medium
-  └── password-val   Add password validation           priority=high
+    ├── login-ui       Design login interface            priority=medium
+    └── password-val   Add password validation           priority=high
 
 # Recursive focus shows full tree
 $ scopes focus auth-feature --recursive
@@ -221,10 +221,10 @@ $ scopes list
 [FOCUS: auth-feature (recursive)]
 
 auth-feature         Implement user authentication      priority=high
-  ├── login-ui       Design login interface            priority=medium
-  │   └── form-val   Add form validation               priority=low
-  └── password-val   Add password validation           priority=high
-      └── hash-impl  Implement password hashing        priority=medium
+    ├── login-ui       Design login interface            priority=medium
+    │   └── form-val   Add form validation               priority=low
+    └── password-val   Add password validation           priority=high
+          └── hash-impl  Implement password hashing        priority=medium
 
 # Status shows comprehensive view
 $ scopes status
@@ -252,3 +252,4 @@ Focus set: 2 minutes ago
 - **US-004**: Named Context Views (works with focus for filtering)
 - **Future**: Workspace Management (automatic focus based on directory)
 - **Future**: AI Focus Integration (AI understands current focus for better assistance)
+

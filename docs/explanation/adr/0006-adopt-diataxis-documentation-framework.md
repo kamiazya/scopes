@@ -16,7 +16,7 @@ Our current documentation structure has several issues:
 The project has grown to include various types of documentation:
 
 - Architectural decisions and design documents
-- Domain models and business requirements  
+- Domain models and business requirements
 - Development guides and setup instructions
 - API references and technical specifications
 
@@ -45,7 +45,7 @@ We will adopt the **Diátaxis framework** for organizing our documentation. Diá
 
 Our documentation will be reorganized into four main categories:
 
-```
+```text
 /docs/
 ├── README.md          # Navigation and overview
 ├── tutorials/         # Learning-oriented guides
@@ -123,3 +123,4 @@ This decision applies to all documentation in the `/docs` directory. It does not
 - [Diátaxis Technical Documentation Framework](https://diataxis.fr/)
 - [Write the Docs - Diátaxis](https://www.writethedocs.org/videos/eu/2017/the-four-kinds-of-documentation-and-why-you-need-to-understand-what-they-are-daniele-procida/)
 - [Django's documentation](https://docs.djangoproject.com/) - Example of Diátaxis in practice
+

@@ -33,53 +33,53 @@ Current pain points with similar tools:
 Feature: First-time installation and setup
 
 Scenario: Install via package manager
-  Given I am a developer with npm/homebrew/cargo installed
-  When I run the standard installation command
-  Then Scopes is installed successfully
-  And I can verify the installation with --version
-  And I see a success message with next steps
+    Given I am a developer with npm/homebrew/cargo installed
+    When I run the standard installation command
+    Then Scopes is installed successfully
+    And I can verify the installation with --version
+    And I see a success message with next steps
 
 Scenario: First command execution
-  Given I have just installed Scopes
-  When I run 'scopes' without arguments
-  Then I see helpful usage information
-  And I see suggestions for getting started
-  And I see how to get more detailed help
+    Given I have just installed Scopes
+    When I run 'scopes' without arguments
+    Then I see helpful usage information
+    And I see suggestions for getting started
+    And I see how to get more detailed help
 
 Scenario: Create first scope
-  Given I have Scopes installed
-  When I follow the getting started guidance
-  Then I can create my first scope successfully
-  And I see confirmation of the created scope
-  And I understand what I can do next
+    Given I have Scopes installed
+    When I follow the getting started guidance
+    Then I can create my first scope successfully
+    And I see confirmation of the created scope
+    And I understand what I can do next
 
 Scenario: Get help when stuck
-  Given I am using Scopes for the first time
-  When I use the help system
-  Then I can find answers to common questions
-  And I can find examples of basic usage
-  And I know where to get additional support
+    Given I am using Scopes for the first time
+    When I use the help system
+    Then I can find answers to common questions
+    And I can find examples of basic usage
+    And I know where to get additional support
 
 Scenario: Handle missing package manager
-  Given I am on a system without npm/homebrew/cargo installed
-  When I try to install Scopes using instructions
-  Then I see a clear error message about missing dependencies
-  And I receive guidance on alternative installation methods
-  And I am directed to platform-specific installation instructions
+    Given I am on a system without npm/homebrew/cargo installed
+    When I try to install Scopes using instructions
+    Then I see a clear error message about missing dependencies
+    And I receive guidance on alternative installation methods
+    And I am directed to platform-specific installation instructions
 
 Scenario: Handle installation permission errors
-  Given I have npm installed but no global install permissions
-  When I run 'npm install -g scopes' without sudo
-  Then I see a clear permission error message
-  And I receive suggestions for resolving the issue
-  And I am informed about npx usage as an alternative
+    Given I have npm installed but no global install permissions
+    When I run 'npm install -g scopes' without sudo
+    Then I see a clear permission error message
+    And I receive suggestions for resolving the issue
+    And I am informed about npx usage as an alternative
 
 Scenario: Handle corrupted installation
-  Given I have a partially installed or corrupted Scopes installation
-  When I run 'scopes --version'
-  Then I see an error indicating the installation is broken
-  And I receive instructions for clean reinstallation
-  And I am provided troubleshooting resources
+    Given I have a partially installed or corrupted Scopes installation
+    When I run 'scopes --version'
+    Then I see an error indicating the installation is broken
+    And I receive instructions for clean reinstallation
+    And I am provided troubleshooting resources
 ```
 
 ## User Journey
@@ -96,22 +96,22 @@ Scenario: Handle corrupted installation
 title: First-Time User Installation Journey
 ---
 journey
-    title First-Time Installation and Setup
-    section Discovery
-      Learn about Scopes     : 3: User
-      Decide to try it       : 3: User
-    section Installation
-      Choose install method  : 4: User
-      Run install command    : 5: User, System
-      Verify installation    : 5: User, System
-    section First Use
-      Run 'scopes' command   : 4: User, System
-      Read getting started   : 4: User
-      Create first scope     : 5: User, System
-    section Success
-      See scope created      : 5: User, System
-      Understand next steps  : 4: User
-      Feel confident         : 5: User
+        title First-Time Installation and Setup
+        section Discovery
+          Learn about Scopes     : 3: User
+          Decide to try it       : 3: User
+        section Installation
+          Choose install method  : 4: User
+          Run install command    : 5: User, System
+          Verify installation    : 5: User, System
+        section First Use
+          Run 'scopes' command   : 4: User, System
+          Read getting started   : 4: User
+          Create first scope     : 5: User, System
+        section Success
+          See scope created      : 5: User, System
+          Understand next steps  : 4: User
+          Feel confident         : 5: User
 ```
 
 ## Success Metrics
@@ -157,3 +157,4 @@ journey
 ## Related Stories
 
 This story enables all other user stories by providing the foundation for users to start using Scopes.
+

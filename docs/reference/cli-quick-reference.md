@@ -32,7 +32,7 @@ $ scopes list
 Found 12 scopes:
 
 quiet-river-a4f7    Implement authentication          priority=high status=ready
-wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo  
+wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo
 swift-mountain-c9x4 Fix critical security bug        priority=high status=done
 brave-star-e5n3     Optimize database queries        priority=medium status=ready
 gentle-cloud-f8p6   Update documentation             priority=low status=todo
@@ -58,16 +58,16 @@ Aspects:
 
 Parent: None
 Children: 2 scopes
-  ├── login-ui: Design login interface
-  └── password-val: Add password validation
+    ├── login-ui: Design login interface
+    └── password-val: Add password validation
 
 # Display scope hierarchy
 $ scopes tree
 quiet-river-a4f7    Implement authentication          priority=high
-  ├── login-ui      Design login interface           priority=medium
-  │   └── form-val  Add form validation              priority=low
-  └── password-val  Add password validation          priority=high
-      └── hash-impl Implement password hashing       priority=medium
+    ├── login-ui      Design login interface           priority=medium
+    │   └── form-val  Add form validation              priority=low
+    └── password-val  Add password validation          priority=high
+          └── hash-impl Implement password hashing       priority=medium
 ```
 
 ### Editing Scopes
@@ -75,12 +75,12 @@ quiet-river-a4f7    Implement authentication          priority=high
 # Update scope title
 $ scopes update quiet-river-a4f7 --title "Enhanced authentication system"
 ✓ Updated scope 'quiet-river-a4f7':
-  Title: Enhanced authentication system
+    Title: Enhanced authentication system
 
 # Update aspects
 $ scopes update quiet-river-a4f7 --status completed
 ✓ Updated scope 'quiet-river-a4f7':
-  status: ready → completed
+    status: ready → completed
 ```
 
 ## Alias Management
@@ -101,7 +101,7 @@ Aliases for scope 01H8XGJWBWBAQ1J3T3B8A0V0A8:
 # Change canonical alias
 $ scopes alias set-canonical quiet-river-a4f7 authentication
 ✓ 'authentication' is now the canonical alias
-  'quiet-river-a4f7' remains as regular alias
+    'quiet-river-a4f7' remains as regular alias
 
 # Remove alias
 $ scopes alias rm sprint-42
@@ -120,13 +120,13 @@ $ scopes alias rm sprint-42
 # Set single aspect
 $ scopes aspect set quiet-river-a4f7 priority=high
 ✓ Set aspects on scope 'quiet-river-a4f7':
-  priority: high
+    priority: high
 
 # Set multiple aspects
 $ scopes aspect set quiet-river-a4f7 priority=high status=ready
 ✓ Set aspects on scope 'quiet-river-a4f7':
-  priority: high
-  status: ready
+    priority: high
+    status: ready
 ```
 
 ### Querying by Aspects
@@ -136,7 +136,7 @@ $ scopes list -a priority=high
 Found 3 scopes with priority=high:
 
 quiet-river-a4f7    Implement authentication          priority=high status=ready
-wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo  
+wise-ocean-b2k8     Redesign user dashboard          priority=high status=todo
 swift-mountain-c9x4 Fix critical security bug        priority=high status=done
 
 # Comparison operator
@@ -185,8 +185,8 @@ $ scopes context create --global "urgent" --filter "priority=high"
 # Apply context
 $ scopes context switch client-work
 ✓ Switched to context 'client-work'
-  Filter: project=acme AND priority>=medium
-  Matching scopes: 8
+    Filter: project=acme AND priority>=medium
+    Matching scopes: 8
 
 # List contexts
 $ scopes context list
@@ -215,7 +215,7 @@ Matching scopes: 8
 # Modify context
 $ scopes context edit client-work --filter "project=acme AND status!=completed"
 ✓ Updated context 'client-work':
-  Filter: project=acme AND status!=completed
+    Filter: project=acme AND status!=completed
 
 # Remove context
 $ scopes context rm old-context
@@ -234,7 +234,7 @@ $ scopes context rm old-context
 # Focus on scope
 $ scopes focus auth-feature
 ✓ Focused on scope 'auth-feature': Implement user authentication
-  Including 2 child scopes
+    Including 2 child scopes
 
 # Include all descendants
 $ scopes focus auth-feature --recursive
@@ -295,17 +295,17 @@ $ scopes help focus
 scopes-focus - Manage focus on specific scopes
 
 USAGE:
-    scopes focus [OPTIONS] [ALIAS]
+        scopes focus [OPTIONS] [ALIAS]
 
 ARGS:
-    <ALIAS>    Scope alias to focus on
+        <ALIAS>    Scope alias to focus on
 
 OPTIONS:
-    --recursive         Include all child scopes
-    --user              Set global focus
-    --workspace         Set workspace-specific focus
-    --clear             Clear current focus
-    -h, --help          Print help information
+          --recursive         Include all child scopes
+          --user              Set global focus
+          --workspace         Set workspace-specific focus
+          --clear             Clear current focus
+          -h, --help          Print help information
 ```
 
 ## Common Workflows
@@ -315,8 +315,8 @@ OPTIONS:
 # Start work on specific feature
 $ scopes context switch client-work
 ✓ Switched to context 'client-work'
-  Filter: project=acme AND priority>=medium
-  Matching scopes: 8
+    Filter: project=acme AND priority>=medium
+    Matching scopes: 8
 
 $ scopes focus auth-feature --recursive
 ✓ Focused on 'auth-feature' and all descendants (5 scopes total)
@@ -326,28 +326,28 @@ $ scopes list                           # See focused tasks
 [FOCUS: auth-feature (recursive)] [CONTEXT: client-work]
 
 auth-feature         Implement user authentication      priority=high
-  ├── login-ui       Design login interface            priority=medium
-  │   └── form-val   Add form validation               priority=low
-  └── password-val   Add password validation           priority=high
-      └── hash-impl  Implement password hashing        priority=medium
+    ├── login-ui       Design login interface            priority=medium
+    │   └── form-val   Add form validation               priority=low
+    └── password-val   Add password validation           priority=high
+          └── hash-impl  Implement password hashing        priority=medium
 
 $ scopes aspect set login-ui status=in-progress
 ✓ Set aspects on scope 'login-ui':
-  status: in-progress
+    status: in-progress
 
 $ scopes update login-ui --title "Improved login UI"
 ✓ Updated scope 'login-ui':
-  Title: Improved login UI
+    Title: Improved login UI
 
 # Switch context for different work
 $ scopes context switch personal-projects
 ✓ Switched to context 'personal-projects'
-  Filter: project=personal
-  Matching scopes: 15
+    Filter: project=personal
+    Matching scopes: 15
 
 $ scopes focus blog-engine
 ✓ Focused on scope 'blog-engine': Build personal blog
-  Including 3 child scopes
+    Including 3 child scopes
 ```
 
 ### Project Organization
@@ -388,11 +388,11 @@ All commands support dynamic tab completion:
 ## Output Conventions
 
 ### Standard Listing Format
-```
+```text
 alias-name           Title/Description                   aspects...
 quiet-river-a4f7     Implement authentication           priority=high status=ready
-  ├── login-ui       Design login interface            priority=medium
-  └── password-val   Add password validation           priority=high
+    ├── login-ui       Design login interface            priority=medium
+    └── password-val   Add password validation           priority=high
 ```
 
 ### Status Indicators
@@ -420,12 +420,12 @@ Error: Invalid aspect query syntax in 'priority=>high'
 ## Configuration
 
 ### Directory Structure
-```
+```text
 ~/.scopes/           # Global configuration
 ├── config.json     # User settings
 └── focus.json      # User-level focus state
 
-project/.scopes/     # Workspace configuration  
+project/.scopes/     # Workspace configuration
 ├── workspace.json  # Workspace settings
 └── focus.json      # Workspace focus state
 ```
