@@ -120,7 +120,7 @@ jobs:
         fi
 
         # Create base64 encoded hash for SLSA (portable across Linux and macOS)
-        echo "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' >> hashes-b64.txt
+        echo -n "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' >> hashes-b64.txt
 
         # Set output variable for downstream steps
         ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
