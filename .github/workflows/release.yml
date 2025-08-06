@@ -44,6 +44,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+    - name: Setup Windows Build Environment
+      if: matrix.platform == 'win32'
+      uses: ./.github/actions/setup-windows-build
+
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
       with:
@@ -69,7 +73,19 @@ jobs:
         echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
         echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
 
-    - name: Build native binary
+    - name: Build native binary (Windows)
+      if: matrix.platform == 'win32'
+      run: |
+        Set-Location "C:\build-workspace\scopes"
+        $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+        echo "Executing: .\gradlew.bat nativeCompile $VERSION_ARG"
+        & .\gradlew.bat nativeCompile $VERSION_ARG
+      shell: powershell
+      env:
+        GRADLE_USER_HOME: C:\gradle-cache
+
+    - name: Build native binary (Unix)
+      if: matrix.platform != 'win32'
       run: ./gradlew nativeCompile -Pversion="${{ steps.version.outputs.version }}"
 
     - name: Prepare binary for upload
@@ -77,7 +93,7 @@ jobs:
       run: |
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          cp presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
           cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
@@ -85,7 +101,17 @@ jobs:
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
 
-    - name: Generate SBOM (CycloneDX)
+    - name: Generate SBOM (CycloneDX) (Windows)
+      if: matrix.platform == 'win32'
+      run: |
+        Set-Location "C:\build-workspace\scopes"
+        & .\gradlew.bat presentation-cli:cycloneDxBom
+      shell: powershell
+      env:
+        GRADLE_USER_HOME: C:\gradle-cache
+
+    - name: Generate SBOM (CycloneDX) (Unix)
+      if: matrix.platform != 'win32'
       run: ./gradlew presentation-cli:cycloneDxBom
 
 
@@ -110,24 +136,32 @@ jobs:
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
 
         # Generate hashes for SBOM files
-        if [ -f "presentation-cli/build/reports/bom.json" ]; then
+        if [ "${{ matrix.platform }}" = "win32" ]; then
+          SBOM_JSON_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.json"
+          SBOM_XML_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.xml"
+        else
+          SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
+          SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
+        fi
+        
+        if [ -f "$SBOM_JSON_PATH" ]; then
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_JSON_HASH=$(certutil -hashfile "presentation-cli/build/reports/bom.json" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+            SBOM_JSON_HASH=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            SBOM_JSON_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+            SBOM_JSON_HASH=$(shasum -a 256 "$SBOM_JSON_PATH" | awk '{print $1}')
           else
-            SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+            SBOM_JSON_HASH=$(sha256sum "$SBOM_JSON_PATH" | awk '{print $1}')
           fi
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
         fi
 
-        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
+        if [ -f "$SBOM_XML_PATH" ]; then
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_XML_HASH=$(certutil -hashfile "presentation-cli/build/reports/bom.xml" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+            SBOM_XML_HASH=$(certutil -hashfile "$SBOM_XML_PATH" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            SBOM_XML_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+            SBOM_XML_HASH=$(shasum -a 256 "$SBOM_XML_PATH" | awk '{print $1}')
           else
-            SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+            SBOM_XML_HASH=$(sha256sum "$SBOM_XML_PATH" | awk '{print $1}')
           fi
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
         fi
@@ -149,12 +183,20 @@ jobs:
       shell: bash
       run: |
         # Copy SBOM files with platform-specific names
-        if [ -f "presentation-cli/build/reports/bom.json" ]; then
-          cp "presentation-cli/build/reports/bom.json" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
+        if [ "${{ matrix.platform }}" = "win32" ]; then
+          SBOM_JSON_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.json"
+          SBOM_XML_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.xml"
+        else
+          SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
+          SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
+        fi
+        
+        if [ -f "$SBOM_JSON_PATH" ]; then
+          cp "$SBOM_JSON_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
         fi
 
-        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
-          cp "presentation-cli/build/reports/bom.xml" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
+        if [ -f "$SBOM_XML_PATH" ]; then
+          cp "$SBOM_XML_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
         fi
 
     - name: Upload SBOM artifacts
