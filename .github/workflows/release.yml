@@ -301,7 +301,7 @@ jobs:
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
           # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-v${{ steps.version.outputs.tag_version }}-linux-x64 \
+          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
             --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
