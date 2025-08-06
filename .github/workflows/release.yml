@@ -136,6 +136,7 @@ jobs:
 
         echo "Hash: $HASH"
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
+        echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
         # Generate hashes for SBOM files
         if [ "${{ matrix.platform }}" = "win32" ]; then
@@ -219,6 +220,7 @@ jobs:
         path: |
           hashes.txt
           hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
   collect-hashes:
     name: Collect Hashes for SLSA
