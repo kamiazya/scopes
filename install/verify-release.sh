@@ -243,8 +243,8 @@ verify_sbom() {
     if [[ ! -f "$sbom_json" ]] && [[ "$AUTO_DOWNLOAD" == "true" ]]; then
         print_status "Downloading SBOM files..."
         base_url="https://github.com/$GITHUB_REPO/releases/download/$version"
-        curl -L -o "$sbom_json" "$base_url/$sbom_json" || print_warning "Failed to download $sbom_json"
-        curl -L -o "$sbom_xml" "$base_url/$sbom_xml" || print_warning "Failed to download $sbom_xml"
+        curl -fsSL -o "$sbom_json" "$base_url/$sbom_json" || print_warning "Failed to download $sbom_json"
+        curl -fsSL -o "$sbom_xml" "$base_url/$sbom_xml" || print_warning "Failed to download $sbom_xml"
     fi
 
     if [[ -f "$sbom_json" ]]; then
