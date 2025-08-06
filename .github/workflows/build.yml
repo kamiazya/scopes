@@ -108,7 +108,7 @@ jobs:
     - name: Prepare binary for security check
       shell: bash
       run: |
-        PREFIX="${{ inputs.binary-prefix || 'scopes-build' }}"
+        PREFIX="${{ inputs.binary-prefix }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
           cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
