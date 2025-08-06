@@ -40,11 +40,66 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    PASSED: Verified SLSA provenance
    ```
 
+### One-Liner Installation (Recommended)
+
+The easiest and most secure way to install Scopes is using our one-liner installation scripts that include automatic verification:
+
+#### Linux/macOS/WSL (Bash)
+```bash
+# One-liner installation with automatic verification
+curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+```
+
+#### Windows PowerShell
+```powershell
+# One-liner installation with automatic verification
+iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 | iex
+```
+
+#### Windows
+For Windows users, please use PowerShell (available on Windows 10/11 by default) with the one-liner installation shown above.
+
+### Standalone Verification Scripts
+
+For manual verification of already downloaded files, we provide standalone verification scripts:
+
+#### Linux/macOS/WSL (Bash)
+```bash
+# Method 1: Using environment variables (recommended)
+export SCOPES_VERSION=v1.0.0
+export SCOPES_AUTO_DOWNLOAD=true
+curl -L -o verify-release.sh https://raw.githubusercontent.com/kamiazya/scopes/main/install/verify-release.sh
+chmod +x verify-release.sh
+./verify-release.sh  # No parameters needed!
+
+# Method 2: Command line parameters
+./verify-release.sh --download --version v1.0.0
+
+# Verify local files
+./verify-release.sh --binary scopes-v1.0.0-linux-x64 --provenance multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
+```
+
+#### Windows (PowerShell)
+```powershell
+# Method 1: Using environment variables (recommended)
+$env:SCOPES_VERSION='v1.0.0'
+$env:SCOPES_AUTO_DOWNLOAD='true'
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/install/Verify-Release.ps1" -OutFile "Verify-Release.ps1"
+.\Verify-Release.ps1  # No parameters needed!
+
+# Method 2: Command line parameters
+.\Verify-Release.ps1 -AutoDownload -Version v1.0.0
+
+# Verify local files
+.\Verify-Release.ps1 -BinaryPath scopes-v1.0.0-win32-x64.exe -HashFile binary-hash-win32-x64.txt -ProvenancePath multiple.intoto.jsonl
+```
+
+
 ### Manual Hash Verification
 
 If you prefer manual verification:
 
-1. **Download the checksums file** (`hashes.txt`) from the release
+1. **Download the checksums file** (`binary-hash-<platform>-<arch>.txt`) from the release
 2. **Calculate the hash** of your downloaded binary:
    ```bash
    # Linux/macOS
@@ -53,7 +108,7 @@ If you prefer manual verification:
    # Windows
    certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
    ```
-3. **Compare** the calculated hash with the value in `hashes.txt`
+3. **Compare** the calculated hash with the value in the checksum file
 
 ## What SLSA Verification Confirms
 
@@ -147,7 +202,7 @@ This release includes comprehensive SBOM files for complete dependency transpare
 ```bash
 # Verify SBOM integrity
 sha256sum sbom-linux-x64.json
-grep "sbom-linux-x64.json" hashes.txt
+grep "sbom-linux-x64.json" binary-hash-linux-x64.txt
 
 # Validate SBOM format
 cyclonedx validate sbom-linux-x64.json

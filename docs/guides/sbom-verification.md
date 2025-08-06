@@ -26,16 +26,44 @@ Scopes releases include comprehensive SBOM files that provide:
 
 ## Verification Steps
 
-### 1. Download and Verify Checksums
+### 1. Automated Verification (Recommended)
+
+Use our cross-platform verification scripts that include SBOM validation:
+
+```bash
+# Linux/macOS - Using environment variables (recommended)
+export SCOPES_VERSION=v1.0.0
+export SCOPES_AUTO_DOWNLOAD=true
+export SCOPES_VERIFY_SBOM=true
+curl -L -o verify-release.sh https://raw.githubusercontent.com/kamiazya/scopes/main/install/verify-release.sh
+chmod +x verify-release.sh
+./verify-release.sh  # SBOM verification enabled via environment
+
+# Linux/macOS - Command line parameters
+./verify-release.sh --download --version v1.0.0 --verify-sbom
+```
+
+```powershell
+# Windows PowerShell - Using environment variables (recommended)
+$env:SCOPES_VERSION='v1.0.0'
+$env:SCOPES_AUTO_DOWNLOAD='true'
+$env:SCOPES_VERIFY_SBOM='true'
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/install/Verify-Release.ps1" -OutFile "Verify-Release.ps1"
+.\Verify-Release.ps1  # SBOM verification enabled via environment
+
+# Windows PowerShell - Command line parameters
+.\Verify-Release.ps1 -AutoDownload -Version v1.0.0 -VerifySBOM
+```
+
+### 2. Manual Download and Verify Checksums
 
 ```bash
 # Download SBOM files and checksums
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/sbom-linux-x64.json
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/hashes.txt
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-linux-x64.txt
 
-# Verify SBOM integrity
+# Verify SBOM integrity (SBOM hashes are included in binary hash files)
 sha256sum sbom-linux-x64.json
-grep "sbom-linux-x64.json" hashes.txt
 ```
 
 ### 2. Validate SBOM Format
