@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
+        description: 'Release tag (e.g., v1.0.0)'
         required: true
         type: string
 
@@ -44,10 +44,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-    - name: Setup Windows Build Environment
-      if: matrix.platform == 'win32'
-      uses: ./.github/actions/setup-windows-build
-
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
       with:
@@ -60,7 +56,6 @@ jobs:
 
     - name: Extract version from tag
       id: version
-      shell: bash
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           VERSION="${{ inputs.tag }}"
@@ -73,27 +68,15 @@ jobs:
         echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
         echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
 
-    - name: Build native binary (Windows)
-      if: matrix.platform == 'win32'
-      run: |
-        Set-Location "C:\build-workspace\scopes"
-        $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
-        echo "Executing: .\gradlew.bat nativeCompile $VERSION_ARG"
-        & .\gradlew.bat nativeCompile $VERSION_ARG
-      shell: powershell
-      env:
-        GRADLE_USER_HOME: C:\gradle-cache
-
-    - name: Build native binary (Unix)
-      if: matrix.platform != 'win32'
-      run: ./gradlew nativeCompile -Pversion="${{ steps.version.outputs.version }}"
+    - name: Build native binary
+      run: ./gradlew nativeCompile -Pversion=${{ steps.version.outputs.version }}
 
     - name: Prepare binary for upload
       shell: bash
       run: |
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-          cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
           BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
           cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
@@ -101,17 +84,7 @@ jobs:
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
 
-    - name: Generate SBOM (CycloneDX) (Windows)
-      if: matrix.platform == 'win32'
-      run: |
-        Set-Location "C:\build-workspace\scopes"
-        & .\gradlew.bat presentation-cli:cycloneDxBom
-      shell: powershell
-      env:
-        GRADLE_USER_HOME: C:\gradle-cache
-
-    - name: Generate SBOM (CycloneDX) (Unix)
-      if: matrix.platform != 'win32'
+    - name: Generate SBOM (CycloneDX)
       run: ./gradlew presentation-cli:cycloneDxBom
 
 
@@ -124,12 +97,8 @@ jobs:
 
         # Generate SHA256 hash for binary
         if [[ "${{ runner.os }}" == "Windows" ]]; then
-          # On Windows, certutil outputs in a specific format, we need to extract just the hash
-          HASH_OUTPUT=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256)
-          # Extract the second line which contains the hash
-          HASH=$(echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-        elif [[ "${{ runner.os }}" == "macOS" ]]; then
-          HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
+          HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
+          HASH=$(echo $HASH | tr -d '[:space:]')
         else
           HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         fi
@@ -138,41 +107,19 @@ jobs:
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
 
         # Generate hashes for SBOM files
-        if [ "${{ matrix.platform }}" = "win32" ]; then
-          SBOM_JSON_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.json"
-          SBOM_XML_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.xml"
-        else
-          SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
-          SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
-        fi
-        
-        if [ -f "$SBOM_JSON_PATH" ]; then
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_JSON_HASH_OUTPUT=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256)
-            SBOM_JSON_HASH=$(echo "$SBOM_JSON_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            SBOM_JSON_HASH=$(shasum -a 256 "$SBOM_JSON_PATH" | awk '{print $1}')
-          else
-            SBOM_JSON_HASH=$(sha256sum "$SBOM_JSON_PATH" | awk '{print $1}')
-          fi
+        if [ -f "presentation-cli/build/reports/bom.json" ]; then
+          SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
         fi
 
-        if [ -f "$SBOM_XML_PATH" ]; then
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_XML_HASH_OUTPUT=$(certutil -hashfile "$SBOM_XML_PATH" SHA256)
-            SBOM_XML_HASH=$(echo "$SBOM_XML_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            SBOM_XML_HASH=$(shasum -a 256 "$SBOM_XML_PATH" | awk '{print $1}')
-          else
-            SBOM_XML_HASH=$(sha256sum "$SBOM_XML_PATH" | awk '{print $1}')
-          fi
+        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
+          SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
         fi
 
         # Create base64 encoded hash for SLSA (portable across Linux and macOS)
-        echo -n "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
-
+        echo "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' >> hashes-b64.txt
+        
         # Set output variable for downstream steps
         ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
         echo "hashes=$ALL_HASHES" >> $GITHUB_OUTPUT
@@ -187,20 +134,12 @@ jobs:
       shell: bash
       run: |
         # Copy SBOM files with platform-specific names
-        if [ "${{ matrix.platform }}" = "win32" ]; then
-          SBOM_JSON_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.json"
-          SBOM_XML_PATH="/c/build-workspace/scopes/presentation-cli/build/reports/bom.xml"
-        else
-          SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
-          SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
-        fi
-        
-        if [ -f "$SBOM_JSON_PATH" ]; then
-          cp "$SBOM_JSON_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
+        if [ -f "presentation-cli/build/reports/bom.json" ]; then
+          cp "presentation-cli/build/reports/bom.json" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
         fi
 
-        if [ -f "$SBOM_XML_PATH" ]; then
-          cp "$SBOM_XML_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
+        if [ -f "presentation-cli/build/reports/bom.xml" ]; then
+          cp "presentation-cli/build/reports/bom.xml" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
         fi
 
     - name: Upload SBOM artifacts
@@ -218,7 +157,7 @@ jobs:
         name: hashes-${{ matrix.platform }}-${{ matrix.arch }}
         path: |
           hashes.txt
-          hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          hashes-b64.txt
 
   collect-hashes:
     name: Collect Hashes for SLSA
@@ -228,23 +167,11 @@ jobs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
     steps:
-    - name: Download Linux hash artifacts
+    - name: Download all hash artifacts
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
-        name: hashes-linux-x64
-        path: linux-hashes
-
-    - name: Download macOS hash artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: hashes-darwin-x64
-        path: darwin-hashes
-
-    - name: Download Windows hash artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: hashes-win32-x64
-        path: win32-hashes
+        pattern: hashes-*
+        merge-multiple: true
 
     - name: Collect all hashes
       id: collect
@@ -252,25 +179,15 @@ jobs:
         set -euo pipefail
         echo "Collecting hashes from all platforms..."
 
-        # List all downloaded files for debugging
-        echo "Downloaded artifacts structure:"
-        find . -name "*.txt" -type f | sort
-
-        # Combine all base64 hash files from all platforms
-        echo "Combining hashes from all platforms..."
-        cat linux-hashes/hashes-b64-linux-x64.txt > combined-hashes-b64.txt
-        cat darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes-b64.txt
-        cat win32-hashes/hashes-b64-win32-x64.txt >> combined-hashes-b64.txt
+        # Combine all hash files
+        cat hashes-b64.txt > combined-hashes-b64.txt || echo "" > combined-hashes-b64.txt
 
         # Create a single base64 encoded string with all hashes
         HASHES_B64=$(cat combined-hashes-b64.txt | tr '\n' ',' | sed 's/,$//')
         echo "hashes=$HASHES_B64" >> $GITHUB_OUTPUT
 
-        echo "Collected hashes (base64):"
-        cat combined-hashes-b64.txt
-        
-        echo "Collected hashes (readable):"
-        cat linux-hashes/hashes.txt darwin-hashes/hashes.txt win32-hashes/hashes.txt
+        echo "Collected hashes:"
+        cat hashes.txt || echo "No hashes.txt found"
 
   provenance:
     name: Generate SLSA Provenance
@@ -279,7 +196,7 @@ jobs:
       actions: read
       id-token: write
       contents: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.3.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
@@ -293,12 +210,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0
 
     - name: Extract version from tag
       id: version
-      shell: bash
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           VERSION="${{ inputs.tag }}"
@@ -324,7 +238,6 @@ jobs:
 
 
     - name: Download SLSA provenance
-      if: needs.provenance.result == 'success'
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: "${{ needs.provenance.outputs.provenance-name }}"
@@ -382,7 +295,7 @@ jobs:
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
           # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
+          slsa-verifier verify-artifact scopes-v${{ steps.version.outputs.tag_version }}-linux-x64 \
             --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
@@ -406,11 +319,11 @@ jobs:
           ```
 
           ### Manual Verification
-          See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
+          See the checksums in `hashes.txt` for manual verification of binaries and SBOM files.
         files: |
           artifacts/*/scopes-*
           provenance/*.intoto.jsonl
-          artifacts/*/binary-hash-*.txt
+          artifacts/*/hashes.txt
           sbom-artifacts/sbom-*.json
           sbom-artifacts/sbom-*.xml
         draft: false
