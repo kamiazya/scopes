@@ -217,7 +217,13 @@ jobs:
     - name: Scan binaries with Grype
       run: |
         echo "=== Grype Vulnerability Scan ==="
-        for binary in binaries/scopes-build-*; do
+        # Use the same default prefix as in the build job
+        PREFIX="${{ inputs.binary-prefix }}"
+        if [ -z "$PREFIX" ]; then
+          PREFIX="scopes-build"
+        fi
+
+        for binary in binaries/"${PREFIX}"-*; do
           if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
             echo "Scanning: $binary"
             grype "$binary" --output json --file "${binary}-grype-report.json" || true
@@ -229,7 +235,13 @@ jobs:
     - name: Generate SBOMs for binaries
       run: |
         echo "=== Syft SBOM Generation ==="
-        for binary in binaries/scopes-build-*; do
+        # Use the same default prefix as in the build job
+        PREFIX="${{ inputs.binary-prefix }}"
+        if [ -z "$PREFIX" ]; then
+          PREFIX="scopes-build"
+        fi
+
+        for binary in binaries/"${PREFIX}"-*; do
           if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
             echo "Generating SBOM for: $binary"
             syft "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
