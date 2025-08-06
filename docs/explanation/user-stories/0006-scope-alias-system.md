@@ -261,4 +261,3 @@ auth-feature   authentication   auth-api-v2
 - **US-005**: Focus Management (aliases make focus commands easier)
 - **Future**: Cross-Device Sync (alias synchronization)
 - **Future**: External Tool Integration (expose aliases to other tools)
-

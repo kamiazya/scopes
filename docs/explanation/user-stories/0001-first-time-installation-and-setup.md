@@ -136,11 +136,18 @@ journey
 ## Implementation Notes
 
 ### Installation Methods
+
+#### Package Managers (Future)
 - **npm**: `npm install -g scopes` (primary method for Node.js ecosystem)
-- **Homebrew**: `brew install scopes` (macOS users)
+- **Homebrew**: `brew install scopes` (macOS users)  
 - **Cargo**: `cargo install scopes` (if implemented in Rust)
-- **GitHub Releases**: Manual download for all platforms
 - **Package managers**: apt, yum, pacman for Linux distributions
+
+#### Secure Manual Installation (Available Now)
+For users who prefer or require manual installation with cryptographic verification:
+- **One-liner installation**: See [US-007: Secure Manual Installation](0007-secure-manual-installation.md)
+- **GitHub Releases**: Direct download with integrated verification
+- **Enterprise deployment**: Verified installation for compliance requirements
 
 ### First-Run Experience
 - Clear welcome message with version info
@@ -156,5 +163,6 @@ journey
 
 ## Related Stories
 
-This story enables all other user stories by providing the foundation for users to start using Scopes.
+- **US-007**: [Secure Manual Installation and Verification](0007-secure-manual-installation.md) - Extends this story with secure manual installation option for users who cannot use package managers or require stronger security guarantees
+- This story enables all other user stories by providing the foundation for users to start using Scopes
 

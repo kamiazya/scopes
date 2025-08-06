@@ -1,0 +1,32 @@
+name: 'Setup Windows Build Environment'
+description: 'Sets up Windows-specific build environment for GraalVM native compilation'
+
+inputs:
+  version:
+    description: 'Version to build (for releases)'
+    required: false
+
+outputs:
+  workspace-path:
+    description: 'Path to the Windows build workspace'
+    value: 'C:\\build-workspace\\scopes'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2.0.0
+
+    - name: "Copy project to C: drive"
+      run: |
+        New-Item -ItemType Directory -Path "C:\\build-workspace" -Force
+        Copy-Item -Path "." -Destination "C:\\build-workspace\\scopes" -Recurse -Force
+        Write-Host "Project copied to C:\\build-workspace\\scopes"
+      shell: powershell
+
+    - name: Set Windows build environment
+      run: |
+        Add-Content -Path $env:GITHUB_ENV -Value "GRADLE_USER_HOME=C:\gradle-cache"
+        Write-Host "Windows build environment configured"
+      shell: powershell
+

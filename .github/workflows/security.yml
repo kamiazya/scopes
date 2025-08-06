@@ -1,0 +1,101 @@
+name: Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  id-token: write
+
+jobs:
+  dependency-check:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
+      with:
+        java-version: '21'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+
+    - name: Submit dependency graph to GitHub
+      if: github.event_name == 'push'
+      uses: gradle/actions/dependency-submission@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      with:
+        dependency-graph: generate-and-submit
+
+    - name: Generate SBOM (CycloneDX)
+      id: sbom_generation
+      run: ./gradlew presentation-cli:cycloneDxBom
+      continue-on-error: ${{ github.event_name == 'pull_request' }}
+
+    - name: Handle SBOM generation failure
+      if: steps.sbom_generation.outcome == 'failure'
+      run: |
+        echo "SBOM generation failed"
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "::warning::SBOM generation failed - this is non-blocking for PRs but should be investigated"
+          exit 0
+        else
+          echo "::error::SBOM generation failed on main branch - this will fail the workflow"
+          exit 1
+        fi
+
+    - name: Upload SBOM artifacts
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        name: sbom-cyclonedx
+        path: |
+          presentation-cli/build/reports/
+        if-no-files-found: warn
+
+    - name: Comment PR with vulnerability summary
+      if: github.event_name == 'pull_request' && steps.sbom_generation.outcome == 'failure'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        SERVER_URL: ${{ github.server_url }}
+        REPOSITORY: ${{ github.repository }}
+        RUN_ID: ${{ github.run_id }}
+      with:
+        script: |
+          const comment = `## ⚠️ Security Issues Detected
+
+          The security check found issues during SBOM generation or dependency analysis.
+
+          Please review the [security check workflow](${process.env.SERVER_URL}/${process.env.REPOSITORY}/actions/runs/${process.env.RUN_ID}) for details.
+
+          **Next steps:**
+          1. Check the Security tab for Dependabot alerts
+          2. Review any failed SBOM generation steps
+          3. Update vulnerable dependencies as needed
+
+          For more information, see [Security Policy](${process.env.SERVER_URL}/${process.env.REPOSITORY}/blob/${process.env.HEAD_REF}/SECURITY.md).`;
+
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+

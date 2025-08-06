@@ -3,7 +3,7 @@
 # Format All Files
 # This script auto-fixes all linting and formatting issues
 
-set -e
+set -Eeuo pipefail
 
 echo "🧹 Auto-fixing all linting and formatting issues..."
 

@@ -48,25 +48,30 @@ Stories covering fundamental Scopes usage patterns.
 - [US-004: Named Context Views](0004-personal-context-switching.md) - Persistent filtered views for work organization
 - [US-005: Focus Management](0005-focus-management.md) - Hierarchical focus on specific scopes for deep work
 
+### Installation & Security Stories
+Stories covering secure installation and verification.
+
+- [US-007: Secure Manual Installation and Verification](0007-secure-manual-installation.md) - One-liner installation with integrated cryptographic verification for security-conscious users
+
 ### AI Integration Stories
 Stories focused on human-AI collaboration features.
 
-- **US-007**: MCP-Based AI Integration (Future) - AI assistant integration via Model Context Protocol
+- **US-XXX**: MCP-Based AI Integration (Future) - AI assistant integration via Model Context Protocol
 
 ### Productivity Stories
 Stories about efficiency and workflow optimization.
 
 - [US-006: Scope Alias System](0006-scope-alias-system.md) - User-friendly ID management for easier scope reference
-- **US-012**: SQL-Based Analysis (Future) - Direct SQL queries for scope data analysis
-- **US-013**: Audit and Log Analysis (Future) - Activity tracking and audit trails
+- **US-XXX**: SQL-Based Analysis (Future) - Direct SQL queries for scope data analysis
+- **US-XXX**: Audit and Log Analysis (Future) - Activity tracking and audit trails
 
 ### Integration Stories
 Stories covering tool ecosystem integration.
 
-- **US-008**: Cross-Device Synchronization (Future) - Sync scopes across multiple devices
-- **US-009**: Self-Update and Schema Migration (Future) - Automatic updates and data migration
-- **US-010**: External Task Management Integration (Future) - Connect with JIRA, GitHub Issues, etc.
-- **US-011**: Export Functionality (Future) - Export scopes to various formats
+- **US-XXX**: Cross-Device Synchronization (Future) - Sync scopes across multiple devices
+- **US-XXX**: Self-Update and Schema Migration (Future) - Automatic updates and data migration
+- **US-XXX**: External Task Management Integration (Future) - Connect with JIRA, GitHub Issues, etc.
+- **US-XXX**: Export Functionality (Future) - Export scopes to various formats
 
 ## OOS CLI Tool Considerations
 

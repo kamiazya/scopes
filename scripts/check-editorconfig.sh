@@ -1,7 +1,7 @@
 #!/bin/bash
 # EditorConfig checking with Docker
 
-set -e
+set -Eeuo pipefail
 
 if [ "$#" -eq 0 ]; then
     echo "Usage: $0 <files...>"

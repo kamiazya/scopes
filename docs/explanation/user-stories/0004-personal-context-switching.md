@@ -200,4 +200,3 @@ scopes context switch default
 - **Future**: Directory-Based Workspace Management (contexts can be workspace-specific)
 - **Future**: AI Integration (AI understands current context for better assistance)
 - **Future**: Personal Analytics (track time and productivity across contexts)
-

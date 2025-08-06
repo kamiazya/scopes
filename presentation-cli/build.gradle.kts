@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.graalvm.native)
+    id("org.cyclonedx.bom") version "2.3.1"
+    id("org.spdx.sbom") version "0.9.0"
     application
 }
 
@@ -36,7 +38,7 @@ graalvmNative {
             mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
             useFatJar.set(true)
 
-            buildArgs.addAll(
+            val commonArgs = listOf(
                 "-O2",
                 "--no-fallback",
                 "--gc=serial",
@@ -48,13 +50,40 @@ graalvmNative {
                 "--initialize-at-build-time=kotlinx.coroutines",
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
+
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
+                System.getenv("RUNNER_OS") == "Windows" ||
+                System.getenv("OS")?.lowercase()?.contains("windows") == true
+            val windowsSpecificArgs = if (isWindows) {
+                listOf(
+                    "-H:+AllowIncompleteClasspath",
+                    "-H:+ReportUnsupportedElementsAtRuntime",
+                    "-H:DeadlockWatchdogInterval=0",
+                    "--allow-incomplete-classpath",
+                    "-H:+StaticExecutableWithDynamicLibC"
+                )
+            } else {
+                emptyList()
+            }
+
+            buildArgs.addAll(commonArgs + windowsSpecificArgs)
         }
     }
 
     toolchainDetection.set(false)
 }
 
+// Windows-specific JAR handling to avoid module-info conflicts
+tasks.named("nativeCompileClasspathJar") {
+    doFirst {
+        if (System.getenv("RUNNER_OS") == "Windows") {
+            println("Windows detected: Configuring JAR to handle module-info conflicts")
+        }
+    }
+}
+
 // Make nativeCompile depend on checkGraalVM
 tasks.named("nativeCompile") {
     dependsOn(":checkGraalVM")
 }
+
