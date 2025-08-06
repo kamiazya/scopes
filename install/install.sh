@@ -142,7 +142,8 @@ get_latest_version() {
 # Function to calculate hash
 calculate_hash() {
     local file="$1"
-    local platform=$(detect_platform)
+    local platform
+    platform=$(detect_platform)
     
     if [[ "$platform" == "darwin" ]]; then
         shasum -a 256 "$file" | awk '{print $1}'
@@ -168,10 +169,12 @@ verify_hash() {
         return 1
     fi
     
-    local calculated_hash=$(calculate_hash "$binary_file")
+    local calculated_hash
+    calculated_hash=$(calculate_hash "$binary_file")
     
     # Read and parse hash file content
-    local hash_file_content=$(cat "$hash_file" 2>/dev/null || echo "")
+    local hash_file_content
+    hash_file_content=$(cat "$hash_file" 2>/dev/null || echo "")
     print_verbose "Hash file content: '$hash_file_content'"
     
     # Try different parsing methods for better compatibility
@@ -453,6 +456,10 @@ show_next_steps() {
 
 # Function to confirm installation
 confirm_installation() {
+    local version="$1"
+    local platform="$2"
+    local arch="$3"
+    
     if [[ "$FORCE_INSTALL" == "true" ]]; then
         return 0
     fi
@@ -460,7 +467,7 @@ confirm_installation() {
     echo -e "${BOLD}Scopes Installation${NC}"
     echo ""
     echo "This script will:"
-    echo "  • Download Scopes $VERSION for $platform-$arch"
+    echo "  • Download Scopes $version for $platform-$arch"
     echo "  • Verify cryptographic signatures and hashes"
     echo "  • Install to: $INSTALL_DIR"
     if needs_sudo; then
@@ -488,8 +495,10 @@ main() {
     fi
     
     # Detect platform and architecture
-    local platform=$(detect_platform)
-    local arch=$(detect_arch)
+    local platform
+    local arch
+    platform=$(detect_platform)
+    arch=$(detect_arch)
     
     if [[ "$platform" == "unknown" || "$arch" == "unknown" ]]; then
         print_error "Unsupported platform: $platform-$arch"
@@ -524,7 +533,7 @@ main() {
     fi
     
     # Confirm installation
-    confirm_installation
+    confirm_installation "$VERSION" "$platform" "$arch"
     
     # Download and verify
     download_and_verify "$VERSION" "$platform" "$arch"

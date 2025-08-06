@@ -64,7 +64,8 @@ detect_arch() {
 # Function to calculate hash cross-platform
 calculate_hash() {
     local file="$1"
-    local platform=$(detect_platform)
+    local platform
+    platform=$(detect_platform)
     
     if [[ "$platform" == "win32" ]]; then
         # Windows: Use certutil if available, otherwise try sha256sum
@@ -89,6 +90,8 @@ calculate_hash() {
 verify_hash() {
     local binary_file="$1"
     local hash_file="$2"
+    local calculated_hash
+    local expected_hash
     
     print_header "Hash Verification"
     
@@ -103,12 +106,26 @@ verify_hash() {
     fi
     
     print_status "Calculating hash for: $binary_file"
-    local calculated_hash
-    calculated_hash=$(calculate_hash "$binary_file")
+    if ! calculated_hash=$(calculate_hash "$binary_file"); then
+        print_error "Failed to calculate hash for: $binary_file"
+        return 1
+    fi
     
     print_status "Reading expected hash from: $hash_file"
-    local expected_hash
-    expected_hash=$(cut -d':' -f2 "$hash_file" | tr -d ' \r\n')
+    if ! expected_hash=$(cut -d':' -f2 "$hash_file" | tr -d ' \r\n'); then
+        print_error "Failed to read expected hash from: $hash_file"
+        return 1
+    fi
+    
+    if [[ -z "$calculated_hash" ]]; then
+        print_error "Calculated hash is empty"
+        return 1
+    fi
+    
+    if [[ -z "$expected_hash" ]]; then
+        print_error "Expected hash is empty"
+        return 1
+    fi
     
     print_status "Expected hash: $expected_hash"
     print_status "Calculated hash: $calculated_hash"
@@ -211,16 +228,19 @@ verify_sbom() {
     local version="$1"
     local platform="$2"
     local arch="$3"
-    
-    print_header "SBOM Verification"
-    
     local sbom_json="sbom-$platform-$arch.json"
     local sbom_xml="sbom-$platform-$arch.xml"
+    local base_url
+    local sbom_hash_entry
+    local expected_sbom_hash
+    local calculated_sbom_hash
+    
+    print_header "SBOM Verification"
     
     # Try to download SBOM files if not present
     if [[ ! -f "$sbom_json" ]] && [[ "$AUTO_DOWNLOAD" == "true" ]]; then
         print_status "Downloading SBOM files..."
-        local base_url="https://github.com/$GITHUB_REPO/releases/download/$version"
+        base_url="https://github.com/$GITHUB_REPO/releases/download/$version"
         curl -L -o "$sbom_json" "$base_url/$sbom_json" || print_warning "Failed to download $sbom_json"
         curl -L -o "$sbom_xml" "$base_url/$sbom_xml" || print_warning "Failed to download $sbom_xml"
     fi
@@ -240,9 +260,21 @@ verify_sbom() {
         # Verify SBOM hash if hash file contains it
         if [[ -f "$HASH_FILE" ]] && grep -q "$sbom_json" "$HASH_FILE"; then
             print_status "Verifying SBOM hash..."
-            local sbom_hash_entry=$(grep "$sbom_json" "$HASH_FILE")
-            local expected_sbom_hash=$(echo "$sbom_hash_entry" | cut -d':' -f2 | tr -d ' \r\n')
-            local calculated_sbom_hash=$(calculate_hash "$sbom_json")
+            
+            if ! sbom_hash_entry=$(grep "$sbom_json" "$HASH_FILE"); then
+                print_error "Failed to read SBOM hash entry from hash file"
+                return 1
+            fi
+            
+            if ! expected_sbom_hash=$(echo "$sbom_hash_entry" | cut -d':' -f2 | tr -d ' \r\n'); then
+                print_error "Failed to parse expected SBOM hash"
+                return 1
+            fi
+            
+            if ! calculated_sbom_hash=$(calculate_hash "$sbom_json"); then
+                print_error "Failed to calculate SBOM hash"
+                return 1
+            fi
             
             if [[ "$calculated_sbom_hash" == "$expected_sbom_hash" ]]; then
                 print_status "✅ SBOM hash verification PASSED"
@@ -373,8 +405,20 @@ main() {
     print_header "Scopes Release Verification"
     
     # Detect platform and architecture
-    local platform=${PLATFORM_OVERRIDE:-$(detect_platform)}
-    local arch=${ARCH_OVERRIDE:-$(detect_arch)}
+    local platform
+    local arch
+    
+    if [[ -n "$PLATFORM_OVERRIDE" ]]; then
+        platform="$PLATFORM_OVERRIDE"
+    else
+        platform=$(detect_platform)
+    fi
+    
+    if [[ -n "$ARCH_OVERRIDE" ]]; then
+        arch="$ARCH_OVERRIDE"
+    else
+        arch=$(detect_arch)
+    fi
     
     # Show current configuration
     print_status "Configuration:"
