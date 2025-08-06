@@ -200,19 +200,19 @@ download_release() {
     fi
 
     print_status "Downloading binary: $binary_name"
-    curl -L -o "$binary_name" "$base_url/$binary_name" || {
+    curl -fsSL -o "$binary_name" "$base_url/$binary_name" || {
         print_error "Failed to download binary"
         exit 1
     }
 
     print_status "Downloading hash file: $hash_name"
-    curl -L -o "$hash_name" "$base_url/$hash_name" || {
+    curl -fsSL -o "$hash_name" "$base_url/$hash_name" || {
         print_error "Failed to download hash file"
         exit 1
     }
 
     print_status "Downloading provenance file: multiple.intoto.jsonl"
-    curl -L -o "multiple.intoto.jsonl" "$base_url/multiple.intoto.jsonl" || {
+    curl -fsSL -o "multiple.intoto.jsonl" "$base_url/multiple.intoto.jsonl" || {
         print_error "Failed to download provenance file"
         exit 1
     }
