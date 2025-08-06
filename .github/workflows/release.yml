@@ -325,10 +325,11 @@ jobs:
           ```
 
           ### Manual Verification
-          See the checksums in `hashes.txt` for manual verification of binaries and SBOM files.
+          See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
         files: |
           artifacts/*/scopes-*
-          artifacts/*/hashes.txt
+          provenance/*.intoto.jsonl
+          artifacts/*/binary-hash-*.txt
           sbom-artifacts/sbom-*.json
           sbom-artifacts/sbom-*.xml
         draft: false
