@@ -3,7 +3,7 @@
 # Cross-platform verification script for Scopes releases
 # Supports: Linux, macOS, Windows (Git Bash/WSL)
 
-set -e
+set -Eeuo pipefail
 
 # Colors for output
 RED='\033[0;31m'
