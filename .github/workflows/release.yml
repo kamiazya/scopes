@@ -124,8 +124,10 @@ jobs:
 
         # Generate SHA256 hash for binary
         if [[ "${{ runner.os }}" == "Windows" ]]; then
-          HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
-          HASH=$(echo $HASH | tr -d '[:space:]')
+          # On Windows, certutil outputs in a specific format, we need to extract just the hash
+          HASH_OUTPUT=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256)
+          # Extract the second line which contains the hash
+          HASH=$(echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
         elif [[ "${{ runner.os }}" == "macOS" ]]; then
           HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         else
@@ -146,7 +148,8 @@ jobs:
         
         if [ -f "$SBOM_JSON_PATH" ]; then
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_JSON_HASH=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+            SBOM_JSON_HASH_OUTPUT=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256)
+            SBOM_JSON_HASH=$(echo "$SBOM_JSON_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             SBOM_JSON_HASH=$(shasum -a 256 "$SBOM_JSON_PATH" | awk '{print $1}')
           else
@@ -157,7 +160,8 @@ jobs:
 
         if [ -f "$SBOM_XML_PATH" ]; then
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            SBOM_XML_HASH=$(certutil -hashfile "$SBOM_XML_PATH" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+            SBOM_XML_HASH_OUTPUT=$(certutil -hashfile "$SBOM_XML_PATH" SHA256)
+            SBOM_XML_HASH=$(echo "$SBOM_XML_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             SBOM_XML_HASH=$(shasum -a 256 "$SBOM_XML_PATH" | awk '{print $1}')
           else
