@@ -252,4 +252,3 @@ Focus set: 2 minutes ago
 - **US-004**: Named Context Views (works with focus for filtering)
 - **Future**: Workspace Management (automatic focus based on directory)
 - **Future**: AI Focus Integration (AI understands current focus for better assistance)
-
