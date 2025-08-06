@@ -136,11 +136,11 @@ jobs:
 
           echo "Hash: $HASH"
           echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
-          
+
           # Create individual hash file with proper format
           echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
-          
-          # Verify the hash file was created correctly  
+
+          # Verify the hash file was created correctly
           echo "Generated hash file content:"
           cat binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
@@ -152,7 +152,7 @@ jobs:
             SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
             SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
           fi
-          
+
           if [ -f "$SBOM_JSON_PATH" ]; then
             if [[ "${{ runner.os }}" == "Windows" ]]; then
               SBOM_JSON_HASH_OUTPUT=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256)
@@ -178,7 +178,7 @@ jobs:
           fi
 
           # Create base64 encoded hash for SLSA (portable across all platforms)
-          printf "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          printf "%s:sha256:%s" "${{ steps.binary.outputs.binary_name }}" "$HASH" | base64 > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
           # Set output variable for downstream steps
           ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
@@ -201,7 +201,7 @@ jobs:
             SBOM_JSON_PATH="presentation-cli/build/reports/bom.json"
             SBOM_XML_PATH="presentation-cli/build/reports/bom.xml"
           fi
-          
+
           if [ -f "$SBOM_JSON_PATH" ]; then
             cp "$SBOM_JSON_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
           fi
@@ -276,7 +276,7 @@ jobs:
 
           echo "Collected hashes (base64):"
           cat combined-hashes-b64.txt
-          
+
           echo "Collected hashes (readable):"
           cat linux-hashes/hashes.txt darwin-hashes/hashes.txt win32-hashes/hashes.txt
 
