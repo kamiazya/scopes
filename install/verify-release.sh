@@ -162,6 +162,8 @@ verify_slsa() {
         print_warning "slsa-verifier not found. Installing..."
         if command -v go >/dev/null 2>&1; then
             go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
+            # Update PATH to include Go binary directory
+            export PATH="$(go env GOPATH)/bin:$PATH"
         else
             print_error "Go is required to install slsa-verifier"
             print_error "Please install Go and run: go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest"
