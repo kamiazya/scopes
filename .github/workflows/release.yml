@@ -36,10 +36,9 @@ jobs:
           - os: macos-latest
             platform: darwin
             arch: x64
-          # Temporarily disable Windows build due to path issues
-          # - os: windows-latest
-          #   platform: win32
-          #   arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: x64
 
     steps:
     - name: Checkout code
@@ -101,6 +100,8 @@ jobs:
         if [[ "${{ runner.os }}" == "Windows" ]]; then
           HASH=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256 | findstr /v "hash" | findstr /v "CertUtil")
           HASH=$(echo $HASH | tr -d '[:space:]')
+        elif [[ "${{ runner.os }}" == "macOS" ]]; then
+          HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         else
           HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
         fi
@@ -110,12 +111,24 @@ jobs:
 
         # Generate hashes for SBOM files
         if [ -f "presentation-cli/build/reports/bom.json" ]; then
-          SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            SBOM_JSON_HASH=$(certutil -hashfile "presentation-cli/build/reports/bom.json" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            SBOM_JSON_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+          else
+            SBOM_JSON_HASH=$(sha256sum "presentation-cli/build/reports/bom.json" | awk '{print $1}')
+          fi
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
         fi
 
         if [ -f "presentation-cli/build/reports/bom.xml" ]; then
-          SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            SBOM_XML_HASH=$(certutil -hashfile "presentation-cli/build/reports/bom.xml" SHA256 | findstr /v "hash" | findstr /v "CertUtil" | tr -d '[:space:]')
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            SBOM_XML_HASH=$(shasum -a 256 "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+          else
+            SBOM_XML_HASH=$(sha256sum "presentation-cli/build/reports/bom.xml" | awk '{print $1}')
+          fi
           echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
         fi
 
