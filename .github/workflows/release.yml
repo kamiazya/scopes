@@ -36,9 +36,10 @@ jobs:
           - os: macos-latest
             platform: darwin
             arch: x64
-          - os: windows-latest
-            platform: win32
-            arch: x64
+          # Temporarily disable Windows build due to path issues
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: x64
 
     steps:
     - name: Checkout code
