@@ -70,7 +70,7 @@ jobs:
         echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
 
     - name: Build native binary
-      run: ./gradlew nativeCompile -Pversion=${{ steps.version.outputs.version }}
+      run: ./gradlew nativeCompile -Pversion="${{ steps.version.outputs.version }}"
 
     - name: Prepare binary for upload
       shell: bash
