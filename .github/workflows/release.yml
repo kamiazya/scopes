@@ -136,7 +136,13 @@ jobs:
 
         echo "Hash: $HASH"
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
+        
+        # Create individual hash file with proper format
         echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+        
+        # Verify the hash file was created correctly  
+        echo "Generated hash file content:"
+        cat binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
         # Generate hashes for SBOM files
         if [ "${{ matrix.platform }}" = "win32" ]; then

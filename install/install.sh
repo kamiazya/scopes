@@ -169,10 +169,31 @@ verify_hash() {
     fi
     
     local calculated_hash=$(calculate_hash "$binary_file")
-    local expected_hash=$(cut -d':' -f2 "$hash_file" | tr -d ' \r\n')
     
-    print_verbose "Expected hash: $expected_hash"
-    print_verbose "Calculated hash: $calculated_hash"
+    # Read and parse hash file content
+    local hash_file_content=$(cat "$hash_file" 2>/dev/null || echo "")
+    print_verbose "Hash file content: '$hash_file_content'"
+    
+    # Try different parsing methods for better compatibility
+    local expected_hash=""
+    if [[ "$hash_file_content" == *":"* ]]; then
+        # Format: "filename:hash" - extract hash part
+        expected_hash=$(echo "$hash_file_content" | cut -d':' -f2 | tr -d ' \r\n')
+    else
+        # Format: just hash or other format - take the first word that looks like a hash
+        expected_hash=$(echo "$hash_file_content" | grep -oE '[a-f0-9]{64}' | head -n1 | tr -d ' \r\n')
+    fi
+    
+    print_verbose "Expected hash: '$expected_hash'"
+    print_verbose "Calculated hash: '$calculated_hash'"
+    
+    # Check if we got a valid hash
+    if [[ -z "$expected_hash" ]]; then
+        print_error "❌ Hash verification FAILED"
+        print_error "Could not extract hash from file: $hash_file"
+        print_error "Hash file content: '$hash_file_content'"
+        return 1
+    fi
     
     if [[ "$calculated_hash" == "$expected_hash" ]]; then
         print_status "✅ Hash verification PASSED"
