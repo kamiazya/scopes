@@ -171,7 +171,7 @@ jobs:
         fi
 
         # Create base64 encoded hash for SLSA (portable across Linux and macOS)
-        echo -n "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 | tr -d '\n' > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
+        echo -n "${{ steps.binary.outputs.binary_name }}:sha256:$HASH" | base64 > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
         # Set output variable for downstream steps
         ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
@@ -262,7 +262,7 @@ jobs:
         cat darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes-b64.txt
         cat win32-hashes/hashes-b64-win32-x64.txt >> combined-hashes-b64.txt
 
-        # Create a single base64 encoded string with all hashes
+        # Create a single base64 encoded string with all hashes (comma-separated for SLSA)
         HASHES_B64=$(cat combined-hashes-b64.txt | tr '\n' ',' | sed 's/,$//')
         echo "hashes=$HASHES_B64" >> $GITHUB_OUTPUT
 
