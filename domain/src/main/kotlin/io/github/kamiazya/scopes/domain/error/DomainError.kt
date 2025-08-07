@@ -42,24 +42,4 @@ sealed class DomainError {
         data class DuplicateTitle(val title: String, val parentId: ScopeId?) : BusinessRuleViolation()
     }
 
-    /**
-     * Aggregate validation error that accumulates multiple field-specific errors.
-     * Supports error accumulation.
-     */
-    data class AggregateValidation(
-        val fieldErrors: Map<String, NonEmptyList<DomainError>>
-    ) : DomainError() {
-
-        /**
-         * Total count of all accumulated errors across all fields.
-         */
-        val totalErrorCount: Int
-            get() = fieldErrors.values.sumOf { it.size }
-
-        /**
-         * Set of field names that have validation errors.
-         */
-        val affectedFields: Set<String>
-            get() = fieldErrors.keys
-    }
 }

@@ -42,7 +42,6 @@ class ErrorRecoveryService(
 
             // Unknown errors default to non-recoverable for safety
             is DomainError.ValidationError.InvalidFormat -> ErrorRecoveryCategory.NON_RECOVERABLE
-            is DomainError.AggregateValidation -> ErrorRecoveryCategory.NON_RECOVERABLE
         }
     }
 

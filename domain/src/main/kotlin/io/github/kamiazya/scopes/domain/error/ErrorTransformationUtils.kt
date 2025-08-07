@@ -22,7 +22,6 @@ object ErrorTransformationUtils {
                 is DomainError.ValidationError -> "ValidationError"
                 is DomainError.ScopeError -> "ScopeError"
                 is DomainError.BusinessRuleViolation -> "BusinessRuleViolation"
-                is DomainError.AggregateValidation -> "AggregateValidation"
             }
         }
     }
@@ -45,8 +44,6 @@ object ErrorTransformationUtils {
                 // BusinessRuleViolations are MEDIUM severity as they enforce business constraints
                 is DomainError.BusinessRuleViolation -> ErrorSeverity.MEDIUM
 
-                // AggregateValidation errors can be variable severity, defaulting to HIGH
-                is DomainError.AggregateValidation -> ErrorSeverity.HIGH
             }
         }
     }
@@ -142,8 +139,6 @@ object ErrorTransformationUtils {
             is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
             is DomainError.BusinessRuleViolation.DuplicateTitle -> "Duplicate title: ${error.title}"
 
-            // Aggregate validation
-            is DomainError.AggregateValidation -> "Multiple validation errors (${error.totalErrorCount} total) affecting fields: ${error.affectedFields.joinToString(", ")}"
         }
     }
 }
