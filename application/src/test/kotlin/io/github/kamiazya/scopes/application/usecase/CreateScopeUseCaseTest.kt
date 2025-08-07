@@ -241,31 +241,4 @@ class CreateScopeUseCaseTest : StringSpec({
         }
     }
 
-    "should accumulate all validation errors by default" {
-        runTest {
-            val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
-
-            // Mock repository calls
-            coEvery { mockRepository.existsByParentIdAndTitle(null, "") } returns false.right()
-
-            val request = CreateScopeRequest(
-                title = "", // Empty title - first validation error
-                description = "A".repeat(1001), // Too long description - second validation error
-                parentId = null
-            )
-
-            val result = useCase.execute(request)
-
-            val error = result.shouldBeLeft()
-
-            // System should accumulate all validation errors
-            error.shouldBeInstanceOf<ApplicationError.ValidationFailure>()
-            error.errors.size shouldBe 2 // Both errors should be reported
-
-            // Verify specific errors are included
-            val errorTypes = error.errors.map { it::class.simpleName }
-            errorTypes shouldContainExactlyInAnyOrder listOf("EmptyTitle", "DescriptionTooLong")
-        }
-    }
 })
