@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.ValidationResult
 import io.github.kamiazya.scopes.domain.error.validationSuccess

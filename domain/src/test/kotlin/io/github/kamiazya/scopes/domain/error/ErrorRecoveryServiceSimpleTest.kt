@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.domain.error
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.shouldBe
 
 /**
  * Simple test to verify the ErrorRecoveryService transformation to suggestion-only behavior.
@@ -26,7 +27,7 @@ class ErrorRecoveryServiceSimpleTest : StringSpec({
 
             // Should only return Suggestion or NonRecoverable results
             // Success results are no longer possible in suggestion-only system
-            result.shouldSatisfy { it is RecoveryResult.Suggestion || it is RecoveryResult.NonRecoverable }
+            (result is RecoveryResult.Suggestion || result is RecoveryResult.NonRecoverable) shouldBe true
         }
     }
 })
