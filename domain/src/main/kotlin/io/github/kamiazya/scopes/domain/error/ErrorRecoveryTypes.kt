@@ -28,19 +28,11 @@ enum class ErrorRecoveryCategory {
 }
 
 /**
- * Represents the result of an error recovery attempt.
+ * Represents the result of an error recovery attempt in the suggestion-only system.
+ * All recovery now requires user consent - no automatic fixes without permission.
  */
 sealed class RecoveryResult {
     abstract val originalError: DomainError
-
-    /**
-     * Successful automatic recovery with a corrected value.
-     */
-    data class Success(
-        override val originalError: DomainError,
-        val recoveredValue: Any,
-        val strategy: String
-    ) : RecoveryResult()
 
     /**
      * Partial recovery with suggested corrections that require user approval.
@@ -82,23 +74,10 @@ data class RecoveredValidationResult<T>(
     val recoveryResults: List<RecoveryResult>
 ) {
     /**
-     * Checks if any errors were successfully recovered.
-     */
-    fun hasAnyRecoverable(): Boolean =
-        recoveryResults.any { it is RecoveryResult.Success }
-
-    /**
      * Checks if any errors have suggested recoveries.
      */
     fun hasAnySuggestions(): Boolean =
         recoveryResults.any { it is RecoveryResult.Suggestion }
-
-    /**
-     * Gets all successfully recovered values.
-     */
-    fun getAllRecoveredValues(): List<Any> =
-        recoveryResults.filterIsInstance<RecoveryResult.Success>()
-            .map { it.recoveredValue }
 
     /**
      * Gets all suggested values that require user approval.
@@ -114,13 +93,4 @@ data class RecoveredValidationResult<T>(
         recoveryResults.filterIsInstance<RecoveryResult.NonRecoverable>()
             .map { it.originalError }
 
-    /**
-     * Attempts to create a successful ValidationResult using recovered values.
-     * Returns the original failure if no complete recovery is possible.
-     */
-    fun attemptRecovery(): ValidationResult<T> {
-        // For this phase, we focus on demonstrating the pattern
-        // Complete implementation would require type-safe recovery mapping
-        return originalResult
-    }
 }

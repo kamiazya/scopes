@@ -36,7 +36,6 @@ fun RecoveredValidationResult<*>.getRecoverySummary(): RecoverySummary {
  * Extension function to get strategy name from any RecoveryResult.
  */
 private fun RecoveryResult.getStrategyName(): String = when (this) {
-    is RecoveryResult.Success -> strategy
     is RecoveryResult.Suggestion -> strategy
     is RecoveryResult.NonRecoverable -> "NonRecoverable"
 }

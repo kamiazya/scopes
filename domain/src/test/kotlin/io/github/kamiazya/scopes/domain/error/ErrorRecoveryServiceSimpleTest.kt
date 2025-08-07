@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.types.shouldNotBeInstanceOf
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Simple test to verify the ErrorRecoveryService transformation to suggestion-only behavior.
@@ -11,8 +11,8 @@ class ErrorRecoveryServiceSimpleTest : StringSpec({
 
     val service = ErrorRecoveryService()
 
-    "should NEVER return RecoveryResult.Success - only suggestions or non-recoverable" {
-        // Test the key validation errors that currently return Success but should return Suggestions
+    "should only return suggestions or non-recoverable results" {
+        // Test validation errors to ensure they only return appropriate results
         val validationErrors = listOf(
             DomainError.ValidationError.EmptyTitle,
             DomainError.ValidationError.TitleTooShort,
@@ -24,9 +24,9 @@ class ErrorRecoveryServiceSimpleTest : StringSpec({
         validationErrors.forEach { error ->
             val result = service.recoverFromError(error)
 
-            // This is the KEY ASSERTION - should fail in RED phase
-            // Current implementation returns Success for these errors, but we want only Suggestions
-            result.shouldNotBeInstanceOf<RecoveryResult.Success>()
+            // Should only return Suggestion or NonRecoverable results
+            // Success results are no longer possible in suggestion-only system
+            result.shouldBeInstanceOf<RecoveryResult>()
         }
     }
 })
