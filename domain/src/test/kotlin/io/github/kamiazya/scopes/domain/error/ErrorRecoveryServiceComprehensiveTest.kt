@@ -60,7 +60,6 @@ class ErrorRecoveryServiceComprehensiveTest : StringSpec({
     }
 
     "configuration should not have enableAutoRecovery field" {
-        val config = RecoveryConfiguration()
         val fields = RecoveryConfiguration::class.java.declaredFields
         val autoRecoveryField = fields.find { it.name == "enableAutoRecovery" }
 

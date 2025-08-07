@@ -190,7 +190,7 @@ class EfficientErrorAccumulator {
 
     fun <T> toValidationResult(): ValidationResult<T> {
         return if (errors.isEmpty()) {
-            throw IllegalStateException("Cannot create failure ValidationResult from empty error accumulator")
+            error("Cannot create failure ValidationResult from empty error accumulator")
         } else {
             ValidationResult.Failure(NonEmptyList(errors.first(), errors.drop(1)))
         }

@@ -153,7 +153,11 @@ fun <T> T?.validateNotNull(error: DomainError): ValidationResult<T> {
  * Validates a condition, creating a success with the value if true, failure if false.
  */
 fun <T> T.validateIf(condition: Boolean, error: DomainError): ValidationResult<T> {
-    return if (condition) validationSuccess() else error.validationFailure()
+    return if (condition) {
+        validationSuccess()
+    } else {
+        error.validationFailure()
+    }
 }
 
 /**

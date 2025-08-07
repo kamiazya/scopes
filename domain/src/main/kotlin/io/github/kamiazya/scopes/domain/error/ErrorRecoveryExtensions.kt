@@ -61,7 +61,9 @@ fun List<DomainError>.getRecoveryStatistics(
         totalErrors = this.size,
         suggestionsAvailable = categories.count { it == ErrorRecoveryCategory.PARTIALLY_RECOVERABLE },
         nonRecoverableCount = categories.count { it == ErrorRecoveryCategory.NON_RECOVERABLE },
-        suggestionRate = if (this.isEmpty()) 0.0 else {
+        suggestionRate = if (this.isEmpty()) {
+            0.0
+        } else {
             categories.count { it != ErrorRecoveryCategory.NON_RECOVERABLE }.toDouble() / this.size
         }
     )
@@ -83,7 +85,9 @@ data class RecoverySummary(
     fun toReadableString(): String = buildString {
         append("Recovery Summary: ")
         append("$requiresUserInput/$totalErrors suggestions available")
-        if (cannotRecover > 0) append(", $cannotRecover cannot recover")
+        if (cannotRecover > 0) {
+            append(", $cannotRecover cannot recover")
+        }
         append(" (strategies: ${recoveryStrategies.joinToString()})")
     }
 }
@@ -101,7 +105,11 @@ data class RecoveryStatistics(
     /**
      * Percentage of errors that have suggestions available.
      */
-    val suggestionPercentage: Double = suggestionRate * 100.0
+    val suggestionPercentage: Double = suggestionRate * PERCENTAGE_MULTIPLIER
+
+    companion object {
+        private const val PERCENTAGE_MULTIPLIER = 100.0
+    }
 
     /**
      * Human-readable statistics for reporting.
