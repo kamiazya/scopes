@@ -3,17 +3,11 @@ package io.github.kamiazya.scopes.application.usecase
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.flatMap
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.service.ScopeValidationService
-import io.github.kamiazya.scopes.domain.error.ValidationResult
-import io.github.kamiazya.scopes.domain.error.validationSuccess
-import io.github.kamiazya.scopes.domain.error.validationFailure
 import io.github.kamiazya.scopes.domain.error.firstErrorOnly
-import arrow.core.NonEmptyList
-import arrow.core.nonEmptyListOf
 
 /**
  * Use case for creating new Scope entities.
@@ -27,7 +21,8 @@ class CreateScopeUseCase(
         // Check parent exists (this is a prerequisite for other validations)
         checkParentExists(request.parentId).bind()
 
-        // Perform comprehensive validation using consolidated method
+        // Perform repository-dependent validations (hierarchy depth, children limit, title uniqueness)
+        // These validations require repository access and cannot be done in Scope.create
         validateScopeCreationConsolidated(request).bind()
 
         // Create and save the scope entity
@@ -53,8 +48,7 @@ class CreateScopeUseCase(
     }
 
     private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
-        // Always use the public factory method for consistency
-        // Validation is already done in validateScopeCreationConsolidated
+        // Use the public factory method which includes validation
         val scope = Scope.create(
             title = request.title,
             description = request.description,
@@ -70,13 +64,13 @@ class CreateScopeUseCase(
             .mapLeft { ApplicationError.Repository(it) }
 
     /**
-     * Consolidated validation using single accumulating method with mode flexibility.
-     * Uses ValidationResult for error accumulation and applies mode-specific processing.
+     * Validates repository-dependent business rules that cannot be checked in Scope.create.
+     * These include hierarchy depth, children limit, and title uniqueness within parent scope.
      */
     private suspend fun validateScopeCreationConsolidated(
         request: CreateScopeRequest
     ): Either<ApplicationError, Unit> {
-        // Always use accumulating validation for consistency
+        // Use ScopeValidationService for repository-dependent validations
         val validationResult = ScopeValidationService.validateScopeCreation(
             request.title,
             request.description,
