@@ -98,6 +98,6 @@ Bot accounts (dependabot, github-actions) are automatically excluded.
 
 - `.github/release.yml` - Release notes configuration
 - `.github/workflows/release.yml` - Release automation workflow
-- `docs/guides/security-verification.md` - Security verification guide
-- `docs/guides/sbom-verification.md` - SBOM verification guide
-- `install/README.md` - Installation guide
+- `../guides/security-verification.md` - Security verification guide
+- `../guides/sbom-verification.md` - SBOM verification guide
+- `../../install/README.md` - Installation guide
