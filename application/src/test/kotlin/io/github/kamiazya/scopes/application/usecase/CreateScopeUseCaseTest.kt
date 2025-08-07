@@ -241,23 +241,6 @@ class CreateScopeUseCaseTest : StringSpec({
         }
     }
 
-    "should always accumulate validation errors for better UX" {
-        runTest {
-            // Test that validation always accumulates errors
-            // Callers can use firstErrorOnly() if they need fail-fast behavior
-            val request = CreateScopeRequest(
-                title = "Test",
-                description = "Test Description",
-                parentId = null
-            )
-
-            // The system should always accumulate errors by default
-            // This provides better user experience by showing all issues at once
-            request.title shouldBe "Test"
-            request.description shouldBe "Test Description"
-        }
-    }
-
     "should accumulate all validation errors by default" {
         runTest {
             val mockRepository = mockk<ScopeRepository>()
