@@ -41,7 +41,8 @@ class CreateScopeUseCaseTest : StringSpec({
             val expectedScopeId = ScopeId.from("01ARZ3NDEKTSV4RRFFQ69G5FAV")
             val createdScope = Scope(
                 id = expectedScopeId,
-                title = ScopeTitle.create("Website Redesign Project").getOrNull()!!,
+                title = ScopeTitle.create("Website Redesign Project").getOrNull()
+                    ?: error("Failed to create test ScopeTitle for 'Website Redesign Project'"),
                 description = ScopeDescription.create("Complete overhaul of company website with modern UX").getOrNull(),
                 parentId = null,
                 createdAt = Clock.System.now(),
