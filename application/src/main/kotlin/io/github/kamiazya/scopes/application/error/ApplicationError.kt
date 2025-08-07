@@ -78,11 +78,5 @@ sealed class ApplicationError {
                 ifSuccess = { value: T -> Either.Right(value) }
             )
 
-        /**
-         * Convert ValidationResult containing Unit to Either<ApplicationError, Unit>.
-         * Specialized version for validation operations that don't return a value.
-         */
-        fun fromValidationUnit(result: ValidationResult<Unit>): Either<ApplicationError, Unit> =
-            fromValidationResult(result)
     }
 }
