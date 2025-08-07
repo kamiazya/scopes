@@ -10,17 +10,15 @@ import kotlin.system.measureTimeMillis
  * error processing, memory management, and performance measurement.
  */
 object OptimizedValidationUtils {
-    companion object {
-        private const val OBJECT_OVERHEAD_BYTES = 48L
-        private const val ERROR_SIZE_BYTES = 64L
-        private const val STRING_OVERHEAD_BYTES = 24L
-        private const val STRING_CHAR_BYTES = 2L
-        private const val LIST_OVERHEAD_BYTES = 24L
-        private const val LIST_ELEMENT_BYTES = 8L
-        private const val DEFAULT_OBJECT_BYTES = 32L
-        private const val PERCENTAGE_MULTIPLIER = 100.0
-        private const val MAX_SUGGESTIONS = 3
-    }
+    private const val OBJECT_OVERHEAD_BYTES = 48L
+    private const val ERROR_SIZE_BYTES = 64L
+    private const val STRING_OVERHEAD_BYTES = 24L
+    private const val STRING_CHAR_BYTES = 2L
+    private const val LIST_OVERHEAD_BYTES = 24L
+    private const val LIST_ELEMENT_BYTES = 8L
+    private const val DEFAULT_OBJECT_BYTES = 32L
+    private const val PERCENTAGE_MULTIPLIER = 100.0
+    private const val MAX_SUGGESTIONS = 3
 
     /**
      * Creates a lazy error message that defers computation until accessed.
@@ -235,7 +233,7 @@ data class PerformanceComparison<T1, T2>(
 ) {
     val improvementPercentage: Double
         get() = if (operation1TimeMs > 0) {
-            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * PERCENTAGE_MULTIPLIER
+            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * 100.0
         } else {
             0.0
         }
