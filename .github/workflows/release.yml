@@ -376,15 +376,26 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-      - name: Create initial GitHub Release with auto-generated notes
+      - name: Create or update GitHub Release with auto-generated notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create release with GitHub's auto-generated notes
-          gh release create "${{ steps.version.outputs.tag_version }}" \
-            --title "Release ${{ steps.version.outputs.tag_version }}" \
-            --generate-notes \
-            --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
+          # Create or update release with GitHub's auto-generated notes
+          if ! gh release view "${{ steps.version.outputs.tag_version }}" > /dev/null 2>&1; then
+            # Create new release with auto-generated notes
+            gh release create "${{ steps.version.outputs.tag_version }}" \
+              --title "Release ${{ steps.version.outputs.tag_version }}" \
+              --generate-notes \
+              --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
+          else
+            # Release exists, delete and recreate to get auto-generated notes
+            echo "Release already exists, recreating with auto-generated notes"
+            gh release delete "${{ steps.version.outputs.tag_version }}" --yes
+            gh release create "${{ steps.version.outputs.tag_version }}" \
+              --title "Release ${{ steps.version.outputs.tag_version }}" \
+              --generate-notes \
+              --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
+          fi
 
       - name: Upload release assets
         env:
