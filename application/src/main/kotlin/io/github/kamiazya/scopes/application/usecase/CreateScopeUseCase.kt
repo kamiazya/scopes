@@ -8,6 +8,12 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.service.ScopeValidationService
+import io.github.kamiazya.scopes.domain.error.ValidationResult
+import io.github.kamiazya.scopes.domain.error.validationSuccess
+import io.github.kamiazya.scopes.domain.error.validationFailure
+import io.github.kamiazya.scopes.domain.error.firstErrorOnly
+import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
 
 /**
  * Use case for creating new Scope entities.
@@ -18,22 +24,16 @@ class CreateScopeUseCase(
 ) {
 
     suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
-        val validRequest = validateRequest(request).bind()
-        checkParentExists(validRequest.parentId).bind()
-        validateBusinessRules(request).bind()
-        val scope = createScopeEntity(validRequest).bind()
+        // Check parent exists (this is a prerequisite for other validations)
+        checkParentExists(request.parentId).bind()
+
+        // Perform comprehensive validation using consolidated method
+        validateScopeCreationConsolidated(request).bind()
+
+        // Create and save the scope entity
+        val scope = createScopeEntity(request).bind()
         val savedScope = saveScopeEntity(scope).bind()
         CreateScopeResponse(savedScope)
-    }
-
-    private fun validateRequest(request: CreateScopeRequest): Either<ApplicationError, CreateScopeRequest> = either {
-        ScopeValidationService.validateTitle(request.title)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-        ScopeValidationService.validateDescription(request.description)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-        request
     }
 
     private suspend fun checkParentExists(parentId: ScopeId?): Either<ApplicationError, Unit> = either {
@@ -52,59 +52,46 @@ class CreateScopeUseCase(
         }
     }
 
-    private suspend fun validateBusinessRules(
-        request: CreateScopeRequest
-    ): Either<ApplicationError, CreateScopeRequest> = either {
-        // Validate hierarchy depth using efficient query
-        ScopeValidationService.validateHierarchyDepthEfficient(request.parentId, scopeRepository)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-
-        // Validate children limit using efficient query
-        ScopeValidationService.validateChildrenLimitEfficient(request.parentId, scopeRepository)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-
-        // Validate title uniqueness using efficient query
-        ScopeValidationService.validateTitleUniquenessEfficient(
-            request.title,
-            request.parentId,
-            scopeRepository
+    private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
+        // Always use the public factory method for consistency
+        // Validation is already done in validateScopeCreationConsolidated
+        val scope = Scope.create(
+            title = request.title,
+            description = request.description,
+            parentId = request.parentId,
+            metadata = request.metadata
         ).mapLeft { ApplicationError.Domain(it) }
             .bind()
-
-        request
-    }
-
-    private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
-        val scope = if (request.id != null) {
-            // For cases where ID is specified, create directly using data class constructor
-            // since validation was already done in validateBusinessRules
-            Scope(
-                id = request.id,
-                title = request.title,
-                description = request.description,
-                parentId = request.parentId,
-                createdAt = kotlinx.datetime.Clock.System.now(),
-                updatedAt = kotlinx.datetime.Clock.System.now(),
-                metadata = request.metadata
-            )
-        } else {
-            // Use the public factory method with validation
-            Scope.create(
-                title = request.title,
-                description = request.description,
-                parentId = request.parentId,
-                metadata = request.metadata
-            ).mapLeft { ApplicationError.Domain(it) }
-                .bind()
-        }
         scope
     }
 
     private suspend fun saveScopeEntity(scope: Scope): Either<ApplicationError, Scope> =
         scopeRepository.save(scope)
             .mapLeft { ApplicationError.Repository(it) }
+
+    /**
+     * Consolidated validation using single accumulating method with mode flexibility.
+     * Uses ValidationResult for error accumulation and applies mode-specific processing.
+     */
+    private suspend fun validateScopeCreationConsolidated(
+        request: CreateScopeRequest
+    ): Either<ApplicationError, Unit> {
+        // Always use accumulating validation for consistency
+        val validationResult = ScopeValidationService.validateScopeCreation(
+            request.title,
+            request.description,
+            request.parentId,
+            scopeRepository
+        )
+
+        // Apply fail-fast behavior if requested
+        val finalResult = when (request.validationMode) {
+            ScopeValidationService.ValidationMode.FAIL_FAST -> validationResult.firstErrorOnly()
+            ScopeValidationService.ValidationMode.ACCUMULATE -> validationResult
+        }
+
+        return ApplicationError.fromValidationResult(finalResult)
+    }
 }
 
 /**
@@ -116,6 +103,7 @@ data class CreateScopeRequest(
     val description: String? = null,
     val parentId: ScopeId? = null,
     val metadata: Map<String, String> = emptyMap(),
+    val validationMode: ScopeValidationService.ValidationMode = ScopeValidationService.ValidationMode.ACCUMULATE,
 )
 
 /**

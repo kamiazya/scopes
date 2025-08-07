@@ -13,7 +13,7 @@ import org.koin.dsl.module
 val cliModule = module {
     // Infrastructure layer - Repository implementations
     single<ScopeRepository> { InMemoryScopeRepository() }
-    
+
     // Application layer - Use cases
     single { CreateScopeUseCase(get()) }
 }

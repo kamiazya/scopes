@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import arrow.core.NonEmptyList
 
 /**
  * Domain-level errors following functional DDD principles.
@@ -27,6 +28,7 @@ sealed class DomainError {
         object EmptyTitle : ValidationError()
         object TitleTooShort : ValidationError()
         data class TitleTooLong(val maxLength: Int, val actualLength: Int) : ValidationError()
+        object TitleContainsNewline : ValidationError()
         data class DescriptionTooLong(val maxLength: Int, val actualLength: Int) : ValidationError()
         data class InvalidFormat(val field: String, val expected: String) : ValidationError()
     }
@@ -38,5 +40,26 @@ sealed class DomainError {
         data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : BusinessRuleViolation()
         data class MaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : BusinessRuleViolation()
         data class DuplicateTitle(val title: String, val parentId: ScopeId?) : BusinessRuleViolation()
+    }
+
+    /**
+     * Aggregate validation error that accumulates multiple field-specific errors.
+     * Supports error accumulation.
+     */
+    data class AggregateValidation(
+        val fieldErrors: Map<String, NonEmptyList<DomainError>>
+    ) : DomainError() {
+
+        /**
+         * Total count of all accumulated errors across all fields.
+         */
+        val totalErrorCount: Int
+            get() = fieldErrors.values.sumOf { it.size }
+
+        /**
+         * Set of field names that have validation errors.
+         */
+        val affectedFields: Set<String>
+            get() = fieldErrors.keys
     }
 }

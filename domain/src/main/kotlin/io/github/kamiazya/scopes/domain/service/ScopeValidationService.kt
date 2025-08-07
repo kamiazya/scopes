@@ -6,6 +6,11 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ValidationResult
+import io.github.kamiazya.scopes.domain.error.validationSuccess
+import io.github.kamiazya.scopes.domain.error.validationFailure
+import io.github.kamiazya.scopes.domain.error.sequence
+import io.github.kamiazya.scopes.domain.error.map
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 
 /**
@@ -15,37 +20,41 @@ import io.github.kamiazya.scopes.domain.repository.ScopeRepository
  */
 object ScopeValidationService {
 
-    const val MAX_TITLE_LENGTH = 200
-    const val MIN_TITLE_LENGTH = 1
-    const val MAX_DESCRIPTION_LENGTH = 1000
+    // Constants moved to value objects for better encapsulation
+    // Use ScopeTitle.MAX_LENGTH, ScopeDescription.MAX_LENGTH instead
     const val MAX_HIERARCHY_DEPTH = 10
     const val MAX_CHILDREN_PER_PARENT = 100
 
     /**
-     * Validate scope title according to business rules.
+     * Validation mode for determining error accumulation behavior.
+     */
+    enum class ValidationMode {
+        /** Accumulate all validation errors (default, better UX) */
+        ACCUMULATE,
+        /** Stop on first validation error (fail-fast) */
+        FAIL_FAST
+    }
+
+    // ===== BASIC FIELD VALIDATION =====
+
+    /**
+     * Validates that a title is not empty or blank.
      */
     fun validateTitle(title: String): Either<DomainError.ValidationError, String> = either {
-        ensure(title.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
-        ensure(title.length >= MIN_TITLE_LENGTH) { DomainError.ValidationError.TitleTooShort }
-        ensure(title.length <= MAX_TITLE_LENGTH) {
-            DomainError.ValidationError.TitleTooLong(MAX_TITLE_LENGTH, title.length)
-        }
-        title.trim()
+        ensure(title.trim().isNotEmpty()) { DomainError.ValidationError.EmptyTitle }
+        title
     }
 
     /**
-     * Validate scope description according to business rules.
+     * Validates that a description doesn't exceed maximum length.
      */
     fun validateDescription(description: String?): Either<DomainError.ValidationError, String?> = either {
-        when (description) {
-            null -> null
-            else -> {
-                ensure(description.length <= MAX_DESCRIPTION_LENGTH) {
-                    DomainError.ValidationError.DescriptionTooLong(MAX_DESCRIPTION_LENGTH, description.length)
-                }
-                description.trim().ifBlank { null }
+        if (description != null) {
+            ensure(description.length <= 1000) {
+                DomainError.ValidationError.DescriptionTooLong(1000, description.length)
             }
         }
+        description
     }
 
     /**
@@ -105,6 +114,7 @@ object ScopeValidationService {
 
     /**
      * Validate title uniqueness within the same parent scope.
+     * Note: Root level scopes (parentId = null) allow duplicate titles.
      */
     fun validateTitleUniqueness(
         title: String,
@@ -112,14 +122,17 @@ object ScopeValidationService {
         excludeScopeId: ScopeId?,
         allScopes: List<Scope>
     ): Either<DomainError.BusinessRuleViolation, Unit> = either {
-        val duplicateExists = allScopes.any { scope ->
-            scope.id != excludeScopeId &&
-            scope.parentId == parentId &&
-            scope.title.equals(title, ignoreCase = true)
-        }
+        // Allow duplicate titles at root level (parentId = null)
+        if (parentId != null) {
+            val duplicateExists = allScopes.any { scope ->
+                scope.id != excludeScopeId &&
+                scope.parentId == parentId &&
+                scope.title.value.equals(title, ignoreCase = true)
+            }
 
-        ensure(!duplicateExists) {
-            DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
+            ensure(!duplicateExists) {
+                DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
+            }
         }
     }
 
@@ -177,22 +190,111 @@ object ScopeValidationService {
 
     /**
      * Efficient version: Validate title uniqueness using repository query.
+     * Note: Root level scopes (parentId = null) allow duplicate titles.
      */
     suspend fun validateTitleUniquenessEfficient(
         title: String,
         parentId: ScopeId?,
         repository: ScopeRepository
     ): Either<DomainError.BusinessRuleViolation, Unit> = either {
-        val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
-            .mapLeft {
-                // Repository errors should be handled at application layer
-                // For now, treat as duplicate title to maintain business rule context
+        // Allow duplicate titles at root level (parentId = null)
+        if (parentId != null) {
+            val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
+                .mapLeft {
+                    // Repository errors should be handled at application layer
+                    // For now, treat as duplicate title to maintain business rule context
+                    DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
+                }
+                .bind()
+
+            ensure(!duplicateExists) {
                 DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
             }
-            .bind()
+        }
+    }
 
-        ensure(!duplicateExists) {
-            DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
+    // ===== CONSOLIDATED VALIDATION METHODS =====
+
+    /**
+     * Comprehensive validation for scope creation using accumulating ValidationResult.
+     * This single method handles all validation concerns and accumulates errors.
+     * Use .firstErrorOnly() for fail-fast behavior when needed.
+     */
+    suspend fun validateScopeCreation(
+        title: String,
+        description: String?,
+        parentId: ScopeId?,
+        repository: ScopeRepository
+    ): ValidationResult<Unit> {
+        // Collect all validations as ValidationResults
+        val titleValidation = validateTitle(title)
+            .fold({ error -> error.validationFailure<String>() }, { it.validationSuccess() })
+
+        val descValidation = validateDescription(description)
+            .fold({ error -> error.validationFailure<String?>() }, { it.validationSuccess() })
+
+        val hierarchyValidation = validateHierarchyDepthEfficient(parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        val childrenValidation = validateChildrenLimitEfficient(parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        val uniquenessValidation = validateTitleUniquenessEfficient(title, parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        // Accumulate all validation results
+        return listOf(
+            titleValidation.map { },
+            descValidation.map { },
+            hierarchyValidation,
+            childrenValidation,
+            uniquenessValidation
+        ).sequence().map { }
+    }
+
+    // ===== PURE HIERARCHY CONTEXT-BASED VALIDATION FUNCTIONS =====
+
+    /**
+     * Validate hierarchy depth using pre-computed parent depth.
+     * Pure function that doesn't depend on repository access.
+     */
+    fun validateHierarchyDepthWithContext(
+        parentDepth: Int
+    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
+        ensure(parentDepth < MAX_HIERARCHY_DEPTH) {
+            DomainError.BusinessRuleViolation.MaxDepthExceeded(MAX_HIERARCHY_DEPTH, parentDepth + 1)
+        }
+    }
+
+    /**
+     * Validate children limit using pre-computed children count.
+     * Pure function that doesn't depend on repository access.
+     */
+    fun validateChildrenLimitWithContext(
+        currentChildrenCount: Int
+    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
+        ensure(currentChildrenCount < MAX_CHILDREN_PER_PARENT) {
+            DomainError.BusinessRuleViolation.MaxChildrenExceeded(
+                MAX_CHILDREN_PER_PARENT, currentChildrenCount + 1
+            )
+        }
+    }
+
+    /**
+     * Validate title uniqueness using pre-computed title existence check.
+     * Pure function that doesn't depend on repository access.
+     * Note: Root level scopes (parentId = null) allow duplicate titles.
+     */
+    fun validateTitleUniquenessWithContext(
+        titleExists: Boolean,
+        title: String,
+        parentId: ScopeId?
+    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
+        // Allow duplicate titles at root level (parentId = null)
+        if (parentId != null) {
+            ensure(!titleExists) {
+                DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
+            }
         }
     }
 

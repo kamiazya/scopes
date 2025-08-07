@@ -9,6 +9,10 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
 fun ApplicationError.toUserMessage(): String =
     when (this) {
         is ApplicationError.Domain -> "Domain error: ${this.cause}"
+        is ApplicationError.ValidationFailure -> {
+            val errorMessages = this.errors.map { it.toString() }
+            "Validation errors: ${errorMessages.joinToString(", ")}"
+        }
         is ApplicationError.Repository -> "Repository error: ${this.cause}"
         is ApplicationError.UseCaseError.InvalidRequest ->
             "Invalid request: ${this.message}"

@@ -7,7 +7,7 @@ fun main(args: Array<String>) {
     startKoin {
         modules(cliModule)
     }
-    
+
     ScopesCommand().main(args)
 }
 

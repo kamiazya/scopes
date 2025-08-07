@@ -11,7 +11,7 @@ import io.github.kamiazya.scopes.presentation.cli.utils.toUserMessage
 import kotlinx.coroutines.runBlocking
 
 /**
- * CLI command for creating new scopes.
+ * CLI command for creating scopes.
  * Handles Result types with proper error presentation.
  */
 class CreateCommand(

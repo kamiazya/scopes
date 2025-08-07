@@ -40,7 +40,7 @@ class InMemoryScopeRepository : ScopeRepository {
     ): Either<RepositoryError, Boolean> = either {
         mutex.withLock {
             scopes.values.any { scope ->
-                scope.parentId == parentId && scope.title.equals(title, ignoreCase = true)
+                scope.parentId == parentId && scope.title.value.equals(title, ignoreCase = true)
             }
         }
     }
