@@ -6,6 +6,145 @@ This document describes the automated release notes generation system implemente
 
 Scopes uses GitHub's native release notes generation combined with custom verification content to create comprehensive, standardized release notes for every release.
 
+## Workflow Architecture
+
+### Overview
+
+```mermaid
+graph LR
+    %% Triggers
+    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch]) 
+    
+    %% Main workflow stages
+    Start --> Build[🏗️ Build<br/>Multi-Platform<br/>Artifacts]
+    Build --> Security[🔐 Security<br/>Verification<br/>& SLSA]
+    Security --> Release[🚀 GitHub<br/>Release<br/>Creation]
+    
+    %% Final outputs
+    Release --> Output{📦 Release Assets}
+    
+    %% Output types
+    Output --> Binaries[📱 Native Binaries<br/>Linux, macOS, Windows]
+    Output --> Verification[🛡️ Security Files<br/>SLSA + SBOM + Checksums]
+    Output --> Documentation[📄 Release Notes<br/>+ Installation Guide]
+    
+    %% Styling
+    classDef triggerBox fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px  
+    classDef outputBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef artifactBox fill:#f3e5f5,stroke:#4a148c,stroke-width:1px
+    
+    class Start triggerBox
+    class Build,Security,Release processBox
+    class Output outputBox
+    class Binaries,Verification,Documentation artifactBox
+```
+
+### Detailed Job Flow
+
+#### 1. Build Release Artifacts Job
+
+```mermaid
+graph TB
+    subgraph Matrix ["🔄 Build Matrix (Parallel Execution)"]
+        direction TB
+        Linux[🐧 Ubuntu Latest<br/>Linux x64]
+        MacOS[🍎 macOS Latest<br/>Darwin x64]  
+        Windows[🪟 Windows Latest<br/>Win32 x64]
+    end
+    
+    subgraph Steps ["📋 Build Steps (Each Platform)"]
+        direction TB
+        A[📥 Checkout Code] --> B[⚙️ Setup Environment<br/>GraalVM + Gradle]
+        B --> C[🏷️ Extract Version<br/>from Tag/Input]
+        C --> D[🔨 Native Compile<br/>Platform Binary]
+        D --> E[📋 Generate SBOM<br/>CycloneDX Format]
+        E --> F[#️⃣ Generate SHA-256<br/>Binary & SBOM Hashes]
+        F --> G[📤 Upload Artifacts<br/>Binary + SBOM + Hash]
+    end
+    
+    Matrix --> Steps
+    
+    %% Styling
+    classDef matrixBox fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
+    classDef stepBox fill:#f1f8e9,stroke:#388e3c,stroke-width:1px
+    
+    class Matrix matrixBox
+    class A,B,C,D,E,F,G stepBox
+```
+
+#### 2. Security & Provenance Generation
+
+```mermaid
+graph TB
+    subgraph Collect ["📦 Collect Hashes"]
+        direction TB
+        DL1[📥 Download Linux Hashes] 
+        DL2[📥 Download macOS Hashes]
+        DL3[📥 Download Windows Hashes]
+        DL1 --> Combine[🔗 Combine & Encode<br/>Base64 for SLSA]
+        DL2 --> Combine
+        DL3 --> Combine
+        Combine --> Output1[📤 Output Combined<br/>Hash String]
+    end
+    
+    subgraph Provenance ["🛡️ SLSA Provenance"]
+        direction TB
+        Input[📥 Combined Hashes<br/>Input]
+        Input --> Generator[🔐 SLSA Framework<br/>Generic Generator]
+        Generator --> Attest[📤 Generate Attestation<br/>multiple.intoto.jsonl]
+    end
+    
+    Output1 --> Input
+    
+    %% Styling  
+    classDef collectBox fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef provenanceBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    
+    class Collect collectBox
+    class Provenance provenanceBox
+```
+
+#### 3. GitHub Release Creation
+
+```mermaid
+graph TB
+    subgraph Downloads ["📦 Artifact Collection"]
+        direction TB
+        GetBinaries[📥 Download Binaries<br/>All Platforms]
+        GetSBOM[📥 Download SBOM Files<br/>JSON & XML formats]  
+        GetProvenance[📥 Download SLSA<br/>Provenance Files]
+    end
+    
+    subgraph Processing ["⚙️ Release Processing"]
+        direction TB
+        GenNotes[📝 Generate Enhanced<br/>Release Notes]
+        PrepAssets[📦 Prepare Assets<br/>Organize Files]
+        GenNotes --> PrepAssets
+    end
+    
+    subgraph Release ["🚀 GitHub Release"]
+        direction TB
+        CreateRelease[✨ Create Release<br/>Tag + Description]
+        AttachAssets[📎 Attach All Assets<br/>Binaries + Security Files]
+        Publish[🌐 Publish Release<br/>Public Availability]
+        CreateRelease --> AttachAssets
+        AttachAssets --> Publish
+    end
+    
+    Downloads --> Processing
+    Processing --> Release
+    
+    %% Styling
+    classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef processBox fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef releaseBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    
+    class Downloads downloadBox
+    class Processing processBox
+    class Release releaseBox
+```
+
 ## How It Works
 
 ### 1. Automatic Categorization
