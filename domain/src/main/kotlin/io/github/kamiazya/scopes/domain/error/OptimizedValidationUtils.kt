@@ -164,16 +164,8 @@ object OptimizedValidationUtils {
 /**
  * Lazy error message wrapper that defers computation until accessed.
  */
-class LazyErrorMessage(private val computation: () -> String) {
-    private var _computed: String? = null
-
-    val message: String
-        get() {
-            if (_computed == null) {
-                _computed = computation()
-            }
-            return _computed!!
-        }
+class LazyErrorMessage(computation: () -> String) {
+    val message: String by lazy { computation() }
 }
 
 /**
