@@ -40,8 +40,8 @@ object ScopeValidationService {
      */
     fun validateDescription(description: String?): Either<DomainError.ValidationError, String?> = either {
         if (description != null) {
-            ensure(description.length <= 1000) {
-                DomainError.ValidationError.DescriptionTooLong(1000, description.length)
+            ensure(description.length <= ScopeDescription.MAX_LENGTH) {
+                DomainError.ValidationError.DescriptionTooLong(ScopeDescription.MAX_LENGTH, description.length)
             }
         }
         description
