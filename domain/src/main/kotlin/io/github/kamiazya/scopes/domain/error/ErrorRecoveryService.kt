@@ -14,6 +14,11 @@ class ErrorRecoveryService(
     private val configuration: RecoveryConfiguration = RecoveryConfiguration()
 ) {
 
+    companion object {
+        private const val WORD_REDUCTION_FACTOR = 10
+        private const val MAX_UNIQUE_VARIANTS = 3
+    }
+
     /**
      * Categorizes an error by its recoverability level.
      * All errors now require user consent - no automatic fixes without permission.
@@ -139,7 +144,7 @@ class ErrorRecoveryService(
                     listOf(
                         originalTitle.take(maxLength - suffixLength) + configuration.truncationSuffix,
                         originalTitle.take(maxLength),
-                        originalTitle.split(" ").take(maxLength / 10).joinToString(" ") // Take first few words
+                        originalTitle.split(" ").take(maxLength / WORD_REDUCTION_FACTOR).joinToString(" ") // Take first few words
                     )
                 } else {
                     listOf(configuration.defaultTitleTemplate)
@@ -289,7 +294,9 @@ class ErrorRecoveryService(
 
             if (variant.lowercase() !in existingTitles) {
                 variants.add(variant)
-                if (variants.size >= 3) break // Provide up to 3 suggestions
+                if (variants.size >= MAX_UNIQUE_VARIANTS) {
+                    break // Provide up to 3 suggestions
+                }
             }
         }
 

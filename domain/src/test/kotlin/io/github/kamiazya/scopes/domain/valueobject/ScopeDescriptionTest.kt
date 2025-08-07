@@ -70,25 +70,27 @@ class ScopeDescriptionTest : StringSpec({
 
     "system supports comprehensive documentation up to reasonable limits" {
         // When a user needs to provide extensive but reasonable documentation
-        val comprehensiveDescription = "Project Overview: This is a complex project requiring detailed documentation.\n\n" +
-            "Key Requirements:\n" +
-            "- User authentication and authorization\n" +
-            "- Data processing and validation\n" +
-            "- Integration with external APIs\n" +
-            "- Performance optimization\n\n" +
-            "Technical Approach:\n" +
-            "- Microservices architecture\n" +
-            "- Event-driven design patterns\n" +
-            "- Comprehensive testing strategy\n\n" +
-            "Timeline and Milestones:\n" +
-            "- Phase 1: Core infrastructure (4 weeks)\n" +
-            "- Phase 2: Feature implementation (6 weeks)\n" +
-            "- Phase 3: Testing and optimization (2 weeks)\n\n" +
-            "Success Criteria:\n" +
-            "- All functional requirements met\n" +
-            "- Performance benchmarks achieved\n" +
-            "- Security audit passed\n\n" +
-            "Additional notes about implementation details and considerations."
+        val comprehensiveDescription = buildString {
+            append("Project Overview: This is a complex project requiring detailed documentation.\n\n")
+            append("Key Requirements:\n")
+            append("- User authentication and authorization\n")
+            append("- Data processing and validation\n")
+            append("- Integration with external APIs\n")
+            append("- Performance optimization\n\n")
+            append("Technical Approach:\n")
+            append("- Microservices architecture\n")
+            append("- Event-driven design patterns\n")
+            append("- Comprehensive testing strategy\n\n")
+            append("Timeline and Milestones:\n")
+            append("- Phase 1: Core infrastructure (4 weeks)\n")
+            append("- Phase 2: Feature implementation (6 weeks)\n")
+            append("- Phase 3: Testing and optimization (2 weeks)\n\n")
+            append("Success Criteria:\n")
+            append("- All functional requirements met\n")
+            append("- Performance benchmarks achieved\n")
+            append("- Security audit passed\n\n")
+            append("Additional notes about implementation details and considerations.")
+        }
 
         // Ensure we're at a reasonable length but under the limit
         require(comprehensiveDescription.length < 1000) { "Test description should be under limit" }

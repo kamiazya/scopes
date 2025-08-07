@@ -225,5 +225,7 @@ data class PerformanceComparison<T1, T2>(
     val improvementPercentage: Double
         get() = if (operation1TimeMs > 0) {
             ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * 100.0
-        } else 0.0
+        } else {
+            0.0
+        }
 }
