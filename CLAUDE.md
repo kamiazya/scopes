@@ -83,6 +83,11 @@ We adopt the **Diátaxis framework** for organizing documentation:
 - All AI operations record co-authorship
 - System must work without AI (AI-optional)
 
+### Quality Assurance
+- Run `./gradlew konsistTest` to verify architectural compliance
+- Architecture tests validate Clean Architecture and DDD principles
+- All changes must pass Konsist architecture validation
+
 ### Asynchronous Collaboration
 - Use comments for non-blocking AI interaction
 - Maintain context across sessions

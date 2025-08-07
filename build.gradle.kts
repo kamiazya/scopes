@@ -94,3 +94,10 @@ ktlint {
 }
 
 // SBOM Configuration will be added to subprojects that need it
+
+// Task to run architecture tests
+tasks.register("konsistTest") {
+    description = "Run Konsist architecture tests"
+    group = "verification"
+    dependsOn(":konsist-test:test")
+}
