@@ -25,16 +25,6 @@ object ScopeValidationService {
     const val MAX_HIERARCHY_DEPTH = 10
     const val MAX_CHILDREN_PER_PARENT = 100
 
-    /**
-     * Validation mode for determining error accumulation behavior.
-     */
-    enum class ValidationMode {
-        /** Accumulate all validation errors (default, better UX) */
-        ACCUMULATE,
-        /** Stop on first validation error (fail-fast) */
-        FAIL_FAST
-    }
-
     // ===== BASIC FIELD VALIDATION =====
 
     /**

@@ -10,7 +10,6 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.service.ScopeValidationService
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
@@ -189,8 +188,7 @@ class CreateScopeUseCaseTest : StringSpec({
             val request = CreateScopeRequest(
                 title = "", // Missing clear identification
                 description = "A".repeat(1001), // Excessively long documentation that would impact performance
-                parentId = null,
-                validationMode = ScopeValidationService.ValidationMode.ACCUMULATE
+                parentId = null
             )
             val result = useCase.execute(request)
 
@@ -225,8 +223,7 @@ class CreateScopeUseCaseTest : StringSpec({
             val request = CreateScopeRequest(
                 title = "InvalidTitle", // Duplicate title - will cause error
                 description = "A".repeat(1001), // Too long description - will cause error
-                parentId = parentId,
-                validationMode = ScopeValidationService.ValidationMode.ACCUMULATE
+                parentId = parentId
             )
 
             val result = useCase.execute(request)
@@ -243,59 +240,48 @@ class CreateScopeUseCaseTest : StringSpec({
         }
     }
 
-    "should support ValidationMode parameter in CreateScopeRequest" {
+    "should always accumulate validation errors for better UX" {
         runTest {
-            // Test that ValidationMode parameter is available and works
-            val requestAccumulate = CreateScopeRequest(
-                title = "Test",
-                description = "Test Description",
-                parentId = null,
-                validationMode = ScopeValidationService.ValidationMode.ACCUMULATE
-            )
-
-            val requestFailFast = CreateScopeRequest(
-                title = "Test",
-                description = "Test Description",
-                parentId = null,
-                validationMode = ScopeValidationService.ValidationMode.FAIL_FAST
-            )
-
-            // Verify the parameter is correctly set
-            requestAccumulate.validationMode shouldBe ScopeValidationService.ValidationMode.ACCUMULATE
-            requestFailFast.validationMode shouldBe ScopeValidationService.ValidationMode.FAIL_FAST
-
-            // Verify default is ACCUMULATE (better UX)
-            val defaultRequest = CreateScopeRequest(
+            // Test that validation always accumulates errors
+            // Callers can use firstErrorOnly() if they need fail-fast behavior
+            val request = CreateScopeRequest(
                 title = "Test",
                 description = "Test Description",
                 parentId = null
             )
-            defaultRequest.validationMode shouldBe ScopeValidationService.ValidationMode.ACCUMULATE
+
+            // The system should always accumulate errors by default
+            // This provides better user experience by showing all issues at once
+            request.title shouldBe "Test"
+            request.description shouldBe "Test Description"
         }
     }
 
-    "should use fail-fast mode when explicitly set" {
+    "should accumulate all validation errors by default" {
         runTest {
             val mockRepository = mockk<ScopeRepository>()
             val useCase = CreateScopeUseCase(mockRepository)
 
-            // Mock repository calls - in fail-fast mode, only first validation matters
+            // Mock repository calls
             coEvery { mockRepository.existsByParentIdAndTitle(null, "") } returns false.right()
 
             val request = CreateScopeRequest(
                 title = "", // Empty title - first validation error
                 description = "A".repeat(1001), // Too long description - second validation error
-                parentId = null,
-                validationMode = ScopeValidationService.ValidationMode.FAIL_FAST
+                parentId = null
             )
 
             val result = useCase.execute(request)
 
             val error = result.shouldBeLeft()
 
-            // With FAIL_FAST mode, we should get only the first error as ApplicationError.Domain
-            error.shouldBeInstanceOf<ApplicationError.Domain>()
-            error.cause.shouldBeInstanceOf<DomainError.ValidationError.EmptyTitle>()
+            // System should accumulate all validation errors
+            error.shouldBeInstanceOf<ApplicationError.ValidationFailure>()
+            error.errors.size shouldBe 2 // Both errors should be reported
+
+            // Verify specific errors are included
+            val errorTypes = error.errors.map { it::class.simpleName }
+            errorTypes shouldContainExactlyInAnyOrder listOf("EmptyTitle", "DescriptionTooLong")
         }
     }
 })

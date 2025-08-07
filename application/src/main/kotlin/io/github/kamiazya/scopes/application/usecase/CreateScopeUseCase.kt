@@ -78,13 +78,9 @@ class CreateScopeUseCase(
             scopeRepository
         )
 
-        // Apply fail-fast behavior if requested
-        val finalResult = when (request.validationMode) {
-            ScopeValidationService.ValidationMode.FAIL_FAST -> validationResult.firstErrorOnly()
-            ScopeValidationService.ValidationMode.ACCUMULATE -> validationResult
-        }
-
-        return ApplicationError.fromValidationResult(finalResult)
+        // Always accumulate errors for better UX
+        // Callers can use firstErrorOnly() if they need fail-fast behavior
+        return ApplicationError.fromValidationResult(validationResult)
     }
 }
 
@@ -97,7 +93,6 @@ data class CreateScopeRequest(
     val description: String? = null,
     val parentId: ScopeId? = null,
     val metadata: Map<String, String> = emptyMap(),
-    val validationMode: ScopeValidationService.ValidationMode = ScopeValidationService.ValidationMode.ACCUMULATE,
 )
 
 /**
