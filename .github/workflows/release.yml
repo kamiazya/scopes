@@ -376,69 +376,99 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
-        with:
-          tag_name: ${{ steps.version.outputs.tag_version }}
-          name: Release ${{ steps.version.outputs.tag_version }}
-          body: |
-            ${{ steps.release_notes.outputs.custom_content }}
+      - name: Create initial GitHub Release with auto-generated notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create release with GitHub's auto-generated notes
+          gh release create "${{ steps.version.outputs.tag_version }}" \
+            --title "Release ${{ steps.version.outputs.tag_version }}" \
+            --generate-notes \
+            --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
 
-            ## Installation
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Upload all binary artifacts
+          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          
+          # Upload hash files
+          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          
+          # Upload SBOM files
+          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          
+          # Upload SLSA provenance if available
+          if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
+            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          fi
 
-            Download the appropriate binary for your platform from the assets below.
+      - name: Enhance release notes with custom content
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the auto-generated release notes
+          AUTO_NOTES=$(gh release view "${{ steps.version.outputs.tag_version }}" --json body --jq '.body')
+          
+          # Create the combined release notes
+          cat > combined_notes.md << 'EOF'
+          ${{ steps.release_notes.outputs.custom_content }}
 
-            ### Linux/macOS
-            ```bash
-            chmod +x scopes-*
-            sudo mv scopes-* /usr/local/bin/scopes
-            ```
+          ## Installation
 
-            ### Windows
-            Extract `scopes-*.exe` to a directory in your PATH.
+          Download the appropriate binary for your platform from the assets below.
 
-            ## Security & Verification
+          ### Linux/macOS
+          ```bash
+          chmod +x scopes-*
+          sudo mv scopes-* /usr/local/bin/scopes
+          ```
 
-            This release includes SLSA Level 3 provenance and Software Bill of Materials (SBOM) for comprehensive supply chain security.
+          ### Windows
+          Extract `scopes-*.exe` to a directory in your PATH.
 
-            ### SLSA Provenance Verification
-            ```bash
-            # Install slsa-verifier
-            go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
+          ## Security & Verification
 
-            # Verify the binary (example for Linux)
-            slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
-              --provenance-path multiple.intoto.jsonl \
-              --source-uri github.com/${{ github.repository }}
-            ```
+          This release includes SLSA Level 3 provenance and Software Bill of Materials (SBOM) for comprehensive supply chain security.
 
-            ### SBOM (Software Bill of Materials)
+          ### SLSA Provenance Verification
+          ```bash
+          # Install slsa-verifier
+          go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
-            Each platform includes SBOM files in both industry-standard formats:
-            - **CycloneDX** (JSON/XML): Security-focused with vulnerability tracking capabilities
-            - Download: `sbom-{platform}-{arch}.json` or `sbom-{platform}-{arch}.xml`
+          # Verify the binary (example for Linux)
+          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
+            --provenance-path multiple.intoto.jsonl \
+            --source-uri github.com/${{ github.repository }}
+          ```
 
-            #### SBOM Usage Examples
-            ```bash
-            # Analyze dependencies with CycloneDX tools
-            cyclonedx-cli analyze sbom-linux-x64.json
+          ### SBOM (Software Bill of Materials)
 
-            # Import into OWASP Dependency-Track
-            curl -X POST "http://dtrack-server/api/v1/bom" \
-              -H "X-API-Key: your-api-key" \
-              -H "Content-Type: application/json" \
-              -d @sbom-linux-x64.json
-            ```
+          Each platform includes SBOM files in both industry-standard formats:
+          - **CycloneDX** (JSON/XML): Security-focused with vulnerability tracking capabilities
+          - Download: `sbom-{platform}-{arch}.json` or `sbom-{platform}-{arch}.xml`
 
-            ### Manual Verification
-            See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
-          files: |
-            artifacts/*/scopes-*
-            provenance/*.intoto.jsonl
-            artifacts/*/binary-hash-*.txt
-            sbom-artifacts/sbom-*.json
-            sbom-artifacts/sbom-*.xml
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.tag_version, '-') }}
-          generate_release_notes: true
-          append_body: true
+          #### SBOM Usage Examples
+          ```bash
+          # Analyze dependencies with CycloneDX tools
+          cyclonedx-cli analyze sbom-linux-x64.json
+
+          # Import into OWASP Dependency-Track
+          curl -X POST "http://dtrack-server/api/v1/bom" \
+            -H "X-API-Key: your-api-key" \
+            -H "Content-Type: application/json" \
+            -d @sbom-linux-x64.json
+          ```
+
+          ### Manual Verification
+          See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
+          EOF
+          
+          # Add the auto-generated notes after our custom content
+          echo "" >> combined_notes.md
+          echo "$AUTO_NOTES" >> combined_notes.md
+          
+          # Update the release with combined content
+          gh release edit "${{ steps.version.outputs.tag_version }}" --notes-file combined_notes.md
