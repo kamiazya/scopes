@@ -17,14 +17,19 @@ class InMemoryScopeRepositoryTest : StringSpec({
         title: String = "Test Scope",
         description: String? = "Test Description",
         parentId: ScopeId? = null
-    ): Scope = Scope(
-        id = id,
-        title = ScopeTitle.create(title).getOrNull()!!,
-        description = ScopeDescription.create(description).getOrNull(),
-        parentId = parentId,
-        createdAt = kotlinx.datetime.Clock.System.now(),
-        updatedAt = kotlinx.datetime.Clock.System.now()
-    )
+    ): Scope {
+        val scopeTitle = ScopeTitle.create(title).getOrNull()
+            ?: error("Invalid title for test scope: '$title'")
+
+        return Scope(
+            id = id,
+            title = scopeTitle,
+            description = ScopeDescription.create(description).getOrNull(),
+            parentId = parentId,
+            createdAt = kotlinx.datetime.Clock.System.now(),
+            updatedAt = kotlinx.datetime.Clock.System.now()
+        )
+    }
 
     "should save scope" {
         runTest {
