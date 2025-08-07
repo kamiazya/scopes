@@ -99,9 +99,8 @@ class ErrorRecoveryServiceComprehensiveTest : StringSpec({
         val summary = recoveredResult.getRecoverySummary()
 
         // Should reflect suggestion-only behavior
-        summary.automaticallyRecovered shouldBe 0
         summary.requiresUserInput shouldBe 1
-        summary.hasCompleteRecovery shouldBe false
+        summary.cannotRecover shouldBe 0
 
         // Summary should mention suggestions
         summary.toReadableString() shouldContain "suggestions"

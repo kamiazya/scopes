@@ -26,11 +26,9 @@ fun RecoveredValidationResult<*>.getRecoverySummary(): RecoverySummary {
 
     return RecoverySummary(
         totalErrors = recoveryResults.size,
-        automaticallyRecovered = 0, // No automatic recovery anymore
         requiresUserInput = suggestions.size,
         cannotRecover = nonRecoverable.size,
-        recoveryStrategies = recoveryResults.map { it.getStrategyName() }.toSet(),
-        hasCompleteRecovery = false // Never true - no automatic fixes
+        recoveryStrategies = recoveryResults.map { it.getStrategyName() }.toSet()
     )
 }
 
@@ -62,10 +60,9 @@ fun List<DomainError>.getRecoveryStatistics(
 
     return RecoveryStatistics(
         totalErrors = this.size,
-        recoverableCount = 0, // No automatic recovery anymore
-        partiallyRecoverableCount = categories.count { it == ErrorRecoveryCategory.PARTIALLY_RECOVERABLE },
+        suggestionsAvailable = categories.count { it == ErrorRecoveryCategory.PARTIALLY_RECOVERABLE },
         nonRecoverableCount = categories.count { it == ErrorRecoveryCategory.NON_RECOVERABLE },
-        recoverabilityRate = if (this.isEmpty()) 0.0 else {
+        suggestionRate = if (this.isEmpty()) 0.0 else {
             categories.count { it != ErrorRecoveryCategory.NON_RECOVERABLE }.toDouble() / this.size
         }
     )
@@ -73,15 +70,13 @@ fun List<DomainError>.getRecoveryStatistics(
 
 /**
  * Summary of recovery results for reporting and logging.
- * Note: No automatic recovery anymore - all fixes require user consent.
+ * All fixes require user consent in the suggestion-only system.
  */
 data class RecoverySummary(
     val totalErrors: Int,
-    val automaticallyRecovered: Int = 0, // Always 0 - no automatic recovery
     val requiresUserInput: Int,
     val cannotRecover: Int,
-    val recoveryStrategies: Set<String>,
-    val hasCompleteRecovery: Boolean = false // Never true - no automatic fixes
+    val recoveryStrategies: Set<String>
 ) {
     /**
      * Human-readable summary for logging or user display.
@@ -95,27 +90,27 @@ data class RecoverySummary(
 }
 
 /**
- * Statistics about error recoverability for analysis.
+ * Statistics about error suggestion availability for analysis.
+ * In the suggestion-only system, no errors are automatically recovered.
  */
 data class RecoveryStatistics(
     val totalErrors: Int,
-    val recoverableCount: Int,
-    val partiallyRecoverableCount: Int,
+    val suggestionsAvailable: Int,
     val nonRecoverableCount: Int,
-    val recoverabilityRate: Double
+    val suggestionRate: Double
 ) {
     /**
-     * Percentage of errors that can be at least partially recovered.
+     * Percentage of errors that have suggestions available.
      */
-    val recoverabilityPercentage: Double = recoverabilityRate * 100.0
+    val suggestionPercentage: Double = suggestionRate * 100.0
 
     /**
      * Human-readable statistics for reporting.
      */
     fun toReadableString(): String = buildString {
         append("Recovery Statistics: ")
-        append("${recoverabilityPercentage.format(1)}% have suggestions ")
-        append("($partiallyRecoverableCount suggestions, $nonRecoverableCount manual)")
+        append("${suggestionPercentage.format(1)}% have suggestions ")
+        append("($suggestionsAvailable suggestions, $nonRecoverableCount manual)")
     }
 }
 
