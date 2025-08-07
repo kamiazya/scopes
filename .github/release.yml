@@ -1,0 +1,79 @@
+# Configuration for GitHub's automated release notes generation
+# This enables categorization of pull requests and commits in release notes
+# See: https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  # Exclude authors (e.g., bots) from release notes
+  exclude:
+    labels:
+      - "skip-changelog"
+      - "duplicate"
+      - "invalid"
+      - "wontfix"
+    authors:
+      - "dependabot"
+      - "dependabot[bot]"
+      - "github-actions"
+      - "github-actions[bot]"
+
+  # Categorize pull requests by type
+  categories:
+    - title: "🚀 New Features"
+      labels:
+        - "feature"
+        - "enhancement"
+        - "feat"
+        - "new-feature"
+    
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "bug"
+        - "bugfix"
+        - "fix"
+        - "hotfix"
+    
+    - title: "📚 Documentation"
+      labels:
+        - "documentation"
+        - "docs"
+    
+    - title: "🔒 Security"
+      labels:
+        - "security"
+        - "vulnerability"
+        - "cve"
+    
+    - title: "⚡ Performance"
+      labels:
+        - "performance"
+        - "perf"
+        - "optimization"
+    
+    - title: "🧹 Code Quality"
+      labels:
+        - "refactor"
+        - "refactoring"
+        - "cleanup"
+        - "code-quality"
+        - "style"
+    
+    - title: "🔧 Infrastructure & CI/CD"
+      labels:
+        - "ci"
+        - "cd"
+        - "infrastructure"
+        - "build"
+        - "workflow"
+        - "github-actions"
+    
+    - title: "📦 Dependencies"
+      labels:
+        - "dependencies"
+        - "deps"
+        - "dependency"
+    
+    - title: "🔄 Other Changes"
+      labels:
+        - "chore"
+        - "maintenance"
+        - "*"

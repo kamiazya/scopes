@@ -341,21 +341,37 @@ jobs:
       - name: Display downloaded artifacts
         run: find artifacts -type f -name "*" | head -20
 
-      - name: Generate changelog
-        id: changelog
+      - name: Generate enhanced release notes
+        id: release_notes
         run: |
-          # Generate changelog from git log since last tag
-          LAST_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 2 | tail -n 1)
-          if [ -z "$LAST_TAG" ]; then
-            CHANGELOG="Initial release"
-          else
-            CHANGELOG=$(git log --pretty=format:'- %s (%h)' $LAST_TAG..${{ steps.version.outputs.tag_version }} | head -20)
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG="Bug fixes and improvements"
-            fi
-          fi
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          # Generate release notes with verification instructions
+          cat > release_notes.md << 'EOF'
+          ## 🔐 Verification Instructions
+          > **Security Notice**: This release is signed and includes SLSA provenance for supply chain security.
+
+          ### Quick Verification
+          ```bash
+          # Download and verify in one command
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | bash
+          ```
+
+          ### Manual Verification
+          For detailed verification instructions, see our [Security Verification Guide](./docs/guides/security-verification.md).
+
+          ## 📦 Artifacts
+          - Binary downloads include SHA-256 checksums
+          - SLSA Level 3 provenance attached
+          - SBOM files available in CycloneDX format
+
+          ## 📚 Documentation
+          - [Installation Guide](./install/README.md)
+          - [Security Verification](./docs/guides/security-verification.md)
+          - [SBOM Verification](./docs/guides/sbom-verification.md)
+          EOF
+          
+          # Store the custom content
+          echo "custom_content<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
@@ -364,8 +380,7 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag_version }}
           name: Release ${{ steps.version.outputs.tag_version }}
           body: |
-            ## Changes
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ steps.release_notes.outputs.custom_content }}
 
             ## Installation
 
@@ -424,3 +439,4 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.version.outputs.tag_version, '-') }}
           generate_release_notes: true
+          append_body: true
