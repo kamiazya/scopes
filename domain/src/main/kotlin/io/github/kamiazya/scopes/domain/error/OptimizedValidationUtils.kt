@@ -41,10 +41,6 @@ object OptimizedValidationUtils {
      * Benchmarks a validation operation and returns timing information.
      */
     fun <T> benchmark(operation: () -> ValidationResult<T>): BenchmarkResult<T> {
-        val executionTime = measureTimeMillis {
-            // We need to capture the result outside the timing block
-        }
-
         var result: ValidationResult<T>
         val actualTime = measureTimeMillis {
             result = operation()
