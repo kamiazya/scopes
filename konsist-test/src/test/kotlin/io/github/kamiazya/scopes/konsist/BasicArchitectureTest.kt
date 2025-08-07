@@ -84,17 +84,20 @@ class BasicArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("domain")
             .interfaces()
-            .filter { it.name.contains("Repository") }
+            .filter { it.packagee?.name?.endsWith(".repository") == true }
             .assertTrue { repository ->
                 repository.name.endsWith("Repository")
             }
     }
     
-    "use cases should end with UseCase" {
+    "classes in 'usecase' package should end with UseCase" {
         Konsist
-            .scopeFromModule("application") 
+            .scopeFromModule("application")
             .classes()
-            .filter { it.name.endsWith("UseCase") && !it.name.endsWith("Test") }
+            .filter { it.packagee?.name?.endsWith(".usecase") == true }
+            .filter { !it.name.endsWith("Test") }
+            .filter { !it.name.endsWith("Request") }
+            .filter { !it.name.endsWith("Response") }
             .assertTrue { useCase ->
                 useCase.name.endsWith("UseCase")
             }

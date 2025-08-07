@@ -17,10 +17,3 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.register("konsistTest", Test::class) {
-    description = "Run Konsist architecture tests"
-    group = "verification"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform()
-}
