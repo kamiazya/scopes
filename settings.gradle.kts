@@ -12,4 +12,5 @@ include(
     ":application",
     ":infrastructure",
     ":presentation-cli",
+    ":konsist-test",
 )

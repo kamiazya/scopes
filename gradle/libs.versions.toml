@@ -10,6 +10,7 @@ koin-bom = "4.1.0"
 
 kotest = "5.9.1"
 mockk = "1.13.12"
+konsist = "0.17.3"
 
 graalvm-buildtools = "0.11.0"
 ktlint-gradle = "13.0.0"
@@ -32,6 +33,7 @@ kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arr
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

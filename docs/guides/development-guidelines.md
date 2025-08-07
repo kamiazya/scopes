@@ -547,7 +547,41 @@ class CreateScopeUseCaseTest : FunSpec({
 
 1. **Unit Tests**: Test individual functions and classes
 2. **Integration Tests**: Test module interactions
-3. **Architecture Tests**: Verify architectural constraints
+3. **Architecture Tests**: Verify architectural constraints with Konsist
+
+### Architecture Testing with Konsist
+
+Konsist automatically validates Clean Architecture and DDD principles:
+
+```bash
+# Run architecture tests
+./gradlew konsistTest
+```
+
+Our architecture tests verify:
+
+- **Layer Dependencies**: Domain layer isolation from outer layers
+- **Clean Architecture**: Application layer restrictions  
+- **DDD Patterns**: Repository, UseCase, Entity naming conventions
+- **Code Quality**: PascalCase classes, immutable data classes
+- **Functional Programming**: No mutable collections in domain
+
+Example architecture test:
+
+```kotlin
+class BasicArchitectureTest : StringSpec({
+    "domain module should not import application layer" {
+        Konsist
+            .scopeFromModule("domain")
+            .files
+            .assertFalse { file ->
+                file.imports.any { import ->
+                    import.name.contains("application")
+                }
+            }
+    }
+})
+```
 
 ### Property-Based Testing
 
@@ -606,6 +640,7 @@ Lefthook runs automatically:
 - **Kotlin linting**: `ktlint`
 - **Static analysis**: `detekt`
 - **Tests**: `./gradlew test`
+- **Architecture Tests**: `./gradlew konsistTest`
 
 ### Running Quality Checks
 
@@ -655,6 +690,7 @@ lefthook run pre-commit
 5. **Test Your Changes**
   ```bash
   ./gradlew test           # Run all tests
+  ./gradlew konsistTest    # Run architecture tests
   ./gradlew detekt         # Static analysis
   ./gradlew ktlintCheck    # Code formatting check
   ```
