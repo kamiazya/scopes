@@ -1080,112 +1080,158 @@ value class ScopeDescription private constructor(private val value: String) {
 
 ```kotlin
 // ✅ Good: Rich domain entity using value objects
-class Scope private constructor(
+@Serializable
+data class Scope(
     val id: ScopeId,
     val title: ScopeTitle,
-    val description: ScopeDescription?,
-    val parentId: ScopeId?,
+    val description: ScopeDescription? = null,
+    val parentId: ScopeId? = null,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val metadata: Map<String, String> = emptyMap(),
 ) {
     companion object {
         /**
-         * Create a new scope with validation.
+         * Create a new scope with generated timestamps.
+         * This is the safe factory method that validates input.
+         * Note: Only performs value object validation (title, description).
+         * Repository-dependent validations (hierarchy, uniqueness) are done in the application layer.
          */
         fun create(
             title: String,
-            description: String?,
-            parentId: ScopeId?,
-            hierarchyContext: HierarchyContext
-        ): Either<NonEmptyList<DomainError>, Scope> = either {
-            zipOrAccumulate(
-                { ScopeTitle.create(title) },
-                { ScopeDescription.create(description) },
-                { ScopeHierarchyRules.validateHierarchy(parentId, hierarchyContext) }
-            ) { validTitle, validDescription, _ ->
-                val now = Clock.System.now()
-                Scope(
-                    id = ScopeId.generate(),
-                    title = validTitle,
-                    description = validDescription,
-                    parentId = parentId,
-                    createdAt = now,
-                    updatedAt = now
-                )
-            }.bind()
+            description: String? = null,
+            parentId: ScopeId? = null,
+            metadata: Map<String, String> = emptyMap()
+        ): Either<DomainError.ValidationError, Scope> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+
+            val now = Clock.System.now()
+            Scope(
+                id = ScopeId.generate(),
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+                createdAt = now,
+                updatedAt = now,
+                metadata = metadata
+            )
         }
     }
     
     /**
-     * Update scope title with validation.
+     * Update the scope title with new timestamp.
+     * Pure function that returns a new instance.
      */
     fun updateTitle(newTitle: String): Either<DomainError.ValidationError, Scope> = either {
-        val validTitle = ScopeTitle.create(newTitle).bind()
-        copy(title = validTitle, updatedAt = Clock.System.now())
+        val validatedTitle = ScopeTitle.create(newTitle).bind()
+        copy(title = validatedTitle, updatedAt = Clock.System.now())
     }
     
     /**
-     * Update scope description with validation.  
+     * Update the scope description with new timestamp.
+     * Pure function that returns a new instance.
      */
     fun updateDescription(newDescription: String?): Either<DomainError.ValidationError, Scope> = either {
-        val validDescription = ScopeDescription.create(newDescription).bind()
-        copy(description = validDescription, updatedAt = Clock.System.now())
+        val validatedDescription = ScopeDescription.create(newDescription).bind()
+        copy(description = validatedDescription, updatedAt = Clock.System.now())
     }
     
-    private fun copy(
-        title: ScopeTitle = this.title,
-        description: ScopeDescription? = this.description,
-        updatedAt: Instant = this.updatedAt
-    ): Scope = Scope(id, title, description, parentId, createdAt, updatedAt)
+    /**
+     * Business rule: Check if this scope can be a parent of another scope.
+     * Prevents circular references and self-parenting.
+     */
+    fun canBeParentOf(childScope: Scope): Boolean =
+        id != childScope.id && childScope.parentId != id
+    
+    /**
+     * Check if this scope is a child of the specified parent.
+     */
+    fun isChildOf(potentialParent: Scope): Boolean =
+        parentId == potentialParent.id
+    
+    /**
+     * Check if this scope is a root scope (no parent).
+     */
+    fun isRoot(): Boolean = parentId == null
 }
 ```
 
-### Clean Architecture with HierarchyContext
+### Clean Architecture with Domain Services
 
-Maintain proper dependency directions by using context patterns:
+Maintain proper dependency directions by separating repository-dependent validations:
 
 ```kotlin
 /**
- * Pure domain service with no repository dependencies.
+ * Domain service for scope validation logic.
+ * Contains business rules that don't naturally belong to any single entity.
+ * Repository-dependent validations are kept separate from pure domain logic.
  */
-object ScopeHierarchyRules {
+object ScopeValidationService {
+    
+    const val MAX_HIERARCHY_DEPTH = 10
+    const val MAX_CHILDREN_PER_PARENT = 100
     
     /**
-     * Validate hierarchy constraints using provided context.
+     * Comprehensive validation for scope creation using accumulating ValidationResult.
+     * This method handles all validation concerns and accumulates errors.
+     * Note: Requires repository access for hierarchy and uniqueness validations.
      */
-    fun validateHierarchy(
+    suspend fun validateScopeCreation(
+        title: String,
+        description: String?,
         parentId: ScopeId?,
-        context: HierarchyContext
+        repository: ScopeRepository
+    ): ValidationResult<Unit> {
+        // Collect all validations as ValidationResults
+        val titleValidation = validateTitle(title)
+            .fold({ error -> error.validationFailure<String>() }, { it.validationSuccess() })
+
+        val descValidation = validateDescription(description)
+            .fold({ error -> error.validationFailure<String?>() }, { it.validationSuccess() })
+
+        val hierarchyValidation = validateHierarchyDepthEfficient(parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        val childrenValidation = validateChildrenLimitEfficient(parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        val uniquenessValidation = validateTitleUniquenessEfficient(title, parentId, repository)
+            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+
+        // Accumulate all validation results
+        return listOf(
+            titleValidation.map { },
+            descValidation.map { },
+            hierarchyValidation,
+            childrenValidation,
+            uniquenessValidation
+        ).sequence().map { }
+    }
+    
+    /**
+     * Validate hierarchy depth using repository query.
+     */
+    suspend fun validateHierarchyDepthEfficient(
+        parentId: ScopeId?,
+        repository: ScopeRepository
     ): Either<DomainError.BusinessRuleViolation, Unit> = either {
         if (parentId == null) return@either
-        
-        val depth = context.getDepth(parentId)
+
+        val depth = repository.findHierarchyDepth(parentId)
+            .mapLeft {
+                // Repository errors should be handled at application layer
+                // For now, treat as max depth exceeded to maintain business rule context
+                DomainError.BusinessRuleViolation.MaxDepthExceeded(
+                    MAX_HIERARCHY_DEPTH,
+                    MAX_HIERARCHY_DEPTH + 1
+                )
+            }
+            .bind()
+
         ensure(depth < MAX_HIERARCHY_DEPTH) {
             DomainError.BusinessRuleViolation.MaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
         }
-        
-        val childrenCount = context.getChildrenCount(parentId)
-        ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
-            DomainError.BusinessRuleViolation.MaxChildrenExceeded(MAX_CHILDREN_PER_PARENT, childrenCount + 1)
-        }
-    }
-}
-
-/**
- * Context providing necessary data for hierarchy validation.
- */
-data class HierarchyContext(
-    private val depthMap: Map<ScopeId, Int>,
-    private val childrenCountMap: Map<ScopeId, Int>,
-    private val existingTitles: Map<ScopeId?, Set<String>>
-) {
-    fun getDepth(scopeId: ScopeId): Int = depthMap[scopeId] ?: 0
-    fun getChildrenCount(scopeId: ScopeId): Int = childrenCountMap[scopeId] ?: 0
-    fun titleExistsInParent(parentId: ScopeId?, title: String): Boolean =
-        existingTitles[parentId]?.contains(title.lowercase()) == true
-    
-    companion object {
-        fun empty() = HierarchyContext(emptyMap(), emptyMap(), emptyMap())
     }
 }
 ```
@@ -1281,39 +1327,54 @@ Integrate rich domain models with clean architecture:
  * Create scope use case with rich domain model integration.
  */
 class CreateScopeUseCase(
-    private val scopeRepository: ScopeRepository,
-    private val domainEventPublisher: DomainEventPublisher
+    private val scopeRepository: ScopeRepository
 ) {
     
     /**
      * Execute create scope request with error accumulation by default.
      */
     suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
-        // Application layer builds hierarchy context from repository
-        val hierarchyContext = scopeRepository.buildHierarchyContext(request.parentId).bind()
-        
-        // Rich domain entity handles its own creation with validation
+        // Check parent exists (this is a prerequisite for other validations)
+        checkParentExists(request.parentId).bind()
+
+        // Perform repository-dependent validations (hierarchy depth, children limit, title uniqueness)
+        // These validations require repository access and cannot be done in Scope.create
+        validateScopeCreationConsolidated(request).bind()
+
+        // Create and save the scope entity
+        val scope = createScopeEntity(request).bind()
+        val savedScope = saveScopeEntity(scope).bind()
+        CreateScopeResponse(savedScope)
+    }
+    
+    /**
+     * Validates repository-dependent business rules that cannot be checked in Scope.create.
+     * These include hierarchy depth, children limit, and title uniqueness within parent scope.
+     */
+    private suspend fun validateScopeCreationConsolidated(
+        request: CreateScopeRequest
+    ): Either<ApplicationError, Unit> {
+        // Use ScopeValidationService for repository-dependent validations
+        val validationResult = ScopeValidationService.validateScopeCreation(
+            request.title,
+            request.description,
+            request.parentId,
+            scopeRepository
+        )
+
+        return ApplicationError.fromValidationResult(validationResult)
+    }
+    
+    private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
+        // Use the public factory method which includes validation
         val scope = Scope.create(
             title = request.title,
             description = request.description,
             parentId = request.parentId,
-            hierarchyContext = hierarchyContext
-        ).mapLeft { errors ->
-            when (errors.size) {
-                1 -> ApplicationError.Domain(errors.head)
-                else -> ApplicationError.ValidationFailure(errors)
-            }
-        }.bind()
-        
-        // Save the created scope
-        val savedScope = scopeRepository.save(scope)
-            .mapLeft { ApplicationError.Repository(it) }
+            metadata = request.metadata
+        ).mapLeft { ApplicationError.Domain(it) }
             .bind()
-        
-        // Publish domain event
-        domainEventPublisher.publish(ScopeCreatedEvent(savedScope))
-        
-        CreateScopeResponse(savedScope)
+        scope
     }
 }
 
