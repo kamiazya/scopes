@@ -48,6 +48,13 @@ object ScopeValidationService {
     }
 
     /**
+     * Helper extension function to convert Either results into ValidationResult.
+     * Eliminates repetitive fold calls throughout validation functions.
+     */
+    private fun <E : DomainError, T> Either<E, T>.toValidationResult(): ValidationResult<T> =
+        fold({ it.validationFailure() }, { it.validationSuccess() })
+
+    /**
      * Validate that a scope can be moved to a new parent.
      * Prevents circular references in the hierarchy.
      */
@@ -216,30 +223,15 @@ object ScopeValidationService {
         parentId: ScopeId?,
         repository: ScopeRepository
     ): ValidationResult<Unit> {
-        // Collect all validations as ValidationResults
-        val titleValidation = validateTitle(title)
-            .fold({ error -> error.validationFailure<String>() }, { it.validationSuccess() })
+        val validations = listOf(
+            validateTitle(title).toValidationResult(),
+            validateDescription(description).toValidationResult(),
+            validateHierarchyDepthEfficient(parentId, repository).toValidationResult(),
+            validateChildrenLimitEfficient(parentId, repository).toValidationResult(),
+            validateTitleUniquenessEfficient(title, parentId, repository).toValidationResult()
+        )
 
-        val descValidation = validateDescription(description)
-            .fold({ error -> error.validationFailure<String?>() }, { it.validationSuccess() })
-
-        val hierarchyValidation = validateHierarchyDepthEfficient(parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-        val childrenValidation = validateChildrenLimitEfficient(parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-        val uniquenessValidation = validateTitleUniquenessEfficient(title, parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-        // Accumulate all validation results
-        return listOf(
-            titleValidation.map { },
-            descValidation.map { },
-            hierarchyValidation,
-            childrenValidation,
-            uniquenessValidation
-        ).sequence().map { }
+        return validations.sequence().map { }
     }
 
     // ===== PURE HIERARCHY CONTEXT-BASED VALIDATION FUNCTIONS =====
