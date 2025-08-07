@@ -10,6 +10,17 @@ import kotlin.system.measureTimeMillis
  * error processing, memory management, and performance measurement.
  */
 object OptimizedValidationUtils {
+    companion object {
+        private const val OBJECT_OVERHEAD_BYTES = 48L
+        private const val ERROR_SIZE_BYTES = 64L
+        private const val STRING_OVERHEAD_BYTES = 24L
+        private const val STRING_CHAR_BYTES = 2L
+        private const val LIST_OVERHEAD_BYTES = 24L
+        private const val LIST_ELEMENT_BYTES = 8L
+        private const val DEFAULT_OBJECT_BYTES = 32L
+        private const val PERCENTAGE_MULTIPLIER = 100.0
+        private const val MAX_SUGGESTIONS = 3
+    }
 
     /**
      * Creates a lazy error message that defers computation until accessed.
@@ -139,11 +150,11 @@ object OptimizedValidationUtils {
         return when (validationResult) {
             is ValidationResult.Success -> {
                 // Rough estimate: object overhead + value size estimation
-                48L + estimateValueSize(validationResult.value)
+                OBJECT_OVERHEAD_BYTES + estimateValueSize(validationResult.value)
             }
             is ValidationResult.Failure -> {
                 // Rough estimate: object overhead + errors collection size
-                48L + (validationResult.errors.size * 64L) // Assume ~64 bytes per error
+                OBJECT_OVERHEAD_BYTES + (validationResult.errors.size * ERROR_SIZE_BYTES)
             }
         }
     }
@@ -154,9 +165,9 @@ object OptimizedValidationUtils {
     private fun estimateValueSize(value: Any?): Long {
         return when (value) {
             null -> 0L
-            is String -> 24L + (value.length * 2L) // Rough UTF-16 estimation
-            is List<*> -> 24L + (value.size * 8L) // Rough list overhead
-            else -> 32L // Default object size estimation
+            is String -> STRING_OVERHEAD_BYTES + (value.length * STRING_CHAR_BYTES)
+            is List<*> -> LIST_OVERHEAD_BYTES + (value.size * LIST_ELEMENT_BYTES)
+            else -> DEFAULT_OBJECT_BYTES
         }
     }
 }
@@ -224,7 +235,7 @@ data class PerformanceComparison<T1, T2>(
 ) {
     val improvementPercentage: Double
         get() = if (operation1TimeMs > 0) {
-            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * 100.0
+            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * PERCENTAGE_MULTIPLIER
         } else {
             0.0
         }

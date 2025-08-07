@@ -121,22 +121,30 @@ object ErrorTransformationUtils {
             // Validation errors
             is DomainError.ValidationError.EmptyTitle -> "Empty title"
             is DomainError.ValidationError.TitleTooShort -> "Title too short"
-            is DomainError.ValidationError.TitleTooLong -> "Title too long (max: ${error.maxLength}, actual: ${error.actualLength})"
-            is DomainError.ValidationError.TitleContainsNewline -> "Title must not contain newline characters"
-            is DomainError.ValidationError.DescriptionTooLong -> "Description too long (max: ${error.maxLength}, actual: ${error.actualLength})"
-            is DomainError.ValidationError.InvalidFormat -> "Invalid format for ${error.field}, expected: ${error.expected}"
+            is DomainError.ValidationError.TitleTooLong -> 
+                "Title too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+            is DomainError.ValidationError.TitleContainsNewline -> 
+                "Title must not contain newline characters"
+            is DomainError.ValidationError.DescriptionTooLong -> 
+                "Description too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+            is DomainError.ValidationError.InvalidFormat -> 
+                "Invalid format for ${error.field}, expected: ${error.expected}"
 
             // Scope errors
             is DomainError.ScopeError.ScopeNotFound -> "Scope not found"
             is DomainError.ScopeError.SelfParenting -> "Scope cannot be its own parent"
-            is DomainError.ScopeError.CircularReference -> "Circular reference detected between ${error.scopeId} and ${error.parentId}"
+            is DomainError.ScopeError.CircularReference -> 
+                "Circular reference detected between ${error.scopeId} and ${error.parentId}"
             is DomainError.ScopeError.InvalidTitle -> "Invalid title: ${error.reason}"
             is DomainError.ScopeError.InvalidDescription -> "Invalid description: ${error.reason}"
-            is DomainError.ScopeError.InvalidParent -> "Invalid parent ${error.parentId}: ${error.reason}"
+            is DomainError.ScopeError.InvalidParent -> 
+                "Invalid parent ${error.parentId}: ${error.reason}"
 
             // Business rule violations
-            is DomainError.BusinessRuleViolation.MaxDepthExceeded -> "Maximum hierarchy depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
-            is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
+            is DomainError.BusinessRuleViolation.MaxDepthExceeded -> 
+                "Maximum hierarchy depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
+            is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> 
+                "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
             is DomainError.BusinessRuleViolation.DuplicateTitle -> "Duplicate title: ${error.title}"
 
         }
