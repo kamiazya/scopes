@@ -26,7 +26,7 @@ class ErrorRecoveryServiceSimpleTest : StringSpec({
 
             // Should only return Suggestion or NonRecoverable results
             // Success results are no longer possible in suggestion-only system
-            result.shouldBeInstanceOf<RecoveryResult>()
+            result.shouldSatisfy { it is RecoveryResult.Suggestion || it is RecoveryResult.NonRecoverable }
         }
     }
 })
