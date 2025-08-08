@@ -23,7 +23,7 @@ value class ScopeDescription private constructor(val value: String) {
          * Returns Either with validation error or nullable ScopeDescription.
          * Null input or blank strings result in null ScopeDescription.
          */
-        fun create(description: String?): Either<DomainError.ValidationError, ScopeDescription?> = either {
+        fun create(description: String?): Either<DomainError.ScopeValidationError, ScopeDescription?> = either {
             when (description) {
                 null -> null
                 else -> {
@@ -32,7 +32,10 @@ value class ScopeDescription private constructor(val value: String) {
                         null
                     } else {
                         ensure(trimmedDescription.length <= MAX_LENGTH) {
-                            DomainError.ValidationError.DescriptionTooLong(MAX_LENGTH, trimmedDescription.length)
+                            DomainError.ScopeValidationError.ScopeDescriptionTooLong(
+                                MAX_LENGTH,
+                                trimmedDescription.length
+                            )
                         }
                         ScopeDescription(trimmedDescription)
                     }

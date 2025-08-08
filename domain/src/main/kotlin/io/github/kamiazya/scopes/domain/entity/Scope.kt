@@ -36,7 +36,7 @@ data class Scope(
             description: String? = null,
             parentId: ScopeId? = null,
             metadata: Map<String, String> = emptyMap()
-        ): Either<DomainError.ValidationError, Scope> = either {
+        ): Either<DomainError.ScopeValidationError, Scope> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
 
@@ -81,7 +81,7 @@ data class Scope(
      * Update the scope title with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateTitle(newTitle: String): Either<DomainError.ValidationError, Scope> = either {
+    fun updateTitle(newTitle: String): Either<DomainError.ScopeValidationError, Scope> = either {
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
     }
@@ -90,7 +90,7 @@ data class Scope(
      * Update the scope description with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateDescription(newDescription: String?): Either<DomainError.ValidationError, Scope> = either {
+    fun updateDescription(newDescription: String?): Either<DomainError.ScopeValidationError, Scope> = either {
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
     }

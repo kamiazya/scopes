@@ -65,7 +65,7 @@ class ScopeDescriptionTest : StringSpec({
 
         // Then the system prevents this to maintain good system performance and UX
         val error = result.shouldBeLeft()
-        error shouldBe DomainError.ValidationError.DescriptionTooLong(1000, 1001)
+        error shouldBe DomainError.ScopeValidationError.ScopeDescriptionTooLong(1000, 1001)
     }
 
     "system supports comprehensive documentation up to reasonable limits" {

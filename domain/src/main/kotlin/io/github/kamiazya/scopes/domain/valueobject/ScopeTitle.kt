@@ -22,16 +22,16 @@ value class ScopeTitle private constructor(val value: String) {
          * Create a validated ScopeTitle from a string.
          * Returns Either with validation error or valid ScopeTitle.
          */
-        fun create(title: String): Either<DomainError.ValidationError, ScopeTitle> = either {
+        fun create(title: String): Either<DomainError.ScopeValidationError, ScopeTitle> = either {
             val trimmedTitle = title.trim()
 
-            ensure(trimmedTitle.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
-            ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ValidationError.TitleTooShort }
+            ensure(trimmedTitle.isNotBlank()) { DomainError.ScopeValidationError.EmptyScopeTitle }
+            ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ScopeValidationError.ScopeTitleTooShort }
             ensure(trimmedTitle.length <= MAX_LENGTH) {
-                DomainError.ValidationError.TitleTooLong(MAX_LENGTH, trimmedTitle.length)
+                DomainError.ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
             }
             ensure(!trimmedTitle.contains('\n') && !trimmedTitle.contains('\r')) {
-                DomainError.ValidationError.TitleContainsNewline
+                DomainError.ScopeValidationError.ScopeTitleContainsNewline
             }
 
             ScopeTitle(trimmedTitle)

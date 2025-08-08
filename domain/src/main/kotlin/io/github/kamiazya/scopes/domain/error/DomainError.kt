@@ -22,24 +22,30 @@ sealed class DomainError {
     }
 
     /**
-     * Validation-related domain errors.
+     * Scope validation-related domain errors.
      */
-    sealed class ValidationError : DomainError() {
-        object EmptyTitle : ValidationError()
-        object TitleTooShort : ValidationError()
-        data class TitleTooLong(val maxLength: Int, val actualLength: Int) : ValidationError()
-        object TitleContainsNewline : ValidationError()
-        data class DescriptionTooLong(val maxLength: Int, val actualLength: Int) : ValidationError()
-        data class InvalidFormat(val field: String, val expected: String) : ValidationError()
+    sealed class ScopeValidationError : DomainError() {
+        object EmptyScopeTitle : ScopeValidationError()
+        object ScopeTitleTooShort : ScopeValidationError()
+        data class ScopeTitleTooLong(val maxLength: Int, val actualLength: Int) : ScopeValidationError()
+        object ScopeTitleContainsNewline : ScopeValidationError()
+        data class ScopeDescriptionTooLong(val maxLength: Int, val actualLength: Int) : ScopeValidationError()
+        data class ScopeInvalidFormat(val field: String, val expected: String) : ScopeValidationError()
     }
 
     /**
-     * Business rule violations.
+     * Scope business rule violations.
      */
-    sealed class BusinessRuleViolation : DomainError() {
-        data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : BusinessRuleViolation()
-        data class MaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : BusinessRuleViolation()
-        data class DuplicateTitle(val title: String, val parentId: ScopeId?) : BusinessRuleViolation()
+    sealed class ScopeBusinessRuleViolation : DomainError() {
+        data class ScopeMaxDepthExceeded(
+            val maxDepth: Int,
+            val actualDepth: Int
+        ) : ScopeBusinessRuleViolation()
+        data class ScopeMaxChildrenExceeded(
+            val maxChildren: Int,
+            val actualChildren: Int
+        ) : ScopeBusinessRuleViolation()
+        data class ScopeDuplicateTitle(val title: String, val parentId: ScopeId?) : ScopeBusinessRuleViolation()
     }
 
 }
