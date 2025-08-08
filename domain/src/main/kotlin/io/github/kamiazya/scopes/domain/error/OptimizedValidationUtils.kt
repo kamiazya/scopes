@@ -17,8 +17,6 @@ object OptimizedValidationUtils {
     private const val LIST_OVERHEAD_BYTES = 24L
     private const val LIST_ELEMENT_BYTES = 8L
     private const val DEFAULT_OBJECT_BYTES = 32L
-    private const val PERCENTAGE_MULTIPLIER = 100.0
-    private const val MAX_SUGGESTIONS = 3
 
     /**
      * Creates a lazy error message that defers computation until accessed.

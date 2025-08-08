@@ -56,85 +56,6 @@ object ScopeValidationService {
         fold({ it.validationFailure() }, { it.validationSuccess() })
 
     /**
-     * Validate that a scope can be moved to a new parent.
-     * Prevents circular references in the hierarchy.
-     */
-    fun validateParentRelationship(
-        scope: Scope,
-        newParentId: ScopeId?,
-        allScopes: List<Scope>
-    ): Either<DomainError.ScopeError, Unit> = either {
-        if (newParentId == null) return@either
-
-        ensure(newParentId != scope.id) { DomainError.ScopeError.SelfParenting }
-
-        // Check for circular reference
-        val ancestors = generateSequence(newParentId) { currentId ->
-            allScopes.find { it.id == currentId }?.parentId
-        }
-
-        ensure(scope.id !in ancestors) {
-            DomainError.ScopeError.CircularReference(scope.id, newParentId)
-        }
-    }
-
-    /**
-     * Validate hierarchy depth doesn't exceed maximum.
-     */
-    fun validateHierarchyDepth(
-        parentId: ScopeId?,
-        allScopes: List<Scope>
-    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
-        if (parentId == null) return@either
-
-        val depth = calculateDepth(parentId, allScopes)
-        ensure(depth < MAX_HIERARCHY_DEPTH) {
-            DomainError.BusinessRuleViolation.MaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
-        }
-    }
-
-    /**
-     * Validate that parent doesn't exceed maximum children limit.
-     */
-    fun validateChildrenLimit(
-        parentId: ScopeId?,
-        allScopes: List<Scope>
-    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
-        if (parentId == null) return@either
-
-        val childrenCount = allScopes.count { it.parentId == parentId }
-        ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
-            DomainError.BusinessRuleViolation.MaxChildrenExceeded(
-                MAX_CHILDREN_PER_PARENT, childrenCount + 1
-            )
-        }
-    }
-
-    /**
-     * Validate title uniqueness within the same parent scope.
-     * Note: Root level scopes (parentId = null) allow duplicate titles.
-     */
-    fun validateTitleUniqueness(
-        title: String,
-        parentId: ScopeId?,
-        excludeScopeId: ScopeId?,
-        allScopes: List<Scope>
-    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
-        // Allow duplicate titles at root level (parentId = null)
-        if (parentId != null) {
-            val duplicateExists = allScopes.any { scope ->
-                scope.id != excludeScopeId &&
-                scope.parentId == parentId &&
-                scope.title.value.equals(title, ignoreCase = true)
-            }
-
-            ensure(!duplicateExists) {
-                DomainError.BusinessRuleViolation.DuplicateTitle(title, parentId)
-            }
-        }
-    }
-
-    /**
      * Efficient version: Validate hierarchy depth using repository query.
      */
     suspend fun validateHierarchyDepthEfficient(
@@ -281,19 +202,4 @@ object ScopeValidationService {
         }
     }
 
-    /**
-     * Calculate the depth of a scope in the hierarchy.
-     */
-    private fun calculateDepth(scopeId: ScopeId, allScopes: List<Scope>): Int {
-        tailrec fun calculateDepthRecursive(currentId: ScopeId?, depth: Int): Int =
-            when (currentId) {
-                null -> depth
-                else -> {
-                    val parent = allScopes.find { it.id == currentId }?.parentId
-                    calculateDepthRecursive(parent, depth + 1)
-                }
-            }
-
-        return calculateDepthRecursive(scopeId, 0)
-    }
 }

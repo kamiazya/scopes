@@ -144,7 +144,9 @@ class ErrorRecoveryService(
                     listOf(
                         originalTitle.take(maxLength - suffixLength) + configuration.truncationSuffix,
                         originalTitle.take(maxLength),
-                        originalTitle.split(" ").take(maxLength / WORD_REDUCTION_FACTOR).joinToString(" ") // Take first few words
+                        originalTitle.split(" ")
+                            .take(maxLength / WORD_REDUCTION_FACTOR)
+                            .joinToString(" ") // Take first few words
                     )
                 } else {
                     listOf(configuration.defaultTitleTemplate)
@@ -154,7 +156,8 @@ class ErrorRecoveryService(
                     originalError = error,
                     suggestedValues = suggestions,
                     strategy = "TruncateTitle",
-                    description = "Title exceeds maximum length (${maxLength} characters). Here are shortened versions that preserve meaning."
+                    description = "Title exceeds maximum length (${maxLength} characters). " +
+                        "Here are shortened versions that preserve meaning."
                 )
             }
 
@@ -163,7 +166,10 @@ class ErrorRecoveryService(
                 val suggestions = if (originalTitle.isNotBlank()) {
                     listOf(
                         originalTitle.replace("\n", " ").replace("\r", " ").replace(Regex("\\s+"), " ").trim(),
-                        originalTitle.replace("\n", " - ").replace("\r", " - ").replace(Regex("\\s+-\\s+"), " - ").trim(),
+                        originalTitle.replace("\n", " - ")
+                            .replace("\r", " - ")
+                            .replace(Regex("\\s+-\\s+"), " - ")
+                            .trim(),
                         originalTitle.split(Regex("[\\n\\r]+")).first().trim() // Just take first line
                     ).filter { it.isNotBlank() }
                 } else {
@@ -174,7 +180,8 @@ class ErrorRecoveryService(
                     originalError = error,
                     suggestedValues = suggestions,
                     strategy = "CleanTitle",
-                    description = "Titles cannot contain line breaks. Here are cleaned versions that preserve your content."
+                    description = "Titles cannot contain line breaks. " +
+                        "Here are cleaned versions that preserve your content."
                 )
             }
 
@@ -197,7 +204,8 @@ class ErrorRecoveryService(
                     originalError = error,
                     suggestedValues = suggestions,
                     strategy = "TruncateDescription",
-                    description = "Description exceeds maximum length (${maxLength} characters). Here are shortened versions that preserve key information."
+                    description = "Description exceeds maximum length (${maxLength} characters). " +
+                        "Here are shortened versions that preserve key information."
                 )
             }
 
@@ -213,7 +221,8 @@ class ErrorRecoveryService(
                     originalError = error,
                     suggestedValues = suggestions,
                     strategy = "AppendNumber",
-                    description = "A scope with this title already exists. Here are unique variations you can use instead."
+                    description = "A scope with this title already exists. " +
+                        "Here are unique variations you can use instead."
                 )
             }
 
@@ -226,7 +235,8 @@ class ErrorRecoveryService(
                         "Create a separate top-level scope for this content"
                     ),
                     strategy = "ReorganizeHierarchy",
-                    description = "The hierarchy is too deep (maximum ${error.maxDepth} levels). Consider restructuring to reduce nesting."
+                    description = "The hierarchy is too deep (maximum ${error.maxDepth} levels). " +
+                        "Consider restructuring to reduce nesting."
                 )
             }
 
@@ -239,7 +249,8 @@ class ErrorRecoveryService(
                         "Combine related children into sub-categories"
                     ),
                     strategy = "CreateGrouping",
-                    description = "Too many child scopes (maximum ${error.maxChildren} allowed). Consider organizing them into logical groups."
+                    description = "Too many child scopes (maximum ${error.maxChildren} allowed). " +
+                        "Consider organizing them into logical groups."
                 )
             }
 
