@@ -229,9 +229,13 @@ data class PerformanceComparison<T1, T2>(
     val operation2Result: ValidationResult<T2>,
     val operation2TimeMs: Long
 ) {
+    companion object {
+        private const val PERCENTAGE_MULTIPLIER = 100.0
+    }
+    
     val improvementPercentage: Double
         get() = if (operation1TimeMs > 0) {
-            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * 100.0
+            ((operation1TimeMs - operation2TimeMs).toDouble() / operation1TimeMs) * PERCENTAGE_MULTIPLIER
         } else {
             0.0
         }

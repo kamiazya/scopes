@@ -69,7 +69,9 @@ sealed class ValidationResult<out T> {
          * Returns all successful values if all results are successful,
          * or accumulates all errors if any result fails.
          */
-        fun <T> allSuccessOrAccumulateErrors(results: List<ValidationResult<T>>): Either<NonEmptyList<DomainError>, List<T>> {
+        fun <T> allSuccessOrAccumulateErrors(
+            results: List<ValidationResult<T>>
+        ): Either<NonEmptyList<DomainError>, List<T>> {
             val successes = mutableListOf<T>()
             val errors = mutableListOf<DomainError>()
 

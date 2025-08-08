@@ -105,157 +105,206 @@ class ErrorRecoveryService(
         context: Map<String, Any>
     ): RecoveryResult {
         return when (error) {
-            // Previously automatic recoveries - now converted to suggestions
-            is DomainError.ValidationError.EmptyTitle -> {
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = listOf(configuration.defaultTitleTemplate),
-                    strategy = "DefaultTitle",
-                    description = "Title cannot be empty. Consider using a default title to get started quickly."
-                )
-            }
-
-            is DomainError.ValidationError.TitleTooShort -> {
-                val originalTitle = context["originalTitle"] as? String ?: ""
-                val suggestions = if (originalTitle.isNotBlank()) {
-                    listOf(
-                        "$originalTitle - Task",
-                        "$originalTitle - Item",
-                        "TODO: $originalTitle"
-                    )
-                } else {
-                    listOf("New Task", "New Item", "TODO Item")
-                }
-
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = suggestions,
-                    strategy = "PadTitle",
-                    description = "Title is too short. Here are some ways to make it more descriptive."
-                )
-            }
-
-            is DomainError.ValidationError.TitleTooLong -> {
-                val originalTitle = context["originalTitle"] as? String ?: ""
-                val maxLength = configuration.maxTitleLength
-                val suffixLength = configuration.truncationSuffix.length
-
-                val suggestions = if (originalTitle.isNotBlank()) {
-                    listOf(
-                        originalTitle.take(maxLength - suffixLength) + configuration.truncationSuffix,
-                        originalTitle.take(maxLength),
-                        originalTitle.split(" ")
-                            .take(maxLength / WORD_REDUCTION_FACTOR)
-                            .joinToString(" ") // Take first few words
-                    )
-                } else {
-                    listOf(configuration.defaultTitleTemplate)
-                }
-
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = suggestions,
-                    strategy = "TruncateTitle",
-                    description = "Title exceeds maximum length (${maxLength} characters). " +
-                        "Here are shortened versions that preserve meaning."
-                )
-            }
-
-            is DomainError.ValidationError.TitleContainsNewline -> {
-                val originalTitle = context["originalTitle"] as? String ?: ""
-                val suggestions = if (originalTitle.isNotBlank()) {
-                    listOf(
-                        originalTitle.replace("\n", " ").replace("\r", " ").replace(Regex("\\s+"), " ").trim(),
-                        originalTitle.replace("\n", " - ")
-                            .replace("\r", " - ")
-                            .replace(Regex("\\s+-\\s+"), " - ")
-                            .trim(),
-                        originalTitle.split(Regex("[\\n\\r]+")).first().trim() // Just take first line
-                    ).filter { it.isNotBlank() }
-                } else {
-                    listOf(configuration.defaultTitleTemplate)
-                }
-
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = suggestions,
-                    strategy = "CleanTitle",
-                    description = "Titles cannot contain line breaks. " +
-                        "Here are cleaned versions that preserve your content."
-                )
-            }
-
-            is DomainError.ValidationError.DescriptionTooLong -> {
-                val originalDescription = context["originalDescription"] as? String ?: ""
-                val maxLength = configuration.maxDescriptionLength
-                val suffixLength = configuration.truncationSuffix.length
-
-                val suggestions = if (originalDescription.isNotBlank()) {
-                    listOf(
-                        originalDescription.take(maxLength - suffixLength) + configuration.truncationSuffix,
-                        originalDescription.split(".").first().trim(), // Take first sentence
-                        originalDescription.split("\n").first().trim()  // Take first paragraph
-                    ).filter { it.isNotBlank() }.distinct()
-                } else {
-                    listOf("") // Empty description is valid
-                }
-
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = suggestions,
-                    strategy = "TruncateDescription",
-                    description = "Description exceeds maximum length (${maxLength} characters). " +
-                        "Here are shortened versions that preserve key information."
-                )
-            }
-
-            // Business rule violations that were already suggestions
-            is DomainError.BusinessRuleViolation.DuplicateTitle -> {
-                val originalTitle = context["originalTitle"] as? String ?: error.title
-                val parentId = context["parentId"] as? ScopeId
-                val allScopes = context["allScopes"] as? List<Scope> ?: emptyList()
-
-                val suggestions = generateUniqueVariants(originalTitle, parentId, allScopes)
-
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = suggestions,
-                    strategy = "AppendNumber",
-                    description = "A scope with this title already exists. " +
-                        "Here are unique variations you can use instead."
-                )
-            }
-
-            is DomainError.BusinessRuleViolation.MaxDepthExceeded -> {
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = listOf(
-                        "Move this scope to a higher level in the hierarchy",
-                        "Consider restructuring parent scopes to reduce nesting",
-                        "Create a separate top-level scope for this content"
-                    ),
-                    strategy = "ReorganizeHierarchy",
-                    description = "The hierarchy is too deep (maximum ${error.maxDepth} levels). " +
-                        "Consider restructuring to reduce nesting."
-                )
-            }
-
-            is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> {
-                RecoveryResult.Suggestion(
-                    originalError = error,
-                    suggestedValues = listOf(
-                        "Create intermediate grouping scopes to organize children",
-                        "Move some children to different parent scopes",
-                        "Combine related children into sub-categories"
-                    ),
-                    strategy = "CreateGrouping",
-                    description = "Too many child scopes (maximum ${error.maxChildren} allowed). " +
-                        "Consider organizing them into logical groups."
-                )
-            }
-
+            is DomainError.ValidationError.EmptyTitle -> suggestEmptyTitleRecovery(error)
+            is DomainError.ValidationError.TitleTooShort -> suggestTitleTooShortRecovery(error, context)
+            is DomainError.ValidationError.TitleTooLong -> suggestTitleTooLongRecovery(error, context)
+            is DomainError.ValidationError.TitleContainsNewline -> suggestTitleContainsNewlineRecovery(error, context)
+            is DomainError.ValidationError.DescriptionTooLong -> suggestDescriptionTooLongRecovery(error, context)
+            is DomainError.BusinessRuleViolation.DuplicateTitle -> suggestDuplicateTitleRecovery(error, context)
+            is DomainError.BusinessRuleViolation.MaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
+            is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> suggestMaxChildrenExceededRecovery(error)
             else -> handleNonRecoverable(error)
         }
+    }
+
+    /**
+     * Suggests recovery for empty title validation errors.
+     */
+    private fun suggestEmptyTitleRecovery(error: DomainError.ValidationError.EmptyTitle): RecoveryResult {
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = listOf(configuration.defaultTitleTemplate),
+            strategy = "DefaultTitle",
+            description = "Title cannot be empty. Consider using a default title to get started quickly."
+        )
+    }
+
+    /**
+     * Suggests recovery for title too short validation errors.
+     */
+    private fun suggestTitleTooShortRecovery(
+        error: DomainError.ValidationError.TitleTooShort,
+        context: Map<String, Any>
+    ): RecoveryResult {
+        val originalTitle = context["originalTitle"] as? String ?: ""
+        val suggestions = if (originalTitle.isNotBlank()) {
+            listOf(
+                "$originalTitle - Task",
+                "$originalTitle - Item",
+                "TODO: $originalTitle"
+            )
+        } else {
+            listOf("New Task", "New Item", "TODO Item")
+        }
+
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = suggestions,
+            strategy = "PadTitle",
+            description = "Title is too short. Here are some ways to make it more descriptive."
+        )
+    }
+
+    /**
+     * Suggests recovery for title too long validation errors.
+     */
+    private fun suggestTitleTooLongRecovery(
+        error: DomainError.ValidationError.TitleTooLong,
+        context: Map<String, Any>
+    ): RecoveryResult {
+        val originalTitle = context["originalTitle"] as? String ?: ""
+        val maxLength = configuration.maxTitleLength
+        val suffixLength = configuration.truncationSuffix.length
+
+        val suggestions = if (originalTitle.isNotBlank()) {
+            listOf(
+                originalTitle.take(maxLength - suffixLength) + configuration.truncationSuffix,
+                originalTitle.take(maxLength),
+                originalTitle.split(" ")
+                    .take(maxLength / WORD_REDUCTION_FACTOR)
+                    .joinToString(" ") // Take first few words
+            )
+        } else {
+            listOf(configuration.defaultTitleTemplate)
+        }
+
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = suggestions,
+            strategy = "TruncateTitle",
+            description = "Title exceeds maximum length (${maxLength} characters). " +
+                "Here are shortened versions that preserve meaning."
+        )
+    }
+
+    /**
+     * Suggests recovery for title contains newline validation errors.
+     */
+    private fun suggestTitleContainsNewlineRecovery(
+        error: DomainError.ValidationError.TitleContainsNewline,
+        context: Map<String, Any>
+    ): RecoveryResult {
+        val originalTitle = context["originalTitle"] as? String ?: ""
+        val suggestions = if (originalTitle.isNotBlank()) {
+            listOf(
+                originalTitle.replace("\n", " ").replace("\r", " ").replace(Regex("\\s+"), " ").trim(),
+                originalTitle.replace("\n", " - ")
+                    .replace("\r", " - ")
+                    .replace(Regex("\\s+-\\s+"), " - ")
+                    .trim(),
+                originalTitle.split(Regex("[\\n\\r]+")).first().trim() // Just take first line
+            ).filter { it.isNotBlank() }
+        } else {
+            listOf(configuration.defaultTitleTemplate)
+        }
+
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = suggestions,
+            strategy = "CleanTitle",
+            description = "Titles cannot contain line breaks. " +
+                "Here are cleaned versions that preserve your content."
+        )
+    }
+
+    /**
+     * Suggests recovery for description too long validation errors.
+     */
+    private fun suggestDescriptionTooLongRecovery(
+        error: DomainError.ValidationError.DescriptionTooLong,
+        context: Map<String, Any>
+    ): RecoveryResult {
+        val originalDescription = context["originalDescription"] as? String ?: ""
+        val maxLength = configuration.maxDescriptionLength
+        val suffixLength = configuration.truncationSuffix.length
+
+        val suggestions = if (originalDescription.isNotBlank()) {
+            listOf(
+                originalDescription.take(maxLength - suffixLength) + configuration.truncationSuffix,
+                originalDescription.split(".").first().trim(), // Take first sentence
+                originalDescription.split("\n").first().trim()  // Take first paragraph
+            ).filter { it.isNotBlank() }.distinct()
+        } else {
+            listOf("") // Empty description is valid
+        }
+
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = suggestions,
+            strategy = "TruncateDescription",
+            description = "Description exceeds maximum length (${maxLength} characters). " +
+                "Here are shortened versions that preserve key information."
+        )
+    }
+
+    /**
+     * Suggests recovery for duplicate title business rule violations.
+     */
+    private fun suggestDuplicateTitleRecovery(
+        error: DomainError.BusinessRuleViolation.DuplicateTitle,
+        context: Map<String, Any>
+    ): RecoveryResult {
+        val originalTitle = context["originalTitle"] as? String ?: error.title
+        val parentId = context["parentId"] as? ScopeId
+        val allScopes = context["allScopes"] as? List<Scope> ?: emptyList()
+
+        val suggestions = generateUniqueVariants(originalTitle, parentId, allScopes)
+
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = suggestions,
+            strategy = "AppendNumber",
+            description = "A scope with this title already exists. " +
+                "Here are unique variations you can use instead."
+        )
+    }
+
+    /**
+     * Suggests recovery for max depth exceeded business rule violations.
+     */
+    private fun suggestMaxDepthExceededRecovery(
+        error: DomainError.BusinessRuleViolation.MaxDepthExceeded
+    ): RecoveryResult {
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = listOf(
+                "Move this scope to a higher level in the hierarchy",
+                "Consider restructuring parent scopes to reduce nesting",
+                "Create a separate top-level scope for this content"
+            ),
+            strategy = "ReorganizeHierarchy",
+            description = "The hierarchy is too deep (maximum ${error.maxDepth} levels). " +
+                "Consider restructuring to reduce nesting."
+        )
+    }
+
+    /**
+     * Suggests recovery for max children exceeded business rule violations.
+     */
+    private fun suggestMaxChildrenExceededRecovery(
+        error: DomainError.BusinessRuleViolation.MaxChildrenExceeded
+    ): RecoveryResult {
+        return RecoveryResult.Suggestion(
+            originalError = error,
+            suggestedValues = listOf(
+                "Create intermediate grouping scopes to organize children",
+                "Move some children to different parent scopes",
+                "Combine related children into sub-categories"
+            ),
+            strategy = "CreateGrouping",
+            description = "Too many child scopes (maximum ${error.maxChildren} allowed). " +
+                "Consider organizing them into logical groups."
+        )
     }
 
     /**

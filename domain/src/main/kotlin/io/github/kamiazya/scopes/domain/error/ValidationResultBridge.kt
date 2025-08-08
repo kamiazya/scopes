@@ -20,7 +20,9 @@ object ValidationResultBridge {
      * @param eitherList List of Either values to convert
      * @return ValidationResult containing all successful values or accumulated errors
      */
-    fun <T> sequenceToValidationResult(eitherList: List<Either<NonEmptyList<DomainError>, T>>): ValidationResult<List<T>> {
+    fun <T> sequenceToValidationResult(
+        eitherList: List<Either<NonEmptyList<DomainError>, T>>
+    ): ValidationResult<List<T>> {
         val successes = mutableListOf<T>()
         val errors = mutableListOf<DomainError>()
 
