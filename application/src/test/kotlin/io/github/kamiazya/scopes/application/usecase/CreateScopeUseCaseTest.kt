@@ -200,7 +200,7 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // And includes specific guidance for each issue
             val errorTypes = error.errors.map { it::class.simpleName }
-            errorTypes shouldContainExactlyInAnyOrder listOf("EmptyTitle", "DescriptionTooLong")
+            errorTypes shouldContainExactlyInAnyOrder listOf("EmptyScopeTitle", "ScopeDescriptionTooLong")
         }
     }
 
@@ -237,7 +237,7 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // Verify specific errors are included
             val errorTypes = error.errors.map { it::class.simpleName }
-            errorTypes shouldContainExactlyInAnyOrder listOf("DescriptionTooLong", "DuplicateTitle")
+            errorTypes shouldContainExactlyInAnyOrder listOf("ScopeDescriptionTooLong", "ScopeDuplicateTitle")
         }
     }
 

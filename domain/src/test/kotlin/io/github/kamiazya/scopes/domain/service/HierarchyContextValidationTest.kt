@@ -33,7 +33,7 @@ class HierarchyContextValidationTest : StringSpec({
 
         // Then the system prevents this to maintain usable navigation and system performance
         val error = result.shouldBeLeft()
-        error.shouldBeInstanceOf<DomainError.BusinessRuleViolation.MaxDepthExceeded>()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded>()
     }
 
     "system enforces hierarchy limits to prevent infinite nesting scenarios" {
@@ -44,7 +44,7 @@ class HierarchyContextValidationTest : StringSpec({
 
         // Then the system prevents this to protect against unwieldy project structures
         val error = result.shouldBeLeft()
-        error.shouldBeInstanceOf<DomainError.BusinessRuleViolation.MaxDepthExceeded>()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded>()
     }
 
     "system supports teams managing substantial numbers of parallel work items" {
@@ -65,7 +65,7 @@ class HierarchyContextValidationTest : StringSpec({
 
         // Then the system prevents additional children to maintain usable project views
         val error = result.shouldBeLeft()
-        error.shouldBeInstanceOf<DomainError.BusinessRuleViolation.MaxChildrenExceeded>()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded>()
     }
 
     "system enforces child limits to maintain interface usability and system performance" {
@@ -76,7 +76,7 @@ class HierarchyContextValidationTest : StringSpec({
 
         // Then the system prevents this to ensure lists remain manageable and performant
         val error = result.shouldBeLeft()
-        error.shouldBeInstanceOf<DomainError.BusinessRuleViolation.MaxChildrenExceeded>()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded>()
     }
 
     "teams can create multiple scopes with clear, distinct names within project boundaries" {
@@ -103,7 +103,7 @@ class HierarchyContextValidationTest : StringSpec({
 
         // Then the system prevents this to avoid confusion in project organization
         val error = result.shouldBeLeft()
-        error.shouldBeInstanceOf<DomainError.BusinessRuleViolation.DuplicateTitle>()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle>()
     }
 
     "multiple teams can use similar scope names at the root level for their independent projects" {

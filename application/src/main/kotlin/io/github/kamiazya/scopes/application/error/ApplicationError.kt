@@ -2,10 +2,10 @@ package io.github.kamiazya.scopes.application.error
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
+import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.error.ValidationResult
-import io.github.kamiazya.scopes.domain.error.fold
 
 /**
  * Application-level errors that can occur during use case execution.
@@ -32,7 +32,7 @@ sealed class ApplicationError {
     ) : ApplicationError()
 
     /**
-     * Use case specific errors.
+     * UseCase specific errors.
      */
     sealed class UseCaseError : ApplicationError() {
         data class InvalidRequest(val message: String) : UseCaseError()
@@ -66,17 +66,19 @@ sealed class ApplicationError {
          * Convert ValidationResult to ApplicationError Either.
          * A key utility for error handling.
          */
-        fun <T> fromValidationResult(result: ValidationResult<T>): Either<ApplicationError, T> =
-            result.fold(
-                ifFailure = { errors: NonEmptyList<DomainError> ->
-                    if (errors.size == 1) {
-                        Either.Left(Domain(errors.head))
+        fun <T> fromValidationResult(result: ValidationResult<T>): Either<ApplicationError, T> = either {
+            when (result) {
+                is ValidationResult.Success -> result.value
+                is ValidationResult.Failure -> {
+                    val error = if (result.errors.size == 1) {
+                        Domain(result.errors.head)
                     } else {
-                        Either.Left(ValidationFailure(errors))
+                        ValidationFailure(result.errors)
                     }
-                },
-                ifSuccess = { value: T -> Either.Right(value) }
-            )
+                    raise(error)
+                }
+            }
+        }
 
     }
 }
