@@ -1,5 +1,7 @@
-package io.github.kamiazya.scopes.domain.error
+package io.github.kamiazya.scopes.infrastructure.functional
 
+import io.github.kamiazya.scopes.domain.error.ValidationResult
+import io.github.kamiazya.scopes.domain.error.DomainError
 import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
@@ -7,9 +9,12 @@ import arrow.core.nonEmptyListOf
 /**
  * Bridge utilities for seamless integration between ValidationResult and Either types.
  *
- * Provides utility functions for converting between
+ * This infrastructure component provides utility functions for converting between
  * ValidationResult and Either, enabling smooth integration in mixed codebases and
  * supporting async operations.
+ *
+ * Moved to infrastructure layer as it deals with technical concerns of type conversion
+ * rather than domain logic.
  */
 object ValidationResultBridge {
 
@@ -27,10 +32,10 @@ object ValidationResultBridge {
         val errors = mutableListOf<DomainError>()
 
         eitherList.forEach { either ->
-            either.fold(
-                { errorList -> errors.addAll(errorList) },
-                { value -> successes.add(value) }
-            )
+            when (either) {
+                is Either.Left -> errors.addAll(either.value)
+                is Either.Right -> successes.add(either.value)
+            }
         }
 
         return if (errors.isEmpty()) {
@@ -79,10 +84,10 @@ object ValidationResultBridge {
         return when (validation) {
             is ValidationResult.Success -> validation
             is ValidationResult.Failure -> {
-                recovery(validation.errors).fold(
-                    { newErrors -> ValidationResult.Failure(newErrors) },
-                    { recoveredValue -> ValidationResult.Success(recoveredValue) }
-                )
+                when (val recoveryResult = recovery(validation.errors)) {
+                    is Either.Left -> ValidationResult.Failure(recoveryResult.value)
+                    is Either.Right -> ValidationResult.Success(recoveryResult.value)
+                }
             }
         }
     }
@@ -98,15 +103,15 @@ object ValidationResultBridge {
         either: Either<NonEmptyList<DomainError>, T>,
         recovery: (NonEmptyList<DomainError>) -> ValidationResult<T>
     ): Either<NonEmptyList<DomainError>, T> {
-        return either.fold(
-            { errors ->
-                recovery(errors).fold(
-                    { newErrors -> Either.Left(newErrors) },
-                    { recoveredValue -> Either.Right(recoveredValue) }
-                )
-            },
-            { value -> Either.Right(value) }
-        )
+        return when (either) {
+            is Either.Left -> {
+                when (val recoveryResult = recovery(either.value)) {
+                    is ValidationResult.Success -> Either.Right(recoveryResult.value)
+                    is ValidationResult.Failure -> Either.Left(recoveryResult.errors)
+                }
+            }
+            is Either.Right -> Either.Right(either.value)
+        }
     }
 
     /**
@@ -116,10 +121,10 @@ object ValidationResultBridge {
      * @return ValidationResult with error wrapped in NonEmptyList if Left
      */
     fun <T> toValidationResultNel(either: Either<DomainError, T>): ValidationResult<T> {
-        return either.fold(
-            { error -> ValidationResult.Failure(nonEmptyListOf(error)) },
-            { value -> ValidationResult.Success(value) }
-        )
+        return when (either) {
+            is Either.Left -> ValidationResult.Failure(nonEmptyListOf(either.value))
+            is Either.Right -> ValidationResult.Success(either.value)
+        }
     }
 
     /**
@@ -152,9 +157,9 @@ object ValidationResultBridge {
         processor: (T) -> ValidationResult<U>
     ): ValidationResult<List<U>> {
         val results = items.map(processor)
-        return sequenceToEither(results).fold(
-            { errors -> ValidationResult.Failure(errors) },
-            { values -> ValidationResult.Success(values) }
-        )
+        return when (val sequenceResult = sequenceToEither(results)) {
+            is Either.Left -> ValidationResult.Failure(sequenceResult.value)
+            is Either.Right -> ValidationResult.Success(sequenceResult.value)
+        }
     }
 }
