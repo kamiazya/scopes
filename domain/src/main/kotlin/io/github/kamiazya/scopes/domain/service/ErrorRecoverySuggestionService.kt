@@ -1,14 +1,16 @@
-package io.github.kamiazya.scopes.domain.error
+package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.RecoveryResult
+import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
- * Service responsible for generating recovery suggestions for domain errors.
- * Extracted from ErrorRecoveryService to reduce function count and improve maintainability.
+ * Domain service that generates recovery suggestions for errors.
  */
 @Suppress("TooManyFunctions") // This class is designed to contain many suggestion functions
-internal class ErrorRecoverySuggestionService(
+class ErrorRecoverySuggestionService(
     private val configuration: ScopeRecoveryConfiguration.Complete
 ) {
 
@@ -18,22 +20,25 @@ internal class ErrorRecoverySuggestionService(
     }
 
     /**
-     * Handles partially recoverable errors by suggesting fixes.
-     * Now includes all previously "automatic" recoveries as suggestions.
+     * Suggests recovery options for domain errors.
      */
     fun suggestRecovery(
         error: DomainError,
         context: Map<String, Any>
     ): RecoveryResult {
         return when (error) {
-            is DomainError.ValidationError.EmptyTitle -> suggestEmptyTitleRecovery(error)
-            is DomainError.ValidationError.TitleTooShort -> suggestTitleTooShortRecovery(error, context)
-            is DomainError.ValidationError.TitleTooLong -> suggestTitleTooLongRecovery(error, context)
-            is DomainError.ValidationError.TitleContainsNewline -> suggestTitleContainsNewlineRecovery(error, context)
-            is DomainError.ValidationError.DescriptionTooLong -> suggestDescriptionTooLongRecovery(error, context)
-            is DomainError.BusinessRuleViolation.DuplicateTitle -> suggestDuplicateTitleRecovery(error, context)
-            is DomainError.BusinessRuleViolation.MaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
-            is DomainError.BusinessRuleViolation.MaxChildrenExceeded -> suggestMaxChildrenExceededRecovery(error)
+            is DomainError.ScopeValidationError.EmptyScopeTitle -> suggestEmptyTitleRecovery(error)
+            is DomainError.ScopeValidationError.ScopeTitleTooShort -> suggestTitleTooShortRecovery(error, context)
+            is DomainError.ScopeValidationError.ScopeTitleTooLong -> suggestTitleTooLongRecovery(error, context)
+            is DomainError.ScopeValidationError.ScopeTitleContainsNewline ->
+                suggestTitleContainsNewlineRecovery(error, context)
+            is DomainError.ScopeValidationError.ScopeDescriptionTooLong ->
+                suggestDescriptionTooLongRecovery(error, context)
+            is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+                suggestDuplicateTitleRecovery(error, context)
+            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
+            is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
+                suggestMaxChildrenExceededRecovery(error)
             else -> handleNonRecoverable(error)
         }
     }
@@ -41,7 +46,7 @@ internal class ErrorRecoverySuggestionService(
     /**
      * Suggests recovery for empty title validation errors.
      */
-    private fun suggestEmptyTitleRecovery(error: DomainError.ValidationError.EmptyTitle): RecoveryResult {
+    private fun suggestEmptyTitleRecovery(error: DomainError.ScopeValidationError.EmptyScopeTitle): RecoveryResult {
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = listOf(configuration.titleConfig().generateDefaultTitle()),
@@ -54,7 +59,7 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for title too short validation errors.
      */
     private fun suggestTitleTooShortRecovery(
-        error: DomainError.ValidationError.TitleTooShort,
+        error: DomainError.ScopeValidationError.ScopeTitleTooShort,
         context: Map<String, Any>
     ): RecoveryResult {
         val originalTitle = context["originalTitle"] as? String ?: ""
@@ -80,7 +85,7 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for title too long validation errors.
      */
     private fun suggestTitleTooLongRecovery(
-        error: DomainError.ValidationError.TitleTooLong,
+        error: DomainError.ScopeValidationError.ScopeTitleTooLong,
         context: Map<String, Any>
     ): RecoveryResult {
         val originalTitle = context["originalTitle"] as? String ?: ""
@@ -112,12 +117,12 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for title contains newline validation errors.
      */
     private fun suggestTitleContainsNewlineRecovery(
-        error: DomainError.ValidationError.TitleContainsNewline,
+        error: DomainError.ScopeValidationError.ScopeTitleContainsNewline,
         context: Map<String, Any>
     ): RecoveryResult {
         val originalTitle = context["originalTitle"] as? String ?: ""
         val titleConfig = configuration.titleConfig()
-        
+
         val suggestions = if (originalTitle.isNotBlank()) {
             listOf(
                 titleConfig.cleanTitle(originalTitle),
@@ -144,7 +149,7 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for description too long validation errors.
      */
     private fun suggestDescriptionTooLongRecovery(
-        error: DomainError.ValidationError.DescriptionTooLong,
+        error: DomainError.ScopeValidationError.ScopeDescriptionTooLong,
         context: Map<String, Any>
     ): RecoveryResult {
         val originalDescription = context["originalDescription"] as? String ?: ""
@@ -174,7 +179,7 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for duplicate title business rule violations.
      */
     private fun suggestDuplicateTitleRecovery(
-        error: DomainError.BusinessRuleViolation.DuplicateTitle,
+        error: DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle,
         context: Map<String, Any>
     ): RecoveryResult {
         val originalTitle = context["originalTitle"] as? String ?: error.title
@@ -196,10 +201,10 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for max depth exceeded business rule violations.
      */
     private fun suggestMaxDepthExceededRecovery(
-        error: DomainError.BusinessRuleViolation.MaxDepthExceeded
+        error: DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded
     ): RecoveryResult {
         val hierarchyConfig = configuration.hierarchyConfig()
-        
+
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = listOf(
@@ -216,10 +221,10 @@ internal class ErrorRecoverySuggestionService(
      * Suggests recovery for max children exceeded business rule violations.
      */
     private fun suggestMaxChildrenExceededRecovery(
-        error: DomainError.BusinessRuleViolation.MaxChildrenExceeded
+        error: DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded
     ): RecoveryResult {
         val hierarchyConfig = configuration.hierarchyConfig()
-        
+
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = listOf(
