@@ -115,11 +115,15 @@ class ErrorRecoveryServiceComprehensiveTest : StringSpec({
         val result = service.recoverFromError(
             DomainError.ValidationError.TitleTooShort,
             context
-        ) as RecoveryResult.Suggestion
+        )
+        
+        // Safely assert the type and access properties
+        result.shouldBeInstanceOf<RecoveryResult.Suggestion>()
+        val suggestion = result as RecoveryResult.Suggestion
 
         // Should incorporate original title in suggestions
-        result.suggestedValues.any { suggestion ->
-            suggestion.toString().contains(originalTitle)
+        suggestion.suggestedValues.any { suggestedValue ->
+            suggestedValue.toString().contains(originalTitle)
         } shouldBe true
     }
 })
