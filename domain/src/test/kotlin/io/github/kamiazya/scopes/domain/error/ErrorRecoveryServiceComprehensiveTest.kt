@@ -78,6 +78,10 @@ class ErrorRecoveryServiceComprehensiveTest : StringSpec({
         val recoveredResult = service.recoverFromValidationResult(failureResult)
 
         // Should have no automatic recoveries (suggestion-only system)
+        // Verify all results are either suggestions or non-recoverable (no automatic fixes)
+        recoveredResult.recoveryResults.all { 
+            it is RecoveryResult.Suggestion || it is RecoveryResult.NonRecoverable 
+        } shouldBe true
 
         // Should have suggestions instead
         recoveredResult.hasAnySuggestions() shouldBe true
