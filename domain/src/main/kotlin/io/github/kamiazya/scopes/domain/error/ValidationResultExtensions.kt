@@ -33,6 +33,45 @@ fun <T, U> ValidationResult<T>.fold(
     }
 }
 
+/**
+ * Applicative functor pattern: applies a wrapped function to a wrapped value.
+ * If both are successful, applies the function. If either fails, accumulates errors.
+ */
+fun <T, U> ValidationResult<T>.ap(
+    fn: ValidationResult<(T) -> U>
+): ValidationResult<U> {
+    return when (this) {
+        is ValidationResult.Success -> when (fn) {
+            is ValidationResult.Success -> ValidationResult.Success(fn.value(this.value))
+            is ValidationResult.Failure -> ValidationResult.Failure(fn.errors)
+        }
+        is ValidationResult.Failure -> when (fn) {
+            is ValidationResult.Success -> ValidationResult.Failure(this.errors)
+            is ValidationResult.Failure -> ValidationResult.Failure(this.errors + fn.errors)
+        }
+    }
+}
+
+/**
+ * Combines two ValidationResults using a combining function.
+ * If both are successful, applies the function. If either fails, accumulates errors.
+ */
+fun <T, U, V> ValidationResult<T>.map2(
+    other: ValidationResult<U>,
+    f: (T, U) -> V
+): ValidationResult<V> {
+    return when (this) {
+        is ValidationResult.Success -> when (other) {
+            is ValidationResult.Success -> ValidationResult.Success(f(this.value, other.value))
+            is ValidationResult.Failure -> ValidationResult.Failure(other.errors)
+        }
+        is ValidationResult.Failure -> when (other) {
+            is ValidationResult.Success -> ValidationResult.Failure(this.errors)
+            is ValidationResult.Failure -> ValidationResult.Failure(this.errors + other.errors)
+        }
+    }
+}
+
 // Convenience constructors
 
 /**
