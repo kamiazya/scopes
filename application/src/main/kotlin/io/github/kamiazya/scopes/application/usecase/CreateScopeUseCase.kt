@@ -3,11 +3,11 @@ package io.github.kamiazya.scopes.application.usecase
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.flatMap
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.service.ScopeValidationService
+import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
+import io.github.kamiazya.scopes.domain.error.firstErrorOnly
 
 /**
  * Use case for creating new Scope entities.
@@ -15,25 +15,21 @@ import io.github.kamiazya.scopes.domain.service.ScopeValidationService
  */
 class CreateScopeUseCase(
     private val scopeRepository: ScopeRepository,
+    private val applicationScopeValidationService: ApplicationScopeValidationService
 ) {
 
     suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
-        val validRequest = validateRequest(request).bind()
-        checkParentExists(validRequest.parentId).bind()
-        validateBusinessRules(request).bind()
-        val scope = createScopeEntity(validRequest).bind()
+        // Check parent exists (this is a prerequisite for other validations)
+        checkParentExists(request.parentId).bind()
+
+        // Perform repository-dependent validations (hierarchy depth, children limit, title uniqueness)
+        // These validations require repository access and cannot be done in Scope.create
+        validateScopeCreationConsolidated(request).bind()
+
+        // Create and save the scope entity
+        val scope = createScopeEntity(request).bind()
         val savedScope = saveScopeEntity(scope).bind()
         CreateScopeResponse(savedScope)
-    }
-
-    private fun validateRequest(request: CreateScopeRequest): Either<ApplicationError, CreateScopeRequest> = either {
-        ScopeValidationService.validateTitle(request.title)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-        ScopeValidationService.validateDescription(request.description)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-        request
     }
 
     private suspend fun checkParentExists(parentId: ScopeId?): Either<ApplicationError, Unit> = either {
@@ -45,66 +41,47 @@ class CreateScopeUseCase(
 
         if (!exists) {
             raise(
-                ApplicationError.Domain(
+                ApplicationError.DomainErrors.single(
                     io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
                 )
             )
         }
     }
 
-    private suspend fun validateBusinessRules(
-        request: CreateScopeRequest
-    ): Either<ApplicationError, CreateScopeRequest> = either {
-        // Validate hierarchy depth using efficient query
-        ScopeValidationService.validateHierarchyDepthEfficient(request.parentId, scopeRepository)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-
-        // Validate children limit using efficient query
-        ScopeValidationService.validateChildrenLimitEfficient(request.parentId, scopeRepository)
-            .mapLeft { ApplicationError.Domain(it) }
-            .bind()
-
-        // Validate title uniqueness using efficient query
-        ScopeValidationService.validateTitleUniquenessEfficient(
-            request.title,
-            request.parentId,
-            scopeRepository
-        ).mapLeft { ApplicationError.Domain(it) }
-            .bind()
-
-        request
-    }
-
     private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
-        val scope = if (request.id != null) {
-            // For cases where ID is specified, create directly using data class constructor
-            // since validation was already done in validateBusinessRules
-            Scope(
-                id = request.id,
-                title = request.title,
-                description = request.description,
-                parentId = request.parentId,
-                createdAt = kotlinx.datetime.Clock.System.now(),
-                updatedAt = kotlinx.datetime.Clock.System.now(),
-                metadata = request.metadata
-            )
-        } else {
-            // Use the public factory method with validation
-            Scope.create(
-                title = request.title,
-                description = request.description,
-                parentId = request.parentId,
-                metadata = request.metadata
-            ).mapLeft { ApplicationError.Domain(it) }
-                .bind()
-        }
+        // Use the public factory method which includes validation
+        val scope = Scope.create(
+            title = request.title,
+            description = request.description,
+            parentId = request.parentId,
+            metadata = request.metadata
+        ).mapLeft { ApplicationError.DomainErrors.single(it) }
+            .bind()
         scope
     }
 
     private suspend fun saveScopeEntity(scope: Scope): Either<ApplicationError, Scope> =
         scopeRepository.save(scope)
             .mapLeft { ApplicationError.Repository(it) }
+
+    /**
+     * Validates repository-dependent business rules that cannot be checked in Scope.create.
+     * These include hierarchy depth, children limit, and title uniqueness within parent scope.
+     */
+    private suspend fun validateScopeCreationConsolidated(
+        request: CreateScopeRequest
+    ): Either<ApplicationError, Unit> {
+        // Use ApplicationScopeValidationService for repository-dependent validations
+        val validationResult = applicationScopeValidationService.validateScopeCreation(
+            request.title,
+            request.description,
+            request.parentId
+        )
+
+        // Always accumulate errors for better UX
+        // Callers can use firstErrorOnly() if they need fail-fast behavior
+        return ApplicationError.fromValidationResult(validationResult)
+    }
 }
 
 /**

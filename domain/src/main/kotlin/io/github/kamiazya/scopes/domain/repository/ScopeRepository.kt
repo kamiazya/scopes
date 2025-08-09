@@ -7,8 +7,6 @@ import io.github.kamiazya.scopes.domain.error.RepositoryError
 
 /**
  * Repository interface for Scope entity operations.
- * Follows Clean Architecture principles with domain-driven design.
- * Uses Arrow Either types for explicit error handling following functional DDD principles.
  */
 interface ScopeRepository {
     /**

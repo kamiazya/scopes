@@ -38,7 +38,7 @@ graph TB
 
 **Benefits:**
 - **Conceptual Simplicity**: Learn one concept, use everywhere
-- **Unlimited Hierarchy**: No artificial depth restrictions
+- **Deep Hierarchy**: Supports up to 10 levels by default (configurable)
 - **Consistent Operations**: Same features available at every level
 - **Natural Recursion**: Mirrors how developers actually think about work
 
@@ -50,7 +50,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 
 **Properties:**
 - **Identity**: Unique ULID identifier
-- **Hierarchy**: Parent-child relationships (unlimited depth)
+- **Hierarchy**: Parent-child relationships (up to 10 levels by default, configurable)
 - **State**: Lifecycle status (pending → in_progress → completed → logged)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
@@ -226,6 +226,110 @@ Designed from the ground up for human-AI collaboration:
 - Advanced project analytics
 - Third-party plugin ecosystem
 - Web-based interface (CLI-first)
+
+## Business Rules
+
+### Title Uniqueness Rules
+
+The system enforces strict title uniqueness rules at all levels of the scope hierarchy. This design ensures clear identification and prevents confusion throughout the entire project organization.
+
+**Design Philosophy**: 
+- **Consistent Uniqueness**: All scope titles must be unique within their respective context
+- **Clear Identification**: No ambiguity in scope naming regardless of hierarchy level
+- **Simple Rules**: One unified rule applies to all scopes
+
+**Benefits**:
+- **No Naming Conflicts**: Clear, unambiguous scope identification at all levels
+- **Predictable Behavior**: Same validation rules apply consistently everywhere
+- **Better Organization**: Forces thoughtful, descriptive naming throughout projects
+- **AI Collaboration**: Clearer context for AI assistants without naming ambiguity
+
+#### All Scopes (Root and Child)
+- **Rule**: Duplicate titles are **FORBIDDEN** at all levels
+- **Rationale**: Consistent uniqueness prevents confusion and ensures clear identification. Even at the root level, having multiple scopes with identical names can lead to ambiguity when referencing or managing projects.
+- **Use Cases**: 
+  - All project names must be unique for clear identification
+  - All task names within any context must be distinct
+  - Forces descriptive, meaningful naming conventions
+- **Example**: All scopes must have unique titles within their context
+
+```text
+❌ Not Allowed at ANY level:
+├── Scope: "Website"
+├── Scope: "Website"  // Duplicate forbidden even at root level
+└── Scope: "Personal Blog"
+    ├── Scope: "Setup"
+    └── Scope: "Setup"  // Duplicate forbidden at child level too
+```
+
+```text
+✅ Required - All scopes must have unique, descriptive names:
+├── Scope: "Personal Portfolio Website"
+├── Scope: "Client Website Project"
+├── Scope: "React Learning Project"
+├── Scope: "Vue.js Experiment"
+└── Scope: "Personal Blog"
+    ├── Scope: "Initial Setup"
+    ├── Scope: "Content Creation"
+    └── Scope: "Deployment Configuration"
+```
+
+#### Real-World Usage Examples
+
+**Scenario 1: Descriptive Project Naming**
+```text
+✅ Required - Clear, unique project identification:
+├── Scope: "Personal Portfolio React"
+├── Scope: "Todo App Vue Learning"
+├── Scope: "E-commerce Node.js API"
+└── Scope: "Mobile App Swift Tutorial"
+```
+
+**Scenario 2: Detailed Task Organization**
+```text
+✅ Required - Specific task naming within projects:
+├── Scope: "E-commerce Website"
+│   ├── Scope: "Database Schema Design"
+│   ├── Scope: "User Authentication Backend" 
+│   ├── Scope: "Frontend User Interface"
+│   └── Scope: "Payment Integration Testing"
+└── Scope: "Blog Platform"
+    ├── Scope: "CMS Setup and Configuration"
+    ├── Scope: "Content Management Features"
+    └── Scope: "SEO Optimization Implementation"
+```
+
+**Scenario 3: Learning Project Differentiation**
+```text
+✅ Required - Distinguish similar learning projects:
+├── Scope: "React Fundamentals Course"
+├── Scope: "React Advanced Patterns Study"
+├── Scope: "Machine Learning Python Basics"
+└── Scope: "Machine Learning Deep Learning Project"
+```
+
+**Scenario 4: Professional vs Personal Distinction**
+```text
+✅ Required - Clear context identification:
+├── Scope: "Personal Portfolio Website"
+├── Scope: "Client ABC Website Project"
+├── Scope: "Freelance E-commerce Site"
+└── Scope: "Open Source Documentation Tool"
+```
+
+### Other Business Rules
+
+#### Hierarchy Constraints
+- **Maximum Depth**: 10 levels to prevent excessive nesting
+- **Maximum Children**: 100 children per parent to maintain performance
+
+#### Title Validation
+- **Length**: 1-200 characters
+- **Content**: No newline characters allowed
+- **Required**: Cannot be empty or whitespace-only
+- **Trimming**: Leading/trailing whitespace is removed before validation
+- **Case-insensitivity**: Duplicate checks compare titles in lowercase
+- **Unicode normalization**: No additional normalization is applied
 
 ## Success Metrics
 

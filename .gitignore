@@ -35,3 +35,12 @@ tmp/
 
 # Lefthook
 .lefthook-local/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Serena AI assistant files
+.serena/

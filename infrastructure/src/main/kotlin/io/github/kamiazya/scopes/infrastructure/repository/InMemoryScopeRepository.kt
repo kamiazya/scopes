@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -39,8 +40,10 @@ class InMemoryScopeRepository : ScopeRepository {
         title: String
     ): Either<RepositoryError, Boolean> = either {
         mutex.withLock {
+            val normalizedInputTitle = TitleNormalizer.normalize(title)
             scopes.values.any { scope ->
-                scope.parentId == parentId && scope.title.equals(title, ignoreCase = true)
+                val normalizedStoredTitle = TitleNormalizer.normalize(scope.title.value)
+                scope.parentId == parentId && normalizedStoredTitle == normalizedInputTitle
             }
         }
     }
@@ -78,5 +81,6 @@ class InMemoryScopeRepository : ScopeRepository {
     suspend fun size(): Int = mutex.withLock {
         scopes.size
     }
+
 }
 

@@ -456,7 +456,7 @@ class CreateScopeUseCase(
 ) {
         suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
             val validRequest = validateRequest(request)
-                .mapLeft { ApplicationError.DomainError(it) }
+                .mapLeft { ApplicationError.Domain(it) }
                 .bind()
 
             val scope = createScope(validRequest).bind()
@@ -603,7 +603,7 @@ sealed class RepositoryError {
 // ✅ Good: Railway-oriented programming with Arrow Either
 suspend fun processScopeCreation(request: CreateScopeRequest): Either<ApplicationError, ScopeCreated> = either {
         val validRequest = validateRequest(request)
-            .mapLeft { ApplicationError.DomainError(it) }
+            .mapLeft { ApplicationError.Domain(it) }
             .bind()
 
         checkParentExists(validRequest.parentId).bind()
@@ -621,7 +621,7 @@ suspend fun processScopeCreation(request: CreateScopeRequest): Either<Applicatio
             .flatMap { createScopeEntity(request) }
             .flatMap { scope -> saveScope(scope) }
             .map { savedScope -> ScopeCreated(savedScope) }
-            .mapLeft { domainError -> ApplicationError.DomainError(domainError) }
+            .mapLeft { domainError -> ApplicationError.Domain(domainError) }
 
 // ❌ Bad: Exception-based error handling
 suspend fun processScopeCreation(request: CreateScopeRequest): ScopeCreated {
@@ -691,7 +691,7 @@ class CreateScopeUseCaseTest : FunSpec({
                 result.isLeft() shouldBe true
                 result.fold(
                     ifLeft = { error ->
-                        error shouldBe instanceOf<ApplicationError.DomainError>()
+                        error shouldBe instanceOf<ApplicationError.Domain>()
                     },
                     ifRight = { fail("Expected Left but got Right") }
                 )
@@ -775,9 +775,9 @@ class ScopeServiceTest : FunSpec({
 ~~~kotlin
 // ✅ Good: Comprehensive KDoc with examples
 /**
- * Creates a new scope with the provided information.
+ * Creates a scope with the provided information.
  *
- * This function validates the input, creates a new scope entity with a generated ULID,
+ * This function validates the input, creates a scope entity with a generated ULID,
  * and returns a Result indicating success or failure.
  *
  * @param title The scope title, must be non-blank and <= 200 characters
@@ -791,7 +791,7 @@ class ScopeServiceTest : FunSpec({
  * ```kotlin
  * val result = createScope(
  *     title = "Project Planning",
- *     description = "Planning phase for new project",
+ *     description = "Planning phase for project",
  *     parentId = ScopeId.from("01ARZ3NDEKTSV4RRFFQ69G5FAV")
  * )
  *
@@ -989,12 +989,592 @@ Recommended IntelliJ IDEA plugins:
 - **EditorConfig**: Automatic formatting
 - **Kotest**: Enhanced test support
 
-## Arrow Core Best Practices
+## Functional DDD
 
-### Arrow Either Quick Reference
+### Overview
+
+Functional Domain-Driven Design combines DDD principles with functional programming patterns. In the Scopes project, we use Arrow for comprehensive error handling, with rich domain models, value objects, and suggestion-based error recovery.
+
+### Core Functional DDD Principles
+
+1. **Rich Domain Models**: Entities contain business logic and use value objects for validation
+2. **Value Objects for Validation**: Encapsulate validation logic within value objects
+3. **Pure Domain Logic**: Domain services contain only pure functions without repository dependencies  
+4. **Explicit Error Handling**: Use Arrow's typed errors with suggestion-based recovery
+5. **Clean Architecture Compliance**: Maintain proper dependency directions
+6. **Functional Composition**: Build complex operations from simple, composable functions
+
+### Error Accumulation Architecture
+
+```mermaid
+flowchart TD
+    subgraph "Error Handling Modes"
+        A[Validation Input]
+        
+        subgraph "Fail-Fast Mode"
+            B[First Error] --> C[Stop Processing]
+            C --> D[Return Single Error]
+        end
+        
+        subgraph "Accumulation Mode"
+            E[All Validations] --> F[Collect All Errors]
+            F --> G[Return Error List]
+        end
+        
+        A --> B
+        A --> E
+    end
+    
+    subgraph "Use Cases"
+        H[Performance Critical] --> B
+        I[User-Facing Forms] --> E
+        J[AI Error Analysis] --> E
+    end
+    
+    classDef failfast fill:#ffebee,stroke:#f44336,stroke-width:2px
+    classDef accumulate fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    classDef usecase fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    
+    class B,C,D failfast
+    class E,F,G accumulate
+    class H,I,J usecase
+```
+
+### Rich Domain Model with Value Objects
+
+#### Value Objects for Validation
 
 ```kotlin
-// 1. ALWAYS prefer either DSL for new functions
+// ✅ Good: Value objects with embedded validation
+@JvmInline
+value class ScopeTitle private constructor(private val value: String) {
+    companion object {
+        fun create(title: String): Either<DomainError.ValidationError, ScopeTitle> = either {
+            ensure(title.isNotBlank()) { DomainError.ValidationError.EmptyTitle }
+            ensure(title.length <= 200) { DomainError.ValidationError.TitleTooLong(200, title.length) }
+            ensure(!title.contains('\n')) { DomainError.ValidationError.TitleContainsNewline }
+            ScopeTitle(title.trim())
+        }
+    }
+    
+    override fun toString(): String = value
+}
+
+@JvmInline
+value class ScopeDescription private constructor(private val value: String) {
+    companion object {
+        fun create(description: String?): Either<DomainError.ValidationError, ScopeDescription?> = either {
+            when {
+                description.isNullOrBlank() -> null
+                description.length > 1000 -> raise(DomainError.ValidationError.DescriptionTooLong(1000, description.length))
+                else -> ScopeDescription(description.trim())
+            }
+        }
+    }
+    
+    override fun toString(): String = value
+}
+```
+
+#### Rich Domain Entity
+
+```kotlin
+// ✅ Good: Rich domain entity using value objects
+@Serializable
+data class Scope(
+    val id: ScopeId,
+    val title: ScopeTitle,
+    val description: ScopeDescription? = null,
+    val parentId: ScopeId? = null,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val metadata: Map<String, String> = emptyMap(),
+) {
+    companion object {
+        /**
+         * Create a new scope with generated timestamps.
+         * This is the safe factory method that validates input.
+         * Note: Only performs value object validation (title, description).
+         * Repository-dependent validations (hierarchy, uniqueness) are done in the application layer.
+         */
+        fun create(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            metadata: Map<String, String> = emptyMap()
+        ): Either<DomainError.ValidationError, Scope> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+
+            val now = Clock.System.now()
+            Scope(
+                id = ScopeId.generate(),
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+                createdAt = now,
+                updatedAt = now,
+                metadata = metadata
+            )
+        }
+    }
+    
+    /**
+     * Update the scope title with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun updateTitle(newTitle: String): Either<DomainError.ValidationError, Scope> = either {
+        val validatedTitle = ScopeTitle.create(newTitle).bind()
+        copy(title = validatedTitle, updatedAt = Clock.System.now())
+    }
+    
+    /**
+     * Update the scope description with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun updateDescription(newDescription: String?): Either<DomainError.ValidationError, Scope> = either {
+        val validatedDescription = ScopeDescription.create(newDescription).bind()
+        copy(description = validatedDescription, updatedAt = Clock.System.now())
+    }
+    
+    /**
+     * Business rule: Check if this scope can be a parent of another scope.
+     * Prevents circular references and self-parenting.
+     */
+    fun canBeParentOf(childScope: Scope): Boolean =
+        id != childScope.id && childScope.parentId != id
+    
+    /**
+     * Check if this scope is a child of the specified parent.
+     */
+    fun isChildOf(potentialParent: Scope): Boolean =
+        parentId == potentialParent.id
+    
+    /**
+     * Check if this scope is a root scope (no parent).
+     */
+    fun isRoot(): Boolean = parentId == null
+}
+```
+
+### Clean Architecture with Domain Services
+
+Maintain proper dependency directions by separating repository-dependent validations:
+
+```kotlin
+// 1. Pure Domain Validation - Value Objects with Self-Validation
+
+/**
+ * Value object representing a scope title with embedded validation.
+ * Encapsulates the business rules for scope titles following DDD principles.
+ * No repository dependencies - pure domain logic.
+ */
+@JvmInline
+value class ScopeTitle private constructor(val value: String) {
+    companion object {
+        const val MAX_LENGTH = 200
+        const val MIN_LENGTH = 1
+
+        /**
+         * Create a validated ScopeTitle from a string.
+         * Returns Either with domain error or valid ScopeTitle.
+         */
+        fun create(title: String): Either<DomainError.ScopeValidationError, ScopeTitle> = either {
+            val trimmedTitle = title.trim()
+
+            ensure(trimmedTitle.isNotBlank()) { DomainError.ScopeValidationError.EmptyScopeTitle }
+            ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ScopeValidationError.ScopeTitleTooShort }
+            ensure(trimmedTitle.length <= MAX_LENGTH) {
+                DomainError.ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
+            }
+            ensure(!trimmedTitle.contains('\n') && !trimmedTitle.contains('\r')) {
+                DomainError.ScopeValidationError.ScopeTitleContainsNewline
+            }
+
+            ScopeTitle(trimmedTitle)
+        }
+    }
+}
+
+/**
+ * Value object for scope descriptions with length validation.
+ * Nullable to represent optional descriptions.
+ */
+@JvmInline
+value class ScopeDescription private constructor(val value: String) {
+    companion object {
+        const val MAX_LENGTH = 1000
+
+        fun create(description: String?): Either<DomainError.ScopeValidationError, ScopeDescription?> = either {
+            when (description) {
+                null -> null
+                else -> {
+                    val trimmed = description.trim()
+                    if (trimmed.isEmpty()) {
+                        null
+                    } else {
+                        ensure(trimmed.length <= MAX_LENGTH) {
+                            DomainError.ScopeValidationError.ScopeDescriptionTooLong(MAX_LENGTH, trimmed.length)
+                        }
+                        ScopeDescription(trimmed)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 2. Application Layer Validation - Repository-Dependent Business Rules
+
+/**
+ * Application service for repository-dependent scope validation logic.
+ * Contains validation methods that require repository access,
+ * maintaining proper domain layer isolation.
+ */
+class ApplicationScopeValidationService(
+    private val repository: ScopeRepository
+) {
+    companion object {
+        const val MAX_HIERARCHY_DEPTH = 10
+        const val MAX_CHILDREN_PER_PARENT = 100
+    }
+
+    /**
+     * Convert Either results to ValidationResult for error accumulation.
+     */
+    private fun <E : DomainError, T> Either<E, T>.toValidationResult(): ValidationResult<T> =
+        fold({ it.validationFailure() }, { it.validationSuccess() })
+
+    /**
+     * Comprehensive validation for scope creation using accumulating ValidationResult.
+     * Combines both domain validation (value objects) and application validation (repository).
+     */
+    suspend fun validateScopeCreation(
+        title: String,
+        description: String?,
+        parentId: ScopeId?
+    ): ValidationResult<Unit> {
+        val validations = listOf(
+            // Domain validation - no repository access
+            ScopeTitle.create(title).toValidationResult().map { },
+            ScopeDescription.create(description).toValidationResult().map { },
+            
+            // Application validation - requires repository
+            validateHierarchyDepth(parentId).toValidationResult(),
+            validateChildrenLimit(parentId).toValidationResult(),
+            validateTitleUniqueness(title, parentId).toValidationResult()
+        )
+
+        return validations.sequence().map { }
+    }
+
+    /**
+     * Validate hierarchy depth using repository query.
+     * Returns Either for composition with other validations.
+     */
+    suspend fun validateHierarchyDepth(parentId: ScopeId?): Either<DomainError, Unit> = either {
+        if (parentId == null) return@either
+
+        val depth = repository.findHierarchyDepth(parentId)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
+
+        ensure(depth < MAX_HIERARCHY_DEPTH) {
+            DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
+        }
+    }
+
+    /**
+     * Validate children limit using repository query.
+     */
+    suspend fun validateChildrenLimit(parentId: ScopeId?): Either<DomainError, Unit> = either {
+        if (parentId == null) return@either
+
+        val childrenCount = repository.countByParentId(parentId)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
+
+        ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
+            DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(MAX_CHILDREN_PER_PARENT, childrenCount + 1)
+        }
+    }
+
+    /**
+     * Validate title uniqueness using repository query.
+     */
+    suspend fun validateTitleUniqueness(title: String, parentId: ScopeId?): Either<DomainError, Unit> = either {
+        val normalizedTitle = TitleNormalizer.normalize(title)
+        val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
+
+        ensure(!duplicateExists) {
+            DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
+        }
+    }
+}
+```
+
+**Key Architecture Principles:**
+
+1. **Domain Layer Isolation**: Value objects handle their own validation without repository dependencies
+2. **Application Layer Coordination**: Repository-dependent validations live in application services
+3. **Error Accumulation**: ValidationResult accumulates multiple errors, Either provides single error for composition
+4. **Clean Separation**: Domain validation (pure) vs. application validation (repository-dependent)
+
+### Suggestion-Based Error Recovery
+
+Provide helpful suggestions without automatic modifications:
+
+```kotlin
+/**
+ * Service for suggesting fixes to validation errors.
+ */
+object ErrorSuggestionService {
+    
+    /**
+     * Get suggestion for fixing validation error.
+     */
+    fun suggestFix(error: DomainError.ValidationError): ErrorSuggestion? = when (error) {
+        is DomainError.ValidationError.EmptyTitle -> 
+            ErrorSuggestion.ReplaceValue("Untitled Scope", "Set a default title?")
+            
+        is DomainError.ValidationError.TitleTooLong -> 
+            ErrorSuggestion.TruncateValue(
+                error.actual.take(197) + "...", 
+                "Truncate to 200 characters?"
+            )
+            
+        is DomainError.ValidationError.DescriptionTooLong -> 
+            ErrorSuggestion.TruncateValue(
+                error.actual.take(997) + "...",
+                "Truncate to 1000 characters?"
+            )
+            
+        is DomainError.ValidationError.TitleContainsNewline -> 
+            ErrorSuggestion.ReplaceValue(
+                error.actual.replace('\n', ' '),
+                "Replace newlines with spaces?"
+            )
+            
+        else -> null
+    }
+    
+    /**
+     * Get suggestions for duplicate title errors.
+     */
+    fun suggestUniqueTitle(originalTitle: String, existingTitles: Set<String>): List<String> {
+        val suggestions = mutableListOf<String>()
+        
+        // Try numbered variants
+        for (i in 1..5) {
+            val candidate = "$originalTitle ($i)"
+            if (candidate !in existingTitles) {
+                suggestions.add(candidate)
+            }
+        }
+        
+        // Try prefixed variants
+        listOf("New ", "Draft ", "Copy of ").forEach { prefix ->
+            val candidate = "$prefix$originalTitle"
+            if (candidate !in existingTitles && candidate.length <= 200) {
+                suggestions.add(candidate)
+            }
+        }
+        
+        return suggestions.take(3)
+    }
+}
+
+sealed class ErrorSuggestion {
+    abstract val description: String
+    abstract val userConsent: Boolean
+    
+    data class ReplaceValue(
+        val suggestedValue: String,
+        override val description: String,
+        override val userConsent: Boolean = false
+    ) : ErrorSuggestion()
+    
+    data class TruncateValue(
+        val truncatedValue: String,
+        override val description: String,
+        override val userConsent: Boolean = false  
+    ) : ErrorSuggestion()
+}
+```
+
+### Application Layer Integration
+
+Integrate rich domain models with clean architecture:
+
+```kotlin
+/**
+ * Create scope use case with rich domain model integration.
+ */
+class CreateScopeUseCase(
+    private val scopeRepository: ScopeRepository
+) {
+    
+    /**
+     * Execute create scope request with error accumulation by default.
+     */
+    suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
+        // Check parent exists (this is a prerequisite for other validations)
+        checkParentExists(request.parentId).bind()
+
+        // Perform repository-dependent validations (hierarchy depth, children limit, title uniqueness)
+        // These validations require repository access and cannot be done in Scope.create
+        validateScopeCreationConsolidated(request).bind()
+
+        // Create and save the scope entity
+        val scope = createScopeEntity(request).bind()
+        val savedScope = saveScopeEntity(scope).bind()
+        CreateScopeResponse(savedScope)
+    }
+    
+    /**
+     * Validates repository-dependent business rules that cannot be checked in Scope.create.
+     * These include hierarchy depth, children limit, and title uniqueness within parent scope.
+     */
+    private suspend fun validateScopeCreationConsolidated(
+        request: CreateScopeRequest
+    ): Either<ApplicationError, Unit> {
+        // Use ScopeValidationService for repository-dependent validations
+        val validationResult = applicationScopeValidationService.validateScopeCreation(
+    request.title,
+    request.description,
+    request.parentId
+            scopeRepository
+        )
+
+        return ApplicationError.fromValidationResult(validationResult)
+    }
+    
+    private fun createScopeEntity(request: CreateScopeRequest): Either<ApplicationError, Scope> = either {
+        // Use the public factory method which includes validation
+        val scope = Scope.create(
+            title = request.title,
+            description = request.description,
+            parentId = request.parentId,
+            metadata = request.metadata
+        ).mapLeft { ApplicationError.Domain(it) }
+            .bind()
+        scope
+    }
+}
+
+/**
+ * Enhanced application error types supporting error accumulation.
+ */
+sealed class ApplicationError {
+    data class Domain(val cause: DomainError) : ApplicationError()
+    data class ValidationFailure(val errors: NonEmptyList<DomainError>) : ApplicationError()
+    data class Repository(val cause: RepositoryError) : ApplicationError()
+    data class Infrastructure(val message: String, val cause: Throwable? = null) : ApplicationError()
+}
+```
+
+### Testing Rich Domain Models
+
+Focus on behavior rather than implementation details:
+
+```kotlin
+/**
+ * Behavior-focused tests for rich domain models.
+ */
+class ScopeTest : StringSpec({
+    
+    "users can create new projects to organize their work and track progress" {
+        // Given a user wants to start organizing a new project
+        val hierarchyContext = HierarchyContext.empty()
+        
+        // When they create a scope with valid information
+        val result = Scope.create(
+            title = "Website Redesign Project",
+            description = "Complete overhaul of company website with modern UX",
+            parentId = null,
+            hierarchyContext = hierarchyContext
+        )
+        
+        // Then they can successfully start organizing their work
+        result.shouldBeRight { scope ->
+            scope.title.toString() shouldBe "Website Redesign Project"
+            scope.description?.toString() shouldBe "Complete overhaul of company website with modern UX"
+            scope.parentId shouldBe null
+        }
+    }
+    
+    "system prevents creating projects without proper titles to maintain organization clarity" {
+        // Given a user tries to create a project without specifying what it's for
+        val hierarchyContext = HierarchyContext.empty()
+        
+        // When they attempt to create a scope with an empty title
+        val result = Scope.create("", null, null, hierarchyContext)
+        
+        // Then the system guides them to provide meaningful project identification
+        result.shouldBeLeft { errors ->
+            errors shouldContain DomainError.ValidationError.EmptyTitle
+        }
+    }
+    
+    "system collects all issues when users provide invalid project information" {
+        // Given a user provides multiple invalid inputs while setting up their project
+        val hierarchyContext = HierarchyContext.empty()
+        
+        // When they submit information that violates multiple business rules
+        val result = Scope.create(
+            title = "", // No clear project identification
+            description = "x".repeat(1001), // Excessive description affecting readability
+            parentId = null,
+            hierarchyContext = hierarchyContext
+        )
+        
+        // Then the system provides comprehensive feedback about all issues
+        result.shouldBeLeft { errors ->
+            errors.size shouldBeGreaterThan 1
+            errors shouldContain DomainError.ValidationError.EmptyTitle
+            errors.any { it is DomainError.ValidationError.DescriptionTooLong } shouldBe true
+        }
+    }
+})
+```
+
+### Documentation Structure Guidelines
+
+Following the Diátaxis framework, organize functional DDD documentation as:
+
+#### 1. Tutorials (Learning-Oriented)
+- **Getting Started with Error Accumulation**: Basic concepts and simple examples
+- **Building Dual-Mode Validators**: Step-by-step validator creation
+- **Error Recovery Fundamentals**: Basic recovery strategies
+- **Migrating to Functional DDD**: Converting existing code
+
+#### 2. How-to Guides (Task-Oriented)
+- **How to Implement Validation Accumulation**: Concrete implementation steps
+- **How to Handle Async Validation**: Parallel validation patterns
+- **How to Customize Error Messages**: Localization and formatting
+- **How to Optimize Validation Performance**: Performance strategies
+- **How to Test Error Accumulation**: Testing patterns and utilities
+
+#### 3. Reference (Information-Oriented)
+- **Validation API Reference**: Complete API documentation
+- **Error Types Reference**: All error types and structures
+- **ValidationContext Reference**: Configuration options
+- **Recovery Utilities Reference**: Recovery functions and patterns
+
+#### 4. Explanation (Understanding-Oriented)
+- **Functional DDD Principles**: Core concepts and philosophy
+- **Error Accumulation Patterns**: Design patterns and trade-offs
+- **Performance Considerations**: When to use each mode
+- **Testing Philosophy**: Testing strategies for functional code
+
+## Arrow Core Best Practices
+
+### Arrow Either Quick Reference with Error Accumulation
+
+```kotlin
+// 1. ALWAYS prefer either DSL for functions
 fun doSomething(input: String): Either<Error, Result> = either {
         // validations, operations, transformations
 }
@@ -1014,6 +1594,28 @@ fun process(data: Data): Either<Error, ProcessedData> = either {
         val transformed = transform(validated).bind()
         save(transformed).bind()
 }
+
+// 6. Use zipOrAccumulate for error accumulation
+fun validateMultipleFields(request: Request): Either<NonEmptyList<ValidationError>, ValidatedRequest> = either {
+    zipOrAccumulate(
+        { validateField1(request.field1) },
+        { validateField2(request.field2) },
+        { validateField3(request.field3) }
+    ) { field1, field2, field3 ->
+        ValidatedRequest(field1, field2, field3)
+    }.bind()
+}
+
+// 7. Bridge pattern for compatibility
+// ValidationResult already provides toEither() method that returns Either<NonEmptyList<DomainError>, T>
+// For single error extraction, you can use firstErrorOnly() extension:
+fun <T> ValidationResult<T>.firstErrorOnly(): Either<DomainError, T> = when (this) {
+    is ValidationResult.Success -> Either.Right(value)
+    is ValidationResult.Failure -> Either.Left(errors.head)
+}
+
+// Or use the built-in toEither() method for error accumulation:
+// validationResult.toEither() // Returns Either<NonEmptyList<DomainError>, T>
 ```
 
 ### Arrow Option Quick Reference
@@ -1076,7 +1678,7 @@ fun observeScopes(): Flow<List<Scope>> =
         )
 ```
 
-### Common Patterns
+### Common Functional DDD Patterns
 
 ```kotlin
 // Repository pattern with Option
@@ -1097,65 +1699,164 @@ suspend fun findAll(): Either<RepositoryError, Flow<Entity>> = either {
         }
 }
 
-// Validation pattern with Either
-fun validate(input: Input): Either<ValidationError, ValidInput> = either {
-        ensure(input.name.isNotBlank()) { ValidationError.EmptyName }
-        ensure(input.age > 0) { ValidationError.InvalidAge }
-        ValidInput(input.name.trim(), input.age)
-}
-
-// Use case pattern combining Either, Option, and Flow
-suspend fun execute(request: Request): Either<UseCaseError, Response> = either {
-        val validated = validate(request).bind()
-        
-        // Handle optional parent lookup
-        val parent = if (validated.parentId != null) {
-            repository.findById(validated.parentId)
-                .mapLeft { UseCaseError.RepositoryError(it) }
-                .bind()
-        } else {
-            none()
+// Enhanced validation pattern with accumulation support
+fun validate(input: Input, context: ValidationContext = ValidationContext.DEFAULT): ValidationResult<ValidationError, ValidInput> = 
+    when (context.mode) {
+        ValidationMode.FAIL_FAST -> either {
+            ensure(input.name.isNotBlank()) { ValidationError.EmptyName }
+            ensure(input.age > 0) { ValidationError.InvalidAge }
+            ValidInput(input.name.trim(), input.age)
+        }.fold(
+            { ValidationResult.failure(it, context) },
+            { ValidationResult.success(it) }
+        )
+        ValidationMode.ACCUMULATE -> {
+            val errors = mutableListOf<ValidationError>()
+            
+            if (input.name.isBlank()) errors.add(ValidationError.EmptyName)
+            if (input.age <= 0) errors.add(ValidationError.InvalidAge)
+            
+            if (errors.isNotEmpty()) {
+                ValidationResult.failures(NonEmptyList.fromListUnsafe(errors), context)
+            } else {
+                ValidationResult.success(ValidInput(input.name.trim(), input.age))
+            }
         }
-        
-        val entity = createEntity(validated, parent).bind()
-        val saved = repository.save(entity)
+    }
+
+// Use case pattern with dual-mode validation support
+suspend fun execute(
+    request: Request, 
+    context: ValidationContext = ValidationContext.DEFAULT
+): Either<UseCaseError, Response> = either {
+    val validationResult = validate(request, context)
+    val validated = validationResult
+        .toCompatibleEither()
+        .mapLeft { UseCaseError.ValidationError(it) }
+        .bind()
+    
+    // Handle optional parent lookup
+    val parent = if (validated.parentId != null) {
+        repository.findById(validated.parentId)
             .mapLeft { UseCaseError.RepositoryError(it) }
             .bind()
-            
-        Response(saved)
+    } else {
+        none()
+    }
+    
+    val entity = createEntity(validated, parent).bind()
+    val saved = repository.save(entity)
+        .mapLeft { UseCaseError.RepositoryError(it) }
+        .bind()
+        
+    Response(saved)
 }
 
-// Service pattern with Flow processing
-suspend fun processAllEntities(): Either<ServiceError, Unit> = either {
-        val entitiesFlow = repository.findAll()
-            .mapLeft { ServiceError.RepositoryError(it) }
-            .bind()
-            
-        entitiesFlow
-            .filter { it.needsProcessing }
-            .map { processEntity(it) }
-            .collect { result ->
-                result.fold(
-                    ifLeft = { error -> logger.warn("Processing failed: $error") },
-                    ifRight = { processed -> logger.info("Processed: ${processed.id}") }
-                )
+// Service pattern with batch validation and error recovery
+suspend fun processAllEntities(
+    entities: List<Entity>,
+    context: ValidationContext = ValidationContext.ACCUMULATING
+): Either<ServiceError, ProcessingResult> = either {
+    val validationResults = entities.map { entity ->
+        async { validate(entity, context) }
+    }.awaitAll()
+    
+    val (valid, invalid) = validationResults.partition { it is ValidationResult.Success }
+    
+    // Process valid entities
+    val processed = valid.map { (it as ValidationResult.Success).value }
+        .map { processEntity(it) }
+    
+    // Attempt recovery for invalid entities if enabled
+    val recovered = if (context.mode == ValidationMode.ACCUMULATE) {
+        invalid.mapNotNull { result ->
+            when (result) {
+                is ValidationResult.Failure -> attemptRecovery(result.errors)
+                else -> null
             }
+        }
+    } else emptyList()
+    
+    ProcessingResult(
+        successful = processed.size,
+        failed = invalid.size - recovered.size,
+        recovered = recovered.size,
+        errors = invalid.filterIsInstance<ValidationResult.Failure<ValidationError>>()
+            .flatMap { it.errors.toList() }
+    )
 }
 
-// Testing pattern with Option assertions
-test("should find existing entity") {
-    val result = repository.findById(existingId)
+// Testing pattern with validation modes
+test("should validate in both fail-fast and accumulate modes") {
+    val invalidInput = Input(name = "", age = -1) // Multiple errors
     
-    result shouldBe Right(existingEntity.some())
+    // Test fail-fast mode
+    val failFastResult = validate(invalidInput, ValidationContext(ValidationMode.FAIL_FAST))
+    failFastResult shouldBe instanceOf<ValidationResult.Failure<ValidationError>>()
+    val failFastErrors = (failFastResult as ValidationResult.Failure).errors
+    failFastErrors.size shouldBe 1 // Only first error
     
-    result.fold(
-        ifLeft = { fail("Expected Right but got Left: $it") },
-        ifRight = { option ->
-            option.fold(
-                ifEmpty = { fail("Expected Some but got None") },
-                ifSome = { entity -> entity.id shouldBe existingId }
-            )
-        }
+    // Test accumulate mode  
+    val accumulateResult = validate(invalidInput, ValidationContext(ValidationMode.ACCUMULATE))
+    accumulateResult shouldBe instanceOf<ValidationResult.Failure<ValidationError>>()
+    val accumulateErrors = (accumulateResult as ValidationResult.Failure).errors
+    accumulateErrors.size shouldBe 2 // All errors collected
+    
+    accumulateErrors should containExactlyInAnyOrder(
+        ValidationError.EmptyName,
+        ValidationError.InvalidAge
+    )
+}
+
+// Bridge pattern for migrating existing Either-based code
+suspend fun legacyFunction(request: Request): Either<DomainError, Result> = either {
+    // Existing Either-based logic
+    val validated = validateLegacy(request).bind()
+    processLegacy(validated).bind()
+}
+
+// Enhanced version with error accumulation
+suspend fun enhancedFunction(
+    request: Request,
+    context: ValidationContext = ValidationContext.ACCUMULATING
+): Either<DomainError, Result> = either {
+    val validationResult = enhancedValidate(request, context)
+    val validated = validationResult
+        .toCompatibleEither() // Converts ValidationResult to Either
+        .bind()
+    
+    processEnhanced(validated).bind()
+}
+
+// Repository pattern with batch operations and validation
+suspend fun saveAll(
+    entities: List<Entity>,
+    context: ValidationContext = ValidationContext.ACCUMULATING
+): Either<RepositoryError, BatchResult> = either {
+    // Validate all entities first
+    val validationResults = entities.map { entity ->
+        validate(entity, context)
+    }
+    
+    val errors = validationResults
+        .filterIsInstance<ValidationResult.Failure<ValidationError>>()
+        .flatMap { it.errors.toList() }
+    
+    if (errors.isNotEmpty() && context.mode == ValidationMode.FAIL_FAST) {
+        raise(RepositoryError.ValidationFailed(errors.first()))
+    }
+    
+    // Proceed with valid entities
+    val validEntities = validationResults
+        .filterIsInstance<ValidationResult.Success<Entity>>()
+        .map { it.value }
+    
+    val savedEntities = database.saveAll(validEntities)
+    
+    BatchResult(
+        saved = savedEntities,
+        validationErrors = errors,
+        totalProcessed = entities.size
     )
 }
 ```
@@ -1164,12 +1865,27 @@ test("should find existing entity") {
 
 These coding standards ensure:
 
+- **Functional DDD Excellence**: Comprehensive functional domain-driven design patterns
+- **Error Accumulation Mastery**: Support for both fail-fast and accumulating validation modes  
 - **Consistency**: Uniform code style across the project
 - **Simplicity**: Prefer `either { ... }` DSL for cleaner code
-- **Quality**: High-quality, maintainable code
-- **Functional Purity**: Embrace functional programming benefits
-- **Architecture Compliance**: Adherence to Clean Architecture principles
-- **Error Safety**: Explicit error handling with Arrow Either
-- **Testability**: Comprehensive testing with clear standards
+- **Quality**: High-quality, maintainable code with comprehensive error handling
+- **Functional Purity**: Embrace functional programming benefits with immutable domain models
+- **Architecture Compliance**: Adherence to Clean Architecture principles with functional enhancements
+- **Error Safety**: Explicit error handling with Arrow Either and ValidationResult patterns
+- **Recovery Capabilities**: Automatic error recovery and user-friendly error suggestions
+- **Testability**: Comprehensive testing with dual-mode validation support
+- **Migration Support**: Bridge patterns for smooth migration from Either-based code
+- **Documentation Structure**: Organized following Diátaxis framework for better maintainability
 
-All standards are automatically enforced through tools and should never be bypassed without explicit justification documented in code reviews.
+### Key Functional DDD Features
+
+1. **Rich Domain Models**: Entities contain business logic and use value objects for validation
+2. **Value Object Validation**: Validation logic encapsulated within value objects themselves
+3. **Clean Architecture Compliance**: Pure domain services with no repository dependencies
+4. **Suggestion-Based Recovery**: Helpful error suggestions without automatic modifications
+5. **Error Accumulation**: Comprehensive validation feedback using zipOrAccumulate patterns
+6. **HierarchyContext Pattern**: Clean separation of concerns for complex validations
+7. **Behavior-Focused Testing**: Tests describe what users want to accomplish, not implementation details
+
+All standards are automatically enforced through tools and should never be bypassed without explicit justification documented in code reviews. The functional DDD patterns provide a solid foundation for building maintainable, error-resilient domain logic with proper separation of concerns and user-centric error handling.

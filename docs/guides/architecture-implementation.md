@@ -465,12 +465,13 @@ class CreateScopeUseCase(
         }
 
         private fun validateRequest(request: CreateScopeRequest): Either<ApplicationError, CreateScopeRequest> = either {
-            ScopeValidationService.validateTitle(request.title)
-                .mapLeft { ApplicationError.fromDomainError(it) }
-                .bind()
-            ScopeValidationService.validateDescription(request.description)
-                .mapLeft { ApplicationError.fromDomainError(it) }
-                .bind()
+            // Title and description validation are now handled in domain value objects
+ScopeTitle.create(request.title)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
+ScopeDescription.create(request.description)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
             request
         }
 
@@ -1321,8 +1322,13 @@ suspend fun getActiveScopeTitles(): Either<RepositoryError, Flow<String>> = eith
 ```kotlin
 // Compose multiple validations using Either
 fun validateCreateScopeRequest(request: CreateScopeRequest): Either<NonEmptyList<DomainError.ValidationError>, CreateScopeRequest> = either {
-    val validatedTitle = ScopeValidationService.validateTitle(request.title).bind()
-    val validatedDescription = ScopeValidationService.validateDescription(request.description).bind()
+    val validatedTitle = // Title and description validation are now handled in domain value objects
+ScopeTitle.create(request.title)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
+ScopeDescription.create(request.description)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
     
     request.copy(
         title = validatedTitle,
@@ -1336,24 +1342,13 @@ suspend fun validateCreateScopeRequestWithAccumulation(
     repository: ScopeRepository
 ): Either<NonEmptyList<DomainError>, CreateScopeRequest> {
     val validations = listOf(
-        ScopeValidationService.validateTitle(request.title).mapLeft { DomainError.ValidationError(it) },
-        ScopeValidationService.validateDescription(request.description).mapLeft { DomainError.ValidationError(it) },
-        validateParentExists(request.parentId, repository)
-    )
-    
-    return validations.traverse { it }.map { request }
-}
-
-// Helper function for parent validation
-suspend fun validateParentExists(
-    parentId: ScopeId?,
-    repository: ScopeRepository
-): Either<DomainError, Unit> = either {
-    if (parentId == null) return@either
-    
-    val exists = repository.existsById(parentId)
-        .mapLeft { DomainError.RepositoryError(it) }
-        .bind()
+        // Title and description validation are now handled in domain value objects
+ScopeTitle.create(request.title)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
+ScopeDescription.create(request.description)
+    .mapLeft { ApplicationError.fromDomainError(it) }
+    .bind()
     
     ensure(exists) {
         DomainError.ScopeError.ScopeNotFound

@@ -3,8 +3,9 @@ package io.github.kamiazya.scopes.domain.entity
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.DomainError
-import io.github.kamiazya.scopes.domain.service.ScopeValidationService
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -18,8 +19,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Scope(
     val id: ScopeId,
-    val title: String,
-    val description: String? = null,
+    val title: ScopeTitle,
+    val description: ScopeDescription? = null,
     val parentId: ScopeId? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -35,9 +36,9 @@ data class Scope(
             description: String? = null,
             parentId: ScopeId? = null,
             metadata: Map<String, String> = emptyMap()
-        ): Either<DomainError.ValidationError, Scope> = either {
-            val validatedTitle = ScopeValidationService.validateTitle(title).bind()
-            val validatedDescription = ScopeValidationService.validateDescription(description).bind()
+        ): Either<DomainError.ScopeValidationError, Scope> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
 
             val now = Clock.System.now()
             Scope(
@@ -58,8 +59,8 @@ data class Scope(
          */
         internal fun create(
             id: ScopeId,
-            title: String,
-            description: String? = null,
+            title: ScopeTitle,
+            description: ScopeDescription? = null,
             parentId: ScopeId? = null,
             metadata: Map<String, String> = emptyMap()
         ): Scope {
@@ -80,15 +81,19 @@ data class Scope(
      * Update the scope title with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateTitle(newTitle: String): Scope =
-        copy(title = newTitle, updatedAt = Clock.System.now())
+    fun updateTitle(newTitle: String): Either<DomainError.ScopeValidationError, Scope> = either {
+        val validatedTitle = ScopeTitle.create(newTitle).bind()
+        copy(title = validatedTitle, updatedAt = Clock.System.now())
+    }
 
     /**
      * Update the scope description with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateDescription(newDescription: String?): Scope =
-        copy(description = newDescription, updatedAt = Clock.System.now())
+    fun updateDescription(newDescription: String?): Either<DomainError.ScopeValidationError, Scope> = either {
+        val validatedDescription = ScopeDescription.create(newDescription).bind()
+        copy(description = validatedDescription, updatedAt = Clock.System.now())
+    }
 
     /**
      * Move scope to a new parent with new timestamp.

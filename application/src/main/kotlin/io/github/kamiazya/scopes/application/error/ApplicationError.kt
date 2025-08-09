@@ -1,7 +1,12 @@
 package io.github.kamiazya.scopes.application.error
 
+import arrow.core.Either
+import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
+import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
+import io.github.kamiazya.scopes.domain.error.ValidationResult
 
 /**
  * Application-level errors that can occur during use case execution.
@@ -10,9 +15,24 @@ import io.github.kamiazya.scopes.domain.error.RepositoryError
 sealed class ApplicationError {
 
     /**
-     * Domain-related errors wrapped with application context.
+     * Domain-related errors at the application level.
+     * Always contains at least one domain error, but can accumulate multiple.
      */
-    data class Domain(val cause: DomainError) : ApplicationError()
+    data class DomainErrors(val errors: NonEmptyList<DomainError>) : ApplicationError() {
+        companion object {
+            /**
+             * Create DomainErrors from a single domain error.
+             */
+            fun single(error: DomainError): DomainErrors =
+                DomainErrors(nonEmptyListOf(error))
+
+            /**
+             * Create DomainErrors from multiple domain errors.
+             */
+            fun multiple(errors: NonEmptyList<DomainError>): DomainErrors =
+                DomainErrors(errors)
+        }
+    }
 
     /**
      * Repository/Infrastructure-related errors.
@@ -22,7 +42,7 @@ sealed class ApplicationError {
     ) : ApplicationError()
 
     /**
-     * Use case specific errors.
+     * UseCase specific errors.
      */
     sealed class UseCaseError : ApplicationError() {
         data class InvalidRequest(val message: String) : UseCaseError()
@@ -44,12 +64,26 @@ sealed class ApplicationError {
          * Convert domain error to application error.
          */
         fun fromDomainError(domain: DomainError): ApplicationError =
-            Domain(domain)
+            DomainErrors.single(domain)
 
         /**
          * Convert repository error to application error.
          */
         fun fromRepositoryError(repository: RepositoryError): ApplicationError =
             Repository(repository)
+
+        /**
+         * Convert ValidationResult to ApplicationError Either.
+         * A key utility for error handling.
+         */
+        fun <T> fromValidationResult(result: ValidationResult<T>): Either<ApplicationError, T> = either {
+            when (result) {
+                is ValidationResult.Success -> result.value
+                is ValidationResult.Failure -> {
+                    raise(DomainErrors.multiple(result.errors))
+                }
+            }
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.presentation.cli.utils
 
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.infrastructure.error.ErrorFormattingUtils
 
 /**
  * Extension function to format ApplicationError into user-friendly messages.
@@ -8,7 +9,8 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
  */
 fun ApplicationError.toUserMessage(): String =
     when (this) {
-        is ApplicationError.Domain -> "Domain error: ${this.cause}"
+        is ApplicationError.DomainErrors ->
+            ErrorFormattingUtils.formatErrorSummary(this.errors)
         is ApplicationError.Repository -> "Repository error: ${this.cause}"
         is ApplicationError.UseCaseError.InvalidRequest ->
             "Invalid request: ${this.message}"
