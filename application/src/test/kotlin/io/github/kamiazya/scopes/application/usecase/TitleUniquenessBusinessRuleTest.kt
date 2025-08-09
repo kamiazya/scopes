@@ -32,7 +32,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // Mock repository indicating duplicate exists at root level
             coEvery {
-                mockRepository.existsByParentIdAndTitle(null, "Website")
+                mockRepository.existsByParentIdAndTitle(null, "website")
             } returns true.right() // Duplicate exists
 
             // When: User tries to create another "Website" project at root level
@@ -60,7 +60,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // Mock repository showing no duplicate exists
             coEvery {
-                mockRepository.existsByParentIdAndTitle(null, "Personal Portfolio Website")
+                mockRepository.existsByParentIdAndTitle(null, "personal portfolio website")
             } returns false.right()
 
             // Create a valid result scope for the save operation
@@ -104,7 +104,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Mock repository indicating duplicate exists within the same parent
             coEvery { mockRepository.existsById(projectId) } returns true.right()
             coEvery {
-                mockRepository.existsByParentIdAndTitle(projectId, "Database Setup")
+                mockRepository.existsByParentIdAndTitle(projectId, "database setup")
             } returns true.right() // Duplicate exists in same parent
             coEvery { mockRepository.findHierarchyDepth(projectId) } returns 1.right()
             coEvery { mockRepository.countByParentId(projectId) } returns 1.right()
@@ -134,7 +134,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // Mock repository showing no duplicate exists for descriptive name
             coEvery {
-                mockRepository.existsByParentIdAndTitle(null, "React Learning Todo App")
+                mockRepository.existsByParentIdAndTitle(null, "react learning todo app")
             } returns false.right()
 
             // Create a valid result scope for the save operation
@@ -179,7 +179,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Mock showing a "Testing" task already exists in this project
             coEvery { mockRepository.existsById(projectId) } returns true.right()
             coEvery {
-                mockRepository.existsByParentIdAndTitle(projectId, "Testing")
+                mockRepository.existsByParentIdAndTitle(projectId, "testing")
             } returns true.right() // "Testing" already exists
             coEvery { mockRepository.findHierarchyDepth(projectId) } returns 1.right()
             coEvery { mockRepository.countByParentId(projectId) } returns 2.right()
@@ -207,7 +207,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Mock repository indicating duplicate exists with lowercase title
             // Note: The repository should check case-insensitively
             coEvery {
-                mockRepository.existsByParentIdAndTitle(null, "Website")
+                mockRepository.existsByParentIdAndTitle(null, "website")
             } returns true.right() // Repository detects "website" exists (case-insensitive)
 
             // When: User tries to create "Website" project with different casing

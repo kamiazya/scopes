@@ -50,8 +50,8 @@ class CreateScopeUseCaseTest : StringSpec({
                 updatedAt = Clock.System.now()
             )
 
-            // And the project name is available (no conflicts)
-            coEvery { mockRepository.existsByParentIdAndTitle(null, "Website Redesign Project") } returns false.right()
+            // And the project name is available (no conflicts) - using normalized title
+            coEvery { mockRepository.existsByParentIdAndTitle(null, "website redesign project") } returns false.right()
             coEvery { mockRepository.save(any()) } returns createdScope.right()
 
             // When they create a new project
@@ -100,8 +100,8 @@ class CreateScopeUseCaseTest : StringSpec({
             val mockRepository = mockk<ScopeRepository>()
             val useCase = CreateScopeUseCase(mockRepository)
 
-            // And their request passes all business validations
-            coEvery { mockRepository.existsByParentIdAndTitle(null, "Infrastructure Project") } returns false.right()
+            // And their request passes all business validations - using normalized title
+            coEvery { mockRepository.existsByParentIdAndTitle(null, "infrastructure project") } returns false.right()
 
             // But the system encounters a technical issue during save
             coEvery { mockRepository.save(any()) } returns RepositoryError.ConnectionError(
@@ -163,7 +163,7 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // But a task with that name already exists in this project
             coEvery {
-                mockRepository.existsByParentIdAndTitle(existingProjectId, "User Authentication")
+                mockRepository.existsByParentIdAndTitle(existingProjectId, "user authentication")
             } returns true.right()
 
             // When they try to create another task with the same name
@@ -227,7 +227,7 @@ class CreateScopeUseCaseTest : StringSpec({
             // Set up multiple validation failures
             // Duplicate title
             coEvery {
-                mockRepository.existsByParentIdAndTitle(parentId, "InvalidTitle")
+                mockRepository.existsByParentIdAndTitle(parentId, "invalidtitle")
             } returns true.right()
 
             val request = CreateScopeRequest(
