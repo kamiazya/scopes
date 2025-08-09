@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.application.dto
 
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
 /**
@@ -8,10 +7,10 @@ import kotlinx.datetime.Instant
  * Contains only the data needed by presentation layer, no domain entities.
  */
 data class CreateScopeResult(
-    val id: ScopeId,
+    val id: String,
     val title: String,
     val description: String?,
-    val parentId: ScopeId?,
+    val parentId: String?,
     val createdAt: Instant,
     val metadata: Map<String, String>
 )
