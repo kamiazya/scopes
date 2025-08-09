@@ -17,7 +17,12 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 /**
  * Domain service for scope validation logic.
  * Contains business rules that don't naturally belong to any single entity.
- * All functions are pure and stateless following functional DDD principles.
+ *
+ * This service focuses on pure domain validation using the WithContext methods.
+ * Repository-dependent methods are deprecated and will be moved to the application
+ * layer in a follow-up PR to maintain proper domain layer isolation.
+ *
+ * All WithContext functions are pure and stateless following functional DDD principles.
  */
 object ScopeValidationService {
 
@@ -35,8 +40,15 @@ object ScopeValidationService {
         fold({ it.validationFailure() }, { it.validationSuccess() })
 
     /**
+     * @deprecated This method will be moved to the application layer in a follow-up PR.
+     * Use validateHierarchyDepthWithContext() instead for pure domain validation.
+     *
      * Efficient version: Validate hierarchy depth using repository query.
      */
+    @Deprecated(
+        message = "Repository-dependent methods should be moved to application layer. Use validateHierarchyDepthWithContext() instead.",
+        replaceWith = ReplaceWith("validateHierarchyDepthWithContext(parentDepth)")
+    )
     suspend fun validateHierarchyDepthEfficient(
         parentId: ScopeId?,
         repository: ScopeRepository
@@ -53,8 +65,15 @@ object ScopeValidationService {
     }
 
     /**
+     * @deprecated This method will be moved to the application layer in a follow-up PR.
+     * Use validateChildrenLimitWithContext() instead for pure domain validation.
+     *
      * Efficient version: Validate children limit using repository query.
      */
+    @Deprecated(
+        message = "Repository-dependent methods should be moved to application layer. Use validateChildrenLimitWithContext() instead.",
+        replaceWith = ReplaceWith("validateChildrenLimitWithContext(currentChildrenCount)")
+    )
     suspend fun validateChildrenLimitEfficient(
         parentId: ScopeId?,
         repository: ScopeRepository
@@ -73,10 +92,17 @@ object ScopeValidationService {
     }
 
     /**
+     * @deprecated This method will be moved to the application layer in a follow-up PR.
+     * Use validateTitleUniquenessWithContext() instead for pure domain validation.
+     *
      * Efficient version: Validate title uniqueness using repository query.
      * All scopes (including root level) must have unique titles within their context.
      * Normalizes titles by trimming whitespace and converting to lowercase for consistent comparison.
      */
+    @Deprecated(
+        message = "Repository-dependent methods should be moved to application layer. Use validateTitleUniquenessWithContext() instead.",
+        replaceWith = ReplaceWith("validateTitleUniquenessWithContext(existsInParentContext, title, parentId)")
+    )
     suspend fun validateTitleUniquenessEfficient(
         title: String,
         parentId: ScopeId?,
@@ -93,13 +119,23 @@ object ScopeValidationService {
         }
     }
 
-    // ===== CONSOLIDATED VALIDATION METHODS =====
+    // ===== DEPRECATED REPOSITORY-DEPENDENT METHODS =====
+    // TODO: Move these methods to the application layer in follow-up PR
+    // TODO: Create ApplicationScopeValidationService or similar to house these methods
+    // TODO: Update all usages to use the new application layer validation service
 
     /**
+     * @deprecated This method will be moved to the application layer in a follow-up PR.
+     * Use the WithContext validation methods for pure domain validation.
+     *
      * Comprehensive validation for scope creation using accumulating ValidationResult.
      * This single method handles all validation concerns and accumulates errors.
      * Use .firstErrorOnly() for fail-fast behavior when needed.
      */
+    @Deprecated(
+        message = "Repository-dependent methods should be moved to application layer. Use WithContext validation methods instead.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun validateScopeCreation(
         title: String,
         description: String?,
@@ -112,6 +148,40 @@ object ScopeValidationService {
             validateHierarchyDepthEfficient(parentId, repository).toValidationResult(),
             validateChildrenLimitEfficient(parentId, repository).toValidationResult(),
             validateTitleUniquenessEfficient(title, parentId, repository).toValidationResult()
+        )
+
+        return validations.sequence().map { }
+    }
+
+    // ===== PURE CONTEXT-BASED VALIDATION METHODS =====
+
+    /**
+     * Comprehensive pure validation for scope creation using pre-computed context data.
+     * This method uses only the WithContext validation methods for pure domain validation.
+     * All repository queries should be performed in the application layer.
+     *
+     * @param title The scope title to validate
+     * @param description The scope description to validate (nullable)
+     * @param parentDepth The pre-computed depth of the parent (0 for root level)
+     * @param currentChildrenCount The pre-computed count of existing children under the parent
+     * @param existsInParentContext Whether a scope with the same title already exists in the parent context
+     * @param parentId The parent scope ID for error context (nullable for root level)
+     * @return ValidationResult containing all validation errors or success
+     */
+    fun validateScopeCreationWithContext(
+        title: String,
+        description: String?,
+        parentDepth: Int,
+        currentChildrenCount: Int,
+        existsInParentContext: Boolean,
+        parentId: ScopeId?
+    ): ValidationResult<Unit> {
+        val validations = listOf(
+            ScopeTitle.create(title).toValidationResult().map { },
+            ScopeDescription.create(description).toValidationResult().map { },
+            validateHierarchyDepthWithContext(parentDepth).toValidationResult(),
+            validateChildrenLimitWithContext(currentChildrenCount).toValidationResult(),
+            validateTitleUniquenessWithContext(existsInParentContext, title, parentId).toValidationResult()
         )
 
         return validations.sequence().map { }
