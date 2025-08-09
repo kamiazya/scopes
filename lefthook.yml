@@ -53,8 +53,8 @@ post-tool-use-edit:
     detekt-check:
       glob: "**/*.kt"
       run: |
-        echo "🔍 Running Detekt analysis with auto-fix"
-        ./gradlew detekt --auto-correct --daemon --quiet || true
+        echo "🔍 Running Detekt analysis with auto-correction"
+        ./gradlew detekt -Pdetekt.autoCorrect=true --daemon --quiet || true
         echo "✅ Detekt analysis completed"
       
     # Optional: Run tests for the affected module only
