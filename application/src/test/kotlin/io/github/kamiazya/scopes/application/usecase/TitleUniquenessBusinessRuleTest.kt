@@ -12,6 +12,7 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 
@@ -45,6 +46,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Then: The system prevents this to ensure clear project identification
             val error = result.shouldBeLeft()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            
+            // Verify that save was never called when validation fails
+            coVerify(exactly = 0) { mockRepository.save(any()) }
         }
     }
 
