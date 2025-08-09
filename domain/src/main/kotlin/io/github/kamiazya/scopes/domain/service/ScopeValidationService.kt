@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.ValidationResult
 import io.github.kamiazya.scopes.domain.error.validationSuccess
@@ -129,16 +130,18 @@ object ScopeValidationService {
         description: String?,
         parentId: ScopeId?,
         repository: ScopeRepository
-    ): ValidationResult<Unit> {
+    ): ValidationResult<ScopeTitle> {
         val validations = listOf(
-            validateTitle(title).toValidationResult(),
+            ScopeTitle.create(title).toValidationResult(),
             validateDescription(description).toValidationResult(),
             validateHierarchyDepthEfficient(parentId, repository).toValidationResult(),
             validateChildrenLimitEfficient(parentId, repository).toValidationResult(),
             validateTitleUniquenessEfficient(title, parentId, repository).toValidationResult()
         )
 
-        return validations.sequence().map { }
+        return validations.sequence().map { validatedResults ->
+            validatedResults[0] as ScopeTitle
+        }
     }
 
     // ===== PURE HIERARCHY CONTEXT-BASED VALIDATION FUNCTIONS =====

@@ -23,6 +23,7 @@ class ErrorRecoverySuggestionService(
     /**
      * Suggests recovery options for domain errors.
      */
+    @Suppress("CyclomaticComplexMethod") // Exhaustive when requires all cases to be handled
     fun suggestRecovery(
         error: DomainError,
         context: Map<String, Any>
@@ -40,7 +41,14 @@ class ErrorRecoverySuggestionService(
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 suggestMaxChildrenExceededRecovery(error)
-            else -> handleNonRecoverable(error)
+            is DomainError.ScopeValidationError.ScopeInvalidFormat -> handleNonRecoverable(error)
+            is DomainError.ScopeError.CircularReference -> handleNonRecoverable(error)
+            is DomainError.ScopeError.SelfParenting -> handleNonRecoverable(error)
+            is DomainError.ScopeError.ScopeNotFound -> handleNonRecoverable(error)
+            is DomainError.ScopeError.InvalidTitle -> handleNonRecoverable(error)
+            is DomainError.ScopeError.InvalidDescription -> handleNonRecoverable(error)
+            is DomainError.ScopeError.InvalidParent -> handleNonRecoverable(error)
+            is DomainError.InfrastructureError -> handleNonRecoverable(error)
         }
     }
 
