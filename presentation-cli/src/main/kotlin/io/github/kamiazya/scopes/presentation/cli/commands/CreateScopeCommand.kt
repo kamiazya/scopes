@@ -21,8 +21,14 @@ class CreateScopeCommand(
     private val parent by option("--parent", help = "Parent scope ID")
 
     override fun run() = runBlocking {
+        val trimmedName = name.trim()
+        if (trimmedName.isEmpty()) {
+            echo("❌ Error: Scope name cannot be empty or contain only whitespace", err = true)
+            throw com.github.ajalt.clikt.core.ProgramResult(1)
+        }
+        
         val command = CreateScope(
-            title = name,
+            title = trimmedName,
             description = description,
             parentId = parent,
         )

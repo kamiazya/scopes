@@ -48,32 +48,12 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    "command classes should be in command package and follow naming convention" {
+    "commands in command package should implement Command interface" {
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { it.name.endsWith("Command") }
-            .assertTrue { command ->
-                // Commands ending with "Command" should be in the .usecase.command package
-                val packageName = command.packagee?.name ?: ""
-                packageName.endsWith(".usecase.command") ||
-                // Or check if it has Command in its parent types (simplified check)
-                command.name == "CreateScope" // Known command classes
-            }
-    }
-
-    "classes in command package should follow Command naming convention" {
-        Konsist
-            .scopeFromModule("application")
-            .classes()
-            .filter { it.packagee?.name?.endsWith(".usecase.command") == true }
-            .filter { it.name != "Command" } // Exclude the Command interface itself
-            .assertTrue { commandClass ->
-                // All classes in command package should have appropriate naming
-                // Either end with Command or be a known command type
-                commandClass.name.endsWith("Command") || 
-                commandClass.name == "CreateScope" // Our actual command
-            }
+            .filter { it.packagee?.name?.endsWith(".command") == true }
+            .assertTrue { it.hasParentWithName("Command") }
     }
 
     "classes in query package should follow Query naming convention" {
