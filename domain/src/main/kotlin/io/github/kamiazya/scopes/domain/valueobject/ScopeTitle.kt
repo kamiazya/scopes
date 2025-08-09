@@ -26,6 +26,9 @@ value class ScopeTitle private constructor(val value: String) {
             val trimmedTitle = title.trim()
 
             ensure(trimmedTitle.isNotBlank()) { DomainError.ScopeValidationError.EmptyScopeTitle }
+            // MIN_LENGTH is currently 1, making this check unreachable after isNotBlank().
+            // However, it's included to support future increases to MIN_LENGTH and is used
+            // in recovery logic and formatting utilities.
             ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ScopeValidationError.ScopeTitleTooShort }
             ensure(trimmedTitle.length <= MAX_LENGTH) {
                 DomainError.ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
