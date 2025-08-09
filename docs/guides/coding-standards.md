@@ -1607,13 +1607,15 @@ fun validateMultipleFields(request: Request): Either<NonEmptyList<ValidationErro
 }
 
 // 7. Bridge pattern for compatibility
-fun ValidationResult<E, A>.toEither(): Either<E, A> = when (this) {
-    is ValidationResult.Success -> value.right()
-    is ValidationResult.Failure -> when {
-        errors.size == 1 -> errors.head.left()
-        else -> DomainError.aggregate(errors, context?.operation).left()
-    }
+// ValidationResult already provides toEither() method that returns Either<NonEmptyList<DomainError>, T>
+// For single error extraction, you can use firstErrorOnly() extension:
+fun <T> ValidationResult<T>.firstErrorOnly(): Either<DomainError, T> = when (this) {
+    is ValidationResult.Success -> Either.Right(value)
+    is ValidationResult.Failure -> Either.Left(errors.head)
 }
+
+// Or use the built-in toEither() method for error accumulation:
+// validationResult.toEither() // Returns Either<NonEmptyList<DomainError>, T>
 ```
 
 ### Arrow Option Quick Reference
