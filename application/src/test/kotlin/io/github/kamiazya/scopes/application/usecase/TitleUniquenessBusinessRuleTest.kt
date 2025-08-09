@@ -30,8 +30,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val useCase = CreateScopeUseCase(mockRepository)
 
             // Mock repository indicating duplicate exists at root level
-            coEvery { 
-                mockRepository.existsByParentIdAndTitle(null, "Website") 
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(null, "Website")
             } returns true.right() // Duplicate exists
 
             // When: User tries to create another "Website" project at root level
@@ -55,8 +55,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val useCase = CreateScopeUseCase(mockRepository)
 
             // Mock repository showing no duplicate exists
-            coEvery { 
-                mockRepository.existsByParentIdAndTitle(null, "Personal Portfolio Website") 
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(null, "Personal Portfolio Website")
             } returns false.right()
 
             // Create a valid result scope for the save operation
@@ -70,10 +70,10 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
                 createdAt = kotlinx.datetime.Clock.System.now(),
                 updatedAt = kotlinx.datetime.Clock.System.now()
             )
-            coEvery { 
-                mockRepository.save(match { scope -> 
-                    scope.title.value == "Personal Portfolio Website" 
-                }) 
+            coEvery {
+                mockRepository.save(match { scope ->
+                    scope.title.value == "Personal Portfolio Website"
+                })
             } returns resultScope.right()
 
             // When: User creates a descriptive, unique project name
@@ -99,8 +99,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // Mock repository indicating duplicate exists within the same parent
             coEvery { mockRepository.existsById(projectId) } returns true.right()
-            coEvery { 
-                mockRepository.existsByParentIdAndTitle(projectId, "Database Setup") 
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(projectId, "Database Setup")
             } returns true.right() // Duplicate exists in same parent
             coEvery { mockRepository.findHierarchyDepth(projectId) } returns 1.right()
             coEvery { mockRepository.countByParentId(projectId) } returns 1.right()
@@ -126,8 +126,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val useCase = CreateScopeUseCase(mockRepository)
 
             // Mock repository showing no duplicate exists for descriptive name
-            coEvery { 
-                mockRepository.existsByParentIdAndTitle(null, "React Learning Todo App") 
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(null, "React Learning Todo App")
             } returns false.right()
 
             // Create a valid result scope for the save operation
@@ -142,10 +142,10 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
                 createdAt = kotlinx.datetime.Clock.System.now(),
                 updatedAt = kotlinx.datetime.Clock.System.now()
             )
-            coEvery { 
-                mockRepository.save(match { scope -> 
-                    scope.title.value == "React Learning Todo App" 
-                }) 
+            coEvery {
+                mockRepository.save(match { scope ->
+                    scope.title.value == "React Learning Todo App"
+                })
             } returns resultScope.right()
 
             // When: User creates a descriptive learning project
@@ -171,8 +171,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // Mock showing a "Testing" task already exists in this project
             coEvery { mockRepository.existsById(projectId) } returns true.right()
-            coEvery { 
-                mockRepository.existsByParentIdAndTitle(projectId, "Testing") 
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(projectId, "Testing")
             } returns true.right() // "Testing" already exists
             coEvery { mockRepository.findHierarchyDepth(projectId) } returns 1.right()
             coEvery { mockRepository.countByParentId(projectId) } returns 2.right()

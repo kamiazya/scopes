@@ -37,11 +37,7 @@ value class ScopeTitle private constructor(val value: String) {
             ScopeTitle(trimmedTitle)
         }
 
-        /**
-         * Internal factory method for creating ScopeTitle without validation.
-         * Used when title is already known to be valid (e.g., from database).
-         */
-        internal fun createUnchecked(title: String): ScopeTitle = ScopeTitle(title)
+
     }
 
     override fun toString(): String = value

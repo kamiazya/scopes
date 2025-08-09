@@ -131,11 +131,5 @@ object ErrorFormattingUtils : ErrorFormatter {
         }
     }
 
-    /**
-     * Keep the old method for backward compatibility.
-     * @deprecated Use formatErrorSummary instead
-     */
-    fun formatErrorMessages(errors: NonEmptyList<DomainError>): String {
-        return formatErrorSummary(errors)
-    }
+
 }

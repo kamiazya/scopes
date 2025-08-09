@@ -5,10 +5,10 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.ValidationResult
-import io.github.kamiazya.scopes.domain.error.map
-import io.github.kamiazya.scopes.domain.error.sequence
 import io.github.kamiazya.scopes.domain.error.validationFailure
 import io.github.kamiazya.scopes.domain.error.validationSuccess
+import io.github.kamiazya.scopes.domain.error.sequence
+import io.github.kamiazya.scopes.domain.error.map
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId

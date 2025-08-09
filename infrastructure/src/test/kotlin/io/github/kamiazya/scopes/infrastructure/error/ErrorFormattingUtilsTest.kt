@@ -22,26 +22,26 @@ class ErrorFormattingUtilsTest : StringSpec({
         utils shouldBe ErrorFormattingUtils
     }
 
-    "formatErrorMessages should create user-friendly summary for single error" {
+    "formatErrorSummary should create user-friendly summary for single error" {
         // Test setup
         val error = DomainError.ScopeValidationError.EmptyScopeTitle
         val errors = nonEmptyListOf(error)
 
-        val result = ErrorFormattingUtils.formatErrorMessages(errors)
+        val result = ErrorFormattingUtils.formatErrorSummary(errors)
 
         result shouldStartWith "1 error found:"
         result shouldContain "ScopeValidationError (1)"
         result shouldContain "- Empty title"
     }
 
-    "formatErrorMessages should create user-friendly summary for multiple errors" {
+    "formatErrorSummary should create user-friendly summary for multiple errors" {
         // Test setup
         val error1 = DomainError.ScopeValidationError.EmptyScopeTitle
         val error2 = DomainError.ScopeValidationError.ScopeTitleTooShort
         val error3 = DomainError.ScopeValidationError.ScopeTitleTooLong(maxLength = 200, actualLength = 300)
         val errors = nonEmptyListOf(error1, error2, error3)
 
-        val result = ErrorFormattingUtils.formatErrorMessages(errors)
+        val result = ErrorFormattingUtils.formatErrorSummary(errors)
 
         result shouldStartWith "3 errors found:"
         result shouldContain "ScopeValidationError (3)"

@@ -10,7 +10,7 @@ import io.github.kamiazya.scopes.infrastructure.error.ErrorFormattingUtils
 fun ApplicationError.toUserMessage(): String =
     when (this) {
         is ApplicationError.DomainErrors ->
-            ErrorFormattingUtils.formatErrorMessages(this.errors)
+            ErrorFormattingUtils.formatErrorSummary(this.errors)
         is ApplicationError.Repository -> "Repository error: ${this.cause}"
         is ApplicationError.UseCaseError.InvalidRequest ->
             "Invalid request: ${this.message}"

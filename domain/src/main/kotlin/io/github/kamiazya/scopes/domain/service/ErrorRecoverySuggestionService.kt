@@ -278,12 +278,10 @@ class ErrorRecoverySuggestionService(
     /**
      * Generates unique title variants for duplicate title resolution.
      */
-    @Suppress("UnusedParameter")
     private fun generateUniqueVariants(
         originalTitle: String,
         parentId: ScopeId?,
-        allScopes: List<Scope>,
-        maxVariants: Int = 10
+        allScopes: List<Scope>
     ): List<String> {
         val existingTitles = allScopes
             .filter { it.parentId == parentId }

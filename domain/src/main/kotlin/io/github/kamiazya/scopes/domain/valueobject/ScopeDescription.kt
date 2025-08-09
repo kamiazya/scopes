@@ -43,11 +43,7 @@ value class ScopeDescription private constructor(val value: String) {
             }
         }
 
-        /**
-         * Internal factory method for creating ScopeDescription without validation.
-         * Used when description is already known to be valid (e.g., from database).
-         */
-        internal fun createUnchecked(description: String): ScopeDescription = ScopeDescription(description)
+
     }
 
     override fun toString(): String = value
