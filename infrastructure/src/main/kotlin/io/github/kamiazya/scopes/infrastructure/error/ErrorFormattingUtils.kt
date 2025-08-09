@@ -116,20 +116,45 @@ object ErrorFormattingUtils : ErrorFormatter {
         }
     }
 
-    /**
-     * Formats repository error with technical details.
-     */
     override fun getRepositoryErrorMessage(error: RepositoryError): String {
         return when (error) {
-            is RepositoryError.ConnectionError -> "Connection error: ${error.cause.message}"
-            is RepositoryError.DataIntegrityError -> "Data integrity error: ${error.message}"
+            is RepositoryError.ConnectionError -> "Connection error: ${error.cause.message.sanitize("Connection failed")}"
+            is RepositoryError.DataIntegrityError -> "Data integrity error: ${error.message.sanitize("Data integrity violation")}"
             is RepositoryError.NotFound -> "Scope not found: ${error.id.value}"
-            is RepositoryError.ConflictError -> "Conflict for scope ${error.id.value}: ${error.message}"
-            is RepositoryError.SerializationError -> "Serialization error: ${error.message}"
-            is RepositoryError.DatabaseError -> "Database error: ${error.message}"
-            is RepositoryError.UnknownError -> "Unknown error: ${error.message}"
+            is RepositoryError.ConflictError -> "Conflict for scope ${error.id.value}: ${error.message.sanitize("Resource conflict")}"
+            is RepositoryError.SerializationError -> "Serialization error: ${error.message.sanitize("Serialization failed")}"
+            is RepositoryError.DatabaseError -> "Database error: ${error.message.sanitize("Database operation failed")}"
+            is RepositoryError.UnknownError -> "Unknown error: ${error.message.sanitize("An unexpected error occurred")}"
         }
     }
 
 
+}
+
+/**
+ * Sanitizes error messages to prevent exposure of sensitive or problematic data.
+ * This extension function ensures safe formatting by:
+ * - Providing a default message for null/empty strings
+ * - Truncating excessively long messages
+ * - Removing newlines and control characters
+ * - Trimming whitespace
+ */
+private fun String?.sanitize(defaultMessage: String = "Unknown error"): String {
+    if (this.isNullOrBlank()) {
+        return defaultMessage
+    }
+
+    return this
+        .replace(Regex("[\\r\\n\\t]"), " ") // Replace newlines and tabs with spaces
+        .replace(Regex("\\p{Cntrl}"), "") // Remove other control characters
+        .trim()
+        .let { sanitized ->
+            // Truncate if too long to prevent log flooding
+            if (sanitized.length > 200) {
+                "${sanitized.take(197)}..."
+            } else {
+                sanitized
+            }
+        }
+        .ifBlank { defaultMessage }
 }
