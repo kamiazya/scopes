@@ -37,8 +37,8 @@ class ErrorRecoverySuggestionServiceEdgeCaseTest : DescribeSpec({
                     actualLength = 60
                 )
 
-                val context = mapOf(
-                    "originalTitle" to "This is a very long title that exceeds the maximum length"
+                val context = SuggestionContext.TitleValidation(
+                    originalTitle = "This is a very long title that exceeds the maximum length"
                 )
 
                 val result = service.suggestRecovery(error, context)
@@ -70,8 +70,8 @@ class ErrorRecoverySuggestionServiceEdgeCaseTest : DescribeSpec({
                     actualLength = 0
                 )
 
-                val context = mapOf(
-                    "originalTitle" to ""
+                val context = SuggestionContext.TitleValidation(
+                    originalTitle = ""
                 )
 
                 val result = service.suggestRecovery(error, context)

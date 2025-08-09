@@ -8,6 +8,41 @@ import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
+ * Sealed class representing typed context for error recovery suggestions.
+ * Provides type-safe context information for each error type, replacing untyped Map<String, Any>.
+ */
+sealed class SuggestionContext {
+
+    /**
+     * Context for title validation errors.
+     */
+    data class TitleValidation(
+        val originalTitle: String
+    ) : SuggestionContext()
+
+    /**
+     * Context for description validation errors.
+     */
+    data class DescriptionValidation(
+        val originalDescription: String
+    ) : SuggestionContext()
+
+    /**
+     * Context for duplicate title business rule violations.
+     */
+    data class DuplicateTitle(
+        val originalTitle: String,
+        val parentId: ScopeId?,
+        val allScopes: List<Scope>
+    ) : SuggestionContext()
+
+    /**
+     * Context for errors that don't require additional context.
+     */
+    object NoContext : SuggestionContext()
+}
+
+/**
  * Domain service that generates recovery suggestions for errors.
  */
 @Suppress("TooManyFunctions") // This class is designed to contain many suggestion functions
@@ -26,7 +61,7 @@ class ErrorRecoverySuggestionService(
     @Suppress("CyclomaticComplexMethod") // Exhaustive when requires all cases to be handled
     fun suggestRecovery(
         error: DomainError,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
         return when (error) {
             is DomainError.ScopeValidationError.EmptyScopeTitle -> suggestEmptyTitleRecovery(error)
@@ -69,9 +104,12 @@ class ErrorRecoverySuggestionService(
      */
     private fun suggestTitleTooShortRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleTooShort,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
-        val originalTitle = context["originalTitle"] as? String ?: ""
+        val originalTitle = when (context) {
+            is SuggestionContext.TitleValidation -> context.originalTitle
+            else -> ""
+        }
         val suggestions = if (originalTitle.isNotBlank()) {
             listOf(
                 "$originalTitle - Task",
@@ -95,9 +133,12 @@ class ErrorRecoverySuggestionService(
      */
     private fun suggestTitleTooLongRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleTooLong,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
-        val originalTitle = context["originalTitle"] as? String ?: ""
+        val originalTitle = when (context) {
+            is SuggestionContext.TitleValidation -> context.originalTitle
+            else -> ""
+        }
         val titleConfig = configuration.titleConfig()
         val maxLength = titleConfig.maxLength
 
@@ -135,9 +176,12 @@ class ErrorRecoverySuggestionService(
      */
     private fun suggestTitleContainsNewlineRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleContainsNewline,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
-        val originalTitle = context["originalTitle"] as? String ?: ""
+        val originalTitle = when (context) {
+            is SuggestionContext.TitleValidation -> context.originalTitle
+            else -> ""
+        }
         val titleConfig = configuration.titleConfig()
 
         val suggestions = if (originalTitle.isNotBlank()) {
@@ -167,9 +211,12 @@ class ErrorRecoverySuggestionService(
      */
     private fun suggestDescriptionTooLongRecovery(
         error: DomainError.ScopeValidationError.ScopeDescriptionTooLong,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
-        val originalDescription = context["originalDescription"] as? String ?: ""
+        val originalDescription = when (context) {
+            is SuggestionContext.DescriptionValidation -> context.originalDescription
+            else -> ""
+        }
         val descriptionConfig = configuration.descriptionConfig()
         val maxLength = descriptionConfig.maxLength
 
@@ -197,11 +244,14 @@ class ErrorRecoverySuggestionService(
      */
     private fun suggestDuplicateTitleRecovery(
         error: DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle,
-        context: Map<String, Any>
+        context: SuggestionContext
     ): RecoveryResult {
-        val originalTitle = context["originalTitle"] as? String ?: error.title
-        val parentId = context["parentId"] as? ScopeId
-        val allScopes = context["allScopes"] as? List<Scope> ?: emptyList()
+        val (originalTitle, parentId, allScopes) = when (context) {
+            is SuggestionContext.DuplicateTitle -> {
+                Triple(context.originalTitle, context.parentId, context.allScopes)
+            }
+            else -> Triple(error.title, null, emptyList<Scope>())
+        }
 
         val suggestions = generateUniqueVariants(originalTitle, parentId, allScopes)
 

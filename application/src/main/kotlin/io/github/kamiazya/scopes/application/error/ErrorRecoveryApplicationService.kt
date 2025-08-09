@@ -4,6 +4,7 @@ import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.ErrorFormatter
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
 import io.github.kamiazya.scopes.domain.service.ErrorRecoverySuggestionService
+import io.github.kamiazya.scopes.domain.service.SuggestionContext
 import io.github.kamiazya.scopes.domain.service.RecoveryStrategyDomainService
 import io.github.kamiazya.scopes.domain.error.ErrorRecoveryCategory
 import io.github.kamiazya.scopes.domain.error.RecoveryResult
@@ -52,7 +53,7 @@ class ErrorRecoveryApplicationService(
      */
     fun recoverFromError(
         error: DomainError,
-        context: Map<String, Any> = emptyMap()
+        context: SuggestionContext = SuggestionContext.NoContext
     ): RecoveryResult {
         // Step 1: Use pure domain service for error categorization
         val category = errorCategorizationService.categorizeError(error)
@@ -81,7 +82,7 @@ class ErrorRecoveryApplicationService(
      */
     fun recoverFromValidationResult(
         result: ValidationResult<*>,
-        context: Map<String, Any> = emptyMap()
+        context: SuggestionContext = SuggestionContext.NoContext
     ): RecoveredValidationResult<*> {
         return when (result) {
             is ValidationResult.Success -> {

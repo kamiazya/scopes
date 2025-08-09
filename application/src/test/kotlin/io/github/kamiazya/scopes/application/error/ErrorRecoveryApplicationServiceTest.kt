@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.application.error
 import io.github.kamiazya.scopes.domain.error.*
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
 import io.github.kamiazya.scopes.domain.service.RecoveryStrategyDomainService
+import io.github.kamiazya.scopes.domain.service.SuggestionContext
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import io.kotest.core.spec.style.StringSpec
@@ -75,7 +76,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
         )
 
         val error = DomainError.ScopeValidationError.EmptyScopeTitle
-        val context = mapOf("originalTitle" to "Test Title")
+        val context = SuggestionContext.TitleValidation("Test Title")
 
         val result = applicationService.recoverFromError(error, context)
 
@@ -97,8 +98,8 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
         val recoverableError = DomainError.ScopeValidationError.EmptyScopeTitle
         val nonRecoverableError = DomainError.ScopeError.ScopeNotFound
 
-        val recoverableResult = applicationService.recoverFromError(recoverableError, emptyMap())
-        val nonRecoverableResult = applicationService.recoverFromError(nonRecoverableError, emptyMap())
+        val recoverableResult = applicationService.recoverFromError(recoverableError)
+        val nonRecoverableResult = applicationService.recoverFromError(nonRecoverableError)
 
         // Should use domain service categorization to determine response
         recoverableResult.shouldBeInstanceOf<RecoveryResult.Suggestion>()
@@ -122,7 +123,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
                 DomainError.ScopeValidationError.ScopeTitleTooShort
             )
         )
-        val context = mapOf("originalTitle" to "Test")
+        val context = SuggestionContext.TitleValidation("Test")
 
         val recoveredResult = applicationService.recoverFromValidationResult(failureResult, context)
 
@@ -145,9 +146,8 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
         )
 
         val successResult = ValidationResult.Success("Valid Value")
-        val context = emptyMap<String, Any>()
 
-        val recoveredResult = applicationService.recoverFromValidationResult(successResult, context)
+        val recoveredResult = applicationService.recoverFromValidationResult(successResult)
 
         // Should handle success without attempting recovery
         recoveredResult.shouldBeInstanceOf<RecoveredValidationResult<String>>()
@@ -193,7 +193,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             errorFormatter = fakeErrorFormatter
         )
 
-        val result = applicationService.recoverFromError(nonRecoverableError, emptyMap())
+        val result = applicationService.recoverFromError(nonRecoverableError)
 
         // Should use the injected formatter for non-recoverable errors
         result.shouldBeInstanceOf<RecoveryResult.NonRecoverable>()
