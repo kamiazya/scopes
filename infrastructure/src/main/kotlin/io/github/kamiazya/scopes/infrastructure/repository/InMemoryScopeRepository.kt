@@ -39,9 +39,9 @@ class InMemoryScopeRepository : ScopeRepository {
         title: String
     ): Either<RepositoryError, Boolean> = either {
         mutex.withLock {
-            val normalizedInputTitle = title.trim().lowercase()
+            val normalizedInputTitle = normalizeTitle(title)
             scopes.values.any { scope ->
-                val normalizedStoredTitle = scope.title.value.trim().lowercase()
+                val normalizedStoredTitle = normalizeTitle(scope.title.value)
                 scope.parentId == parentId && normalizedStoredTitle == normalizedInputTitle
             }
         }
@@ -79,6 +79,18 @@ class InMemoryScopeRepository : ScopeRepository {
      */
     suspend fun size(): Int = mutex.withLock {
         scopes.size
+    }
+
+    /**
+     * Normalizes a title for consistent comparison by:
+     * - Trimming leading/trailing whitespace
+     * - Collapsing internal whitespace sequences (spaces, tabs, newlines) to single spaces
+     * - Converting to lowercase
+     */
+    private fun normalizeTitle(title: String): String {
+        return title.trim()
+            .replace(Regex("\\s+"), " ")
+            .lowercase()
     }
 }
 

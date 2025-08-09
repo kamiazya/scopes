@@ -184,7 +184,12 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 " task name ",       // Leading/trailing spaces
                 "\ttask name\n",     // Tab and newline
                 "  TASK NAME  ",     // Case and multiple spaces
-                " Task Name "        // Original case with spaces
+                " Task Name ",       // Original case with spaces
+                "Task  Name",        // Internal double space
+                "Task\tName",        // Internal tab
+                "Task\nName",        // Internal newline
+                "Task   \t  Name",   // Mixed internal whitespace
+                "\t Task \n Name \r" // Complex mixed whitespace
             )
 
             testCases.forEach { testTitle ->
