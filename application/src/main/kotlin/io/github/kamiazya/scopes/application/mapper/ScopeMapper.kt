@@ -14,12 +14,12 @@ object ScopeMapper {
      */
     fun toCreateScopeResult(scope: Scope): CreateScopeResult = 
         CreateScopeResult(
-            id = scope.id.value,
+            id = scope.id.toString(),
             title = scope.title.value,
             description = scope.description?.value,
-            parentId = scope.parentId?.value,
+            parentId = scope.parentId?.toString(),
             createdAt = scope.createdAt,
-            metadata = scope.metadata
+            metadata = scope.metadata.toMap()  // Defensive copy to ensure immutability
         )
 
 }
