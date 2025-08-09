@@ -1,9 +1,13 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
-import io.github.kamiazya.scopes.domain.error.ErrorFormatter
-import io.github.kamiazya.scopes.domain.error.DomainError
-import io.github.kamiazya.scopes.domain.error.RepositoryError
 import arrow.core.NonEmptyList
+import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ErrorFormatter
+import io.github.kamiazya.scopes.domain.error.RepositoryError
+
+// Constants for error message sanitization
+private const val MAX_ERROR_MESSAGE_LENGTH = 200
+private const val MAX_ERROR_MESSAGE_TRUNCATED_LENGTH = 197
 
 /**
  * Infrastructure implementation of ErrorFormatter interface.
@@ -118,13 +122,19 @@ object ErrorFormattingUtils : ErrorFormatter {
 
     override fun getRepositoryErrorMessage(error: RepositoryError): String {
         return when (error) {
-            is RepositoryError.ConnectionError -> "Connection error: ${error.cause.message.sanitize("Connection failed")}"
-            is RepositoryError.DataIntegrityError -> "Data integrity error: ${error.message.sanitize("Data integrity violation")}"
+            is RepositoryError.ConnectionError ->
+                "Connection error: ${error.cause.message.sanitize("Connection failed")}"
+            is RepositoryError.DataIntegrityError ->
+                "Data integrity error: ${error.message.sanitize("Data integrity violation")}"
             is RepositoryError.NotFound -> "Scope not found: ${error.id.value}"
-            is RepositoryError.ConflictError -> "Conflict for scope ${error.id.value}: ${error.message.sanitize("Resource conflict")}"
-            is RepositoryError.SerializationError -> "Serialization error: ${error.message.sanitize("Serialization failed")}"
-            is RepositoryError.DatabaseError -> "Database error: ${error.message.sanitize("Database operation failed")}"
-            is RepositoryError.UnknownError -> "Unknown error: ${error.message.sanitize("An unexpected error occurred")}"
+            is RepositoryError.ConflictError ->
+                "Conflict for scope ${error.id.value}: ${error.message.sanitize("Resource conflict")}"
+            is RepositoryError.SerializationError ->
+                "Serialization error: ${error.message.sanitize("Serialization failed")}"
+            is RepositoryError.DatabaseError ->
+                "Database error: ${error.message.sanitize("Database operation failed")}"
+            is RepositoryError.UnknownError ->
+                "Unknown error: ${error.message.sanitize("An unexpected error occurred")}"
         }
     }
 
@@ -145,13 +155,13 @@ private fun String?.sanitize(defaultMessage: String = "Unknown error"): String {
     }
 
     return this
-        .replace(Regex("[\\r\\n\\t]"), " ") // Replace newlines and tabs with spaces
+        .replace(Regex("[\r\n\t]"), " ") // Replace newlines and tabs with spaces
         .replace(Regex("\\p{Cntrl}"), "") // Remove other control characters
         .trim()
         .let { sanitized ->
             // Truncate if too long to prevent log flooding
-            if (sanitized.length > 200) {
-                "${sanitized.take(197)}..."
+            if (sanitized.length > MAX_ERROR_MESSAGE_LENGTH) {
+                "${sanitized.take(MAX_ERROR_MESSAGE_TRUNCATED_LENGTH)}..."
             } else {
                 sanitized
             }
