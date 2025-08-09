@@ -456,7 +456,7 @@ class CreateScopeUseCase(
 ) {
         suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
             val validRequest = validateRequest(request)
-                .mapLeft { ApplicationError.DomainError(it) }
+                .mapLeft { ApplicationError.Domain(it) }
                 .bind()
 
             val scope = createScope(validRequest).bind()
@@ -603,7 +603,7 @@ sealed class RepositoryError {
 // ✅ Good: Railway-oriented programming with Arrow Either
 suspend fun processScopeCreation(request: CreateScopeRequest): Either<ApplicationError, ScopeCreated> = either {
         val validRequest = validateRequest(request)
-            .mapLeft { ApplicationError.DomainError(it) }
+            .mapLeft { ApplicationError.Domain(it) }
             .bind()
 
         checkParentExists(validRequest.parentId).bind()
@@ -621,7 +621,7 @@ suspend fun processScopeCreation(request: CreateScopeRequest): Either<Applicatio
             .flatMap { createScopeEntity(request) }
             .flatMap { scope -> saveScope(scope) }
             .map { savedScope -> ScopeCreated(savedScope) }
-            .mapLeft { domainError -> ApplicationError.DomainError(domainError) }
+            .mapLeft { domainError -> ApplicationError.Domain(domainError) }
 
 // ❌ Bad: Exception-based error handling
 suspend fun processScopeCreation(request: CreateScopeRequest): ScopeCreated {
@@ -691,7 +691,7 @@ class CreateScopeUseCaseTest : FunSpec({
                 result.isLeft() shouldBe true
                 result.fold(
                     ifLeft = { error ->
-                        error shouldBe instanceOf<ApplicationError.DomainError>()
+                        error shouldBe instanceOf<ApplicationError.Domain>()
                     },
                     ifRight = { fail("Expected Left but got Right") }
                 )
