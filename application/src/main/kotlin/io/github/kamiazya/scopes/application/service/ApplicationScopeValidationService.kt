@@ -14,6 +14,7 @@ import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 
 /**
  * Application service for repository-dependent scope validation logic.
@@ -109,7 +110,7 @@ class ApplicationScopeValidationService(
         parentId: ScopeId?
     ): Either<DomainError, Unit> = either {
         // Normalize title for consistent duplicate detection
-        val normalizedTitle = title.trim().lowercase()
+        val normalizedTitle = TitleNormalizer.normalize(title)
         val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
             .mapLeft { DomainError.InfrastructureError(it) }
             .bind()

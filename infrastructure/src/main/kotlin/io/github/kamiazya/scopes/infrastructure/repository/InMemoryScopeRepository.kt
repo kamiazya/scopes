@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -39,9 +40,9 @@ class InMemoryScopeRepository : ScopeRepository {
         title: String
     ): Either<RepositoryError, Boolean> = either {
         mutex.withLock {
-            val normalizedInputTitle = normalizeTitle(title)
+            val normalizedInputTitle = TitleNormalizer.normalize(title)
             scopes.values.any { scope ->
-                val normalizedStoredTitle = normalizeTitle(scope.title.value)
+                val normalizedStoredTitle = TitleNormalizer.normalize(scope.title.value)
                 scope.parentId == parentId && normalizedStoredTitle == normalizedInputTitle
             }
         }
@@ -81,16 +82,5 @@ class InMemoryScopeRepository : ScopeRepository {
         scopes.size
     }
 
-    /**
-     * Normalizes a title for consistent comparison by:
-     * - Trimming leading/trailing whitespace
-     * - Collapsing internal whitespace sequences (spaces, tabs, newlines) to single spaces
-     * - Converting to lowercase
-     */
-    private fun normalizeTitle(title: String): String {
-        return title.trim()
-            .replace(Regex("\\s+"), " ")
-            .lowercase()
-    }
 }
 
