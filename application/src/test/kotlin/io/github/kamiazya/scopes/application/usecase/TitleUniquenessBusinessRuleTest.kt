@@ -120,6 +120,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Then: The system prevents this to avoid confusion within the project
             val error = result.shouldBeLeft()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            
+            // Verify that save was never called when validation fails
+            coVerify(exactly = 0) { mockRepository.save(any()) }
         }
     }
 
