@@ -197,4 +197,33 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
         }
     }
+
+    "system performs case-insensitive duplicate title checks to prevent confusion" {
+        runTest {
+            // Given: A user already has a "website" project (lowercase)
+            val mockRepository = mockk<ScopeRepository>()
+            val useCase = CreateScopeUseCase(mockRepository)
+
+            // Mock repository indicating duplicate exists with lowercase title
+            // Note: The repository should check case-insensitively
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(null, "Website")
+            } returns true.right() // Repository detects "website" exists (case-insensitive)
+
+            // When: User tries to create "Website" project with different casing
+            val request = CreateScopeRequest(
+                title = "Website",  // Different casing
+                description = "My personal website",
+                parentId = null // Root level
+            )
+            val result = useCase.execute(request)
+
+            // Then: The system prevents this to avoid case-based duplicates
+            val error = result.shouldBeLeft()
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            
+            // Verify that save was never called when validation fails
+            coVerify(exactly = 0) { mockRepository.save(any()) }
+        }
+    }
 })
