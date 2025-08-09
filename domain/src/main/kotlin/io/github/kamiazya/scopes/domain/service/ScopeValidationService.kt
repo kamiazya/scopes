@@ -75,13 +75,16 @@ object ScopeValidationService {
     /**
      * Efficient version: Validate title uniqueness using repository query.
      * All scopes (including root level) must have unique titles within their context.
+     * Normalizes titles by trimming whitespace and converting to lowercase for consistent comparison.
      */
     suspend fun validateTitleUniquenessEfficient(
         title: String,
         parentId: ScopeId?,
         repository: ScopeRepository
     ): Either<DomainError, Unit> = either {
-        val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
+        // Normalize title for consistent duplicate detection
+        val normalizedTitle = title.trim().lowercase()
+        val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
             .mapLeft { DomainError.InfrastructureError(it) }
             .bind()
 

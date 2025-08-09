@@ -137,4 +137,132 @@ class InMemoryScopeRepositoryTest : StringSpec({
             nonExistentDepth shouldBe 1
         }
     }
+
+    "existsByParentIdAndTitle should perform case-insensitive comparison" {
+        runTest {
+            val repository = InMemoryScopeRepository()
+            val parentId = ScopeId.generate()
+
+            // Save a scope with mixed case title
+            val originalScope = createTestScope(
+                title = "Website Project",
+                parentId = parentId
+            )
+            repository.save(originalScope)
+
+            // Test case-insensitive variations
+            val testCases = listOf(
+                "website project",    // All lowercase
+                "WEBSITE PROJECT",    // All uppercase
+                "Website Project",    // Original case
+                "wEbSiTe PrOjEcT"    // Mixed case
+            )
+
+            testCases.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe true
+            }
+        }
+    }
+
+    "existsByParentIdAndTitle should handle whitespace normalization" {
+        runTest {
+            val repository = InMemoryScopeRepository()
+            val parentId = ScopeId.generate()
+
+            // Save a scope with clean title
+            val originalScope = createTestScope(
+                title = "Task Name",
+                parentId = parentId
+            )
+            repository.save(originalScope)
+
+            // Test whitespace variations
+            val testCases = listOf(
+                "task name",         // Normalized
+                " task name ",       // Leading/trailing spaces
+                "\ttask name\n",     // Tab and newline
+                "  TASK NAME  ",     // Case and multiple spaces
+                " Task Name "        // Original case with spaces
+            )
+
+            testCases.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe true
+            }
+        }
+    }
+
+    "existsByParentIdAndTitle should distinguish different parent contexts" {
+        runTest {
+            val repository = InMemoryScopeRepository()
+            val parentId1 = ScopeId.generate()
+            val parentId2 = ScopeId.generate()
+
+            // Save scope under parent1
+            val scope1 = createTestScope(
+                title = "Duplicate Title",
+                parentId = parentId1
+            )
+            repository.save(scope1)
+
+            // Check existence under parent1 - should exist
+            val exists1Result = repository.existsByParentIdAndTitle(parentId1, "duplicate title")
+            val exists1 = exists1Result.shouldBeRight()
+            exists1 shouldBe true
+
+            // Check existence under parent2 - should NOT exist
+            val exists2Result = repository.existsByParentIdAndTitle(parentId2, "duplicate title")
+            val exists2 = exists2Result.shouldBeRight()
+            exists2 shouldBe false
+
+            // Check existence at root level - should NOT exist
+            val existsRootResult = repository.existsByParentIdAndTitle(null, "duplicate title")
+            val existsRoot = existsRootResult.shouldBeRight()
+            existsRoot shouldBe false
+        }
+    }
+
+    "existsByParentIdAndTitle should not match titles stored with different whitespace" {
+        runTest {
+            val repository = InMemoryScopeRepository()
+            val parentId = ScopeId.generate()
+
+            // Save a scope with whitespace in the stored title
+            val scopeWithSpaces = createTestScope(
+                title = " Spaced Title ",
+                parentId = parentId
+            )
+            repository.save(scopeWithSpaces)
+
+            // All these variations should match due to normalization
+            val shouldMatch = listOf(
+                "spaced title",
+                "SPACED TITLE",
+                " SPACED TITLE ",
+                "\tSpaced Title\n"
+            )
+
+            shouldMatch.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe true
+            }
+
+            // These should NOT match
+            val shouldNotMatch = listOf(
+                "different title",
+                "spaced",
+                "title"
+            )
+
+            shouldNotMatch.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe false
+            }
+        }
+    }
 })

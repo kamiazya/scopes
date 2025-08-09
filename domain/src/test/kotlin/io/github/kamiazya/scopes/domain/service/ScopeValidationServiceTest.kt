@@ -1,10 +1,12 @@
 package io.github.kamiazya.scopes.domain.service
 
+import arrow.core.right
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.test.runTest
 
 /**
  * Tests for ScopeValidationService focusing on business rule validation.

@@ -39,8 +39,10 @@ class InMemoryScopeRepository : ScopeRepository {
         title: String
     ): Either<RepositoryError, Boolean> = either {
         mutex.withLock {
+            val normalizedInputTitle = title.trim().lowercase()
             scopes.values.any { scope ->
-                scope.parentId == parentId && scope.title.value.equals(title, ignoreCase = true)
+                val normalizedStoredTitle = scope.title.value.trim().lowercase()
+                scope.parentId == parentId && normalizedStoredTitle == normalizedInputTitle
             }
         }
     }
