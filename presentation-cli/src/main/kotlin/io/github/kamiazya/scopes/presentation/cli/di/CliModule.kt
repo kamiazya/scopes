@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.presentation.cli.di
 
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
-import io.github.kamiazya.scopes.application.usecase.CreateScopeUseCase
+import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import org.koin.dsl.module
@@ -18,6 +18,6 @@ val cliModule = module {
     // Application layer - Services
     single { ApplicationScopeValidationService(get()) }
 
-    // Application layer - Use cases
-    single { CreateScopeUseCase(get(), get()) }
+    // Application layer - Use case handlers
+    single { CreateScopeHandler(get(), get()) }
 }
