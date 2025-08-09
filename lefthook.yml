@@ -39,6 +39,37 @@ pre-commit:
         - merge
         - rebase
 
+# Claude Code integration - runs after file edits
+post-tool-use-edit:
+  parallel: true
+  commands:
+    ktlint-format:
+      glob: "*.kt"
+      run: |
+        echo "🔧 Auto-formatting Kotlin file: {files}"
+        ./gradlew ktlintFormat --daemon --quiet
+        echo "✅ KtLint formatting completed"
+      
+    detekt-check:
+      glob: "*.kt"
+      run: |
+        echo "🔍 Running Detekt analysis with auto-fix"
+        ./gradlew detekt --auto-correct --daemon --quiet || true
+        echo "✅ Detekt analysis completed"
+      
+    # Optional: Run tests for the affected module only
+    module-test:
+      glob: "*.kt"
+      run: |
+        # Extract module from file path and run tests for that module only
+        MODULE_PATH=$(echo "{file}" | cut -d'/' -f1)
+        if [ -f "$MODULE_PATH/build.gradle.kts" ]; then
+          echo "Running tests for module: $MODULE_PATH"
+          ./gradlew :$MODULE_PATH:test --daemon --quiet
+        else
+          echo "No module found for {file}, skipping tests"
+        fi
+
 # Skip hooks during CI/CD
 skip_output:
   - meta
