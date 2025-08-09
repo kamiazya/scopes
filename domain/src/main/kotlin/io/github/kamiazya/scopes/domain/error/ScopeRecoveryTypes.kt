@@ -172,10 +172,10 @@ data class ScopeDuplicationRecoveryConfig(
  * users understand and resolve hierarchy constraints.
  */
 data class ScopeHierarchyRecoveryConfig(
-    val maxDepthGuidance: String = "The hierarchy is too deep (maximum {maxDepth} levels). " +
+    val maxDepthGuidance: String = "The hierarchy is too deep (maximum {maxDepth} levels, currently {currentDepth}). " +
         "Consider restructuring to reduce nesting.",
-    val maxChildrenGuidance: String = "Too many child scopes (maximum {maxChildren} allowed). " +
-        "Consider organizing them into logical groups."
+    val maxChildrenGuidance: String = "Too many child scopes (maximum {maxChildren} allowed, " +
+        "currently {currentChildren}). Consider organizing them into logical groups."
 ) {
 
     /**

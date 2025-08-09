@@ -43,7 +43,8 @@ class CreateScopeUseCaseTest : StringSpec({
                 id = expectedScopeId,
                 title = ScopeTitle.create("Website Redesign Project").getOrNull()
                     ?: error("Failed to create test ScopeTitle for 'Website Redesign Project'"),
-                description = ScopeDescription.create("Complete overhaul of company website with modern UX").getOrNull(),
+                description = ScopeDescription
+                    .create("Complete overhaul of company website with modern UX").getOrNull(),
                 parentId = null,
                 createdAt = Clock.System.now(),
                 updatedAt = Clock.System.now()
@@ -88,7 +89,8 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // Then the system prevents this to ensure all work items are clearly identifiable
             val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.Domain>()
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            error.errors.size shouldBe 1
         }
     }
 
@@ -141,7 +143,8 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // Then the system prevents this to maintain organizational integrity
             val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.Domain>()
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            error.errors.size shouldBe 1
         }
     }
 
@@ -159,7 +162,9 @@ class CreateScopeUseCaseTest : StringSpec({
             coEvery { mockRepository.countByParentId(existingProjectId) } returns 10.right()
 
             // But a task with that name already exists in this project
-            coEvery { mockRepository.existsByParentIdAndTitle(existingProjectId, "User Authentication") } returns true.right()
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(existingProjectId, "User Authentication")
+            } returns true.right()
 
             // When they try to create another task with the same name
             val request = CreateScopeRequest(
@@ -171,7 +176,8 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // Then the system prevents this to avoid confusion in project navigation
             val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.Domain>()
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            error.errors.size shouldBe 1
         }
     }
 
@@ -195,7 +201,7 @@ class CreateScopeUseCaseTest : StringSpec({
 
             // Then the system provides feedback about all issues at once (better UX than one-at-a-time)
             val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.ValidationFailure>()
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
             error.errors.size shouldBe 2 // All input issues identified
 
             // And includes specific guidance for each issue
@@ -219,7 +225,10 @@ class CreateScopeUseCaseTest : StringSpec({
             coEvery { mockRepository.countByParentId(parentId) } returns 10.right()
 
             // Set up multiple validation failures
-            coEvery { mockRepository.existsByParentIdAndTitle(parentId, "InvalidTitle") } returns true.right() // Duplicate title
+            // Duplicate title
+            coEvery {
+                mockRepository.existsByParentIdAndTitle(parentId, "InvalidTitle")
+            } returns true.right()
 
             val request = CreateScopeRequest(
                 title = "InvalidTitle", // Duplicate title - will cause error
@@ -231,8 +240,8 @@ class CreateScopeUseCaseTest : StringSpec({
 
             val error = result.shouldBeLeft()
 
-            // Should get ValidationFailure with multiple errors
-            error.shouldBeInstanceOf<ApplicationError.ValidationFailure>()
+            // Should get DomainErrors with multiple errors
+            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
             error.errors.size shouldBe 2 // Description too long + duplicate title
 
             // Verify specific errors are included

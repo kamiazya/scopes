@@ -16,6 +16,7 @@ class ErrorRecoveryDomainService {
             is DomainError.ScopeValidationError -> categorizeValidationError(error)
             is DomainError.ScopeBusinessRuleViolation -> categorizeBusinessRuleViolation(error)
             is DomainError.ScopeError -> ErrorRecoveryCategory.NON_RECOVERABLE
+            is DomainError.InfrastructureError -> ErrorRecoveryCategory.NON_RECOVERABLE
         }
     }
 
@@ -50,6 +51,9 @@ class ErrorRecoveryDomainService {
 
             // All scope errors are complex by nature (data integrity issues)
             is DomainError.ScopeError -> RecoveryComplexity.COMPLEX
+
+            // Infrastructure errors are complex - require technical intervention
+            is DomainError.InfrastructureError -> RecoveryComplexity.COMPLEX
         }
     }
 

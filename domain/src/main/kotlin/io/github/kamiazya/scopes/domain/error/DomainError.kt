@@ -48,4 +48,9 @@ sealed class DomainError {
         data class ScopeDuplicateTitle(val title: String, val parentId: ScopeId?) : ScopeBusinessRuleViolation()
     }
 
+    /**
+     * Infrastructure errors wrapped as domain errors.
+     */
+    data class InfrastructureError(val repositoryError: RepositoryError) : DomainError()
+
 }

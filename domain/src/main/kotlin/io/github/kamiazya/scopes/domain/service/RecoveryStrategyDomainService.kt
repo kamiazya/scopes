@@ -22,7 +22,7 @@ class RecoveryStrategyDomainService {
 
     /**
      * Determines the appropriate recovery strategy for a given domain error.
-     * 
+     *
      * This pure function maps error types to recovery strategies based on domain logic.
      * Each strategy represents a domain concept for how the error should be approached.
      *
@@ -42,7 +42,8 @@ class RecoveryStrategyDomainService {
                 RecoveryStrategy.TRUNCATE
 
             // Validation errors that need format cleaning
-            is DomainError.ScopeValidationError.ScopeTitleContainsNewline ->
+            is DomainError.ScopeValidationError.ScopeTitleContainsNewline,
+            is DomainError.ScopeValidationError.ScopeInvalidFormat ->
                 RecoveryStrategy.CLEAN_FORMAT
 
             // Business rule violations that need variant generation
@@ -54,7 +55,7 @@ class RecoveryStrategyDomainService {
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryStrategy.RESTRUCTURE_HIERARCHY
 
-            // Format errors and scope errors are not handled by this service
+            // Format errors, scope errors, and infrastructure errors are not handled by this service
             // as they typically require manual intervention beyond strategy determination
             else -> throw IllegalArgumentException(
                 "No recovery strategy defined for error type: ${error::class.simpleName}"
@@ -64,7 +65,7 @@ class RecoveryStrategyDomainService {
 
     /**
      * Determines the approach needed to implement a recovery strategy for a given error.
-     * 
+     *
      * This pure function maps error types to recovery approaches based on domain complexity
      * and the level of user involvement required from a domain perspective.
      *
@@ -81,6 +82,7 @@ class RecoveryStrategyDomainService {
             // Moderate errors where system can suggest options but user choice is needed
             is DomainError.ScopeValidationError.ScopeTitleTooLong,
             is DomainError.ScopeValidationError.ScopeTitleContainsNewline,
+            is DomainError.ScopeValidationError.ScopeInvalidFormat,
             is DomainError.ScopeValidationError.ScopeDescriptionTooLong,
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
                 RecoveryApproach.USER_INPUT_REQUIRED
@@ -90,7 +92,13 @@ class RecoveryStrategyDomainService {
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryApproach.MANUAL_INTERVENTION
 
-            // Format errors and scope errors require manual intervention
+            // Scope errors require manual intervention
+            is DomainError.ScopeError -> RecoveryApproach.MANUAL_INTERVENTION
+
+            // Infrastructure errors require manual intervention
+            is DomainError.InfrastructureError -> RecoveryApproach.MANUAL_INTERVENTION
+
+            // Format errors and other unhandled cases
             else -> throw IllegalArgumentException(
                 "No recovery approach defined for error type: ${error::class.simpleName}"
             )
@@ -99,7 +107,7 @@ class RecoveryStrategyDomainService {
 
     /**
      * Determines if a recovery strategy is complex from a domain perspective.
-     * 
+     *
      * This pure function categorizes strategies based on the inherent complexity
      * of implementing them. Complex strategies typically require more user involvement,
      * external data, or sophisticated logic.

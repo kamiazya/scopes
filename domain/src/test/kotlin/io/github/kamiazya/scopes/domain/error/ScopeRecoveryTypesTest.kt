@@ -413,10 +413,10 @@ class ScopeRecoveryTypesTest : StringSpec({
         // Test setup
         val config = ScopeHierarchyRecoveryConfig()
 
-        config.maxDepthGuidance shouldBe "The hierarchy is too deep (maximum {maxDepth} levels). " +
-            "Consider restructuring to reduce nesting."
-        config.maxChildrenGuidance shouldBe "Too many child scopes (maximum {maxChildren} allowed). " +
-            "Consider organizing them into logical groups."
+        config.maxDepthGuidance shouldBe "The hierarchy is too deep (maximum {maxDepth} levels, " +
+            "currently {currentDepth}). Consider restructuring to reduce nesting."
+        config.maxChildrenGuidance shouldBe "Too many child scopes (maximum {maxChildren} allowed, " +
+            "currently {currentChildren}). Consider organizing them into logical groups."
     }
 
     // =====  ScopeRecoveryConfiguration Tests =====
@@ -479,7 +479,7 @@ class ScopeRecoveryTypesTest : StringSpec({
         config.titleConfig().defaultTemplate shouldBe "Test"
         config.descriptionConfig().maxLength shouldBe 800
         config.duplicationConfig().maxRetryAttempts shouldBe 5
-        config.hierarchyConfig().maxDepthGuidance shouldBe "The hierarchy is too deep (maximum {maxDepth} levels). " +
-            "Consider restructuring to reduce nesting."
+        config.hierarchyConfig().maxDepthGuidance shouldBe "The hierarchy is too deep " +
+            "(maximum {maxDepth} levels, currently {currentDepth}). Consider restructuring to reduce nesting."
     }
 })

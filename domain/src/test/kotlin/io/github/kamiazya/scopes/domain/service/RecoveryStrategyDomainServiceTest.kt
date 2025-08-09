@@ -11,7 +11,7 @@ import io.kotest.matchers.collections.shouldContainAll
 
 /**
  * Test for RecoveryStrategyDomainService.
- * 
+ *
  * This test suite verifies that the domain service correctly determines recovery
  * strategies and approaches based purely on domain error types, without any
  * application or infrastructure concerns.
@@ -252,6 +252,7 @@ class RecoveryStrategyDomainServiceTest : StringSpec({
             DomainError.ScopeValidationError.ScopeTitleTooLong(200, 300),
             DomainError.ScopeValidationError.ScopeTitleContainsNewline,
             DomainError.ScopeValidationError.ScopeDescriptionTooLong(1000, 1500),
+            DomainError.ScopeValidationError.ScopeInvalidFormat("title", "alphanumeric"),
             DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(
                 "Duplicate", ScopeId.generate()
             ),
@@ -263,10 +264,39 @@ class RecoveryStrategyDomainServiceTest : StringSpec({
         errors.forEach { error ->
             val strategy = service.determineRecoveryStrategy(error)
             val approach = service.getStrategyApproach(error)
-            
+
             // Verify strategy and approach are valid
             RecoveryStrategy.values().shouldContainAll(listOf(strategy))
             RecoveryApproach.values().shouldContainAll(listOf(approach))
+        }
+    }
+
+    "service should handle unhandled ScopeError types gracefully" {
+        // Arrange - Test with ScopeError types that might not have explicit mappings
+        val scopeErrors = listOf(
+            DomainError.ScopeError.ScopeNotFound,
+            DomainError.ScopeError.InvalidTitle("Invalid characters"),
+            DomainError.ScopeError.InvalidDescription("Too complex format"),
+            DomainError.ScopeError.InvalidParent(ScopeId.generate(), "Parent not found"),
+            DomainError.ScopeError.CircularReference(ScopeId.generate(), ScopeId.generate()),
+            DomainError.ScopeError.SelfParenting
+        )
+
+        // Act & Assert
+        scopeErrors.forEach { error ->
+            // Should either return valid strategy/approach or fail predictably
+            try {
+                val strategy = service.determineRecoveryStrategy(error)
+                val approach = service.getStrategyApproach(error)
+
+                // If successful, verify they are valid enum values
+                RecoveryStrategy.values().shouldContainAll(listOf(strategy))
+                RecoveryApproach.values().shouldContainAll(listOf(approach))
+            } catch (e: Exception) {
+                // If the service doesn't handle these errors, it should fail explicitly
+                // This prevents silent failures or returning invalid strategies
+                e.shouldBeInstanceOf<IllegalArgumentException>()
+            }
         }
     }
 })

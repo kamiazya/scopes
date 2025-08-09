@@ -29,7 +29,7 @@ enum class ErrorRecoveryCategory {
 
 /**
  * Domain concept representing recovery complexity levels.
- * 
+ *
  * This enum categorizes the complexity involved in recovering from errors
  * from a domain perspective, helping determine the appropriate recovery strategy.
  */
@@ -66,7 +66,7 @@ sealed class RecoveryResult {
     data class Suggestion(
         override val originalError: DomainError,
         val suggestedValues: List<Any>,
-        val strategy: String,
+        val strategy: RecoveryStrategy,
         val description: String = ""
     ) : RecoveryResult()
 
@@ -82,8 +82,8 @@ sealed class RecoveryResult {
 
 /**
  * Domain concept representing specific recovery strategies for different error types.
- * 
- * Each strategy represents a pure domain approach to recovering from a specific 
+ *
+ * Each strategy represents a pure domain approach to recovering from a specific
  * category of error. These strategies are determined by domain logic and express
  * business concepts that domain experts can understand and validate.
  */
@@ -121,13 +121,13 @@ enum class RecoveryStrategy {
 
 /**
  * Domain concept representing the approach needed for recovery implementation.
- * 
+ *
  * This enum categorizes how a recovery strategy should be applied from
  * a domain perspective, determining the level of user involvement required.
  */
 enum class RecoveryApproach {
     /**
-     * System can automatically suggest specific values with high confidence.
+     * The System can automatically suggest specific values with high confidence.
      * Domain logic can determine exact suggestions without additional input.
      */
     AUTOMATIC_SUGGESTION,
@@ -140,7 +140,7 @@ enum class RecoveryApproach {
 
     /**
      * Complex manual intervention needed beyond simple suggestions.
-     * Domain logic identifies the issue but resolution requires significant user work.
+     * Domain logic identifies the issue, but resolution requires significant user work.
      */
     MANUAL_INTERVENTION
 }

@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.application.error
 import io.github.kamiazya.scopes.domain.error.*
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
 import io.github.kamiazya.scopes.domain.service.RecoveryStrategyDomainService
+import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -18,68 +19,103 @@ import io.kotest.matchers.string.shouldContain
  */
 class ErrorRecoveryApplicationServiceTest : StringSpec({
 
+    // Simple fake implementation of ErrorFormatter for testing
+    class FakeErrorFormatter(private val messagePrefix: String = "Formatted: ") : ErrorFormatter {
+        var getErrorMessageCallCount = 0
+        var lastErrorReceived: DomainError? = null
+
+        override fun getErrorMessage(error: DomainError): String {
+            getErrorMessageCallCount++
+            lastErrorReceived = error
+            return "$messagePrefix$error"
+        }
+
+        override fun formatErrorSummary(errors: NonEmptyList<DomainError>): String {
+            return "Summary of ${errors.size} errors"
+        }
+
+        override fun getValidationErrorMessage(error: DomainError.ScopeValidationError): String {
+            return "Validation: $error"
+        }
+
+        override fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String {
+            return "Business rule: $error"
+        }
+
+        override fun getRepositoryErrorMessage(error: RepositoryError): String {
+            return "Repository: $error"
+        }
+    }
+
     "ErrorRecoveryApplicationService should exist with proper dependencies" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
-        
+        val fakeErrorFormatter = FakeErrorFormatter()
+
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         // Should be able to create the application service
         applicationService.shouldBeInstanceOf<ErrorRecoveryApplicationService>()
     }
 
     "recoverFromError should orchestrate complete error recovery process" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter()
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         val error = DomainError.ScopeValidationError.EmptyScopeTitle
         val context = mapOf("originalTitle" to "Test Title")
-        
+
         val result = applicationService.recoverFromError(error, context)
-        
+
         // Should orchestrate between domain assessment and suggestion generation
-        result.shouldNotBeNull()
         result.shouldBeInstanceOf<RecoveryResult.Suggestion>()
     }
 
     "recoverFromError should delegate to domain service for categorization" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter()
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         val recoverableError = DomainError.ScopeValidationError.EmptyScopeTitle
         val nonRecoverableError = DomainError.ScopeError.ScopeNotFound
-        
+
         val recoverableResult = applicationService.recoverFromError(recoverableError, emptyMap())
         val nonRecoverableResult = applicationService.recoverFromError(nonRecoverableError, emptyMap())
-        
+
         // Should use domain service categorization to determine response
         recoverableResult.shouldBeInstanceOf<RecoveryResult.Suggestion>()
         nonRecoverableResult.shouldBeInstanceOf<RecoveryResult.NonRecoverable>()
     }
 
     "recoverFromValidationResult should handle ValidationResult workflows" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter()
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         val failureResult = ValidationResult.Failure<String>(
             nonEmptyListOf(
                 DomainError.ScopeValidationError.EmptyScopeTitle,
@@ -87,9 +123,9 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             )
         )
         val context = mapOf("originalTitle" to "Test")
-        
+
         val recoveredResult = applicationService.recoverFromValidationResult(failureResult, context)
-        
+
         // Should orchestrate recovery for each error in ValidationResult
         recoveredResult.shouldBeInstanceOf<RecoveredValidationResult<String>>()
         recoveredResult.originalResult shouldBe failureResult
@@ -98,19 +134,21 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
     }
 
     "recoverFromValidationResult should handle success cases gracefully" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter()
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         val successResult = ValidationResult.Success("Valid Value")
         val context = emptyMap<String, Any>()
-        
+
         val recoveredResult = applicationService.recoverFromValidationResult(successResult, context)
-        
+
         // Should handle success without attempting recovery
         recoveredResult.shouldBeInstanceOf<RecoveredValidationResult<String>>()
         recoveredResult.originalResult shouldBe successResult
@@ -118,20 +156,22 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
     }
 
     "application service should coordinate but not contain domain logic" {
-        // Test setup
+        // Test setup with mock formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter()
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
+
         val methods = applicationService::class.java.declaredMethods.map { it.name }
-        
+
         // Should have orchestration methods
         methods shouldContain "recoverFromError"
         methods shouldContain "recoverFromValidationResult"
-        
+
         // Should NOT have domain logic methods (those belong in domain service)
         val forbiddenDomainMethods = listOf("categorizeError", "isRecoverable", "getRecoveryComplexity")
         forbiddenDomainMethods.forEach { method ->
@@ -139,23 +179,29 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
         }
     }
 
-    "application service should use infrastructure formatting for messages" {
-        // Test setup
+    "application service should use injected formatter for non-recoverable errors" {
+        // Test setup with fake formatter
         val errorCategorizationService = ErrorRecoveryDomainService()
         val recoveryStrategyService = RecoveryStrategyDomainService()
+        val fakeErrorFormatter = FakeErrorFormatter("Test: ")
+
+        val nonRecoverableError = DomainError.ScopeError.ScopeNotFound
+
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,
-            recoveryStrategyService = recoveryStrategyService
+            recoveryStrategyService = recoveryStrategyService,
+            errorFormatter = fakeErrorFormatter
         )
-        
-        val error = DomainError.ScopeValidationError.EmptyScopeTitle
-        val result = applicationService.recoverFromError(error, emptyMap())
-        
-        // Should use infrastructure formatting service for message generation
-        result.shouldBeInstanceOf<RecoveryResult.Suggestion>()
-        val suggestion = result as RecoveryResult.Suggestion
-        suggestion.description.shouldNotBeNull()
-        // The description should be formatted using ErrorFormattingUtils logic
-        suggestion.description shouldContain "title"
+
+        val result = applicationService.recoverFromError(nonRecoverableError, emptyMap())
+
+        // Should use the injected formatter for non-recoverable errors
+        result.shouldBeInstanceOf<RecoveryResult.NonRecoverable>()
+        val nonRecoverable = result as RecoveryResult.NonRecoverable
+        nonRecoverable.reason shouldContain "Test: "
+
+        // Verify the formatter was called exactly once
+        fakeErrorFormatter.getErrorMessageCallCount shouldBe 1
+        fakeErrorFormatter.lastErrorReceived shouldBe nonRecoverableError
     }
 })

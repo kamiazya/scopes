@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.application.error
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
@@ -14,15 +15,24 @@ import io.github.kamiazya.scopes.domain.error.ValidationResult
 sealed class ApplicationError {
 
     /**
-     * Domain-related errors wrapped with application context.
+     * Domain-related errors at the application level.
+     * Always contains at least one domain error, but can accumulate multiple.
      */
-    data class Domain(val cause: DomainError) : ApplicationError()
+    data class DomainErrors(val errors: NonEmptyList<DomainError>) : ApplicationError() {
+        companion object {
+            /**
+             * Create DomainErrors from a single domain error.
+             */
+            fun single(error: DomainError): DomainErrors =
+                DomainErrors(nonEmptyListOf(error))
 
-    /**
-     * Multiple domain validation errors accumulated together.
-     * Used for error accumulation in validation scenarios.
-     */
-    data class ValidationFailure(val errors: NonEmptyList<DomainError>) : ApplicationError()
+            /**
+             * Create DomainErrors from multiple domain errors.
+             */
+            fun multiple(errors: NonEmptyList<DomainError>): DomainErrors =
+                DomainErrors(errors)
+        }
+    }
 
     /**
      * Repository/Infrastructure-related errors.
@@ -54,7 +64,7 @@ sealed class ApplicationError {
          * Convert domain error to application error.
          */
         fun fromDomainError(domain: DomainError): ApplicationError =
-            Domain(domain)
+            DomainErrors.single(domain)
 
         /**
          * Convert repository error to application error.
@@ -70,12 +80,7 @@ sealed class ApplicationError {
             when (result) {
                 is ValidationResult.Success -> result.value
                 is ValidationResult.Failure -> {
-                    val error = if (result.errors.size == 1) {
-                        Domain(result.errors.head)
-                    } else {
-                        ValidationFailure(result.errors)
-                    }
-                    raise(error)
+                    raise(DomainErrors.multiple(result.errors))
                 }
             }
         }

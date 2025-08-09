@@ -40,7 +40,7 @@ class CreateScopeUseCase(
 
         if (!exists) {
             raise(
-                ApplicationError.Domain(
+                ApplicationError.DomainErrors.single(
                     io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
                 )
             )
@@ -54,7 +54,7 @@ class CreateScopeUseCase(
             description = request.description,
             parentId = request.parentId,
             metadata = request.metadata
-        ).mapLeft { ApplicationError.Domain(it) }
+        ).mapLeft { ApplicationError.DomainErrors.single(it) }
             .bind()
         scope
     }

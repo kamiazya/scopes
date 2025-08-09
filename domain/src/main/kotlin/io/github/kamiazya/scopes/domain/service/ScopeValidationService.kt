@@ -64,18 +64,11 @@ object ScopeValidationService {
     suspend fun validateHierarchyDepthEfficient(
         parentId: ScopeId?,
         repository: ScopeRepository
-    ): Either<DomainError.ScopeBusinessRuleViolation, Unit> = either {
+    ): Either<DomainError, Unit> = either {
         if (parentId == null) return@either
 
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft {
-                // Repository errors should be handled at application layer
-                // For now, treat as max depth exceeded to maintain business rule context
-                DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
-                    MAX_HIERARCHY_DEPTH,
-                    MAX_HIERARCHY_DEPTH + 1
-                )
-            }
+            .mapLeft { DomainError.InfrastructureError(it) }
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
@@ -89,18 +82,11 @@ object ScopeValidationService {
     suspend fun validateChildrenLimitEfficient(
         parentId: ScopeId?,
         repository: ScopeRepository
-    ): Either<DomainError.ScopeBusinessRuleViolation, Unit> = either {
+    ): Either<DomainError, Unit> = either {
         if (parentId == null) return@either
 
         val childrenCount = repository.countByParentId(parentId)
-            .mapLeft {
-                // Repository errors should be handled at application layer
-                // For now, treat as max children exceeded to maintain business rule context
-                DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(
-                    MAX_CHILDREN_PER_PARENT,
-                    MAX_CHILDREN_PER_PARENT + 1
-                )
-            }
+            .mapLeft { DomainError.InfrastructureError(it) }
             .bind()
 
         ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
@@ -118,15 +104,11 @@ object ScopeValidationService {
         title: String,
         parentId: ScopeId?,
         repository: ScopeRepository
-    ): Either<DomainError.ScopeBusinessRuleViolation, Unit> = either {
+    ): Either<DomainError, Unit> = either {
         // Allow duplicate titles at root level (parentId = null)
         if (parentId != null) {
             val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
-                .mapLeft {
-                    // Repository errors should be handled at application layer
-                    // For now, treat as duplicate title to maintain business rule context
-                    DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
-                }
+                .mapLeft { DomainError.InfrastructureError(it) }
                 .bind()
 
             ensure(!duplicateExists) {
@@ -193,13 +175,13 @@ object ScopeValidationService {
      * Note: Root level scopes (parentId = null) allow duplicate titles.
      */
     fun validateTitleUniquenessWithContext(
-        titleExists: Boolean,
+        existsInParentContext: Boolean,
         title: String,
         parentId: ScopeId?
     ): Either<DomainError.ScopeBusinessRuleViolation, Unit> = either {
         // Allow duplicate titles at root level (parentId = null)
         if (parentId != null) {
-            ensure(!titleExists) {
+            ensure(!existsInParentContext) {
                 DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
             }
         }

@@ -36,6 +36,16 @@ class HierarchyContextValidationTest : StringSpec({
         error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded>()
     }
 
+    "system allows creating scope at maximum allowed depth boundary" {
+        // When creating a scope at exactly the maximum allowed depth (MAX_HIERARCHY_DEPTH - 1)
+        val result = ScopeValidationService.validateHierarchyDepthWithContext(
+            parentDepth = ScopeValidationService.MAX_HIERARCHY_DEPTH - 1
+        )
+
+        // Then the system allows this as it's within the valid boundary
+        result.shouldBeRight()
+    }
+
     "system enforces hierarchy limits to prevent infinite nesting scenarios" {
         // When someone tries to create a scope beyond the maximum organizational depth
         val result = ScopeValidationService.validateHierarchyDepthWithContext(
@@ -68,6 +78,16 @@ class HierarchyContextValidationTest : StringSpec({
         error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded>()
     }
 
+    "system allows creating child at maximum allowed children boundary" {
+        // When adding a child at exactly the maximum allowed children count (MAX_CHILDREN_PER_PARENT - 1)
+        val result = ScopeValidationService.validateChildrenLimitWithContext(
+            currentChildrenCount = ScopeValidationService.MAX_CHILDREN_PER_PARENT - 1
+        )
+
+        // Then the system allows this as it's within the valid boundary
+        result.shouldBeRight()
+    }
+
     "system enforces child limits to maintain interface usability and system performance" {
         // When someone tries to exceed the reasonable limit for children under one parent
         val result = ScopeValidationService.validateChildrenLimitWithContext(
@@ -83,7 +103,7 @@ class HierarchyContextValidationTest : StringSpec({
         // When a team creates a new scope with a unique name within their project context
         val parentId = ScopeId.generate()
         val result = ScopeValidationService.validateTitleUniquenessWithContext(
-            titleExists = false,
+            existsInParentContext = false,
             title = "Authentication Feature",
             parentId = parentId
         )
@@ -96,7 +116,7 @@ class HierarchyContextValidationTest : StringSpec({
         // When someone tries to create a scope with a name that already exists in the same parent
         val parentId = ScopeId.generate()
         val result = ScopeValidationService.validateTitleUniquenessWithContext(
-            titleExists = true,
+            existsInParentContext = true,
             title = "User Management",
             parentId = parentId
         )
@@ -109,7 +129,7 @@ class HierarchyContextValidationTest : StringSpec({
     "multiple teams can use similar scope names at the root level for their independent projects" {
         // When different teams want to create root-level projects with similar names
         val result = ScopeValidationService.validateTitleUniquenessWithContext(
-            titleExists = true,
+            existsInParentContext = true,
             title = "Mobile App",  // Another team might also have "Mobile App" project
             parentId = null  // Root level - different organizational contexts
         )

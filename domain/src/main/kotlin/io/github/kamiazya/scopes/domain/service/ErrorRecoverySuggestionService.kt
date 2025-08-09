@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.domain.service
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RecoveryResult
+import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
@@ -50,7 +51,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = listOf(configuration.titleConfig().generateDefaultTitle()),
-            strategy = "DefaultTitle",
+            strategy = RecoveryStrategy.DEFAULT_VALUE,
             description = "Title cannot be empty. Consider using a default title to get started quickly."
         )
     }
@@ -76,7 +77,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = suggestions,
-            strategy = "PadTitle",
+            strategy = RecoveryStrategy.DEFAULT_VALUE,
             description = "Title is too short. Here are some ways to make it more descriptive."
         )
     }
@@ -93,13 +94,21 @@ class ErrorRecoverySuggestionService(
         val maxLength = titleConfig.maxLength
 
         val suggestions = if (originalTitle.isNotBlank()) {
-            listOf(
+            val candidateSuggestions = listOf(
                 titleConfig.truncateTitle(originalTitle),
                 originalTitle.take(maxLength),
                 originalTitle.split(" ")
-                    .take(maxLength / WORD_REDUCTION_FACTOR)
-                    .joinToString(" ") // Take first few words
+                    .take(maxOf(1, maxLength / WORD_REDUCTION_FACTOR))
+                    .joinToString(" ") // Take at least first word
             )
+
+            // Filter out blank suggestions and ensure at least one valid suggestion
+            val validSuggestions = candidateSuggestions.filter { it.isNotBlank() }
+            if (validSuggestions.isEmpty()) {
+                listOf(titleConfig.generateDefaultTitle())
+            } else {
+                validSuggestions
+            }
         } else {
             listOf(titleConfig.generateDefaultTitle())
         }
@@ -107,7 +116,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = suggestions,
-            strategy = "TruncateTitle",
+            strategy = RecoveryStrategy.TRUNCATE,
             description = "Title exceeds maximum length (${maxLength} characters). " +
                 "Here are shortened versions that preserve meaning."
         )
@@ -139,7 +148,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = suggestions,
-            strategy = "CleanTitle",
+            strategy = RecoveryStrategy.CLEAN_FORMAT,
             description = "Titles cannot contain line breaks. " +
                 "Here are cleaned versions that preserve your content."
         )
@@ -169,7 +178,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = suggestions,
-            strategy = "TruncateDescription",
+            strategy = RecoveryStrategy.TRUNCATE,
             description = "Description exceeds maximum length (${maxLength} characters). " +
                 "Here are shortened versions that preserve key information."
         )
@@ -191,7 +200,7 @@ class ErrorRecoverySuggestionService(
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = suggestions,
-            strategy = "AppendNumber",
+            strategy = RecoveryStrategy.GENERATE_VARIANTS,
             description = "A scope with this title already exists. " +
                 "Here are unique variations you can use instead."
         )
@@ -212,7 +221,7 @@ class ErrorRecoverySuggestionService(
                 "Consider restructuring parent scopes to reduce nesting",
                 "Create a separate top-level scope for this content"
             ),
-            strategy = "ReorganizeHierarchy",
+            strategy = RecoveryStrategy.RESTRUCTURE_HIERARCHY,
             description = hierarchyConfig.getDepthGuidance(error.maxDepth, error.actualDepth)
         )
     }
@@ -232,7 +241,7 @@ class ErrorRecoverySuggestionService(
                 "Move some children to different parent scopes",
                 "Combine related children into sub-categories"
             ),
-            strategy = "CreateGrouping",
+            strategy = RecoveryStrategy.RESTRUCTURE_HIERARCHY,
             description = hierarchyConfig.getChildrenGuidance(error.maxChildren, error.actualChildren)
         )
     }
@@ -261,6 +270,7 @@ class ErrorRecoverySuggestionService(
     /**
      * Generates unique title variants for duplicate title resolution.
      */
+    @Suppress("UnusedParameter")
     private fun generateUniqueVariants(
         originalTitle: String,
         parentId: ScopeId?,
@@ -269,16 +279,16 @@ class ErrorRecoverySuggestionService(
     ): List<String> {
         val existingTitles = allScopes
             .filter { it.parentId == parentId }
-            .map { it.title.value.lowercase() }
+            .map { it.title.value.trim().lowercase() }
             .toSet()
 
         val duplicationConfig = configuration.duplicationConfig()
         val variants = mutableListOf<String>()
 
-        for (i in 1..maxVariants) {
+        for (i in 1..duplicationConfig.maxRetryAttempts) {
             val variant = duplicationConfig.generateVariant(originalTitle, i)
 
-            if (variant.lowercase() !in existingTitles) {
+            if (variant.trim().lowercase() !in existingTitles) {
                 variants.add(variant)
                 if (variants.size >= MAX_UNIQUE_VARIANTS) {
                     break // Provide up to 3 suggestions

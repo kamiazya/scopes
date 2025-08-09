@@ -1,12 +1,16 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
+import io.github.kamiazya.scopes.domain.error.ErrorFormatter
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.RepositoryError
 import arrow.core.NonEmptyList
 
 /**
- * Utility for formatting domain errors into user-friendly messages.
+ * Infrastructure implementation of ErrorFormatter interface.
+ *
+ * Provides concrete formatting logic for domain errors into user-friendly messages.
  */
-object ErrorFormattingUtils {
+object ErrorFormattingUtils : ErrorFormatter {
 
     /**
      * Formats a collection of errors into a user-friendly summary message.
@@ -14,7 +18,7 @@ object ErrorFormattingUtils {
      * @param errors NonEmptyList of domain errors to format
      * @return Formatted error message string
      */
-    fun formatErrorMessages(errors: NonEmptyList<DomainError>): String {
+    override fun formatErrorSummary(errors: NonEmptyList<DomainError>): String {
         val errorCount = errors.size
         val grouped = groupErrorsByType(errors)
 
@@ -24,7 +28,7 @@ object ErrorFormattingUtils {
             "$errorCount errors found:"
         }
 
-        val groupSummary = grouped.entries.joinToString(", ") { (type, errorList) ->
+        val groupSummary = grouped.entries.sortedBy { it.key }.joinToString(", ") { (type, errorList) ->
             "$type (${errorList.size})"
         }
 
@@ -45,6 +49,7 @@ object ErrorFormattingUtils {
                 is DomainError.ScopeValidationError -> "ScopeValidationError"
                 is DomainError.ScopeError -> "ScopeError"
                 is DomainError.ScopeBusinessRuleViolation -> "ScopeBusinessRuleViolation"
+                is DomainError.InfrastructureError -> "InfrastructureError"
             }
         }
     }
@@ -55,18 +60,19 @@ object ErrorFormattingUtils {
      * @param error Domain error to convert
      * @return Human-readable error message
      */
-    fun getErrorMessage(error: DomainError): String {
+    override fun getErrorMessage(error: DomainError): String {
         return when (error) {
             is DomainError.ScopeValidationError -> getValidationErrorMessage(error)
             is DomainError.ScopeError -> getScopeErrorMessage(error)
             is DomainError.ScopeBusinessRuleViolation -> getBusinessRuleViolationMessage(error)
+            is DomainError.InfrastructureError -> getRepositoryErrorMessage(error.repositoryError)
         }
     }
 
     /**
      * Converts a validation error to a human-readable message.
      */
-    fun getValidationErrorMessage(error: DomainError.ScopeValidationError): String {
+    override fun getValidationErrorMessage(error: DomainError.ScopeValidationError): String {
         return when (error) {
             is DomainError.ScopeValidationError.EmptyScopeTitle -> "Empty title"
             is DomainError.ScopeValidationError.ScopeTitleTooShort -> "Title too short"
@@ -100,7 +106,7 @@ object ErrorFormattingUtils {
     /**
      * Converts a business rule violation to a human-readable message.
      */
-    fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String {
+    override fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String {
         return when (error) {
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
                 "Maximum hierarchy depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
@@ -108,5 +114,28 @@ object ErrorFormattingUtils {
                 "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> "Duplicate title: ${error.title}"
         }
+    }
+
+    /**
+     * Formats repository error with technical details.
+     */
+    override fun getRepositoryErrorMessage(error: RepositoryError): String {
+        return when (error) {
+            is RepositoryError.ConnectionError -> "Connection error: ${error.cause.message}"
+            is RepositoryError.DataIntegrityError -> "Data integrity error: ${error.message}"
+            is RepositoryError.NotFound -> "Scope not found: ${error.id.value}"
+            is RepositoryError.ConflictError -> "Conflict for scope ${error.id.value}: ${error.message}"
+            is RepositoryError.SerializationError -> "Serialization error: ${error.message}"
+            is RepositoryError.DatabaseError -> "Database error: ${error.message}"
+            is RepositoryError.UnknownError -> "Unknown error: ${error.message}"
+        }
+    }
+
+    /**
+     * Keep the old method for backward compatibility.
+     * @deprecated Use formatErrorSummary instead
+     */
+    fun formatErrorMessages(errors: NonEmptyList<DomainError>): String {
+        return formatErrorSummary(errors)
     }
 }
