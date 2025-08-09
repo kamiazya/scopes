@@ -1162,78 +1162,165 @@ data class Scope(
 Maintain proper dependency directions by separating repository-dependent validations:
 
 ```kotlin
+// 1. Pure Domain Validation - Value Objects with Self-Validation
+
 /**
- * Domain service for scope validation logic.
- * Contains business rules that don't naturally belong to any single entity.
- * Repository-dependent validations are kept separate from pure domain logic.
+ * Value object representing a scope title with embedded validation.
+ * Encapsulates the business rules for scope titles following DDD principles.
+ * No repository dependencies - pure domain logic.
  */
-object ScopeValidationService {
-    
-    const val MAX_HIERARCHY_DEPTH = 10
-    const val MAX_CHILDREN_PER_PARENT = 100
-    
+@JvmInline
+value class ScopeTitle private constructor(val value: String) {
+    companion object {
+        const val MAX_LENGTH = 200
+        const val MIN_LENGTH = 1
+
+        /**
+         * Create a validated ScopeTitle from a string.
+         * Returns Either with domain error or valid ScopeTitle.
+         */
+        fun create(title: String): Either<DomainError.ScopeValidationError, ScopeTitle> = either {
+            val trimmedTitle = title.trim()
+
+            ensure(trimmedTitle.isNotBlank()) { DomainError.ScopeValidationError.EmptyScopeTitle }
+            ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ScopeValidationError.ScopeTitleTooShort }
+            ensure(trimmedTitle.length <= MAX_LENGTH) {
+                DomainError.ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
+            }
+            ensure(!trimmedTitle.contains('\n') && !trimmedTitle.contains('\r')) {
+                DomainError.ScopeValidationError.ScopeTitleContainsNewline
+            }
+
+            ScopeTitle(trimmedTitle)
+        }
+    }
+}
+
+/**
+ * Value object for scope descriptions with length validation.
+ * Nullable to represent optional descriptions.
+ */
+@JvmInline
+value class ScopeDescription private constructor(val value: String) {
+    companion object {
+        const val MAX_LENGTH = 1000
+
+        fun create(description: String?): Either<DomainError.ScopeValidationError, ScopeDescription?> = either {
+            when (description) {
+                null -> null
+                else -> {
+                    val trimmed = description.trim()
+                    if (trimmed.isEmpty()) {
+                        null
+                    } else {
+                        ensure(trimmed.length <= MAX_LENGTH) {
+                            DomainError.ScopeValidationError.ScopeDescriptionTooLong(MAX_LENGTH, trimmed.length)
+                        }
+                        ScopeDescription(trimmed)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 2. Application Layer Validation - Repository-Dependent Business Rules
+
+/**
+ * Application service for repository-dependent scope validation logic.
+ * Contains validation methods that require repository access,
+ * maintaining proper domain layer isolation.
+ */
+class ApplicationScopeValidationService(
+    private val repository: ScopeRepository
+) {
+    companion object {
+        const val MAX_HIERARCHY_DEPTH = 10
+        const val MAX_CHILDREN_PER_PARENT = 100
+    }
+
+    /**
+     * Convert Either results to ValidationResult for error accumulation.
+     */
+    private fun <E : DomainError, T> Either<E, T>.toValidationResult(): ValidationResult<T> =
+        fold({ it.validationFailure() }, { it.validationSuccess() })
+
     /**
      * Comprehensive validation for scope creation using accumulating ValidationResult.
-     * This method handles all validation concerns and accumulates errors.
-     * Note: Requires repository access for hierarchy and uniqueness validations.
+     * Combines both domain validation (value objects) and application validation (repository).
      */
     suspend fun validateScopeCreation(
-    title: String,
-    description: String?,
-        parentId: ScopeId?,
-        repository: ScopeRepository
+        title: String,
+        description: String?,
+        parentId: ScopeId?
     ): ValidationResult<Unit> {
-        // Collect all validations as ValidationResults
-        val titleValidation = validateTitle(title)
-            .fold({ error -> error.validationFailure<String>() }, { it.validationSuccess() })
+        val validations = listOf(
+            // Domain validation - no repository access
+            ScopeTitle.create(title).toValidationResult().map { },
+            ScopeDescription.create(description).toValidationResult().map { },
+            
+            // Application validation - requires repository
+            validateHierarchyDepth(parentId).toValidationResult(),
+            validateChildrenLimit(parentId).toValidationResult(),
+            validateTitleUniqueness(title, parentId).toValidationResult()
+        )
 
-        val descValidation = validateDescription(description)
-            .fold({ error -> error.validationFailure<String?>() }, { it.validationSuccess() })
-
-        val hierarchyValidation = applicationScopeValidationService.validateHierarchyDepth(parentId)
-    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-val childrenValidation = applicationScopeValidationService.validateChildrenLimit(parentId)
-    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-val uniquenessValidation = applicationScopeValidationService.validateTitleUniqueness(title, parentId)
-    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
-
-        // Accumulate all validation results
-        return listOf(
-            titleValidation.map { },
-            descValidation.map { },
-            hierarchyValidation,
-            childrenValidation,
-            uniquenessValidation
-        ).sequence().map { }
+        return validations.sequence().map { }
     }
-    
+
     /**
      * Validate hierarchy depth using repository query.
+     * Returns Either for composition with other validations.
      */
-    suspend fun validateHierarchyDepth(
-    parentId: ScopeId?
-    ): Either<DomainError.BusinessRuleViolation, Unit> = either {
+    suspend fun validateHierarchyDepth(parentId: ScopeId?): Either<DomainError, Unit> = either {
         if (parentId == null) return@either
 
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft {
-                // Repository errors should be handled at application layer
-                // For now, treat as max depth exceeded to maintain business rule context
-                DomainError.BusinessRuleViolation.MaxDepthExceeded(
-                    MAX_HIERARCHY_DEPTH,
-                    MAX_HIERARCHY_DEPTH + 1
-                )
-            }
+            .mapLeft { DomainError.InfrastructureError(it) }
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
-            DomainError.BusinessRuleViolation.MaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
+            DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
+        }
+    }
+
+    /**
+     * Validate children limit using repository query.
+     */
+    suspend fun validateChildrenLimit(parentId: ScopeId?): Either<DomainError, Unit> = either {
+        if (parentId == null) return@either
+
+        val childrenCount = repository.countByParentId(parentId)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
+
+        ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
+            DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(MAX_CHILDREN_PER_PARENT, childrenCount + 1)
+        }
+    }
+
+    /**
+     * Validate title uniqueness using repository query.
+     */
+    suspend fun validateTitleUniqueness(title: String, parentId: ScopeId?): Either<DomainError, Unit> = either {
+        val normalizedTitle = TitleNormalizer.normalize(title)
+        val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
+
+        ensure(!duplicateExists) {
+            DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
         }
     }
 }
 ```
+
+**Key Architecture Principles:**
+
+1. **Domain Layer Isolation**: Value objects handle their own validation without repository dependencies
+2. **Application Layer Coordination**: Repository-dependent validations live in application services
+3. **Error Accumulation**: ValidationResult accumulates multiple errors, Either provides single error for composition
+4. **Clean Separation**: Domain validation (pure) vs. application validation (repository-dependent)
 
 ### Suggestion-Based Error Recovery
 
