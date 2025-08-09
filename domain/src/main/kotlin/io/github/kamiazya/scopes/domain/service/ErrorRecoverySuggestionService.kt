@@ -99,16 +99,17 @@ class ErrorRecoverySuggestionService(
         )
     }
 
-    /**
-     * Suggests recovery for title too short validation errors.
-     */
     private fun suggestTitleTooShortRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleTooShort,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
             is SuggestionContext.TitleValidation -> context.originalTitle
-            else -> ""
+            else -> throw IllegalArgumentException(
+                "Invalid context type for title too short recovery. " +
+                "Expected TitleValidation, got ${context::class.simpleName}. " +
+                "This indicates a programming error in the calling code."
+            )
         }
         val suggestions = if (originalTitle.isNotBlank()) {
             listOf(
@@ -128,16 +129,17 @@ class ErrorRecoverySuggestionService(
         )
     }
 
-    /**
-     * Suggests recovery for title too long validation errors.
-     */
     private fun suggestTitleTooLongRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleTooLong,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
             is SuggestionContext.TitleValidation -> context.originalTitle
-            else -> ""
+            else -> throw IllegalArgumentException(
+                "Invalid context type for title too long recovery. " +
+                "Expected TitleValidation, got ${context::class.simpleName}. " +
+                "This indicates a programming error in the calling code."
+            )
         }
         val titleConfig = configuration.titleConfig()
         val maxLength = titleConfig.maxLength
@@ -171,16 +173,17 @@ class ErrorRecoverySuggestionService(
         )
     }
 
-    /**
-     * Suggests recovery for title contains newline validation errors.
-     */
     private fun suggestTitleContainsNewlineRecovery(
         error: DomainError.ScopeValidationError.ScopeTitleContainsNewline,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
             is SuggestionContext.TitleValidation -> context.originalTitle
-            else -> ""
+            else -> throw IllegalArgumentException(
+                "Invalid context type for title contains newline recovery. " +
+                "Expected TitleValidation, got ${context::class.simpleName}. " +
+                "This indicates a programming error in the calling code."
+            )
         }
         val titleConfig = configuration.titleConfig()
 
@@ -206,16 +209,17 @@ class ErrorRecoverySuggestionService(
         )
     }
 
-    /**
-     * Suggests recovery for description too long validation errors.
-     */
     private fun suggestDescriptionTooLongRecovery(
         error: DomainError.ScopeValidationError.ScopeDescriptionTooLong,
         context: SuggestionContext
     ): RecoveryResult {
         val originalDescription = when (context) {
             is SuggestionContext.DescriptionValidation -> context.originalDescription
-            else -> ""
+            else -> throw IllegalArgumentException(
+                "Invalid context type for description too long recovery. " +
+                "Expected DescriptionValidation, got ${context::class.simpleName}. " +
+                "This indicates a programming error in the calling code."
+            )
         }
         val descriptionConfig = configuration.descriptionConfig()
         val maxLength = descriptionConfig.maxLength
@@ -239,9 +243,6 @@ class ErrorRecoverySuggestionService(
         )
     }
 
-    /**
-     * Suggests recovery for duplicate title business rule violations.
-     */
     private fun suggestDuplicateTitleRecovery(
         error: DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle,
         context: SuggestionContext
@@ -250,7 +251,11 @@ class ErrorRecoverySuggestionService(
             is SuggestionContext.DuplicateTitle -> {
                 Triple(context.originalTitle, context.parentId, context.allScopes)
             }
-            else -> Triple(error.title, null, emptyList<Scope>())
+            else -> throw IllegalArgumentException(
+                "Invalid context type for duplicate title recovery. " +
+                "Expected DuplicateTitle, got ${context::class.simpleName}. " +
+                "This indicates a programming error in the calling code."
+            )
         }
 
         val suggestions = generateUniqueVariants(originalTitle, parentId, allScopes)
