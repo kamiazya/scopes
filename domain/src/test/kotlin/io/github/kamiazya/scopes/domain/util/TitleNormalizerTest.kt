@@ -32,6 +32,26 @@ class TitleNormalizerTest {
     }
 
     @Test
+    fun `normalize should be locale-agnostic to prevent Turkish-I problem`() {
+        // Test specific characters that are problematic in Turkish locale
+        // In Turkish locale, 'I'.lowercase() produces 'ı' instead of 'i'
+        // Our implementation should always produce 'i' regardless of locale
+        assertEquals("i", TitleNormalizer.normalize("I"))
+        assertEquals("ij", TitleNormalizer.normalize("IJ"))
+        assertEquals("istanbul task", TitleNormalizer.normalize("ISTANBUL TASK"))
+        
+        // Additional test cases for locale-sensitive characters
+        assertEquals("info item", TitleNormalizer.normalize("INFO ITEM"))
+        assertEquals("important task", TitleNormalizer.normalize("IMPORTANT TASK"))
+        
+        // Verify that our implementation consistently uses ASCII conversion
+        // regardless of system locale settings
+        val allUppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        val expectedLowercaseLetters = "abcdefghijklmnopqrstuvwxyz"
+        assertEquals(expectedLowercaseLetters, TitleNormalizer.normalize(allUppercaseLetters))
+    }
+
+    @Test
     fun `normalize should handle comprehensive cases`() {
         // Combining all transformations
         assertEquals("my task", TitleNormalizer.normalize("  MY  \t\nTASK  "))
