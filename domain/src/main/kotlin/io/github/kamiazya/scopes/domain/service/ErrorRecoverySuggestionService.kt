@@ -280,11 +280,31 @@ class ErrorRecoverySuggestionService(
         val maxLength = descriptionConfig.maxLength
 
         val suggestions = if (originalDescription.isNotBlank()) {
-            listOf(
+            val candidateSuggestions = listOf(
                 descriptionConfig.truncateDescription(originalDescription),
                 descriptionConfig.extractFirstSentence(originalDescription),
                 originalDescription.split("\n").first().trim()  // Take first paragraph
-            ).filter { it.isNotBlank() }.distinct()
+            )
+
+            // Apply descriptionConfig normalization to enforce maxLength and remove duplicates
+            val normalizedSuggestions = candidateSuggestions
+                .filter { it.isNotBlank() }
+                .map { candidate ->
+                    // Apply descriptionConfig normalization to ensure maxLength compliance
+                    if (candidate.length > maxLength) {
+                        descriptionConfig.truncateDescription(candidate)
+                    } else {
+                        candidate
+                    }
+                }
+                .distinct() // Remove duplicates
+                .filter { it.isNotBlank() } // Filter again in case truncation created blanks
+
+            if (normalizedSuggestions.isEmpty()) {
+                listOf("") // Empty description is valid fallback
+            } else {
+                normalizedSuggestions
+            }
         } else {
             listOf("") // Empty description is valid
         }
