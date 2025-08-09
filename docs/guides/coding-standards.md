@@ -1178,8 +1178,8 @@ object ScopeValidationService {
      * Note: Requires repository access for hierarchy and uniqueness validations.
      */
     suspend fun validateScopeCreation(
-        title: String,
-        description: String?,
+    title: String,
+    description: String?,
         parentId: ScopeId?,
         repository: ScopeRepository
     ): ValidationResult<Unit> {
@@ -1190,14 +1190,14 @@ object ScopeValidationService {
         val descValidation = validateDescription(description)
             .fold({ error -> error.validationFailure<String?>() }, { it.validationSuccess() })
 
-        val hierarchyValidation = validateHierarchyDepthEfficient(parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+        val hierarchyValidation = applicationScopeValidationService.validateHierarchyDepth(parentId)
+    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
 
-        val childrenValidation = validateChildrenLimitEfficient(parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+val childrenValidation = applicationScopeValidationService.validateChildrenLimit(parentId)
+    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
 
-        val uniquenessValidation = validateTitleUniquenessEfficient(title, parentId, repository)
-            .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
+val uniquenessValidation = applicationScopeValidationService.validateTitleUniqueness(title, parentId)
+    .fold({ error -> error.validationFailure<Unit>() }, { it.validationSuccess() })
 
         // Accumulate all validation results
         return listOf(
@@ -1212,9 +1212,8 @@ object ScopeValidationService {
     /**
      * Validate hierarchy depth using repository query.
      */
-    suspend fun validateHierarchyDepthEfficient(
-        parentId: ScopeId?,
-        repository: ScopeRepository
+    suspend fun validateHierarchyDepth(
+    parentId: ScopeId?
     ): Either<DomainError.BusinessRuleViolation, Unit> = either {
         if (parentId == null) return@either
 
@@ -1355,10 +1354,10 @@ class CreateScopeUseCase(
         request: CreateScopeRequest
     ): Either<ApplicationError, Unit> {
         // Use ScopeValidationService for repository-dependent validations
-        val validationResult = ScopeValidationService.validateScopeCreation(
-            request.title,
-            request.description,
-            request.parentId,
+        val validationResult = applicationScopeValidationService.validateScopeCreation(
+    request.title,
+    request.description,
+    request.parentId
             scopeRepository
         )
 

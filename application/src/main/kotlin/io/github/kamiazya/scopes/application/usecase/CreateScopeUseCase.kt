@@ -6,7 +6,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.service.ScopeValidationService
+import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.domain.error.firstErrorOnly
 
 /**
@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.domain.error.firstErrorOnly
  */
 class CreateScopeUseCase(
     private val scopeRepository: ScopeRepository,
+    private val applicationScopeValidationService: ApplicationScopeValidationService
 ) {
 
     suspend fun execute(request: CreateScopeRequest): Either<ApplicationError, CreateScopeResponse> = either {
@@ -70,12 +71,11 @@ class CreateScopeUseCase(
     private suspend fun validateScopeCreationConsolidated(
         request: CreateScopeRequest
     ): Either<ApplicationError, Unit> {
-        // Use ScopeValidationService for repository-dependent validations
-        val validationResult = ScopeValidationService.validateScopeCreation(
+        // Use ApplicationScopeValidationService for repository-dependent validations
+        val validationResult = applicationScopeValidationService.validateScopeCreation(
             request.title,
             request.description,
-            request.parentId,
-            scopeRepository
+            request.parentId
         )
 
         // Always accumulate errors for better UX

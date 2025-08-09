@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.application.usecase
 
 import arrow.core.right
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
@@ -28,7 +29,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A user already has a "Website" project at root level
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
             // Mock repository indicating duplicate exists at root level
             coEvery {
@@ -46,7 +48,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Then: The system prevents this to ensure clear project identification
             val error = result.shouldBeLeft()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
-            
+
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
         }
@@ -56,12 +58,14 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A user wants to organize different types of projects
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
-            // Mock repository showing no duplicate exists
+            // Mock repository showing no duplicate exists - all validations should pass
             coEvery {
                 mockRepository.existsByParentIdAndTitle(null, "personal portfolio website")
             } returns false.right()
+            // Root level projects don't need hierarchy/children validations
 
             // Create a valid result scope for the save operation
             val resultScope = Scope(
@@ -97,7 +101,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A personal project already has a task named "Database Setup"
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
             val projectId = ScopeId.generate()
 
@@ -120,7 +125,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Then: The system prevents this to avoid confusion within the project
             val error = result.shouldBeLeft()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
-            
+
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
         }
@@ -130,12 +135,14 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A developer wants to work on learning projects
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
-            // Mock repository showing no duplicate exists for descriptive name
+            // Mock repository showing no duplicate exists for descriptive name - all validations should pass
             coEvery {
                 mockRepository.existsByParentIdAndTitle(null, "react learning todo app")
             } returns false.right()
+            // Root level projects don't need hierarchy/children validations
 
             // Create a valid result scope for the save operation
             val resultScope = Scope(
@@ -172,7 +179,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A personal project with well-organized task structure
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
             val projectId = ScopeId.generate()
 
@@ -202,7 +210,8 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
         runTest {
             // Given: A user already has a "website" project (lowercase)
             val mockRepository = mockk<ScopeRepository>()
-            val useCase = CreateScopeUseCase(mockRepository)
+            val validationService = ApplicationScopeValidationService(mockRepository)
+            val useCase = CreateScopeUseCase(mockRepository, validationService)
 
             // Mock repository indicating duplicate exists with lowercase title
             // Note: The repository should check case-insensitively
@@ -212,7 +221,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
 
             // When: User tries to create "Website" project with different casing
             val request = CreateScopeRequest(
-                title = "Website",  // Different casing
+                title = "Website", // Different casing
                 description = "My personal website",
                 parentId = null // Root level
             )
@@ -221,7 +230,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Then: The system prevents this to avoid case-based duplicates
             val error = result.shouldBeLeft()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
-            
+
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
         }
