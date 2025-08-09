@@ -27,30 +27,6 @@ object ScopeValidationService {
     const val MAX_HIERARCHY_DEPTH = 10
     const val MAX_CHILDREN_PER_PARENT = 100
 
-    // ===== BASIC FIELD VALIDATION =====
-
-    /**
-     * Validates that a title is not empty or blank.
-     */
-    fun validateTitle(title: String): Either<DomainError.ScopeValidationError, String> = either {
-        ensure(title.trim().isNotEmpty()) { DomainError.ScopeValidationError.EmptyScopeTitle }
-        title
-    }
-
-    /**
-     * Validates that a description doesn't exceed maximum length.
-     */
-    fun validateDescription(description: String?): Either<DomainError.ScopeValidationError, String?> = either {
-        if (description != null) {
-            ensure(description.length <= ScopeDescription.MAX_LENGTH) {
-                DomainError.ScopeValidationError.ScopeDescriptionTooLong(
-                    ScopeDescription.MAX_LENGTH,
-                    description.length
-                )
-            }
-        }
-        description
-    }
 
     /**
      * Helper extension function to convert Either results into ValidationResult.
@@ -130,18 +106,16 @@ object ScopeValidationService {
         description: String?,
         parentId: ScopeId?,
         repository: ScopeRepository
-    ): ValidationResult<ScopeTitle> {
+    ): ValidationResult<Unit> {
         val validations = listOf(
-            ScopeTitle.create(title).toValidationResult(),
-            validateDescription(description).toValidationResult(),
+            ScopeTitle.create(title).toValidationResult().map { },
+            ScopeDescription.create(description).toValidationResult().map { },
             validateHierarchyDepthEfficient(parentId, repository).toValidationResult(),
             validateChildrenLimitEfficient(parentId, repository).toValidationResult(),
             validateTitleUniquenessEfficient(title, parentId, repository).toValidationResult()
         )
 
-        return validations.sequence().map { validatedResults ->
-            validatedResults[0] as ScopeTitle
-        }
+        return validations.sequence().map { }
     }
 
     // ===== PURE HIERARCHY CONTEXT-BASED VALIDATION FUNCTIONS =====

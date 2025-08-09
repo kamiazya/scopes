@@ -80,7 +80,7 @@ class CreateScopeUseCase(
 
         // Always accumulate errors for better UX
         // Callers can use firstErrorOnly() if they need fail-fast behavior
-        return ApplicationError.fromValidationResult(validationResult).map { }
+        return ApplicationError.fromValidationResult(validationResult)
     }
 }
 

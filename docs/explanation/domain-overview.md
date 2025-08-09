@@ -38,7 +38,7 @@ graph TB
 
 **Benefits:**
 - **Conceptual Simplicity**: Learn one concept, use everywhere
-- **Unlimited Hierarchy**: No artificial depth restrictions
+- **Deep Hierarchy**: Supports up to 10 levels by default (configurable)
 - **Consistent Operations**: Same features available at every level
 - **Natural Recursion**: Mirrors how developers actually think about work
 
@@ -50,7 +50,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 
 **Properties:**
 - **Identity**: Unique ULID identifier
-- **Hierarchy**: Parent-child relationships (unlimited depth)
+- **Hierarchy**: Parent-child relationships (up to 10 levels by default)
 - **State**: Lifecycle status (pending → in_progress → completed → logged)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
