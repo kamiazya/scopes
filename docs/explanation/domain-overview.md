@@ -264,9 +264,41 @@ The system enforces different title uniqueness rules depending on the scope hier
 ```
 
 #### Implementation Details
-- **Validation**: Enforced in `ScopeValidationService.validateTitleUniquenessEfficient()`
+- **Validation Methods**: 
+  - `ScopeValidationService.validateTitleUniquenessEfficient()` - Repository-based validation
+  - `ScopeValidationService.validateTitleUniquenessWithContext()` - Pure function validation
 - **Performance**: Root-level scopes bypass database uniqueness checks entirely
 - **Error Handling**: Violations return `DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle`
+- **Testing**: Comprehensive unit tests in `ScopeValidationServiceTest.kt` verify both scenarios
+
+#### Real-World Usage Examples
+
+**Scenario 1: Multiple Personal Projects**
+```text
+✅ Allowed - Different developers can have similar project names:
+├── Scope: "Personal Website" (Alice's project)
+├── Scope: "Personal Website" (Bob's project)
+└── Scope: "Learning React" (Multiple people learning)
+```
+
+**Scenario 2: Organization Structure**
+```text
+✅ Allowed - Same task names under different projects:
+├── Scope: "E-commerce Platform"
+│   ├── Scope: "Setup Database"
+│   └── Scope: "User Authentication" 
+└── Scope: "Blog System"
+    ├── Scope: "Setup Database"    // Same name, different parent - OK
+    └── Scope: "User Authentication"  // Same name, different parent - OK
+```
+
+**Scenario 3: Forbidden Duplicates**
+```text
+❌ Forbidden - Same task names within same project:
+└── Scope: "E-commerce Platform"
+    ├── Scope: "User Authentication"
+    └── Scope: "User Authentication"  // Duplicate within same parent - FORBIDDEN
+```
 
 ### Other Business Rules
 
