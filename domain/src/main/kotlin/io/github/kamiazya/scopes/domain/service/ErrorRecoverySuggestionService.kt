@@ -111,12 +111,34 @@ class ErrorRecoverySuggestionService(
                 "This indicates a programming error in the calling code."
             )
         }
+        val titleConfig = configuration.titleConfig()
+        val maxLength = titleConfig.maxLength
+
         val suggestions = if (originalTitle.isNotBlank()) {
-            listOf(
+            val candidateSuggestions = listOf(
                 "$originalTitle - Task",
                 "$originalTitle - Item",
                 "TODO: $originalTitle"
             )
+
+            // Apply titleConfig normalization to enforce maxLength and remove duplicates
+            val normalizedSuggestions = candidateSuggestions
+                .map { candidate ->
+                    // Apply titleConfig normalization to ensure maxLength compliance
+                    if (candidate.length > maxLength) {
+                        titleConfig.truncateTitle(candidate)
+                    } else {
+                        candidate
+                    }
+                }
+                .distinct() // Remove duplicates
+                .filter { it.isNotBlank() } // Filter out blanks
+
+            if (normalizedSuggestions.isEmpty()) {
+                listOf(titleConfig.generateDefaultTitle())
+            } else {
+                normalizedSuggestions
+            }
         } else {
             listOf("New Task", "New Item", "TODO Item")
         }
@@ -153,12 +175,24 @@ class ErrorRecoverySuggestionService(
                     .joinToString(" ") // Take at least first word
             )
 
-            // Filter out blank suggestions and ensure at least one valid suggestion
-            val validSuggestions = candidateSuggestions.filter { it.isNotBlank() }
-            if (validSuggestions.isEmpty()) {
+            // Apply titleConfig normalization to enforce maxLength and remove duplicates
+            val normalizedSuggestions = candidateSuggestions
+                .filter { it.isNotBlank() }
+                .map { candidate ->
+                    // Apply titleConfig normalization to ensure maxLength compliance
+                    if (candidate.length > maxLength) {
+                        titleConfig.truncateTitle(candidate)
+                    } else {
+                        candidate
+                    }
+                }
+                .distinct() // Remove duplicates
+                .filter { it.isNotBlank() } // Filter again in case truncation created blanks
+
+            if (normalizedSuggestions.isEmpty()) {
                 listOf(titleConfig.generateDefaultTitle())
             } else {
-                validSuggestions
+                normalizedSuggestions
             }
         } else {
             listOf(titleConfig.generateDefaultTitle())
@@ -186,16 +220,37 @@ class ErrorRecoverySuggestionService(
             )
         }
         val titleConfig = configuration.titleConfig()
+        val maxLength = titleConfig.maxLength
 
         val suggestions = if (originalTitle.isNotBlank()) {
-            listOf(
+            val candidateSuggestions = listOf(
                 titleConfig.cleanTitle(originalTitle),
                 originalTitle.replace("\n", " - ")
                     .replace("\r", " - ")
                     .replace(Regex("\\s+-\\s+"), " - ")
                     .trim(),
                 originalTitle.split(Regex("[\n\r]+")).first().trim() // Just take first line
-            ).filter { it.isNotBlank() }
+            )
+
+            // Apply titleConfig normalization to enforce maxLength and remove duplicates
+            val normalizedSuggestions = candidateSuggestions
+                .filter { it.isNotBlank() }
+                .map { candidate ->
+                    // Apply titleConfig normalization to ensure maxLength compliance
+                    if (candidate.length > maxLength) {
+                        titleConfig.truncateTitle(candidate)
+                    } else {
+                        candidate
+                    }
+                }
+                .distinct() // Remove duplicates
+                .filter { it.isNotBlank() } // Filter again in case truncation created blanks
+
+            if (normalizedSuggestions.isEmpty()) {
+                listOf(titleConfig.generateDefaultTitle())
+            } else {
+                normalizedSuggestions
+            }
         } else {
             listOf(titleConfig.generateDefaultTitle())
         }
