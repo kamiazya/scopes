@@ -332,6 +332,7 @@ class ErrorRecoverySuggestionService(
 
     /**
      * Generates unique title variants for duplicate title resolution.
+     * Applies max length constraints and removes duplicates after normalization.
      */
     private fun generateUniqueVariants(
         originalTitle: String,
@@ -344,19 +345,41 @@ class ErrorRecoverySuggestionService(
             .toSet()
 
         val duplicationConfig = configuration.duplicationConfig()
+        val titleConfig = configuration.titleConfig()
+        val maxLength = titleConfig.maxLength
         val variants = mutableListOf<String>()
+        val normalizedVariants = mutableSetOf<String>()
 
         for (i in 1..duplicationConfig.maxRetryAttempts) {
             val variant = duplicationConfig.generateVariant(originalTitle, i)
 
-            if (variant.trim().lowercase() !in existingTitles) {
-                variants.add(variant)
+            // Apply max length constraint by truncating if necessary
+            val constrainedVariant = if (variant.length > maxLength) {
+                titleConfig.truncateTitle(variant)
+            } else {
+                variant
+            }
+
+            val normalizedVariant = constrainedVariant.trim().lowercase()
+
+            // Check if this variant is unique (not in existing titles and not already added)
+            if (normalizedVariant !in existingTitles && normalizedVariant !in normalizedVariants) {
+                variants.add(constrainedVariant)
+                normalizedVariants.add(normalizedVariant)
                 if (variants.size >= MAX_UNIQUE_VARIANTS) {
                     break // Provide up to 3 suggestions
                 }
             }
         }
 
-        return variants.ifEmpty { listOf("$originalTitle (Copy)") }
+        // Fallback with length constraint applied
+        val fallback = "$originalTitle (Copy)"
+        val constrainedFallback = if (fallback.length > maxLength) {
+            titleConfig.truncateTitle(fallback)
+        } else {
+            fallback
+        }
+
+        return variants.ifEmpty { listOf(constrainedFallback) }
     }
 }
