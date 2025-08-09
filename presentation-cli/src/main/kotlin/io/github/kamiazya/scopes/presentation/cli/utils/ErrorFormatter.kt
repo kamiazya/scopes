@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.presentation.cli.utils
 
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.infrastructure.error.ErrorFormattingUtils
 
 /**
  * Extension function to format ApplicationError into user-friendly messages.
@@ -8,14 +9,8 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
  */
 fun ApplicationError.toUserMessage(): String =
     when (this) {
-        is ApplicationError.DomainErrors -> {
-            val errorMessages = this.errors.map { it.toString() }
-            if (this.errors.size == 1) {
-                "Domain error: ${this.errors.head}"
-            } else {
-                "Validation errors: ${errorMessages.joinToString(", ")}"
-            }
-        }
+        is ApplicationError.DomainErrors ->
+            ErrorFormattingUtils.formatErrorMessages(this.errors)
         is ApplicationError.Repository -> "Repository error: ${this.cause}"
         is ApplicationError.UseCaseError.InvalidRequest ->
             "Invalid request: ${this.message}"
