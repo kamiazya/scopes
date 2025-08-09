@@ -3,17 +3,16 @@ package io.github.kamiazya.scopes.domain.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.domain.entity.Scope
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
-import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.ValidationResult
-import io.github.kamiazya.scopes.domain.error.validationSuccess
-import io.github.kamiazya.scopes.domain.error.validationFailure
-import io.github.kamiazya.scopes.domain.error.sequence
 import io.github.kamiazya.scopes.domain.error.map
+import io.github.kamiazya.scopes.domain.error.sequence
+import io.github.kamiazya.scopes.domain.error.validationFailure
+import io.github.kamiazya.scopes.domain.error.validationSuccess
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 
 /**
  * Domain service for scope validation logic.
@@ -75,22 +74,19 @@ object ScopeValidationService {
 
     /**
      * Efficient version: Validate title uniqueness using repository query.
-     * Note: Root level scopes (parentId = null) allow duplicate titles.
+     * All scopes (including root level) must have unique titles within their context.
      */
     suspend fun validateTitleUniquenessEfficient(
         title: String,
         parentId: ScopeId?,
         repository: ScopeRepository
     ): Either<DomainError, Unit> = either {
-        // Allow duplicate titles at root level (parentId = null)
-        if (parentId != null) {
-            val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
-                .mapLeft { DomainError.InfrastructureError(it) }
-                .bind()
+        val duplicateExists = repository.existsByParentIdAndTitle(parentId, title)
+            .mapLeft { DomainError.InfrastructureError(it) }
+            .bind()
 
-            ensure(!duplicateExists) {
-                DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
-            }
+        ensure(!duplicateExists) {
+            DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
         }
     }
 
@@ -149,18 +145,15 @@ object ScopeValidationService {
     /**
      * Validate title uniqueness using pre-computed title existence check.
      * Pure function that doesn't depend on repository access.
-     * Note: Root level scopes (parentId = null) allow duplicate titles.
+     * All scopes (including root level) must have unique titles within their context.
      */
     fun validateTitleUniquenessWithContext(
         existsInParentContext: Boolean,
         title: String,
         parentId: ScopeId?
     ): Either<DomainError.ScopeBusinessRuleViolation, Unit> = either {
-        // Allow duplicate titles at root level (parentId = null)
-        if (parentId != null) {
-            ensure(!existsInParentContext) {
-                DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
-            }
+        ensure(!existsInParentContext) {
+            DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
         }
     }
 

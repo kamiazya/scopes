@@ -41,3 +41,6 @@ tmp/
 *.iml
 *.ipr
 *.iws
+
+# Serena AI assistant files
+.serena/

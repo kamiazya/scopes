@@ -50,7 +50,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 
 **Properties:**
 - **Identity**: Unique ULID identifier
-- **Hierarchy**: Parent-child relationships (up to 10 levels by default)
+- **Hierarchy**: Parent-child relationships (up to 10 levels by default, configurable)
 - **State**: Lifecycle status (pending → in_progress → completed → logged)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
@@ -231,73 +231,90 @@ Designed from the ground up for human-AI collaboration:
 
 ### Title Uniqueness Rules
 
-The system enforces different title uniqueness rules depending on the scope hierarchy level:
+The system enforces strict title uniqueness rules at all levels of the scope hierarchy. This design ensures clear identification and prevents confusion throughout the entire project organization.
 
-#### Root-Level Scopes (parentId = null)
-- **Rule**: Duplicate titles are **ALLOWED** at the root level
-- **Rationale**: Users may have multiple unrelated projects with similar names
-- **Example**: Multiple "Website" or "Documentation" projects are acceptable
+**Design Philosophy**: 
+- **Consistent Uniqueness**: All scope titles must be unique within their respective context
+- **Clear Identification**: No ambiguity in scope naming regardless of hierarchy level
+- **Simple Rules**: One unified rule applies to all scopes
+
+**Benefits**:
+- **No Naming Conflicts**: Clear, unambiguous scope identification at all levels
+- **Predictable Behavior**: Same validation rules apply consistently everywhere
+- **Better Organization**: Forces thoughtful, descriptive naming throughout projects
+- **AI Collaboration**: Clearer context for AI assistants without naming ambiguity
+
+#### All Scopes (Root and Child)
+- **Rule**: Duplicate titles are **FORBIDDEN** at all levels
+- **Rationale**: Consistent uniqueness prevents confusion and ensures clear identification. Even at the root level, having multiple scopes with identical names can lead to ambiguity when referencing or managing projects.
+- **Use Cases**: 
+  - All project names must be unique for clear identification
+  - All task names within any context must be distinct
+  - Forces descriptive, meaningful naming conventions
+- **Example**: All scopes must have unique titles within their context
 
 ```text
-✅ Allowed:
-├── Scope: "Website" (Project A)
-├── Scope: "Website" (Project B)  // Duplicate title OK at root
-└── Scope: "Documentation"
+❌ Not Allowed at ANY level:
+├── Scope: "Website"
+├── Scope: "Website"  // Duplicate forbidden even at root level
+└── Scope: "Personal Blog"
+    ├── Scope: "Setup"
+    └── Scope: "Setup"  // Duplicate forbidden at child level too
 ```
-
-#### Child Scopes (parentId != null)
-- **Rule**: Duplicate titles are **FORBIDDEN** within the same parent
-- **Rationale**: Prevents confusion and maintains clear identification within a project context
-- **Example**: Two tasks with the same name under the same parent are rejected
 
 ```text
-❌ Not Allowed:
-└── Scope: "Project Alpha"
-    ├── Scope: "Implementation"
-    └── Scope: "Implementation"  // Duplicate title forbidden
-
-✅ Allowed:
-├── Scope: "Project Alpha"
-│   └── Scope: "Implementation"
-└── Scope: "Project Beta"
-    └── Scope: "Implementation"  // Same title OK under different parents
+✅ Required - All scopes must have unique, descriptive names:
+├── Scope: "Personal Portfolio Website"
+├── Scope: "Client Website Project"
+├── Scope: "React Learning Project"
+├── Scope: "Vue.js Experiment"
+└── Scope: "Personal Blog"
+    ├── Scope: "Initial Setup"
+    ├── Scope: "Content Creation"
+    └── Scope: "Deployment Configuration"
 ```
-
-#### Implementation Details
-- **Validation Methods**: 
-  - `ScopeValidationService.validateTitleUniquenessEfficient()` - Repository-based validation
-  - `ScopeValidationService.validateTitleUniquenessWithContext()` - Pure function validation
-- **Performance**: Root-level scopes bypass database uniqueness checks entirely
-- **Error Handling**: Violations return `DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle`
-- **Testing**: Comprehensive unit tests in `ScopeValidationServiceTest.kt` verify both scenarios
 
 #### Real-World Usage Examples
 
-**Scenario 1: Multiple Personal Projects**
+**Scenario 1: Descriptive Project Naming**
 ```text
-✅ Allowed - Different developers can have similar project names:
-├── Scope: "Personal Website" (Alice's project)
-├── Scope: "Personal Website" (Bob's project)
-└── Scope: "Learning React" (Multiple people learning)
+✅ Required - Clear, unique project identification:
+├── Scope: "Personal Portfolio React"
+├── Scope: "Todo App Vue Learning"
+├── Scope: "E-commerce Node.js API"
+└── Scope: "Mobile App Swift Tutorial"
 ```
 
-**Scenario 2: Organization Structure**
+**Scenario 2: Detailed Task Organization**
 ```text
-✅ Allowed - Same task names under different projects:
-├── Scope: "E-commerce Platform"
-│   ├── Scope: "Setup Database"
-│   └── Scope: "User Authentication" 
-└── Scope: "Blog System"
-    ├── Scope: "Setup Database"    // Same name, different parent - OK
-    └── Scope: "User Authentication"  // Same name, different parent - OK
+✅ Required - Specific task naming within projects:
+├── Scope: "E-commerce Website"
+│   ├── Scope: "Database Schema Design"
+│   ├── Scope: "User Authentication Backend" 
+│   ├── Scope: "Frontend User Interface"
+│   └── Scope: "Payment Integration Testing"
+└── Scope: "Blog Platform"
+    ├── Scope: "CMS Setup and Configuration"
+    ├── Scope: "Content Management Features"
+    └── Scope: "SEO Optimization Implementation"
 ```
 
-**Scenario 3: Forbidden Duplicates**
+**Scenario 3: Learning Project Differentiation**
 ```text
-❌ Forbidden - Same task names within same project:
-└── Scope: "E-commerce Platform"
-    ├── Scope: "User Authentication"
-    └── Scope: "User Authentication"  // Duplicate within same parent - FORBIDDEN
+✅ Required - Distinguish similar learning projects:
+├── Scope: "React Fundamentals Course"
+├── Scope: "React Advanced Patterns Study"
+├── Scope: "Machine Learning Python Basics"
+└── Scope: "Machine Learning Deep Learning Project"
+```
+
+**Scenario 4: Professional vs Personal Distinction**
+```text
+✅ Required - Clear context identification:
+├── Scope: "Personal Portfolio Website"
+├── Scope: "Client ABC Website Project"
+├── Scope: "Freelance E-commerce Site"
+└── Scope: "Open Source Documentation Tool"
 ```
 
 ### Other Business Rules
@@ -310,6 +327,9 @@ The system enforces different title uniqueness rules depending on the scope hier
 - **Length**: 1-200 characters
 - **Content**: No newline characters allowed
 - **Required**: Cannot be empty or whitespace-only
+- **Trimming**: Leading/trailing whitespace is removed before validation
+- **Case-insensitivity**: Duplicate checks compare titles in lowercase
+- **Unicode normalization**: No additional normalization is applied
 
 ## Success Metrics
 

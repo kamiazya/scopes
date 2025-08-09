@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -15,17 +14,13 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  */
 class ScopeValidationServiceTest : StringSpec({
 
-
-
-
-
-    "validateTitleUniquenessWithContext should allow duplicate titles at root level (parentId = null)" {
+    "validateTitleUniquenessWithContext should reject duplicate titles at all levels" {
         // Test the pure function validateTitleUniquenessWithContext
-        // This tests the business rule directly without repository dependency
+        // New business rule: ALL levels require unique titles
 
         val title = "My Project"
         val parentId = null // Root level
-        val existsInParentContext = true // Even if duplicate exists, should be allowed
+        val existsInParentContext = true // Duplicate exists
 
         // When: Validating title uniqueness at root level with duplicate
         val result = ScopeValidationService.validateTitleUniquenessWithContext(
@@ -34,8 +29,16 @@ class ScopeValidationServiceTest : StringSpec({
             parentId = parentId
         )
 
-        // Then: Should succeed because root level allows duplicates
-        result.isRight() shouldBe true
+        // Then: Should fail because duplicates are now forbidden at all levels
+        result.isLeft() shouldBe true
+        result.fold(
+            { error ->
+                error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle>()
+                error.title shouldBe title
+                error.parentId shouldBe parentId
+            },
+            { /* Should not reach here */ }
+        )
     }
 
     "validateTitleUniquenessWithContext should reject duplicate titles within same parent" {
@@ -64,61 +67,66 @@ class ScopeValidationServiceTest : StringSpec({
         )
     }
 
-    "validateTitleUniquenessWithContext should allow unique titles within same parent" {
-        // Test acceptance of unique titles when parentId is not null
+    "validateTitleUniquenessWithContext should allow unique titles at all levels" {
+        // Test acceptance of unique titles at both root and child levels
 
-        val title = "Unique Task Name"
-        val parentId = ScopeId.generate() // Child scope
-        val existsInParentContext = false // No duplicate in parent context
+        // Root level unique title
+        val rootTitle = "Unique Root Project"
+        val rootResult = ScopeValidationService.validateTitleUniquenessWithContext(
+            existsInParentContext = false, // No duplicate
+            title = rootTitle,
+            parentId = null // Root level
+        )
+        rootResult.isRight() shouldBe true
 
-        // When: Validating unique title within parent
-        val result = ScopeValidationService.validateTitleUniquenessWithContext(
-            existsInParentContext = existsInParentContext,
-            title = title,
+        // Child level unique title
+        val childTitle = "Unique Task Name"
+        val parentId = ScopeId.generate()
+        val childResult = ScopeValidationService.validateTitleUniquenessWithContext(
+            existsInParentContext = false, // No duplicate in parent context
+            title = childTitle,
             parentId = parentId
         )
-
-        // Then: Should succeed
-        result.isRight() shouldBe true
+        childResult.isRight() shouldBe true
     }
 
-    "validateTitleUniquenessWithContext should demonstrate business rule behavior with examples" {
-        // This test demonstrates the business rule with concrete examples
+    "validateTitleUniquenessWithContext should demonstrate consistent uniqueness behavior" {
+        // This test demonstrates the new unified business rule
 
-        // Example 1: Multiple root-level projects with same name should be allowed
-        val projectTitle = "Website Redesign"
-        val result1 = ScopeValidationService.validateTitleUniquenessWithContext(
-            existsInParentContext = true, // Another "Website Redesign" already exists
+        // Example 1: Root-level projects must have unique names
+        val projectTitle = "Website Project"
+        val rootDuplicateResult = ScopeValidationService.validateTitleUniquenessWithContext(
+            existsInParentContext = true, // Another "Website Project" already exists
             title = projectTitle,
             parentId = null // Root level
         )
-        result1.isRight() shouldBe true // Should be allowed
+        rootDuplicateResult.isLeft() shouldBe true // Should be rejected
 
-        // Example 2: Tasks with same name under different parents should be allowed
+        // Example 2: Root-level projects with unique names are allowed
+        val uniqueRootResult = ScopeValidationService.validateTitleUniquenessWithContext(
+            existsInParentContext = false, // No duplicate exists
+            title = "Personal Portfolio Website",
+            parentId = null // Root level
+        )
+        uniqueRootResult.isRight() shouldBe true // Should be allowed
+
+        // Example 3: Child tasks must have unique names within their parent
         val taskTitle = "Implementation"
         val parentA = ScopeId.generate()
-        val parentB = ScopeId.generate()
 
-        val resultParentA = ScopeValidationService.validateTitleUniquenessWithContext(
-            existsInParentContext = false, // No duplicate under parent A
-            title = taskTitle,
-            parentId = parentA
-        )
-        val resultParentB = ScopeValidationService.validateTitleUniquenessWithContext(
-            existsInParentContext = false, // No duplicate under parent B
-            title = taskTitle,
-            parentId = parentB
-        )
-
-        resultParentA.isRight() shouldBe true
-        resultParentB.isRight() shouldBe true
-
-        // Example 3: Tasks with same name under same parent should be forbidden
-        val duplicateInSameParent = ScopeValidationService.validateTitleUniquenessWithContext(
+        val childDuplicateResult = ScopeValidationService.validateTitleUniquenessWithContext(
             existsInParentContext = true, // Duplicate exists under same parent
             title = taskTitle,
             parentId = parentA
         )
-        duplicateInSameParent.isLeft() shouldBe true
+        childDuplicateResult.isLeft() shouldBe true // Should be rejected
+
+        // Example 4: Child tasks with unique names within parent are allowed
+        val uniqueChildResult = ScopeValidationService.validateTitleUniquenessWithContext(
+            existsInParentContext = false, // No duplicate under parent
+            title = "Backend Implementation",
+            parentId = parentA
+        )
+        uniqueChildResult.isRight() shouldBe true // Should be allowed
     }
 })

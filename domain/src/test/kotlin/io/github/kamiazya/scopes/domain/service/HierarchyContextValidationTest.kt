@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.domain.service
 
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
@@ -126,15 +126,16 @@ class HierarchyContextValidationTest : StringSpec({
         error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle>()
     }
 
-    "multiple teams can use similar scope names at the root level for their independent projects" {
-        // When different teams want to create root-level projects with similar names
+    "system prevents duplicate scope names at the root level to maintain consistent uniqueness" {
+        // When someone tries to create a root-level scope with a name that already exists
         val result = ScopeValidationService.validateTitleUniquenessWithContext(
             existsInParentContext = true,
-            title = "Mobile App",  // Another team might also have "Mobile App" project
-            parentId = null  // Root level - different organizational contexts
+            title = "Mobile App",  // A scope with this name already exists at root level
+            parentId = null  // Root level - unified uniqueness applies here too
         )
 
-        // Then the system allows this since root-level scopes serve different teams/contexts
-        result.shouldBeRight()
+        // Then the system prevents this to maintain consistent title uniqueness across all levels
+        val error = result.shouldBeLeft()
+        error.shouldBeInstanceOf<DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle>()
     }
 })
