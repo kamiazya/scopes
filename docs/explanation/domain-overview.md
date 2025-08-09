@@ -227,6 +227,58 @@ Designed from the ground up for human-AI collaboration:
 - Third-party plugin ecosystem
 - Web-based interface (CLI-first)
 
+## Business Rules
+
+### Title Uniqueness Rules
+
+The system enforces different title uniqueness rules depending on the scope hierarchy level:
+
+#### Root-Level Scopes (parentId = null)
+- **Rule**: Duplicate titles are **ALLOWED** at the root level
+- **Rationale**: Users may have multiple unrelated projects with similar names
+- **Example**: Multiple "Website" or "Documentation" projects are acceptable
+
+```text
+✅ Allowed:
+├── Scope: "Website" (Project A)
+├── Scope: "Website" (Project B)  // Duplicate title OK at root
+└── Scope: "Documentation"
+```
+
+#### Child Scopes (parentId != null)
+- **Rule**: Duplicate titles are **FORBIDDEN** within the same parent
+- **Rationale**: Prevents confusion and maintains clear identification within a project context
+- **Example**: Two tasks with the same name under the same parent are rejected
+
+```text
+❌ Not Allowed:
+└── Scope: "Project Alpha"
+    ├── Scope: "Implementation"
+    └── Scope: "Implementation"  // Duplicate title forbidden
+
+✅ Allowed:
+├── Scope: "Project Alpha"
+│   └── Scope: "Implementation"
+└── Scope: "Project Beta"
+    └── Scope: "Implementation"  // Same title OK under different parents
+```
+
+#### Implementation Details
+- **Validation**: Enforced in `ScopeValidationService.validateTitleUniquenessEfficient()`
+- **Performance**: Root-level scopes bypass database uniqueness checks entirely
+- **Error Handling**: Violations return `DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle`
+
+### Other Business Rules
+
+#### Hierarchy Constraints
+- **Maximum Depth**: 10 levels to prevent excessive nesting
+- **Maximum Children**: 100 children per parent to maintain performance
+
+#### Title Validation
+- **Length**: 1-200 characters
+- **Content**: No newline characters allowed
+- **Required**: Cannot be empty or whitespace-only
+
 ## Success Metrics
 
 ### Developer Productivity
