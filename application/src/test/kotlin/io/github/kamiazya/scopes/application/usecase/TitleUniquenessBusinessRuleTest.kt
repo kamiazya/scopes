@@ -120,7 +120,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val command = CreateScope(
                 title = "Database Setup",
                 description = "Another database setup task",
-                parentId = projectId
+                parentId = projectId.toString()
             )
             val result = handler(command)
 
@@ -198,7 +198,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val command = CreateScope(
                 title = "Testing",
                 description = "Additional testing work",
-                parentId = projectId
+                parentId = projectId.toString()
             )
             val result = handler(command)
 

@@ -5,7 +5,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.presentation.cli.utils.toUserMessage
 import kotlinx.coroutines.runBlocking
 
@@ -25,7 +24,7 @@ class CreateScopeCommand(
         val command = CreateScope(
             title = name,
             description = description,
-            parentId = parent?.let { ScopeId.from(it) },
+            parentId = parent,
         )
 
         createScopeHandler(command).fold(

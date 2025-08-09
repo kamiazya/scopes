@@ -32,12 +32,15 @@ class CreateScopeHandler(
         // Step 1: Check parent exists (prerequisite for other validations)
         validateParentExists(input.parentId).bind()
 
+        // Convert parentId string to ScopeId if provided
+        val parentId = input.parentId?.let { ScopeId.from(it) }
+
         // Step 2: Perform repository-dependent validations
         // (hierarchy depth, children limit, title uniqueness)
-        validateScopeCreation(input).bind()
+        validateScopeCreation(input.title, input.description, parentId).bind()
 
         // Step 3: Create domain entity (enforces domain invariants)
-        val scope = createScopeEntity(input).bind()
+        val scope = createScopeEntity(input.title, input.description, parentId, input.metadata).bind()
 
         // Step 4: Persist the entity
         val savedScope = saveScopeEntity(scope).bind()
@@ -49,9 +52,19 @@ class CreateScopeHandler(
     /**
      * Validates that parent scope exists if parentId is provided.
      */
-    private suspend fun validateParentExists(parentId: ScopeId?): Either<ApplicationError, Unit> = either {
-        if (parentId == null) {
+    private suspend fun validateParentExists(parentIdString: String?): Either<ApplicationError, Unit> = either {
+        if (parentIdString == null) {
             return@either
+        }
+
+        val parentId = try {
+            ScopeId.from(parentIdString)
+        } catch (e: IllegalArgumentException) {
+            raise(
+                ApplicationError.DomainErrors.single(
+                    io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
+                )
+            )
         }
 
         val exists = scopeRepository.existsById(parentId)
@@ -71,11 +84,15 @@ class CreateScopeHandler(
      * Validates repository-dependent business rules.
      * These cannot be checked in Scope.create as they require repository access.
      */
-    private suspend fun validateScopeCreation(input: CreateScope): Either<ApplicationError, Unit> {
+    private suspend fun validateScopeCreation(
+        title: String, 
+        description: String?, 
+        parentId: ScopeId?
+    ): Either<ApplicationError, Unit> {
         val validationResult = applicationScopeValidationService.validateScopeCreation(
-            input.title,
-            input.description,
-            input.parentId
+            title,
+            description,
+            parentId
         )
 
         return ApplicationError.fromValidationResult(validationResult)
@@ -85,12 +102,17 @@ class CreateScopeHandler(
      * Creates domain entity using safe factory method.
      * Domain layer enforces all business invariants.
      */
-    private fun createScopeEntity(input: CreateScope): Either<ApplicationError, Scope> = either {
+    private fun createScopeEntity(
+        title: String,
+        description: String?,
+        parentId: ScopeId?,
+        metadata: Map<String, String>
+    ): Either<ApplicationError, Scope> = either {
         Scope.create(
-            title = input.title,
-            description = input.description,
-            parentId = input.parentId,
-            metadata = input.metadata
+            title = title,
+            description = description,
+            parentId = parentId,
+            metadata = metadata
         ).mapLeft { ApplicationError.DomainErrors.single(it) }
             .bind()
     }

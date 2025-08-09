@@ -22,6 +22,32 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
+    "presentation module should not import domain classes except abstractions" {
+        Konsist
+            .scopeFromModule("presentation-cli")
+            .files
+            .assertFalse { file ->
+                file.imports.any { import ->
+                    import.name.startsWith("io.github.kamiazya.scopes.domain.") &&
+                    // Allow repository interfaces for DI configuration
+                    !import.name.contains(".repository.")
+                }
+            }
+    }
+
+    "application DTO classes should not import domain types" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { it.packagee?.name?.endsWith(".dto") == true }
+            .assertFalse { dtoClass ->
+                // Check all imports in files containing DTO classes
+                dtoClass.containingFile.imports.any { import ->
+                    import.name.startsWith("io.github.kamiazya.scopes.domain.")
+                }
+            }
+    }
+
     "command classes should be in command package and follow naming convention" {
         Konsist
             .scopeFromModule("application")
