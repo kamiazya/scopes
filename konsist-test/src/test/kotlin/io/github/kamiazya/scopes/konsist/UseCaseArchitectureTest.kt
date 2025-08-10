@@ -50,7 +50,8 @@ class UseCaseArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { it.packagee?.name?.endsWith(".command") == true }
+            .filter { it.packagee?.name?.endsWith(".usecase.command") == true }
+            .filter { it.name != "Command" } // Exclude the Command interface itself
             .assertTrue { it.hasParentWithName("Command") }
     }
 
@@ -58,7 +59,8 @@ class UseCaseArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { it.packagee?.name?.endsWith(".query") == true }
+            .filter { it.packagee?.name?.endsWith(".usecase.query") == true }
+            .filter { it.name != "Query" } // Exclude the Query interface itself
             .assertTrue { it.hasParentWithName("Query") }
     }
 
