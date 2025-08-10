@@ -279,4 +279,17 @@ class UseCaseArchitectureTest : StringSpec({
                 }
             }
     }
+
+    "result classes should be in dto package" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { it.name.endsWith("Result") }
+            .filter { it.name != "UseCaseResult" } // Exclude the base result type
+            .assertTrue { result ->
+                // Classes ending with "Result" should be in the dto package
+                val packageName = result.packagee?.name ?: ""
+                packageName.endsWith(".dto")
+            }
+    }
 })
