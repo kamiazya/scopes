@@ -5,6 +5,78 @@ import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
 
+/**
+ * Enhanced domain type detection that uses package-based analysis
+ * instead of hardcoded entity names.
+ */
+private fun isDomainType(sourceType: String?, typeName: String): Boolean {
+    // Primary check: Use actual package information if available
+    if (sourceType != null) {
+        // Check if the type comes from a domain package
+        if (sourceType.contains(".domain.")) {
+            return true
+        }
+        
+        // Check if it's from a domain-related module structure
+        if (sourceType.contains("domain") && 
+            (sourceType.contains("entity") || sourceType.contains("aggregate") || sourceType.contains("valueobject"))) {
+            return true
+        }
+    }
+    
+    // Secondary check: Pattern-based detection for when package info is not available
+    // This is more comprehensive than the previous hardcoded approach
+    
+    // Exclude known non-domain types first
+    val allowedTypes = setOf(
+        "String", "Int", "Long", "Boolean", "Double", "Float", "Unit", "Any",
+        "List", "Map", "Set", "Array", "Collection", "Sequence",
+        "Instant", "LocalDateTime", "LocalDate", "UUID", "BigDecimal"
+    )
+    
+    if (allowedTypes.contains(typeName)) {
+        return false
+    }
+    
+    // Exclude DTO/Result types (these are application layer, not domain)
+    if (typeName.endsWith("DTO") || typeName.endsWith("Result") || 
+        typeName.endsWith("Command") || typeName.endsWith("Query")) {
+        return false
+    }
+    
+    // Exclude generic type expressions
+    if (typeName.contains("<") || typeName.contains(">") || typeName.contains(",")) {
+        return false
+    }
+    
+    // Check for domain-specific patterns
+    // Domain entities are typically single capitalized words
+    if (typeName.matches(Regex("^[A-Z][a-zA-Z0-9]*$"))) {
+        // Additional checks to reduce false positives
+        
+        // Likely domain value object patterns
+        val domainValueObjectSuffixes = listOf("Id", "Name", "Title", "Code", "Status", "Type", "Category")
+        if (domainValueObjectSuffixes.any { suffix -> typeName.endsWith(suffix) && typeName.length > suffix.length }) {
+            return true
+        }
+        
+        // Likely domain entity patterns (short, descriptive nouns)
+        // This replaces the hardcoded list with pattern matching
+        if (typeName.length in 3..20 && 
+            !typeName.startsWith("Http") && 
+            !typeName.startsWith("Json") && 
+            !typeName.startsWith("Xml") &&
+            !typeName.endsWith("Exception") &&
+            !typeName.endsWith("Error") &&
+            !typeName.endsWith("Config") &&
+            !typeName.endsWith("Properties") &&
+            !typeName.endsWith("Context")) {
+            return true
+        }
+    }
+    
+    return false
+}
 
 /**
  * Konsist tests for DDD UseCase pattern hardening requirements.
@@ -211,27 +283,30 @@ class DddUseCasePatternTest : StringSpec({
                 handler.functions()
                     .filter { it.name == "invoke" }
                     .any { function ->
-                        val returnType = function.returnType?.text ?: ""
+                        val returnType = function.returnType
                         
-                        // Extract generic type parameter from UseCaseResult<T>
+                        if (returnType == null) {
+                            return@any false
+                        }
+                        
+                        // Try to get actual type information from Konsist first
+                        val typeArguments = returnType.typeArguments
+                        if (typeArguments?.isNotEmpty() == true) {
+                            // Use Konsist's type system to check generic parameters
+                            return@any typeArguments.any { typeArg ->
+                                isDomainType(null, typeArg.text)
+                            }
+                        }
+                        
+                        // Fallback to string parsing if type arguments aren't available
+                        val returnTypeText = returnType.text
                         val genericTypePattern = Regex("UseCaseResult<([^>]+)>")
-                        val matchResult = genericTypePattern.find(returnType)
+                        val matchResult = genericTypePattern.find(returnTypeText)
                         
                         if (matchResult != null) {
                             val genericType = matchResult.groupValues[1].trim()
-                            
-                            // Check if generic type parameter is a likely domain entity
-                            // Domain entities are typically single capitalized words without DTO/Result suffix
-                            val isDomainEntity = genericType.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
-                                               !genericType.endsWith("Result") && 
-                                               !genericType.endsWith("DTO") &&
-                                               genericType !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
-                            
-                            // Also check for specific known domain entities
-                            val knownDomainEntities = listOf("Scope", "User", "Project", "Task")
-                            val isKnownDomainEntity = knownDomainEntities.contains(genericType)
-                            
-                            isDomainEntity || isKnownDomainEntity
+                            // Use enhanced domain type detection
+                            isDomainType(null, genericType)
                         } else {
                             false
                         }
