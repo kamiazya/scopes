@@ -120,17 +120,19 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    // TODO: Fix UseCase interface implementation check
-    // "handler classes should implement UseCase interface" {
-    //     Konsist
-    //         .scopeFromModule("application")
-    //         .classes()
-    //         .filter { it.name.endsWith("Handler") }
-    //         .assertTrue { handler ->
-    //             // Handlers should implement UseCase<I, O> interface
-    //             handler.parents().any { parent -> parent.name == "UseCase" }
-    //         }
-    // }
+    "handler classes should implement UseCase interface" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { it.packagee?.name?.endsWith(".usecase.handler") == true }
+            .assertTrue { handler ->
+                // Handlers should implement UseCase interface
+                // Check if any parent contains "UseCase" in its name
+                handler.parents().any { parent -> 
+                    parent.name.contains("UseCase")
+                }
+            }
+    }
 
     "queries in query package should implement Query interface" {
         Konsist
