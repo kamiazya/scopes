@@ -11,26 +11,28 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 class InfrastructureErrorTranslator {
 
     /**
-     * Translates database adapter errors to save operation errors.
+     * Translates infrastructure adapter errors to save operation errors.
      */
     fun translateToSaveError(
-        error: InfrastructureAdapterError.DatabaseAdapterError,
+        error: InfrastructureAdapterError,
         scopeId: ScopeId
     ): SaveScopeError = when (error) {
         is InfrastructureAdapterError.DatabaseAdapterError.ConnectionError -> 
-            SaveScopeError.DatabaseError(
+            SaveScopeError.InfrastructureError(
                 scopeId = scopeId,
-                message = "Database connection failed: ${error.cause.message}",
+                failureType = "Database connection error",
                 cause = error.cause,
-                retryable = error.retryable
+                retryable = error.retryable,
+                correlationId = error.correlationId
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
-            SaveScopeError.DatabaseError(
+            SaveScopeError.InfrastructureError(
                 scopeId = scopeId,
-                message = "Query execution failed: ${error.cause.message}",
+                failureType = "Database query error",
                 cause = error.cause,
-                retryable = error.retryable
+                retryable = error.retryable,
+                correlationId = error.correlationId
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.TransactionError -> 
@@ -46,19 +48,90 @@ class InfrastructureErrorTranslator {
             SaveScopeError.DuplicateId(scopeId)
         
         is InfrastructureAdapterError.DatabaseAdapterError.ResourceExhaustionError -> 
-            SaveScopeError.DatabaseError(
+            SaveScopeError.InfrastructureError(
                 scopeId = scopeId,
-                message = "Database resource exhausted: ${error.resource}",
+                failureType = "Database resource exhausted",
                 cause = error.cause,
-                retryable = error.retryable
+                retryable = error.retryable,
+                correlationId = error.correlationId
             )
+            
+        is InfrastructureAdapterError.ExternalApiAdapterError.NetworkError -> 
+            SaveScopeError.InfrastructureError(
+                scopeId = scopeId,
+                failureType = "External API network error",
+                cause = error.cause,
+                retryable = true,
+                correlationId = error.correlationId
+            )
+            
+        is InfrastructureAdapterError.ExternalApiAdapterError.HttpError -> 
+            SaveScopeError.InfrastructureError(
+                scopeId = scopeId,
+                failureType = "External API HTTP error (${error.statusCode})",
+                cause = RuntimeException("HTTP ${error.statusCode}: ${error.responseBody}"),
+                retryable = error.statusCode >= 500,
+                correlationId = error.correlationId
+            )
+            
+        is InfrastructureAdapterError.FileSystemAdapterError.PermissionError -> 
+            SaveScopeError.InfrastructureError(
+                scopeId = scopeId,
+                failureType = "Filesystem permission error",
+                cause = RuntimeException("Permission denied: ${error.path}"),
+                retryable = false,
+                correlationId = error.correlationId
+            )
+            
+        is InfrastructureAdapterError.FileSystemAdapterError.StorageError -> 
+            SaveScopeError.StorageError(
+                scopeId = scopeId,
+                availableSpace = error.availableSpace ?: 0L,
+                requiredSpace = error.requiredSpace ?: 0L,
+                retryable = false
+            )
+            
+        is InfrastructureAdapterError.MessagingAdapterError.DeliveryError -> 
+            SaveScopeError.InfrastructureError(
+                scopeId = scopeId,
+                failureType = "Messaging delivery error",
+                cause = error.cause,
+                retryable = true,
+                correlationId = error.correlationId
+            )
+            
+        is InfrastructureAdapterError.ConfigurationAdapterError.ValidationError -> 
+            SaveScopeError.InfrastructureError(
+                scopeId = scopeId,
+                failureType = "Configuration validation error",
+                cause = RuntimeException("Config validation failed: ${error.configKey}"),
+                retryable = false,
+                correlationId = error.correlationId
+            )
+            
+        is InfrastructureAdapterError.TransactionAdapterError.DeadlockError -> 
+            SaveScopeError.TransactionError(
+                scopeId = scopeId,
+                transactionId = error.transactionId,
+                operation = "DEADLOCK",
+                retryable = true,
+                cause = RuntimeException("Deadlock detected")
+            )
+            
+        else -> SaveScopeError.InfrastructureError(
+            scopeId = scopeId,
+            failureType = "Unknown infrastructure error",
+            cause = RuntimeException("Unknown infrastructure adapter error"),
+            retryable = false,
+            correlationId = null
+        )
     }
 
     /**
-     * Translates database adapter errors to existence check errors.
+     * Translates infrastructure adapter errors to existence check errors.
      */
     fun translateToExistsError(
-        error: InfrastructureAdapterError.DatabaseAdapterError,
+        error: InfrastructureAdapterError,
         scopeId: ScopeId? = null
     ): ExistsScopeError = when (error) {
         is InfrastructureAdapterError.DatabaseAdapterError.ConnectionError -> 
@@ -68,23 +141,22 @@ class InfrastructureErrorTranslator {
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
-            ExistsScopeError.QueryTimeout(
-                scopeId = scopeId ?: ScopeId.generate(),
-                timeoutMs = error.executionTimeMs ?: 0,
-                operation = "existence check"
+            ExistsScopeError.PersistenceFailure(
+                message = "Query execution failed",
+                cause = error.cause
             )
         
-        else -> ExistsScopeError.UnknownError(
-            message = "Infrastructure error: Unknown database error",
-            cause = RuntimeException("Unknown database adapter error")
+        else -> ExistsScopeError.PersistenceFailure(
+            message = "Infrastructure error: Unknown adapter error",
+            cause = RuntimeException("Unknown infrastructure adapter error")
         )
     }
 
     /**
-     * Translates database adapter errors to count operation errors.
+     * Translates infrastructure adapter errors to count operation errors.
      */
     fun translateToCountError(
-        error: InfrastructureAdapterError.DatabaseAdapterError,
+        error: InfrastructureAdapterError,
         parentId: ScopeId?
     ): CountScopeError = when (error) {
         is InfrastructureAdapterError.DatabaseAdapterError.ConnectionError -> 
@@ -96,21 +168,28 @@ class InfrastructureErrorTranslator {
         
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
             CountScopeError.AggregationTimeout(
-                timeoutMillis = error.executionTimeMs ?: 0
+                timeoutMillis = error.executionTimeMs ?: 0L
+            )
+        
+        is InfrastructureAdapterError.DatabaseAdapterError.ResourceExhaustionError -> 
+            CountScopeError.ConnectionError(
+                parentId = parentId ?: ScopeId.generate(),
+                retryable = error.retryable,
+                cause = error.cause
             )
         
         else -> CountScopeError.UnknownError(
             parentId = parentId ?: ScopeId.generate(),
-            message = "Infrastructure error: Unknown database error",
-            cause = RuntimeException("Unknown database adapter error")
+            message = "Infrastructure error: Unknown adapter error",
+            cause = RuntimeException("Unknown infrastructure adapter error")
         )
     }
 
     /**
-     * Translates database adapter errors to find operation errors.
+     * Translates infrastructure adapter errors to find operation errors.
      */
     fun translateToFindError(
-        error: InfrastructureAdapterError.DatabaseAdapterError,
+        error: InfrastructureAdapterError,
         scopeId: ScopeId?
     ): FindScopeError = when (error) {
         is InfrastructureAdapterError.DatabaseAdapterError.ConnectionError -> 
@@ -123,13 +202,13 @@ class InfrastructureErrorTranslator {
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
             FindScopeError.TraversalTimeout(
                 scopeId = scopeId ?: ScopeId.generate(),
-                timeoutMillis = error.executionTimeMs ?: 0
+                timeoutMillis = error.executionTimeMs ?: 0L
             )
         
         else -> FindScopeError.UnknownError(
             scopeId = scopeId ?: ScopeId.generate(),
-            message = "Infrastructure error: Unknown database error",
-            cause = RuntimeException("Unknown database adapter error")
+            message = "Infrastructure error: Unknown adapter error",
+            cause = RuntimeException("Unknown infrastructure adapter error")
         )
     }
 

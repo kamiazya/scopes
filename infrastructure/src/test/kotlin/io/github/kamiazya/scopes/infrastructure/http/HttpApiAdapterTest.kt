@@ -216,7 +216,7 @@ class HttpApiAdapterTest : StringSpec({
         runTest {
             val adapter = HttpApiAdapter()
             val circuitBreakerManager = MockCircuitBreakerManager()
-            circuitBreakerManager.setCircuitState("https://api.external.com", io.github.kamiazya.scopes.infrastructure.error.CircuitBreakerState.OPEN)
+            circuitBreakerManager.setCircuitState("https://api.external.com/users", io.github.kamiazya.scopes.infrastructure.error.CircuitBreakerState.OPEN)
             
             val request = HttpRequest(
                 url = "https://api.external.com/users",

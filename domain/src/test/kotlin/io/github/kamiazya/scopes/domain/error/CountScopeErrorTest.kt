@@ -21,15 +21,14 @@ class CountScopeErrorTest : FunSpec({
             error.timeoutMillis shouldBe timeoutMillis
         }
         
-        test("should create ConnectionFailure error with parent ID, message and cause") {
+        test("should create ConnectionError with parent ID and retryable flag") {
             val parentId = ScopeId.generate()
-            val message = "Database connection lost during count"
             val cause = RuntimeException("Connection reset")
-            val error = CountScopeError.ConnectionFailure(parentId, message, cause)
+            val error = CountScopeError.ConnectionError(parentId, retryable = true, cause = cause)
             
-            error.shouldBeInstanceOf<CountScopeError.ConnectionFailure>()
+            error.shouldBeInstanceOf<CountScopeError.ConnectionError>()
             error.parentId shouldBe parentId
-            error.message shouldBe message
+            error.retryable shouldBe true
             error.cause shouldBe cause
         }
         
@@ -76,7 +75,7 @@ class CountScopeErrorTest : FunSpec({
             
             val errors = listOf(
                 CountScopeError.AggregationTimeout(10000L),
-                CountScopeError.ConnectionFailure(parentId, "test", cause),
+                CountScopeError.ConnectionError(parentId, retryable = true, cause = cause),
                 CountScopeError.InvalidParentId(parentId, "test"),
                 CountScopeError.PersistenceFailure(parentId, "test", cause),
                 CountScopeError.UnknownError(parentId, "test", cause)
