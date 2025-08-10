@@ -227,7 +227,7 @@ class DddUseCasePatternTest : StringSpec({
             }
     }
 
-    "handlers should accept commands/queries and return UseCaseResult with DTOs" {
+    "handlers should accept commands/queries and return Either with DTOs" {
         Konsist
             .scopeFromModule("application")
             .classes()
@@ -242,20 +242,26 @@ class DddUseCasePatternTest : StringSpec({
                             return@all false
                         }
                         
-                        // Check if return type name is UseCaseResult (check for base type without generics)
-                        if (!returnType.name.startsWith("UseCaseResult")) {
+                        // Check if return type is Either<ApplicationError, T>
+                        if (!returnType.name.startsWith("Either")) {
                             return@all false
                         }
                         
                         // Use Konsist's typeArguments API instead of regex parsing
                         val typeArguments = returnType.typeArguments
-                        if (typeArguments.isNullOrEmpty()) {
+                        if (typeArguments == null || typeArguments.size != 2) {
                             return@all false
                         }
                         
-                        // Get the first type argument (T in UseCaseResult<T>)
+                        // First type argument should be ApplicationError
                         val firstTypeArgument = typeArguments.first()
-                        val genericTypeName = firstTypeArgument.name
+                        if (firstTypeArgument.name != "ApplicationError") {
+                            return@all false
+                        }
+                        
+                        // Get the second type argument (T in Either<ApplicationError, T>)
+                        val secondTypeArgument = typeArguments[1]
+                        val genericTypeName = secondTypeArgument.name
                         
                         // Validate that the generic type parameter is a proper DTO or Result class
                         // Should end with "Result" (DTO naming convention) or be from dto package
@@ -278,7 +284,7 @@ class DddUseCasePatternTest : StringSpec({
             }
     }
 
-    "handlers should not directly use domain entities in UseCaseResult generic parameters" {
+    "handlers should not directly use domain entities in Either generic parameters" {
         Konsist
             .scopeFromModule("application")
             .classes()
@@ -289,22 +295,21 @@ class DddUseCasePatternTest : StringSpec({
                     .any { function ->
                         val returnType = function.returnType
                         
-                        if (returnType == null || !returnType.name.startsWith("UseCaseResult")) {
+                        if (returnType == null || !returnType.name.startsWith("Either")) {
                             return@any false
                         }
                         
                         // Use Konsist's typeArguments API to check generic parameters
                         val typeArguments = returnType.typeArguments
-                        if (typeArguments.isNullOrEmpty()) {
+                        if (typeArguments == null || typeArguments.size != 2) {
                             return@any false
                         }
                         
-                        // Check if any type argument is a domain type
-                        typeArguments.any { typeArg ->
-                            // Use enhanced domain type detection with just the type name
-                            // The isDomainType function has comprehensive pattern-based detection
-                            isDomainType(null, typeArg.name)
-                        }
+                        // Check if the success type (second type argument) is a domain type
+                        val successType = typeArguments[1]
+                        // Use enhanced domain type detection with just the type name
+                        // The isDomainType function has comprehensive pattern-based detection
+                        isDomainType(null, successType.name)
                     }
             }
     }

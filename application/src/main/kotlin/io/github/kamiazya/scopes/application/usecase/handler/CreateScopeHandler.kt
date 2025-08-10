@@ -7,8 +7,6 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.application.usecase.UseCase
-import io.github.kamiazya.scopes.application.usecase.UseCaseResult
-import io.github.kamiazya.scopes.application.usecase.isErr
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
@@ -25,43 +23,28 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 class CreateScopeHandler(
     private val scopeRepository: ScopeRepository,
     private val applicationScopeValidationService: ApplicationScopeValidationService
-) : UseCase<CreateScope, UseCaseResult<CreateScopeResult>> {
+) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
 
     @Suppress("ReturnCount") // Early returns improve readability in result handling
-    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> = either {
         // Transaction boundary starts here (simulated with comment)
         // In real implementation, this would be wrapped in @Transactional
 
         // Step 1: Parse and validate parent exists (returns parsed ScopeId)
-        val parentIdResult = validateParentExists(input.parentId)
-        if (parentIdResult.isErr()) {
-            return UseCaseResult.err((parentIdResult as UseCaseResult.Err).error)
-        }
-        val parentId = (parentIdResult as UseCaseResult.Ok).value
+        val parentId = validateParentExists(input.parentId).bind()
 
         // Step 2: Perform repository-dependent validations
         // (hierarchy depth, children limit, title uniqueness)
-        val validationResult = validateScopeCreation(input.title, input.description, parentId)
-        if (validationResult.isErr()) {
-            return UseCaseResult.err((validationResult as UseCaseResult.Err).error)
-        }
+        validateScopeCreation(input.title, input.description, parentId).bind()
 
         // Step 3: Create domain entity (enforces domain invariants)
-        val scopeResult = createScopeEntity(input.title, input.description, parentId, input.metadata)
-        if (scopeResult.isErr()) {
-            return UseCaseResult.err((scopeResult as UseCaseResult.Err).error)
-        }
-        val scope = (scopeResult as UseCaseResult.Ok).value
+        val scope = createScopeEntity(input.title, input.description, parentId, input.metadata).bind()
 
         // Step 4: Persist the entity
-        val savedScopeResult = saveScopeEntity(scope)
-        if (savedScopeResult.isErr()) {
-            return UseCaseResult.err((savedScopeResult as UseCaseResult.Err).error)
-        }
-        val savedScope = (savedScopeResult as UseCaseResult.Ok).value
+        val savedScope = saveScopeEntity(scope).bind()
 
         // Step 5: Map to DTO (no domain entities leak out)
-        return UseCaseResult.ok(ScopeMapper.toCreateScopeResult(savedScope))
+        ScopeMapper.toCreateScopeResult(savedScope)
     }
 
     /**
@@ -69,36 +52,34 @@ class CreateScopeHandler(
      * Returns the parsed ScopeId if valid, null if not provided.
      */
     @Suppress("ReturnCount") // Early returns improve readability in result handling
-    private suspend fun validateParentExists(parentIdString: String?): UseCaseResult<ScopeId?> {
+    private suspend fun validateParentExists(parentIdString: String?): Either<ApplicationError, ScopeId?> = either {
         if (parentIdString == null) {
-            return UseCaseResult.ok(null)
+            return@either null
         }
 
         val parentId = try {
             ScopeId.from(parentIdString)
         } catch (e: IllegalArgumentException) {
-            return UseCaseResult.err(
+            raise(
                 ApplicationError.DomainErrors.single(
                     io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
                 )
             )
         }
 
-        return scopeRepository.existsById(parentId)
-            .fold(
-                ifLeft = { error -> UseCaseResult.err(ApplicationError.Repository(error)) },
-                ifRight = { exists ->
-                    if (!exists) {
-                        UseCaseResult.err(
-                            ApplicationError.DomainErrors.single(
-                                io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
-                            )
-                        )
-                    } else {
-                        UseCaseResult.ok(parentId)
-                    }
-                }
+        val exists = scopeRepository.existsById(parentId)
+            .mapLeft { ApplicationError.Repository(it) }
+            .bind()
+
+        if (!exists) {
+            raise(
+                ApplicationError.DomainErrors.single(
+                    io.github.kamiazya.scopes.domain.error.DomainError.ScopeError.ScopeNotFound
+                )
             )
+        }
+
+        parentId
     }
 
     /**
@@ -109,17 +90,14 @@ class CreateScopeHandler(
         title: String, 
         description: String?, 
         parentId: ScopeId?
-    ): UseCaseResult<Unit> {
+    ): Either<ApplicationError, Unit> {
         val validationResult = applicationScopeValidationService.validateScopeCreation(
             title,
             description,
             parentId
         )
 
-        return ApplicationError.fromValidationResult(validationResult).fold(
-            ifLeft = { error -> UseCaseResult.err(error) },
-            ifRight = { value -> UseCaseResult.ok(value) }
-        )
+        return ApplicationError.fromValidationResult(validationResult)
     }
 
     /**
@@ -131,25 +109,19 @@ class CreateScopeHandler(
         description: String?,
         parentId: ScopeId?,
         metadata: Map<String, String>
-    ): UseCaseResult<Scope> {
-        return Scope.create(
+    ): Either<ApplicationError, Scope> =
+        Scope.create(
             title = title,
             description = description,
             parentId = parentId,
             metadata = metadata
-        ).fold(
-            ifLeft = { error -> UseCaseResult.err(ApplicationError.DomainErrors.single(error)) },
-            ifRight = { scope -> UseCaseResult.ok(scope) }
-        )
-    }
+        ).mapLeft { ApplicationError.DomainErrors.single(it) }
 
     /**
      * Persists the entity through repository.
      */
-    private suspend fun saveScopeEntity(scope: Scope): UseCaseResult<Scope> =
-        scopeRepository.save(scope).fold(
-            ifLeft = { error -> UseCaseResult.err(ApplicationError.Repository(error)) },
-            ifRight = { savedScope -> UseCaseResult.ok(savedScope) }
-        )
+    private suspend fun saveScopeEntity(scope: Scope): Either<ApplicationError, Scope> =
+        scopeRepository.save(scope)
+            .mapLeft { ApplicationError.Repository(it) }
 
 }

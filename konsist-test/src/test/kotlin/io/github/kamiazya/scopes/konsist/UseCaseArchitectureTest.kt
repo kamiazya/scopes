@@ -156,15 +156,15 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    "handlers should use UseCaseResult for unified result handling" {
+    "handlers should use Either for unified result handling" {
         Konsist
             .scopeFromModule("application")
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertTrue { handler ->
-                // Handlers should return UseCaseResult<T> type
+                // Handlers should return Either<ApplicationError, T> type
                 handler.functions().any { function ->
-                    function.returnType?.text?.contains("UseCaseResult") == true
+                    function.returnType?.text?.contains("Either<ApplicationError,") == true
                 }
             }
     }
@@ -285,7 +285,6 @@ class UseCaseArchitectureTest : StringSpec({
             .scopeFromModule("application")
             .classes()
             .filter { it.name.endsWith("Result") }
-            .filter { it.name != "UseCaseResult" } // Exclude the base result type
             .assertTrue { result ->
                 // Classes ending with "Result" should be in the dto package
                 val packageName = result.packagee?.name ?: ""

@@ -117,35 +117,33 @@ Mappers integrate seamlessly with the UseCase pattern at the final step of handl
 
 **Before (Inline Mapping - Avoid)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, UseCaseResult<CreateScopeResult>> {
+class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
     
-    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
         // ... domain logic ...
         
         // ❌ Inline mapping clutters handler logic
-        return UseCaseResult.ok(
-            CreateScopeResult(
-                id = savedScope.id.toString(),
-                title = savedScope.title.value,
-                description = savedScope.description?.value,
-                parentId = savedScope.parentId?.toString(),
-                createdAt = savedScope.createdAt,
-                metadata = savedScope.metadata.toMap()
-            )
-        )
+        return CreateScopeResult(
+            id = savedScope.id.toString(),
+            title = savedScope.title.value,
+            description = savedScope.description?.value,
+            parentId = savedScope.parentId?.toString(),
+            createdAt = savedScope.createdAt,
+            metadata = savedScope.metadata.toMap()
+        ).right()
     }
 }
 ```
 
 **After (Dedicated Mapper - Preferred)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, UseCaseResult<CreateScopeResult>> {
+class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
     
-    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
         // ... domain logic ...
         
         // ✅ Clean separation using dedicated mapper
-        return UseCaseResult.ok(ScopeMapper.toCreateScopeResult(savedScope))
+        return ScopeMapper.toCreateScopeResult(savedScope).right()
     }
 }
 ```
@@ -297,8 +295,8 @@ val dto = ScopeMapper.toCreateScopeResult(scope)
 //   metadata = mapOf("priority" to "high")
 // )
 
-// Step 3: Handler returns DTO wrapped in UseCaseResult
-return UseCaseResult.ok(dto)
+// Step 3: Handler returns DTO wrapped in Either
+return dto.right()
 ```
 
 This flow ensures:

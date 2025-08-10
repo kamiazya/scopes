@@ -91,7 +91,7 @@ class BasicArchitectureTest : StringSpec({
     }
     
     // Temporarily skip UseCase naming convention test 
-    // The core functionality is working correctly with unified UseCaseResult
+    // The core functionality is working correctly with Arrow Either
     // This test needs refinement to handle utility classes properly
     
     "data classes should use val properties" {
