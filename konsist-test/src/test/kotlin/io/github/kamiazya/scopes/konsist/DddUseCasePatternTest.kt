@@ -390,7 +390,7 @@ class DddUseCasePatternTest : StringSpec({
             .assertTrue { mapper ->
                 // Mappers should return DTOs, not domain entities
                 mapper.functions().all { function ->
-                    val returnType = function.returnType?.name ?: ""
+                    val returnType = function.returnType?.text ?: ""
                     // Return types should be DTOs (end with Result/DTO) or primitives
                     returnType.endsWith("Result") || 
                     returnType.endsWith("DTO") ||
