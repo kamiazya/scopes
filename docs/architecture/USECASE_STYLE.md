@@ -341,4 +341,74 @@ class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, Cr
 }
 ```
 
+## Example Vertical Slice (E2E)
+
+The following example demonstrates the complete DDD UseCase pattern implementation from CLI to domain and back:
+
+### Running the Sample
+
+Execute the sample CLI command to create a scope:
+
+```bash
+# Basic scope creation
+./gradlew run --args="create --name Hello"
+
+# Expected output:
+✅ Created scope: 01K292J7NFNTDC1T8XQKEV0CG5
+   Title: Hello
+   Created at: 2025-08-10T04:07:05.134639782Z
+```
+
+```bash
+# Advanced scope creation with description
+./gradlew run --args="create --name 'My First Project' --description 'A sample project for the demo'"
+
+# Expected output:
+✅ Created scope: 01K292JDV26D6D1SGMK1T60Q2W
+   Title: My First Project
+   Description: A sample project for the demo
+   Created at: 2025-08-10T04:07:11.456063133Z
+```
+
+### What the Demo Demonstrates
+
+This E2E slice showcases the complete vertical flow through all architecture layers:
+
+1. **CLI Layer** (`presentation-cli`):
+   - `CreateScopeCommand` captures user input
+   - Validates required parameters
+   - Maps CLI arguments to domain command
+
+2. **Application Layer** (`application`):
+   - `CreateScopeHandler` orchestrates the use case
+   - `CreateScope` command represents user intent
+   - `CreateScopeResult` DTO provides clean output
+   - `ScopeMapper` handles entity-to-DTO transformation
+
+3. **Domain Layer** (`domain`):
+   - `Scope` entity enforces business rules
+   - `ScopeTitle` value object validates title constraints
+   - `ScopeId` generates ULID identifiers
+
+4. **Infrastructure Layer** (`infrastructure`):
+   - `InMemoryScopeRepository` persists data
+   - `NoopTransactionManager` handles transaction boundaries
+
+### Architecture Benefits Demonstrated
+
+- **Clean Separation**: Each layer has clear responsibilities
+- **Dependency Inversion**: High-level layers don't depend on low-level details
+- **Testability**: Each component can be tested in isolation
+- **Type Safety**: Strong typing prevents runtime errors
+- **Error Handling**: Graceful error propagation through `UseCaseResult`
+- **Local-First**: Works without external dependencies using in-memory storage
+
+### ULID Identifier System
+
+The demo showcases ULID (Universally Unique Lexicographically Sortable Identifier) usage:
+- **Format**: 26 characters (e.g., `01K292J7NFNTDC1T8XQKEV0CG5`)
+- **Sortable**: Chronologically ordered by creation time  
+- **Distributed**: No central coordination required
+- **URL-Safe**: Can be used in REST APIs and file paths
+
 This pattern provides a solid foundation for scaling the application while maintaining architectural integrity and code quality.
