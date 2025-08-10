@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
@@ -25,15 +26,18 @@ object CompositionRoot {
     
     /**
      * Initialize the dependency injection container with all required modules.
-     * This should be called once at application startup.
+     * This is idempotent and safe to call multiple times - it only initializes
+     * Koin if it's not already running.
      */
     fun initialize() {
-        startKoin {
-            modules(
-                infrastructureModule,
-                applicationModule,
-                presentationModule
-            )
+        if (GlobalContext.getOrNull() == null) {
+            startKoin {
+                modules(
+                    infrastructureModule,
+                    applicationModule,
+                    presentationModule
+                )
+            }
         }
     }
     
