@@ -81,6 +81,83 @@ data class CreateScopeResult(
 - **Immutable**: Data classes with `val` properties
 - **Serializable**: Support JSON/API responses
 
+### 5. Mappers
+
+Mappers are responsible for converting between domain entities and application DTOs, ensuring that domain types never leak outside the application layer.
+
+```kotlin
+object ScopeMapper {
+    
+    /**
+     * Map Scope entity to CreateScopeResult DTO.
+     */
+    fun toCreateScopeResult(scope: Scope): CreateScopeResult = 
+        CreateScopeResult(
+            id = scope.id.toString(),
+            title = scope.title.value,
+            description = scope.description?.value,
+            parentId = scope.parentId?.toString(),
+            createdAt = scope.createdAt,
+            metadata = scope.metadata.toMap()  // Defensive copy for immutability
+        )
+}
+```
+
+#### Mapper Rules and Constraints:
+
+1. **Location**: Mappers MUST live only in `application/mapper/` package
+2. **Purity**: No business logic inside mappers - only data transformation
+3. **Boundary Protection**: Domain types never leak outside mappers
+4. **Immutability**: Always create defensive copies for mutable collections
+5. **One-Way Flow**: Domain Entity → Mapper → DTO → UseCaseResult
+
+#### Integration with UseCase Pattern:
+
+Mappers integrate seamlessly with the UseCase pattern at the final step of handlers:
+
+**Before (Inline Mapping - Avoid)**:
+```kotlin
+class CreateScopeHandler(...) : UseCase<CreateScope, UseCaseResult<CreateScopeResult>> {
+    
+    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
+        // ... domain logic ...
+        
+        // ❌ Inline mapping clutters handler logic
+        return UseCaseResult.ok(
+            CreateScopeResult(
+                id = savedScope.id.toString(),
+                title = savedScope.title.value,
+                description = savedScope.description?.value,
+                parentId = savedScope.parentId?.toString(),
+                createdAt = savedScope.createdAt,
+                metadata = savedScope.metadata.toMap()
+            )
+        )
+    }
+}
+```
+
+**After (Dedicated Mapper - Preferred)**:
+```kotlin
+class CreateScopeHandler(...) : UseCase<CreateScope, UseCaseResult<CreateScopeResult>> {
+    
+    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
+        // ... domain logic ...
+        
+        // ✅ Clean separation using dedicated mapper
+        return UseCaseResult.ok(ScopeMapper.toCreateScopeResult(savedScope))
+    }
+}
+```
+
+#### Benefits:
+
+- **Separation of Concerns**: Handlers focus on orchestration, mappers handle transformation
+- **Reusability**: Same mapper can be used across multiple handlers
+- **Testability**: Mapping logic can be tested independently
+- **Maintainability**: Changes to DTO structure are centralized in mappers
+- **Architecture Compliance**: Enforces Clean Architecture boundary rules
+
 ## Directory Structure
 
 ```
@@ -110,6 +187,13 @@ application/
 - [ ] Input implements `Command` or `Query` marker
 - [ ] Output is a DTO (no domain entities)
 - [ ] Handler name ends with "Handler"
+
+### ✅ Mapper Requirements
+- [ ] Mappers located only in `application/mapper/` package
+- [ ] No business logic inside mappers (pure transformation)
+- [ ] Domain entities converted to DTOs before leaving application layer
+- [ ] Defensive copies created for mutable collections
+- [ ] Handler uses dedicated mapper instead of inline mapping
 
 ### ✅ Dependency Management  
 - [ ] Handler depends only on domain interfaces
@@ -153,6 +237,12 @@ application/
    - No domain entities in DTOs
    - Mappers handle entity ↔ DTO conversion
 
+4. **Mapper Rules**:
+   - Mappers reside only in `application/mapper/`
+   - No business logic in mappers (pure data transformation)
+   - Domain entities never escape mappers
+   - Use defensive copying for mutable collections
+
 ## Example Usage
 
 ### CLI Integration
@@ -182,6 +272,39 @@ val applicationModule = module {
     single { CreateScopeHandler(get(), get()) }
 }
 ```
+
+### Complete Data Flow Example
+
+```kotlin
+// Step 1: Domain Entity (with rich domain types)
+val scope = Scope(
+    id = ScopeId.generate(),
+    title = ScopeTitle.from("Project Alpha"),
+    description = ScopeDescription.from("Strategic project"),
+    parentId = ScopeId.from("parent-123"),
+    createdAt = Clock.System.now(),
+    metadata = mutableMapOf("priority" to "high")
+)
+
+// Step 2: Mapper transforms domain entity to DTO
+val dto = ScopeMapper.toCreateScopeResult(scope)
+// Result: CreateScopeResult(
+//   id = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+//   title = "Project Alpha", 
+//   description = "Strategic project",
+//   parentId = "parent-123",
+//   createdAt = 2024-01-15T10:30:00Z,
+//   metadata = mapOf("priority" to "high")
+// )
+
+// Step 3: Handler returns DTO wrapped in UseCaseResult
+return UseCaseResult.ok(dto)
+```
+
+This flow ensures:
+- **Domain types** (ScopeId, ScopeTitle) stay within domain/application boundary
+- **Primitive types** (String, Instant) are exposed to presentation layer
+- **Clean separation** between domain complexity and API simplicity
 
 ## Benefits
 
