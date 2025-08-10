@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.presentation.cli
 
-import io.github.kamiazya.scopes.application.error.AppErrorTranslator
-import io.github.kamiazya.scopes.application.error.DefaultAppErrorTranslator
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
@@ -56,7 +54,6 @@ object CompositionRoot {
      */
     private val applicationModule = module {
         single { ApplicationScopeValidationService(get()) }
-        single<AppErrorTranslator> { DefaultAppErrorTranslator() }
         single { CreateScopeHandler(get(), get()) }
     }
     

@@ -9,13 +9,14 @@ This document defines the UseCase pattern implementation for the Scopes project,
 ### 1. UseCase Interface
 
 ```kotlin
-fun interface UseCase<I, O> {
-    suspend operator fun invoke(input: I): O
+fun interface UseCase<I, T> {
+    suspend operator fun invoke(input: I): Either<ApplicationError, T>
 }
 ```
 
 - **Functional interface**: Single abstract method for simplicity
-- **Generic types**: `I` for input, `O` for output
+- **Generic types**: `I` for input, `T` for success result type
+- **Enforced Either return**: Type-level guarantee of consistent error handling
 - **Operator function**: Enables direct invocation `useCase(input)`
 - **Suspend function**: Supports coroutines for async operations
 
@@ -48,7 +49,7 @@ data class GetScopeById(
 class CreateScopeHandler(
     private val scopeRepository: ScopeRepository,
     private val applicationScopeValidationService: ApplicationScopeValidationService
-) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
+) : UseCase<CreateScope, CreateScopeResult> {
 
     override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> = either {
         // Orchestration logic here
@@ -117,7 +118,7 @@ Mappers integrate seamlessly with the UseCase pattern at the final step of handl
 
 **Before (Inline Mapping - Avoid)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
     
     override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
         // ... domain logic ...
@@ -137,7 +138,7 @@ class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, Cr
 
 **After (Dedicated Mapper - Preferred)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
     
     override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
         // ... domain logic ...
@@ -322,7 +323,7 @@ The existing `CreateScopeUseCase` class can coexist with the new pattern during 
 class CreateScopeUseCase(...)
 
 // New pattern
-class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>>
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult>
 ```
 
 Both are registered in DI container until migration is complete.
@@ -331,7 +332,7 @@ Both are registered in DI container until migration is complete.
 
 ```kotlin
 @Transactional
-class CreateScopeHandler(...) : UseCase<CreateScope, Either<ApplicationError, CreateScopeResult>> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
     override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> = either {
         // All operations within this handler are in one transaction
         // Automatic rollback on any error

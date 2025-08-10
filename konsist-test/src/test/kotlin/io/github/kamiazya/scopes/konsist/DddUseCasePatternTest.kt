@@ -242,7 +242,7 @@ class DddUseCasePatternTest : StringSpec({
                             return@all false
                         }
                         
-                        // Check if return type is Either<ApplicationError, T>
+                        // Check if return type is Either<SomeError, T>
                         if (!returnType.name.startsWith("Either")) {
                             return@all false
                         }
@@ -253,13 +253,13 @@ class DddUseCasePatternTest : StringSpec({
                             return@all false
                         }
                         
-                        // First type argument should be ApplicationError
+                        // First type argument should be some Error type
                         val firstTypeArgument = typeArguments.first()
-                        if (firstTypeArgument.name != "ApplicationError") {
+                        if (!firstTypeArgument.name.endsWith("Error")) {
                             return@all false
                         }
                         
-                        // Get the second type argument (T in Either<ApplicationError, T>)
+                        // Get the second type argument (T in Either<SomeError, T>)
                         val secondTypeArgument = typeArguments[1]
                         val genericTypeName = secondTypeArgument.name
                         

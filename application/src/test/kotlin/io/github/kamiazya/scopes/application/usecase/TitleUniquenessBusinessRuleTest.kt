@@ -1,9 +1,13 @@
 package io.github.kamiazya.scopes.application.usecase
 
+import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.beInstanceOf
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
+import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
@@ -46,8 +50,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to ensure clear project identification
-            val error = result.shouldBeErr()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -93,7 +98,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system allows this with clear, unique naming
-            result.shouldBeOk()
+            result.isRight() shouldBe true
         }
     }
 
@@ -123,8 +128,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to avoid confusion within the project
-            val error = result.shouldBeErr()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -171,7 +177,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: Clear naming helps maintain organized project structure
-            result.shouldBeOk()
+            result.isRight() shouldBe true
         }
     }
 
@@ -201,8 +207,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system enforces unique naming at all levels for consistency
-            val error = result.shouldBeErr()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
         }
     }
 
@@ -228,8 +235,9 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to avoid case-based duplicates
-            val error = result.shouldBeErr()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }

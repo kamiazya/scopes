@@ -156,15 +156,16 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    "handlers should use Either for unified result handling" {
+    "handlers should use Either for unified result handling with UseCase-specific errors" {
         Konsist
             .scopeFromModule("application")
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertTrue { handler ->
-                // Handlers should return Either<ApplicationError, T> type
+                // Handlers should return Either<SpecificError, T> type (enforced by UseCase interface)
                 handler.functions().any { function ->
-                    function.returnType?.text?.contains("Either<ApplicationError,") == true
+                    function.returnType?.text?.contains("Either<") == true &&
+                    function.returnType?.text?.contains("Error,") == true
                 }
             }
     }
@@ -190,16 +191,17 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    "UseCase interface should have generic parameters I and O" {
+    "UseCase interface should have generic parameters I, E, and T" {
         Konsist
             .scopeFromModule("application")
             .interfaces()
             .filter { it.name == "UseCase" }
             .assertTrue { useCase ->
                 val typeParameters = useCase.typeParameters
-                typeParameters.size == 2 && 
+                typeParameters.size == 3 && 
                 typeParameters.any { it.name == "I" } &&
-                typeParameters.any { it.name == "O" }
+                typeParameters.any { it.name == "E" } &&
+                typeParameters.any { it.name == "T" }
             }
     }
 
@@ -213,6 +215,19 @@ class UseCaseArchitectureTest : StringSpec({
                     function.name == "invoke" &&
                     function.hasOperatorModifier &&
                     function.hasSuspendModifier
+                }
+            }
+    }
+
+    "UseCase interface should enforce Either return type at type level" {
+        Konsist
+            .scopeFromModule("application")
+            .interfaces()
+            .filter { it.name == "UseCase" }
+            .assertTrue { useCase ->
+                useCase.functions().any { function ->
+                    function.name == "invoke" &&
+                    function.returnType?.text?.startsWith("Either<E,") == true
                 }
             }
     }
@@ -289,6 +304,35 @@ class UseCaseArchitectureTest : StringSpec({
                 // Classes ending with "Result" should be in the dto package
                 val packageName = result.packagee?.name ?: ""
                 packageName.endsWith(".dto")
+            }
+    }
+
+    "UseCase error classes should be sealed and end with Error" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { it.packagee?.name?.endsWith(".usecase.error") == true }
+            .filter { it.name.endsWith("Error") } // Only check classes that end with "Error" (top-level error classes)
+            .forEach { errorClass ->
+                // Check if class is sealed
+                if (!errorClass.hasSealedModifier) {
+                    throw AssertionError("Error class ${errorClass.name} should be sealed")
+                }
+            }
+    }
+
+    "UseCase error classes should be in usecase.error package" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { 
+                it.name.endsWith("Error") && 
+                !it.name.startsWith("Application") && 
+                it.packagee?.name?.endsWith(".usecase.error") == true 
+            }
+            .assertTrue { errorClass ->
+                val packageName = errorClass.packagee?.name ?: ""
+                packageName.endsWith(".usecase.error")
             }
     }
 })

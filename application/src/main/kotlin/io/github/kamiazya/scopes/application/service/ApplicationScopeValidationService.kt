@@ -9,6 +9,8 @@ import io.github.kamiazya.scopes.domain.error.validationFailure
 import io.github.kamiazya.scopes.domain.error.validationSuccess
 import io.github.kamiazya.scopes.domain.error.sequence
 import io.github.kamiazya.scopes.domain.error.map
+import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
+import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
@@ -38,6 +40,107 @@ class ApplicationScopeValidationService(
      */
     private fun <E : DomainError, T> Either<E, T>.toValidationResult(): ValidationResult<T> =
         fold({ it.validationFailure() }, { it.validationSuccess() })
+
+    // ===== NEW SERVICE-SPECIFIC ERROR METHODS =====
+
+    /**
+     * Validates title format with service-specific error context.
+     * Returns specific ScopeValidationServiceError.TitleValidationError types.
+     */
+    fun validateTitleFormat(title: String): Either<ScopeValidationServiceError.TitleValidationError, Unit> = either {
+        when {
+            title.isBlank() -> raise(ScopeValidationServiceError.TitleValidationError.EmptyTitle)
+            title.length < 3 -> raise(ScopeValidationServiceError.TitleValidationError.TooShort(
+                minLength = 3, 
+                actualLength = title.length
+            ))
+            title.length > 100 -> raise(ScopeValidationServiceError.TitleValidationError.TooLong(
+                maxLength = 100,
+                actualLength = title.length
+            ))
+            title.contains('\n') || title.contains('\r') -> {
+                val invalidChars = title.filter { it == '\n' || it == '\r' }.toSet()
+                raise(ScopeValidationServiceError.TitleValidationError.InvalidCharacters(invalidChars))
+            }
+        }
+    }
+
+    /**
+     * Validates hierarchy constraints with business rule-specific error context.
+     * Returns specific BusinessRuleServiceError.ScopeBusinessRuleError types.
+     */
+    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<BusinessRuleServiceError.ScopeBusinessRuleError, Unit> = either {
+        if (parentId == null) {
+            return@either
+        }
+
+        // Check depth constraint
+        val depth = repository.findHierarchyDepth(parentId)
+            .mapLeft { _ -> 
+                BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+                    maxDepth = MAX_HIERARCHY_DEPTH,
+                    attemptedDepth = Int.MAX_VALUE, // Unknown depth due to error
+                    affectedScopeId = parentId
+                )
+            }
+            .bind()
+
+        if (depth >= MAX_HIERARCHY_DEPTH) {
+            raise(BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+                maxDepth = MAX_HIERARCHY_DEPTH,
+                attemptedDepth = depth + 1,
+                affectedScopeId = parentId
+            ))
+        }
+
+        // Check children limit constraint
+        val childrenCount = repository.countByParentId(parentId)
+            .mapLeft { _ ->
+                BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(
+                    maxChildren = MAX_CHILDREN_PER_PARENT,
+                    currentChildren = Int.MAX_VALUE, // Unknown count due to error
+                    parentId = parentId
+                )
+            }
+            .bind()
+
+        if (childrenCount >= MAX_CHILDREN_PER_PARENT) {
+            raise(BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(
+                maxChildren = MAX_CHILDREN_PER_PARENT,
+                currentChildren = childrenCount,
+                parentId = parentId
+            ))
+        }
+    }
+
+    /**
+     * Validates title uniqueness with service-specific error context.
+     * Returns specific ScopeValidationServiceError.UniquenessValidationError types.
+     */
+    suspend fun validateTitleUniquenessTyped(
+        title: String, 
+        parentId: ScopeId?
+    ): Either<ScopeValidationServiceError.UniquenessValidationError, Unit> = either {
+        val normalizedTitle = TitleNormalizer.normalize(title)
+        val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
+            .mapLeft { _ ->
+                // Map repository error to validation error with context
+                ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle(
+                    title = title,
+                    parentId = parentId,
+                    normalizedTitle = normalizedTitle
+                )
+            }
+            .bind()
+
+        if (duplicateExists) {
+            raise(ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle(
+                title = title,
+                parentId = parentId,
+                normalizedTitle = normalizedTitle
+            ))
+        }
+    }
 
     /**
      * Comprehensive validation for scope creation using accumulating ValidationResult.
@@ -71,7 +174,16 @@ class ApplicationScopeValidationService(
         }
 
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { DomainError.InfrastructureError(it) }
+            .mapLeft { findError -> 
+                // Map FindScopeError to appropriate DomainError
+                when (findError) {
+                    is io.github.kamiazya.scopes.domain.error.FindScopeError.CircularReference ->
+                        DomainError.ScopeError.CircularReference(findError.scopeId, parentId)
+                    is io.github.kamiazya.scopes.domain.error.FindScopeError.OrphanedScope ->
+                        DomainError.ScopeError.InvalidParent(parentId, findError.message)
+                    else -> DomainError.ScopeError.InvalidParent(parentId, "Unable to determine hierarchy depth")
+                }
+            }
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
@@ -90,7 +202,14 @@ class ApplicationScopeValidationService(
         }
 
         val childrenCount = repository.countByParentId(parentId)
-            .mapLeft { DomainError.InfrastructureError(it) }
+            .mapLeft { countError ->
+                // Map CountScopeError to appropriate DomainError
+                when (countError) {
+                    is io.github.kamiazya.scopes.domain.error.CountScopeError.InvalidParentId ->
+                        DomainError.ScopeError.InvalidParent(parentId, countError.message)
+                    else -> DomainError.ScopeError.InvalidParent(parentId, "Unable to count children")
+                }
+            }
             .bind()
 
         ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
@@ -112,7 +231,14 @@ class ApplicationScopeValidationService(
         // Normalize title for consistent duplicate detection
         val normalizedTitle = TitleNormalizer.normalize(title)
         val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
-            .mapLeft { DomainError.InfrastructureError(it) }
+            .mapLeft { existsError ->
+                // Map ExistsScopeError to appropriate DomainError
+                when (existsError) {
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption ->
+                        DomainError.ScopeError.InvalidParent(parentId ?: ScopeId.generate(), existsError.message)
+                    else -> DomainError.ScopeError.ScopeNotFound
+                }
+            }
             .bind()
 
         ensure(!duplicateExists) {

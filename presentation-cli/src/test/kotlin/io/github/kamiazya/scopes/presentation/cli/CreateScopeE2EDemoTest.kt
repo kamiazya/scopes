@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.presentation.cli
 
 import com.github.ajalt.clikt.testing.test
-import io.github.kamiazya.scopes.application.error.DefaultAppErrorTranslator
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
@@ -25,8 +24,7 @@ class CreateScopeE2EDemoTest : FunSpec({
         val repository = InMemoryScopeRepository()
         val validationService = ApplicationScopeValidationService(repository)
         val handler = CreateScopeHandler(repository, validationService)
-        val errorTranslator = DefaultAppErrorTranslator()
-        val command = CreateScopeCommand(handler, errorTranslator)
+        val command = CreateScopeCommand(handler)
 
         // Act: Execute CLI command (same as `./gradlew run --args="create --name Hello"`)
         val result = command.test("--name=Hello")
@@ -46,8 +44,7 @@ class CreateScopeE2EDemoTest : FunSpec({
         val repository = InMemoryScopeRepository()
         val validationService = ApplicationScopeValidationService(repository)
         val handler = CreateScopeHandler(repository, validationService)
-        val errorTranslator = DefaultAppErrorTranslator()
-        val command = CreateScopeCommand(handler, errorTranslator)
+        val command = CreateScopeCommand(handler)
 
         // Demonstrate that E2E flow succeeds
         val result = command.test("--name=DemoProject")
