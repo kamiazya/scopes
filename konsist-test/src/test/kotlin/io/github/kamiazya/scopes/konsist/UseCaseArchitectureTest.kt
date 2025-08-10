@@ -149,10 +149,9 @@ class UseCaseArchitectureTest : StringSpec({
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertFalse { handler ->
-                // Handlers should not import infrastructure classes
+                // Handlers should not import any infrastructure classes
                 handler.containingFile.imports.any { import ->
-                    import.name.contains("infrastructure") &&
-                    !import.name.endsWith(".repository.") // Allow repository interfaces
+                    import.name.contains("infrastructure")
                 }
             }
     }
