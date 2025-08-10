@@ -133,13 +133,13 @@ class NotificationServiceErrorTest : DescribeSpec({
                     templateId = "scope-notification",
                     messageId = "msg-102",
                     renderingError = "Undefined variable: scopeTitle",
-                    templateData = mapOf("scopeId" to "123")
+                    templateDataKeys = setOf("scopeId")
                 )
 
                 error.templateId shouldBe "scope-notification"
                 error.messageId shouldBe "msg-102"
                 error.renderingError shouldBe "Undefined variable: scopeTitle"
-                error.templateData shouldBe mapOf("scopeId" to "123")
+                error.templateDataKeys shouldBe setOf("scopeId")
             }
 
             it("should create TemplateVersionConflict") {

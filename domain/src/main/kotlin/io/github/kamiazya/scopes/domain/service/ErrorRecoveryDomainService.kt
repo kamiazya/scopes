@@ -46,7 +46,8 @@ class ErrorRecoveryDomainService {
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> RecoveryComplexity.MODERATE
 
             // Complex business rule violations - significant restructuring needed
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> RecoveryComplexity.COMPLEX
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> RecoveryComplexity.COMPLEX
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> RecoveryComplexity.COMPLEX
 
             // All scope errors are complex by nature (data integrity issues)
@@ -83,7 +84,8 @@ class ErrorRecoveryDomainService {
         return when (error) {
             // Business rule violations are partially recoverable - can suggest fixes but require user input
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle,
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
         }

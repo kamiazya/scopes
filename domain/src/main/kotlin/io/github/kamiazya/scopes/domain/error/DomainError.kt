@@ -37,10 +37,8 @@ sealed class DomainError {
      * Scope business rule violations.
      */
     sealed class ScopeBusinessRuleViolation : DomainError() {
-        data class ScopeMaxDepthExceeded(
-            val maxDepth: Int,
-            val actualDepth: Int
-        ) : ScopeBusinessRuleViolation()
+        // MaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+        // for consistent error handling across all business rule validations
         data class ScopeMaxChildrenExceeded(
             val maxChildren: Int,
             val actualChildren: Int

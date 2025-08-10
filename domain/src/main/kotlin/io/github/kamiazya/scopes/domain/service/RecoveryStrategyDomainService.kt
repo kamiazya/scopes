@@ -51,7 +51,8 @@ class RecoveryStrategyDomainService {
                 RecoveryStrategy.GENERATE_VARIANTS
 
             // Business rule violations that need hierarchy restructuring
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryStrategy.RESTRUCTURE_HIERARCHY
 
@@ -88,7 +89,8 @@ class RecoveryStrategyDomainService {
                 RecoveryApproach.USER_INPUT_REQUIRED
 
             // Complex errors where significant manual intervention is needed
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryApproach.MANUAL_INTERVENTION
 

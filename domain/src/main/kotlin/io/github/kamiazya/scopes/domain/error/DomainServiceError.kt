@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import kotlin.reflect.KClass
 
 /**
  * General domain service error hierarchy for operational and infrastructure concerns.
@@ -46,12 +47,14 @@ sealed class DomainServiceError {
          * 
          * @param configKey The configuration key that has an invalid value
          * @param expectedType The expected type of the configuration value
-         * @param actualValue The actual value that was provided
+         * @param actualType The actual type of the provided value
+         * @param redactedPreview Optional redacted preview of the actual value (first 10 chars + "...")
          */
         data class ConfigurationError(
             val configKey: String,
-            val expectedType: String,
-            val actualValue: String
+            val expectedType: KClass<*>,
+            val actualType: KClass<*>,
+            val redactedPreview: String? = null
         ) : ServiceOperationError()
     }
 

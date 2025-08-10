@@ -99,6 +99,8 @@ class CreateScopeCommand(
                 "Cannot create scope: parent already has the maximum number of children (${error.maxChildren})"
             is io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError.ScopeBusinessRuleError.DuplicateTitleNotAllowed ->
                 "Cannot create scope: duplicate title '${error.title}' not allowed in this context (${error.conflictContext})"
+            is io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed ->
+                "Cannot create scope: validation check '${error.checkName}' failed - ${error.errorDetails}"
             is io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError.HierarchyBusinessRuleError.SelfParentingNotAllowed ->
                 "Cannot create scope: self-parenting is not allowed"
             is io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError.HierarchyBusinessRuleError.CircularReferenceNotAllowed ->
@@ -121,6 +123,8 @@ class CreateScopeCommand(
                 val context = if (error.parentId != null) "under the same parent" else "at the root level"
                 "Title '${error.title}' already exists $context"
             }
+            is io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError.UniquenessValidationError.CheckFailed ->
+                "Cannot validate title uniqueness: check '${error.checkName}' failed - ${error.errorDetails}"
         }
     }
 }

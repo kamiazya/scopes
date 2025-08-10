@@ -73,7 +73,8 @@ class ErrorRecoverySuggestionService(
                 suggestDescriptionTooLongRecovery(error, context)
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
                 suggestDuplicateTitleRecovery(error, context)
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 suggestMaxChildrenExceededRecovery(error)
             is DomainError.ScopeValidationError.ScopeInvalidFormat -> handleNonRecoverable(error)
@@ -347,22 +348,15 @@ class ErrorRecoverySuggestionService(
     /**
      * Suggests recovery for max depth exceeded business rule violations.
      */
+    /*
+    // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
     private fun suggestMaxDepthExceededRecovery(
         error: DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded
     ): RecoveryResult {
-        val hierarchyConfig = configuration.hierarchyConfig()
-
-        return RecoveryResult.Suggestion(
-            originalError = error,
-            suggestedValues = listOf(
-                "Move this scope to a higher level in the hierarchy",
-                "Consider restructuring parent scopes to reduce nesting",
-                "Create a separate top-level scope for this content"
-            ),
-            strategy = RecoveryStrategy.RESTRUCTURE_HIERARCHY,
-            description = hierarchyConfig.getDepthGuidance(error.maxDepth, error.actualDepth)
-        )
+        // Implementation removed due to consolidation
+        return RecoveryResult.NoSuggestion(error)
     }
+    */
 
     /**
      * Suggests recovery for max children exceeded business rule violations.

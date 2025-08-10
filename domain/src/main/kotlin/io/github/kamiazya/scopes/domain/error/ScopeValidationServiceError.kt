@@ -133,5 +133,23 @@ sealed class ScopeValidationServiceError {
             val parentId: ScopeId?,
             val normalizedTitle: String
         ) : UniquenessValidationError()
+        
+        /**
+         * Represents a uniqueness check failure due to repository/infrastructure issues.
+         * This distinguishes repository failures from actual duplicate title violations.
+         * 
+         * @param checkName The name of the uniqueness check that failed to execute
+         * @param errorDetails Descriptive details about the failure
+         * @param title The title that was being checked when the failure occurred
+         * @param parentId The parent scope ID context for the check
+         * @param cause The underlying throwable that caused the check to fail
+         */
+        data class CheckFailed(
+            val checkName: String,
+            val errorDetails: String,
+            val title: String,
+            val parentId: ScopeId?,
+            val cause: Throwable
+        ) : UniquenessValidationError()
     }
 }

@@ -26,7 +26,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
     val translator = InfrastructureErrorTranslator()
 
     // Database Adapter Error Translation Tests
-    "should translate DatabaseAdapterError.ConnectionError to SaveScopeError.InfrastructureError" {
+    "should translate DatabaseAdapterError.ConnectionError to SaveScopeError.SystemFailure" {
         val infrastructureError = InfrastructureAdapterError.DatabaseAdapterError.ConnectionError(
             connectionString = "jdbc:postgresql://localhost:5432/test",
             poolSize = 10,
@@ -38,14 +38,14 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.scopeId shouldBe testScopeId
         result.failureType shouldBe "Database connection error"
         result.cause shouldBe infrastructureError.cause
         result.retryable shouldBe true
     }
 
-    "should translate DatabaseAdapterError.QueryError to SaveScopeError.InfrastructureError" {
+    "should translate DatabaseAdapterError.QueryError to SaveScopeError.SystemFailure" {
         val infrastructureError = InfrastructureAdapterError.DatabaseAdapterError.QueryError(
             query = "INSERT INTO scopes VALUES (?)",
             parameters = mapOf("id" to testScopeId.value),
@@ -57,7 +57,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.scopeId shouldBe testScopeId
         result.failureType shouldBe "Database query error"
         result.cause shouldBe infrastructureError.cause
@@ -153,7 +153,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
     }
 
     // External API Error Translation Tests
-    "should translate ExternalApiAdapterError.NetworkError to SaveScopeError.InfrastructureError" {
+    "should translate ExternalApiAdapterError.NetworkError to SaveScopeError.SystemFailure" {
         val infrastructureError = InfrastructureAdapterError.ExternalApiAdapterError.NetworkError(
             endpoint = "https://external-api.com/validation",
             method = "POST",
@@ -165,7 +165,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.scopeId shouldBe testScopeId
         result.failureType shouldBe "External API network error"
         result.retryable shouldBe true
@@ -184,7 +184,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.retryable shouldBe false
         result.failureType shouldBe "External API HTTP error (400)"
     }
@@ -202,7 +202,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.retryable shouldBe true
         result.failureType shouldBe "External API HTTP error (503)"
     }
@@ -220,7 +220,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.retryable shouldBe false
         result.failureType shouldBe "Filesystem permission error"
     }
@@ -258,7 +258,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.retryable shouldBe true
         result.failureType shouldBe "Messaging delivery error"
     }
@@ -276,7 +276,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.retryable shouldBe false
         result.failureType shouldBe "Configuration validation error"
     }
@@ -312,7 +312,7 @@ class InfrastructureErrorTranslatorTest : StringSpec({
         
         val result = translator.translateToSaveError(infrastructureError, testScopeId)
         
-        result.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+        result.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
         result.correlationId shouldBe testCorrelationId
         result.retryable shouldBe infrastructureError.retryable
     }

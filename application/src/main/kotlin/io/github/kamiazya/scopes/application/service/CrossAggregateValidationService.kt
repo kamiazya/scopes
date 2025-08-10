@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.service.error.ApplicationValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 
 /**
  * Cross-aggregate validation service for validations that span multiple aggregates.
@@ -88,7 +89,7 @@ class CrossAggregateValidationService(
         contextIds: List<ScopeId>
     ): Either<ApplicationValidationError.CrossAggregateValidationError, Unit> = either {
         
-        val normalizedTitle = title.lowercase()
+        val normalizedTitle = TitleNormalizer.normalize(title)
         
         // Check uniqueness across all contexts
         for (contextId in contextIds) {

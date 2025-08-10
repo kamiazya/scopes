@@ -112,8 +112,9 @@ object ErrorFormattingUtils : ErrorFormatter {
      */
     override fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String {
         return when (error) {
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
-                "Maximum hierarchy depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
+            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
+            //     "Maximum hierarchy depth exceeded (max: \${error.maxDepth}, actual: \${error.actualDepth})"
             is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
             is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> "Duplicate title: ${error.title}"

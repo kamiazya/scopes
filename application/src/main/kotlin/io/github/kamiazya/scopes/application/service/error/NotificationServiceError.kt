@@ -115,7 +115,7 @@ sealed class NotificationServiceError {
             val templateId: String,
             val messageId: String,
             val renderingError: String,
-            val templateData: Map<String, Any>
+            val templateDataKeys: Set<String>
         ) : TemplateError()
         
         /**

@@ -9,15 +9,17 @@ This document defines the UseCase pattern implementation for the Scopes project,
 ### 1. UseCase Interface
 
 ```kotlin
-fun interface UseCase<I, E, T> {
-    suspend operator fun invoke(input: I): Either<E, T>
+typealias UseCaseResult<T> = Either<ApplicationError, T>
+
+fun interface UseCase<I, T> {
+    suspend operator fun invoke(input: I): UseCaseResult<T>
 }
 ```
 
 - **Functional interface**: Single abstract method for simplicity
-- **Generic types**: `I` for input, `E` for error type, `T` for success result type
-- **Type-safe error handling**: Each UseCase specifies its specific error type
-- **Enforced Either return**: Type-level guarantee of consistent error handling
+- **Generic types**: `I` for input, `T` for success result type
+- **Unified error handling**: All use cases return `UseCaseResult<T>` with standardized `ApplicationError`
+- **Type-safe error handling**: Compile-time guarantee of consistent error handling
 - **Operator function**: Enables direct invocation `useCase(input)`
 - **Suspend function**: Supports coroutines for async operations
 
@@ -30,7 +32,7 @@ interface Command  // Marker interface for state-changing operations
 data class CreateScope(
     val title: String,
     val description: String? = null,
-    val parentId: ScopeId? = null,
+    val parentId: String? = null,
     val metadata: Map<String, String> = emptyMap(),
 ) : Command
 ```
@@ -40,7 +42,7 @@ data class CreateScope(
 interface Query    // Marker interface for read-only operations
 
 data class GetScopeById(
-    val id: ScopeId
+    val id: String
 ) : Query
 ```
 
@@ -52,7 +54,7 @@ class CreateScopeHandler(
     private val applicationScopeValidationService: ApplicationScopeValidationService
 ) : UseCase<CreateScope, CreateScopeResult> {
 
-    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> = either {
+    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> = either {
         // Orchestration logic here
     }
 }
@@ -69,10 +71,10 @@ class CreateScopeHandler(
 
 ```kotlin
 data class CreateScopeResult(
-    val id: ScopeId,
+    val id: String,
     val title: String,
     val description: String?,
-    val parentId: ScopeId?,
+    val parentId: String?,
     val createdAt: Instant,
     val metadata: Map<String, String>
 )
@@ -139,9 +141,9 @@ class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateSco
 
 **After (Dedicated Mapper - Preferred)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
     
-    override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
         // ... domain logic ...
         
         // ✅ Clean separation using dedicated mapper
@@ -202,7 +204,7 @@ application/
 - [ ] Domain services injected when needed
 
 ### ✅ Error Handling
-- [ ] Uses `Either<Error, Result>` for error handling
+- [ ] Uses `UseCaseResult<T>` for error handling
 - [ ] Domain errors mapped to application errors
 - [ ] Repository errors wrapped appropriately
 - [ ] Validation errors accumulated for better UX
@@ -333,8 +335,8 @@ Both are registered in DI container until migration is complete.
 
 ```kotlin
 @Transactional
-class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
-    override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> = either {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> = either {
         // All operations within this handler are in one transaction
         // Automatic rollback on any error
     }
@@ -400,7 +402,7 @@ This E2E slice showcases the complete vertical flow through all architecture lay
 - **Dependency Inversion**: High-level layers don't depend on low-level details
 - **Testability**: Each component can be tested in isolation
 - **Type Safety**: Strong typing prevents runtime errors
-- **Error Handling**: Graceful error propagation through `UseCaseResult`
+- **Error Handling**: Graceful error propagation through `UseCaseResult<T>`
 - **Local-First**: Works without external dependencies using in-memory storage
 
 ### ULID Identifier System

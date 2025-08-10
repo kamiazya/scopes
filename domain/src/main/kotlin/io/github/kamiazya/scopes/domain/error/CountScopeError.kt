@@ -35,14 +35,26 @@ sealed class CountScopeError {
     ) : CountScopeError()
     
     /**
-     * Represents a persistence layer failure during count operation.
-     * Occurs when the underlying storage system encounters an error.
+     * Represents a unified persistence/database error during count operation.
+     * Consolidates both persistence layer failures and database-level errors.
      */
-    data class PersistenceFailure(
+    data class PersistenceError(
         val parentId: ScopeId,
         val message: String,
-        val cause: Throwable
-    ) : CountScopeError()
+        val cause: Throwable,
+        val retryable: Boolean = false,
+        val errorCode: String? = null,
+        val category: ErrorCategory = ErrorCategory.PERSISTENCE
+    ) : CountScopeError() {
+        
+        enum class ErrorCategory {
+            PERSISTENCE,
+            DATABASE,
+            CONNECTION,
+            TIMEOUT,
+            CONSTRAINT
+        }
+    }
     
     /**
      * Represents an unexpected error during count operation.

@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -32,21 +33,27 @@ class ApplicationScopeValidationServiceErrorIntegrationTest : DescribeSpec({
                 result.leftOrNull().shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.EmptyTitle>()
             }
             
-            it("should return ScopeValidationServiceError.TitleValidationError.TooShort for short title") {
-                val result = service.validateTitleFormat("ab") // Assuming min length is 3
+            it("should return Right for valid short title (domain MIN_LENGTH=1)") {
+                val result = service.validateTitleFormat("a".repeat(ScopeTitle.MIN_LENGTH + 1)) // Valid since domain MIN_LENGTH is ${ScopeTitle.MIN_LENGTH}
+                
+                result.isRight() shouldBe true
+            }
+            
+            it("should return ScopeValidationServiceError.TitleValidationError.EmptyTitle for whitespace-only title") {
+                val result = service.validateTitleFormat("   ") // Becomes empty after trim
                 
                 result.isLeft() shouldBe true
-                val error = result.leftOrNull().shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.TooShort>()
-                error.actualLength shouldBe 2
+                result.leftOrNull().shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.EmptyTitle>()
             }
             
             it("should return ScopeValidationServiceError.TitleValidationError.TooLong for long title") {
-                val longTitle = "a".repeat(200) // Assuming max length is less than 200
+                val longTitle = "a".repeat(ApplicationScopeValidationService.MAX_TITLE_LENGTH + 1) // Exceeds service MAX_TITLE_LENGTH of ${ApplicationScopeValidationService.MAX_TITLE_LENGTH}
                 val result = service.validateTitleFormat(longTitle)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.TooLong>()
-                error.actualLength shouldBe 200
+                error.actualLength shouldBe ApplicationScopeValidationService.MAX_TITLE_LENGTH + 1
+                error.maxLength shouldBe ApplicationScopeValidationService.MAX_TITLE_LENGTH
             }
             
             it("should return ScopeValidationServiceError.TitleValidationError.InvalidCharacters for newline characters") {
@@ -67,27 +74,27 @@ class ApplicationScopeValidationServiceErrorIntegrationTest : DescribeSpec({
         describe("hierarchy validation with service-specific errors") {
             it("should return BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded for depth limit") {
                 val parentId = ScopeId.generate()
-                coEvery { mockRepository.findHierarchyDepth(parentId) } returns 11.right() // Over the limit of 10
+                coEvery { mockRepository.findHierarchyDepth(parentId) } returns (ApplicationScopeValidationService.MAX_HIERARCHY_DEPTH + 1).right() // Over the limit
                 
                 val result = service.validateHierarchyConstraints(parentId)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded>()
-                error.maxDepth shouldBe 10
-                error.attemptedDepth shouldBe 12
+                error.maxDepth shouldBe ApplicationScopeValidationService.MAX_HIERARCHY_DEPTH
+                error.attemptedDepth shouldBe ApplicationScopeValidationService.MAX_HIERARCHY_DEPTH + 2
             }
             
             it("should return BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded for children limit") {
                 val parentId = ScopeId.generate()
                 coEvery { mockRepository.findHierarchyDepth(parentId) } returns 5.right()
-                coEvery { mockRepository.countByParentId(parentId) } returns 100.right() // At the limit of 100
+                coEvery { mockRepository.countByParentId(parentId) } returns ApplicationScopeValidationService.MAX_CHILDREN_PER_PARENT.right() // At the limit
                 
                 val result = service.validateHierarchyConstraints(parentId)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded>()
-                error.maxChildren shouldBe 100
-                error.currentChildren shouldBe 100
+                error.maxChildren shouldBe ApplicationScopeValidationService.MAX_CHILDREN_PER_PARENT
+                error.currentChildren shouldBe ApplicationScopeValidationService.MAX_CHILDREN_PER_PARENT
             }
             
             it("should return Right for valid hierarchy") {

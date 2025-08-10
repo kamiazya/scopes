@@ -227,9 +227,9 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             val saveResult = repository.save(scope)
             
             val error = saveResult.shouldBeLeft()
-            error.shouldBeInstanceOf<SaveScopeError.InfrastructureError>()
+            error.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
             
-            val infraError = error as SaveScopeError.InfrastructureError
+            val infraError = error as SaveScopeError.SystemFailure
             infraError.failureType shouldBe "CASCADING_FAILURE"
             infraError.retryable shouldBe false
             infraError.correlationId shouldNotBe null
@@ -392,7 +392,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
         }
         
         if (simulateInfrastructureFailure) {
-            raise(SaveScopeError.InfrastructureError(
+            raise(SaveScopeError.SystemFailure(
                 scopeId = scope.id,
                 failureType = infrastructureFailureType,
                 retryable = false,

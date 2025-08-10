@@ -57,6 +57,22 @@ sealed class BusinessRuleServiceError {
             val parentId: ScopeId?,
             val conflictContext: String
         ) : ScopeBusinessRuleError()
+        
+        /**
+         * Represents a business rule check failure due to repository/infrastructure issues.
+         * This distinguishes repository failures from actual business rule violations.
+         * 
+         * @param checkName The name of the business rule check that failed to execute
+         * @param errorDetails Descriptive details about the failure
+         * @param affectedScopeId The scope ID that was being checked when the failure occurred
+         * @param cause The underlying throwable that caused the check to fail
+         */
+        data class CheckFailed(
+            val checkName: String,
+            val errorDetails: String,
+            val affectedScopeId: ScopeId,
+            val cause: Throwable
+        ) : ScopeBusinessRuleError()
     }
 
     /**

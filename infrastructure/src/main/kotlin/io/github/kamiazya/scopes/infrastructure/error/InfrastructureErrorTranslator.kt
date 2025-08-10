@@ -18,21 +18,25 @@ class InfrastructureErrorTranslator {
         scopeId: ScopeId
     ): SaveScopeError = when (error) {
         is InfrastructureAdapterError.DatabaseAdapterError.ConnectionError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Database connection error",
-                cause = error.cause,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.DatabaseConnectionError(
+                    details = error.cause.message ?: "Connection failed"
+                ),
                 retryable = error.retryable,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = error.cause
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Database query error",
-                cause = error.cause,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.DatabaseQueryError(
+                    query = error.query
+                ),
                 retryable = error.retryable,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = error.cause
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.TransactionError -> 
@@ -48,39 +52,49 @@ class InfrastructureErrorTranslator {
             SaveScopeError.DuplicateId(scopeId)
         
         is InfrastructureAdapterError.DatabaseAdapterError.ResourceExhaustionError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Database resource exhausted",
-                cause = error.cause,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.ResourceExhaustedError(
+                    resource = "database"
+                ),
                 retryable = error.retryable,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = error.cause
             )
             
         is InfrastructureAdapterError.ExternalApiAdapterError.NetworkError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "External API network error",
-                cause = error.cause,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.NetworkError(
+                    endpoint = error.endpoint
+                ),
                 retryable = true,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = error.cause
             )
             
         is InfrastructureAdapterError.ExternalApiAdapterError.HttpError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "External API HTTP error (${error.statusCode})",
-                cause = RuntimeException("HTTP ${error.statusCode}: ${error.responseBody}"),
+                failure = SaveScopeError.SystemFailure.SystemFailureType.ExternalServiceError(
+                    serviceName = error.endpoint,
+                    statusCode = error.statusCode
+                ),
                 retryable = error.statusCode >= 500,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = RuntimeException("HTTP ${error.statusCode}: ${error.responseBody}")
             )
             
         is InfrastructureAdapterError.FileSystemAdapterError.PermissionError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Filesystem permission error",
-                cause = RuntimeException("Permission denied: ${error.path}"),
+                failure = SaveScopeError.SystemFailure.SystemFailureType.FileSystemError(
+                    path = error.path,
+                    operation = "permission_check"
+                ),
                 retryable = false,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = RuntimeException("Permission denied: ${error.path}")
             )
             
         is InfrastructureAdapterError.FileSystemAdapterError.StorageError -> 
@@ -92,21 +106,25 @@ class InfrastructureErrorTranslator {
             )
             
         is InfrastructureAdapterError.MessagingAdapterError.DeliveryError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Messaging delivery error",
-                cause = error.cause,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.MessagingError(
+                    messageType = "delivery"
+                ),
                 retryable = true,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = error.cause
             )
             
         is InfrastructureAdapterError.ConfigurationAdapterError.ValidationError -> 
-            SaveScopeError.InfrastructureError(
+            SaveScopeError.SystemFailure(
                 scopeId = scopeId,
-                failureType = "Configuration validation error",
-                cause = RuntimeException("Config validation failed: ${error.configKey}"),
+                failure = SaveScopeError.SystemFailure.SystemFailureType.ConfigurationError(
+                    configKey = error.configKey
+                ),
                 retryable = false,
-                correlationId = error.correlationId
+                correlationId = error.correlationId,
+                cause = RuntimeException("Config validation failed: ${error.configKey}")
             )
             
         is InfrastructureAdapterError.TransactionAdapterError.DeadlockError -> 
@@ -118,12 +136,14 @@ class InfrastructureErrorTranslator {
                 cause = RuntimeException("Deadlock detected")
             )
             
-        else -> SaveScopeError.InfrastructureError(
+        else -> SaveScopeError.SystemFailure(
             scopeId = scopeId,
-            failureType = "Unknown infrastructure error",
-            cause = RuntimeException("Unknown infrastructure adapter error"),
+            failure = SaveScopeError.SystemFailure.SystemFailureType.UnknownError(
+                description = "Unknown infrastructure adapter error"
+            ),
             retryable = false,
-            correlationId = null
+            correlationId = null,
+            cause = RuntimeException("Unknown infrastructure adapter error")
         )
     }
 
@@ -141,12 +161,14 @@ class InfrastructureErrorTranslator {
             )
         
         is InfrastructureAdapterError.DatabaseAdapterError.QueryError -> 
-            ExistsScopeError.PersistenceFailure(
+            ExistsScopeError.PersistenceError(
+                context = ExistsScopeError.ExistenceContext.ByCustomCriteria(mapOf("operation" to "query")),
                 message = "Query execution failed",
                 cause = error.cause
             )
         
-        else -> ExistsScopeError.PersistenceFailure(
+        else -> ExistsScopeError.PersistenceError(
+            context = ExistsScopeError.ExistenceContext.ByCustomCriteria(mapOf("operation" to "unknown")),
             message = "Infrastructure error: Unknown adapter error",
             cause = RuntimeException("Unknown infrastructure adapter error")
         )

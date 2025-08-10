@@ -11,6 +11,32 @@ import kotlinx.datetime.Instant
 sealed class InfrastructureAdapterError {
     abstract val timestamp: Instant
     abstract val correlationId: String?
+    
+    /**
+     * Indicates whether this error represents a transient condition that can be safely retried.
+     * 
+     * **Retry Semantics:**
+     * - `true`: The operation can be retried with reasonable expectation of success
+     * - `false`: The operation should NOT be retried as it represents a persistent condition
+     * 
+     * **Important Notes:**
+     * - This flag indicates **immediate** retry potential without mandatory delay
+     * - For operations requiring delay (rate limits, circuit breakers), additional timing 
+     *   information should be checked (e.g., `resetTime`, `retryAfter`, `nextAttemptAt`)
+     * - Callers should implement exponential backoff and maximum retry limits
+     * - Transient network issues, resource exhaustion, and deadlocks are typically retryable
+     * - Configuration errors, permission issues, and data integrity violations are not retryable
+     * 
+     * **Example Usage:**
+     * ```kotlin
+     * if (error.retryable && retryCount < maxRetries) {
+     *     delay(exponentialBackoff(retryCount))
+     *     retry()
+     * } else {
+     *     handleFailure(error)
+     * }
+     * ```
+     */
     abstract val retryable: Boolean
     
     /**
@@ -30,6 +56,7 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
+            // Connection issues are typically transient (network blips, pool exhaustion)
             override val retryable: Boolean = true
         }
         
@@ -44,7 +71,9 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
-            override val retryable: Boolean = false  // Usually syntax errors are not retryable
+            // Most query errors (syntax, invalid references) are persistent conditions
+            // Only query timeouts might be retryable, but we classify conservatively as false
+            override val retryable: Boolean = false
         }
         
         /**
@@ -58,6 +87,8 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
+            // Only deadlocks are retryable as they represent transient resource conflicts
+            // Other transaction errors (rollback failures, etc.) indicate persistent issues
             override val retryable: Boolean = operation == TransactionOperation.DEADLOCK
         }
         
@@ -72,6 +103,7 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
+            // Data integrity violations are persistent conditions that require data correction
             override val retryable: Boolean = false
         }
         
@@ -86,6 +118,7 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
+            // Resource exhaustion is often temporary (connections freed, memory reclaimed)
             override val retryable: Boolean = true
         }
     }
@@ -122,6 +155,8 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : ExternalApiAdapterError() {
+            // 5xx server errors and 429 rate limits are typically retryable
+            // 4xx client errors (except 429) indicate persistent request issues
             override val retryable: Boolean = statusCode in 500..599 || statusCode == 429
         }
         
@@ -165,6 +200,8 @@ sealed class InfrastructureAdapterError {
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : ExternalApiAdapterError() {
+            // Rate limits are retryable when resetTime is provided, indicating when to retry
+            // Without resetTime, we don't know when the limit resets
             override val retryable: Boolean = resetTime != null
         }
         

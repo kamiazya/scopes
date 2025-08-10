@@ -34,25 +34,27 @@ sealed class SaveScopeError {
     ) : SaveScopeError()
     
     /**
-     * Represents a persistence layer failure.
-     * Occurs when the underlying storage system encounters an error.
+     * Represents a unified persistence/database error during save operation.
+     * Consolidates both persistence layer failures and database-level errors
+     * to simplify error handling and eliminate ambiguity.
      */
-    data class PersistenceFailure(
-        val scopeId: ScopeId,
-        val message: String,
-        val cause: Throwable
-    ) : SaveScopeError()
-    
-    /**
-     * Represents a database-level error during save operation.
-     * Maps infrastructure adapter errors to domain repository errors.
-     */
-    data class DatabaseError(
+    data class PersistenceError(
         val scopeId: ScopeId,
         val message: String,
         val cause: Throwable,
-        val retryable: Boolean = false
-    ) : SaveScopeError()
+        val retryable: Boolean = false,
+        val errorCode: String? = null,
+        val category: ErrorCategory = ErrorCategory.PERSISTENCE
+    ) : SaveScopeError() {
+        
+        enum class ErrorCategory {
+            PERSISTENCE,
+            DATABASE,
+            CONNECTION,
+            TIMEOUT,
+            CONSTRAINT
+        }
+    }
     
     /**
      * Represents a transaction error during save operation.
@@ -90,16 +92,32 @@ sealed class SaveScopeError {
     ) : SaveScopeError()
     
     /**
-     * Represents an infrastructure-level failure.
-     * Used for cascading failures and system-wide issues.
+     * Represents a system-level failure during save operation.
+     * Used for cascading failures and system-wide issues without exposing infrastructure details.
      */
-    data class InfrastructureError(
+    data class SystemFailure(
         val scopeId: ScopeId,
-        val failureType: String,
+        val failure: SystemFailureType,
         val retryable: Boolean,
         val correlationId: String? = null,
         val cause: Throwable? = null
-    ) : SaveScopeError()
+    ) : SaveScopeError() {
+        
+        /**
+         * Type-safe enumeration of system failure types.
+         */
+        sealed class SystemFailureType {
+            data class DatabaseConnectionError(val details: String) : SystemFailureType()
+            data class DatabaseQueryError(val query: String? = null) : SystemFailureType()
+            data class NetworkError(val endpoint: String) : SystemFailureType()
+            data class ExternalServiceError(val serviceName: String, val statusCode: Int? = null) : SystemFailureType()
+            data class FileSystemError(val path: String, val operation: String) : SystemFailureType()
+            data class ConfigurationError(val configKey: String) : SystemFailureType()
+            data class ResourceExhaustedError(val resource: String) : SystemFailureType()
+            data class MessagingError(val messageType: String) : SystemFailureType()
+            data class UnknownError(val description: String = "Unknown system failure") : SystemFailureType()
+        }
+    }
 
     /**
      * Represents an unexpected error during save operation.

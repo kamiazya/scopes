@@ -47,14 +47,26 @@ sealed class FindScopeError {
     ) : FindScopeError()
     
     /**
-     * Represents a persistence layer failure during traversal.
-     * Occurs when the underlying storage system encounters an error.
+     * Represents a unified persistence/database error during hierarchy traversal.
+     * Consolidates both persistence layer failures and database-level errors.
      */
-    data class PersistenceFailure(
+    data class PersistenceError(
         val scopeId: ScopeId,
         val message: String,
-        val cause: Throwable
-    ) : FindScopeError()
+        val cause: Throwable,
+        val retryable: Boolean = false,
+        val errorCode: String? = null,
+        val category: ErrorCategory = ErrorCategory.PERSISTENCE
+    ) : FindScopeError() {
+        
+        enum class ErrorCategory {
+            PERSISTENCE,
+            DATABASE,
+            CONNECTION,
+            TIMEOUT,
+            CONSTRAINT
+        }
+    }
     
     /**
      * Represents a transaction isolation violation during hierarchy traversal.

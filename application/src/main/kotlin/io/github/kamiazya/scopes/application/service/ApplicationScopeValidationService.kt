@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.application.service
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.error.DomainError
@@ -11,6 +13,7 @@ import io.github.kamiazya.scopes.domain.error.sequence
 import io.github.kamiazya.scopes.domain.error.map
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
+import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
@@ -33,6 +36,7 @@ class ApplicationScopeValidationService(
     companion object {
         const val MAX_HIERARCHY_DEPTH = 10
         const val MAX_CHILDREN_PER_PARENT = 100
+        const val MAX_TITLE_LENGTH = 100
     }
 
     /**
@@ -46,23 +50,39 @@ class ApplicationScopeValidationService(
     /**
      * Validates title format with service-specific error context.
      * Returns specific ScopeValidationServiceError.TitleValidationError types.
+     * Delegates to ScopeTitle.create() and maps domain errors to service errors.
      */
-    fun validateTitleFormat(title: String): Either<ScopeValidationServiceError.TitleValidationError, Unit> = either {
-        when {
-            title.isBlank() -> raise(ScopeValidationServiceError.TitleValidationError.EmptyTitle)
-            title.length < 3 -> raise(ScopeValidationServiceError.TitleValidationError.TooShort(
-                minLength = 3, 
-                actualLength = title.length
-            ))
-            title.length > 100 -> raise(ScopeValidationServiceError.TitleValidationError.TooLong(
-                maxLength = 100,
-                actualLength = title.length
-            ))
-            title.contains('\n') || title.contains('\r') -> {
-                val invalidChars = title.filter { it == '\n' || it == '\r' }.toSet()
-                raise(ScopeValidationServiceError.TitleValidationError.InvalidCharacters(invalidChars))
-            }
+    fun validateTitleFormat(title: String): Either<ScopeValidationServiceError.TitleValidationError, Unit> {
+        val trimmedTitle = title.trim()
+        
+        // Check for empty title
+        if (trimmedTitle.isBlank()) {
+            return ScopeValidationServiceError.TitleValidationError.EmptyTitle.left()
         }
+        
+        // Check minimum length
+        if (trimmedTitle.length < ScopeTitle.MIN_LENGTH) {
+            return ScopeValidationServiceError.TitleValidationError.TooShort(
+                minLength = ScopeTitle.MIN_LENGTH,
+                actualLength = trimmedTitle.length
+            ).left()
+        }
+        
+        // Check maximum length using service-specific constant
+        if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+            return ScopeValidationServiceError.TitleValidationError.TooLong(
+                maxLength = MAX_TITLE_LENGTH,
+                actualLength = trimmedTitle.length
+            ).left()
+        }
+        
+        // Check for invalid characters
+        if (title.contains('\n') || title.contains('\r')) {
+            val invalidChars = title.filter { it == '\n' || it == '\r' }.toSet()
+            return ScopeValidationServiceError.TitleValidationError.InvalidCharacters(invalidChars).left()
+        }
+        
+        return Unit.right()
     }
 
     /**
@@ -76,11 +96,12 @@ class ApplicationScopeValidationService(
 
         // Check depth constraint
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { _ -> 
-                BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
-                    maxDepth = MAX_HIERARCHY_DEPTH,
-                    attemptedDepth = Int.MAX_VALUE, // Unknown depth due to error
-                    affectedScopeId = parentId
+            .mapLeft { repositoryError -> 
+                BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed(
+                    checkName = "hierarchy_depth_check",
+                    errorDetails = "Failed to retrieve hierarchy depth for validation",
+                    affectedScopeId = parentId,
+                    cause = RuntimeException("Repository error during depth check: $repositoryError")
                 )
             }
             .bind()
@@ -95,11 +116,12 @@ class ApplicationScopeValidationService(
 
         // Check children limit constraint
         val childrenCount = repository.countByParentId(parentId)
-            .mapLeft { _ ->
-                BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(
-                    maxChildren = MAX_CHILDREN_PER_PARENT,
-                    currentChildren = Int.MAX_VALUE, // Unknown count due to error
-                    parentId = parentId
+            .mapLeft { repositoryError ->
+                BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed(
+                    checkName = "children_count_check",
+                    errorDetails = "Failed to retrieve children count for validation",
+                    affectedScopeId = parentId,
+                    cause = RuntimeException("Repository error during children count check: $repositoryError")
                 )
             }
             .bind()
@@ -123,12 +145,14 @@ class ApplicationScopeValidationService(
     ): Either<ScopeValidationServiceError.UniquenessValidationError, Unit> = either {
         val normalizedTitle = TitleNormalizer.normalize(title)
         val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
-            .mapLeft { _ ->
-                // Map repository error to validation error with context
-                ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle(
+            .mapLeft { repositoryError ->
+                // Map repository error to check failure, not duplicate title
+                ScopeValidationServiceError.UniquenessValidationError.CheckFailed(
+                    checkName = "title_uniqueness_check",
+                    errorDetails = "Failed to check title uniqueness in repository",
                     title = title,
                     parentId = parentId,
-                    normalizedTitle = normalizedTitle
+                    cause = RuntimeException("Repository error during uniqueness check: $repositoryError")
                 )
             }
             .bind()
@@ -187,7 +211,7 @@ class ApplicationScopeValidationService(
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
-            DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
+            DomainError.ScopeError.InvalidParent(parentId, "Maximum hierarchy depth ($MAX_HIERARCHY_DEPTH) would be exceeded")
         }
     }
 
@@ -236,7 +260,16 @@ class ApplicationScopeValidationService(
                 when (existsError) {
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption ->
                         DomainError.ScopeError.InvalidParent(parentId ?: ScopeId.generate(), existsError.message)
-                    else -> DomainError.ScopeError.ScopeNotFound
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout ->
+                        DomainError.InfrastructureError(RepositoryError.DatabaseError("Query timeout during existence check", RuntimeException(existsError.toString())))
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout ->
+                        DomainError.InfrastructureError(RepositoryError.DatabaseError("Lock timeout during existence check", RuntimeException(existsError.toString())))
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure ->
+                        DomainError.InfrastructureError(RepositoryError.ConnectionError(existsError.cause))
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError ->
+                        DomainError.InfrastructureError(RepositoryError.DatabaseError(existsError.message, existsError.cause))
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError ->
+                        DomainError.InfrastructureError(RepositoryError.UnknownError(existsError.message, existsError.cause))
                 }
             }
             .bind()

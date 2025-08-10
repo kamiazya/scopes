@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.domain.error.CountScopeError
 import io.github.kamiazya.scopes.domain.error.FindScopeError
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Errors specific to CreateScope use case.
@@ -75,7 +76,7 @@ sealed class CreateScopeError {
      * Parent already has maximum number of children.
      */
     data class MaxChildrenExceeded(
-        val parentId: String,
+        val parentId: ScopeId,
         val maxChildren: Int
     ) : CreateScopeError()
 
