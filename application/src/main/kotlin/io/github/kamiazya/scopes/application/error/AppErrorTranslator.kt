@@ -87,11 +87,11 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
     
     private fun translateScopeError(error: DomainError.ScopeError): String = when (error) {
         is DomainError.ScopeError.ScopeNotFound -> "The scope was not found"
-        is DomainError.ScopeError.InvalidTitle -> "Invalid scope title: ${error.reason}"
-        is DomainError.ScopeError.InvalidDescription -> "Invalid scope description: ${error.reason}"
-        is DomainError.ScopeError.InvalidParent -> "Invalid parent scope '${error.parentId}': ${error.reason}"
+        is DomainError.ScopeError.InvalidTitle -> "Invalid scope title: ${error.reason.sanitize()}"
+        is DomainError.ScopeError.InvalidDescription -> "Invalid scope description: ${error.reason.sanitize()}"
+        is DomainError.ScopeError.InvalidParent -> "Invalid parent scope '${error.parentId.toString().sanitize()}': ${error.reason.sanitize()}"
         is DomainError.ScopeError.CircularReference -> 
-            "Cannot set scope '${error.parentId}' as parent of '${error.scopeId}' - would create circular reference"
+            "Cannot set scope '${error.parentId.toString().sanitize()}' as parent of '${error.scopeId.toString().sanitize()}' - would create circular reference"
         is DomainError.ScopeError.SelfParenting -> "A scope cannot be its own parent"
     }
     
@@ -104,7 +104,7 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
         is DomainError.ScopeValidationError.ScopeDescriptionTooLong -> 
             "Scope description is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
         is DomainError.ScopeValidationError.ScopeInvalidFormat -> 
-            "Invalid format for ${error.field}: expected ${error.expected}"
+            "Invalid format for ${error.field.sanitize()}: expected ${error.expected.sanitize()}"
     }
     
     private fun translateBusinessRuleViolation(error: DomainError.ScopeBusinessRuleViolation): String = when (error) {
@@ -113,8 +113,8 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
         is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> 
             "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
         is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> {
-            val parentInfo = error.parentId?.let { " under parent '$it'" } ?: ""
-            "A scope with title '${error.title}' already exists$parentInfo"
+            val parentInfo = error.parentId?.let { " under parent '${it.toString().sanitize()}'" } ?: ""
+            "A scope with title '${error.title.sanitize()}' already exists$parentInfo"
         }
     }
     
@@ -129,10 +129,10 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
             "Data integrity error: ${error.message.sanitize("Data integrity violation")}. Please check your input."
             
         is RepositoryError.NotFound -> 
-            "The scope with ID '${error.id}' was not found."
+            "The scope with ID '${error.id.toString().sanitize()}' was not found."
             
         is RepositoryError.ConflictError -> 
-            "Conflict error for scope '${error.id}': ${error.message.sanitize("Resource conflict")}"
+            "Conflict error for scope '${error.id.toString().sanitize()}': ${error.message.sanitize("Resource conflict")}"
             
         is RepositoryError.SerializationError -> 
             "Data serialization error: ${error.message.sanitize("Serialization failed")}"
