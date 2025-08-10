@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.RecoveryApproach
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
@@ -106,9 +107,10 @@ class RecoveryStrategyDomainServiceTest : StringSpec({
 
     "determineRecoveryStrategy should return RESTRUCTURE_HIERARCHY for max depth exceeded error" {
         // Arrange
-        val error = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
+        val error = BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
             maxDepth = 10,
-            actualDepth = 12
+            attemptedDepth = 12,
+            affectedScopeId = ScopeId.generate()
         )
 
         // Act
@@ -183,7 +185,11 @@ class RecoveryStrategyDomainServiceTest : StringSpec({
 
     "getStrategyApproach should return MANUAL_INTERVENTION for max depth exceeded error" {
         // Arrange
-        val error = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(10, 12)
+        val error = BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+            maxDepth = 10,
+            attemptedDepth = 12,
+            affectedScopeId = ScopeId.generate()
+        )
 
         // Act
         val approach = service.getStrategyApproach(error)
@@ -256,7 +262,11 @@ class RecoveryStrategyDomainServiceTest : StringSpec({
             DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(
                 "Duplicate", ScopeId.generate()
             ),
-            DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(10, 12),
+            BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+                maxDepth = 10,
+                attemptedDepth = 12,
+                affectedScopeId = ScopeId.generate()
+            ),
             DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(100, 150)
         )
 

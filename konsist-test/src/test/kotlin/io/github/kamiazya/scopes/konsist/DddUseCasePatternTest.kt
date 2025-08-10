@@ -6,76 +6,13 @@ import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
 
 /**
- * Enhanced domain type detection that uses package-based analysis
- * instead of hardcoded entity names.
+ * Domain type detection based on full type text.
+ * Parses the full type text to determine if it belongs to the domain layer.
  */
-private fun isDomainType(sourceType: String?, typeName: String): Boolean {
-    // Primary check: Use actual package information if available
-    if (sourceType != null) {
-        // Check if the type comes from a domain package
-        if (sourceType.contains(".domain.")) {
-            return true
-        }
-        
-        // Check if it's from a domain-related module structure
-        if (sourceType.contains("domain") && 
-            (sourceType.contains("entity") || sourceType.contains("aggregate") || sourceType.contains("valueobject"))) {
-            return true
-        }
-    }
-    
-    // Secondary check: Pattern-based detection for when package info is not available
-    // This is more comprehensive than the previous hardcoded approach
-    
-    // Exclude known non-domain types first
-    val allowedTypes = setOf(
-        "String", "Int", "Long", "Boolean", "Double", "Float", "Unit", "Any",
-        "List", "Map", "Set", "Array", "Collection", "Sequence",
-        "Instant", "LocalDateTime", "LocalDate", "UUID", "BigDecimal"
-    )
-    
-    if (allowedTypes.contains(typeName)) {
-        return false
-    }
-    
-    // Exclude DTO/Result types (these are application layer, not domain)
-    if (typeName.endsWith("DTO") || typeName.endsWith("Result") || 
-        typeName.endsWith("Command") || typeName.endsWith("Query")) {
-        return false
-    }
-    
-    // Exclude generic type expressions
-    if (typeName.contains("<") || typeName.contains(">") || typeName.contains(",")) {
-        return false
-    }
-    
-    // Check for domain-specific patterns
-    // Domain entities are typically single capitalized words
-    if (typeName.matches(Regex("^[A-Z][a-zA-Z0-9]*$"))) {
-        // Additional checks to reduce false positives
-        
-        // Likely domain value object patterns
-        val domainValueObjectSuffixes = listOf("Id", "Name", "Title", "Code", "Status", "Type", "Category")
-        if (domainValueObjectSuffixes.any { suffix -> typeName.endsWith(suffix) && typeName.length > suffix.length }) {
-            return true
-        }
-        
-        // Likely domain entity patterns (short, descriptive nouns)
-        // This replaces the hardcoded list with pattern matching
-        if (typeName.length in 3..20 && 
-            !typeName.startsWith("Http") && 
-            !typeName.startsWith("Json") && 
-            !typeName.startsWith("Xml") &&
-            !typeName.endsWith("Exception") &&
-            !typeName.endsWith("Error") &&
-            !typeName.endsWith("Config") &&
-            !typeName.endsWith("Properties") &&
-            !typeName.endsWith("Context")) {
-            return true
-        }
-    }
-    
-    return false
+private fun isDomainType(fullTypeText: String): Boolean {
+    // Check if the full type text contains a domain package reference
+    // This handles both simple types and fully qualified names
+    return fullTypeText.contains("io.github.kamiazya.scopes.domain.")
 }
 
 /**
@@ -119,8 +56,8 @@ class DddUseCasePatternTest : StringSpec({
                     val packageName = property.type?.packagee?.name ?: ""
                     
                     // Primary check: types from domain package are not allowed
-                    // This replaces the problematic sourceType?.contains("domain") check
-                    if (packageName.contains(".domain")) {
+                    // This uses exact package prefix matching
+                    if (packageName.startsWith("io.github.kamiazya.scopes.domain.")) {
                         return@any true
                     }
                     
@@ -197,7 +134,7 @@ class DddUseCasePatternTest : StringSpec({
             .filter { !it.path.contains("test") } // Allow test files to import infrastructure
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }
@@ -207,10 +144,12 @@ class DddUseCasePatternTest : StringSpec({
             .scopeFromModule("presentation-cli")
             .files
             .filter { it.name.contains("CompositionRoot") }
+            .filter { !it.path.contains("test") } // Restrict to production files only
             .assertTrue { file ->
-                // CompositionRoot is allowed to import infrastructure
+                // CompositionRoot is allowed to import infrastructure using fully qualified class names
                 file.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.") &&
+                    !import.name.contains("*") // Ensure FQCN, not wildcard imports
                 }
             }
     }
@@ -222,7 +161,7 @@ class DddUseCasePatternTest : StringSpec({
             .filter { it.name.endsWith("Command") }
             .assertFalse { command ->
                 command.containingFile.imports.any { import ->
-                    import.name.contains("infrastructure.error")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.error.")
                 }
             }
     }
@@ -306,10 +245,16 @@ class DddUseCasePatternTest : StringSpec({
                         }
                         
                         // Check if the success type (second type argument) is a domain type
-                        val successType = typeArguments[1]
-                        // Use enhanced domain type detection with just the type name
-                        // The isDomainType function has comprehensive pattern-based detection
-                        isDomainType(null, successType.name)
+                        // Extract the full type text from the return type to get package information
+                        val returnTypeText = returnType.text ?: returnType.name
+                        
+                        // Parse Either<Error, SuccessType> to extract the success type portion
+                        // The success type is after the comma in the generic parameters
+                        val genericMatch = Regex("Either<[^,]+,\\s*([^>]+)>").find(returnTypeText)
+                        val successTypeText = genericMatch?.groupValues?.get(1)?.trim() ?: ""
+                        
+                        // Check if the success type is from the domain package
+                        isDomainType(successTypeText)
                     }
             }
     }
@@ -336,7 +281,7 @@ class DddUseCasePatternTest : StringSpec({
             .filter { it.name.contains("ErrorTranslator") }
             .assertFalse { translator ->
                 translator.containingFile.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }

@@ -1280,7 +1280,11 @@ class ApplicationScopeValidationService(
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
-            DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(MAX_HIERARCHY_DEPTH, depth + 1)
+            BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+                maxDepth = MAX_HIERARCHY_DEPTH,
+                attemptedDepth = depth + 1,
+                affectedScopeId = scopeId
+            )
         }
     }
 

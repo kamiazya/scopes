@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.error.RecoveryResult
 import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
@@ -85,6 +86,23 @@ class ErrorRecoverySuggestionService(
             is DomainError.ScopeError.InvalidDescription -> handleNonRecoverable(error)
             is DomainError.ScopeError.InvalidParent -> handleNonRecoverable(error)
             is DomainError.InfrastructureError -> handleNonRecoverable(error)
+        }
+    }
+
+    /**
+     * Suggests recovery options for business rule service errors.
+     */
+    fun suggestRecovery(
+        error: BusinessRuleServiceError,
+        context: SuggestionContext = SuggestionContext.NoContext
+    ): RecoveryResult {
+        return when (error) {
+            is BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded ->
+                suggestMaxDepthExceededRecovery(error)
+            else -> RecoveryResult.NonRecoverable(
+                originalError = error as DomainError,
+                reason = "This business rule error type requires manual intervention and cannot be automatically recovered"
+            )
         }
     }
 
@@ -348,15 +366,27 @@ class ErrorRecoverySuggestionService(
     /**
      * Suggests recovery for max depth exceeded business rule violations.
      */
-    /*
-    // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
     private fun suggestMaxDepthExceededRecovery(
-        error: DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded
+        error: BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
     ): RecoveryResult {
-        // Implementation removed due to consolidation
-        return RecoveryResult.NoSuggestion(error)
+        val hierarchyConfig = configuration.hierarchyConfig()
+
+        return RecoveryResult.Suggestion(
+            originalError = DomainError.InfrastructureError(
+                repositoryError = io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError(
+                    "BusinessRuleServiceError.MaxDepthExceeded mapped to domain error for recovery suggestions",
+                    RuntimeException("BusinessRuleServiceError mapping")
+                )
+            ),
+            suggestedValues = listOf(
+                "Move this scope to a higher level in the hierarchy",
+                "Create the scope at a different parent with lower depth",
+                "Restructure the hierarchy to reduce overall depth"
+            ),
+            strategy = RecoveryStrategy.RESTRUCTURE_HIERARCHY,
+            description = hierarchyConfig.getDepthGuidance(error.maxDepth, error.attemptedDepth)
+        )
     }
-    */
 
     /**
      * Suggests recovery for max children exceeded business rule violations.

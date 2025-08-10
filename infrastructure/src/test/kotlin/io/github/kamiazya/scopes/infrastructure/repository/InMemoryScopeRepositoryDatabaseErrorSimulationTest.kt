@@ -53,13 +53,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             val saveResult = repository.save(scope)
             
             val error = saveResult.shouldBeLeft()
-            error.shouldBeInstanceOf<SaveScopeError.DatabaseError>()
+            error.shouldBeInstanceOf<SaveScopeError.PersistenceError>()
             
             // Verify the error contains connection pool details
-            val dbError = error as SaveScopeError.DatabaseError
+            val dbError = error as SaveScopeError.PersistenceError
             dbError.message shouldBe "Connection pool exhausted"
             dbError.cause.shouldBeInstanceOf<RuntimeException>()
             dbError.retryable shouldBe true
+            dbError.category shouldBe SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
         }
     }
 
@@ -77,7 +78,9 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             
             val timeoutError = error as ExistsScopeError.QueryTimeout
             timeoutError.timeoutMs shouldBe 5000
-            timeoutError.scopeId shouldBe scopeId
+            timeoutError.context.shouldBeInstanceOf<ExistsScopeError.ExistenceContext.ById>()
+            val byIdContext = timeoutError.context as ExistsScopeError.ExistenceContext.ById
+            byIdContext.scopeId shouldBe scopeId
         }
     }
 
@@ -230,7 +233,9 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             error.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
             
             val infraError = error as SaveScopeError.SystemFailure
-            infraError.failureType shouldBe "CASCADING_FAILURE"
+            infraError.failure.shouldBeInstanceOf<SaveScopeError.SystemFailure.SystemFailureType.UnknownError>()
+            val unknownError = infraError.failure as SaveScopeError.SystemFailure.SystemFailureType.UnknownError
+            unknownError.description shouldBe "CASCADING_FAILURE"
             infraError.retryable shouldBe false
             infraError.correlationId shouldNotBe null
         }
@@ -252,22 +257,45 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             val scopeId = ScopeId.generate()
             val parentId = ScopeId.generate()
             
-            // Each operation should fail with its specific error type
+            // Verify save operation fails with PersistenceError for connection pool exhaustion
             val saveResult = repository.save(scope)
             val saveError = saveResult.shouldBeLeft()
-            saveError.shouldBeInstanceOf<SaveScopeError>()
+            saveError.shouldBeInstanceOf<SaveScopeError.PersistenceError>()
+            val persistenceError = saveError as SaveScopeError.PersistenceError
+            persistenceError.scopeId shouldBe scope.id
+            persistenceError.message shouldBe "Connection pool exhausted"
+            persistenceError.retryable shouldBe true
+            persistenceError.cause?.message shouldBe "Connection pool exhausted"
+            persistenceError.category shouldBe SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
             
+            // Verify exists operation fails with QueryTimeout
             val existsResult = repository.existsById(scopeId)
             val existsError = existsResult.shouldBeLeft()
-            existsError.shouldBeInstanceOf<ExistsScopeError>()
+            existsError.shouldBeInstanceOf<ExistsScopeError.QueryTimeout>()
+            val queryTimeout = existsError as ExistsScopeError.QueryTimeout
+            queryTimeout.context.shouldBeInstanceOf<ExistsScopeError.ExistenceContext.ById>()
+            val byIdContext = queryTimeout.context as ExistsScopeError.ExistenceContext.ById
+            byIdContext.scopeId shouldBe scopeId
+            queryTimeout.timeoutMs shouldBe 5000
+            queryTimeout.operation shouldBe "EXISTS_CHECK"
             
+            // Verify count operation fails with ConnectionError for table lock
             val countResult = repository.countByParentId(parentId)
             val countError = countResult.shouldBeLeft()
-            countError.shouldBeInstanceOf<CountScopeError>()
+            countError.shouldBeInstanceOf<CountScopeError.ConnectionError>()
+            val connectionError = countError as CountScopeError.ConnectionError
+            connectionError.parentId shouldBe parentId
+            connectionError.retryable shouldBe true
+            connectionError.cause?.message shouldBe "Table locked"
             
+            // Verify findDepth operation fails with IsolationViolation for transaction rollback
             val depthResult = repository.findHierarchyDepth(scopeId)
             val depthError = depthResult.shouldBeLeft()
-            depthError.shouldBeInstanceOf<FindScopeError>()
+            depthError.shouldBeInstanceOf<FindScopeError.IsolationViolation>()
+            val isolationViolation = depthError as FindScopeError.IsolationViolation
+            isolationViolation.scopeId shouldBe scopeId
+            isolationViolation.violationType shouldBe "ROLLBACK"
+            isolationViolation.retryable shouldBe true
         }
     }
 })
@@ -354,11 +382,12 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 timestamp = Clock.System.now(),
                 correlationId = "test-correlation"
             )
-            raise(SaveScopeError.DatabaseError(
+            raise(SaveScopeError.PersistenceError(
                 scopeId = scope.id,
                 message = "Connection pool exhausted",
                 cause = RuntimeException("Connection pool exhausted"),
-                retryable = true
+                retryable = true,
+                category = SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
             ))
         }
         
@@ -394,7 +423,9 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
         if (simulateInfrastructureFailure) {
             raise(SaveScopeError.SystemFailure(
                 scopeId = scope.id,
-                failureType = infrastructureFailureType,
+                failure = SaveScopeError.SystemFailure.SystemFailureType.UnknownError(
+                    description = infrastructureFailureType
+                ),
                 retryable = false,
                 correlationId = "infra-correlation-${scope.id.value}",
                 cause = RuntimeException("Infrastructure failure: $infrastructureFailureType")
@@ -412,11 +443,12 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                         cause = RuntimeException("Connection pool exhausted"),
                         timestamp = Clock.System.now()
                     )
-                    raise(SaveScopeError.DatabaseError(
+                    raise(SaveScopeError.PersistenceError(
                         scopeId = scope.id,
                         message = "Connection pool exhausted",
                         cause = RuntimeException("Connection pool exhausted"),
-                        retryable = true
+                        retryable = true,
+                        category = SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
                     ))
                 }
             }
@@ -432,7 +464,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
     override suspend fun existsById(id: ScopeId): Either<ExistsScopeError, Boolean> = either {
         if (simulateQueryTimeout) {
             raise(ExistsScopeError.QueryTimeout(
-                scopeId = id,
+                context = ExistsScopeError.ExistenceContext.ById(scopeId = id),
                 timeoutMs = queryTimeoutMs,
                 operation = "EXISTS_CHECK"
             ))
@@ -443,7 +475,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
             when (errorType) {
                 "QUERY_TIMEOUT" -> {
                     raise(ExistsScopeError.QueryTimeout(
-                        scopeId = id,
+                        context = ExistsScopeError.ExistenceContext.ById(scopeId = id),
                         timeoutMs = 5000,
                         operation = "EXISTS_CHECK"
                     ))

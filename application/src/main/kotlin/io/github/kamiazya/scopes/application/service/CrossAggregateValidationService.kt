@@ -36,12 +36,28 @@ class CrossAggregateValidationService(
         
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
-            .mapLeft { 
+            .mapLeft { existsError ->
+                // Include detailed repository error information for better diagnostics
+                val diagnosticDetails = when (existsError) {
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                        "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                        "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                        "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                        "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                        "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                        "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                }
+                
                 ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "children",
                     targetAggregate = parentId.value,
                     referenceType = "parentId",
-                    violation = "Failed to check parent existence"
+                    violation = "Failed to check parent existence - $diagnosticDetails"
                 )
             }
             .bind()
@@ -58,12 +74,28 @@ class CrossAggregateValidationService(
         // Validate all children exist
         for (childId in childIds) {
             val childExists = scopeRepository.existsById(childId)
-                .mapLeft { 
+                .mapLeft { existsError ->
+                    // Include detailed repository error information and root cause for better diagnostics
+                    val diagnosticDetails = when (existsError) {
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                    }
+                    
                     ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
                         sourceAggregate = parentId.value,
                         targetAggregate = childId.value,
                         referenceType = "childId",
-                        violation = "Failed to check child existence"
+                        violation = "Failed to check child existence - $diagnosticDetails"
                     )
                 }
                 .bind()
@@ -94,11 +126,27 @@ class CrossAggregateValidationService(
         // Check uniqueness across all contexts
         for (contextId in contextIds) {
             val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, normalizedTitle)
-                .mapLeft { 
+                .mapLeft { existsError ->
+                    // Include detailed repository error information and root cause for better diagnostics
+                    val diagnosticDetails = when (existsError) {
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                    }
+                    
                     ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
                         aggregateIds = contextIds.map { it.value },
-                        violationDescription = "Failed to check uniqueness in context ${contextId.value}"
+                        violationDescription = "Failed to check uniqueness in context ${contextId.value} - $diagnosticDetails"
                     )
                 }
                 .bind()
@@ -138,12 +186,28 @@ class CrossAggregateValidationService(
             }
 
             val aggregateExists = scopeRepository.existsById(aggregateId)
-                .mapLeft { 
+                .mapLeft { existsError ->
+                    // Include detailed repository error information and root cause for better diagnostics
+                    val diagnosticDetails = when (existsError) {
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
+                    }
+                    
                     ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation(
                         operation = operation,
                         affectedAggregates = aggregateIds,
                         consistencyRule = consistencyRule,
-                        violationDetails = "Failed to check aggregate $aggregateIdString existence"
+                        violationDetails = "Failed to check aggregate $aggregateIdString existence - $diagnosticDetails"
                     )
                 }
                 .bind()

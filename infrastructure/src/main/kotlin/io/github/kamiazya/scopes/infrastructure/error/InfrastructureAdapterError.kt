@@ -67,13 +67,13 @@ sealed class InfrastructureAdapterError {
             val query: String,
             val parameters: Map<String, Any>? = null,
             val executionTimeMs: Long?,
+            val errorType: QueryErrorType = QueryErrorType.OTHER,
             val cause: Throwable,
             override val timestamp: Instant,
             override val correlationId: String? = null
         ) : DatabaseAdapterError() {
-            // Most query errors (syntax, invalid references) are persistent conditions
-            // Only query timeouts might be retryable, but we classify conservatively as false
-            override val retryable: Boolean = false
+            // Retry logic determined by error type - timeouts and transient errors are retryable
+            override val retryable: Boolean = errorType.retryable
         }
         
         /**
@@ -491,6 +491,29 @@ sealed class InfrastructureAdapterError {
 enum class TransactionOperation { COMMIT, ROLLBACK, SAVEPOINT, DEADLOCK }
 enum class TransactionIsolationLevel { READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE }
 enum class DatabaseResource { CONNECTIONS, MEMORY, STORAGE, LOCKS }
+
+/**
+ * Types of query errors for more granular retry logic.
+ */
+enum class QueryErrorType(val retryable: Boolean) {
+    /** SQL syntax errors, table/column not found, etc. - not retryable */
+    SYNTAX(false),
+    
+    /** Constraint violations like primary key, foreign key, check constraints - not retryable */
+    CONSTRAINT(false),
+    
+    /** Query execution timeouts - retryable as they may succeed with more time */
+    TIMEOUT(true),
+    
+    /** Lock wait timeouts during concurrent operations - retryable */
+    LOCK_WAIT_TIMEOUT(true),
+    
+    /** Transient connection issues during query execution - retryable */
+    TRANSIENT_CONNECTION(true),
+    
+    /** Other/unknown query errors - conservatively non-retryable */
+    OTHER(false)
+}
 
 // Supporting enums and types for external API errors
 enum class NetworkErrorType(val retryable: Boolean) {

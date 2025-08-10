@@ -36,7 +36,6 @@ class ApplicationScopeValidationService(
     companion object {
         const val MAX_HIERARCHY_DEPTH = 10
         const val MAX_CHILDREN_PER_PARENT = 100
-        const val MAX_TITLE_LENGTH = 100
     }
 
     /**
@@ -69,9 +68,9 @@ class ApplicationScopeValidationService(
         }
         
         // Check maximum length using service-specific constant
-        if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+        if (trimmedTitle.length > ScopeTitle.MAX_LENGTH) {
             return ScopeValidationServiceError.TitleValidationError.TooLong(
-                maxLength = MAX_TITLE_LENGTH,
+                maxLength = ScopeTitle.MAX_LENGTH,
                 actualLength = trimmedTitle.length
             ).left()
         }
@@ -259,17 +258,52 @@ class ApplicationScopeValidationService(
                 // Map ExistsScopeError to appropriate DomainError
                 when (existsError) {
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption ->
-                        DomainError.ScopeError.InvalidParent(parentId ?: ScopeId.generate(), existsError.message)
+                        // Handle IndexCorruption without generating misleading ScopeIds when parentId is null
+                        if (parentId != null) {
+                            DomainError.ScopeError.InvalidParent(
+                                parentId, 
+                                "Index corruption detected for parent: ${existsError.message}. ScopeId in corruption: ${existsError.scopeId}"
+                            )
+                        } else {
+                            DomainError.InfrastructureError(
+                                RepositoryError.DataIntegrityError(
+                                    "Index corruption detected for root-level existence check: ${existsError.message}. Corrupted ScopeId: ${existsError.scopeId}",
+                                    cause = RuntimeException("Index corruption in existence validation")
+                                )
+                            )
+                        }
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout ->
-                        DomainError.InfrastructureError(RepositoryError.DatabaseError("Query timeout during existence check", RuntimeException(existsError.toString())))
+                        DomainError.InfrastructureError(
+                            RepositoryError.DatabaseError(
+                                "Query timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}",
+                                RuntimeException("Query timeout: ${existsError.operation}")
+                            )
+                        )
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout ->
-                        DomainError.InfrastructureError(RepositoryError.DatabaseError("Lock timeout during existence check", RuntimeException(existsError.toString())))
+                        DomainError.InfrastructureError(
+                            RepositoryError.DatabaseError(
+                                "Lock timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}",
+                                RuntimeException("Lock timeout: ${existsError.operation}")
+                            )
+                        )
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure ->
-                        DomainError.InfrastructureError(RepositoryError.ConnectionError(existsError.cause))
+                        DomainError.InfrastructureError(
+                            RepositoryError.ConnectionError(existsError.cause)
+                        )
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError ->
-                        DomainError.InfrastructureError(RepositoryError.DatabaseError(existsError.message, existsError.cause))
+                        DomainError.InfrastructureError(
+                            RepositoryError.DatabaseError(
+                                "Persistence error during existence check: context=${existsError.context}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"} - ${existsError.message}",
+                                existsError.cause
+                            )
+                        )
                     is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError ->
-                        DomainError.InfrastructureError(RepositoryError.UnknownError(existsError.message, existsError.cause))
+                        DomainError.InfrastructureError(
+                            RepositoryError.UnknownError(
+                                "Unknown error during existence check: ${existsError.message}",
+                                existsError.cause
+                            )
+                        )
                 }
             }
             .bind()

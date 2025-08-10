@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -51,7 +53,11 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         val service = ErrorRecoveryDomainService()
 
         val duplicateError = DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
-        val maxDepthError = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
+        val maxDepthError = BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+            maxDepth = 5,
+            attemptedDepth = 8,
+            affectedScopeId = ScopeId.generate()
+        )
         val maxChildrenError = DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.categorizeError(duplicateError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
@@ -109,7 +115,11 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         service.getRecoveryComplexity(duplicateError) shouldBe RecoveryComplexity.MODERATE
 
         // Complex errors - significant intervention needed
-        val maxDepthError = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
+        val maxDepthError = BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+            maxDepth = 5,
+            attemptedDepth = 8,
+            affectedScopeId = ScopeId.generate()
+        )
         val maxChildrenError = DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.getRecoveryComplexity(maxDepthError) shouldBe RecoveryComplexity.COMPLEX

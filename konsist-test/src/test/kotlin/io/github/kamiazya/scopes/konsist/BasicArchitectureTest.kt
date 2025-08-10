@@ -13,7 +13,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("application")
+                    import.name.startsWith("io.github.kamiazya.scopes.application.")
                 }
             }
     }
@@ -24,7 +24,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }
@@ -35,7 +35,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("presentation")
+                    import.name.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }
@@ -46,7 +46,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }
@@ -57,7 +57,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("presentation")
+                    import.name.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }
@@ -156,7 +156,7 @@ class BasicArchitectureTest : StringSpec({
             .files
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.contains("presentation")
+                    import.name.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }

@@ -9,7 +9,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
 
-    testImplementation(project(":infrastructure")) // For ErrorFormattingUtils implementation
+    testImplementation(project(":infrastructure"))
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

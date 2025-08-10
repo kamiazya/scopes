@@ -16,7 +16,10 @@ class ExistsScopeErrorTest : FunSpec({
         test("should create QueryTimeout error with scopeId and timeout") {
             val scopeId = ScopeId.generate()
             val timeoutMs = 5000L
-            val error = ExistsScopeError.QueryTimeout(scopeId, timeoutMs)
+            val error = ExistsScopeError.QueryTimeout(
+                context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
+                timeoutMs = timeoutMs
+            )
             
             error.shouldBeInstanceOf<ExistsScopeError.QueryTimeout>()
             error.scopeId shouldBe scopeId
@@ -71,7 +74,10 @@ class ExistsScopeErrorTest : FunSpec({
             val cause = RuntimeException("Test")
             
             val errors = listOf(
-                ExistsScopeError.QueryTimeout(scopeId, 5000L),
+                ExistsScopeError.QueryTimeout(
+                    context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
+                    timeoutMs = 5000L
+                ),
                 ExistsScopeError.ConnectionFailure("test", cause),
                 ExistsScopeError.IndexCorruption(scopeId, "test"),
                 ExistsScopeError.PersistenceFailure("test", cause),

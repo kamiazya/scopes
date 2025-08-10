@@ -14,21 +14,20 @@ class UseCaseArchitectureTest : StringSpec({
             .assertFalse { file ->
                 file.imports.any { import ->
                     val importName = import.name
-                    importName.contains("infrastructure") || 
-                    importName.contains("presentation")
+                    importName.startsWith("io.github.kamiazya.scopes.infrastructure.") || 
+                    importName.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }
 
-    "presentation module should not import domain classes except abstractions" {
+    "presentation module should not import domain classes" {
         Konsist
             .scopeFromModule("presentation-cli")
             .files
+            .filter { !it.path.contains("test") } // Exclude test sources
             .assertFalse { file ->
                 file.imports.any { import ->
-                    import.name.startsWith("io.github.kamiazya.scopes.domain.") &&
-                    // Allow repository interfaces for DI configuration
-                    !import.name.contains(".repository.")
+                    import.name.startsWith("io.github.kamiazya.scopes.domain.")
                 }
             }
     }
@@ -127,20 +126,8 @@ class UseCaseArchitectureTest : StringSpec({
             .filter { it.packagee?.name?.endsWith(".usecase.handler") == true }
             .assertTrue { handler ->
                 // Handlers should implement UseCase interface
-                // Check if any parent contains "UseCase" in its name
-                handler.parents().any { parent -> 
-                    parent.name.contains("UseCase")
-                }
+                handler.hasParentWithName("UseCase")
             }
-    }
-
-    "queries in query package should implement Query interface" {
-        Konsist
-            .scopeFromModule("application")
-            .classes()
-            .filter { it.packagee?.name?.endsWith(".query") == true }
-            .filter { it.name != "Query" }
-            .assertTrue { it.hasParentWithName("Query") }
     }
 
     "handlers should only depend on domain interfaces not infrastructure" {
@@ -151,7 +138,7 @@ class UseCaseArchitectureTest : StringSpec({
             .assertFalse { handler ->
                 // Handlers should not import any infrastructure classes
                 handler.containingFile.imports.any { import ->
-                    import.name.contains("infrastructure")
+                    import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }

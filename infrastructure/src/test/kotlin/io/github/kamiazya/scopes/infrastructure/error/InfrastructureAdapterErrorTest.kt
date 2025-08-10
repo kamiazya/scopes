@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.minutes
 
 class InfrastructureAdapterErrorTest : StringSpec({
 
@@ -112,7 +113,7 @@ class InfrastructureAdapterErrorTest : StringSpec({
             endpoint = "https://api.external.com/users",
             state = CircuitBreakerState.OPEN,
             failureCount = 5,
-            nextAttemptAt = testTimestamp.plus(kotlin.time.Duration.parse("PT1M")),
+            nextAttemptAt = testTimestamp.plus(1.minutes),
             timestamp = testTimestamp,
             correlationId = testCorrelationId
         )
