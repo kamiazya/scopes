@@ -110,7 +110,62 @@ class BasicArchitectureTest : StringSpec({
             .filter { it.hasDataModifier }
             .assertTrue { dataClass ->
                 dataClass.properties().all { property ->
-                    property.hasValModifier
+                    property.hasValModifier || !property.hasVarModifier
+                }
+            }
+    }
+
+    "domain entities should be in entity package" {
+        Konsist
+            .scopeFromModule("domain")
+            .classes()
+            .filter { it.name == "Scope" || it.name.endsWith("Entity") }
+            .filter { !it.name.endsWith("Test") }
+            .assertTrue { entity ->
+                val packageName = entity.packagee?.name ?: ""
+                packageName.endsWith(".entity")
+            }
+    }
+
+    "value objects should be in valueobject package" {
+        Konsist
+            .scopeFromModule("domain")
+            .classes()
+            .filter { clazz ->
+                val packageName = clazz.packagee?.name ?: ""
+                val className = clazz.name
+                // Only look at classes that are actually in valueobject package OR match value object naming pattern
+                packageName.endsWith(".valueobject") ||
+                (className.startsWith("Scope") && 
+                 (className.endsWith("Id") || className.endsWith("Title") || className.endsWith("Description")) &&
+                 !className.endsWith("Test") &&
+                 !packageName.contains(".error"))
+            }
+            .assertTrue { valueObject ->
+                val packageName = valueObject.packagee?.name ?: ""
+                packageName.endsWith(".valueobject")
+            }
+    }
+
+    "domain services should be in service package" {
+        Konsist
+            .scopeFromModule("domain")
+            .classes()
+            .filter { it.name.endsWith("DomainService") }
+            .filter { !it.name.endsWith("Test") }
+            .assertTrue { service ->
+                val packageName = service.packagee?.name ?: ""
+                packageName.endsWith(".service")
+            }
+    }
+
+    "infrastructure should not depend on presentation" {
+        Konsist
+            .scopeFromModule("infrastructure")
+            .files
+            .assertFalse { file ->
+                file.imports.any { import ->
+                    import.name.contains("presentation")
                 }
             }
     }

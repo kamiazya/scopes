@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
  */
 class CreateScopeCommand(
     private val createScopeHandler: CreateScopeHandler,
-) : CliktCommand(name = "create-scope") {
+) : CliktCommand(name = "create") {
     
     private val name by option("--name", help = "Scope name").required()
     private val description by option("--description", help = "Scope description")
