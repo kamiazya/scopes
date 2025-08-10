@@ -75,29 +75,43 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
     }
     
     private fun translateDomainError(error: DomainError): String = when (error) {
-        // Scope errors
+        is DomainError.ScopeError -> translateScopeError(error)
+        is DomainError.ScopeValidationError -> translateValidationError(error)
+        is DomainError.ScopeBusinessRuleViolation -> translateBusinessRuleViolation(error)
+        is DomainError.InfrastructureError -> translateRepositoryError(error.repositoryError)
+    }
+    
+    private fun translateScopeError(error: DomainError.ScopeError): String = when (error) {
         is DomainError.ScopeError.ScopeNotFound -> "The scope was not found"
         is DomainError.ScopeError.InvalidTitle -> "Invalid scope title: ${error.reason}"
         is DomainError.ScopeError.InvalidDescription -> "Invalid scope description: ${error.reason}"
         is DomainError.ScopeError.InvalidParent -> "Invalid parent scope '${error.parentId}': ${error.reason}"
-        is DomainError.ScopeError.CircularReference -> "Cannot set scope '${error.parentId}' as parent of '${error.scopeId}' - would create circular reference"
+        is DomainError.ScopeError.CircularReference -> 
+            "Cannot set scope '${error.parentId}' as parent of '${error.scopeId}' - would create circular reference"
         is DomainError.ScopeError.SelfParenting -> "A scope cannot be its own parent"
-        
-        // Validation errors
+    }
+    
+    private fun translateValidationError(error: DomainError.ScopeValidationError): String = when (error) {
         is DomainError.ScopeValidationError.EmptyScopeTitle -> "Scope title cannot be empty"
         is DomainError.ScopeValidationError.ScopeTitleTooShort -> "Scope title is too short"
-        is DomainError.ScopeValidationError.ScopeTitleTooLong -> "Scope title is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+        is DomainError.ScopeValidationError.ScopeTitleTooLong -> 
+            "Scope title is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
         is DomainError.ScopeValidationError.ScopeTitleContainsNewline -> "Scope title cannot contain newlines"
-        is DomainError.ScopeValidationError.ScopeDescriptionTooLong -> "Scope description is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
-        is DomainError.ScopeValidationError.ScopeInvalidFormat -> "Invalid format for ${error.field}: expected ${error.expected}"
-        
-        // Business rule violations
-        is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> "Maximum scope depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
-        is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
-        is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> "A scope with title '${error.title}' already exists${error.parentId?.let { " under parent '$it'" } ?: ""}"
-        
-        // Infrastructure errors
-        is DomainError.InfrastructureError -> translateRepositoryError(error.repositoryError)
+        is DomainError.ScopeValidationError.ScopeDescriptionTooLong -> 
+            "Scope description is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+        is DomainError.ScopeValidationError.ScopeInvalidFormat -> 
+            "Invalid format for ${error.field}: expected ${error.expected}"
+    }
+    
+    private fun translateBusinessRuleViolation(error: DomainError.ScopeBusinessRuleViolation): String = when (error) {
+        is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> 
+            "Maximum scope depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
+        is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> 
+            "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
+        is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> {
+            val parentInfo = error.parentId?.let { " under parent '$it'" } ?: ""
+            "A scope with title '${error.title}' already exists$parentInfo"
+        }
     }
     
     private fun translateRepositoryError(error: RepositoryError): String = when (error) {
