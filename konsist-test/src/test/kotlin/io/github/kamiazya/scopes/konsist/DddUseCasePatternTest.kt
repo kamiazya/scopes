@@ -236,38 +236,42 @@ class DddUseCasePatternTest : StringSpec({
                 handler.functions()
                     .filter { it.name == "invoke" }
                     .all { function ->
-                        val returnType = function.returnType?.text ?: ""
+                        val returnType = function.returnType
                         
-                        // Check if return type contains UseCaseResult
-                        if (!returnType.contains("UseCaseResult")) {
+                        if (returnType == null) {
                             return@all false
                         }
                         
-                        // Extract generic type parameter from UseCaseResult<T>
-                        val genericTypePattern = Regex("UseCaseResult<([^>]+)>")
-                        val matchResult = genericTypePattern.find(returnType)
-                        
-                        if (matchResult == null) {
+                        // Check if return type name is UseCaseResult (check for base type without generics)
+                        if (!returnType.name.startsWith("UseCaseResult")) {
                             return@all false
                         }
                         
-                        val genericType = matchResult.groupValues[1].trim()
+                        // Use Konsist's typeArguments API instead of regex parsing
+                        val typeArguments = returnType.typeArguments
+                        if (typeArguments.isNullOrEmpty()) {
+                            return@all false
+                        }
+                        
+                        // Get the first type argument (T in UseCaseResult<T>)
+                        val firstTypeArgument = typeArguments.first()
+                        val genericTypeName = firstTypeArgument.name
                         
                         // Validate that the generic type parameter is a proper DTO or Result class
                         // Should end with "Result" (DTO naming convention) or be from dto package
-                        val isValidDtoType = genericType.endsWith("Result") || 
-                                           genericType.endsWith("DTO") ||
+                        val isValidDtoType = genericTypeName.endsWith("Result") || 
+                                           genericTypeName.endsWith("DTO") ||
                                            // Allow primitive wrapper types and collections
-                                           genericType in listOf("String", "Int", "Long", "Boolean", "Double", "Float") ||
-                                           genericType.startsWith("List<") ||
-                                           genericType.startsWith("Map<") ||
-                                           genericType.startsWith("Set<")
+                                           genericTypeName in listOf("String", "Int", "Long", "Boolean", "Double", "Float") ||
+                                           genericTypeName.startsWith("List") ||
+                                           genericTypeName.startsWith("Map") ||
+                                           genericTypeName.startsWith("Set")
                         
                         // Ensure it's NOT a domain entity (shouldn't be just a single capitalized word without DTO/Result suffix)
-                        val isDomainEntity = genericType.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
-                                           !genericType.endsWith("Result") && 
-                                           !genericType.endsWith("DTO") &&
-                                           genericType !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
+                        val isDomainEntity = genericTypeName.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
+                                           !genericTypeName.endsWith("Result") && 
+                                           !genericTypeName.endsWith("DTO") &&
+                                           genericTypeName !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
                         
                         isValidDtoType && !isDomainEntity
                     }
@@ -285,30 +289,21 @@ class DddUseCasePatternTest : StringSpec({
                     .any { function ->
                         val returnType = function.returnType
                         
-                        if (returnType == null) {
+                        if (returnType == null || !returnType.name.startsWith("UseCaseResult")) {
                             return@any false
                         }
                         
-                        // Try to get actual type information from Konsist first
+                        // Use Konsist's typeArguments API to check generic parameters
                         val typeArguments = returnType.typeArguments
-                        if (typeArguments?.isNotEmpty() == true) {
-                            // Use Konsist's type system to check generic parameters
-                            return@any typeArguments.any { typeArg ->
-                                isDomainType(null, typeArg.text)
-                            }
+                        if (typeArguments.isNullOrEmpty()) {
+                            return@any false
                         }
                         
-                        // Fallback to string parsing if type arguments aren't available
-                        val returnTypeText = returnType.text
-                        val genericTypePattern = Regex("UseCaseResult<([^>]+)>")
-                        val matchResult = genericTypePattern.find(returnTypeText)
-                        
-                        if (matchResult != null) {
-                            val genericType = matchResult.groupValues[1].trim()
-                            // Use enhanced domain type detection
-                            isDomainType(null, genericType)
-                        } else {
-                            false
+                        // Check if any type argument is a domain type
+                        typeArguments.any { typeArg ->
+                            // Use enhanced domain type detection with just the type name
+                            // The isDomainType function has comprehensive pattern-based detection
+                            isDomainType(null, typeArg.name)
                         }
                     }
             }
