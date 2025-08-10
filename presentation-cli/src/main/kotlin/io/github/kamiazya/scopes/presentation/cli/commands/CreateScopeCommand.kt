@@ -3,8 +3,11 @@ package io.github.kamiazya.scopes.presentation.cli.commands
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import io.github.kamiazya.scopes.application.dto.CreateScopeResult
+import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.AppErrorTranslator
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
+import io.github.kamiazya.scopes.application.usecase.fold
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.presentation.cli.utils.toUserMessage
 import kotlinx.coroutines.runBlocking
@@ -36,11 +39,7 @@ class CreateScopeCommand(
         )
 
         createScopeHandler(command).fold(
-            ifLeft = { error ->
-                echo("❌ Error creating scope: ${error.toUserMessage(errorTranslator)}", err = true)
-                throw com.github.ajalt.clikt.core.ProgramResult(1)
-            },
-            ifRight = { result ->
+            ifOk = { result: CreateScopeResult ->
                 echo("✅ Created scope: ${result.id}")
                 echo("   Title: ${result.title}")
                 if (result.description != null) {
@@ -50,6 +49,10 @@ class CreateScopeCommand(
                     echo("   Parent: ${result.parentId}")
                 }
                 echo("   Created at: ${result.createdAt}")
+            },
+            ifErr = { error: ApplicationError ->
+                echo("❌ Error creating scope: ${error.toUserMessage(errorTranslator)}", err = true)
+                throw com.github.ajalt.clikt.core.ProgramResult(1)
             }
         )
     }

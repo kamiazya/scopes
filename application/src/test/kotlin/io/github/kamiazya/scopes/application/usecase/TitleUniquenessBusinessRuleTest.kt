@@ -10,8 +10,6 @@ import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.kotest.assertions.arrow.core.shouldBeLeft
-import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
@@ -48,7 +46,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to ensure clear project identification
-            val error = result.shouldBeLeft()
+            val error = result.shouldBeErr()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
 
             // Verify that save was never called when validation fails
@@ -95,7 +93,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system allows this with clear, unique naming
-            result.shouldBeRight()
+            result.shouldBeOk()
         }
     }
 
@@ -125,7 +123,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to avoid confusion within the project
-            val error = result.shouldBeLeft()
+            val error = result.shouldBeErr()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
 
             // Verify that save was never called when validation fails
@@ -173,7 +171,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: Clear naming helps maintain organized project structure
-            result.shouldBeRight()
+            result.shouldBeOk()
         }
     }
 
@@ -203,7 +201,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system enforces unique naming at all levels for consistency
-            val error = result.shouldBeLeft()
+            val error = result.shouldBeErr()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
         }
     }
@@ -230,7 +228,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             val result = handler(command)
 
             // Then: The system prevents this to avoid case-based duplicates
-            val error = result.shouldBeLeft()
+            val error = result.shouldBeErr()
             error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
 
             // Verify that save was never called when validation fails

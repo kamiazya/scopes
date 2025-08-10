@@ -126,7 +126,7 @@ class DddUseCasePatternTest : StringSpec({
             }
     }
 
-    "handlers should accept commands/queries and return Either with DTOs" {
+    "handlers should accept commands/queries and return UseCaseResult with DTOs" {
         Konsist
             .scopeFromModule("application")
             .classes()
@@ -136,8 +136,7 @@ class DddUseCasePatternTest : StringSpec({
                     .filter { it.name == "invoke" }
                     .any { function ->
                         val returnType = function.returnType?.text ?: ""
-                        returnType.contains("Either") && 
-                        returnType.contains("ApplicationError")
+                        returnType.contains("UseCaseResult")
                     }
             }
     }

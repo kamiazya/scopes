@@ -156,15 +156,15 @@ class UseCaseArchitectureTest : StringSpec({
             }
     }
 
-    "handlers should use Either for error handling" {
+    "handlers should use UseCaseResult for unified result handling" {
         Konsist
             .scopeFromModule("application")
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertTrue { handler ->
-                // Handlers should return Either<Error, Result> type
+                // Handlers should return UseCaseResult<T> type
                 handler.functions().any { function ->
-                    function.returnType?.text?.contains("Either") == true
+                    function.returnType?.text?.contains("UseCaseResult") == true
                 }
             }
     }
