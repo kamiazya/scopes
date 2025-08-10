@@ -54,17 +54,12 @@ class UseCaseArchitectureTest : StringSpec({
             .assertTrue { it.hasParentWithName("Command") }
     }
 
-    "classes in query package should follow Query naming convention" {
+    "queries in query package should implement Query interface" {
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { it.packagee?.name?.endsWith(".usecase.query") == true }
-            .filter { it.name != "Query" } // Exclude the Query interface itself
-            .assertTrue { queryClass ->
-                // All classes in query package should end with Query or be query types
-                queryClass.name.endsWith("Query") || 
-                queryClass.name.contains("Query")
-            }
+            .filter { it.packagee?.name?.endsWith(".query") == true }
+            .assertTrue { it.hasParentWithName("Query") }
     }
 
     "UseCase interface should be functional interface" {
