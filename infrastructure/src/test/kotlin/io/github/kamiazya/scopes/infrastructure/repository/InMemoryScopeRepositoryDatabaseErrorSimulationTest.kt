@@ -19,8 +19,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 
 /**
- * TDD Test for InMemoryScopeRepository enhancement with database error simulation.
- * These tests will initially fail until we implement the infrastructure error handling.
+ * Tests for InMemoryScopeRepository database error simulation capabilities.
  */
 class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
 

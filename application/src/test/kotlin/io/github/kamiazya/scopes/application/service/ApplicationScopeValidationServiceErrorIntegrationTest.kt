@@ -16,7 +16,7 @@ import io.mockk.mockk
  * Integration tests for ApplicationScopeValidationService using new service-specific error types.
  * 
  * These tests verify that the service properly translates domain errors to service-specific
- * error hierarchies following TDD principles and Serena MCP best practices.
+ * error hierarchies.
  */
 class ApplicationScopeValidationServiceErrorIntegrationTest : DescribeSpec({
 

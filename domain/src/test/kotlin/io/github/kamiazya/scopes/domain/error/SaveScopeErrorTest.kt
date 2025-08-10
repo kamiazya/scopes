@@ -6,8 +6,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Test cases for SaveScopeError sealed class following TDD methodology.
- * These tests define the expected behavior before implementation.
+ * Test cases for SaveScopeError sealed class.
+ * These tests define the expected behavior for save operation failures.
  */
 class SaveScopeErrorTest : FunSpec({
     

@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Test cases for CountScopeError sealed class following TDD methodology.
+ * Test cases for CountScopeError sealed class.
  * These tests define the expected behavior for count operation failures.
  */
 class CountScopeErrorTest : FunSpec({

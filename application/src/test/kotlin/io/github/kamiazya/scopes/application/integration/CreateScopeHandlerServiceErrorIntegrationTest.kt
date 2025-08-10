@@ -21,7 +21,7 @@ import io.mockk.mockk
  * Integration tests for CreateScopeHandler using new service-specific error types.
  * 
  * Tests verify that the handler properly translates service-specific errors to 
- * UseCase-specific error types following TDD principles and Serena MCP best practices.
+ * UseCase-specific error types.
  */
 class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
 

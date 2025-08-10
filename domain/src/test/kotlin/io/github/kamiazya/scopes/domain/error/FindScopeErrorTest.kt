@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Test cases for FindScopeError sealed class following TDD methodology.
+ * Test cases for FindScopeError sealed class.
  * These tests define the expected behavior for hierarchy traversal failures.
  */
 class FindScopeErrorTest : FunSpec({

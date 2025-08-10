@@ -9,13 +9,14 @@ This document defines the UseCase pattern implementation for the Scopes project,
 ### 1. UseCase Interface
 
 ```kotlin
-fun interface UseCase<I, T> {
-    suspend operator fun invoke(input: I): Either<ApplicationError, T>
+fun interface UseCase<I, E, T> {
+    suspend operator fun invoke(input: I): Either<E, T>
 }
 ```
 
 - **Functional interface**: Single abstract method for simplicity
-- **Generic types**: `I` for input, `T` for success result type
+- **Generic types**: `I` for input, `E` for error type, `T` for success result type
+- **Type-safe error handling**: Each UseCase specifies its specific error type
 - **Enforced Either return**: Type-level guarantee of consistent error handling
 - **Operator function**: Enables direct invocation `useCase(input)`
 - **Suspend function**: Supports coroutines for async operations
@@ -118,9 +119,9 @@ Mappers integrate seamlessly with the UseCase pattern at the final step of handl
 
 **Before (Inline Mapping - Avoid)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
     
-    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> {
         // ... domain logic ...
         
         // ❌ Inline mapping clutters handler logic
@@ -138,9 +139,9 @@ class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
 
 **After (Dedicated Mapper - Preferred)**:
 ```kotlin
-class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
     
-    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> {
         // ... domain logic ...
         
         // ✅ Clean separation using dedicated mapper
@@ -332,8 +333,8 @@ Both are registered in DI container until migration is complete.
 
 ```kotlin
 @Transactional
-class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
-    override suspend operator fun invoke(input: CreateScope): Either<ApplicationError, CreateScopeResult> = either {
+class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
+    override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> = either {
         // All operations within this handler are in one transaction
         // Automatic rollback on any error
     }

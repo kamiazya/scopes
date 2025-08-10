@@ -1,15 +1,12 @@
 package io.github.kamiazya.scopes.application.service.error
 
 import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
-import io.github.kamiazya.scopes.application.error.ApplicationError
 
 /**
  * Translator for converting between application service errors and UseCase errors.
  * 
  * This service provides translation between different error layers following
  * Clean Architecture principles and maintaining proper error boundaries.
- * 
- * Based on Serena MCP research on error translation patterns.
  */
 object ApplicationServiceErrorTranslator {
 
@@ -159,39 +156,4 @@ object ApplicationServiceErrorTranslator {
         }
     }
 
-    /**
-     * Translates general ApplicationError to CreateScopeError for backwards compatibility.
-     */
-    fun translateApplicationError(appError: ApplicationError): CreateScopeError {
-        return when (appError) {
-            is ApplicationError.DomainErrors ->
-                CreateScopeError.DomainRuleViolation(appError.errors.head)
-                
-            is ApplicationError.Repository ->
-                when (appError.cause) {
-                    is io.github.kamiazya.scopes.domain.error.SaveScopeError ->
-                        CreateScopeError.SaveFailure(appError.cause)
-                    else ->
-                        CreateScopeError.ValidationFailed("repository", "Repository operation failed")
-                }
-                
-            is ApplicationError.UseCaseError.InvalidRequest ->
-                CreateScopeError.ValidationFailed("request", appError.message)
-                
-            is ApplicationError.UseCaseError.AuthorizationFailed ->
-                CreateScopeError.ValidationFailed("authorization", appError.reason)
-                
-            is ApplicationError.UseCaseError.ConcurrencyConflict ->
-                CreateScopeError.ValidationFailed("concurrency", appError.message)
-                
-            is ApplicationError.IntegrationError.ServiceUnavailable ->
-                CreateScopeError.ValidationFailed("integration", "Service unavailable: ${appError.serviceName}")
-                
-            is ApplicationError.IntegrationError.ServiceTimeout ->
-                CreateScopeError.ValidationFailed("integration", "Service timeout: ${appError.serviceName}")
-                
-            is ApplicationError.IntegrationError.InvalidResponse ->
-                CreateScopeError.ValidationFailed("integration", "Invalid response from: ${appError.serviceName}")
-        }
-    }
 }

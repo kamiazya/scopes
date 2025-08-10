@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.infrastructure.transaction
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import java.util.*
@@ -17,16 +16,16 @@ import java.util.*
  */
 class NoopTransactionManager : TransactionManager {
     
-    override suspend fun <T> inTransaction(
-        block: suspend TransactionContext.() -> Either<ApplicationError, T>
-    ): Either<ApplicationError, T> {
+    override suspend fun <E, T> inTransaction(
+        block: suspend TransactionContext.() -> Either<E, T>
+    ): Either<E, T> {
         val context = NoopTransactionContext()
         return context.block()
     }
     
-    override suspend fun <T> inReadOnlyTransaction(
-        block: suspend TransactionContext.() -> Either<ApplicationError, T>
-    ): Either<ApplicationError, T> {
+    override suspend fun <E, T> inReadOnlyTransaction(
+        block: suspend TransactionContext.() -> Either<E, T>
+    ): Either<E, T> {
         // For noop implementation, read-only is the same as regular transaction
         val context = NoopTransactionContext(readOnly = true)
         return context.block()

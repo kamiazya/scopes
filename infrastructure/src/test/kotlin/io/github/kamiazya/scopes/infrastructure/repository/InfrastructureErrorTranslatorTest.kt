@@ -14,7 +14,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.datetime.Clock
 
 /**
- * TDD tests for infrastructure error translation to repository domain errors.
+ * Tests for infrastructure error translation to repository domain errors.
  * These tests demonstrate the translation layer between infrastructure-specific errors
  * and domain-level repository errors maintaining Clean Architecture boundaries.
  */

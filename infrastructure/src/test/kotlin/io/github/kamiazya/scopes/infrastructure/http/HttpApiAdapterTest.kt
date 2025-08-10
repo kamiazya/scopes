@@ -16,8 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 
 /**
- * TDD Test for HttpApiAdapter with external service integration error handling.
- * These tests will initially fail until we implement the HTTP adapter with comprehensive error handling.
+ * Tests for HttpApiAdapter with external service integration error handling.
  */
 class HttpApiAdapterTest : StringSpec({
 

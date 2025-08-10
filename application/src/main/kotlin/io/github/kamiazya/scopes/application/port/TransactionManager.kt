@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.application.port
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.application.error.ApplicationError
 
 /**
  * Port for managing database transactions in use cases.
@@ -16,22 +15,22 @@ interface TransactionManager {
      * or rolled back if an exception occurs or an error is returned.
      * 
      * @param block The code block to execute within the transaction
-     * @return Either an ApplicationError if the transaction fails, or the result of the block
+     * @return Either an error if the transaction fails, or the result of the block
      */
-    suspend fun <T> inTransaction(
-        block: suspend TransactionContext.() -> Either<ApplicationError, T>
-    ): Either<ApplicationError, T>
+    suspend fun <E, T> inTransaction(
+        block: suspend TransactionContext.() -> Either<E, T>
+    ): Either<E, T>
     
     /**
      * Execute a block of code within a transaction, but always roll back.
      * Useful for read-only operations or testing scenarios.
      * 
      * @param block The code block to execute within the transaction
-     * @return Either an ApplicationError if the transaction fails, or the result of the block
+     * @return Either an error if the transaction fails, or the result of the block
      */
-    suspend fun <T> inReadOnlyTransaction(
-        block: suspend TransactionContext.() -> Either<ApplicationError, T>
-    ): Either<ApplicationError, T>
+    suspend fun <E, T> inReadOnlyTransaction(
+        block: suspend TransactionContext.() -> Either<E, T>
+    ): Either<E, T>
 }
 
 /**

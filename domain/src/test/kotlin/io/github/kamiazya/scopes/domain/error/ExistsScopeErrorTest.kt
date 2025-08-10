@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Test cases for ExistsScopeError sealed class following TDD methodology.
+ * Test cases for ExistsScopeError sealed class.
  * These tests define the expected behavior for existence check failures.
  */
 class ExistsScopeErrorTest : FunSpec({
