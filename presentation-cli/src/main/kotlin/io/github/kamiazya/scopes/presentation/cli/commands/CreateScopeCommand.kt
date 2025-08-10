@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.presentation.cli.commands
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import io.github.kamiazya.scopes.application.error.AppErrorTranslator
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.presentation.cli.utils.toUserMessage
@@ -14,6 +15,7 @@ import kotlinx.coroutines.runBlocking
  */
 class CreateScopeCommand(
     private val createScopeHandler: CreateScopeHandler,
+    private val errorTranslator: AppErrorTranslator,
 ) : CliktCommand(name = "create") {
     
     private val name by option("--name", help = "Scope name").required()
@@ -35,7 +37,7 @@ class CreateScopeCommand(
 
         createScopeHandler(command).fold(
             ifLeft = { error ->
-                echo("❌ Error creating scope: ${error.toUserMessage()}", err = true)
+                echo("❌ Error creating scope: ${error.toUserMessage(errorTranslator)}", err = true)
                 throw com.github.ajalt.clikt.core.ProgramResult(1)
             },
             ifRight = { result ->

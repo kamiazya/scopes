@@ -75,27 +75,51 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
     }
     
     private fun translateDomainError(error: DomainError): String = when (error) {
-        is DomainError.ValidationError -> error.message
-        is DomainError.BusinessRuleViolation -> "Business rule violation: ${error.rule}"
-        is DomainError.EntityNotFound -> "The ${error.entityType} with ID '${error.id}' was not found"
-        is DomainError.DuplicateEntity -> "A ${error.entityType} with the same identifier already exists"
-        is DomainError.InvalidEntityState -> "The ${error.entityType} is in an invalid state: ${error.reason}"
+        // Scope errors
+        is DomainError.ScopeError.ScopeNotFound -> "The scope was not found"
+        is DomainError.ScopeError.InvalidTitle -> "Invalid scope title: ${error.reason}"
+        is DomainError.ScopeError.InvalidDescription -> "Invalid scope description: ${error.reason}"
+        is DomainError.ScopeError.InvalidParent -> "Invalid parent scope '${error.parentId}': ${error.reason}"
+        is DomainError.ScopeError.CircularReference -> "Cannot set scope '${error.parentId}' as parent of '${error.scopeId}' - would create circular reference"
+        is DomainError.ScopeError.SelfParenting -> "A scope cannot be its own parent"
+        
+        // Validation errors
+        is DomainError.ScopeValidationError.EmptyScopeTitle -> "Scope title cannot be empty"
+        is DomainError.ScopeValidationError.ScopeTitleTooShort -> "Scope title is too short"
+        is DomainError.ScopeValidationError.ScopeTitleTooLong -> "Scope title is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+        is DomainError.ScopeValidationError.ScopeTitleContainsNewline -> "Scope title cannot contain newlines"
+        is DomainError.ScopeValidationError.ScopeDescriptionTooLong -> "Scope description is too long (max: ${error.maxLength}, actual: ${error.actualLength})"
+        is DomainError.ScopeValidationError.ScopeInvalidFormat -> "Invalid format for ${error.field}: expected ${error.expected}"
+        
+        // Business rule violations
+        is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> "Maximum scope depth exceeded (max: ${error.maxDepth}, actual: ${error.actualDepth})"
+        is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> "Maximum children exceeded (max: ${error.maxChildren}, actual: ${error.actualChildren})"
+        is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle -> "A scope with title '${error.title}' already exists${error.parentId?.let { " under parent '$it'" } ?: ""}"
+        
+        // Infrastructure errors
+        is DomainError.InfrastructureError -> translateRepositoryError(error.repositoryError)
     }
     
     private fun translateRepositoryError(error: RepositoryError): String = when (error) {
-        is RepositoryError.ConnectionFailed -> 
+        is RepositoryError.ConnectionError -> 
             "Database connection failed. Please check your connection and try again."
             
-        is RepositoryError.QueryFailed -> 
-            "Database query failed. Please contact support if this persists."
+        is RepositoryError.DatabaseError -> 
+            "Database error: ${error.message}. Please contact support if this persists."
             
-        is RepositoryError.TransactionFailed -> 
-            "Transaction failed. Changes were not saved. Please try again."
+        is RepositoryError.DataIntegrityError -> 
+            "Data integrity error: ${error.message}. Please check your input."
             
-        is RepositoryError.OptimisticLockingFailed -> 
-            "The data was modified by another user. Please refresh and try again."
+        is RepositoryError.NotFound -> 
+            "The scope with ID '${error.id}' was not found."
             
-        is RepositoryError.ConstraintViolation -> 
-            "Data constraint violation: ${error.constraint}. Please check your input."
+        is RepositoryError.ConflictError -> 
+            "Conflict error for scope '${error.id}': ${error.message}"
+            
+        is RepositoryError.SerializationError -> 
+            "Data serialization error: ${error.message}"
+            
+        is RepositoryError.UnknownError -> 
+            "Unknown error: ${error.message}"
     }
 }
