@@ -29,11 +29,8 @@ class CreateScopeHandler(
         // Transaction boundary starts here (simulated with comment)
         // In real implementation, this would be wrapped in @Transactional
 
-        // Step 1: Check parent exists (prerequisite for other validations)
-        validateParentExists(input.parentId).bind()
-
-        // Convert parentId string to ScopeId if provided
-        val parentId = input.parentId?.let { ScopeId.from(it) }
+        // Step 1: Parse and validate parent exists (returns parsed ScopeId)
+        val parentId = validateParentExists(input.parentId).bind()
 
         // Step 2: Perform repository-dependent validations
         // (hierarchy depth, children limit, title uniqueness)
@@ -51,10 +48,11 @@ class CreateScopeHandler(
 
     /**
      * Validates that parent scope exists if parentId is provided.
+     * Returns the parsed ScopeId if valid, null if not provided.
      */
-    private suspend fun validateParentExists(parentIdString: String?): Either<ApplicationError, Unit> = either {
+    private suspend fun validateParentExists(parentIdString: String?): Either<ApplicationError, ScopeId?> = either {
         if (parentIdString == null) {
-            return@either
+            return@either null
         }
 
         val parentId = try {
@@ -78,6 +76,8 @@ class CreateScopeHandler(
                 )
             )
         }
+
+        parentId
     }
 
     /**
