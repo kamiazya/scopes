@@ -5,6 +5,7 @@ import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
 
+
 /**
  * Konsist tests for DDD UseCase pattern hardening requirements.
  * Tests the new architecture components and enhanced conventions.
@@ -40,18 +41,45 @@ class DddUseCasePatternTest : StringSpec({
             .filter { it.hasParentWithName("DTO") }
             .assertFalse { dto ->
                 // Check if any property uses domain types
+                // This replaces the original hardcoded "Scope*" patterns with more flexible detection
                 dto.properties().any { property ->
                     val typeName = property.type?.name ?: ""
-                    // Check for domain value objects
-                    typeName.startsWith("Scope") && (
-                        typeName.endsWith("Id") || 
-                        typeName.endsWith("Title") || 
-                        typeName.endsWith("Description")
-                    ) || 
-                    // Check for domain entities
-                    typeName == "Scope" ||
-                    // Check for other domain types
-                    property.type?.sourceType?.contains("domain") == true
+                    val packageName = property.type?.packagee?.name ?: ""
+                    
+                    // Primary check: types from domain package are not allowed
+                    // This replaces the problematic sourceType?.contains("domain") check
+                    if (packageName.contains(".domain")) {
+                        return@any true
+                    }
+                    
+                    // Secondary check: common domain type patterns 
+                    // This is more flexible than the original hardcoded "Scope*" patterns
+                    // and will work for any domain types, not just Scope-related ones
+                    val domainSuffixes = listOf("Id", "Title", "Description", "Name", "Code", "Status")
+                    val serviceSuffixes = listOf("Service", "Factory", "Repository")
+                    
+                    // Check domain value object patterns
+                    if (domainSuffixes.any { suffix -> typeName.endsWith(suffix) }) {
+                        return@any true
+                    }
+                    
+                    // Check domain service patterns  
+                    if (serviceSuffixes.any { suffix -> typeName.endsWith(suffix) }) {
+                        return@any true
+                    }
+                    
+                    // Check likely domain entities (single capitalized word, not DTO/Result/Command/Query)
+                    if (typeName.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
+                        !typeName.endsWith("DTO") && 
+                        !typeName.endsWith("Result") &&
+                        !typeName.endsWith("Command") &&
+                        !typeName.endsWith("Query") &&
+                        typeName !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", 
+                                            "List", "Map", "Set", "Array", "Instant", "UUID")) {
+                        return@any true
+                    }
+                    
+                    false
                 }
             }
     }
@@ -94,6 +122,7 @@ class DddUseCasePatternTest : StringSpec({
             .scopeFromModule("presentation-cli")
             .files
             .filter { !it.name.contains("CompositionRoot") }
+            .filter { !it.path.contains("test") } // Allow test files to import infrastructure
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.contains("infrastructure")
@@ -134,14 +163,46 @@ class DddUseCasePatternTest : StringSpec({
             .assertTrue { handler ->
                 handler.functions()
                     .filter { it.name == "invoke" }
-                    .any { function ->
+                    .all { function ->
                         val returnType = function.returnType?.text ?: ""
-                        returnType.contains("UseCaseResult")
+                        
+                        // Check if return type contains UseCaseResult
+                        if (!returnType.contains("UseCaseResult")) {
+                            return@all false
+                        }
+                        
+                        // Extract generic type parameter from UseCaseResult<T>
+                        val genericTypePattern = Regex("UseCaseResult<([^>]+)>")
+                        val matchResult = genericTypePattern.find(returnType)
+                        
+                        if (matchResult == null) {
+                            return@all false
+                        }
+                        
+                        val genericType = matchResult.groupValues[1].trim()
+                        
+                        // Validate that the generic type parameter is a proper DTO or Result class
+                        // Should end with "Result" (DTO naming convention) or be from dto package
+                        val isValidDtoType = genericType.endsWith("Result") || 
+                                           genericType.endsWith("DTO") ||
+                                           // Allow primitive wrapper types and collections
+                                           genericType in listOf("String", "Int", "Long", "Boolean", "Double", "Float") ||
+                                           genericType.startsWith("List<") ||
+                                           genericType.startsWith("Map<") ||
+                                           genericType.startsWith("Set<")
+                        
+                        // Ensure it's NOT a domain entity (shouldn't be just a single capitalized word without DTO/Result suffix)
+                        val isDomainEntity = genericType.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
+                                           !genericType.endsWith("Result") && 
+                                           !genericType.endsWith("DTO") &&
+                                           genericType !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
+                        
+                        isValidDtoType && !isDomainEntity
                     }
             }
     }
 
-    "handlers should not directly use domain entities in return types" {
+    "handlers should not directly use domain entities in UseCaseResult generic parameters" {
         Konsist
             .scopeFromModule("application")
             .classes()
@@ -151,8 +212,29 @@ class DddUseCasePatternTest : StringSpec({
                     .filter { it.name == "invoke" }
                     .any { function ->
                         val returnType = function.returnType?.text ?: ""
-                        // Check if return type contains domain entity names
-                        returnType.contains("Scope>") && !returnType.contains("Result>")
+                        
+                        // Extract generic type parameter from UseCaseResult<T>
+                        val genericTypePattern = Regex("UseCaseResult<([^>]+)>")
+                        val matchResult = genericTypePattern.find(returnType)
+                        
+                        if (matchResult != null) {
+                            val genericType = matchResult.groupValues[1].trim()
+                            
+                            // Check if generic type parameter is a likely domain entity
+                            // Domain entities are typically single capitalized words without DTO/Result suffix
+                            val isDomainEntity = genericType.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
+                                               !genericType.endsWith("Result") && 
+                                               !genericType.endsWith("DTO") &&
+                                               genericType !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
+                            
+                            // Also check for specific known domain entities
+                            val knownDomainEntities = listOf("Scope", "User", "Project", "Task")
+                            val isKnownDomainEntity = knownDomainEntities.contains(genericType)
+                            
+                            isDomainEntity || isKnownDomainEntity
+                        } else {
+                            false
+                        }
                     }
             }
     }

@@ -3,6 +3,10 @@ package io.github.kamiazya.scopes.application.error
 import io.github.kamiazya.scopes.domain.error.DomainError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 
+// Constants for error message sanitization
+private const val MAX_ERROR_MESSAGE_LENGTH = 200
+private const val MAX_ERROR_MESSAGE_TRUNCATED_LENGTH = 197
+
 /**
  * Translates application errors into user-friendly messages.
  * This interface allows for different translation strategies (e.g., localization).
@@ -45,22 +49,22 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
         is ApplicationError.Repository -> translateRepositoryError(error.cause)
         
         is ApplicationError.UseCaseError.InvalidRequest -> 
-            "Invalid request: ${error.message}"
+            "Invalid request: ${error.message.sanitize("Invalid request parameters")}"
             
         is ApplicationError.UseCaseError.AuthorizationFailed -> 
-            "Access denied for operation '${error.operation}': ${error.reason}"
+            "Access denied for operation '${error.operation.sanitize("unknown")}': ${error.reason.sanitize("Access denied")}"
             
         is ApplicationError.UseCaseError.ConcurrencyConflict -> 
-            "The item (${error.entityId}) was modified by another user. ${error.message}"
+            "The item (${error.entityId.sanitize("unknown")}) was modified by another user. ${error.message.sanitize("Please refresh and try again.")}"
             
         is ApplicationError.IntegrationError.ServiceUnavailable -> 
-            "The service '${error.serviceName}' is currently unavailable. Please try again later."
+            "The service '${error.serviceName.sanitize("external service")}' is currently unavailable. Please try again later."
             
         is ApplicationError.IntegrationError.ServiceTimeout -> 
-            "The service '${error.serviceName}' took too long to respond (${error.timeoutMs}ms)."
+            "The service '${error.serviceName.sanitize("external service")}' took too long to respond (${error.timeoutMs}ms)."
             
         is ApplicationError.IntegrationError.InvalidResponse -> 
-            "The service '${error.serviceName}' returned an invalid response: ${error.message}"
+            "The service '${error.serviceName.sanitize("external service")}' returned an invalid response: ${error.message.sanitize("Invalid service response")}"
     }
     
     override fun translateMultiple(errors: List<ApplicationError>): String {
@@ -119,21 +123,51 @@ class DefaultAppErrorTranslator : AppErrorTranslator {
             "Database connection failed. Please check your connection and try again."
             
         is RepositoryError.DatabaseError -> 
-            "Database error: ${error.message}. Please contact support if this persists."
+            "Database error: ${error.message.sanitize("Database operation failed")}. Please contact support if this persists."
             
         is RepositoryError.DataIntegrityError -> 
-            "Data integrity error: ${error.message}. Please check your input."
+            "Data integrity error: ${error.message.sanitize("Data integrity violation")}. Please check your input."
             
         is RepositoryError.NotFound -> 
             "The scope with ID '${error.id}' was not found."
             
         is RepositoryError.ConflictError -> 
-            "Conflict error for scope '${error.id}': ${error.message}"
+            "Conflict error for scope '${error.id}': ${error.message.sanitize("Resource conflict")}"
             
         is RepositoryError.SerializationError -> 
-            "Data serialization error: ${error.message}"
+            "Data serialization error: ${error.message.sanitize("Serialization failed")}"
             
         is RepositoryError.UnknownError -> 
-            "Unknown error: ${error.message}"
+            "Unknown error: ${error.message.sanitize("An unexpected error occurred")}"
     }
+}
+
+/**
+ * Sanitizes error messages to prevent exposure of sensitive or problematic data.
+ * This extension function ensures safe formatting by:
+ * - Providing a default message for null/empty strings
+ * - Truncating excessively long messages
+ * - Removing newlines and control characters
+ * - Trimming whitespace
+ *
+ * This is a KMP-compatible implementation that works across all Kotlin platforms.
+ */
+private fun String?.sanitize(defaultMessage: String = "Unknown error"): String {
+    if (this.isNullOrBlank()) {
+        return defaultMessage
+    }
+
+    return this
+        .replace(Regex("[\r\n\t]"), " ") // Replace newlines and tabs with spaces
+        .replace(Regex("\\p{Cntrl}"), "") // Remove other control characters
+        .trim()
+        .let { sanitized ->
+            // Truncate if too long to prevent log flooding
+            if (sanitized.length > MAX_ERROR_MESSAGE_LENGTH) {
+                "${sanitized.take(MAX_ERROR_MESSAGE_TRUNCATED_LENGTH)}..."
+            } else {
+                sanitized
+            }
+        }
+        .ifBlank { defaultMessage }
 }
