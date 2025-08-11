@@ -1,9 +1,6 @@
 package io.github.kamiazya.scopes.application.service
 
-import arrow.core.Either
-import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.application.service.error.ApplicationValidationError
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
@@ -17,10 +14,10 @@ import io.mockk.mockk
 
 /**
  * Test for CrossAggregateValidationService.
- * 
+ *
  * This test validates cross-aggregate validation logic that spans multiple aggregates
  * and requires coordination between different bounded contexts.
- * 
+ *
  * Based on Serena MCP research on cross-aggregate validation patterns:
  * - Eventual consistency handling
  * - Saga pattern for distributed validation
@@ -39,7 +36,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Given
                 val parentId = ScopeId.generate()
                 val childIds = listOf(ScopeId.generate(), ScopeId.generate())
-                
+
                 coEvery { mockScopeRepository.existsById(parentId) } returns true.right()
                 coEvery { mockScopeRepository.existsById(childIds[0]) } returns true.right()
                 coEvery { mockScopeRepository.existsById(childIds[1]) } returns true.right()
@@ -60,7 +57,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Given
                 val parentId = ScopeId.generate()
                 val childIds = listOf(ScopeId.generate())
-                
+
                 coEvery { mockScopeRepository.existsById(parentId) } returns false.right()
 
                 // When
@@ -70,7 +67,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
                 error should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
-                
+
                 val crossRefError = error as CrossAggregateValidationError.CrossReferenceViolation
                 crossRefError.sourceAggregate shouldBe "children"
                 crossRefError.targetAggregate shouldBe parentId.value
@@ -84,7 +81,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val existingChildId = ScopeId.generate()
                 val nonExistingChildId = ScopeId.generate()
                 val childIds = listOf(existingChildId, nonExistingChildId)
-                
+
                 coEvery { mockScopeRepository.existsById(parentId) } returns true.right()
                 coEvery { mockScopeRepository.existsById(existingChildId) } returns true.right()
                 coEvery { mockScopeRepository.existsById(nonExistingChildId) } returns false.right()
@@ -96,7 +93,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
                 error should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
-                
+
                 val crossRefError = error as CrossAggregateValidationError.CrossReferenceViolation
                 crossRefError.targetAggregate shouldBe nonExistingChildId.value
                 crossRefError.violation shouldBe "Child scope does not exist"
@@ -108,12 +105,12 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Given
                 val title = "Unique Title"
                 val contextIds = listOf(ScopeId.generate(), ScopeId.generate())
-                
-                coEvery { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase()) 
+
+                coEvery {
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase())
                 } returns false.right()
-                coEvery { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase()) 
+                coEvery {
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase())
                 } returns false.right()
 
                 // When
@@ -122,11 +119,11 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then
                 result.isRight() shouldBe true
 
-                coVerify { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase()) 
+                coVerify {
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase())
                 }
-                coVerify { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase()) 
+                coVerify {
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase())
                 }
             }
 
@@ -136,12 +133,12 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val contextId1 = ScopeId.generate()
                 val contextId2 = ScopeId.generate()
                 val contextIds = listOf(contextId1, contextId2)
-                
-                coEvery { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextId1, title.lowercase()) 
+
+                coEvery {
+                    mockScopeRepository.existsByParentIdAndTitle(contextId1, title.lowercase())
                 } returns false.right()
-                coEvery { 
-                    mockScopeRepository.existsByParentIdAndTitle(contextId2, title.lowercase()) 
+                coEvery {
+                    mockScopeRepository.existsByParentIdAndTitle(contextId2, title.lowercase())
                 } returns true.right() // Conflict detected
 
                 // When
@@ -151,7 +148,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
                 error should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
-                
+
                 val invariantError = error as CrossAggregateValidationError.InvariantViolation
                 invariantError.invariantName shouldBe "crossAggregateUniqueness"
                 invariantError.aggregateIds shouldBe contextIds.map { it.value }
@@ -165,16 +162,16 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val operation = "moveScope"
                 val aggregateIds = setOf("scope-1", "scope-2")
                 val consistencyRule = "hierarchyIntegrity"
-                
+
                 val scope1Id = ScopeId.generate()
                 val scope2Id = ScopeId.generate()
                 val testAggregateIds = setOf(scope1Id.value, scope2Id.value)
-                
-                coEvery { 
-                    mockScopeRepository.existsById(scope1Id) 
+
+                coEvery {
+                    mockScopeRepository.existsById(scope1Id)
                 } returns true.right()
-                coEvery { 
-                    mockScopeRepository.existsById(scope2Id) 
+                coEvery {
+                    mockScopeRepository.existsById(scope2Id)
                 } returns true.right()
 
                 // When
@@ -191,12 +188,12 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val missingId = ScopeId.generate()
                 val testAggregateIds = setOf(scope1Id.value, missingId.value)
                 val consistencyRule = "hierarchyIntegrity"
-                
-                coEvery { 
-                    mockScopeRepository.existsById(scope1Id) 
+
+                coEvery {
+                    mockScopeRepository.existsById(scope1Id)
                 } returns true.right()
-                coEvery { 
-                    mockScopeRepository.existsById(missingId) 
+                coEvery {
+                    mockScopeRepository.existsById(missingId)
                 } returns false.right()
 
                 // When
@@ -206,7 +203,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
                 error should beInstanceOf<CrossAggregateValidationError.AggregateConsistencyViolation>()
-                
+
                 val consistencyError = error as CrossAggregateValidationError.AggregateConsistencyViolation
                 consistencyError.operation shouldBe operation
                 consistencyError.affectedAggregates shouldBe testAggregateIds
@@ -215,20 +212,75 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
             }
         }
 
+        describe("validateDistributedBusinessRule") {
+            it("should succeed for known rule 'eventualConsistency'") {
+                // Given
+                val ruleName = "eventualConsistency"
+                val aggregateStates = mapOf("scope-1" to "state1", "scope-2" to "state2")
+                val operation = "distributedUpdate"
+
+                // When
+                val result = service.validateDistributedBusinessRule(ruleName, aggregateStates, operation)
+
+                // Then
+                result.isRight() shouldBe true
+            }
+
+            it("should fail for unknown rule name") {
+                // Given
+                val unknownRuleName = "unknownDistributedRule"
+                val aggregateStates = mapOf("scope-1" to "state1", "scope-2" to "state2")
+                val operation = "distributedUpdate"
+
+                // When
+                val result = service.validateDistributedBusinessRule(unknownRuleName, aggregateStates, operation)
+
+                // Then
+                result.isLeft() shouldBe true
+                val error = result.leftOrNull()!!
+                error should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
+
+                val invariantError = error as CrossAggregateValidationError.InvariantViolation
+                invariantError.invariantName shouldBe unknownRuleName
+                invariantError.aggregateIds shouldBe aggregateStates.keys.toList()
+                invariantError.violationDescription shouldBe "Unknown distributed business rule: $unknownRuleName"
+            }
+
+            it("should handle empty aggregate states map") {
+                // Given
+                val unknownRuleName = "invalidRule"
+                val emptyAggregateStates = emptyMap<String, Any>()
+                val operation = "emptyOperation"
+
+                // When
+                val result = service.validateDistributedBusinessRule(unknownRuleName, emptyAggregateStates, operation)
+
+                // Then
+                result.isLeft() shouldBe true
+                val error = result.leftOrNull()!!
+                error should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
+
+                val invariantError = error as CrossAggregateValidationError.InvariantViolation
+                invariantError.invariantName shouldBe unknownRuleName
+                invariantError.aggregateIds shouldBe emptyList()
+                invariantError.violationDescription shouldBe "Unknown distributed business rule: $unknownRuleName"
+            }
+        }
+
         describe("error accumulation") {
             it("should accumulate multiple validation errors") {
                 // This test demonstrates eventual consistency handling
                 // In a real system, this might involve compensating transactions
-                
+
                 // Given - scenario with multiple validation failures
                 val parentId = ScopeId.generate()
-                val childIds = listOf(ScopeId.generate()) 
+                val childIds = listOf(ScopeId.generate())
                 val title = "Duplicate Title"
-                
+
                 // Setup mocks for failures
                 coEvery { mockScopeRepository.existsById(parentId) } returns false.right()
-                coEvery { 
-                    mockScopeRepository.existsByParentIdAndTitle(parentId, title.lowercase()) 
+                coEvery {
+                    mockScopeRepository.existsByParentIdAndTitle(parentId, title.lowercase())
                 } returns true.right()
 
                 // When - performing validations
@@ -238,10 +290,10 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then - both should fail with specific errors
                 hierarchyResult.isLeft() shouldBe true
                 uniquenessResult.isLeft() shouldBe true
-                
+
                 val hierarchyError = hierarchyResult.leftOrNull()!!
                 val uniquenessError = uniquenessResult.leftOrNull()!!
-                
+
                 hierarchyError should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
                 uniquenessError should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
             }
