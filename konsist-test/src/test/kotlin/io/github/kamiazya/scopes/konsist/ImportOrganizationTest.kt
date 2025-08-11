@@ -30,18 +30,18 @@ class ImportOrganizationTest : StringSpec({
             .files
             .assertTrue { file ->
                 val wildcardImports = file.imports.filter { it.isWildcard }
-                
+
                 wildcardImports.all { import ->
                     val importPath = import.name.removeSuffix(".*")
                     val filePackage = file.packagee?.name ?: ""
-                    
+
                     when {
                         // Allow standard library wildcard imports
-                        importPath.startsWith("java.") || 
+                        importPath.startsWith("java.") ||
                         importPath.startsWith("javax.") ||
                         importPath.startsWith("kotlin.") ||
                         importPath.startsWith("kotlinx.") -> true
-                        
+
                         // Allow wildcard imports for error packages following Clean Architecture dependencies
                         importPath.endsWith(".error") -> {
                             // Extract module from both import and file package
@@ -52,7 +52,7 @@ class ImportOrganizationTest : StringSpec({
                             val fileModule = if (filePackage.startsWith(expectedPrefix)) {
                                 filePackage.removePrefix(expectedPrefix).substringBefore('.')
                             } else null
-                            
+
                             // Allow based on Clean Architecture dependency rules
                             when (fileModule) {
                                 "domain" -> importModule == "domain" // Domain can only import from domain
@@ -61,7 +61,7 @@ class ImportOrganizationTest : StringSpec({
                                 else -> false // Other modules not recognized
                             }
                         }
-                        
+
                         else -> false // Other wildcard imports not allowed
                     }
                 }
@@ -76,17 +76,17 @@ class ImportOrganizationTest : StringSpec({
             .assertTrue { serviceClass ->
                 val file = serviceClass.containingFile
                 val content = file.text
-                
+
                 // Check for fully-qualified error class names in code (excluding import statements)
                 val codeWithoutImports = content.lines()
                     .filterNot { it.trim().startsWith("import ") }
                     .joinToString("\n")
-                
+
                 // Allow fully-qualified names if they are properly imported or used sparingly
                 val fullyQualifiedErrorUsages = Regex(
                     """\bio\.github\.kamiazya\.scopes\.(domain|application|infrastructure)\.error\.[A-Z][a-zA-Z]*Error\b"""
                 ).findAll(codeWithoutImports).toList()
-                
+
                 // If there are fully-qualified usages, they should be minimal (less than 3)
                 // This allows for occasional usage while encouraging imports
                 fullyQualifiedErrorUsages.size < 3
