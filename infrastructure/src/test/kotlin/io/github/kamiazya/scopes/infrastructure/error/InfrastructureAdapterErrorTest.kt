@@ -66,38 +66,33 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
             }
 
             it("should delegate retryable to NetworkErrorType enum") {
-                // Test retryable cases
-                val retryableTypes = listOf(
-                    NetworkErrorType.DNS_RESOLUTION,
-                    NetworkErrorType.CONNECTION_REFUSED,
-                    NetworkErrorType.CONNECTION_TIMEOUT
-                )
-                
-                retryableTypes.forEach { errorType ->
+                // Test all NetworkErrorType values dynamically
+                NetworkErrorType.values().forEach { errorType ->
                     val error = ExternalApiAdapterError.NetworkError(
                         endpoint = "https://api.example.com",
                         errorType = errorType,
-                        cause = RuntimeException("Test"),
+                        cause = RuntimeException("Test for ${errorType.name}"),
                         timestamp = Clock.System.now()
                     )
-                    error.retryable shouldBe true
-                }
-
-                // Test non-retryable cases
-                val nonRetryableTypes = listOf(
-                    NetworkErrorType.SSL_HANDSHAKE,
-                    NetworkErrorType.CERTIFICATE_ERROR,
-                    NetworkErrorType.UNKNOWN_HOST
-                )
-                
-                nonRetryableTypes.forEach { errorType ->
-                    val error = ExternalApiAdapterError.NetworkError(
-                        endpoint = "https://api.example.com",
-                        errorType = errorType,
-                        cause = RuntimeException("Test"),
-                        timestamp = Clock.System.now()
-                    )
-                    error.retryable shouldBe false
+                    
+                    // Verify that NetworkError delegates to the enum's retryable property
+                    error.retryable shouldBe errorType.retryable
+                    
+                    // Verify expected retryability based on enum definition
+                    when (errorType) {
+                        NetworkErrorType.DNS_RESOLUTION,
+                        NetworkErrorType.CONNECTION_REFUSED,
+                        NetworkErrorType.CONNECTION_TIMEOUT -> {
+                            // These types should be retryable
+                            errorType.retryable shouldBe true
+                        }
+                        NetworkErrorType.SSL_HANDSHAKE,
+                        NetworkErrorType.CERTIFICATE_ERROR,
+                        NetworkErrorType.UNKNOWN_HOST -> {
+                            // These types should not be retryable
+                            errorType.retryable shouldBe false
+                        }
+                    }
                 }
             }
 
