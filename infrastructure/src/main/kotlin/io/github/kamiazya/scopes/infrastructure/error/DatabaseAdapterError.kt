@@ -82,8 +82,22 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {
-        // Only connection exhaustion is retryable (connections can be freed)
-        // Storage and memory exhaustion require intervention
-        override val retryable: Boolean = resourceType == DatabaseResource.CONNECTIONS
+        /*
+         * Storage full conditions are typically persistent and require manual
+         * intervention (e.g. provisioning additional disk space). Other kinds
+         * of resource exhaustion such as connection, memory, or lock
+         * saturation are usually transient and can often succeed on a
+         * subsequent attempt once resources are freed.
+         *
+         * Use an exhaustive `when` expression (no `else`) so that if new
+         * DatabaseResource values are introduced in the future the compiler
+         * will remind us to explicitly decide their retry-ability.
+         */
+        override val retryable: Boolean = when (resourceType) {
+            DatabaseResource.STORAGE      -> false
+            DatabaseResource.CONNECTIONS  -> true
+            DatabaseResource.MEMORY       -> true
+            DatabaseResource.LOCKS        -> true
+        }
     }
 }
