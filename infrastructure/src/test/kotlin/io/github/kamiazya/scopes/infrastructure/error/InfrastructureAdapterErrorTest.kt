@@ -282,6 +282,92 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
             }
         }
 
+        describe("MessagingAdapterError") {
+            it("should handle DeliveryError retryable logic correctly") {
+                val now = Clock.System.now()
+                
+                // First attempt - should be retryable (0 < 3)
+                val firstAttempt = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 0,
+                    maxRetries = 3,
+                    timestamp = now
+                )
+                firstAttempt.retryable shouldBe true
+                
+                // Second attempt - should be retryable (1 < 3)
+                val secondAttempt = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 1,
+                    maxRetries = 3,
+                    timestamp = now
+                )
+                secondAttempt.retryable shouldBe true
+                
+                // Third attempt - should be retryable (2 < 3)
+                val thirdAttempt = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 2,
+                    maxRetries = 3,
+                    timestamp = now
+                )
+                thirdAttempt.retryable shouldBe true
+                
+                // Fourth attempt - should not be retryable (3 >= 3)
+                val fourthAttempt = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 3,
+                    maxRetries = 3,
+                    timestamp = now
+                )
+                fourthAttempt.retryable shouldBe false
+                
+                // Exceeded max retries - should not be retryable (4 > 3)
+                val exceededAttempt = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 4,
+                    maxRetries = 3,
+                    timestamp = now
+                )
+                exceededAttempt.retryable shouldBe false
+                
+                // Edge case: max retries is 0 - should not be retryable
+                val noRetriesAllowed = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 0,
+                    maxRetries = 0,
+                    timestamp = now
+                )
+                noRetriesAllowed.retryable shouldBe false
+                
+                // Single retry allowed - first attempt should be retryable
+                val singleRetryFirst = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 0,
+                    maxRetries = 1,
+                    timestamp = now
+                )
+                singleRetryFirst.retryable shouldBe true
+                
+                // Single retry allowed - second attempt should not be retryable
+                val singleRetrySecond = MessagingAdapterError.DeliveryError(
+                    messageId = "msg-123",
+                    destination = "queue://test.queue",
+                    attemptCount = 1,
+                    maxRetries = 1,
+                    timestamp = now
+                )
+                singleRetrySecond.retryable shouldBe false
+            }
+        }
+
         describe("ConfigurationAdapterError") {
             it("should redact sensitive values in ValidationError") {
                 val error = ConfigurationAdapterError.ValidationError(

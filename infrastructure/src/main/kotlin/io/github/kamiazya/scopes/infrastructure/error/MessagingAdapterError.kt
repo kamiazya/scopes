@@ -49,8 +49,8 @@ sealed class MessagingAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : MessagingAdapterError() {
-        // Delivery errors are typically transient
-        override val retryable: Boolean = true
+        // Retry only if we haven't exceeded the maximum retry limit
+        override val retryable: Boolean = attemptCount < maxRetries
     }
     
     /**
