@@ -26,7 +26,7 @@ sealed class HierarchyBusinessRuleError : BusinessRuleServiceError() {
      * @param operation The operation that was attempted
      */
     data class SelfParenting(
-        val scopeId: String,
+        val scopeId: ScopeId,
         val operation: String
     ) : HierarchyBusinessRuleError()
     
@@ -38,9 +38,9 @@ sealed class HierarchyBusinessRuleError : BusinessRuleServiceError() {
      * @param cyclePath The detected cycle path
      */
     data class CircularReference(
-        val scopeId: String,
-        val parentId: String,
-        val cyclePath: List<String>
+        val scopeId: ScopeId,
+        val parentId: ScopeId,
+        val cyclePath: List<ScopeId>
     ) : HierarchyBusinessRuleError()
 }
 
@@ -59,7 +59,7 @@ sealed class DataIntegrityBusinessRuleError : BusinessRuleServiceError() {
      * @param affectedFields The fields affected by the inconsistency
      */
     data class ConsistencyCheckFailure(
-        val scopeId: String,
+        val scopeId: ScopeId,
         val checkType: String,
         val expectedState: String,
         val actualState: String,

@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+
 /**
  * Scope-specific business rule errors with detailed context.
  */
@@ -16,8 +18,8 @@ sealed class ScopeBusinessRuleError : BusinessRuleServiceError() {
     data class MaxDepthExceeded(
         val maxDepth: Int,
         val actualDepth: Int,
-        val scopeId: String,
-        val parentPath: List<String>
+        val scopeId: ScopeId,
+        val parentPath: List<ScopeId>
     ) : ScopeBusinessRuleError()
     
     /**
@@ -31,7 +33,7 @@ sealed class ScopeBusinessRuleError : BusinessRuleServiceError() {
     data class MaxChildrenExceeded(
         val maxChildren: Int,
         val currentChildren: Int,
-        val parentId: String,
+        val parentId: ScopeId,
         val attemptedOperation: String
     ) : ScopeBusinessRuleError()
     
@@ -45,8 +47,8 @@ sealed class ScopeBusinessRuleError : BusinessRuleServiceError() {
      */
     data class DuplicateScope(
         val duplicateTitle: String,
-        val parentId: String?,
-        val existingScopeId: String,
+        val parentId: ScopeId?,
+        val existingScopeId: ScopeId,
         val normalizedTitle: String
     ) : ScopeBusinessRuleError()
 }

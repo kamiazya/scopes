@@ -99,7 +99,7 @@ class ApplicationScopeValidationService(
                     raise(ScopeBusinessRuleError.MaxDepthExceeded(
                         maxDepth = MAX_HIERARCHY_DEPTH,
                         actualDepth = 0,
-                        scopeId = parentId.toString(),
+                        scopeId = parentId,
                         parentPath = emptyList()
                     ))
                 },
@@ -110,7 +110,7 @@ class ApplicationScopeValidationService(
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
                 actualDepth = depth + 1,
-                scopeId = parentId.toString(),
+                scopeId = parentId,
                 parentPath = emptyList() // Would need to fetch parent path if required
             ))
         }
@@ -123,7 +123,7 @@ class ApplicationScopeValidationService(
                     raise(ScopeBusinessRuleError.MaxChildrenExceeded(
                         maxChildren = MAX_CHILDREN_PER_PARENT,
                         currentChildren = 0,
-                        parentId = parentId.toString(),
+                        parentId = parentId,
                         attemptedOperation = "create_child_scope"
                     ))
                 },
@@ -134,7 +134,7 @@ class ApplicationScopeValidationService(
             raise(ScopeBusinessRuleError.MaxChildrenExceeded(
                 maxChildren = MAX_CHILDREN_PER_PARENT,
                 currentChildren = childrenCount,
-                parentId = parentId.toString(),
+                parentId = parentId,
                 attemptedOperation = "create_child_scope"
             ))
         }

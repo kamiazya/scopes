@@ -4,6 +4,7 @@ import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
 import io.github.kamiazya.scopes.domain.error.HierarchyBusinessRuleError
 import io.github.kamiazya.scopes.domain.error.DataIntegrityBusinessRuleError
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -20,78 +21,88 @@ class BusinessRuleServiceErrorTest : DescribeSpec({
         
         describe("ScopeBusinessRuleError") {
             it("should provide context for maximum depth exceeded errors") {
+                val scopeId = ScopeId.generate()
+                val rootId = ScopeId.generate()
+                val parentId = ScopeId.generate()
                 val error = ScopeBusinessRuleError.MaxDepthExceeded(
                     maxDepth = 10,
                     actualDepth = 11,
-                    scopeId = "test-scope-id",
-                    parentPath = listOf("root", "parent")
+                    scopeId = scopeId,
+                    parentPath = listOf(rootId, parentId)
                 )
                 
                 error.shouldBeInstanceOf<ScopeBusinessRuleError>()
                 error.maxDepth shouldBe 10
                 error.actualDepth shouldBe 11
-                error.scopeId shouldBe "test-scope-id"
-                error.parentPath shouldBe listOf("root", "parent")
+                error.scopeId shouldBe scopeId
+                error.parentPath shouldBe listOf(rootId, parentId)
             }
             
             it("should provide context for maximum children exceeded errors") {
+                val parentId = ScopeId.generate()
                 val error = ScopeBusinessRuleError.MaxChildrenExceeded(
                     maxChildren = 100,
                     currentChildren = 100,
-                    parentId = "parent-id",
+                    parentId = parentId,
                     attemptedOperation = "create child scope"
                 )
                 
                 error.maxChildren shouldBe 100
                 error.currentChildren shouldBe 100
-                error.parentId shouldBe "parent-id"
+                error.parentId shouldBe parentId
                 error.attemptedOperation shouldBe "create child scope"
             }
             
             it("should provide context for duplicate scope errors") {
+                val parentId = ScopeId.generate()
+                val existingScopeId = ScopeId.generate()
                 val error = ScopeBusinessRuleError.DuplicateScope(
                     duplicateTitle = "Duplicate Title",
-                    parentId = "parent-id",
-                    existingScopeId = "existing-scope-id",
+                    parentId = parentId,
+                    existingScopeId = existingScopeId,
                     normalizedTitle = "duplicate title"
                 )
                 
                 error.duplicateTitle shouldBe "Duplicate Title"
-                error.parentId shouldBe "parent-id"
-                error.existingScopeId shouldBe "existing-scope-id"
+                error.parentId shouldBe parentId
+                error.existingScopeId shouldBe existingScopeId
                 error.normalizedTitle shouldBe "duplicate title"
             }
         }
         
         describe("HierarchyBusinessRuleError") {
             it("should provide context for self-parenting errors") {
+                val scopeId = ScopeId.generate()
                 val error = HierarchyBusinessRuleError.SelfParenting(
-                    scopeId = "scope-id",
+                    scopeId = scopeId,
                     operation = "set parent"
                 )
                 
                 error.shouldBeInstanceOf<HierarchyBusinessRuleError>()
-                error.scopeId shouldBe "scope-id"
+                error.scopeId shouldBe scopeId
                 error.operation shouldBe "set parent"
             }
             
             it("should provide context for circular reference errors") {
+                val scopeId = ScopeId.generate()
+                val parentId = ScopeId.generate()
                 val error = HierarchyBusinessRuleError.CircularReference(
-                    scopeId = "scope-id",
-                    parentId = "parent-id",
-                    cyclePath = listOf("scope-id", "parent-id", "scope-id")
+                    scopeId = scopeId,
+                    parentId = parentId,
+                    cyclePath = listOf(scopeId, parentId, scopeId)
                 )
                 
-                error.scopeId shouldBe "scope-id"
-                error.parentId shouldBe "parent-id"
-                error.cyclePath shouldBe listOf("scope-id", "parent-id", "scope-id")
+                error.scopeId shouldBe scopeId
+                error.parentId shouldBe parentId
+                error.cyclePath shouldBe listOf(scopeId, parentId, scopeId)
             }
         }
         
         describe("DataIntegrityBusinessRuleError") {
             it("should provide context for consistency check failures") {
+                val scopeId = ScopeId.generate()
                 val error = DataIntegrityBusinessRuleError.ConsistencyCheckFailure(
-                    scopeId = "scope-id",
+                    scopeId = scopeId,
                     checkType = "hierarchy consistency",
                     expectedState = "valid hierarchy",
                     actualState = "invalid hierarchy",
@@ -99,7 +110,7 @@ class BusinessRuleServiceErrorTest : DescribeSpec({
                 )
                 
                 error.shouldBeInstanceOf<DataIntegrityBusinessRuleError>()
-                error.scopeId shouldBe "scope-id"
+                error.scopeId shouldBe scopeId
                 error.checkType shouldBe "hierarchy consistency"
                 error.expectedState shouldBe "valid hierarchy"
                 error.actualState shouldBe "invalid hierarchy"

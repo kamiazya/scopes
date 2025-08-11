@@ -86,7 +86,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 coEvery { mockRepository.existsById(parentId) } returns true.right()
                 coEvery { mockValidationService.validateTitleFormat("Valid Title") } returns Unit.right()
                 coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns 
-                    ScopeBusinessRuleError.MaxDepthExceeded(10, 11, parentId.value, listOf("path")).left()
+                    ScopeBusinessRuleError.MaxDepthExceeded(10, 11, parentId, listOf(parentId)).left()
                 
                 val result = handler.invoke(command)
                 
@@ -95,7 +95,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 val businessError = error.businessRuleError.shouldBeInstanceOf<ScopeBusinessRuleError.MaxDepthExceeded>()
                 businessError.maxDepth shouldBe 10
                 businessError.actualDepth shouldBe 11
-                businessError.scopeId shouldBe parentId.value
+                businessError.scopeId shouldBe parentId
             }
             
             it("should translate ScopeBusinessRuleError.MaxChildrenExceeded to MaxChildrenExceeded") {
@@ -110,7 +110,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 coEvery { mockRepository.existsById(parentId) } returns true.right()
                 coEvery { mockValidationService.validateTitleFormat("Valid Title") } returns Unit.right()
                 coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns 
-                    ScopeBusinessRuleError.MaxChildrenExceeded(100, 100, parentId.value, "create").left()
+                    ScopeBusinessRuleError.MaxChildrenExceeded(100, 100, parentId, "create").left()
                 
                 val result = handler.invoke(command)
                 
@@ -119,7 +119,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 val businessError = error.businessRuleError.shouldBeInstanceOf<ScopeBusinessRuleError.MaxChildrenExceeded>()
                 businessError.maxChildren shouldBe 100
                 businessError.currentChildren shouldBe 100
-                businessError.parentId shouldBe parentId.value
+                businessError.parentId shouldBe parentId
             }
         }
 
