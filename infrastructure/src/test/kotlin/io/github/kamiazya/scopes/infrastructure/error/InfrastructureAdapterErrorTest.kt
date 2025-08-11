@@ -4,6 +4,9 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Test class for InfrastructureAdapterError hierarchy.
@@ -122,15 +125,15 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                     error.retryable shouldBe true
                 }
 
-                // Conditionally retryable based on retryAfter (429, 503)
-                val futureRetryTime = now.toEpochMilliseconds() + 60000
-                val pastRetryTime = now.toEpochMilliseconds() - 60000
+                // Conditionally retryable based on retryAfterAt (429, 503)
+                val futureRetryTime = now + 1.minutes
+                val pastRetryTime = now - 1.minutes
                 
                 // 429 with future retry time - not retryable
                 val rateLimitFuture = ExternalApiAdapterError.HttpError(
                     endpoint = "https://api.example.com",
                     statusCode = 429,
-                    retryAfter = futureRetryTime,
+                    retryAfterAt = futureRetryTime,
                     timestamp = now
                 )
                 rateLimitFuture.retryable shouldBe false
@@ -139,12 +142,12 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 val rateLimitPast = ExternalApiAdapterError.HttpError(
                     endpoint = "https://api.example.com",
                     statusCode = 429,
-                    retryAfter = pastRetryTime,
+                    retryAfterAt = pastRetryTime,
                     timestamp = now
                 )
                 rateLimitPast.retryable shouldBe true
                 
-                // 503 with no retryAfter - not retryable
+                // 503 with no retryAfterAt - not retryable
                 val serviceUnavailableNoRetry = ExternalApiAdapterError.HttpError(
                     endpoint = "https://api.example.com",
                     statusCode = 503,

@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.infrastructure.error
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 
 /**
  * External API adapter errors for remote service integrations.
@@ -31,13 +32,13 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         val statusCode: Int,
         val responseBody: String? = null,
         val headers: Map<String, String>? = null,
-        val retryAfter: Long? = null,
+        val retryAfterAt: Instant? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
         override val retryable: Boolean = when (statusCode) {
             408, 502, 504 -> true
-            429, 503 -> retryAfter?.let { it <= timestamp.toEpochMilliseconds() } ?: false
+            429, 503 -> retryAfterAt?.let { it <= Clock.System.now() } ?: false
             else -> false
         }
     }
@@ -47,7 +48,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
      */
     data class TimeoutError(
         val endpoint: String,
-        val timeoutMillis: Long,
+        val timeout: Duration,
         val phase: String, // "connection", "read", "write"
         override val timestamp: Instant,
         override val correlationId: String? = null
@@ -63,7 +64,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         val serviceName: String,
         val state: CircuitBreakerState,
         val failureCount: Int,
-        val nextAttemptAt: Long? = null,
+        val nextAttemptAt: Instant? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
@@ -78,14 +79,14 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         val endpoint: String,
         val limitType: RateLimitType,
         val limit: Int,
-        val windowSeconds: Int,
-        val resetTime: Long,
-        val retryAfter: Long? = null,
+        val window: Duration,
+        val resetAt: Instant,
+        val retryAfterAt: Instant? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
         // Rate limits are retryable only if reset time has passed
-        override val retryable: Boolean = resetTime <= Clock.System.now().toEpochMilliseconds()
+        override val retryable: Boolean = resetAt <= Clock.System.now()
     }
 
     /**
@@ -94,7 +95,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
     data class ServiceUnavailableError(
         val serviceName: String,
         val healthStatus: ServiceHealthStatus,
-        val estimatedRecoveryTime: Long? = null,
+        val estimatedRecoveryAt: Instant? = null,
         val alternativeEndpoint: String? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
