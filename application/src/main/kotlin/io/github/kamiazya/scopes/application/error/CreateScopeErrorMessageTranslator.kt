@@ -24,7 +24,21 @@ class CreateScopeErrorMessageTranslator {
     fun toUserMessage(error: CreateScopeError): String {
         return when (error) {
             is CreateScopeError.ParentNotFound -> "Parent scope not found"
-            is CreateScopeError.ValidationFailed -> "Validation failed: ${error.reason} (field: ${error.field})"
+            is CreateScopeError.ValidationFailed -> {
+                // Sanitize error messages to avoid exposing internal details
+                val sanitizedReason = when {
+                    error.reason.contains("Cross-aggregate uniqueness check failed") -> "Title must be unique within the scope"
+                    error.reason.contains("Failed to verify parent scope") -> "Unable to verify parent scope"
+                    error.reason.contains("Aggregate consistency validation failed") -> "System validation failed"
+                    error.reason.contains("Query timeout") || error.reason.contains("timeout") -> "Operation timed out"
+                    error.reason.contains("Connection failure") || error.reason.contains("connection") -> "Service temporarily unavailable" 
+                    error.reason.contains("Index corruption") || error.reason.contains("corruption") -> "System validation error"
+                    error.reason.contains("Persistence error") || error.reason.contains("persistence") -> "Unable to complete operation"
+                    error.reason.contains("errorCode") || error.reason.contains("repository") -> "System validation error"
+                    else -> error.reason
+                }
+                "Validation failed: $sanitizedReason (field: ${error.field})"
+            }
             is CreateScopeError.DomainRuleViolation -> "Domain rule violated: ${error.domainError}"
             is CreateScopeError.SaveFailure -> "Save operation failed: ${error.saveError}"
             is CreateScopeError.ExistenceCheckFailure -> "Existence check failed: ${error.existsError}"

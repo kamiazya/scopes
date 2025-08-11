@@ -39,27 +39,11 @@ class CrossAggregateValidationService(
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
             .mapLeft { existsError ->
-                // Include detailed repository error information for better diagnostics
-                val diagnosticDetails = when (existsError) {
-                    is ExistsScopeError.QueryTimeout -> 
-                        "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                    is ExistsScopeError.LockTimeout -> 
-                        "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                    is ExistsScopeError.ConnectionFailure -> 
-                        "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    is ExistsScopeError.IndexCorruption -> 
-                        "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                    is ExistsScopeError.PersistenceError -> 
-                        "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    is ExistsScopeError.UnknownError -> 
-                        "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                }
-                
                 CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "children",
                     targetAggregate = parentId.value,
                     referenceType = "parentId",
-                    violation = "Failed to check parent existence - $diagnosticDetails"
+                    violation = "Failed to verify parent scope"
                 )
             }
             .bind()
@@ -77,27 +61,11 @@ class CrossAggregateValidationService(
         for (childId in childIds) {
             val childExists = scopeRepository.existsById(childId)
                 .mapLeft { existsError ->
-                    // Include detailed repository error information and root cause for better diagnostics
-                    val diagnosticDetails = when (existsError) {
-                        is ExistsScopeError.QueryTimeout -> 
-                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is ExistsScopeError.LockTimeout -> 
-                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is ExistsScopeError.ConnectionFailure -> 
-                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.IndexCorruption -> 
-                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is ExistsScopeError.PersistenceError -> 
-                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.UnknownError -> 
-                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    }
-                    
                     CrossAggregateValidationError.CrossReferenceViolation(
                         sourceAggregate = parentId.value,
                         targetAggregate = childId.value,
                         referenceType = "childId",
-                        violation = "Failed to check child existence - $diagnosticDetails"
+                        violation = "Failed to verify child scope"
                     )
                 }
                 .bind()
@@ -129,26 +97,10 @@ class CrossAggregateValidationService(
         for (contextId in contextIds) {
             val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, normalizedTitle)
                 .mapLeft { existsError ->
-                    // Include detailed repository error information and root cause for better diagnostics
-                    val diagnosticDetails = when (existsError) {
-                        is ExistsScopeError.QueryTimeout -> 
-                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is ExistsScopeError.LockTimeout -> 
-                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is ExistsScopeError.ConnectionFailure -> 
-                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.IndexCorruption -> 
-                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is ExistsScopeError.PersistenceError -> 
-                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.UnknownError -> 
-                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    }
-                    
                     CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
                         aggregateIds = contextIds.map { it.value },
-                        violationDescription = "Failed to check uniqueness in context ${contextId.value} - $diagnosticDetails"
+                        violationDescription = "Cross-aggregate uniqueness check failed"
                     )
                 }
                 .bind()
@@ -189,27 +141,11 @@ class CrossAggregateValidationService(
 
             val aggregateExists = scopeRepository.existsById(aggregateId)
                 .mapLeft { existsError ->
-                    // Include detailed repository error information and root cause for better diagnostics
-                    val diagnosticDetails = when (existsError) {
-                        is ExistsScopeError.QueryTimeout -> 
-                            "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is ExistsScopeError.LockTimeout -> 
-                            "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is ExistsScopeError.ConnectionFailure -> 
-                            "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.IndexCorruption -> 
-                            "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is ExistsScopeError.PersistenceError -> 
-                            "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is ExistsScopeError.UnknownError -> 
-                            "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    }
-                    
                     CrossAggregateValidationError.AggregateConsistencyViolation(
                         operation = operation,
                         affectedAggregates = aggregateIds,
                         consistencyRule = consistencyRule,
-                        violationDetails = "Failed to check aggregate $aggregateIdString existence - $diagnosticDetails"
+                        violationDetails = "Failed to verify aggregate consistency"
                     )
                 }
                 .bind()

@@ -54,19 +54,19 @@ object ApplicationServiceErrorTranslator {
             is CrossAggregateValidationError.CrossReferenceViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.referenceType,
-                    "Cross-reference violation: ${validationError.violation}"
+                    "Failed to verify parent scope"
                 )
                 
             is CrossAggregateValidationError.InvariantViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.invariantName,
-                    validationError.violationDescription
+                    "Cross-aggregate uniqueness check failed"
                 )
                 
             is CrossAggregateValidationError.AggregateConsistencyViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.consistencyRule,
-                    "Consistency violation in ${validationError.operation}: ${validationError.violationDetails}"
+                    "Aggregate consistency validation failed"
                 )
                 
             is BusinessRuleValidationError.PreconditionViolation ->
