@@ -12,14 +12,14 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Test class for DomainServiceError hierarchy.
- * 
+ *
  * Tests verify that general domain service error types provide appropriate
  * context for operational and infrastructure-related errors.
  */
 class DomainServiceErrorTest : DescribeSpec({
 
     describe("DomainServiceError hierarchy") {
-        
+
         describe("ServiceOperationError") {
             it("should provide context for service unavailable errors") {
                 val error = ServiceOperationError.ServiceUnavailable(
@@ -28,14 +28,14 @@ class DomainServiceErrorTest : DescribeSpec({
                     estimatedRecoveryTime = 30.seconds,
                     alternativeService = "BackupValidationService"
                 )
-                
+
                 error.shouldBeInstanceOf<ServiceOperationError>()
                 error.serviceName shouldBe "ValidationService"
                 error.reason shouldBe "Service is temporarily down"
                 error.estimatedRecoveryTime shouldBe 30.seconds
                 error.alternativeService shouldBe "BackupValidationService"
             }
-            
+
             it("should provide context for service timeout errors") {
                 val error = ServiceOperationError.ServiceTimeout(
                     serviceName = "ValidationService",
@@ -43,14 +43,14 @@ class DomainServiceErrorTest : DescribeSpec({
                     timeout = 5.seconds,
                     elapsed = 5500.milliseconds
                 )
-                
+
                 error.serviceName shouldBe "ValidationService"
                 error.operation shouldBe "validateScopeCreation"
                 error.timeout shouldBe 5.seconds
                 error.elapsed shouldBe 5500.milliseconds
             }
         }
-        
+
         describe("RepositoryIntegrationError") {
             it("should provide context for repository operation failures") {
                 val cause = RuntimeException("Database unavailable")
@@ -60,7 +60,7 @@ class DomainServiceErrorTest : DescribeSpec({
                     cause = cause,
                     retryable = true
                 )
-                
+
                 error.shouldBeInstanceOf<RepositoryIntegrationError>()
                 error.operation shouldBe "findHierarchyDepth"
                 error.repositoryName shouldBe "ScopeRepository"
@@ -68,7 +68,7 @@ class DomainServiceErrorTest : DescribeSpec({
                 error.retryable shouldBe true
             }
         }
-        
+
         describe("ExternalServiceError") {
             it("should provide context for external service integration failures") {
                 val error = ExternalServiceError.IntegrationFailure(
@@ -78,7 +78,7 @@ class DomainServiceErrorTest : DescribeSpec({
                     errorMessage = "Service temporarily unavailable",
                     retryAfter = 60.seconds
                 )
-                
+
                 error.shouldBeInstanceOf<ExternalServiceError>()
                 error.serviceName shouldBe "TitleNormalizationService"
                 error.endpoint shouldBe "/api/v1/normalize"
