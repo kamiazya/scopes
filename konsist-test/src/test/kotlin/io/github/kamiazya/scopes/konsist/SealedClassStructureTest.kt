@@ -161,67 +161,35 @@ class SealedClassStructureTest : StringSpec({
             }
     }
 
-    "sealed class naming should be consistent" {
-        Konsist
-            .scopeFromProduction()
-            .classes()
-            .filter { it.hasSealedModifier }
-            .assertTrue { sealedClass ->
-                val name = sealedClass.name
+    "sealed class and interface naming should be consistent" {
+        val sealedClasses = Konsist.scopeFromProduction().classes().filter { it.hasSealedModifier }
+        val sealedInterfaces = Konsist.scopeFromProduction().interfaces().filter { it.hasSealedModifier }
+        val allSealedTypes = sealedClasses + sealedInterfaces
 
-                // Sealed classes should follow naming conventions based on their role
-                when {
-                    sealedClass.resideInPackage("..error..") -> {
-                        // In error packages, allow various naming patterns:
-                        // 1. Root error types end with "Error" or "Exception"
-                        // 2. Context/category classes can have descriptive names
-                        // 3. Result types can end with "Result"
-                        // 4. Configuration classes can end with "Configuration"
-                        // 5. Violation classes can contain "Violation"
-                        name.endsWith("Error") || name.endsWith("Exception") ||
-                        name.endsWith("Context") || name.endsWith("Type") ||
-                        name.endsWith("Category") || name.endsWith("Kind") ||
-                        name.endsWith("Result") || name.endsWith("Configuration") ||
-                        name.contains("Violation")
-                    }
-                    sealedClass.resideInPackage("..result..") ->
-                        name.endsWith("Result") || name == "Result"
-                    sealedClass.resideInPackage("..type..") ->
-                        name.endsWith("Type") || name.endsWith("Kind")
-                    else -> true // Other packages can have different conventions
+        allSealedTypes.assertTrue { sealedType ->
+            val name = sealedType.name
+
+            // Sealed types should follow naming conventions based on their role
+            when {
+                sealedType.resideInPackage("..error..") -> {
+                    // In error packages, allow various naming patterns:
+                    // 1. Root error types end with "Error" or "Exception"
+                    // 2. Context/category types can have descriptive names
+                    // 3. Result types can end with "Result"
+                    // 4. Configuration types can end with "Configuration"
+                    // 5. Violation types can contain "Violation"
+                    name.endsWith("Error") || name.endsWith("Exception") ||
+                    name.endsWith("Context") || name.endsWith("Type") ||
+                    name.endsWith("Category") || name.endsWith("Kind") ||
+                    name.endsWith("Result") || name.endsWith("Configuration") ||
+                    name.contains("Violation")
                 }
+                sealedType.resideInPackage("..result..") ->
+                    name.endsWith("Result") || name == "Result"
+                sealedType.resideInPackage("..type..") ->
+                    name.endsWith("Type") || name.endsWith("Kind")
+                else -> true // Other packages can have different conventions
             }
-    }
-
-    "sealed interface naming should be consistent" {
-        Konsist
-            .scopeFromProduction()
-            .interfaces()
-            .filter { it.hasSealedModifier }
-            .assertTrue { sealedInterface ->
-                val name = sealedInterface.name
-
-                // Sealed interfaces should follow naming conventions based on their role
-                when {
-                    sealedInterface.resideInPackage("..error..") -> {
-                        // In error packages, allow various naming patterns:
-                        // 1. Root error types end with "Error" or "Exception"
-                        // 2. Context/category interfaces can have descriptive names
-                        // 3. Result types can end with "Result"
-                        // 4. Configuration interfaces can end with "Configuration"
-                        // 5. Violation interfaces can contain "Violation"
-                        name.endsWith("Error") || name.endsWith("Exception") ||
-                        name.endsWith("Context") || name.endsWith("Type") ||
-                        name.endsWith("Category") || name.endsWith("Kind") ||
-                        name.endsWith("Result") || name.endsWith("Configuration") ||
-                        name.contains("Violation")
-                    }
-                    sealedInterface.resideInPackage("..result..") ->
-                        name.endsWith("Result") || name == "Result"
-                    sealedInterface.resideInPackage("..type..") ->
-                        name.endsWith("Type") || name.endsWith("Kind")
-                    else -> true // Other packages can have different conventions
-                }
-            }
+        }
     }
 })
