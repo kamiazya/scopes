@@ -1,17 +1,11 @@
 package io.github.kamiazya.scopes.application.error
 
 import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
-import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
-import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
-import io.github.kamiazya.scopes.domain.error.TitleValidationError
-import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
-import io.github.kamiazya.scopes.domain.error.HierarchyBusinessRuleError
-import io.github.kamiazya.scopes.domain.error.DataIntegrityBusinessRuleError
-import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
+import io.github.kamiazya.scopes.domain.error.*
 
 /**
  * Centralized translator for CreateScopeError instances to user-friendly messages.
- * 
+ *
  * This class provides a single source of truth for error message formatting,
  * keeping presentation layer code clean and ensuring consistent messaging across
  * different presentation interfaces (CLI, web, API, etc.).
@@ -31,7 +25,7 @@ class CreateScopeErrorMessageTranslator {
                     error.reason.contains("Failed to verify parent scope") -> "Unable to verify parent scope"
                     error.reason.contains("Aggregate consistency validation failed") -> "System validation failed"
                     error.reason.contains("Query timeout") || error.reason.contains("timeout") -> "Operation timed out"
-                    error.reason.contains("Connection failure") || error.reason.contains("connection") -> "Service temporarily unavailable" 
+                    error.reason.contains("Connection failure") || error.reason.contains("connection") -> "Service temporarily unavailable"
                     error.reason.contains("Index corruption") || error.reason.contains("corruption") -> "System validation error"
                     error.reason.contains("Persistence error") || error.reason.contains("persistence") -> "Unable to complete operation"
                     error.reason.contains("errorCode") || error.reason.contains("repository") -> "System validation error"
@@ -46,7 +40,7 @@ class CreateScopeErrorMessageTranslator {
             is CreateScopeError.HierarchyTraversalFailure -> "Hierarchy traversal failed: ${error.findError}"
             is CreateScopeError.HierarchyDepthExceeded -> "Maximum hierarchy depth (${error.maxDepth}) exceeded"
             is CreateScopeError.MaxChildrenExceeded -> "Parent ${error.parentId} already has maximum children (${error.maxChildren})"
-            
+
             // Service-specific error types with improved user messages
             is CreateScopeError.TitleValidationFailed -> formatTitleValidationError(error.titleError)
             is CreateScopeError.BusinessRuleViolationFailed -> formatBusinessRuleError(error.businessRuleError)

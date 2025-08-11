@@ -2,23 +2,21 @@ package io.github.kamiazya.scopes.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.application.service.error.ApplicationValidationError
-import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.util.TitleNormalizer
-import io.github.kamiazya.scopes.domain.error.ExistsScopeError
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
+import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Cross-aggregate validation service for validations that span multiple aggregates.
- * 
+ *
  * This service handles validation logic that requires coordination between different
  * aggregates and bounded contexts, following Serena MCP research on:
  * - Eventual consistency patterns
  * - Saga pattern for distributed validation
  * - Cross-aggregate invariant enforcement
  * - Compensation patterns for distributed systems
- * 
+ *
  * Based on DDD principles, this service maintains aggregate boundaries while
  * providing validation coordination across them.
  */
@@ -35,7 +33,7 @@ class CrossAggregateValidationService(
         parentId: ScopeId,
         childIds: List<ScopeId>
     ): Either<CrossAggregateValidationError, Unit> = either {
-        
+
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
             .mapLeft { existsError ->
@@ -90,9 +88,9 @@ class CrossAggregateValidationService(
         title: String,
         contextIds: List<ScopeId>
     ): Either<CrossAggregateValidationError, Unit> = either {
-        
+
         val normalizedTitle = TitleNormalizer.normalize(title)
-        
+
         // Check uniqueness across all contexts
         for (contextId in contextIds) {
             val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, normalizedTitle)
@@ -125,7 +123,7 @@ class CrossAggregateValidationService(
         aggregateIds: Set<String>,
         consistencyRule: String
     ): Either<CrossAggregateValidationError, Unit> = either {
-        
+
         // Validate all aggregates exist and are in valid state
         for (aggregateIdString in aggregateIds) {
             val aggregateId = try {
@@ -172,7 +170,7 @@ class CrossAggregateValidationService(
     ): Either<CrossAggregateValidationError, Unit> = either {
         // Implementation would depend on specific distributed business rules
         // This is a placeholder for future saga pattern integration
-        
+
         when (ruleName) {
             "eventualConsistency" -> {
                 // Validate eventual consistency requirements
