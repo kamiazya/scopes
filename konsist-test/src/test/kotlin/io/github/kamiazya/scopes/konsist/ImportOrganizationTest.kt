@@ -42,14 +42,24 @@ class ImportOrganizationTest : StringSpec({
                         importPath.startsWith("kotlin.") ||
                         importPath.startsWith("kotlinx.") -> true
                         
-                        // Allow wildcard imports for error packages from same module
+                        // Allow wildcard imports for error packages following Clean Architecture dependencies
                         importPath.endsWith(".error") -> {
                             // Extract module from both import and file package
-                            val importModule = importPath.split(".").getOrNull(3) // io.github.kamiazya.scopes.[MODULE].error
-                            val fileModule = filePackage.split(".").getOrNull(3) // io.github.kamiazya.scopes.[MODULE].*
+                            val expectedPrefix = "io.github.kamiazya.scopes."
+                            val importModule = if (importPath.startsWith(expectedPrefix)) {
+                                importPath.removePrefix(expectedPrefix).substringBefore('.')
+                            } else null
+                            val fileModule = if (filePackage.startsWith(expectedPrefix)) {
+                                filePackage.removePrefix(expectedPrefix).substringBefore('.')
+                            } else null
                             
-                            // Allow if same module (domain, application, infrastructure)
-                            importModule == fileModule
+                            // Allow based on Clean Architecture dependency rules
+                            when (fileModule) {
+                                "domain" -> importModule == "domain" // Domain can only import from domain
+                                "application" -> importModule in listOf("domain", "application") // Application can import from domain and itself
+                                "infrastructure" -> importModule in listOf("domain", "application", "infrastructure") // Infrastructure can import from all
+                                else -> false // Other modules not recognized
+                            }
                         }
                         
                         else -> false // Other wildcard imports not allowed
