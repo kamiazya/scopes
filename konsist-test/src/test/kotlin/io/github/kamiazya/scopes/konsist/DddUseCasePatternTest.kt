@@ -35,7 +35,7 @@ class DddUseCasePatternTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { 
+            .filter {
                 it.hasParentWithName("Command") || it.hasParentWithName("Query")
             }
             .assertTrue { commandOrQuery ->
@@ -54,40 +54,40 @@ class DddUseCasePatternTest : StringSpec({
                 dto.properties().any { property ->
                     val typeName = property.type?.name ?: ""
                     val packageName = property.type?.packagee?.name ?: ""
-                    
+
                     // Primary check: types from domain package are not allowed
                     // This uses exact package prefix matching
                     if (packageName.startsWith("io.github.kamiazya.scopes.domain.")) {
                         return@any true
                     }
-                    
-                    // Secondary check: common domain type patterns 
+
+                    // Secondary check: common domain type patterns
                     // This is more flexible than the original hardcoded "Scope*" patterns
                     // and will work for any domain types, not just Scope-related ones
                     val domainSuffixes = listOf("Id", "Title", "Description", "Name", "Code", "Status")
                     val serviceSuffixes = listOf("Service", "Factory", "Repository")
-                    
+
                     // Check domain value object patterns
                     if (domainSuffixes.any { suffix -> typeName.endsWith(suffix) }) {
                         return@any true
                     }
-                    
-                    // Check domain service patterns  
+
+                    // Check domain service patterns
                     if (serviceSuffixes.any { suffix -> typeName.endsWith(suffix) }) {
                         return@any true
                     }
-                    
+
                     // Check likely domain entities (single capitalized word, not DTO/Result/Command/Query)
-                    if (typeName.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
-                        !typeName.endsWith("DTO") && 
+                    if (typeName.matches(Regex("^[A-Z][a-zA-Z]+$")) &&
+                        !typeName.endsWith("DTO") &&
                         !typeName.endsWith("Result") &&
                         !typeName.endsWith("Command") &&
                         !typeName.endsWith("Query") &&
-                        typeName !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", 
+                        typeName !in listOf("String", "Int", "Long", "Boolean", "Double", "Float",
                                             "List", "Map", "Set", "Array", "Instant", "UUID")) {
                         return@any true
                     }
-                    
+
                     false
                 }
             }
@@ -176,48 +176,48 @@ class DddUseCasePatternTest : StringSpec({
                     .filter { it.name == "invoke" }
                     .all { function ->
                         val returnType = function.returnType
-                        
+
                         if (returnType == null) {
                             return@all false
                         }
-                        
+
                         // Check if return type is Either<SomeError, T>
                         if (!returnType.name.startsWith("Either")) {
                             return@all false
                         }
-                        
+
                         // Use Konsist's typeArguments API instead of regex parsing
                         val typeArguments = returnType.typeArguments
                         if (typeArguments == null || typeArguments.size != 2) {
                             return@all false
                         }
-                        
+
                         // First type argument should be some Error type
                         val firstTypeArgument = typeArguments.first()
                         if (!firstTypeArgument.name.endsWith("Error")) {
                             return@all false
                         }
-                        
+
                         // Get the second type argument (T in Either<SomeError, T>)
                         val secondTypeArgument = typeArguments[1]
                         val genericTypeName = secondTypeArgument.name
-                        
+
                         // Validate that the generic type parameter is a proper DTO or Result class
                         // Should end with "Result" (DTO naming convention) or be from dto package
-                        val isValidDtoType = genericTypeName.endsWith("Result") || 
+                        val isValidDtoType = genericTypeName.endsWith("Result") ||
                                            genericTypeName.endsWith("DTO") ||
                                            // Allow primitive wrapper types and collections
                                            genericTypeName in listOf("String", "Int", "Long", "Boolean", "Double", "Float") ||
                                            genericTypeName.startsWith("List") ||
                                            genericTypeName.startsWith("Map") ||
                                            genericTypeName.startsWith("Set")
-                        
+
                         // Ensure it's NOT a domain entity (shouldn't be just a single capitalized word without DTO/Result suffix)
-                        val isDomainEntity = genericTypeName.matches(Regex("^[A-Z][a-zA-Z]+$")) && 
-                                           !genericTypeName.endsWith("Result") && 
+                        val isDomainEntity = genericTypeName.matches(Regex("^[A-Z][a-zA-Z]+$")) &&
+                                           !genericTypeName.endsWith("Result") &&
                                            !genericTypeName.endsWith("DTO") &&
                                            genericTypeName !in listOf("String", "Int", "Long", "Boolean", "Double", "Float", "Unit")
-                        
+
                         isValidDtoType && !isDomainEntity
                     }
             }
@@ -233,26 +233,22 @@ class DddUseCasePatternTest : StringSpec({
                     .filter { it.name == "invoke" }
                     .any { function ->
                         val returnType = function.returnType
-                        
+
                         if (returnType == null || !returnType.name.startsWith("Either")) {
                             return@any false
                         }
-                        
+
                         // Use Konsist's typeArguments API to check generic parameters
                         val typeArguments = returnType.typeArguments
                         if (typeArguments == null || typeArguments.size != 2) {
                             return@any false
                         }
-                        
+
                         // Check if the success type (second type argument) is a domain type
-                        // Extract the full type text from the return type to get package information
-                        val returnTypeText = returnType.text ?: returnType.name
-                        
-                        // Parse Either<Error, SuccessType> to extract the success type portion
-                        // The success type is after the comma in the generic parameters
-                        val genericMatch = Regex("Either<[^,]+,\\s*([^>]+)>").find(returnTypeText)
-                        val successTypeText = genericMatch?.groupValues?.get(1)?.trim() ?: ""
-                        
+                        // Access the second generic parameter directly using typeArguments[1]
+                        val successType = typeArguments[1]
+                        val successTypeText = successType.text
+
                         // Check if the success type is from the domain package
                         isDomainType(successTypeText)
                     }
@@ -263,8 +259,8 @@ class DddUseCasePatternTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .interfaces()
-            .filter { 
-                it.name.endsWith("Manager") || 
+            .filter {
+                it.name.endsWith("Manager") ||
                 it.name.endsWith("Repository") ||
                 it.name.contains("Port")
             }
@@ -320,7 +316,7 @@ class DddUseCasePatternTest : StringSpec({
             .assertFalse { noop ->
                 // Noop implementations should not import external persistence libs
                 noop.containingFile.imports.any { import ->
-                    import.name.contains("jdbc") || 
+                    import.name.contains("jdbc") ||
                     import.name.contains("hibernate") ||
                     import.name.contains("database")
                 }
@@ -337,7 +333,7 @@ class DddUseCasePatternTest : StringSpec({
                 mapper.functions().all { function ->
                     val returnType = function.returnType?.text ?: ""
                     // Return types should be DTOs (end with Result/DTO) or primitives
-                    returnType.endsWith("Result") || 
+                    returnType.endsWith("Result") ||
                     returnType.endsWith("DTO") ||
                     returnType in listOf("String", "Int", "Boolean", "Long", "Double") ||
                     returnType.startsWith("List<") ||
