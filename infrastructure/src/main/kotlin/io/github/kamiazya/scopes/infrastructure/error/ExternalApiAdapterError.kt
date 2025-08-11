@@ -35,8 +35,11 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
-        // Common retryable HTTP status codes for transient issues
-        override val retryable: Boolean = statusCode in setOf(408, 429, 502, 503, 504)
+        override val retryable: Boolean = when (statusCode) {
+            408, 502, 504 -> true
+            429, 503 -> retryAfter?.let { it <= timestamp.toEpochMilliseconds() } ?: false
+            else -> false
+        }
     }
 
     /**

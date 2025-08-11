@@ -62,6 +62,42 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 error.retryable shouldBe true
             }
 
+            it("should delegate retryable to NetworkErrorType enum") {
+                // Test retryable cases
+                val retryableTypes = listOf(
+                    NetworkErrorType.DNS_RESOLUTION,
+                    NetworkErrorType.CONNECTION_REFUSED,
+                    NetworkErrorType.CONNECTION_TIMEOUT
+                )
+                
+                retryableTypes.forEach { errorType ->
+                    val error = ExternalApiAdapterError.NetworkError(
+                        endpoint = "https://api.example.com",
+                        errorType = errorType,
+                        cause = RuntimeException("Test"),
+                        timestamp = Clock.System.now()
+                    )
+                    error.retryable shouldBe true
+                }
+
+                // Test non-retryable cases
+                val nonRetryableTypes = listOf(
+                    NetworkErrorType.SSL_HANDSHAKE,
+                    NetworkErrorType.CERTIFICATE_ERROR,
+                    NetworkErrorType.UNKNOWN_HOST
+                )
+                
+                nonRetryableTypes.forEach { errorType ->
+                    val error = ExternalApiAdapterError.NetworkError(
+                        endpoint = "https://api.example.com",
+                        errorType = errorType,
+                        cause = RuntimeException("Test"),
+                        timestamp = Clock.System.now()
+                    )
+                    error.retryable shouldBe false
+                }
+            }
+
             it("should provide context for HTTP errors") {
                 val error = ExternalApiAdapterError.HttpError(
                     endpoint = "https://api.example.com",
@@ -70,7 +106,61 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 )
 
                 error.statusCode shouldBe 503
-                error.retryable shouldBe true
+                error.retryable shouldBe false // No retryAfter provided
+            }
+
+            it("should handle HTTP retryable logic correctly") {
+                val now = Clock.System.now()
+                
+                // Always retryable status codes
+                listOf(408, 502, 504).forEach { statusCode ->
+                    val error = ExternalApiAdapterError.HttpError(
+                        endpoint = "https://api.example.com",
+                        statusCode = statusCode,
+                        timestamp = now
+                    )
+                    error.retryable shouldBe true
+                }
+
+                // Conditionally retryable based on retryAfter (429, 503)
+                val futureRetryTime = now.toEpochMilliseconds() + 60000
+                val pastRetryTime = now.toEpochMilliseconds() - 60000
+                
+                // 429 with future retry time - not retryable
+                val rateLimitFuture = ExternalApiAdapterError.HttpError(
+                    endpoint = "https://api.example.com",
+                    statusCode = 429,
+                    retryAfter = futureRetryTime,
+                    timestamp = now
+                )
+                rateLimitFuture.retryable shouldBe false
+                
+                // 429 with past retry time - retryable
+                val rateLimitPast = ExternalApiAdapterError.HttpError(
+                    endpoint = "https://api.example.com",
+                    statusCode = 429,
+                    retryAfter = pastRetryTime,
+                    timestamp = now
+                )
+                rateLimitPast.retryable shouldBe true
+                
+                // 503 with no retryAfter - not retryable
+                val serviceUnavailableNoRetry = ExternalApiAdapterError.HttpError(
+                    endpoint = "https://api.example.com",
+                    statusCode = 503,
+                    timestamp = now
+                )
+                serviceUnavailableNoRetry.retryable shouldBe false
+                
+                // Non-retryable status codes
+                listOf(400, 401, 403, 404, 500).forEach { statusCode ->
+                    val error = ExternalApiAdapterError.HttpError(
+                        endpoint = "https://api.example.com",
+                        statusCode = statusCode,
+                        timestamp = now
+                    )
+                    error.retryable shouldBe false
+                }
             }
         }
 
