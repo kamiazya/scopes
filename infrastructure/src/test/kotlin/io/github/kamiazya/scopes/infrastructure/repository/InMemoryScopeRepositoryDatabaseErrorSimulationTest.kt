@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.error.*
 import io.github.kamiazya.scopes.infrastructure.error.InfrastructureAdapterError
+import io.github.kamiazya.scopes.infrastructure.error.DatabaseAdapterError
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.StringSpec
@@ -374,7 +375,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
     
     override suspend fun save(scope: Scope): Either<SaveScopeError, Scope> = either {
         if (simulateConnectionPoolExhaustion) {
-            val infraError = InfrastructureAdapterError.DatabaseAdapterError.ConnectionError(
+            val infraError = DatabaseAdapterError.ConnectionError(
                 connectionString = "jdbc:postgresql://localhost:5432/scopes",
                 poolSize = 10,
                 activeConnections = 10,
@@ -436,7 +437,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
             val errorType = operationSpecificErrors["save"]!!
             when (errorType) {
                 "CONNECTION_POOL_EXHAUSTED" -> {
-                    val infraError = InfrastructureAdapterError.DatabaseAdapterError.ConnectionError(
+                    val infraError = DatabaseAdapterError.ConnectionError(
                         connectionString = "jdbc:postgresql://localhost:5432/scopes",
                         poolSize = 10,
                         activeConnections = 10,

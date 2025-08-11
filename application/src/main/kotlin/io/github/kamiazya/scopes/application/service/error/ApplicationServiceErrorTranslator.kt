@@ -2,6 +2,27 @@ package io.github.kamiazya.scopes.application.service.error
 
 import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 
+import io.github.kamiazya.scopes.application.service.error.ApplicationValidationError
+import io.github.kamiazya.scopes.application.service.error.AuditServiceError
+import io.github.kamiazya.scopes.application.service.error.NotificationServiceError
+import io.github.kamiazya.scopes.application.service.error.AuthorizationServiceError
+import io.github.kamiazya.scopes.application.service.error.InputValidationError
+import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
+import io.github.kamiazya.scopes.application.service.error.BusinessRuleValidationError
+import io.github.kamiazya.scopes.application.service.error.AsyncValidationError
+import io.github.kamiazya.scopes.application.service.error.AuditTrailError
+import io.github.kamiazya.scopes.application.service.error.EventLoggingError
+import io.github.kamiazya.scopes.application.service.error.ComplianceError
+import io.github.kamiazya.scopes.application.service.error.AuditSystemError
+import io.github.kamiazya.scopes.application.service.error.MessageDeliveryError
+import io.github.kamiazya.scopes.application.service.error.EventDistributionError
+import io.github.kamiazya.scopes.application.service.error.TemplateError
+import io.github.kamiazya.scopes.application.service.error.NotificationConfigurationError
+import io.github.kamiazya.scopes.application.service.error.PermissionDeniedError
+import io.github.kamiazya.scopes.application.service.error.AuthenticationError
+import io.github.kamiazya.scopes.application.service.error.AuthorizationContextError
+import io.github.kamiazya.scopes.application.service.error.PolicyEvaluationError
+
 /**
  * Translator for converting between application service errors and UseCase errors.
  * 
@@ -15,68 +36,63 @@ object ApplicationServiceErrorTranslator {
      */
     fun translateValidationError(validationError: ApplicationValidationError): CreateScopeError {
         return when (validationError) {
-            is ApplicationValidationError.InputValidationError.MissingRequiredField ->
-                CreateScopeError.ValidationFailed(validationError.field, "Required field is missing")
+            is InputValidationError.MissingRequiredField ->
+                CreateScopeError.ValidationFailed(validationError.fieldName, "Required field is missing")
                 
-            is ApplicationValidationError.InputValidationError.InvalidFieldFormat ->
+            is InputValidationError.InvalidFieldFormat ->
                 CreateScopeError.ValidationFailed(
-                    validationError.field, 
+                    validationError.fieldName, 
                     "Invalid format: ${validationError.expectedFormat}"
                 )
                 
-            is ApplicationValidationError.InputValidationError.FieldConstraintViolation ->
+            is InputValidationError.ValueOutOfRange ->
                 CreateScopeError.ValidationFailed(
-                    validationError.field,
-                    "${validationError.constraint} violation: expected ${validationError.expectedValue}, got ${validationError.actualValue}"
+                    validationError.fieldName,
+                    "Value out of range: min ${validationError.minValue}, max ${validationError.maxValue}, got ${validationError.actualValue}"
                 )
                 
-            is ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation ->
+            is CrossAggregateValidationError.CrossReferenceViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.referenceType,
                     "Cross-reference violation: ${validationError.violation}"
                 )
                 
-            is ApplicationValidationError.CrossAggregateValidationError.InvariantViolation ->
+            is CrossAggregateValidationError.InvariantViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.invariantName,
                     validationError.violationDescription
                 )
                 
-            is ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation ->
+            is CrossAggregateValidationError.AggregateConsistencyViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.consistencyRule,
                     "Consistency violation in ${validationError.operation}: ${validationError.violationDetails}"
                 )
                 
-            is ApplicationValidationError.BusinessRuleValidationError.PreconditionViolation ->
+            is BusinessRuleValidationError.PreconditionViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.operation,
                     "Precondition not met: ${validationError.precondition}"
                 )
                 
-            is ApplicationValidationError.BusinessRuleValidationError.PostconditionViolation ->
+            is BusinessRuleValidationError.PostconditionViolation ->
                 CreateScopeError.ValidationFailed(
                     validationError.operation,
                     "Postcondition violated: ${validationError.postcondition}"
                 )
                 
-            is ApplicationValidationError.AsyncValidationError.ValidationTimeout ->
+            is AsyncValidationError.ValidationTimeout ->
                 CreateScopeError.ValidationFailed(
-                    validationError.validationType,
-                    "Validation timed out after ${validationError.elapsedMs}ms"
+                    validationError.validationPhase,
+                    "Validation timed out after ${validationError.timeoutMillis}ms"
                 )
                 
-            is ApplicationValidationError.AsyncValidationError.ConcurrentModificationDetected ->
+            is AsyncValidationError.ConcurrentValidationConflict ->
                 CreateScopeError.ValidationFailed(
                     "concurrency",
-                    "Concurrent modification detected on entity ${validationError.entityId}"
+                    "Concurrent validation conflict on ${validationError.resource}"
                 )
                 
-            is ApplicationValidationError.AsyncValidationError.ExternalServiceValidationFailure ->
-                CreateScopeError.ValidationFailed(
-                    validationError.validationType,
-                    "External validation service '${validationError.serviceName}' failed after ${validationError.retryAttempts} retries"
-                )
         }
     }
 
@@ -85,73 +101,55 @@ object ApplicationServiceErrorTranslator {
      */
     fun translateAuthorizationError(authError: AuthorizationServiceError): CreateScopeError {
         return when (authError) {
-            is AuthorizationServiceError.PermissionDeniedError.PermissionDenied ->
+            is PermissionDeniedError.PermissionDenied ->
                 CreateScopeError.ValidationFailed(
                     "authorization", 
-                    "Permission denied: ${authError.reason}"
+                    "Permission denied for ${authError.action} on ${authError.resource}"
                 )
                 
-            is AuthorizationServiceError.PermissionDeniedError.InsufficientRoleLevel ->
+            is PermissionDeniedError.InsufficientPermissions ->
                 CreateScopeError.ValidationFailed(
                     "authorization",
-                    "Insufficient role: required ${authError.requiredRole}, has ${authError.currentRole}"
+                    "Insufficient permissions: required role ${authError.requiredRole}, has roles ${authError.userRoles}"
                 )
                 
-            is AuthorizationServiceError.PermissionDeniedError.ResourceAccessDenied ->
+            is PermissionDeniedError.RoleNotFound ->
                 CreateScopeError.ValidationFailed(
                     "authorization",
-                    "Access denied to resource ${authError.resourceId} of type ${authError.resourceType}"
+                    "Role not found: ${authError.roleId} for user ${authError.userId}"
                 )
                 
-            is AuthorizationServiceError.AuthenticationError.UserNotAuthenticated ->
+            is AuthenticationError.UserNotAuthenticated ->
                 CreateScopeError.ValidationFailed(
                     "authentication",
-                    "User not authenticated for operation: ${authError.operation}"
+                    "User not authenticated for resource: ${authError.requestedResource}"
                 )
                 
-            is AuthorizationServiceError.AuthenticationError.TokenExpired ->
+            is AuthenticationError.InvalidToken ->
                 CreateScopeError.ValidationFailed(
                     "authentication",
-                    "Authentication token expired for user ${authError.userId}"
+                    "Invalid ${authError.tokenType} token: ${authError.reason}"
                 )
                 
-            is AuthorizationServiceError.AuthenticationError.InvalidCredentials ->
-                CreateScopeError.ValidationFailed(
-                    "authentication",
-                    "Invalid credentials: ${authError.reason}"
-                )
-                
-            is AuthorizationServiceError.ContextError.ResourceNotFound ->
+            is AuthorizationContextError.ResourceNotFound ->
                 CreateScopeError.ParentNotFound
                 
-            is AuthorizationServiceError.ContextError.InvalidContext ->
+            is AuthorizationContextError.InvalidContext ->
                 CreateScopeError.ValidationFailed(
                     "context",
-                    "Invalid context: ${authError.reason}"
+                    "Invalid ${authError.contextType} context: missing fields ${authError.missingFields}"
                 )
                 
-            is AuthorizationServiceError.ContextError.AmbiguousContext ->
-                CreateScopeError.ValidationFailed(
-                    "context",
-                    "Ambiguous context: ${authError.reason}"
-                )
-                
-            is AuthorizationServiceError.PolicyEvaluationError.PolicyViolation ->
+            is PolicyEvaluationError.PolicyViolation ->
                 CreateScopeError.ValidationFailed(
                     "policy",
-                    "Policy violation in ${authError.policyName}: ${authError.violationDetails}"
+                    "Policy violation in ${authError.policyName}: violated rules ${authError.violatedRules}"
                 )
                 
-            is AuthorizationServiceError.PolicyEvaluationError.PolicyEvaluationTimeout ->
+            is PolicyEvaluationError.EvaluationFailure ->
                 CreateScopeError.ValidationFailed(
                     "policy",
-                    "Policy evaluation timeout for ${authError.policyName}"
-                )
-                
-            is AuthorizationServiceError.PolicyEvaluationError.PolicyNotFound ->
-                CreateScopeError.ValidationFailed(
-                    "policy",
-                    "Policy not found: ${authError.policyName}"
+                    "Policy evaluation failed for ${authError.policyId}: ${authError.reason}"
                 )
         }
     }

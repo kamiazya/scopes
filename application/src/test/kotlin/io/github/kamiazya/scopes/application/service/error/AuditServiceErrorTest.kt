@@ -23,7 +23,7 @@ class AuditServiceErrorTest : DescribeSpec({
 
         describe("AuditTrailError") {
             it("should create AuditLogCorruption with integrity details") {
-                val error = AuditServiceError.AuditTrailError.AuditLogCorruption(
+                val error = AuditTrailError.AuditLogCorruption(
                     auditEntryId = "audit-123",
                     detectedAt = 1640995200000L,
                     corruptionType = "HASH_MISMATCH",
@@ -39,7 +39,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create AuditEntryNotFound") {
-                val error = AuditServiceError.AuditTrailError.AuditEntryNotFound(
+                val error = AuditTrailError.AuditEntryNotFound(
                     auditEntryId = "audit-999",
                     requestedBy = "compliance-officer",
                     searchCriteria = mapOf("userId" to "user-123", "action" to "DELETE")
@@ -51,7 +51,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create ImmutabilityViolation") {
-                val error = AuditServiceError.AuditTrailError.ImmutabilityViolation(
+                val error = AuditTrailError.ImmutabilityViolation(
                     auditEntryId = "audit-456",
                     attemptedOperation = "UPDATE",
                     attemptedBy = "malicious-user",
@@ -69,7 +69,7 @@ class AuditServiceErrorTest : DescribeSpec({
 
         describe("EventLoggingError") {
             it("should create EventSerializationFailure") {
-                val error = AuditServiceError.EventLoggingError.EventSerializationFailure(
+                val error = EventLoggingError.EventSerializationFailure(
                     eventId = "event-789",
                     eventType = "ScopeDeleted",
                     serializationError = "Cannot serialize field: metadata",
@@ -83,7 +83,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create EventStorageFailure") {
-                val error = AuditServiceError.EventLoggingError.EventStorageFailure(
+                val error = EventLoggingError.EventStorageFailure(
                     eventId = "event-012",
                     storageLocation = "/var/audit/2024/01/",
                     cause = RuntimeException("Disk full"),
@@ -97,7 +97,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create EventOrderingViolation") {
-                val error = AuditServiceError.EventLoggingError.EventOrderingViolation(
+                val error = EventLoggingError.EventOrderingViolation(
                     eventId = "event-345",
                     expectedSequence = 100,
                     actualSequence = 98,
@@ -113,7 +113,7 @@ class AuditServiceErrorTest : DescribeSpec({
 
         describe("ComplianceError") {
             it("should create RetentionPolicyViolation") {
-                val error = AuditServiceError.ComplianceError.RetentionPolicyViolation(
+                val error = ComplianceError.RetentionPolicyViolation(
                     policyId = "gdpr-retention-policy",
                     violationType = "RETENTION_PERIOD_EXCEEDED",
                     affectedRecords = 1500,
@@ -129,7 +129,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create DataClassificationError") {
-                val error = AuditServiceError.ComplianceError.DataClassificationError(
+                val error = ComplianceError.DataClassificationError(
                     dataId = "scope-sensitive-data",
                     expectedClassification = "CONFIDENTIAL",
                     actualClassification = "PUBLIC",
@@ -143,7 +143,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create AuditRequirementNotMet") {
-                val error = AuditServiceError.ComplianceError.AuditRequirementNotMet(
+                val error = ComplianceError.AuditRequirementNotMet(
                     requirementId = "pci-dss-req-10",
                     description = "All user access must be logged",
                     missingAudits = listOf("user-login-123", "user-access-456"),
@@ -157,9 +157,9 @@ class AuditServiceErrorTest : DescribeSpec({
             }
         }
 
-        describe("SystemError") {
+        describe("AuditSystemError") {
             it("should create AuditSystemUnavailable") {
-                val error = AuditServiceError.SystemError.AuditSystemUnavailable(
+                val error = AuditSystemError.AuditSystemUnavailable(
                     subsystem = "event-store",
                     cause = RuntimeException("Database connection failed"),
                     estimatedRecoveryTime = 3600000L, // 1 hour
@@ -173,7 +173,7 @@ class AuditServiceErrorTest : DescribeSpec({
             }
 
             it("should create ConfigurationError") {
-                val error = AuditServiceError.SystemError.ConfigurationError(
+                val error = AuditSystemError.ConfigurationError(
                     configurationKey = "audit.storage.encryption.key",
                     errorDetails = "Encryption key not found in keystore",
                     service = "audit-service"
@@ -187,16 +187,16 @@ class AuditServiceErrorTest : DescribeSpec({
 
         describe("error hierarchy") {
             it("all errors should extend AuditServiceError") {
-                val trailError = AuditServiceError.AuditTrailError.AuditLogCorruption(
+                val trailError = AuditTrailError.AuditLogCorruption(
                     "id", 1L, "type", emptyList(), "hash"
                 )
-                val loggingError = AuditServiceError.EventLoggingError.EventSerializationFailure(
+                val loggingError = EventLoggingError.EventSerializationFailure(
                     "id", "type", "error", 1L
                 )
-                val complianceError = AuditServiceError.ComplianceError.RetentionPolicyViolation(
+                val complianceError = ComplianceError.RetentionPolicyViolation(
                     "policy", "type", 0, "details", 1L
                 )
-                val systemError = AuditServiceError.SystemError.AuditSystemUnavailable(
+                val systemError = AuditSystemError.AuditSystemUnavailable(
                     "subsystem", RuntimeException(), 1L, "level"
                 )
 

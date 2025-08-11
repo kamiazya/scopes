@@ -6,6 +6,8 @@ import io.github.kamiazya.scopes.application.service.error.ApplicationValidation
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.util.TitleNormalizer
+import io.github.kamiazya.scopes.domain.error.ExistsScopeError
+import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 
 /**
  * Cross-aggregate validation service for validations that span multiple aggregates.
@@ -32,28 +34,28 @@ class CrossAggregateValidationService(
     suspend fun validateHierarchyConsistency(
         parentId: ScopeId,
         childIds: List<ScopeId>
-    ): Either<ApplicationValidationError.CrossAggregateValidationError, Unit> = either {
+    ): Either<CrossAggregateValidationError, Unit> = either {
         
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
             .mapLeft { existsError ->
                 // Include detailed repository error information for better diagnostics
                 val diagnosticDetails = when (existsError) {
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                    is ExistsScopeError.QueryTimeout -> 
                         "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                    is ExistsScopeError.LockTimeout -> 
                         "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                    is ExistsScopeError.ConnectionFailure -> 
                         "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                    is ExistsScopeError.IndexCorruption -> 
                         "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                    is ExistsScopeError.PersistenceError -> 
                         "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                    is ExistsScopeError.UnknownError -> 
                         "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
                 }
                 
-                ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
+                CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "children",
                     targetAggregate = parentId.value,
                     referenceType = "parentId",
@@ -63,7 +65,7 @@ class CrossAggregateValidationService(
             .bind()
 
         if (!parentExists) {
-            raise(ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
+            raise(CrossAggregateValidationError.CrossReferenceViolation(
                 sourceAggregate = "children",
                 targetAggregate = parentId.value,
                 referenceType = "parentId",
@@ -77,21 +79,21 @@ class CrossAggregateValidationService(
                 .mapLeft { existsError ->
                     // Include detailed repository error information and root cause for better diagnostics
                     val diagnosticDetails = when (existsError) {
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                        is ExistsScopeError.QueryTimeout -> 
                             "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                        is ExistsScopeError.LockTimeout -> 
                             "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                        is ExistsScopeError.ConnectionFailure -> 
                             "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                        is ExistsScopeError.IndexCorruption -> 
                             "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                        is ExistsScopeError.PersistenceError -> 
                             "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                        is ExistsScopeError.UnknownError -> 
                             "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
                     }
                     
-                    ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
+                    CrossAggregateValidationError.CrossReferenceViolation(
                         sourceAggregate = parentId.value,
                         targetAggregate = childId.value,
                         referenceType = "childId",
@@ -101,7 +103,7 @@ class CrossAggregateValidationService(
                 .bind()
 
             if (!childExists) {
-                raise(ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
+                raise(CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = parentId.value,
                     targetAggregate = childId.value,
                     referenceType = "childId",
@@ -119,7 +121,7 @@ class CrossAggregateValidationService(
     suspend fun validateCrossAggregateUniqueness(
         title: String,
         contextIds: List<ScopeId>
-    ): Either<ApplicationValidationError.CrossAggregateValidationError, Unit> = either {
+    ): Either<CrossAggregateValidationError, Unit> = either {
         
         val normalizedTitle = TitleNormalizer.normalize(title)
         
@@ -129,21 +131,21 @@ class CrossAggregateValidationService(
                 .mapLeft { existsError ->
                     // Include detailed repository error information and root cause for better diagnostics
                     val diagnosticDetails = when (existsError) {
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                        is ExistsScopeError.QueryTimeout -> 
                             "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                        is ExistsScopeError.LockTimeout -> 
                             "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                        is ExistsScopeError.ConnectionFailure -> 
                             "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                        is ExistsScopeError.IndexCorruption -> 
                             "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                        is ExistsScopeError.PersistenceError -> 
                             "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                        is ExistsScopeError.UnknownError -> 
                             "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
                     }
                     
-                    ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
+                    CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
                         aggregateIds = contextIds.map { it.value },
                         violationDescription = "Failed to check uniqueness in context ${contextId.value} - $diagnosticDetails"
@@ -152,7 +154,7 @@ class CrossAggregateValidationService(
                 .bind()
 
             if (existsInContext) {
-                raise(ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
+                raise(CrossAggregateValidationError.InvariantViolation(
                     invariantName = "crossAggregateUniqueness",
                     aggregateIds = contextIds.map { it.value },
                     violationDescription = "Title '$title' conflicts across aggregates"
@@ -170,14 +172,14 @@ class CrossAggregateValidationService(
         operation: String,
         aggregateIds: Set<String>,
         consistencyRule: String
-    ): Either<ApplicationValidationError.CrossAggregateValidationError, Unit> = either {
+    ): Either<CrossAggregateValidationError, Unit> = either {
         
         // Validate all aggregates exist and are in valid state
         for (aggregateIdString in aggregateIds) {
             val aggregateId = try {
                 ScopeId.from(aggregateIdString)
             } catch (e: IllegalArgumentException) {
-                raise(ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation(
+                raise(CrossAggregateValidationError.AggregateConsistencyViolation(
                     operation = operation,
                     affectedAggregates = aggregateIds,
                     consistencyRule = consistencyRule,
@@ -189,21 +191,21 @@ class CrossAggregateValidationService(
                 .mapLeft { existsError ->
                     // Include detailed repository error information and root cause for better diagnostics
                     val diagnosticDetails = when (existsError) {
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout -> 
+                        is ExistsScopeError.QueryTimeout -> 
                             "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout -> 
+                        is ExistsScopeError.LockTimeout -> 
                             "Lock timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure -> 
+                        is ExistsScopeError.ConnectionFailure -> 
                             "Connection failure: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption -> 
+                        is ExistsScopeError.IndexCorruption -> 
                             "Index corruption: scopeId=${existsError.scopeId}, details=${existsError.message}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError -> 
+                        is ExistsScopeError.PersistenceError -> 
                             "Persistence error: context=${existsError.context}, category=${existsError.category}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"}, message=${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
-                        is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError -> 
+                        is ExistsScopeError.UnknownError -> 
                             "Unknown error: ${existsError.message}, cause=${existsError.cause.message ?: existsError.cause::class.simpleName}"
                     }
                     
-                    ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation(
+                    CrossAggregateValidationError.AggregateConsistencyViolation(
                         operation = operation,
                         affectedAggregates = aggregateIds,
                         consistencyRule = consistencyRule,
@@ -213,7 +215,7 @@ class CrossAggregateValidationService(
                 .bind()
 
             if (!aggregateExists) {
-                raise(ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation(
+                raise(CrossAggregateValidationError.AggregateConsistencyViolation(
                     operation = operation,
                     affectedAggregates = aggregateIds,
                     consistencyRule = consistencyRule,
@@ -231,7 +233,7 @@ class CrossAggregateValidationService(
         ruleName: String,
         aggregateStates: Map<String, Any>,
         operation: String
-    ): Either<ApplicationValidationError.CrossAggregateValidationError, Unit> = either {
+    ): Either<CrossAggregateValidationError, Unit> = either {
         // Implementation would depend on specific distributed business rules
         // This is a placeholder for future saga pattern integration
         
@@ -242,7 +244,7 @@ class CrossAggregateValidationService(
                 // or check compensation transaction states
             }
             else -> {
-                raise(ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
+                raise(CrossAggregateValidationError.InvariantViolation(
                     invariantName = ruleName,
                     aggregateIds = aggregateStates.keys.toList(),
                     violationDescription = "Unknown distributed business rule: $ruleName"

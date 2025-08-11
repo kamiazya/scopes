@@ -1,8 +1,9 @@
 package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.DomainServiceError
-import io.github.kamiazya.scopes.domain.error.RepositoryError
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.error.ServiceOperationError
+import io.github.kamiazya.scopes.domain.error.RepositoryIntegrationError
+import io.github.kamiazya.scopes.domain.error.ExternalServiceError
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -19,88 +20,69 @@ class DomainServiceErrorTest : DescribeSpec({
         
         describe("ServiceOperationError") {
             it("should provide context for service unavailable errors") {
-                val error = DomainServiceError.ServiceOperationError.ServiceUnavailable(
+                val error = ServiceOperationError.ServiceUnavailable(
                     serviceName = "ValidationService",
-                    reason = "Service is temporarily down"
+                    reason = "Service is temporarily down",
+                    estimatedRecoveryTime = 30000L,
+                    alternativeService = "BackupValidationService"
                 )
                 
-                error.shouldBeInstanceOf<DomainServiceError.ServiceOperationError>()
+                error.shouldBeInstanceOf<ServiceOperationError>()
                 error.serviceName shouldBe "ValidationService"
                 error.reason shouldBe "Service is temporarily down"
+                error.estimatedRecoveryTime shouldBe 30000L
+                error.alternativeService shouldBe "BackupValidationService"
             }
             
-            it("should provide context for operation timeout errors") {
-                val error = DomainServiceError.ServiceOperationError.OperationTimeout(
+            it("should provide context for service timeout errors") {
+                val error = ServiceOperationError.ServiceTimeout(
+                    serviceName = "ValidationService",
                     operation = "validateScopeCreation",
-                    timeoutMs = 5000L
+                    timeoutMillis = 5000L,
+                    elapsedMillis = 5500L
                 )
                 
+                error.serviceName shouldBe "ValidationService"
                 error.operation shouldBe "validateScopeCreation"
-                error.timeoutMs shouldBe 5000L
-            }
-            
-            it("should provide context for configuration errors") {
-                val error = DomainServiceError.ServiceOperationError.ConfigurationError(
-                    configKey = "max_hierarchy_depth",
-                    expectedType = "Integer",
-                    actualValue = "unlimited"
-                )
-                
-                error.configKey shouldBe "max_hierarchy_depth"
-                error.expectedType shouldBe "Integer"
-                error.actualValue shouldBe "unlimited"
+                error.timeoutMillis shouldBe 5000L
+                error.elapsedMillis shouldBe 5500L
             }
         }
         
         describe("RepositoryIntegrationError") {
             it("should provide context for repository operation failures") {
-                val repositoryError = RepositoryError.ConnectionError(RuntimeException("Database unavailable"))
-                val error = DomainServiceError.RepositoryIntegrationError.OperationFailed(
+                val cause = RuntimeException("Database unavailable")
+                val error = RepositoryIntegrationError.RepositoryOperationFailure(
                     operation = "findHierarchyDepth",
-                    repositoryError = repositoryError
+                    repositoryName = "ScopeRepository",
+                    cause = cause,
+                    retryable = true
                 )
                 
-                error.shouldBeInstanceOf<DomainServiceError.RepositoryIntegrationError>()
+                error.shouldBeInstanceOf<RepositoryIntegrationError>()
                 error.operation shouldBe "findHierarchyDepth"
-                error.repositoryError shouldBe repositoryError
-            }
-            
-            it("should provide context for data consistency errors") {
-                val scopeId = ScopeId.generate()
-                val error = DomainServiceError.RepositoryIntegrationError.DataConsistencyError(
-                    scopeId = scopeId,
-                    inconsistencyType = "parent_child_mismatch",
-                    details = "Parent scope references non-existent child"
-                )
-                
-                error.scopeId shouldBe scopeId
-                error.inconsistencyType shouldBe "parent_child_mismatch"
-                error.details shouldBe "Parent scope references non-existent child"
+                error.repositoryName shouldBe "ScopeRepository"
+                error.cause shouldBe cause
+                error.retryable shouldBe true
             }
         }
         
         describe("ExternalServiceError") {
             it("should provide context for external service integration failures") {
-                val error = DomainServiceError.ExternalServiceError.IntegrationFailure(
+                val error = ExternalServiceError.IntegrationFailure(
                     serviceName = "TitleNormalizationService",
-                    operation = "normalize",
-                    errorCode = "NORM_001"
+                    endpoint = "/api/v1/normalize",
+                    statusCode = 503,
+                    errorMessage = "Service temporarily unavailable",
+                    retryAfter = 60
                 )
                 
-                error.shouldBeInstanceOf<DomainServiceError.ExternalServiceError>()
+                error.shouldBeInstanceOf<ExternalServiceError>()
                 error.serviceName shouldBe "TitleNormalizationService"
-                error.operation shouldBe "normalize"
-                error.errorCode shouldBe "NORM_001"
-            }
-            
-            it("should provide context for service authentication errors") {
-                val error = DomainServiceError.ExternalServiceError.AuthenticationFailure(
-                    serviceName = "ValidationAPIService",
-                    reason = "API key expired"
-                )
-                
-                error.serviceName shouldBe "ValidationAPIService"
-                error.reason shouldBe "API key expired"
+                error.endpoint shouldBe "/api/v1/normalize"
+                error.statusCode shouldBe 503
+                error.errorMessage shouldBe "Service temporarily unavailable"
+                error.retryAfter shouldBe 60
             }
         }
     }

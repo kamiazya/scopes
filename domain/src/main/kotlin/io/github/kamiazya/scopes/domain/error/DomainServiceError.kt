@@ -13,108 +13,84 @@ import kotlin.reflect.KClass
  * Based on Serena MCP research insights for functional domain modeling where
  * operational errors require different handling strategies than business rule violations.
  */
-sealed class DomainServiceError {
+sealed class DomainServiceError
 
+/**
+ * Service operation specific errors with detailed context.
+ */
+sealed class ServiceOperationError : DomainServiceError() {
+    
     /**
-     * Service operation specific errors with detailed context.
+     * Represents a service unavailable error.
+     * 
+     * @param serviceName The name of the service that is unavailable
+     * @param reason The reason for unavailability
+     * @param estimatedRecoveryTime Optional estimated recovery time in milliseconds
+     * @param alternativeService Optional alternative service that can be used
      */
-    sealed class ServiceOperationError : DomainServiceError() {
-        
-        /**
-         * Represents a service unavailable error.
-         * 
-         * @param serviceName The name of the service that is unavailable
-         * @param reason The reason why the service is unavailable
-         */
-        data class ServiceUnavailable(
-            val serviceName: String,
-            val reason: String
-        ) : ServiceOperationError()
-        
-        /**
-         * Represents an operation timeout error.
-         * 
-         * @param operation The operation that timed out
-         * @param timeoutMs The timeout duration in milliseconds
-         */
-        data class OperationTimeout(
-            val operation: String,
-            val timeoutMs: Long
-        ) : ServiceOperationError()
-        
-        /**
-         * Represents a configuration error.
-         * 
-         * @param configKey The configuration key that has an invalid value
-         * @param expectedType The expected type of the configuration value
-         * @param actualType The actual type of the provided value
-         * @param redactedPreview Optional redacted preview of the actual value (first 10 chars + "...")
-         */
-        data class ConfigurationError(
-            val configKey: String,
-            val expectedType: KClass<*>,
-            val actualType: KClass<*>,
-            val redactedPreview: String? = null
-        ) : ServiceOperationError()
-    }
+    data class ServiceUnavailable(
+        val serviceName: String,
+        val reason: String,
+        val estimatedRecoveryTime: Long? = null,
+        val alternativeService: String? = null
+    ) : ServiceOperationError()
+    
+    /**
+     * Represents a service timeout error.
+     * 
+     * @param serviceName The name of the service that timed out
+     * @param operation The operation that timed out
+     * @param timeoutMillis The timeout duration in milliseconds
+     * @param elapsedMillis The actual elapsed time before timeout
+     */
+    data class ServiceTimeout(
+        val serviceName: String,
+        val operation: String,
+        val timeoutMillis: Long,
+        val elapsedMillis: Long
+    ) : ServiceOperationError()
+}
 
+/**
+ * Repository integration specific errors with detailed context.
+ */
+sealed class RepositoryIntegrationError : DomainServiceError() {
+    
     /**
-     * Repository integration specific errors with detailed context.
+     * Represents a repository operation failure.
+     * 
+     * @param operation The repository operation that failed
+     * @param repositoryName The name of the repository
+     * @param cause The underlying cause of the failure
+     * @param retryable Whether the operation can be retried
      */
-    sealed class RepositoryIntegrationError : DomainServiceError() {
-        
-        /**
-         * Represents a repository operation failure.
-         * 
-         * @param operation The repository operation that failed
-         * @param repositoryError The underlying repository error
-         */
-        data class OperationFailed(
-            val operation: String,
-            val repositoryError: RepositoryError
-        ) : RepositoryIntegrationError()
-        
-        /**
-         * Represents a data consistency error from repository operations.
-         * 
-         * @param scopeId The scope ID where data inconsistency was detected
-         * @param inconsistencyType The type of data inconsistency
-         * @param details Additional details about the inconsistency
-         */
-        data class DataConsistencyError(
-            val scopeId: ScopeId,
-            val inconsistencyType: String,
-            val details: String
-        ) : RepositoryIntegrationError()
-    }
+    data class RepositoryOperationFailure(
+        val operation: String,
+        val repositoryName: String,
+        val cause: Throwable,
+        val retryable: Boolean = false
+    ) : RepositoryIntegrationError()
+}
 
+/**
+ * External service integration specific errors with detailed context.
+ */
+sealed class ExternalServiceError : DomainServiceError() {
+    
     /**
-     * External service integration specific errors with detailed context.
+     * Represents an external service integration failure.
+     * 
+     * @param serviceName The name of the external service
+     * @param endpoint The service endpoint that failed
+     * @param statusCode Optional HTTP status code if applicable
+     * @param errorMessage The error message from the external service
+     * @param retryAfter Optional retry-after duration in seconds
      */
-    sealed class ExternalServiceError : DomainServiceError() {
-        
-        /**
-         * Represents an external service integration failure.
-         * 
-         * @param serviceName The name of the external service
-         * @param operation The operation that failed on the external service
-         * @param errorCode The error code from the external service
-         */
-        data class IntegrationFailure(
-            val serviceName: String,
-            val operation: String,
-            val errorCode: String
-        ) : ExternalServiceError()
-        
-        /**
-         * Represents an external service authentication failure.
-         * 
-         * @param serviceName The name of the external service
-         * @param reason The reason for authentication failure
-         */
-        data class AuthenticationFailure(
-            val serviceName: String,
-            val reason: String
-        ) : ExternalServiceError()
-    }
+    data class IntegrationFailure(
+        val serviceName: String,
+        val endpoint: String,
+        val statusCode: Int? = null,
+        val errorMessage: String,
+        val retryAfter: Int? = null
+    ) : ExternalServiceError()
 }

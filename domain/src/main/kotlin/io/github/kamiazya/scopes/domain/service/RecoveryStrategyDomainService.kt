@@ -1,6 +1,10 @@
 package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
+import io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
 import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.RecoveryApproach
 
@@ -32,28 +36,28 @@ class RecoveryStrategyDomainService {
     fun determineRecoveryStrategy(error: DomainError): RecoveryStrategy {
         return when (error) {
             // Validation errors that need default values
-            is DomainError.ScopeValidationError.EmptyScopeTitle,
-            is DomainError.ScopeValidationError.ScopeTitleTooShort ->
+            is ScopeValidationError.EmptyScopeTitle,
+            is ScopeValidationError.ScopeTitleTooShort ->
                 RecoveryStrategy.DEFAULT_VALUE
 
             // Validation errors that need truncation
-            is DomainError.ScopeValidationError.ScopeTitleTooLong,
-            is DomainError.ScopeValidationError.ScopeDescriptionTooLong ->
+            is ScopeValidationError.ScopeTitleTooLong,
+            is ScopeValidationError.ScopeDescriptionTooLong ->
                 RecoveryStrategy.TRUNCATE
 
             // Validation errors that need format cleaning
-            is DomainError.ScopeValidationError.ScopeTitleContainsNewline,
-            is DomainError.ScopeValidationError.ScopeInvalidFormat ->
+            is ScopeValidationError.ScopeTitleContainsNewline,
+            is ScopeValidationError.ScopeInvalidFormat ->
                 RecoveryStrategy.CLEAN_FORMAT
 
             // Business rule violations that need variant generation
-            is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+            is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
                 RecoveryStrategy.GENERATE_VARIANTS
 
             // Business rule violations that need hierarchy restructuring
             // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
-            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
+            // is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryStrategy.RESTRUCTURE_HIERARCHY
 
             // Format errors, scope errors, and infrastructure errors are not handled by this service
@@ -76,29 +80,29 @@ class RecoveryStrategyDomainService {
     fun getStrategyApproach(error: DomainError): RecoveryApproach {
         return when (error) {
             // Simple errors where system can confidently suggest exact values
-            is DomainError.ScopeValidationError.EmptyScopeTitle,
-            is DomainError.ScopeValidationError.ScopeTitleTooShort ->
+            is ScopeValidationError.EmptyScopeTitle,
+            is ScopeValidationError.ScopeTitleTooShort ->
                 RecoveryApproach.AUTOMATIC_SUGGESTION
 
             // Moderate errors where system can suggest options but user choice is needed
-            is DomainError.ScopeValidationError.ScopeTitleTooLong,
-            is DomainError.ScopeValidationError.ScopeTitleContainsNewline,
-            is DomainError.ScopeValidationError.ScopeInvalidFormat,
-            is DomainError.ScopeValidationError.ScopeDescriptionTooLong,
-            is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+            is ScopeValidationError.ScopeTitleTooLong,
+            is ScopeValidationError.ScopeTitleContainsNewline,
+            is ScopeValidationError.ScopeInvalidFormat,
+            is ScopeValidationError.ScopeDescriptionTooLong,
+            is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
                 RecoveryApproach.USER_INPUT_REQUIRED
 
             // Complex errors where significant manual intervention is needed
             // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
-            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
+            // is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 RecoveryApproach.MANUAL_INTERVENTION
 
             // Scope errors require manual intervention
-            is DomainError.ScopeError -> RecoveryApproach.MANUAL_INTERVENTION
+            is ScopeError -> RecoveryApproach.MANUAL_INTERVENTION
 
             // Infrastructure errors require manual intervention
-            is DomainError.InfrastructureError -> RecoveryApproach.MANUAL_INTERVENTION
+            is DomainInfrastructureError -> RecoveryApproach.MANUAL_INTERVENTION
 
             // Format errors and other unhandled cases
             else -> throw IllegalArgumentException(

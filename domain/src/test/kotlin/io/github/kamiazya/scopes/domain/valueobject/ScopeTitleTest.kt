@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 
 /**
  * Tests for ScopeTitle focusing on business rules and user experience.
@@ -36,7 +37,7 @@ class ScopeTitleTest : StringSpec({
         val result = ScopeTitle.create("")
 
         // Then the system prevents this to ensure all work items are identifiable
-        result.shouldBeLeft() shouldBe DomainError.ScopeValidationError.EmptyScopeTitle
+        result.shouldBeLeft() shouldBe ScopeValidationError.EmptyScopeTitle
     }
 
     "system prevents whitespace-only titles that would appear empty in project lists" {
@@ -44,7 +45,7 @@ class ScopeTitleTest : StringSpec({
         val result = ScopeTitle.create("   ")
 
         // Then the system treats this as missing title to maintain clarity
-        result.shouldBeLeft() shouldBe DomainError.ScopeValidationError.EmptyScopeTitle
+        result.shouldBeLeft() shouldBe ScopeValidationError.EmptyScopeTitle
     }
 
     "system handles edge case of single space to prevent accidental empty titles" {
@@ -52,7 +53,7 @@ class ScopeTitleTest : StringSpec({
         val result = ScopeTitle.create(" ")
 
         // Then the system prevents this to ensure intentional title creation
-        result.shouldBeLeft() shouldBe DomainError.ScopeValidationError.EmptyScopeTitle
+        result.shouldBeLeft() shouldBe ScopeValidationError.EmptyScopeTitle
     }
 
     "system enforces title length limits to maintain readability in user interfaces" {
@@ -62,7 +63,7 @@ class ScopeTitleTest : StringSpec({
 
         // Then the system prevents this to ensure titles fit in lists, cards, and navigation
         val error = result.shouldBeLeft()
-        error shouldBe DomainError.ScopeValidationError.ScopeTitleTooLong(200, 201)
+        error shouldBe ScopeValidationError.ScopeTitleTooLong(200, 201)
     }
 
     "system prevents line breaks in titles to maintain single-line display format" {
@@ -70,7 +71,7 @@ class ScopeTitleTest : StringSpec({
         val result = ScopeTitle.create("Multi-line\nTitle")
 
         // Then the system prevents this to ensure titles display correctly in lists and UI
-        result.shouldBeLeft() shouldBe DomainError.ScopeValidationError.ScopeTitleContainsNewline
+        result.shouldBeLeft() shouldBe ScopeValidationError.ScopeTitleContainsNewline
     }
 
     "system prevents carriage returns in titles for consistent cross-platform behavior" {
@@ -78,7 +79,7 @@ class ScopeTitleTest : StringSpec({
         val result = ScopeTitle.create("Title\rwith carriage return")
 
         // Then the system normalizes this for consistent behavior across platforms
-        result.shouldBeLeft() shouldBe DomainError.ScopeValidationError.ScopeTitleContainsNewline
+        result.shouldBeLeft() shouldBe ScopeValidationError.ScopeTitleContainsNewline
     }
 
     "system allows maximum reasonable title length for detailed project identification" {

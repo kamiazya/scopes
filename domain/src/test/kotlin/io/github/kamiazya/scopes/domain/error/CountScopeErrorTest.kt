@@ -42,13 +42,13 @@ class CountScopeErrorTest : FunSpec({
             error.message shouldBe message
         }
         
-        test("should create PersistenceFailure error with parent ID, message and cause") {
+        test("should create PersistenceError error with parent ID, message and cause") {
             val parentId = ScopeId.generate()
             val message = "Storage system unavailable"
             val cause = RuntimeException("Disk full")
-            val error = CountScopeError.PersistenceFailure(parentId, message, cause)
+            val error = CountScopeError.PersistenceError(parentId, message, cause)
             
-            error.shouldBeInstanceOf<CountScopeError.PersistenceFailure>()
+            error.shouldBeInstanceOf<CountScopeError.PersistenceError>()
             error.parentId shouldBe parentId
             error.message shouldBe message
             error.cause shouldBe cause
@@ -77,7 +77,7 @@ class CountScopeErrorTest : FunSpec({
                 CountScopeError.AggregationTimeout(10000L),
                 CountScopeError.ConnectionError(parentId, retryable = true, cause = cause),
                 CountScopeError.InvalidParentId(parentId, "test"),
-                CountScopeError.PersistenceFailure(parentId, "test", cause),
+                CountScopeError.PersistenceError(parentId, "test", cause),
                 CountScopeError.UnknownError(parentId, "test", cause)
             )
             

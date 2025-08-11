@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.application.service.error.ApplicationValidationError
+import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
@@ -68,9 +69,9 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
-                error should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation>()
+                error should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
                 
-                val crossRefError = error as ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation
+                val crossRefError = error as CrossAggregateValidationError.CrossReferenceViolation
                 crossRefError.sourceAggregate shouldBe "children"
                 crossRefError.targetAggregate shouldBe parentId.value
                 crossRefError.referenceType shouldBe "parentId"
@@ -94,9 +95,9 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
-                error should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation>()
+                error should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
                 
-                val crossRefError = error as ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation
+                val crossRefError = error as CrossAggregateValidationError.CrossReferenceViolation
                 crossRefError.targetAggregate shouldBe nonExistingChildId.value
                 crossRefError.violation shouldBe "Child scope does not exist"
             }
@@ -149,9 +150,9 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
-                error should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.InvariantViolation>()
+                error should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
                 
-                val invariantError = error as ApplicationValidationError.CrossAggregateValidationError.InvariantViolation
+                val invariantError = error as CrossAggregateValidationError.InvariantViolation
                 invariantError.invariantName shouldBe "crossAggregateUniqueness"
                 invariantError.aggregateIds shouldBe contextIds.map { it.value }
                 invariantError.violationDescription shouldBe "Title '$title' conflicts across aggregates"
@@ -204,9 +205,9 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Then
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull()!!
-                error should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation>()
+                error should beInstanceOf<CrossAggregateValidationError.AggregateConsistencyViolation>()
                 
-                val consistencyError = error as ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation
+                val consistencyError = error as CrossAggregateValidationError.AggregateConsistencyViolation
                 consistencyError.operation shouldBe operation
                 consistencyError.affectedAggregates shouldBe testAggregateIds
                 consistencyError.consistencyRule shouldBe consistencyRule
@@ -241,8 +242,8 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val hierarchyError = hierarchyResult.leftOrNull()!!
                 val uniquenessError = uniquenessResult.leftOrNull()!!
                 
-                hierarchyError should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation>()
-                uniquenessError should beInstanceOf<ApplicationValidationError.CrossAggregateValidationError.InvariantViolation>()
+                hierarchyError should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
+                uniquenessError should beInstanceOf<CrossAggregateValidationError.InvariantViolation>()
             }
         }
     }

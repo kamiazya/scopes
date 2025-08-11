@@ -2,7 +2,12 @@ package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
+import io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
 import io.github.kamiazya.scopes.domain.error.RecoveryResult
 import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
@@ -65,27 +70,27 @@ class ErrorRecoverySuggestionService(
         context: SuggestionContext
     ): RecoveryResult {
         return when (error) {
-            is DomainError.ScopeValidationError.EmptyScopeTitle -> suggestEmptyTitleRecovery(error)
-            is DomainError.ScopeValidationError.ScopeTitleTooShort -> suggestTitleTooShortRecovery(error, context)
-            is DomainError.ScopeValidationError.ScopeTitleTooLong -> suggestTitleTooLongRecovery(error, context)
-            is DomainError.ScopeValidationError.ScopeTitleContainsNewline ->
+            is ScopeValidationError.EmptyScopeTitle -> suggestEmptyTitleRecovery(error)
+            is ScopeValidationError.ScopeTitleTooShort -> suggestTitleTooShortRecovery(error, context)
+            is ScopeValidationError.ScopeTitleTooLong -> suggestTitleTooLongRecovery(error, context)
+            is ScopeValidationError.ScopeTitleContainsNewline ->
                 suggestTitleContainsNewlineRecovery(error, context)
-            is DomainError.ScopeValidationError.ScopeDescriptionTooLong ->
+            is ScopeValidationError.ScopeDescriptionTooLong ->
                 suggestDescriptionTooLongRecovery(error, context)
-            is DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+            is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
                 suggestDuplicateTitleRecovery(error, context)
             // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
-            // is DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
-            is DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
+            // is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> suggestMaxDepthExceededRecovery(error)
+            is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 suggestMaxChildrenExceededRecovery(error)
-            is DomainError.ScopeValidationError.ScopeInvalidFormat -> handleNonRecoverable(error)
-            is DomainError.ScopeError.CircularReference -> handleNonRecoverable(error)
-            is DomainError.ScopeError.SelfParenting -> handleNonRecoverable(error)
-            is DomainError.ScopeError.ScopeNotFound -> handleNonRecoverable(error)
-            is DomainError.ScopeError.InvalidTitle -> handleNonRecoverable(error)
-            is DomainError.ScopeError.InvalidDescription -> handleNonRecoverable(error)
-            is DomainError.ScopeError.InvalidParent -> handleNonRecoverable(error)
-            is DomainError.InfrastructureError -> handleNonRecoverable(error)
+            is ScopeValidationError.ScopeInvalidFormat -> handleNonRecoverable(error)
+            is ScopeError.CircularReference -> handleNonRecoverable(error)
+            is ScopeError.SelfParenting -> handleNonRecoverable(error)
+            is ScopeError.ScopeNotFound -> handleNonRecoverable(error)
+            is ScopeError.InvalidTitle -> handleNonRecoverable(error)
+            is ScopeError.InvalidDescription -> handleNonRecoverable(error)
+            is ScopeError.InvalidParent -> handleNonRecoverable(error)
+            is DomainInfrastructureError -> handleNonRecoverable(error)
         }
     }
 
@@ -97,7 +102,7 @@ class ErrorRecoverySuggestionService(
         context: SuggestionContext = SuggestionContext.NoContext
     ): RecoveryResult {
         return when (error) {
-            is BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded ->
+            is ScopeBusinessRuleError.MaxDepthExceeded ->
                 suggestMaxDepthExceededRecovery(error)
             else -> RecoveryResult.NonRecoverable(
                 originalError = error as DomainError,
@@ -109,7 +114,7 @@ class ErrorRecoverySuggestionService(
     /**
      * Suggests recovery for empty title validation errors.
      */
-    private fun suggestEmptyTitleRecovery(error: DomainError.ScopeValidationError.EmptyScopeTitle): RecoveryResult {
+    private fun suggestEmptyTitleRecovery(error: ScopeValidationError.EmptyScopeTitle): RecoveryResult {
         return RecoveryResult.Suggestion(
             originalError = error,
             suggestedValues = listOf(configuration.titleConfig().generateDefaultTitle()),
@@ -119,7 +124,7 @@ class ErrorRecoverySuggestionService(
     }
 
     private fun suggestTitleTooShortRecovery(
-        error: DomainError.ScopeValidationError.ScopeTitleTooShort,
+        error: ScopeValidationError.ScopeTitleTooShort,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
@@ -171,7 +176,7 @@ class ErrorRecoverySuggestionService(
     }
 
     private fun suggestTitleTooLongRecovery(
-        error: DomainError.ScopeValidationError.ScopeTitleTooLong,
+        error: ScopeValidationError.ScopeTitleTooLong,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
@@ -227,7 +232,7 @@ class ErrorRecoverySuggestionService(
     }
 
     private fun suggestTitleContainsNewlineRecovery(
-        error: DomainError.ScopeValidationError.ScopeTitleContainsNewline,
+        error: ScopeValidationError.ScopeTitleContainsNewline,
         context: SuggestionContext
     ): RecoveryResult {
         val originalTitle = when (context) {
@@ -284,7 +289,7 @@ class ErrorRecoverySuggestionService(
     }
 
     private fun suggestDescriptionTooLongRecovery(
-        error: DomainError.ScopeValidationError.ScopeDescriptionTooLong,
+        error: ScopeValidationError.ScopeDescriptionTooLong,
         context: SuggestionContext
     ): RecoveryResult {
         val originalDescription = when (context) {
@@ -338,7 +343,7 @@ class ErrorRecoverySuggestionService(
     }
 
     private fun suggestDuplicateTitleRecovery(
-        error: DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle,
+        error: ScopeBusinessRuleViolation.ScopeDuplicateTitle,
         context: SuggestionContext
     ): RecoveryResult {
         val (originalTitle, parentId, allScopes) = when (context) {
@@ -367,12 +372,12 @@ class ErrorRecoverySuggestionService(
      * Suggests recovery for max depth exceeded business rule violations.
      */
     private fun suggestMaxDepthExceededRecovery(
-        error: BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
+        error: ScopeBusinessRuleError.MaxDepthExceeded
     ): RecoveryResult {
         val hierarchyConfig = configuration.hierarchyConfig()
 
         return RecoveryResult.Suggestion(
-            originalError = DomainError.InfrastructureError(
+            originalError = DomainInfrastructureError(
                 repositoryError = io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError(
                     "BusinessRuleServiceError.MaxDepthExceeded mapped to domain error for recovery suggestions",
                     RuntimeException("BusinessRuleServiceError mapping")
@@ -384,7 +389,7 @@ class ErrorRecoverySuggestionService(
                 "Restructure the hierarchy to reduce overall depth"
             ),
             strategy = RecoveryStrategy.RESTRUCTURE_HIERARCHY,
-            description = hierarchyConfig.getDepthGuidance(error.maxDepth, error.attemptedDepth)
+            description = hierarchyConfig.getDepthGuidance(error.maxDepth, error.actualDepth)
         )
     }
 
@@ -392,7 +397,7 @@ class ErrorRecoverySuggestionService(
      * Suggests recovery for max children exceeded business rule violations.
      */
     private fun suggestMaxChildrenExceededRecovery(
-        error: DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded
+        error: ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded
     ): RecoveryResult {
         val hierarchyConfig = configuration.hierarchyConfig()
 
@@ -413,11 +418,11 @@ class ErrorRecoverySuggestionService(
      */
     private fun handleNonRecoverable(error: DomainError): RecoveryResult {
         val reason = when (error) {
-            is DomainError.ScopeError.CircularReference ->
+            is ScopeError.CircularReference ->
                 "Circular references require manual resolution to prevent infinite loops"
-            is DomainError.ScopeError.SelfParenting ->
+            is ScopeError.SelfParenting ->
                 "Self-parenting violates fundamental hierarchy rules and cannot be automatically fixed"
-            is DomainError.ScopeError.ScopeNotFound ->
+            is ScopeError.ScopeNotFound ->
                 "Missing scope must be created or reference must be updated manually"
             else ->
                 "This error type requires manual intervention and cannot be automatically recovered"

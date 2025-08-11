@@ -59,9 +59,9 @@ class FindScopeErrorTest : FunSpec({
             val scopeId = ScopeId.generate()
             val message = "Storage system unavailable"
             val cause = RuntimeException("Disk full")
-            val error = FindScopeError.PersistenceFailure(scopeId, message, cause)
+            val error = FindScopeError.PersistenceError(scopeId, message, cause)
             
-            error.shouldBeInstanceOf<FindScopeError.PersistenceFailure>()
+            error.shouldBeInstanceOf<FindScopeError.PersistenceError>()
             error.scopeId shouldBe scopeId
             error.message shouldBe message
             error.cause shouldBe cause
@@ -92,7 +92,7 @@ class FindScopeErrorTest : FunSpec({
                 FindScopeError.CircularReference(scopeId, cyclePath),
                 FindScopeError.OrphanedScope(scopeId, "test"),
                 FindScopeError.ConnectionFailure(scopeId, "test", cause),
-                FindScopeError.PersistenceFailure(scopeId, "test", cause),
+                FindScopeError.PersistenceError(scopeId, "test", cause),
                 FindScopeError.UnknownError(scopeId, "test", cause)
             )
             

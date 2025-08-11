@@ -11,6 +11,12 @@ import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.error.ValidationResult
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
+import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 
 /**
  * Handler for CreateScope command.
@@ -117,8 +123,8 @@ class CreateScopeHandler(
         )
         
         when (validationResult) {
-            is io.github.kamiazya.scopes.domain.error.ValidationResult.Success -> Unit
-            is io.github.kamiazya.scopes.domain.error.ValidationResult.Failure -> {
+            is ValidationResult.Success -> Unit
+            is ValidationResult.Failure -> {
                 val firstError = validationResult.errors.first()
                 raise(CreateScopeError.ValidationFailed("validation", firstError.toString()))
             }

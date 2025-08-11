@@ -6,6 +6,8 @@ import io.github.kamiazya.scopes.domain.error.ExistsScopeError
 import io.github.kamiazya.scopes.domain.error.CountScopeError
 import io.github.kamiazya.scopes.domain.error.FindScopeError
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
@@ -86,7 +88,7 @@ sealed class CreateScopeError {
      * Title validation failed with service-specific error context.
      */
     data class TitleValidationFailed(
-        val titleError: ScopeValidationServiceError.TitleValidationError
+        val titleError: TitleValidationError
     ) : CreateScopeError()
 
     /**
@@ -100,6 +102,6 @@ sealed class CreateScopeError {
      * Duplicate title validation failed with service-specific error context.
      */
     data class DuplicateTitleFailed(
-        val uniquenessError: ScopeValidationServiceError.UniquenessValidationError
+        val uniquenessError: UniquenessValidationError
     ) : CreateScopeError()
 }

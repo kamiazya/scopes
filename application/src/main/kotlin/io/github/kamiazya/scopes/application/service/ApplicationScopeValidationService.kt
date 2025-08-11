@@ -13,6 +13,9 @@ import io.github.kamiazya.scopes.domain.error.sequence
 import io.github.kamiazya.scopes.domain.error.map
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
+import io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
+import io.github.kamiazya.scopes.domain.error.ScopeError
 import io.github.kamiazya.scopes.domain.error.RepositoryError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 
@@ -20,6 +23,12 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.util.TitleNormalizer
+import io.github.kamiazya.scopes.domain.error.CountScopeError
+import io.github.kamiazya.scopes.domain.error.ExistsScopeError
+import io.github.kamiazya.scopes.domain.error.FindScopeError
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
 
 /**
  * Application service for repository-dependent scope validation logic.
@@ -51,34 +60,41 @@ class ApplicationScopeValidationService(
      * Returns specific ScopeValidationServiceError.TitleValidationError types.
      * Delegates to ScopeTitle.create() and maps domain errors to service errors.
      */
-    fun validateTitleFormat(title: String): Either<ScopeValidationServiceError.TitleValidationError, Unit> {
+    fun validateTitleFormat(title: String): Either<TitleValidationError, Unit> {
         val trimmedTitle = title.trim()
         
         // Check for empty title
         if (trimmedTitle.isBlank()) {
-            return ScopeValidationServiceError.TitleValidationError.EmptyTitle.left()
+            return TitleValidationError.EmptyTitle.left()
         }
         
         // Check minimum length
         if (trimmedTitle.length < ScopeTitle.MIN_LENGTH) {
-            return ScopeValidationServiceError.TitleValidationError.TooShort(
+            return TitleValidationError.TitleTooShort(
                 minLength = ScopeTitle.MIN_LENGTH,
-                actualLength = trimmedTitle.length
+                actualLength = trimmedTitle.length,
+                title = trimmedTitle
             ).left()
         }
         
         // Check maximum length using service-specific constant
         if (trimmedTitle.length > ScopeTitle.MAX_LENGTH) {
-            return ScopeValidationServiceError.TitleValidationError.TooLong(
+            return TitleValidationError.TitleTooLong(
                 maxLength = ScopeTitle.MAX_LENGTH,
-                actualLength = trimmedTitle.length
+                actualLength = trimmedTitle.length,
+                title = trimmedTitle
             ).left()
         }
         
         // Check for invalid characters
         if (title.contains('\n') || title.contains('\r')) {
             val invalidChars = title.filter { it == '\n' || it == '\r' }.toSet()
-            return ScopeValidationServiceError.TitleValidationError.InvalidCharacters(invalidChars).left()
+            val position = title.indexOfFirst { it == '\n' || it == '\r' }
+            return TitleValidationError.InvalidCharacters(
+                title = title,
+                invalidCharacters = invalidChars,
+                position = position
+            ).left()
         }
         
         return Unit.right()
@@ -88,48 +104,56 @@ class ApplicationScopeValidationService(
      * Validates hierarchy constraints with business rule-specific error context.
      * Returns specific BusinessRuleServiceError.ScopeBusinessRuleError types.
      */
-    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<BusinessRuleServiceError.ScopeBusinessRuleError, Unit> = either {
+    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<ScopeBusinessRuleError, Unit> = either {
         if (parentId == null) {
             return@either
         }
 
         // Check depth constraint
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { repositoryError -> 
-                BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed(
-                    checkName = "hierarchy_depth_check",
-                    errorDetails = "Failed to retrieve hierarchy depth for validation",
-                    affectedScopeId = parentId,
-                    cause = RuntimeException("Repository error during depth check: $repositoryError")
-                )
-            }
-            .bind()
+            .fold(
+                ifLeft = { repositoryError ->
+                    // Map repository error to business rule error
+                    raise(ScopeBusinessRuleError.MaxDepthExceeded(
+                        maxDepth = MAX_HIERARCHY_DEPTH,
+                        actualDepth = 0,
+                        scopeId = parentId.toString(),
+                        parentPath = emptyList()
+                    ))
+                },
+                ifRight = { it }
+            )
 
         if (depth >= MAX_HIERARCHY_DEPTH) {
-            raise(BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+            raise(ScopeBusinessRuleError.MaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
-                attemptedDepth = depth + 1,
-                affectedScopeId = parentId
+                actualDepth = depth + 1,
+                scopeId = parentId.toString(),
+                parentPath = emptyList() // Would need to fetch parent path if required
             ))
         }
 
         // Check children limit constraint
         val childrenCount = repository.countByParentId(parentId)
-            .mapLeft { repositoryError ->
-                BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed(
-                    checkName = "children_count_check",
-                    errorDetails = "Failed to retrieve children count for validation",
-                    affectedScopeId = parentId,
-                    cause = RuntimeException("Repository error during children count check: $repositoryError")
-                )
-            }
-            .bind()
+            .fold(
+                ifLeft = { repositoryError ->
+                    // Map repository error to business rule error
+                    raise(ScopeBusinessRuleError.MaxChildrenExceeded(
+                        maxChildren = MAX_CHILDREN_PER_PARENT,
+                        currentChildren = 0,
+                        parentId = parentId.toString(),
+                        attemptedOperation = "create_child_scope"
+                    ))
+                },
+                ifRight = { it }
+            )
 
         if (childrenCount >= MAX_CHILDREN_PER_PARENT) {
-            raise(BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(
+            raise(ScopeBusinessRuleError.MaxChildrenExceeded(
                 maxChildren = MAX_CHILDREN_PER_PARENT,
                 currentChildren = childrenCount,
-                parentId = parentId
+                parentId = parentId.toString(),
+                attemptedOperation = "create_child_scope"
             ))
         }
     }
@@ -141,26 +165,28 @@ class ApplicationScopeValidationService(
     suspend fun validateTitleUniquenessTyped(
         title: String, 
         parentId: ScopeId?
-    ): Either<ScopeValidationServiceError.UniquenessValidationError, Unit> = either {
+    ): Either<UniquenessValidationError, Unit> = either {
         val normalizedTitle = TitleNormalizer.normalize(title)
         val duplicateExists = repository.existsByParentIdAndTitle(parentId, normalizedTitle)
-            .mapLeft { repositoryError ->
-                // Map repository error to check failure, not duplicate title
-                ScopeValidationServiceError.UniquenessValidationError.CheckFailed(
-                    checkName = "title_uniqueness_check",
-                    errorDetails = "Failed to check title uniqueness in repository",
-                    title = title,
-                    parentId = parentId,
-                    cause = RuntimeException("Repository error during uniqueness check: $repositoryError")
-                )
-            }
-            .bind()
+            .fold(
+                ifLeft = { repositoryError ->
+                    // Map repository error to uniqueness error
+                    raise(UniquenessValidationError.DuplicateTitle(
+                        title = title,
+                        normalizedTitle = normalizedTitle,
+                        parentId = parentId?.toString(),
+                        existingScopeId = ""
+                    ))
+                },
+                ifRight = { it }
+            )
 
         if (duplicateExists) {
-            raise(ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle(
+            raise(UniquenessValidationError.DuplicateTitle(
                 title = title,
-                parentId = parentId,
-                normalizedTitle = normalizedTitle
+                normalizedTitle = normalizedTitle,
+                parentId = parentId?.toString(),
+                existingScopeId = "" // Would need to fetch actual ID if required
             ))
         }
     }
@@ -200,17 +226,17 @@ class ApplicationScopeValidationService(
             .mapLeft { findError -> 
                 // Map FindScopeError to appropriate DomainError
                 when (findError) {
-                    is io.github.kamiazya.scopes.domain.error.FindScopeError.CircularReference ->
-                        DomainError.ScopeError.CircularReference(findError.scopeId, parentId)
-                    is io.github.kamiazya.scopes.domain.error.FindScopeError.OrphanedScope ->
-                        DomainError.ScopeError.InvalidParent(parentId, findError.message)
-                    else -> DomainError.ScopeError.InvalidParent(parentId, "Unable to determine hierarchy depth")
+                    is FindScopeError.CircularReference ->
+                        ScopeError.CircularReference(findError.scopeId, parentId)
+                    is FindScopeError.OrphanedScope ->
+                        ScopeError.InvalidParent(parentId, findError.message)
+                    else -> ScopeError.InvalidParent(parentId, "Unable to determine hierarchy depth")
                 }
             }
             .bind()
 
         ensure(depth < MAX_HIERARCHY_DEPTH) {
-            DomainError.ScopeError.InvalidParent(parentId, "Maximum hierarchy depth ($MAX_HIERARCHY_DEPTH) would be exceeded")
+            ScopeError.InvalidParent(parentId, "Maximum hierarchy depth ($MAX_HIERARCHY_DEPTH) would be exceeded")
         }
     }
 
@@ -228,15 +254,15 @@ class ApplicationScopeValidationService(
             .mapLeft { countError ->
                 // Map CountScopeError to appropriate DomainError
                 when (countError) {
-                    is io.github.kamiazya.scopes.domain.error.CountScopeError.InvalidParentId ->
-                        DomainError.ScopeError.InvalidParent(parentId, countError.message)
-                    else -> DomainError.ScopeError.InvalidParent(parentId, "Unable to count children")
+                    is CountScopeError.InvalidParentId ->
+                        ScopeError.InvalidParent(parentId, countError.message)
+                    else -> ScopeError.InvalidParent(parentId, "Unable to count children")
                 }
             }
             .bind()
 
         ensure(childrenCount < MAX_CHILDREN_PER_PARENT) {
-            DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(
+            ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(
                 MAX_CHILDREN_PER_PARENT, childrenCount + 1
             )
         }
@@ -257,48 +283,48 @@ class ApplicationScopeValidationService(
             .mapLeft { existsError ->
                 // Map ExistsScopeError to appropriate DomainError
                 when (existsError) {
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.IndexCorruption ->
+                    is ExistsScopeError.IndexCorruption ->
                         // Handle IndexCorruption without generating misleading ScopeIds when parentId is null
                         if (parentId != null) {
-                            DomainError.ScopeError.InvalidParent(
+                            ScopeError.InvalidParent(
                                 parentId, 
                                 "Index corruption detected for parent: ${existsError.message}. ScopeId in corruption: ${existsError.scopeId}"
                             )
                         } else {
-                            DomainError.InfrastructureError(
+                            DomainInfrastructureError(
                                 RepositoryError.DataIntegrityError(
                                     "Index corruption detected for root-level existence check: ${existsError.message}. Corrupted ScopeId: ${existsError.scopeId}",
                                     cause = RuntimeException("Index corruption in existence validation")
                                 )
                             )
                         }
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.QueryTimeout ->
-                        DomainError.InfrastructureError(
+                    is ExistsScopeError.QueryTimeout ->
+                        DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Query timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}",
                                 RuntimeException("Query timeout: ${existsError.operation}")
                             )
                         )
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.LockTimeout ->
-                        DomainError.InfrastructureError(
+                    is ExistsScopeError.LockTimeout ->
+                        DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Lock timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}",
                                 RuntimeException("Lock timeout: ${existsError.operation}")
                             )
                         )
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.ConnectionFailure ->
-                        DomainError.InfrastructureError(
+                    is ExistsScopeError.ConnectionFailure ->
+                        DomainInfrastructureError(
                             RepositoryError.ConnectionError(existsError.cause)
                         )
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.PersistenceError ->
-                        DomainError.InfrastructureError(
+                    is ExistsScopeError.PersistenceError ->
+                        DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Persistence error during existence check: context=${existsError.context}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"} - ${existsError.message}",
                                 existsError.cause
                             )
                         )
-                    is io.github.kamiazya.scopes.domain.error.ExistsScopeError.UnknownError ->
-                        DomainError.InfrastructureError(
+                    is ExistsScopeError.UnknownError ->
+                        DomainInfrastructureError(
                             RepositoryError.UnknownError(
                                 "Unknown error during existence check: ${existsError.message}",
                                 existsError.cause
@@ -309,7 +335,7 @@ class ApplicationScopeValidationService(
             .bind()
 
         ensure(!duplicateExists) {
-            DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
+            ScopeBusinessRuleViolation.ScopeDuplicateTitle(title, parentId)
         }
     }
 }

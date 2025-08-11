@@ -45,9 +45,9 @@ class SaveScopeErrorTest : FunSpec({
             val scopeId = ScopeId.generate()
             val message = "Database connection failed"
             val cause = RuntimeException("Connection timeout")
-            val error = SaveScopeError.PersistenceFailure(scopeId, message, cause)
+            val error = SaveScopeError.PersistenceError(scopeId, message, cause)
             
-            error.shouldBeInstanceOf<SaveScopeError.PersistenceFailure>()
+            error.shouldBeInstanceOf<SaveScopeError.PersistenceError>()
             error.scopeId shouldBe scopeId
             error.message shouldBe message
             error.cause shouldBe cause
@@ -76,7 +76,7 @@ class SaveScopeErrorTest : FunSpec({
                 SaveScopeError.DuplicateId(scopeId),
                 SaveScopeError.OptimisticLockFailure(scopeId, "test"),
                 SaveScopeError.ValidationFailure(scopeId, "test"),
-                SaveScopeError.PersistenceFailure(scopeId, "test", cause),
+                SaveScopeError.PersistenceError(scopeId, "test", cause),
                 SaveScopeError.UnknownError(scopeId, "test", cause)
             )
             

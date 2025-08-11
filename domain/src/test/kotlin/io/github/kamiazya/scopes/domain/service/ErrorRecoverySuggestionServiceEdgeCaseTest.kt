@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 import io.github.kamiazya.scopes.domain.error.RecoveryResult
 import io.github.kamiazya.scopes.domain.error.RecoveryStrategy
 import io.github.kamiazya.scopes.domain.error.ScopeRecoveryConfiguration
@@ -32,7 +33,7 @@ class ErrorRecoverySuggestionServiceEdgeCaseTest : DescribeSpec({
 
                 val service = ErrorRecoverySuggestionService(config)
 
-                val error = DomainError.ScopeValidationError.ScopeTitleTooLong(
+                val error = ScopeValidationError.ScopeTitleTooLong(
                     maxLength = 5,
                     actualLength = 60
                 )
@@ -65,7 +66,7 @@ class ErrorRecoverySuggestionServiceEdgeCaseTest : DescribeSpec({
 
                 val service = ErrorRecoverySuggestionService(config)
 
-                val error = DomainError.ScopeValidationError.ScopeTitleTooLong(
+                val error = ScopeValidationError.ScopeTitleTooLong(
                     maxLength = 5,
                     actualLength = 0
                 )

@@ -8,7 +8,10 @@ import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
@@ -31,7 +34,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
         val handler = CreateScopeHandler(mockRepository, mockValidationService)
 
         describe("title validation error translation") {
-            it("should translate ScopeValidationServiceError.TitleValidationError.EmptyTitle to ValidationFailed") {
+            it("should translate TitleValidationError.EmptyTitle to ValidationFailed") {
                 val command = CreateScope(
                     title = "",
                     description = "Test description",
@@ -40,16 +43,16 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 )
 
                 coEvery { mockValidationService.validateTitleFormat("") } returns 
-                    ScopeValidationServiceError.TitleValidationError.EmptyTitle.left()
+                    TitleValidationError.EmptyTitle.left()
                 
                 val result = handler.invoke(command)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.TitleValidationFailed>()
-                error.titleError.shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.EmptyTitle>()
+                error.titleError.shouldBeInstanceOf<TitleValidationError.EmptyTitle>()
             }
             
-            it("should translate ScopeValidationServiceError.TitleValidationError.TooShort to ValidationFailed") {
+            it("should translate TitleValidationError.TitleTooShort to ValidationFailed") {
                 val command = CreateScope(
                     title = "ab",
                     description = "Test description", 
@@ -58,20 +61,20 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 )
 
                 coEvery { mockValidationService.validateTitleFormat("ab") } returns 
-                    ScopeValidationServiceError.TitleValidationError.TooShort(3, 2).left()
+                    TitleValidationError.TitleTooShort(3, 2, "ab").left()
                 
                 val result = handler.invoke(command)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.TitleValidationFailed>()
-                val titleError = error.titleError.shouldBeInstanceOf<ScopeValidationServiceError.TitleValidationError.TooShort>()
+                val titleError = error.titleError.shouldBeInstanceOf<TitleValidationError.TitleTooShort>()
                 titleError.minLength shouldBe 3
                 titleError.actualLength shouldBe 2
             }
         }
 
         describe("business rule error translation") {
-            it("should translate BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded to HierarchyDepthExceeded") {
+            it("should translate ScopeBusinessRuleError.MaxDepthExceeded to HierarchyDepthExceeded") {
                 val parentId = ScopeId.generate()
                 val command = CreateScope(
                     title = "Valid Title",
@@ -83,19 +86,19 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 coEvery { mockRepository.existsById(parentId) } returns true.right()
                 coEvery { mockValidationService.validateTitleFormat("Valid Title") } returns Unit.right()
                 coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns 
-                    BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(10, 11, parentId).left()
+                    ScopeBusinessRuleError.MaxDepthExceeded(10, 11, parentId.value, listOf("path")).left()
                 
                 val result = handler.invoke(command)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.BusinessRuleViolationFailed>()
-                val businessError = error.businessRuleError.shouldBeInstanceOf<BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded>()
+                val businessError = error.businessRuleError.shouldBeInstanceOf<ScopeBusinessRuleError.MaxDepthExceeded>()
                 businessError.maxDepth shouldBe 10
-                businessError.attemptedDepth shouldBe 11
-                businessError.affectedScopeId shouldBe parentId
+                businessError.actualDepth shouldBe 11
+                businessError.scopeId shouldBe parentId.value
             }
             
-            it("should translate BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded to MaxChildrenExceeded") {
+            it("should translate ScopeBusinessRuleError.MaxChildrenExceeded to MaxChildrenExceeded") {
                 val parentId = ScopeId.generate()
                 val command = CreateScope(
                     title = "Valid Title",
@@ -107,22 +110,23 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 coEvery { mockRepository.existsById(parentId) } returns true.right()
                 coEvery { mockValidationService.validateTitleFormat("Valid Title") } returns Unit.right()
                 coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns 
-                    BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(100, 100, parentId).left()
+                    ScopeBusinessRuleError.MaxChildrenExceeded(100, 100, parentId.value, "create").left()
                 
                 val result = handler.invoke(command)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.BusinessRuleViolationFailed>()
-                val businessError = error.businessRuleError.shouldBeInstanceOf<BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded>()
+                val businessError = error.businessRuleError.shouldBeInstanceOf<ScopeBusinessRuleError.MaxChildrenExceeded>()
                 businessError.maxChildren shouldBe 100
                 businessError.currentChildren shouldBe 100
-                businessError.parentId shouldBe parentId
+                businessError.parentId shouldBe parentId.value
             }
         }
 
         describe("uniqueness validation error translation") {
-            it("should translate ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle to DuplicateTitleFailed") {
+            it("should translate UniquenessValidationError.DuplicateTitle to DuplicateTitleFailed") {
                 val parentId = ScopeId.generate()
+                val existingScopeId = ScopeId.generate()
                 val command = CreateScope(
                     title = "Duplicate Title",
                     description = "Test description",
@@ -134,19 +138,20 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 coEvery { mockValidationService.validateTitleFormat("Duplicate Title") } returns Unit.right()
                 coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns Unit.right()
                 coEvery { mockValidationService.validateTitleUniquenessTyped("Duplicate Title", parentId) } returns 
-                    ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle(
+                    UniquenessValidationError.DuplicateTitle(
                         "Duplicate Title", 
-                        parentId, 
-                        "duplicate title"
+                        "duplicate title",
+                        parentId.value, 
+                        existingScopeId.value
                     ).left()
                 
                 val result = handler.invoke(command)
                 
                 result.isLeft() shouldBe true
                 val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.DuplicateTitleFailed>()
-                val uniquenessError = error.uniquenessError.shouldBeInstanceOf<ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle>()
+                val uniquenessError = error.uniquenessError.shouldBeInstanceOf<UniquenessValidationError.DuplicateTitle>()
                 uniquenessError.title shouldBe "Duplicate Title"
-                uniquenessError.parentId shouldBe parentId
+                uniquenessError.parentId shouldBe parentId.value
                 uniquenessError.normalizedTitle shouldBe "duplicate title"
             }
         }

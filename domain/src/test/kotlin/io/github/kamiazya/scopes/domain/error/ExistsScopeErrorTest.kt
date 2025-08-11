@@ -22,7 +22,7 @@ class ExistsScopeErrorTest : FunSpec({
             )
             
             error.shouldBeInstanceOf<ExistsScopeError.QueryTimeout>()
-            error.scopeId shouldBe scopeId
+            (error.context as ExistsScopeError.ExistenceContext.ById).scopeId shouldBe scopeId
             error.timeoutMs shouldBe timeoutMs
         }
         
@@ -46,12 +46,17 @@ class ExistsScopeErrorTest : FunSpec({
             error.message shouldBe message
         }
         
-        test("should create PersistenceFailure error with message and cause") {
+        test("should create PersistenceError error with context, message and cause") {
+            val scopeId = ScopeId.generate()
             val message = "Storage system unavailable"
             val cause = RuntimeException("Disk full")
-            val error = ExistsScopeError.PersistenceFailure(message, cause)
+            val error = ExistsScopeError.PersistenceError(
+                context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
+                message = message,
+                cause = cause
+            )
             
-            error.shouldBeInstanceOf<ExistsScopeError.PersistenceFailure>()
+            error.shouldBeInstanceOf<ExistsScopeError.PersistenceError>()
             error.message shouldBe message
             error.cause shouldBe cause
         }
@@ -80,7 +85,11 @@ class ExistsScopeErrorTest : FunSpec({
                 ),
                 ExistsScopeError.ConnectionFailure("test", cause),
                 ExistsScopeError.IndexCorruption(scopeId, "test"),
-                ExistsScopeError.PersistenceFailure("test", cause),
+                ExistsScopeError.PersistenceError(
+                    context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
+                    message = "test",
+                    cause = cause
+                ),
                 ExistsScopeError.UnknownError("test", cause)
             )
             

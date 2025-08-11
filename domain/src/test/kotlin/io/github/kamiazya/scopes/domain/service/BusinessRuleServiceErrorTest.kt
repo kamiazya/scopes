@@ -1,7 +1,9 @@
 package io.github.kamiazya.scopes.domain.service
 
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.HierarchyBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.DataIntegrityBusinessRuleError
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -18,106 +20,90 @@ class BusinessRuleServiceErrorTest : DescribeSpec({
         
         describe("ScopeBusinessRuleError") {
             it("should provide context for maximum depth exceeded errors") {
-                val error = BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded(
+                val error = ScopeBusinessRuleError.MaxDepthExceeded(
                     maxDepth = 10,
-                    attemptedDepth = 11,
-                    affectedScopeId = ScopeId.generate()
+                    actualDepth = 11,
+                    scopeId = "test-scope-id",
+                    parentPath = listOf("root", "parent")
                 )
                 
-                error.shouldBeInstanceOf<BusinessRuleServiceError.ScopeBusinessRuleError>()
+                error.shouldBeInstanceOf<ScopeBusinessRuleError>()
                 error.maxDepth shouldBe 10
-                error.attemptedDepth shouldBe 11
+                error.actualDepth shouldBe 11
+                error.scopeId shouldBe "test-scope-id"
+                error.parentPath shouldBe listOf("root", "parent")
             }
             
             it("should provide context for maximum children exceeded errors") {
-                val parentId = ScopeId.generate()
-                val error = BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded(
+                val error = ScopeBusinessRuleError.MaxChildrenExceeded(
                     maxChildren = 100,
                     currentChildren = 100,
-                    parentId = parentId
+                    parentId = "parent-id",
+                    attemptedOperation = "create child scope"
                 )
                 
                 error.maxChildren shouldBe 100
                 error.currentChildren shouldBe 100
-                error.parentId shouldBe parentId
+                error.parentId shouldBe "parent-id"
+                error.attemptedOperation shouldBe "create child scope"
             }
             
-            it("should provide context for duplicate title errors with business context") {
-                val parentId = ScopeId.generate()
-                val error = BusinessRuleServiceError.ScopeBusinessRuleError.DuplicateTitleNotAllowed(
-                    title = "Duplicate Title",
-                    parentId = parentId,
-                    conflictContext = "Same parent scope"
+            it("should provide context for duplicate scope errors") {
+                val error = ScopeBusinessRuleError.DuplicateScope(
+                    duplicateTitle = "Duplicate Title",
+                    parentId = "parent-id",
+                    existingScopeId = "existing-scope-id",
+                    normalizedTitle = "duplicate title"
                 )
                 
-                error.title shouldBe "Duplicate Title"
-                error.parentId shouldBe parentId
-                error.conflictContext shouldBe "Same parent scope"
+                error.duplicateTitle shouldBe "Duplicate Title"
+                error.parentId shouldBe "parent-id"
+                error.existingScopeId shouldBe "existing-scope-id"
+                error.normalizedTitle shouldBe "duplicate title"
             }
         }
         
         describe("HierarchyBusinessRuleError") {
             it("should provide context for self-parenting errors") {
-                val scopeId = ScopeId.generate()
-                val error = BusinessRuleServiceError.HierarchyBusinessRuleError.SelfParentingNotAllowed(
-                    scopeId = scopeId
+                val error = HierarchyBusinessRuleError.SelfParenting(
+                    scopeId = "scope-id",
+                    operation = "set parent"
                 )
                 
-                error.shouldBeInstanceOf<BusinessRuleServiceError.HierarchyBusinessRuleError>()
-                error.scopeId shouldBe scopeId
+                error.shouldBeInstanceOf<HierarchyBusinessRuleError>()
+                error.scopeId shouldBe "scope-id"
+                error.operation shouldBe "set parent"
             }
             
-            it("should provide context for circular reference business rule errors") {
-                val scopeId = ScopeId.generate()
-                val parentId = ScopeId.generate()
-                val error = BusinessRuleServiceError.HierarchyBusinessRuleError.CircularReferenceNotAllowed(
-                    scopeId = scopeId,
-                    parentId = parentId,
-                    circularPath = listOf(scopeId, parentId, scopeId)
+            it("should provide context for circular reference errors") {
+                val error = HierarchyBusinessRuleError.CircularReference(
+                    scopeId = "scope-id",
+                    parentId = "parent-id",
+                    cyclePath = listOf("scope-id", "parent-id", "scope-id")
                 )
                 
-                error.scopeId shouldBe scopeId
-                error.parentId shouldBe parentId
-                error.circularPath shouldBe listOf(scopeId, parentId, scopeId)
-            }
-            
-            it("should provide context for orphaned scope creation prevention") {
-                val parentId = ScopeId.generate()
-                val error = BusinessRuleServiceError.HierarchyBusinessRuleError.OrphanedScopeCreationNotAllowed(
-                    parentId = parentId,
-                    reason = "Parent scope does not exist"
-                )
-                
-                error.parentId shouldBe parentId
-                error.reason shouldBe "Parent scope does not exist"
+                error.scopeId shouldBe "scope-id"
+                error.parentId shouldBe "parent-id"
+                error.cyclePath shouldBe listOf("scope-id", "parent-id", "scope-id")
             }
         }
         
         describe("DataIntegrityBusinessRuleError") {
             it("should provide context for consistency check failures") {
-                val scopeId = ScopeId.generate()
-                val error = BusinessRuleServiceError.DataIntegrityBusinessRuleError.ConsistencyCheckFailed(
-                    scopeId = scopeId,
-                    failedChecks = listOf("parent_child_consistency", "hierarchy_depth_consistency")
+                val error = DataIntegrityBusinessRuleError.ConsistencyCheckFailure(
+                    scopeId = "scope-id",
+                    checkType = "hierarchy consistency",
+                    expectedState = "valid hierarchy",
+                    actualState = "invalid hierarchy",
+                    affectedFields = listOf("parentId", "children")
                 )
                 
-                error.shouldBeInstanceOf<BusinessRuleServiceError.DataIntegrityBusinessRuleError>()
-                error.scopeId shouldBe scopeId
-                error.failedChecks shouldBe listOf("parent_child_consistency", "hierarchy_depth_consistency")
-            }
-            
-            it("should provide context for referential integrity errors") {
-                val scopeId = ScopeId.generate()
-                val referencedId = ScopeId.generate()
-                val error = BusinessRuleServiceError.DataIntegrityBusinessRuleError.ReferentialIntegrityViolation(
-                    scopeId = scopeId,
-                    referencedId = referencedId,
-                    referenceType = "parent_id"
-                )
-                
-                error.scopeId shouldBe scopeId
-                error.referencedId shouldBe referencedId
-                error.referenceType shouldBe "parent_id"
+                error.shouldBeInstanceOf<DataIntegrityBusinessRuleError>()
+                error.scopeId shouldBe "scope-id"
+                error.checkType shouldBe "hierarchy consistency"
+                error.expectedState shouldBe "valid hierarchy"
+                error.actualState shouldBe "invalid hierarchy"
+                error.affectedFields shouldBe listOf("parentId", "children")
             }
         }
     }

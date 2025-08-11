@@ -19,173 +19,152 @@ class ApplicationValidationErrorTest : DescribeSpec({
 
         describe("InputValidationError") {
             it("should create InvalidFieldFormat with field details") {
-                val error = ApplicationValidationError.InputValidationError.InvalidFieldFormat(
-                    field = "email",
-                    value = "invalid-email",
+                val error = InputValidationError.InvalidFieldFormat(
+                    fieldName = "email",
                     expectedFormat = "valid email format",
+                    actualValue = "invalid-email",
                     validationRule = "RFC 5322 compliant"
                 )
 
-                error.field shouldBe "email"
-                error.value shouldBe "invalid-email"
+                error.fieldName shouldBe "email"
+                error.actualValue shouldBe "invalid-email"
                 error.expectedFormat shouldBe "valid email format"
                 error.validationRule shouldBe "RFC 5322 compliant"
             }
-
-            it("should create MissingRequiredField") {
-                val error = ApplicationValidationError.InputValidationError.MissingRequiredField("title")
-                
-                error.field shouldBe "title"
-            }
-
-            it("should create FieldConstraintViolation with specific constraints") {
-                val error = ApplicationValidationError.InputValidationError.FieldConstraintViolation(
-                    field = "description",
-                    constraint = "maxLength",
-                    actualValue = "1000",
-                    expectedValue = "500"
+            
+            it("should create MissingRequiredField with context") {
+                val error = InputValidationError.MissingRequiredField(
+                    fieldName = "title",
+                    entityType = "Scope"
                 )
 
-                error.field shouldBe "description"
-                error.constraint shouldBe "maxLength"
-                error.actualValue shouldBe "1000"
-                error.expectedValue shouldBe "500"
+                error.fieldName shouldBe "title"
+                error.entityType shouldBe "Scope"
+            }
+            
+            it("should create ValueOutOfRange with bounds") {
+                val error = InputValidationError.ValueOutOfRange(
+                    fieldName = "priority",
+                    minValue = 1,
+                    maxValue = 10,
+                    actualValue = 15
+                )
+
+                error.fieldName shouldBe "priority"
+                error.minValue shouldBe 1
+                error.maxValue shouldBe 10
+                error.actualValue shouldBe 15
             }
         }
 
         describe("CrossAggregateValidationError") {
             it("should create AggregateConsistencyViolation") {
-                val aggregateIds = setOf("scope-1", "scope-2")
-                val error = ApplicationValidationError.CrossAggregateValidationError.AggregateConsistencyViolation(
-                    operation = "createChildScope",
-                    affectedAggregates = aggregateIds,
-                    consistencyRule = "parent-child-hierarchy",
-                    violationDetails = "Parent scope is archived"
+                val error = CrossAggregateValidationError.AggregateConsistencyViolation(
+                    operation = "create",
+                    affectedAggregates = setOf("Scope", "Project"),
+                    consistencyRule = "unique_title_per_parent",
+                    violationDetails = "Title already exists in parent scope"
                 )
 
-                error.operation shouldBe "createChildScope"
-                error.affectedAggregates shouldBe aggregateIds
-                error.consistencyRule shouldBe "parent-child-hierarchy"
-                error.violationDetails shouldBe "Parent scope is archived"
+                error.operation shouldBe "create"
+                error.consistencyRule shouldBe "unique_title_per_parent"
+                error.violationDetails shouldBe "Title already exists in parent scope"
             }
-
+            
             it("should create CrossReferenceViolation") {
-                val error = ApplicationValidationError.CrossAggregateValidationError.CrossReferenceViolation(
-                    sourceAggregate = "scope-1",
-                    targetAggregate = "scope-2", 
-                    referenceType = "parentId",
-                    violation = "target does not exist"
+                val error = CrossAggregateValidationError.CrossReferenceViolation(
+                    sourceAggregate = "Scope",
+                    targetAggregate = "Project", 
+                    referenceType = "parent",
+                    violation = "Parent does not exist"
                 )
 
-                error.sourceAggregate shouldBe "scope-1"
-                error.targetAggregate shouldBe "scope-2"
-                error.referenceType shouldBe "parentId"
-                error.violation shouldBe "target does not exist"
+                error.sourceAggregate shouldBe "Scope"
+                error.targetAggregate shouldBe "Project"
+                error.referenceType shouldBe "parent"
+                error.violation shouldBe "Parent does not exist"
             }
-
-            it("should create InvariantViolation across aggregates") {
-                val error = ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
-                    invariantName = "uniqueTitleWithinParent",
-                    aggregateIds = listOf("parent-1", "child-1", "child-2"),
-                    violationDescription = "Duplicate titles found within parent scope"
+            
+            it("should create InvariantViolation") {
+                val error = CrossAggregateValidationError.InvariantViolation(
+                    invariantName = "scope_hierarchy_limit",
+                    aggregateIds = listOf("scope1", "scope2"),
+                    violationDescription = "Maximum hierarchy depth exceeded"
                 )
 
-                error.invariantName shouldBe "uniqueTitleWithinParent"
-                error.aggregateIds shouldBe listOf("parent-1", "child-1", "child-2")
-                error.violationDescription shouldBe "Duplicate titles found within parent scope"
+                error.invariantName shouldBe "scope_hierarchy_limit"
+                error.aggregateIds shouldBe listOf("scope1", "scope2")
+                error.violationDescription shouldBe "Maximum hierarchy depth exceeded"
             }
         }
 
         describe("BusinessRuleValidationError") {
             it("should create PreconditionViolation") {
-                val error = ApplicationValidationError.BusinessRuleValidationError.PreconditionViolation(
-                    operation = "archiveScope",
-                    precondition = "noActiveChildren",
-                    actualCondition = "scope has 3 active children",
-                    affectedEntityId = "scope-123"
+                val error = BusinessRuleValidationError.PreconditionViolation(
+                    operation = "delete_scope",
+                    precondition = "no_children",
+                    currentState = "has_children",
+                    requiredState = "no_children"
                 )
 
-                error.operation shouldBe "archiveScope"
-                error.precondition shouldBe "noActiveChildren"
-                error.actualCondition shouldBe "scope has 3 active children"
-                error.affectedEntityId shouldBe "scope-123"
+                error.operation shouldBe "delete_scope"
+                error.precondition shouldBe "no_children"
+                error.currentState shouldBe "has_children"
+                error.requiredState shouldBe "no_children"
             }
-
+            
             it("should create PostconditionViolation") {
-                val error = ApplicationValidationError.BusinessRuleValidationError.PostconditionViolation(
-                    operation = "updateScope",
-                    postcondition = "parentChildRelationshipMaintained",
-                    actualResult = "orphaned child scopes detected",
-                    affectedEntityIds = listOf("child-1", "child-2")
+                val error = BusinessRuleValidationError.PostconditionViolation(
+                    operation = "create_scope",
+                    postcondition = "parent_updated",
+                    expectedOutcome = "parent_child_count_incremented",
+                    actualOutcome = "parent_child_count_unchanged"
                 )
 
-                error.operation shouldBe "updateScope"
-                error.postcondition shouldBe "parentChildRelationshipMaintained"
-                error.actualResult shouldBe "orphaned child scopes detected"
-                error.affectedEntityIds shouldBe listOf("child-1", "child-2")
+                error.operation shouldBe "create_scope"
+                error.postcondition shouldBe "parent_updated"
+                error.expectedOutcome shouldBe "parent_child_count_incremented"
+                error.actualOutcome shouldBe "parent_child_count_unchanged"
             }
         }
 
         describe("AsyncValidationError") {
             it("should create ValidationTimeout") {
-                val error = ApplicationValidationError.AsyncValidationError.ValidationTimeout(
-                    validationType = "uniquenessCheck",
-                    timeoutMs = 5000,
-                    elapsedMs = 5001
+                val error = AsyncValidationError.ValidationTimeout(
+                    operation = "cross_aggregate_check",
+                    timeoutMillis = 5000L,
+                    validationPhase = "consistency_check"
                 )
 
-                error.validationType shouldBe "uniquenessCheck"
-                error.timeoutMs shouldBe 5000
-                error.elapsedMs shouldBe 5001
+                error.operation shouldBe "cross_aggregate_check"
+                error.timeoutMillis shouldBe 5000L
+                error.validationPhase shouldBe "consistency_check"
             }
-
-            it("should create ConcurrentModificationDetected") {
-                val error = ApplicationValidationError.AsyncValidationError.ConcurrentModificationDetected(
-                    entityId = "scope-123",
-                    expectedVersion = 1,
-                    actualVersion = 2,
-                    operation = "updateTitle"
+            
+            it("should create ConcurrentValidationConflict") {
+                val error = AsyncValidationError.ConcurrentValidationConflict(
+                    resource = "scope_123",
+                    conflictingOperations = listOf("update", "delete"),
+                    timestamp = 1234567890L
                 )
 
-                error.entityId shouldBe "scope-123"
-                error.expectedVersion shouldBe 1
-                error.actualVersion shouldBe 2
-                error.operation shouldBe "updateTitle"
-            }
-
-            it("should create ExternalServiceValidationFailure") {
-                val cause = RuntimeException("Connection timeout")
-                val error = ApplicationValidationError.AsyncValidationError.ExternalServiceValidationFailure(
-                    serviceName = "titleValidationService",
-                    validationType = "profanityCheck",
-                    cause = cause,
-                    retryAttempts = 3
-                )
-
-                error.serviceName shouldBe "titleValidationService"
-                error.validationType shouldBe "profanityCheck"
-                error.cause shouldBe cause
-                error.retryAttempts shouldBe 3
+                error.resource shouldBe "scope_123"
+                error.conflictingOperations shouldBe listOf("update", "delete")
+                error.timestamp shouldBe 1234567890L
             }
         }
 
-        describe("error hierarchy") {
-            it("all errors should extend ApplicationValidationError") {
-                val inputError = ApplicationValidationError.InputValidationError.MissingRequiredField("field")
-                val crossAggregateError = ApplicationValidationError.CrossAggregateValidationError.InvariantViolation(
-                    "invariant", listOf("id1"), "violation"
-                )
-                val businessRuleError = ApplicationValidationError.BusinessRuleValidationError.PreconditionViolation(
-                    "operation", "precondition", "actual", "id"
-                )
-                val asyncError = ApplicationValidationError.AsyncValidationError.ValidationTimeout(
-                    "type", 1000, 1001
-                )
+        describe("error type hierarchy verification") {
+            it("should have correct inheritance") {
+                val inputError: ApplicationValidationError = InputValidationError.MissingRequiredField("field", "Type")
+                val crossError: ApplicationValidationError = CrossAggregateValidationError.InvariantViolation("inv", listOf("id"), "desc")
+                val businessError: ApplicationValidationError = BusinessRuleValidationError.PreconditionViolation("op", "pre", "curr", "req")
+                val asyncError: ApplicationValidationError = AsyncValidationError.ValidationTimeout("op", 1000L, "phase")
 
-                inputError should beInstanceOf<ApplicationValidationError>()
-                crossAggregateError should beInstanceOf<ApplicationValidationError>()
-                businessRuleError should beInstanceOf<ApplicationValidationError>()
-                asyncError should beInstanceOf<ApplicationValidationError>()
+                inputError should beInstanceOf<InputValidationError>()
+                crossError should beInstanceOf<CrossAggregateValidationError>()
+                businessError should beInstanceOf<BusinessRuleValidationError>()
+                asyncError should beInstanceOf<AsyncValidationError>()
             }
         }
     }

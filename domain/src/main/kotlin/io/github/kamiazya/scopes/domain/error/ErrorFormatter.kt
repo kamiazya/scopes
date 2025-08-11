@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.domain.error
 
 import arrow.core.NonEmptyList
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
 
 /**
  * Port interface for error formatting operations.
@@ -22,12 +24,12 @@ interface ErrorFormatter {
     /**
      * Formats validation error with specific field context.
      */
-    fun getValidationErrorMessage(error: DomainError.ScopeValidationError): String
+    fun getValidationErrorMessage(error: ScopeValidationError): String
 
     /**
      * Formats business rule violation with business context.
      */
-    fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String
+    fun getBusinessRuleViolationMessage(error: ScopeBusinessRuleViolation): String
 
     /**
      * Formats repository error with technical details.

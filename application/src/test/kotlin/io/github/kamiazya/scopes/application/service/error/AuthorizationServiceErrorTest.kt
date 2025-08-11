@@ -22,94 +22,66 @@ class AuthorizationServiceErrorTest : DescribeSpec({
     describe("AuthorizationServiceError hierarchy") {
 
         describe("PermissionDeniedError") {
-            it("should create PermissionDenied with specific permission details") {
-                val error = AuthorizationServiceError.PermissionDeniedError.PermissionDenied(
-                    userId = "user-123",
-                    operation = "scope:delete",
-                    resourceId = "scope-456",
-                    requiredPermission = "SCOPE_DELETE",
-                    reason = "User does not have delete permission"
+            it("should create PermissionDenied") {
+                val error = PermissionDeniedError.PermissionDenied(
+                    resource = "scope-123",
+                    action = "delete",
+                    userId = "user-456",
+                    requiredPermissions = listOf("SCOPE_DELETE"),
+                    actualPermissions = listOf("SCOPE_READ")
                 )
 
-                error.userId shouldBe "user-123"
-                error.operation shouldBe "scope:delete"
-                error.resourceId shouldBe "scope-456"
-                error.requiredPermission shouldBe "SCOPE_DELETE"
-                error.reason shouldBe "User does not have delete permission"
+                error.resource shouldBe "scope-123"
+                error.action shouldBe "delete"
+                error.userId shouldBe "user-456"
+                error.requiredPermissions shouldBe listOf("SCOPE_DELETE")
+                error.actualPermissions shouldBe listOf("SCOPE_READ")
             }
 
-            it("should create InsufficientRoleLevel") {
-                val error = AuthorizationServiceError.PermissionDeniedError.InsufficientRoleLevel(
-                    userId = "user-123",
-                    currentRole = "MEMBER",
-                    requiredRole = "ADMIN",
+            it("should create InsufficientPermissions") {
+                val error = PermissionDeniedError.InsufficientPermissions(
                     operation = "scope:create",
-                    resourceContext = "project:enterprise"
+                    requiredRole = "ADMIN",
+                    userRoles = listOf("MEMBER"),
+                    additionalContext = mapOf("project" to "test-project")
                 )
 
-                error.userId shouldBe "user-123"
-                error.currentRole shouldBe "MEMBER"
-                error.requiredRole shouldBe "ADMIN"
                 error.operation shouldBe "scope:create"
-                error.resourceContext shouldBe "project:enterprise"
-            }
-
-            it("should create ResourceAccessDenied") {
-                val error = AuthorizationServiceError.PermissionDeniedError.ResourceAccessDenied(
-                    userId = "user-123",
-                    resourceId = "scope-456",
-                    resourceType = "Scope",
-                    accessType = "WRITE",
-                    ownershipRequired = true
-                )
-
-                error.userId shouldBe "user-123"
-                error.resourceId shouldBe "scope-456"
-                error.resourceType shouldBe "Scope"
-                error.accessType shouldBe "WRITE"
-                error.ownershipRequired shouldBe true
+                error.requiredRole shouldBe "ADMIN"
+                error.userRoles shouldBe listOf("MEMBER")
+                error.additionalContext shouldBe mapOf("project" to "test-project")
             }
         }
 
         describe("AuthenticationError") {
             it("should create UserNotAuthenticated") {
-                val error = AuthorizationServiceError.AuthenticationError.UserNotAuthenticated(
-                    operation = "scope:view",
-                    endpoint = "/api/scopes/123"
+                val error = AuthenticationError.UserNotAuthenticated(
+                    requestedResource = "scope:view",
+                    authenticationMethod = "JWT"
                 )
 
-                error.operation shouldBe "scope:view"
-                error.endpoint shouldBe "/api/scopes/123"
+                error.requestedResource shouldBe "scope:view"
+                error.authenticationMethod shouldBe "JWT"
             }
 
-            it("should create TokenExpired") {
-                val error = AuthorizationServiceError.AuthenticationError.TokenExpired(
-                    userId = "user-123",
+            it("should create InvalidToken") {
+                val error = AuthenticationError.InvalidToken(
                     tokenType = "ACCESS",
-                    expiredAt = 1640995200000L,
-                    currentTime = 1640995300000L
+                    reason = "Token expired",
+                    expirationTime = 1640995200000L,
+                    refreshable = true
                 )
 
-                error.userId shouldBe "user-123"
                 error.tokenType shouldBe "ACCESS"
-                error.expiredAt shouldBe 1640995200000L
-                error.currentTime shouldBe 1640995300000L
-            }
-
-            it("should create InvalidCredentials") {
-                val error = AuthorizationServiceError.AuthenticationError.InvalidCredentials(
-                    credentialType = "API_KEY",
-                    reason = "Invalid signature"
-                )
-
-                error.credentialType shouldBe "API_KEY"
-                error.reason shouldBe "Invalid signature"
+                error.reason shouldBe "Token expired"
+                error.expirationTime shouldBe 1640995200000L
+                error.refreshable shouldBe true
             }
         }
 
-        describe("ContextError") {
+        describe("AuthorizationContextError") {
             it("should create ResourceNotFound") {
-                val error = AuthorizationServiceError.ContextError.ResourceNotFound(
+                val error = AuthorizationContextError.ResourceNotFound(
                     resourceId = "scope-123",
                     resourceType = "Scope",
                     operation = "scope:view"
@@ -121,85 +93,77 @@ class AuthorizationServiceErrorTest : DescribeSpec({
             }
 
             it("should create InvalidContext") {
-                val error = AuthorizationServiceError.ContextError.InvalidContext(
+                val error = AuthorizationContextError.InvalidContext(
                     contextType = "PROJECT",
-                    contextId = "project-456",
-                    reason = "Project is archived",
-                    operation = "scope:create"
+                    missingFields = listOf("projectId"),
+                    invalidFields = mapOf("status" to "archived"),
+                    requiredContext = "Active project context"
                 )
 
                 error.contextType shouldBe "PROJECT"
-                error.contextId shouldBe "project-456"
-                error.reason shouldBe "Project is archived"
-                error.operation shouldBe "scope:create"
-            }
-
-            it("should create AmbiguousContext") {
-                val error = AuthorizationServiceError.ContextError.AmbiguousContext(
-                    possibleContexts = listOf("project-1", "project-2"),
-                    operation = "scope:create",
-                    reason = "Multiple valid contexts found"
-                )
-
-                error.possibleContexts shouldBe listOf("project-1", "project-2")
-                error.operation shouldBe "scope:create"
-                error.reason shouldBe "Multiple valid contexts found"
+                error.missingFields shouldBe listOf("projectId")
+                error.invalidFields shouldBe mapOf("status" to "archived")
+                error.requiredContext shouldBe "Active project context"
             }
         }
 
         describe("PolicyEvaluationError") {
             it("should create PolicyViolation") {
-                val error = AuthorizationServiceError.PolicyEvaluationError.PolicyViolation(
+                val error = PolicyEvaluationError.PolicyViolation(
+                    policyId = "policy-123",
                     policyName = "hierarchyDepthPolicy",
-                    policyVersion = "v1.2.0",
-                    violationDetails = "Maximum depth of 10 exceeded",
-                    operation = "scope:create",
-                    resourceId = "scope-deep-nested"
+                    evaluationResult = "DENY",
+                    violatedRules = listOf("max_depth_exceeded"),
+                    context = mapOf("depth" to 15)
                 )
 
+                error.policyId shouldBe "policy-123"
                 error.policyName shouldBe "hierarchyDepthPolicy"
-                error.policyVersion shouldBe "v1.2.0"
-                error.violationDetails shouldBe "Maximum depth of 10 exceeded"
-                error.operation shouldBe "scope:create"
-                error.resourceId shouldBe "scope-deep-nested"
+                error.evaluationResult shouldBe "DENY"
+                error.violatedRules shouldBe listOf("max_depth_exceeded")
+                error.context shouldBe mapOf("depth" to 15)
             }
 
-            it("should create PolicyEvaluationTimeout") {
-                val error = AuthorizationServiceError.PolicyEvaluationError.PolicyEvaluationTimeout(
-                    policyName = "complexBusinessRulePolicy",
-                    timeoutMs = 5000,
-                    elapsedMs = 5100,
-                    operation = "scope:update"
+            it("should create EvaluationFailure") {
+                val cause = RuntimeException("Policy engine error")
+                val error = PolicyEvaluationError.EvaluationFailure(
+                    policyId = "policy-456",
+                    reason = "Policy engine unavailable",
+                    cause = cause,
+                    fallbackBehavior = "DENY_ALL"
                 )
 
-                error.policyName shouldBe "complexBusinessRulePolicy"
-                error.timeoutMs shouldBe 5000
-                error.elapsedMs shouldBe 5100
-                error.operation shouldBe "scope:update"
-            }
-
-            it("should create PolicyNotFound") {
-                val error = AuthorizationServiceError.PolicyEvaluationError.PolicyNotFound(
-                    policyName = "nonExistentPolicy",
-                    operation = "scope:delete",
-                    availablePolicies = listOf("scopeHierarchyPolicy", "scopeOwnershipPolicy")
-                )
-
-                error.policyName shouldBe "nonExistentPolicy"
-                error.operation shouldBe "scope:delete"
-                error.availablePolicies shouldBe listOf("scopeHierarchyPolicy", "scopeOwnershipPolicy")
+                error.policyId shouldBe "policy-456"
+                error.reason shouldBe "Policy engine unavailable"
+                error.cause shouldBe cause
+                error.fallbackBehavior shouldBe "DENY_ALL"
             }
         }
 
         describe("error hierarchy") {
             it("all errors should extend AuthorizationServiceError") {
-                val permissionError = AuthorizationServiceError.PermissionDeniedError.PermissionDenied(
-                    "user", "op", "resource", "permission", "reason"
+                val permissionError = PermissionDeniedError.PermissionDenied(
+                    resource = "test",
+                    action = "test",
+                    userId = "test",
+                    requiredPermissions = emptyList(),
+                    actualPermissions = emptyList()
                 )
-                val authError = AuthorizationServiceError.AuthenticationError.UserNotAuthenticated("op", "endpoint")
-                val contextError = AuthorizationServiceError.ContextError.ResourceNotFound("id", "type", "op")
-                val policyError = AuthorizationServiceError.PolicyEvaluationError.PolicyNotFound(
-                    "policy", "op", emptyList()
+                val authError = AuthenticationError.UserNotAuthenticated(
+                    requestedResource = "test",
+                    authenticationMethod = "test"
+                )
+                val contextError = AuthorizationContextError.ResourceNotFound(
+                    resourceId = "test",
+                    resourceType = "test",
+                    operation = "test"
+                )
+                val policyError = PolicyEvaluationError.PolicyViolation(
+                    policyId = "test",
+                    policyName = "test",
+                    evaluationResult = "test",
+                    violatedRules = emptyList(),
+                    context = emptyMap()
                 )
 
                 permissionError should beInstanceOf<AuthorizationServiceError>()

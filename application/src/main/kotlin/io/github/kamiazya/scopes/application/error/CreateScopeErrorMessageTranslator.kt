@@ -3,6 +3,11 @@ package io.github.kamiazya.scopes.application.error
 import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
 import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.HierarchyBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.DataIntegrityBusinessRuleError
+import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
 
 /**
  * Centralized translator for CreateScopeError instances to user-friendly messages.
@@ -38,16 +43,16 @@ class CreateScopeErrorMessageTranslator {
     /**
      * Formats title validation errors with user-friendly messages.
      */
-    private fun formatTitleValidationError(error: ScopeValidationServiceError.TitleValidationError): String {
+    private fun formatTitleValidationError(error: TitleValidationError): String {
         return when (error) {
-            is ScopeValidationServiceError.TitleValidationError.EmptyTitle ->
+            is TitleValidationError.EmptyTitle ->
                 "Title cannot be empty"
-            is ScopeValidationServiceError.TitleValidationError.TooShort ->
+            is TitleValidationError.TitleTooShort ->
                 "Title is too short (minimum ${error.minLength} characters, got ${error.actualLength})"
-            is ScopeValidationServiceError.TitleValidationError.TooLong ->
+            is TitleValidationError.TitleTooLong ->
                 "Title is too long (maximum ${error.maxLength} characters, got ${error.actualLength})"
-            is ScopeValidationServiceError.TitleValidationError.InvalidCharacters ->
-                "Title contains invalid characters: ${error.invalidChars.joinToString(", ")}"
+            is TitleValidationError.InvalidCharacters ->
+                "Title contains invalid characters: ${error.invalidCharacters.joinToString(", ")}"
         }
     }
 
@@ -56,38 +61,30 @@ class CreateScopeErrorMessageTranslator {
      */
     private fun formatBusinessRuleError(error: BusinessRuleServiceError): String {
         return when (error) {
-            is BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded ->
-                "Cannot create scope: maximum hierarchy depth of ${error.maxDepth} would be exceeded (attempted depth: ${error.attemptedDepth})"
-            is BusinessRuleServiceError.ScopeBusinessRuleError.MaxChildrenExceeded ->
+            is ScopeBusinessRuleError.MaxDepthExceeded ->
+                "Cannot create scope: maximum hierarchy depth of ${error.maxDepth} would be exceeded (attempted depth: ${error.actualDepth})"
+            is ScopeBusinessRuleError.MaxChildrenExceeded ->
                 "Cannot create scope: parent already has the maximum number of children (${error.maxChildren})"
-            is BusinessRuleServiceError.ScopeBusinessRuleError.DuplicateTitleNotAllowed ->
-                "Cannot create scope: duplicate title '${error.title}' not allowed in this context (${error.conflictContext})"
-            is BusinessRuleServiceError.ScopeBusinessRuleError.CheckFailed ->
-                "Cannot create scope: validation check '${error.checkName}' failed - ${error.errorDetails}"
-            is BusinessRuleServiceError.HierarchyBusinessRuleError.SelfParentingNotAllowed ->
+            is ScopeBusinessRuleError.DuplicateScope ->
+                "Cannot create scope: duplicate title '${error.duplicateTitle}' not allowed in this context"
+            is HierarchyBusinessRuleError.SelfParenting ->
                 "Cannot create scope: self-parenting is not allowed"
-            is BusinessRuleServiceError.HierarchyBusinessRuleError.CircularReferenceNotAllowed ->
+            is HierarchyBusinessRuleError.CircularReference ->
                 "Cannot create scope: circular reference detected in hierarchy"
-            is BusinessRuleServiceError.HierarchyBusinessRuleError.OrphanedScopeCreationNotAllowed ->
-                "Cannot create scope: ${error.reason}"
-            is BusinessRuleServiceError.DataIntegrityBusinessRuleError.ConsistencyCheckFailed ->
-                "Cannot create scope: data consistency check failed (${error.failedChecks.joinToString(", ")})"
-            is BusinessRuleServiceError.DataIntegrityBusinessRuleError.ReferentialIntegrityViolation ->
-                "Cannot create scope: referential integrity violation in ${error.referenceType}"
+            is DataIntegrityBusinessRuleError.ConsistencyCheckFailure ->
+                "Cannot create scope: data consistency check failed (${error.checkType})"
         }
     }
 
     /**
      * Formats duplicate title errors with user-friendly messages.
      */
-    private fun formatDuplicateTitleError(error: ScopeValidationServiceError.UniquenessValidationError): String {
+    private fun formatDuplicateTitleError(error: UniquenessValidationError): String {
         return when (error) {
-            is ScopeValidationServiceError.UniquenessValidationError.DuplicateTitle -> {
+            is UniquenessValidationError.DuplicateTitle -> {
                 val context = if (error.parentId != null) "under the same parent" else "at the root level"
                 "Title '${error.title}' already exists $context"
             }
-            is ScopeValidationServiceError.UniquenessValidationError.CheckFailed ->
-                "Cannot validate title uniqueness: check '${error.checkName}' failed - ${error.errorDetails}"
         }
     }
 }

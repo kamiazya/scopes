@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.domain.entity
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
@@ -36,7 +37,7 @@ data class Scope(
             description: String? = null,
             parentId: ScopeId? = null,
             metadata: Map<String, String> = emptyMap()
-        ): Either<DomainError.ScopeValidationError, Scope> = either {
+        ): Either<ScopeValidationError, Scope> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
 
@@ -81,7 +82,7 @@ data class Scope(
      * Update the scope title with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateTitle(newTitle: String): Either<DomainError.ScopeValidationError, Scope> = either {
+    fun updateTitle(newTitle: String): Either<ScopeValidationError, Scope> = either {
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
     }
@@ -90,7 +91,7 @@ data class Scope(
      * Update the scope description with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateDescription(newDescription: String?): Either<DomainError.ScopeValidationError, Scope> = either {
+    fun updateDescription(newDescription: String?): Either<ScopeValidationError, Scope> = either {
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
     }
