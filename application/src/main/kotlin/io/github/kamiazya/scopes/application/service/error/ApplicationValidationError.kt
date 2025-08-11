@@ -44,11 +44,11 @@ sealed class InputValidationError : ApplicationValidationError() {
     /**
      * A field value is outside the allowed range.
      */
-    data class ValueOutOfRange(
+    data class ValueOutOfRange<T : Comparable<T>>(
         val fieldName: String,
-        val minValue: Any?,
-        val maxValue: Any?,
-        val actualValue: Any
+        val minValue: T?,
+        val maxValue: T?,
+        val actualValue: T
     ) : InputValidationError()
 }
 

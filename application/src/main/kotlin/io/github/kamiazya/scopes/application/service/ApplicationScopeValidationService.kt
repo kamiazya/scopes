@@ -2,33 +2,15 @@ package io.github.kamiazya.scopes.application.service
 
 import arrow.core.Either
 import arrow.core.left
-import arrow.core.right
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.domain.error.DomainError
-import io.github.kamiazya.scopes.domain.error.ValidationResult
-import io.github.kamiazya.scopes.domain.error.validationFailure
-import io.github.kamiazya.scopes.domain.error.validationSuccess
-import io.github.kamiazya.scopes.domain.error.sequence
-import io.github.kamiazya.scopes.domain.error.map
-import io.github.kamiazya.scopes.domain.error.ScopeValidationServiceError
-import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
-import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
-import io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
-import io.github.kamiazya.scopes.domain.error.ScopeError
-import io.github.kamiazya.scopes.domain.error.RepositoryError
+import arrow.core.right
+import io.github.kamiazya.scopes.domain.error.*
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.domain.util.TitleNormalizer
-import io.github.kamiazya.scopes.domain.error.CountScopeError
-import io.github.kamiazya.scopes.domain.error.ExistsScopeError
-import io.github.kamiazya.scopes.domain.error.FindScopeError
-import io.github.kamiazya.scopes.domain.error.TitleValidationError
-import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleError
-import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
 
 /**
  * Application service for repository-dependent scope validation logic.
@@ -62,12 +44,12 @@ class ApplicationScopeValidationService(
      */
     fun validateTitleFormat(title: String): Either<TitleValidationError, Unit> {
         val trimmedTitle = title.trim()
-        
+
         // Check for empty title
         if (trimmedTitle.isBlank()) {
             return TitleValidationError.EmptyTitle.left()
         }
-        
+
         // Check minimum length
         if (trimmedTitle.length < ScopeTitle.MIN_LENGTH) {
             return TitleValidationError.TitleTooShort(
@@ -76,7 +58,7 @@ class ApplicationScopeValidationService(
                 title = trimmedTitle
             ).left()
         }
-        
+
         // Check maximum length using service-specific constant
         if (trimmedTitle.length > ScopeTitle.MAX_LENGTH) {
             return TitleValidationError.TitleTooLong(
@@ -85,7 +67,7 @@ class ApplicationScopeValidationService(
                 title = trimmedTitle
             ).left()
         }
-        
+
         // Check for invalid characters
         if (title.contains('\n') || title.contains('\r')) {
             val invalidChars = title.filter { it == '\n' || it == '\r' }.toSet()
@@ -96,7 +78,7 @@ class ApplicationScopeValidationService(
                 position = position
             ).left()
         }
-        
+
         return Unit.right()
     }
 
@@ -163,7 +145,7 @@ class ApplicationScopeValidationService(
      * Returns specific ScopeValidationServiceError.UniquenessValidationError types.
      */
     suspend fun validateTitleUniquenessTyped(
-        title: String, 
+        title: String,
         parentId: ScopeId?
     ): Either<UniquenessValidationError, Unit> = either {
         val normalizedTitle = TitleNormalizer.normalize(title)
@@ -223,14 +205,23 @@ class ApplicationScopeValidationService(
         }
 
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { findError -> 
+            .mapLeft { findError ->
                 // Map FindScopeError to appropriate DomainError
                 when (findError) {
                     is FindScopeError.CircularReference ->
                         ScopeError.CircularReference(findError.scopeId, parentId)
                     is FindScopeError.OrphanedScope ->
                         ScopeError.InvalidParent(parentId, findError.message)
-                    else -> ScopeError.InvalidParent(parentId, "Unable to determine hierarchy depth")
+                    is FindScopeError.TraversalTimeout ->
+                        ScopeError.InvalidParent(parentId, "Hierarchy traversal timed out")
+                    is FindScopeError.ConnectionFailure ->
+                        ScopeError.InvalidParent(parentId, "Connection failure: ${findError.message}")
+                    is FindScopeError.PersistenceError ->
+                        ScopeError.InvalidParent(parentId, "Persistence error: ${findError.message}")
+                    is FindScopeError.IsolationViolation ->
+                        ScopeError.InvalidParent(parentId, "Isolation violation: ${findError.violationType}")
+                    is FindScopeError.UnknownError ->
+                        ScopeError.InvalidParent(parentId, "Unknown error: ${findError.message}")
                 }
             }
             .bind()
@@ -287,7 +278,7 @@ class ApplicationScopeValidationService(
                         // Handle IndexCorruption without generating misleading ScopeIds when parentId is null
                         if (parentId != null) {
                             ScopeError.InvalidParent(
-                                parentId, 
+                                parentId,
                                 "Index corruption detected for parent: ${existsError.message}. ScopeId in corruption: ${existsError.scopeId}"
                             )
                         } else {

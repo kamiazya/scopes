@@ -24,7 +24,7 @@ object ApplicationServiceErrorTranslator {
                     "Invalid format: ${validationError.expectedFormat}"
                 )
 
-            is InputValidationError.ValueOutOfRange ->
+            is InputValidationError.ValueOutOfRange<*> ->
                 CreateScopeError.ValidationFailed(
                     validationError.fieldName,
                     "Value out of range: min ${validationError.minValue}, max ${validationError.maxValue}, got ${validationError.actualValue}"

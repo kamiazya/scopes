@@ -339,7 +339,12 @@ class UseCaseArchitectureTest : StringSpec({
             .filter {
                 it.name.endsWith("Error") &&
                 !it.name.startsWith("Application") &&
-                it.packagee?.name?.endsWith(".usecase.error") == true
+                // Only check error classes that are actually in usecase packages
+                // or that should be UseCase-related error classes
+                (it.packagee?.name?.contains(".usecase") == true ||
+                 it.name.contains("UseCase") ||
+                 it.name.contains("Command") ||
+                 it.name.contains("Query"))
             }
             .assertTrue { errorClass ->
                 val packageName = errorClass.packagee?.name ?: ""
