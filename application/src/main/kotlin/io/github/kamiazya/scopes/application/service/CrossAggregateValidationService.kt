@@ -60,7 +60,7 @@ class CrossAggregateValidationService(
             val childExists = scopeRepository.existsById(childId)
                 .mapLeft { existsError ->
                     CrossAggregateValidationError.CrossReferenceViolation(
-                        sourceAggregate = parentId.value,
+                        sourceAggregate = "parentId",
                         targetAggregate = childId.value,
                         referenceType = "childId",
                         violation = "Failed to verify child scope"
@@ -70,7 +70,7 @@ class CrossAggregateValidationService(
 
             if (!childExists) {
                 raise(CrossAggregateValidationError.CrossReferenceViolation(
-                    sourceAggregate = parentId.value,
+                    sourceAggregate = "parentId",
                     targetAggregate = childId.value,
                     referenceType = "childId",
                     violation = "Child scope does not exist"

@@ -95,7 +95,9 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 error should beInstanceOf<CrossAggregateValidationError.CrossReferenceViolation>()
 
                 val crossRefError = error as CrossAggregateValidationError.CrossReferenceViolation
+                crossRefError.sourceAggregate shouldBe "parentId"
                 crossRefError.targetAggregate shouldBe nonExistingChildId.value
+                crossRefError.referenceType shouldBe "childId"
                 crossRefError.violation shouldBe "Child scope does not exist"
             }
         }
