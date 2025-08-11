@@ -46,7 +46,7 @@ sealed class HierarchyValidationError : ScopeValidationServiceError() {
     data class DepthLimitExceeded(
         val maxDepth: Int,
         val actualDepth: Int,
-        val scopeId: String
+        val scopeId: ScopeId
     ) : HierarchyValidationError()
     
     /**
@@ -57,8 +57,8 @@ sealed class HierarchyValidationError : ScopeValidationServiceError() {
      * @param reason The reason why the parent is invalid
      */
     data class InvalidParentReference(
-        val scopeId: String,
-        val parentId: String,
+        val scopeId: ScopeId,
+        val parentId: ScopeId,
         val reason: String
     ) : HierarchyValidationError()
     
@@ -70,8 +70,8 @@ sealed class HierarchyValidationError : ScopeValidationServiceError() {
      * @param cyclePath The detected cycle path
      */
     data class CircularHierarchy(
-        val scopeId: String,
-        val parentId: String,
-        val cyclePath: List<String>
+        val scopeId: ScopeId,
+        val parentId: ScopeId,
+        val cyclePath: List<ScopeId>
     ) : HierarchyValidationError()
 }

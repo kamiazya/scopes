@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.domain.error.TitleValidationError
 import io.github.kamiazya.scopes.domain.error.DescriptionValidationError
 import io.github.kamiazya.scopes.domain.error.HierarchyValidationError
 import io.github.kamiazya.scopes.domain.error.UniquenessValidationError
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -78,39 +79,45 @@ class ScopeValidationServiceErrorTest : DescribeSpec({
         
         describe("HierarchyValidationError") {
             it("should provide context for depth limit exceeded errors") {
+                val scopeId = ScopeId.generate()
                 val error = HierarchyValidationError.DepthLimitExceeded(
                     maxDepth = 10,
                     actualDepth = 12,
-                    scopeId = "test-scope-id"
+                    scopeId = scopeId
                 )
                 
                 error.maxDepth shouldBe 10
                 error.actualDepth shouldBe 12
-                error.scopeId shouldBe "test-scope-id"
+                error.scopeId shouldBe scopeId
             }
             
             it("should provide context for invalid parent reference errors") {
+                val scopeId = ScopeId.generate()
+                val parentId = ScopeId.generate()
                 val error = HierarchyValidationError.InvalidParentReference(
-                    scopeId = "child-scope-id",
-                    parentId = "invalid-parent-id",
+                    scopeId = scopeId,
+                    parentId = parentId,
                     reason = "Parent scope does not exist"
                 )
                 
-                error.scopeId shouldBe "child-scope-id"
-                error.parentId shouldBe "invalid-parent-id"
+                error.scopeId shouldBe scopeId
+                error.parentId shouldBe parentId
                 error.reason shouldBe "Parent scope does not exist"
             }
             
             it("should provide context for circular hierarchy errors") {
+                val scopeId = ScopeId.generate()
+                val parentId = ScopeId.generate()
+                val cyclePath = listOf(scopeId, parentId, scopeId)
                 val error = HierarchyValidationError.CircularHierarchy(
-                    scopeId = "scope-a",
-                    parentId = "scope-b",
-                    cyclePath = listOf("scope-a", "scope-b", "scope-a")
+                    scopeId = scopeId,
+                    parentId = parentId,
+                    cyclePath = cyclePath
                 )
                 
-                error.scopeId shouldBe "scope-a"
-                error.parentId shouldBe "scope-b"
-                error.cyclePath shouldBe listOf("scope-a", "scope-b", "scope-a")
+                error.scopeId shouldBe scopeId
+                error.parentId shouldBe parentId
+                error.cyclePath shouldBe cyclePath
             }
         }
         
