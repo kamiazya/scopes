@@ -96,7 +96,8 @@ class ErrorRecoverySuggestionService(
             originalError = DomainInfrastructureError(
                 repositoryError = io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError(
                     "BusinessRuleServiceError not supported in domain-level recovery",
-                    RuntimeException("BusinessRuleServiceError mapping")
+                    causeClass = RuntimeException::class,
+                    causeMessage = "BusinessRuleServiceError mapping"
                 )
             ),
             reason = "This business rule error type requires manual intervention and cannot be automatically recovered"

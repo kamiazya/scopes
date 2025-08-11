@@ -101,7 +101,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 dataIntegrityError.message shouldContain "Index corruption detected for root-level existence check"
                 dataIntegrityError.message shouldContain corruptionMessage
                 dataIntegrityError.message shouldContain corruptedScopeId.toString()
-                dataIntegrityError.cause should beInstanceOf<RuntimeException>()
+                dataIntegrityError.causeClass shouldBe RuntimeException::class
+                dataIntegrityError.causeMessage shouldBe "Index corruption in existence validation"
             }
 
             it("should handle IndexCorruption with null scopeId") {
@@ -171,8 +172,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 databaseError.message shouldContain "operation='$operation'"
                 databaseError.message shouldContain "timeout=${timeout.inWholeMilliseconds}ms"
                 databaseError.message shouldContain "context=$context"
-                databaseError.cause should beInstanceOf<RuntimeException>()
-                databaseError.cause!!.message shouldBe "Query timeout: $operation"
+                databaseError.causeClass shouldBe RuntimeException::class
+                databaseError.causeMessage shouldBe "Query timeout: $operation"
             }
 
             it("should map QueryTimeout with ById context") {
@@ -246,8 +247,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 databaseError.message shouldContain "operation='$operation'"
                 databaseError.message shouldContain "timeout=${timeout.inWholeMilliseconds}ms"
                 databaseError.message shouldContain "retryable=$retryable"
-                databaseError.cause should beInstanceOf<RuntimeException>()
-                databaseError.cause!!.message shouldBe "Lock timeout: $operation"
+                databaseError.causeClass shouldBe RuntimeException::class
+                databaseError.causeMessage shouldBe "Lock timeout: $operation"
             }
 
             it("should map LockTimeout with retryable=false") {
@@ -312,7 +313,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 infrastructureError.repositoryError should beInstanceOf<RepositoryError.ConnectionError>()
 
                 val connectionError = infrastructureError.repositoryError as RepositoryError.ConnectionError
-                connectionError.cause shouldBe cause
+                connectionError.causeClass shouldBe cause::class
+                connectionError.causeMessage shouldBe cause.message
             }
 
             it("should handle ConnectionFailure with null cause") {
@@ -341,9 +343,9 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val infrastructureError = error as DomainInfrastructureError
                 val connectionError = infrastructureError.repositoryError as RepositoryError.ConnectionError
 
-                // Verify no NullPointerException when accessing cause?.message
-                val causeMessage = connectionError.cause.cause?.message
-                causeMessage shouldBe null  // Should be null, not throw NPE
+                // Verify proper mapping of exception with null nested cause
+                connectionError.causeClass shouldBe RuntimeException::class
+                connectionError.causeMessage shouldBe "Test exception with null cause"
             }
         }
 
@@ -390,7 +392,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 databaseError.message shouldContain "retryable=$retryable"
                 databaseError.message shouldContain "errorCode=$errorCode"
                 databaseError.message shouldContain message
-                databaseError.cause shouldBe cause
+                databaseError.causeClass shouldBe cause::class
+                databaseError.causeMessage shouldBe cause.message
             }
 
             it("should map PersistenceError with null errorCode") {
@@ -504,7 +507,8 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val repositoryUnknownError = infrastructureError.repositoryError as RepositoryError.UnknownError
                 repositoryUnknownError.message shouldContain "Unknown error during existence check"
                 repositoryUnknownError.message shouldContain message
-                repositoryUnknownError.cause shouldBe cause
+                repositoryUnknownError.causeClass shouldBe cause::class
+                repositoryUnknownError.causeMessage shouldBe cause.message
             }
 
             it("should handle UnknownError with null cause") {
@@ -534,9 +538,9 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val infrastructureError = error as DomainInfrastructureError
                 val repositoryUnknownError = infrastructureError.repositoryError as RepositoryError.UnknownError
 
-                // Verify no NullPointerException when accessing cause?.message
-                val causeMessage = repositoryUnknownError.cause.cause?.message
-                causeMessage shouldBe null  // Should be null, not throw NPE
+                // Verify proper mapping of exception with null nested cause
+                repositoryUnknownError.causeClass shouldBe RuntimeException::class
+                repositoryUnknownError.causeMessage shouldBe "Exception with null cause"
             }
         }
 

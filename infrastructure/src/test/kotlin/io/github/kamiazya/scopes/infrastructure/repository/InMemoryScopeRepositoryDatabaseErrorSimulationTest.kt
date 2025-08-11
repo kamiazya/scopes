@@ -382,7 +382,8 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 connectionString = "jdbc:postgresql://localhost:5432/scopes",
                 poolSize = 10,
                 activeConnections = 10,
-                cause = RuntimeException("Connection pool exhausted"),
+                causeClass = RuntimeException::class,
+                causeMessage = "Connection pool exhausted",
                 timestamp = Clock.System.now(),
                 correlationId = "test-correlation"
             )
@@ -444,7 +445,8 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                         connectionString = "jdbc:postgresql://localhost:5432/scopes",
                         poolSize = 10,
                         activeConnections = 10,
-                        cause = RuntimeException("Connection pool exhausted"),
+                        causeClass = RuntimeException::class,
+                        causeMessage = "Connection pool exhausted",
                         timestamp = Clock.System.now()
                     )
                     raise(SaveScopeError.PersistenceError(

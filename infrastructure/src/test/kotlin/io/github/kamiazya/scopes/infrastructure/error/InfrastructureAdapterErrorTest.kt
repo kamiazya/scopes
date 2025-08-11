@@ -24,7 +24,8 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                     connectionString = "jdbc:postgresql://localhost:5432/test",
                     poolSize = 10,
                     activeConnections = 8,
-                    cause = RuntimeException("Connection refused"),
+                    causeClass = RuntimeException::class,
+                    causeMessage = "Connection refused",
                     timestamp = Clock.System.now()
                 )
 
@@ -40,7 +41,8 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                     query = "SELECT * FROM scopes",
                     parameters = mapOf("id" to "123"),
                     executionTimeMs = 5000L,
-                    cause = RuntimeException("Syntax error"),
+                    causeClass = RuntimeException::class,
+                    causeMessage = "Syntax error",
                     timestamp = Clock.System.now()
                 )
 
@@ -506,7 +508,8 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                     connectionString = "jdbc:test",
                     poolSize = null,
                     activeConnections = null,
-                    cause = RuntimeException("test"),
+                    causeClass = RuntimeException::class,
+                    causeMessage = "test",
                     timestamp = Clock.System.now()
                 )
 

@@ -55,14 +55,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val connectionError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.ConnectionError
 
-                // Verify safe access to cause chain without NPE
-                val topLevelCause = connectionError.cause
-                val nestedCause = topLevelCause.cause
-                val nestedCauseMessage = topLevelCause.cause?.message
-
-                topLevelCause should beInstanceOf<RuntimeException>()
-                nestedCause.should(beNull())
-                nestedCauseMessage.should(beNull())
+                // Verify cause information is properly captured without Throwable reference issues
+                connectionError.causeClass shouldBe RuntimeException::class
+                connectionError.causeMessage shouldBe "Connection error"
             }
 
             it("should handle ConnectionFailure with nested null causes") {
@@ -95,20 +90,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val connectionError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.ConnectionError
 
-                // Verify safe traversal of cause chain
-                val level1Cause = connectionError.cause
-                val level2Cause = level1Cause.cause
-                val level3Cause = level2Cause?.cause
-                val level4Cause = level3Cause?.cause  // This should be null
-
-                level1Cause.message shouldBe "Top cause"
-                level2Cause?.message shouldBe "Middle cause"
-                level3Cause?.message shouldBe "Root cause"
-                level4Cause.should(beNull())
-
-                // Verify no NPE when accessing properties on null cause
-                val nullCauseMessage = level4Cause?.message
-                nullCauseMessage.should(beNull())
+                // Verify cause information is properly captured (top-level exception only)
+                connectionError.causeClass shouldBe RuntimeException::class
+                connectionError.causeMessage shouldBe "Top cause"
             }
         }
 
@@ -139,14 +123,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val repositoryUnknownError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError
 
-                // Verify safe access to cause properties
-                val causeMessage = repositoryUnknownError.cause.message
-                val nestedCause = repositoryUnknownError.cause.cause
-                val nestedCauseMessage = repositoryUnknownError.cause.cause?.message
-
-                causeMessage shouldBe "Unknown state"
-                nestedCause.should(beNull())
-                nestedCauseMessage.should(beNull())
+                // Verify cause information is properly captured
+                repositoryUnknownError.causeClass shouldBe IllegalStateException::class
+                repositoryUnknownError.causeMessage shouldBe "Unknown state"
             }
         }
 
@@ -183,14 +162,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val databaseError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.DatabaseError
 
-                // Verify safe access to SQLException properties with null cause
-                val sqlCause = databaseError.cause as java.sql.SQLException
-                val sqlNestedCause = sqlCause.cause
-                val sqlCauseMessage = sqlCause.cause?.message
-
-                sqlCause.message shouldBe "SQL error"
-                sqlNestedCause.should(beNull())
-                sqlCauseMessage.should(beNull())
+                // Verify cause information is properly captured
+                databaseError.causeClass shouldBe java.sql.SQLException::class
+                databaseError.causeMessage shouldBe "SQL error"
             }
         }
 
@@ -222,30 +196,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val connectionError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.ConnectionError
 
-                // Perform deep cause chain traversal that should be safe
-                val cause1 = connectionError.cause
-                val cause2 = cause1.cause
-                val cause3 = cause2?.cause
-                val cause4 = cause3?.cause
-                val cause5 = cause4?.cause
-
-                // All these accesses should be safe and not throw NPE
-                cause1.message shouldBe "Exception with null cause"
-                cause2.should(beNull())
-                cause3.should(beNull())
-                cause4.should(beNull())
-                cause5.should(beNull())
-
-                // Verify safe property access on null causes
-                val message2 = cause2?.message
-                val message3 = cause3?.message
-                val stackTrace2 = cause2?.stackTrace
-                val localizedMessage2 = cause2?.localizedMessage
-
-                message2.should(beNull())
-                message3.should(beNull())
-                stackTrace2.should(beNull())
-                localizedMessage2.should(beNull())
+                // With new approach, we safely store cause info without Throwable chains
+                connectionError.causeClass shouldBe RuntimeException::class
+                connectionError.causeMessage shouldBe "Exception with null cause"
             }
 
             it("should handle toString() calls on null causes") {
@@ -273,12 +226,9 @@ class ApplicationScopeValidationServiceNullCauseTest : DescribeSpec({
                 val infrastructureError = error as io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
                 val repositoryUnknownError = infrastructureError.repositoryError as io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError
 
-                // These operations should not throw NPE
-                val causeString = repositoryUnknownError.cause.toString()
-                val nestedCauseString = repositoryUnknownError.cause.cause?.toString()
-
-                causeString shouldBe "java.lang.RuntimeException: ToString test"
-                nestedCauseString.should(beNull())
+                // Verify safe cause information storage without toString() issues
+                repositoryUnknownError.causeClass shouldBe RuntimeException::class
+                repositoryUnknownError.causeMessage shouldBe "ToString test"
             }
         }
     }

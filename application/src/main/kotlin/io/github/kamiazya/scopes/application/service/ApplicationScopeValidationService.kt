@@ -291,7 +291,8 @@ class ApplicationScopeValidationService(
                             DomainInfrastructureError(
                                 RepositoryError.DataIntegrityError(
                                     "Index corruption detected for root-level existence check: ${existsError.message}. Corrupted ScopeId: ${existsError.scopeId}",
-                                    cause = RuntimeException("Index corruption in existence validation")
+                                    causeClass = RuntimeException::class,
+                                    causeMessage = "Index corruption in existence validation"
                                 )
                             )
                         }
@@ -299,32 +300,39 @@ class ApplicationScopeValidationService(
                         DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Query timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeout.inWholeMilliseconds}ms, context=${existsError.context}",
-                                RuntimeException("Query timeout: ${existsError.operation}")
+                                causeClass = RuntimeException::class,
+                                causeMessage = "Query timeout: ${existsError.operation}"
                             )
                         )
                     is ExistsScopeError.LockTimeout ->
                         DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Lock timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeout.inWholeMilliseconds}ms, retryable=${existsError.retryable}",
-                                RuntimeException("Lock timeout: ${existsError.operation}")
+                                causeClass = RuntimeException::class,
+                                causeMessage = "Lock timeout: ${existsError.operation}"
                             )
                         )
                     is ExistsScopeError.ConnectionFailure ->
                         DomainInfrastructureError(
-                            RepositoryError.ConnectionError(existsError.cause)
+                            RepositoryError.ConnectionError(
+                                causeClass = existsError.cause::class,
+                                causeMessage = existsError.cause.message
+                            )
                         )
                     is ExistsScopeError.PersistenceError ->
                         DomainInfrastructureError(
                             RepositoryError.DatabaseError(
                                 "Persistence error during existence check: context=${existsError.context}, retryable=${existsError.retryable}, errorCode=${existsError.errorCode ?: "none"} - ${existsError.message}",
-                                existsError.cause
+                                causeClass = existsError.cause::class,
+                                causeMessage = existsError.cause.message
                             )
                         )
                     is ExistsScopeError.UnknownError ->
                         DomainInfrastructureError(
                             RepositoryError.UnknownError(
                                 "Unknown error during existence check: ${existsError.message}",
-                                existsError.cause
+                                causeClass = existsError.cause::class,
+                                causeMessage = existsError.cause.message
                             )
                         )
                 }

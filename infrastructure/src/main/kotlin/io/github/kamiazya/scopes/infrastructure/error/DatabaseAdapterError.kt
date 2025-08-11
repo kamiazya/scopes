@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
 import kotlinx.datetime.Instant
+import kotlin.reflect.KClass
 
 /**
  * Database adapter errors for persistence operations.
@@ -15,7 +16,8 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         val connectionString: String,
         val poolSize: Int?,
         val activeConnections: Int?,
-        val cause: Throwable,
+        val causeClass: KClass<out Throwable>,
+        val causeMessage: String? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {
@@ -31,7 +33,8 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         val parameters: Map<String, Any>? = null,
         val executionTimeMs: Long?,
         val errorType: QueryErrorType = QueryErrorType.OTHER,
-        val cause: Throwable,
+        val causeClass: KClass<out Throwable>,
+        val causeMessage: String? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {
@@ -46,7 +49,8 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         val transactionId: String,
         val operation: TransactionOperation,
         val isolationLevel: TransactionIsolationLevel?,
-        val cause: Throwable,
+        val causeClass: KClass<out Throwable>,
+        val causeMessage: String? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {
@@ -63,7 +67,8 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         val constraint: String?,
         val violationType: String,
         val affectedData: Map<String, Any>? = null,
-        val cause: Throwable,
+        val causeClass: KClass<out Throwable>,
+        val causeMessage: String? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {
