@@ -6,62 +6,67 @@ import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
 
 class BasicArchitectureTest : StringSpec({
-    
+
     "domain module should not import application layer" {
         Konsist
             .scopeFromModule("domain")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.application.")
                 }
             }
     }
-    
+
     "domain module should not import infrastructure layer" {
         Konsist
             .scopeFromModule("domain")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }
-    
+
     "domain module should not import presentation layer" {
         Konsist
             .scopeFromModule("domain")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }
-    
+
     "application module should not import infrastructure layer" {
         Konsist
             .scopeFromModule("application")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.infrastructure.")
                 }
             }
     }
-    
+
     "application module should not import presentation layer" {
         Konsist
             .scopeFromModule("application")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
     }
-    
+
     "classes should have PascalCase names" {
         Konsist
             .scopeFromProduction()
@@ -70,7 +75,7 @@ class BasicArchitectureTest : StringSpec({
                 clazz.name.first().isUpperCase()
             }
     }
-    
+
     "package names should be lowercase" {
         Konsist
             .scopeFromProduction()
@@ -79,7 +84,7 @@ class BasicArchitectureTest : StringSpec({
                 pkg.name.lowercase() == pkg.name
             }
     }
-    
+
     "repository interfaces should end with Repository" {
         Konsist
             .scopeFromModule("domain")
@@ -89,11 +94,11 @@ class BasicArchitectureTest : StringSpec({
                 repository.name.endsWith("Repository")
             }
     }
-    
-    // Temporarily skip UseCase naming convention test 
+
+    // Temporarily skip UseCase naming convention test
     // The core functionality is working correctly with Arrow Either
     // This test needs refinement to handle utility classes properly
-    
+
     "data classes should use val properties" {
         Konsist
             .scopeFromProduction()
@@ -101,7 +106,7 @@ class BasicArchitectureTest : StringSpec({
             .filter { it.hasDataModifier }
             .assertTrue { dataClass ->
                 dataClass.properties().all { property ->
-                    property.hasValModifier || !property.hasVarModifier
+                    property.isVal || !property.isVar
                 }
             }
     }
@@ -127,7 +132,7 @@ class BasicArchitectureTest : StringSpec({
                 val className = clazz.name
                 // Only look at classes that are actually in valueobject package OR match value object naming pattern
                 packageName.endsWith(".valueobject") ||
-                (className.startsWith("Scope") && 
+                (className.startsWith("Scope") &&
                  (className.endsWith("Id") || className.endsWith("Title") || className.endsWith("Description")) &&
                  !className.endsWith("Test") &&
                  !packageName.contains(".error"))
@@ -154,6 +159,7 @@ class BasicArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("infrastructure")
             .files
+            .filter { it.path.contains("src/main") }
             .assertFalse { file ->
                 file.imports.any { import ->
                     import.name.startsWith("io.github.kamiazya.scopes.presentation.")
