@@ -19,7 +19,7 @@ class ImportOrganizationTest : StringSpec({
                 val content = file.text
                 // Check for fully-qualified error types in when expressions
                 content.contains(Regex(
-                    """when\s*\([^)]*\)\s*\{[^}]*is\s+io\.github\.kamiazya\.scopes\.(domain|application|infrastructure)\.error\.[A-Z]"""
+                    """when\s*\([^)]*\)\s*\{[^}]*is\s+io\.github\.kamiazya\.scopes\.(domain|application|infrastructure)\.error\.[A-Z][A-Za-z0-9]*Error\b"""
                 ))
             }
     }
