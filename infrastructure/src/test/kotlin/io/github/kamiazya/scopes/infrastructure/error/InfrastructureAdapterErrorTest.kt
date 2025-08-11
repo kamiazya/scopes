@@ -226,6 +226,65 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 )
                 closedPastAttempt.retryable shouldBe true
             }
+
+            it("should handle ServiceUnavailableError retryable logic correctly") {
+                val now = Clock.System.now()
+                
+                // No alternative endpoint and no recovery time - not retryable
+                val noFallback = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.UNHEALTHY,
+                    timestamp = now
+                )
+                noFallback.retryable shouldBe false
+                
+                // Alternative endpoint exists - always retryable
+                val withAlternative = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.UNHEALTHY,
+                    alternativeEndpoint = "https://backup.example.com",
+                    timestamp = now
+                )
+                withAlternative.retryable shouldBe true
+                
+                // Future recovery time without alternative - not retryable
+                val futureRecovery = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.MAINTENANCE,
+                    estimatedRecoveryAt = now + 1.minutes,
+                    timestamp = now
+                )
+                futureRecovery.retryable shouldBe false
+                
+                // Past recovery time without alternative - retryable
+                val pastRecovery = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.MAINTENANCE,
+                    estimatedRecoveryAt = now - 1.minutes,
+                    timestamp = now
+                )
+                pastRecovery.retryable shouldBe true
+                
+                // Both alternative endpoint and future recovery time - retryable
+                val bothAlternativeAndFuture = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.DEGRADED,
+                    estimatedRecoveryAt = now + 1.minutes,
+                    alternativeEndpoint = "https://backup.example.com",
+                    timestamp = now
+                )
+                bothAlternativeAndFuture.retryable shouldBe true
+                
+                // Both alternative endpoint and past recovery time - retryable
+                val bothAlternativeAndPast = ExternalApiAdapterError.ServiceUnavailableError(
+                    serviceName = "test-service",
+                    healthStatus = ServiceHealthStatus.HEALTHY,
+                    estimatedRecoveryAt = now - 1.minutes,
+                    alternativeEndpoint = "https://backup.example.com",
+                    timestamp = now
+                )
+                bothAlternativeAndPast.retryable shouldBe true
+            }
         }
 
         describe("ConfigurationAdapterError") {

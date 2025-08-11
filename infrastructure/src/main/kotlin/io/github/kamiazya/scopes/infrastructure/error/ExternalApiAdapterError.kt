@@ -101,7 +101,8 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
-        // Service unavailability is typically temporary
-        override val retryable: Boolean = true
+        // Retry when alternative endpoint exists or recovery time has passed
+        override val retryable: Boolean = alternativeEndpoint != null ||
+            (estimatedRecoveryAt != null && estimatedRecoveryAt <= Clock.System.now())
     }
 }
