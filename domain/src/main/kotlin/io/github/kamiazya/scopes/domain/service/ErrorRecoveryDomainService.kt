@@ -1,12 +1,6 @@
 package io.github.kamiazya.scopes.domain.service
 
-import io.github.kamiazya.scopes.domain.error.DomainError
-import io.github.kamiazya.scopes.domain.error.ScopeError
-import io.github.kamiazya.scopes.domain.error.ScopeValidationError
-import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
-import io.github.kamiazya.scopes.domain.error.DomainInfrastructureError
-import io.github.kamiazya.scopes.domain.error.ErrorRecoveryCategory
-import io.github.kamiazya.scopes.domain.error.RecoveryComplexity
+import io.github.kamiazya.scopes.domain.error.*
 
 /**
  * Domain service for error categorization and recovery assessment.
@@ -50,8 +44,7 @@ class ErrorRecoveryDomainService {
             is ScopeBusinessRuleViolation.ScopeDuplicateTitle -> RecoveryComplexity.MODERATE
 
             // Complex business rule violations - significant restructuring needed
-            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
-            // is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> RecoveryComplexity.COMPLEX
+            is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded -> RecoveryComplexity.COMPLEX
             is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded -> RecoveryComplexity.COMPLEX
 
             // All scope errors are complex by nature (data integrity issues)
@@ -88,8 +81,7 @@ class ErrorRecoveryDomainService {
         return when (error) {
             // Business rule violations are partially recoverable - can suggest fixes but require user input
             is ScopeBusinessRuleViolation.ScopeDuplicateTitle,
-            // ScopeMaxDepthExceeded consolidated into BusinessRuleServiceError.ScopeBusinessRuleError.MaxDepthExceeded
-            // is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
+            is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded,
             is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
                 ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
         }

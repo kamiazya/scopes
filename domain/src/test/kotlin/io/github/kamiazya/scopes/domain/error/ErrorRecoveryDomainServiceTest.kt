@@ -1,16 +1,11 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.error.BusinessRuleServiceError
-import io.github.kamiazya.scopes.domain.error.ScopeError
-import io.github.kamiazya.scopes.domain.error.ScopeValidationError
-import io.github.kamiazya.scopes.domain.error.ScopeBusinessRuleViolation
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Test for ErrorRecoveryDomainService.
@@ -56,8 +51,7 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         val service = ErrorRecoveryDomainService()
 
         val duplicateError = ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
-        // Note: ScopeMaxDepthExceeded doesn't exist in DomainError, using ScopeMaxChildrenExceeded
-        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(5, 8)
+        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
         val maxChildrenError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.categorizeError(duplicateError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
@@ -115,8 +109,7 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         service.getRecoveryComplexity(duplicateError) shouldBe RecoveryComplexity.MODERATE
 
         // Complex errors - significant intervention needed
-        // Note: ScopeMaxDepthExceeded doesn't exist in DomainError, using ScopeMaxChildrenExceeded
-        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(5, 8)
+        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
         val maxChildrenError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.getRecoveryComplexity(maxDepthError) shouldBe RecoveryComplexity.COMPLEX
