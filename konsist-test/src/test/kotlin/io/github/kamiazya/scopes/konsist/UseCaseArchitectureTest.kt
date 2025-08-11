@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.konsist
 
 import com.lemonappdev.konsist.api.Konsist
-import com.lemonappdev.konsist.api.verify.assertTrue
 import com.lemonappdev.konsist.api.verify.assertFalse
+import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
 
 class UseCaseArchitectureTest : StringSpec({
@@ -14,7 +14,7 @@ class UseCaseArchitectureTest : StringSpec({
             .assertFalse { file ->
                 file.imports.any { import ->
                     val importName = import.name
-                    importName.startsWith("io.github.kamiazya.scopes.infrastructure.") || 
+                    importName.startsWith("io.github.kamiazya.scopes.infrastructure.") ||
                     importName.startsWith("io.github.kamiazya.scopes.presentation.")
                 }
             }
@@ -28,7 +28,7 @@ class UseCaseArchitectureTest : StringSpec({
             .assertFalse { file ->
                 // Allow CompositionRoot to import domain interfaces for DI setup
                 val isCompositionRoot = file.nameWithExtension == "CompositionRoot.kt"
-                
+
                 if (isCompositionRoot) {
                     // For CompositionRoot, allow repository, port, and service interfaces
                     // Only fail if there are domain imports that are NOT allowed
@@ -108,7 +108,7 @@ class UseCaseArchitectureTest : StringSpec({
 
     "handler classes should end with Handler and be in handler package" {
         Konsist
-            .scopeFromModule("application") 
+            .scopeFromModule("application")
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertTrue { handler ->
@@ -137,9 +137,9 @@ class UseCaseArchitectureTest : StringSpec({
             .assertTrue { handler ->
                 // Handlers should implement UseCase interface (parameterized)
                 // Check by examining the parent interfaces and their text representation
-                handler.hasParentWithName("UseCase") || 
-                handler.parents().any { parent -> 
-                    parent.text.contains("UseCase") 
+                handler.hasParentWithName("UseCase") ||
+                handler.parents().any { parent ->
+                    parent.text.contains("UseCase")
                 }
             }
     }
@@ -165,8 +165,18 @@ class UseCaseArchitectureTest : StringSpec({
             .assertTrue { handler ->
                 // Handlers should return Either<SpecificError, T> type (enforced by UseCase interface)
                 handler.functions().any { function ->
-                    function.returnType?.text?.contains("Either<") == true &&
-                    function.returnType?.text?.contains("Error,") == true
+                    val returnType = function.returnType
+                    if (returnType != null) {
+                        // Check if return type contains "Either" (more flexible than exact name match)
+                        val containsEither = returnType.text.contains("Either")
+
+                        // Check if it has type arguments and first one ends with "Error"
+                        val typeArgs = returnType.typeArguments
+                        val hasErrorType = typeArgs?.isNotEmpty() == true &&
+                            typeArgs.firstOrNull()?.text?.endsWith("Error") == true
+
+                        containsEither && hasErrorType
+                    } else false
                 }
             }
     }
@@ -199,7 +209,7 @@ class UseCaseArchitectureTest : StringSpec({
             .filter { it.name == "UseCase" }
             .assertTrue { useCase ->
                 val typeParameters = useCase.typeParameters
-                typeParameters.size == 3 && 
+                typeParameters.size == 3 &&
                 typeParameters.any { it.name == "I" } &&
                 typeParameters.any { it.name == "E" } &&
                 typeParameters.any { it.name == "T" }
@@ -261,7 +271,7 @@ class UseCaseArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { 
+            .filter {
                 it.hasParentWithName("Command") || it.hasParentWithName("Query")
             }
             .assertTrue { commandOrQuery ->
@@ -273,7 +283,7 @@ class UseCaseArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { 
+            .filter {
                 it.hasParentWithName("Command") || it.hasParentWithName("Query")
             }
             .assertTrue { commandOrQuery ->
@@ -326,10 +336,10 @@ class UseCaseArchitectureTest : StringSpec({
         Konsist
             .scopeFromModule("application")
             .classes()
-            .filter { 
-                it.name.endsWith("Error") && 
-                !it.name.startsWith("Application") && 
-                it.packagee?.name?.endsWith(".usecase.error") == true 
+            .filter {
+                it.name.endsWith("Error") &&
+                !it.name.startsWith("Application") &&
+                it.packagee?.name?.endsWith(".usecase.error") == true
             }
             .assertTrue { errorClass ->
                 val packageName = errorClass.packagee?.name ?: ""
