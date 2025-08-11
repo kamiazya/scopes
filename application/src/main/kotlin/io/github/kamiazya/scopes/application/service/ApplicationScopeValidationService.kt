@@ -195,7 +195,31 @@ class ApplicationScopeValidationService(
     }
 
     /**
+     * Private translator function to map ScopeBusinessRuleError to ScopeError.
+     * Centralizes the conversion of business rule errors to public scope errors.
+     */
+    private fun mapBusinessRuleErrorToScopeError(error: ScopeBusinessRuleError, parentId: ScopeId?): ScopeError =
+        when (error) {
+            is ScopeBusinessRuleError.MaxDepthExceeded ->
+                ScopeError.InvalidParent(
+                    parentId ?: ScopeId.generate(),
+                    "Maximum hierarchy depth (${error.maxDepth}) would be exceeded"
+                )
+            is ScopeBusinessRuleError.MaxChildrenExceeded ->
+                ScopeError.InvalidParent(
+                    parentId ?: ScopeId.generate(),
+                    "Maximum children limit (${error.maxChildren}) would be exceeded"
+                )
+            is ScopeBusinessRuleError.DuplicateScope ->
+                ScopeError.InvalidParent(
+                    parentId ?: ScopeId.generate(),
+                    "Duplicate scope detected: ${error.existingScopeId}"
+                )
+        }
+
+    /**
      * Validate hierarchy depth using repository query.
+     * Delegates to validateHierarchyConstraints for depth validation.
      */
     suspend fun validateHierarchyDepth(
         parentId: ScopeId?
@@ -204,31 +228,13 @@ class ApplicationScopeValidationService(
             return@either
         }
 
-        val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { findError ->
-                // Map FindScopeError to appropriate DomainError
-                when (findError) {
-                    is FindScopeError.CircularReference ->
-                        ScopeError.CircularReference(findError.scopeId, parentId)
-                    is FindScopeError.OrphanedScope ->
-                        ScopeError.InvalidParent(parentId, findError.message)
-                    is FindScopeError.TraversalTimeout ->
-                        ScopeError.InvalidParent(parentId, "Hierarchy traversal timed out")
-                    is FindScopeError.ConnectionFailure ->
-                        ScopeError.InvalidParent(parentId, "Connection failure: ${findError.message}")
-                    is FindScopeError.PersistenceError ->
-                        ScopeError.InvalidParent(parentId, "Persistence error: ${findError.message}")
-                    is FindScopeError.IsolationViolation ->
-                        ScopeError.InvalidParent(parentId, "Isolation violation: ${findError.violationType}")
-                    is FindScopeError.UnknownError ->
-                        ScopeError.InvalidParent(parentId, "Unknown error: ${findError.message}")
-                }
+        // Delegate to validateHierarchyConstraints which handles depth checking
+        validateHierarchyConstraints(parentId)
+            .mapLeft { businessRuleError ->
+                // Map business rule errors to scope errors
+                mapBusinessRuleErrorToScopeError(businessRuleError, parentId)
             }
             .bind()
-
-        ensure(depth < MAX_HIERARCHY_DEPTH) {
-            ScopeError.InvalidParent(parentId, "Maximum hierarchy depth ($MAX_HIERARCHY_DEPTH) would be exceeded")
-        }
     }
 
     /**
