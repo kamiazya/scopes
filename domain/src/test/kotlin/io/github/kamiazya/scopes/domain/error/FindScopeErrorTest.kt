@@ -66,6 +66,9 @@ class FindScopeErrorTest : FunSpec({
             error.scopeId shouldBe scopeId
             error.message shouldBe message
             error.cause shouldBe cause
+            error.retryable shouldBe false
+            error.errorCode shouldBe null
+            error.category shouldBe FindScopeError.PersistenceError.ErrorCategory.PERSISTENCE
         }
 
         test("should create UnknownError error with scope ID, message and cause") {
