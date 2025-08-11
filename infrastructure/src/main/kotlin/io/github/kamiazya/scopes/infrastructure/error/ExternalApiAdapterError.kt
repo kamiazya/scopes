@@ -8,7 +8,7 @@ import kotlinx.datetime.Instant
  * Covers network issues, service unavailability, and circuit breaker states.
  */
 sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
-    
+
     /**
      * Network-level connectivity errors.
      */
@@ -19,10 +19,10 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
-        // Most network errors are transient except certificate issues
-        override val retryable: Boolean = errorType != NetworkErrorType.CERTIFICATE_ERROR
+        // Delegate retry logic to the enum's semantics
+        override val retryable: Boolean = errorType.retryable
     }
-    
+
     /**
      * HTTP protocol errors with status codes.
      */
@@ -38,7 +38,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         // Common retryable HTTP status codes for transient issues
         override val retryable: Boolean = statusCode in setOf(408, 429, 502, 503, 504)
     }
-    
+
     /**
      * Request timeout errors.
      */
@@ -52,7 +52,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         // Timeouts are transient and retryable
         override val retryable: Boolean = true
     }
-    
+
     /**
      * Circuit breaker activation errors.
      */
@@ -67,7 +67,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         // Only half-open state allows retries (testing if service recovered)
         override val retryable: Boolean = state == CircuitBreakerState.HALF_OPEN
     }
-    
+
     /**
      * Rate limiting errors.
      */
@@ -84,7 +84,7 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         // Rate limits are retryable only if reset time has passed
         override val retryable: Boolean = resetTime <= Clock.System.now().toEpochMilliseconds()
     }
-    
+
     /**
      * Service health and availability errors.
      */
