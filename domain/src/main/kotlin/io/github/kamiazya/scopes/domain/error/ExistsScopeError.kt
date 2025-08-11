@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import kotlin.time.Duration
 
 /**
  * Scope existence check operation specific errors.
@@ -40,7 +41,7 @@ sealed class ExistsScopeError {
      */
     data class QueryTimeout(
         val context: ExistenceContext,
-        val timeoutMs: Long,
+        val timeout: Duration,
         val operation: String = "EXISTS_CHECK"
     ) : ExistsScopeError()
 
@@ -49,7 +50,7 @@ sealed class ExistsScopeError {
      * Occurs when the query cannot acquire necessary locks within the timeout period.
      */
     data class LockTimeout(
-        val timeoutMs: Long,
+        val timeout: Duration,
         val operation: String,
         val retryable: Boolean = true
     ) : ExistsScopeError()
@@ -84,7 +85,7 @@ sealed class ExistsScopeError {
         val errorCode: String? = null,
         val category: ErrorCategory = ErrorCategory.PERSISTENCE
     ) : ExistsScopeError() {
-        
+
         enum class ErrorCategory {
             PERSISTENCE,
             DATABASE,

@@ -3,21 +3,24 @@ package io.github.kamiazya.scopes.infrastructure.repository
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.entity.Scope
+import io.github.kamiazya.scopes.domain.error.CountScopeError
+import io.github.kamiazya.scopes.domain.error.ExistsScopeError
+import io.github.kamiazya.scopes.domain.error.FindScopeError
+import io.github.kamiazya.scopes.domain.error.SaveScopeError
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
-import io.github.kamiazya.scopes.domain.error.*
-import io.github.kamiazya.scopes.infrastructure.error.InfrastructureAdapterError
 import io.github.kamiazya.scopes.infrastructure.error.DatabaseAdapterError
-import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Tests for InMemoryScopeRepository database error simulation capabilities.
@@ -48,14 +51,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateConnectionPoolExhaustion(true)
-            
+
             val scope = createTestScope()
-            
+
             val saveResult = repository.save(scope)
-            
+
             val error = saveResult.shouldBeLeft()
             error.shouldBeInstanceOf<SaveScopeError.PersistenceError>()
-            
+
             // Verify the error contains connection pool details
             val dbError = error as SaveScopeError.PersistenceError
             dbError.message shouldBe "Connection pool exhausted"
@@ -68,17 +71,17 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
     "should simulate query timeout during existsById operation" {
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
-            repository.simulateQueryTimeout(true, timeoutMs = 5000)
-            
+            repository.simulateQueryTimeout(true, timeoutMs = 5)
+
             val scopeId = ScopeId.generate()
-            
+
             val existsResult = repository.existsById(scopeId)
-            
+
             val error = existsResult.shouldBeLeft()
             error.shouldBeInstanceOf<ExistsScopeError.QueryTimeout>()
-            
+
             val timeoutError = error as ExistsScopeError.QueryTimeout
-            timeoutError.timeoutMs shouldBe 5000
+            timeoutError.timeout shouldBe 5.seconds
             timeoutError.context.shouldBeInstanceOf<ExistsScopeError.ExistenceContext.ById>()
             val byIdContext = timeoutError.context as ExistsScopeError.ExistenceContext.ById
             byIdContext.scopeId shouldBe scopeId
@@ -89,14 +92,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateTransactionDeadlock(true)
-            
+
             val scope = createTestScope()
-            
+
             val saveResult = repository.save(scope)
-            
+
             val error = saveResult.shouldBeLeft()
             error.shouldBeInstanceOf<SaveScopeError.TransactionError>()
-            
+
             val txError = error as SaveScopeError.TransactionError
             txError.transactionId shouldNotBe null
             txError.operation shouldBe "DEADLOCK_DETECTED"
@@ -108,14 +111,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateDataIntegrityViolation(true, constraintName = "uk_scope_parent_title")
-            
+
             val scope = createTestScope()
-            
+
             val saveResult = repository.save(scope)
-            
+
             val error = saveResult.shouldBeLeft()
             error.shouldBeInstanceOf<SaveScopeError.DataIntegrity>()
-            
+
             val integrityError = error as SaveScopeError.DataIntegrity
             integrityError.constraint shouldBe "uk_scope_parent_title"
             integrityError.retryable shouldBe false
@@ -126,14 +129,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateStorageExhaustion(true, availableSpace = 0, requiredSpace = 1024)
-            
+
             val scope = createTestScope()
-            
+
             val saveResult = repository.save(scope)
-            
+
             val error = saveResult.shouldBeLeft()
             error.shouldBeInstanceOf<SaveScopeError.StorageError>()
-            
+
             val storageError = error as SaveScopeError.StorageError
             storageError.availableSpace shouldBe 0
             storageError.requiredSpace shouldBe 1024
@@ -145,14 +148,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateConnectionInterruption(true)
-            
+
             val parentId = ScopeId.generate()
-            
+
             val countResult = repository.countByParentId(parentId)
-            
+
             val error = countResult.shouldBeLeft()
             error.shouldBeInstanceOf<CountScopeError.ConnectionError>()
-            
+
             val connectionError = error as CountScopeError.ConnectionError
             connectionError.retryable shouldBe true
             connectionError.parentId shouldBe parentId
@@ -162,18 +165,18 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
     "should simulate table lock timeout during existsByParentIdAndTitle operation" {
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
-            repository.simulateTableLockTimeout(true, lockTimeoutMs = 3000)
-            
+            repository.simulateTableLockTimeout(true, lockTimeoutMs = 3)
+
             val parentId = ScopeId.generate()
             val title = "Locked Title"
-            
+
             val existsResult = repository.existsByParentIdAndTitle(parentId, title)
-            
+
             val error = existsResult.shouldBeLeft()
             error.shouldBeInstanceOf<ExistsScopeError.LockTimeout>()
-            
+
             val lockError = error as ExistsScopeError.LockTimeout
-            lockError.timeoutMs shouldBe 3000
+            lockError.timeout shouldBe 3.seconds
             lockError.operation shouldBe "SELECT_BY_PARENT_AND_TITLE"
             lockError.retryable shouldBe true
         }
@@ -183,14 +186,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateIsolationViolation(true, violationType = "PHANTOM_READ")
-            
+
             val scopeId = ScopeId.generate()
-            
+
             val depthResult = repository.findHierarchyDepth(scopeId)
-            
+
             val error = depthResult.shouldBeLeft()
             error.shouldBeInstanceOf<FindScopeError.IsolationViolation>()
-            
+
             val isolationError = error as FindScopeError.IsolationViolation
             isolationError.violationType shouldBe "PHANTOM_READ"
             isolationError.scopeId shouldBe scopeId
@@ -201,19 +204,19 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
     "should simulate partial failure recovery scenario" {
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
-            
+
             // First attempt fails with connection error
             repository.simulateConnectionPoolExhaustion(true)
             val scope = createTestScope()
             val firstAttempt = repository.save(scope)
             firstAttempt.shouldBeLeft()
-            
+
             // Second attempt succeeds after connection recovery
             repository.simulateConnectionPoolExhaustion(false)
             val secondAttempt = repository.save(scope)
             val savedScope = secondAttempt.shouldBeRight()
             savedScope shouldBe scope
-            
+
             // Verify scope is actually saved
             val existsResult = repository.existsById(scope.id)
             val exists = existsResult.shouldBeRight()
@@ -225,14 +228,14 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
             repository.simulateInfrastructureFailure(true, failureType = "CASCADING_FAILURE")
-            
+
             val scope = createTestScope()
-            
+
             val saveResult = repository.save(scope)
-            
+
             val error = saveResult.shouldBeLeft()
             error.shouldBeInstanceOf<SaveScopeError.SystemFailure>()
-            
+
             val infraError = error as SaveScopeError.SystemFailure
             infraError.failure.shouldBeInstanceOf<SaveScopeError.SystemFailure.SystemFailureType.UnknownError>()
             val unknownError = infraError.failure as SaveScopeError.SystemFailure.SystemFailureType.UnknownError
@@ -245,7 +248,7 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
     "should simulate different error types based on operation context" {
         runTest {
             val repository = InMemoryScopeRepositoryWithErrorSimulation()
-            
+
             // Different errors for different operations
             repository.simulateOperationSpecificErrors(mapOf(
                 "save" to "CONNECTION_POOL_EXHAUSTED",
@@ -253,11 +256,11 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
                 "count" to "TABLE_LOCKED",
                 "findDepth" to "TRANSACTION_ROLLBACK"
             ))
-            
+
             val scope = createTestScope()
             val scopeId = ScopeId.generate()
             val parentId = ScopeId.generate()
-            
+
             // Verify save operation fails with PersistenceError for connection pool exhaustion
             val saveResult = repository.save(scope)
             val saveError = saveResult.shouldBeLeft()
@@ -268,7 +271,7 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             persistenceError.retryable shouldBe true
             persistenceError.cause?.message shouldBe "Connection pool exhausted"
             persistenceError.category shouldBe SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
-            
+
             // Verify exists operation fails with QueryTimeout
             val existsResult = repository.existsById(scopeId)
             val existsError = existsResult.shouldBeLeft()
@@ -277,9 +280,9 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             queryTimeout.context.shouldBeInstanceOf<ExistsScopeError.ExistenceContext.ById>()
             val byIdContext = queryTimeout.context as ExistsScopeError.ExistenceContext.ById
             byIdContext.scopeId shouldBe scopeId
-            queryTimeout.timeoutMs shouldBe 5000
+            queryTimeout.timeout shouldBe 5.seconds
             queryTimeout.operation shouldBe "EXISTS_CHECK"
-            
+
             // Verify count operation fails with ConnectionError for table lock
             val countResult = repository.countByParentId(parentId)
             val countError = countResult.shouldBeLeft()
@@ -288,7 +291,7 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
             connectionError.parentId shouldBe parentId
             connectionError.retryable shouldBe true
             connectionError.cause?.message shouldBe "Table locked"
-            
+
             // Verify findDepth operation fails with IsolationViolation for transaction rollback
             val depthResult = repository.findHierarchyDepth(scopeId)
             val depthError = depthResult.shouldBeLeft()
@@ -307,7 +310,7 @@ class InMemoryScopeRepositoryDatabaseErrorSimulationTest : StringSpec({
  * by simulating realistic database failure scenarios.
  */
 class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
-    
+
     private var simulateConnectionPoolExhaustion = false
     private var simulateQueryTimeout = false
     private var queryTimeoutMs = 0L
@@ -325,54 +328,54 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
     private var simulateInfrastructureFailure = false
     private var infrastructureFailureType = ""
     private var operationSpecificErrors = mapOf<String, String>()
-    
+
     fun simulateConnectionPoolExhaustion(enabled: Boolean) {
         simulateConnectionPoolExhaustion = enabled
     }
-    
+
     fun simulateQueryTimeout(enabled: Boolean, timeoutMs: Long = 5000) {
         simulateQueryTimeout = enabled
         queryTimeoutMs = timeoutMs
     }
-    
+
     fun simulateTransactionDeadlock(enabled: Boolean) {
         simulateTransactionDeadlock = enabled
     }
-    
+
     fun simulateDataIntegrityViolation(enabled: Boolean, constraintName: String = "") {
         simulateDataIntegrityViolation = enabled
         dataIntegrityConstraint = constraintName
     }
-    
+
     fun simulateStorageExhaustion(enabled: Boolean, availableSpace: Long = 0, requiredSpace: Long = 0) {
         simulateStorageExhaustion = enabled
         this.availableSpace = availableSpace
         this.requiredSpace = requiredSpace
     }
-    
+
     fun simulateConnectionInterruption(enabled: Boolean) {
         simulateConnectionInterruption = enabled
     }
-    
+
     fun simulateTableLockTimeout(enabled: Boolean, lockTimeoutMs: Long = 3000) {
         simulateTableLockTimeout = enabled
         this.lockTimeoutMs = lockTimeoutMs
     }
-    
+
     fun simulateIsolationViolation(enabled: Boolean, violationType: String = "") {
         simulateIsolationViolation = enabled
         isolationViolationType = violationType
     }
-    
+
     fun simulateInfrastructureFailure(enabled: Boolean, failureType: String = "") {
         simulateInfrastructureFailure = enabled
         infrastructureFailureType = failureType
     }
-    
+
     fun simulateOperationSpecificErrors(errors: Map<String, String>) {
         operationSpecificErrors = errors
     }
-    
+
     override suspend fun save(scope: Scope): Either<SaveScopeError, Scope> = either {
         if (simulateConnectionPoolExhaustion) {
             val infraError = DatabaseAdapterError.ConnectionError(
@@ -391,7 +394,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 category = SaveScopeError.PersistenceError.ErrorCategory.CONNECTION
             ))
         }
-        
+
         if (simulateTransactionDeadlock) {
             raise(SaveScopeError.TransactionError(
                 scopeId = scope.id,
@@ -401,7 +404,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 cause = RuntimeException("Transaction deadlock detected")
             ))
         }
-        
+
         if (simulateDataIntegrityViolation) {
             raise(SaveScopeError.DataIntegrity(
                 scopeId = scope.id,
@@ -410,7 +413,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 cause = RuntimeException("Constraint violation: $dataIntegrityConstraint")
             ))
         }
-        
+
         if (simulateStorageExhaustion) {
             raise(SaveScopeError.StorageError(
                 scopeId = scope.id,
@@ -420,7 +423,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 cause = RuntimeException("Insufficient storage space")
             ))
         }
-        
+
         if (simulateInfrastructureFailure) {
             raise(SaveScopeError.SystemFailure(
                 scopeId = scope.id,
@@ -432,7 +435,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 cause = RuntimeException("Infrastructure failure: $infrastructureFailureType")
             ))
         }
-        
+
         if (operationSpecificErrors.containsKey("save")) {
             val errorType = operationSpecificErrors["save"]!!
             when (errorType) {
@@ -454,53 +457,53 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 }
             }
         }
-        
+
         // If no errors simulated, use parent implementation
         mutex.withLock {
             scopes[scope.id] = scope
             scope
         }
     }
-    
+
     override suspend fun existsById(id: ScopeId): Either<ExistsScopeError, Boolean> = either {
         if (simulateQueryTimeout) {
             raise(ExistsScopeError.QueryTimeout(
                 context = ExistsScopeError.ExistenceContext.ById(scopeId = id),
-                timeoutMs = queryTimeoutMs,
+                timeout = queryTimeoutMs.seconds,
                 operation = "EXISTS_CHECK"
             ))
         }
-        
+
         if (operationSpecificErrors.containsKey("exists")) {
             val errorType = operationSpecificErrors["exists"]!!
             when (errorType) {
                 "QUERY_TIMEOUT" -> {
                     raise(ExistsScopeError.QueryTimeout(
                         context = ExistsScopeError.ExistenceContext.ById(scopeId = id),
-                        timeoutMs = 5000,
+                        timeout = 5.seconds,
                         operation = "EXISTS_CHECK"
                     ))
                 }
             }
         }
-        
+
         mutex.withLock {
             scopes.containsKey(id)
         }
     }
-    
+
     override suspend fun existsByParentIdAndTitle(
         parentId: ScopeId?,
         title: String
     ): Either<ExistsScopeError, Boolean> = either {
         if (simulateTableLockTimeout) {
             raise(ExistsScopeError.LockTimeout(
-                timeoutMs = lockTimeoutMs,
+                timeout = lockTimeoutMs.seconds,
                 operation = "SELECT_BY_PARENT_AND_TITLE",
                 retryable = true
             ))
         }
-        
+
         mutex.withLock {
             val normalizedInputTitle = io.github.kamiazya.scopes.domain.util.TitleNormalizer.normalize(title)
             scopes.values.any { scope ->
@@ -509,7 +512,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
             }
         }
     }
-    
+
     override suspend fun countByParentId(parentId: ScopeId): Either<CountScopeError, Int> = either {
         if (simulateConnectionInterruption) {
             raise(CountScopeError.ConnectionError(
@@ -518,7 +521,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 cause = RuntimeException("Connection interrupted")
             ))
         }
-        
+
         if (operationSpecificErrors.containsKey("count")) {
             val errorType = operationSpecificErrors["count"]!!
             when (errorType) {
@@ -531,12 +534,12 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 }
             }
         }
-        
+
         mutex.withLock {
             scopes.values.count { it.parentId == parentId }
         }
     }
-    
+
     override suspend fun findHierarchyDepth(scopeId: ScopeId): Either<FindScopeError, Int> = either {
         if (simulateIsolationViolation) {
             raise(FindScopeError.IsolationViolation(
@@ -545,7 +548,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 retryable = true
             ))
         }
-        
+
         if (operationSpecificErrors.containsKey("findDepth")) {
             val errorType = operationSpecificErrors["findDepth"]!!
             when (errorType) {
@@ -558,10 +561,10 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                 }
             }
         }
-        
+
         mutex.withLock {
             val visited = mutableSetOf<ScopeId>()
-            
+
             fun calculateDepth(currentId: ScopeId?, depth: Int): Either<FindScopeError, Int> {
                 return when (currentId) {
                     null -> Either.Right(depth)
@@ -572,7 +575,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                             return Either.Left(FindScopeError.CircularReference(scopeId, cyclePath))
                         }
                         visited.add(currentId)
-                        
+
                         val scope = scopes[currentId]
                         when (scope) {
                             null -> Either.Left(FindScopeError.OrphanedScope(currentId, "Parent scope not found during traversal"))
@@ -581,7 +584,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
                     }
                 }
             }
-            
+
             calculateDepth(scopeId, 0).bind()
         }
     }

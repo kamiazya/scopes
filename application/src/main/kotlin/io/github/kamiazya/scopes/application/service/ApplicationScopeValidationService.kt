@@ -298,14 +298,14 @@ class ApplicationScopeValidationService(
                     is ExistsScopeError.QueryTimeout ->
                         DomainInfrastructureError(
                             RepositoryError.DatabaseError(
-                                "Query timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, context=${existsError.context}",
+                                "Query timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeout.inWholeMilliseconds}ms, context=${existsError.context}",
                                 RuntimeException("Query timeout: ${existsError.operation}")
                             )
                         )
                     is ExistsScopeError.LockTimeout ->
                         DomainInfrastructureError(
                             RepositoryError.DatabaseError(
-                                "Lock timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms, retryable=${existsError.retryable}",
+                                "Lock timeout during existence check: operation='${existsError.operation}', timeout=${existsError.timeout.inWholeMilliseconds}ms, retryable=${existsError.retryable}",
                                 RuntimeException("Lock timeout: ${existsError.operation}")
                             )
                         )

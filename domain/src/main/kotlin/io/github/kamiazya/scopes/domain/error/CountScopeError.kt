@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import kotlin.time.Duration
 
 /**
  * Scope count operation specific errors.
@@ -8,13 +9,13 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
  * Used for operations like countByParentId.
  */
 sealed class CountScopeError {
-    
+
     /**
      * Represents an aggregation timeout during count operation.
      * Occurs when counting large numbers of children takes longer than expected.
      */
-    data class AggregationTimeout(val timeoutMillis: Long) : CountScopeError()
-    
+    data class AggregationTimeout(val timeout: Duration) : CountScopeError()
+
     /**
      * Represents a connection error during count operation.
      * Occurs when the connection to the storage system is lost or unavailable.
@@ -24,7 +25,7 @@ sealed class CountScopeError {
         val retryable: Boolean = true,
         val cause: Throwable? = null
     ) : CountScopeError()
-    
+
     /**
      * Represents an invalid parent ID error.
      * Occurs when trying to count children of a non-existent parent.
@@ -33,7 +34,7 @@ sealed class CountScopeError {
         val parentId: ScopeId,
         val message: String
     ) : CountScopeError()
-    
+
     /**
      * Represents a unified persistence/database error during count operation.
      * Consolidates both persistence layer failures and database-level errors.
@@ -46,7 +47,7 @@ sealed class CountScopeError {
         val errorCode: String? = null,
         val category: ErrorCategory = ErrorCategory.PERSISTENCE
     ) : CountScopeError() {
-        
+
         enum class ErrorCategory {
             PERSISTENCE,
             DATABASE,
@@ -55,7 +56,7 @@ sealed class CountScopeError {
             CONSTRAINT
         }
     }
-    
+
     /**
      * Represents an unexpected error during count operation.
      * Used as a fallback for any unhandled exceptions.

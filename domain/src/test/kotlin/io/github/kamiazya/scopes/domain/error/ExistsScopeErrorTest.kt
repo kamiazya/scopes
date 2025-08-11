@@ -4,48 +4,49 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Test cases for ExistsScopeError sealed class.
  * These tests define the expected behavior for existence check failures.
  */
 class ExistsScopeErrorTest : FunSpec({
-    
+
     context("ExistsScopeError sealed class") {
-        
+
         test("should create QueryTimeout error with scopeId and timeout") {
             val scopeId = ScopeId.generate()
-            val timeoutMs = 5000L
+            val timeout = 5.seconds
             val error = ExistsScopeError.QueryTimeout(
                 context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
-                timeoutMs = timeoutMs
+                timeout = timeout
             )
-            
+
             error.shouldBeInstanceOf<ExistsScopeError.QueryTimeout>()
             (error.context as ExistsScopeError.ExistenceContext.ById).scopeId shouldBe scopeId
-            error.timeoutMs shouldBe timeoutMs
+            error.timeout shouldBe timeout
         }
-        
+
         test("should create ConnectionFailure error with message and cause") {
             val message = "Database connection lost"
             val cause = RuntimeException("Connection reset")
             val error = ExistsScopeError.ConnectionFailure(message, cause)
-            
+
             error.shouldBeInstanceOf<ExistsScopeError.ConnectionFailure>()
             error.message shouldBe message
             error.cause shouldBe cause
         }
-        
+
         test("should create IndexCorruption error with scope ID and message") {
             val scopeId = ScopeId.generate()
             val message = "Index is corrupted and needs rebuilding"
             val error = ExistsScopeError.IndexCorruption(scopeId, message)
-            
+
             error.shouldBeInstanceOf<ExistsScopeError.IndexCorruption>()
             error.scopeId shouldBe scopeId
             error.message shouldBe message
         }
-        
+
         test("should create PersistenceError error with context, message and cause") {
             val scopeId = ScopeId.generate()
             val message = "Storage system unavailable"
@@ -55,33 +56,33 @@ class ExistsScopeErrorTest : FunSpec({
                 message = message,
                 cause = cause
             )
-            
+
             error.shouldBeInstanceOf<ExistsScopeError.PersistenceError>()
             error.message shouldBe message
             error.cause shouldBe cause
         }
-        
+
         test("should create UnknownError error with message and cause") {
             val message = "Unexpected error during existence check"
             val cause = RuntimeException("Unknown failure")
             val error = ExistsScopeError.UnknownError(message, cause)
-            
+
             error.shouldBeInstanceOf<ExistsScopeError.UnknownError>()
             error.message shouldBe message
             error.cause shouldBe cause
         }
     }
-    
+
     context("ExistsScopeError sealed hierarchy") {
-        
+
         test("all error types should be instances of ExistsScopeError") {
             val scopeId = ScopeId.generate()
             val cause = RuntimeException("Test")
-            
+
             val errors = listOf(
                 ExistsScopeError.QueryTimeout(
                     context = ExistsScopeError.ExistenceContext.ById(scopeId = scopeId),
-                    timeoutMs = 5000L
+                    timeout = 5.seconds
                 ),
                 ExistsScopeError.ConnectionFailure("test", cause),
                 ExistsScopeError.IndexCorruption(scopeId, "test"),
@@ -92,7 +93,7 @@ class ExistsScopeErrorTest : FunSpec({
                 ),
                 ExistsScopeError.UnknownError("test", cause)
             )
-            
+
             errors.forEach { error ->
                 error.shouldBeInstanceOf<ExistsScopeError>()
             }

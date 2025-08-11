@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import kotlin.time.Duration
 
 /**
  * Scope hierarchy traversal and find operation specific errors.
@@ -8,16 +9,16 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
  * Used for operations like findHierarchyDepth and other hierarchy-related queries.
  */
 sealed class FindScopeError {
-    
+
     /**
      * Represents a timeout during hierarchy traversal.
      * Occurs when traversing deep hierarchies takes longer than expected.
      */
     data class TraversalTimeout(
         val scopeId: ScopeId,
-        val timeoutMillis: Long
+        val timeout: Duration
     ) : FindScopeError()
-    
+
     /**
      * Represents a circular reference detection in the hierarchy.
      * Occurs when a scope has itself as an ancestor, creating an infinite loop.
@@ -26,7 +27,7 @@ sealed class FindScopeError {
         val scopeId: ScopeId,
         val cyclePath: List<ScopeId>
     ) : FindScopeError()
-    
+
     /**
      * Represents an orphaned scope error.
      * Occurs when a scope references a parent that doesn't exist.
@@ -35,7 +36,7 @@ sealed class FindScopeError {
         val scopeId: ScopeId,
         val message: String
     ) : FindScopeError()
-    
+
     /**
      * Represents a connection failure during hierarchy traversal.
      * Occurs when the connection to the storage system is lost or unavailable.
@@ -45,7 +46,7 @@ sealed class FindScopeError {
         val message: String,
         val cause: Throwable
     ) : FindScopeError()
-    
+
     /**
      * Represents a unified persistence/database error during hierarchy traversal.
      * Consolidates both persistence layer failures and database-level errors.
@@ -58,7 +59,7 @@ sealed class FindScopeError {
         val errorCode: String? = null,
         val category: ErrorCategory = ErrorCategory.PERSISTENCE
     ) : FindScopeError() {
-        
+
         enum class ErrorCategory {
             PERSISTENCE,
             DATABASE,
@@ -67,7 +68,7 @@ sealed class FindScopeError {
             CONSTRAINT
         }
     }
-    
+
     /**
      * Represents a transaction isolation violation during hierarchy traversal.
      * Occurs when concurrent modifications affect the hierarchy structure.

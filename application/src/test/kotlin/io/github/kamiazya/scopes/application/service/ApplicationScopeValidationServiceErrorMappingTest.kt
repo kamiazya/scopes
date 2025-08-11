@@ -16,6 +16,7 @@ import io.kotest.matchers.types.beInstanceOf
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.sql.SQLException
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Comprehensive test for ExistsScopeError to ApplicationValidationError mapping.
@@ -141,12 +142,12 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val title = "Test Title"
                 val normalizedTitle = title.lowercase().trim()
                 val operation = "EXISTS_BY_PARENT_AND_TITLE"
-                val timeoutMs = 5000L
+                val timeout = 5.seconds
                 val context = ExistsScopeError.ExistenceContext.ByParentIdAndTitle(parentId, title)
 
                 val queryTimeoutError = ExistsScopeError.QueryTimeout(
                     context = context,
-                    timeoutMs = timeoutMs,
+                    timeout = timeout,
                     operation = operation
                 )
 
@@ -168,7 +169,7 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val databaseError = infrastructureError.repositoryError as RepositoryError.DatabaseError
                 databaseError.message shouldContain "Query timeout during existence check"
                 databaseError.message shouldContain "operation='$operation'"
-                databaseError.message shouldContain "timeout=${timeoutMs}ms"
+                databaseError.message shouldContain "timeout=${timeout.inWholeMilliseconds}ms"
                 databaseError.message shouldContain "context=$context"
                 databaseError.cause should beInstanceOf<RuntimeException>()
                 databaseError.cause!!.message shouldBe "Query timeout: $operation"
@@ -180,12 +181,12 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val title = "Test Title"
                 val normalizedTitle = title.lowercase().trim()
                 val operation = "EXISTS_BY_ID"
-                val timeoutMs = 3000L
+                val timeout = 3.seconds
                 val context = ExistsScopeError.ExistenceContext.ById(scopeId)
 
                 val queryTimeoutError = ExistsScopeError.QueryTimeout(
                     context = context,
-                    timeoutMs = timeoutMs,
+                    timeout = timeout,
                     operation = operation
                 )
 
@@ -204,7 +205,7 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val infrastructureError = error as DomainInfrastructureError
                 val databaseError = infrastructureError.repositoryError as RepositoryError.DatabaseError
                 databaseError.message shouldContain "operation='$operation'"
-                databaseError.message shouldContain "timeout=${timeoutMs}ms"
+                databaseError.message shouldContain "timeout=${timeout.inWholeMilliseconds}ms"
                 databaseError.message shouldContain "context=$context"
             }
         }
@@ -216,11 +217,11 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val title = "Test Title"
                 val normalizedTitle = title.lowercase().trim()
                 val operation = "ACQUIRE_TABLE_LOCK"
-                val timeoutMs = 10000L
+                val timeout = 10.seconds
                 val retryable = true
 
                 val lockTimeoutError = ExistsScopeError.LockTimeout(
-                    timeoutMs = timeoutMs,
+                    timeout = timeout,
                     operation = operation,
                     retryable = retryable
                 )
@@ -243,7 +244,7 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val databaseError = infrastructureError.repositoryError as RepositoryError.DatabaseError
                 databaseError.message shouldContain "Lock timeout during existence check"
                 databaseError.message shouldContain "operation='$operation'"
-                databaseError.message shouldContain "timeout=${timeoutMs}ms"
+                databaseError.message shouldContain "timeout=${timeout.inWholeMilliseconds}ms"
                 databaseError.message shouldContain "retryable=$retryable"
                 databaseError.cause should beInstanceOf<RuntimeException>()
                 databaseError.cause!!.message shouldBe "Lock timeout: $operation"
@@ -254,11 +255,11 @@ class ApplicationScopeValidationServiceErrorMappingTest : DescribeSpec({
                 val title = "Test Title"
                 val normalizedTitle = title.lowercase().trim()
                 val operation = "DEADLOCK_DETECTED"
-                val timeoutMs = 15000L
+                val timeout = 15.seconds
                 val retryable = false
 
                 val lockTimeoutError = ExistsScopeError.LockTimeout(
-                    timeoutMs = timeoutMs,
+                    timeout = timeout,
                     operation = operation,
                     retryable = retryable
                 )
