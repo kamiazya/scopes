@@ -187,6 +187,23 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 // Should have same hashCode despite different actualValue
                 error1.hashCode() shouldBe error2.hashCode()
             }
+
+            it("should have invalidVariableReasons property in EnvironmentError") {
+                val error = ConfigurationAdapterError.EnvironmentError(
+                    environment = "production",
+                    missingVariables = listOf("REQUIRED_VAR"),
+                    invalidVariableReasons = mapOf(
+                        "SECRET_KEY" to "Invalid format",
+                        "API_TOKEN" to "Missing prefix"
+                    ),
+                    timestamp = Clock.System.now()
+                )
+
+                error.environment shouldBe "production"
+                error.invalidVariableReasons.size shouldBe 2
+                error.invalidVariableReasons["SECRET_KEY"] shouldBe "Invalid format"
+                error.invalidVariableReasons["API_TOKEN"] shouldBe "Missing prefix"
+            }
         }
 
         describe("InfrastructureAdapterError base class") {
