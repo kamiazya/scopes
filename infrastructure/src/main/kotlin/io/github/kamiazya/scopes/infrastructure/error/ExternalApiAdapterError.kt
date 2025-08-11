@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -80,8 +81,8 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
-        // Rate limits are temporary and retryable after reset
-        override val retryable: Boolean = true
+        // Rate limits are retryable only if reset time has passed
+        override val retryable: Boolean = resetTime <= Clock.System.now().toEpochMilliseconds()
     }
     
     /**
