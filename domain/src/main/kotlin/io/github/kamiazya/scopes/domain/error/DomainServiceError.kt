@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 
 /**
  * General domain service error hierarchy for operational and infrastructure concerns.
@@ -25,13 +26,13 @@ sealed class ServiceOperationError : DomainServiceError() {
      * 
      * @param serviceName The name of the service that is unavailable
      * @param reason The reason for unavailability
-     * @param estimatedRecoveryTime Optional estimated recovery time in milliseconds
+     * @param estimatedRecoveryTime Optional estimated recovery time as Duration
      * @param alternativeService Optional alternative service that can be used
      */
     data class ServiceUnavailable(
         val serviceName: String,
         val reason: String,
-        val estimatedRecoveryTime: Long? = null,
+        val estimatedRecoveryTime: Duration? = null,
         val alternativeService: String? = null
     ) : ServiceOperationError()
     
@@ -40,14 +41,14 @@ sealed class ServiceOperationError : DomainServiceError() {
      * 
      * @param serviceName The name of the service that timed out
      * @param operation The operation that timed out
-     * @param timeoutMillis The timeout duration in milliseconds
-     * @param elapsedMillis The actual elapsed time before timeout
+     * @param timeout The timeout duration
+     * @param elapsed The actual elapsed time before timeout
      */
     data class ServiceTimeout(
         val serviceName: String,
         val operation: String,
-        val timeoutMillis: Long,
-        val elapsedMillis: Long
+        val timeout: Duration,
+        val elapsed: Duration
     ) : ServiceOperationError()
 }
 
@@ -84,13 +85,13 @@ sealed class ExternalServiceError : DomainServiceError() {
      * @param endpoint The service endpoint that failed
      * @param statusCode Optional HTTP status code if applicable
      * @param errorMessage The error message from the external service
-     * @param retryAfter Optional retry-after duration in seconds
+     * @param retryAfter Optional retry-after duration
      */
     data class IntegrationFailure(
         val serviceName: String,
         val endpoint: String,
         val statusCode: Int? = null,
         val errorMessage: String,
-        val retryAfter: Int? = null
+        val retryAfter: Duration? = null
     ) : ExternalServiceError()
 }

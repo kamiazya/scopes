@@ -7,6 +7,8 @@ import io.github.kamiazya.scopes.domain.error.ExternalServiceError
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Test class for DomainServiceError hierarchy.
@@ -23,14 +25,14 @@ class DomainServiceErrorTest : DescribeSpec({
                 val error = ServiceOperationError.ServiceUnavailable(
                     serviceName = "ValidationService",
                     reason = "Service is temporarily down",
-                    estimatedRecoveryTime = 30000L,
+                    estimatedRecoveryTime = 30.seconds,
                     alternativeService = "BackupValidationService"
                 )
                 
                 error.shouldBeInstanceOf<ServiceOperationError>()
                 error.serviceName shouldBe "ValidationService"
                 error.reason shouldBe "Service is temporarily down"
-                error.estimatedRecoveryTime shouldBe 30000L
+                error.estimatedRecoveryTime shouldBe 30.seconds
                 error.alternativeService shouldBe "BackupValidationService"
             }
             
@@ -38,14 +40,14 @@ class DomainServiceErrorTest : DescribeSpec({
                 val error = ServiceOperationError.ServiceTimeout(
                     serviceName = "ValidationService",
                     operation = "validateScopeCreation",
-                    timeoutMillis = 5000L,
-                    elapsedMillis = 5500L
+                    timeout = 5.seconds,
+                    elapsed = 5500.milliseconds
                 )
                 
                 error.serviceName shouldBe "ValidationService"
                 error.operation shouldBe "validateScopeCreation"
-                error.timeoutMillis shouldBe 5000L
-                error.elapsedMillis shouldBe 5500L
+                error.timeout shouldBe 5.seconds
+                error.elapsed shouldBe 5500.milliseconds
             }
         }
         
@@ -74,7 +76,7 @@ class DomainServiceErrorTest : DescribeSpec({
                     endpoint = "/api/v1/normalize",
                     statusCode = 503,
                     errorMessage = "Service temporarily unavailable",
-                    retryAfter = 60
+                    retryAfter = 60.seconds
                 )
                 
                 error.shouldBeInstanceOf<ExternalServiceError>()
@@ -82,7 +84,7 @@ class DomainServiceErrorTest : DescribeSpec({
                 error.endpoint shouldBe "/api/v1/normalize"
                 error.statusCode shouldBe 503
                 error.errorMessage shouldBe "Service temporarily unavailable"
-                error.retryAfter shouldBe 60
+                error.retryAfter shouldBe 60.seconds
             }
         }
     }
