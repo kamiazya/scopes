@@ -68,8 +68,9 @@ sealed class ExternalApiAdapterError : InfrastructureAdapterError() {
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : ExternalApiAdapterError() {
-        // Only half-open state allows retries (testing if service recovered)
-        override val retryable: Boolean = state == CircuitBreakerState.HALF_OPEN
+        // Allow retries for half-open state or when next attempt time has passed
+        override val retryable: Boolean = state == CircuitBreakerState.HALF_OPEN ||
+            (nextAttemptAt != null && nextAttemptAt <= Clock.System.now())
     }
 
     /**

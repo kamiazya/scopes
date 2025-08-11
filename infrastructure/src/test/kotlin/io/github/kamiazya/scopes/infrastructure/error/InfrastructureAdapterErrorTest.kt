@@ -165,6 +165,67 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                     error.retryable shouldBe false
                 }
             }
+
+            it("should handle CircuitBreakerError retryable logic correctly") {
+                val now = Clock.System.now()
+                
+                // HALF_OPEN state is always retryable
+                val halfOpenError = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.HALF_OPEN,
+                    failureCount = 5,
+                    timestamp = now
+                )
+                halfOpenError.retryable shouldBe true
+                
+                // OPEN state with no nextAttemptAt is not retryable
+                val openNoNextAttempt = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.OPEN,
+                    failureCount = 5,
+                    timestamp = now
+                )
+                openNoNextAttempt.retryable shouldBe false
+                
+                // OPEN state with future nextAttemptAt is not retryable
+                val openFutureAttempt = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.OPEN,
+                    failureCount = 5,
+                    nextAttemptAt = now + 1.minutes,
+                    timestamp = now
+                )
+                openFutureAttempt.retryable shouldBe false
+                
+                // OPEN state with past nextAttemptAt is retryable
+                val openPastAttempt = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.OPEN,
+                    failureCount = 5,
+                    nextAttemptAt = now - 1.minutes,
+                    timestamp = now
+                )
+                openPastAttempt.retryable shouldBe true
+                
+                // CLOSED state with no nextAttemptAt is not retryable
+                val closedError = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.CLOSED,
+                    failureCount = 5,
+                    timestamp = now
+                )
+                closedError.retryable shouldBe false
+                
+                // CLOSED state with past nextAttemptAt is retryable
+                val closedPastAttempt = ExternalApiAdapterError.CircuitBreakerError(
+                    serviceName = "test-service",
+                    state = CircuitBreakerState.CLOSED,
+                    failureCount = 5,
+                    nextAttemptAt = now - 1.minutes,
+                    timestamp = now
+                )
+                closedPastAttempt.retryable shouldBe true
+            }
         }
 
         describe("ConfigurationAdapterError") {
