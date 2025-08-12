@@ -88,7 +88,7 @@ jobs:
 
       - name: Build native binary (Unix)
         if: matrix.platform != 'win32'
-        run: ./gradlew nativeCompile -Pversion="${{ steps.version.outputs.version }}"
+        run: ./gradlew --no-daemon nativeCompile -Pversion="${{ steps.version.outputs.version }}"
 
       - name: Prepare binary for upload
         shell: bash
@@ -112,9 +112,9 @@ jobs:
         env:
           GRADLE_USER_HOME: C:\gradle-cache
 
-      - name: Generate SBOM (CycloneDX) (Unix)
+      - name: Generate SBOM (CycloneDx) (Unix)
         if: matrix.platform != 'win32'
-        run: ./gradlew presentation-cli:cycloneDxBom
+        run: ./gradlew --no-daemon presentation-cli:cycloneDxBom
 
 
       - name: Generate hash for SLSA provenance

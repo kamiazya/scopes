@@ -14,7 +14,6 @@ concurrency:
 permissions:
   contents: write # Required for dependency graph submission
   actions: read
-  id-token: write
 
 jobs:
   dependency-check:
@@ -42,7 +41,7 @@ jobs:
 
     - name: Generate SBOM (CycloneDX)
       id: sbom_generation
-      run: ./gradlew presentation-cli:cycloneDxBom
+      run: ./gradlew --no-daemon presentation-cli:cycloneDxBom
       continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     - name: Handle SBOM generation failure
