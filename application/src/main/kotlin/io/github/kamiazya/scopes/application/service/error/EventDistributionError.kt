@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 /**
  * Event distribution errors for event bus and subscription failures.
  * These handle errors in distributing events to subscribers and services.
@@ -23,7 +25,7 @@ sealed class EventDistributionError : NotificationServiceError() {
     data class SubscriberUnreachable(
         val subscriberId: String,
         val endpoint: String,
-        val lastAttempt: Long,
+        val lastAttemptAt: Instant,
         val retryCount: Int
     ) : EventDistributionError()
     

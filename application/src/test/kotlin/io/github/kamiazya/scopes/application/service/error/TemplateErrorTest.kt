@@ -37,7 +37,8 @@ class TemplateErrorTest : DescribeSpec({
                     missingVariables = listOf("USER_NAME"),
                     invalidVariableReasons = mapOf(
                         "FORMAT" to "Must be a valid email format",
-                        "LENGTH" to "Must be between 1 and 100 characters"
+                        "LENGTH" to "Must be between 1 and 100 characters",
+                        "EMAIL_VALUE" to "Invalid value, got 'secret@example.com'"
                     ),
                     cause = RuntimeException("Template engine error")
                 )
@@ -45,6 +46,7 @@ class TemplateErrorTest : DescribeSpec({
                 val sanitized = error.sanitizedReasons
                 sanitized["FORMAT"] shouldBe "Must be a valid email format"
                 sanitized["LENGTH"] shouldBe "Must be between 1 and 100 characters"
+                sanitized["EMAIL_VALUE"] shouldBe "Invalid value, got 'se**************om'"
             }
 
             it("should use sanitized reasons in toString") {
@@ -52,14 +54,23 @@ class TemplateErrorTest : DescribeSpec({
                     templateId = "password-reset",
                     missingVariables = listOf(),
                     invalidVariableReasons = mapOf(
-                        "RESET_TOKEN" to "Invalid token format"
+                        "RESET_TOKEN" to "Invalid token format, got 'super-secret-token-12345'"
                     ),
                     cause = null
                 )
 
                 val toStringResult = error.toString()
+                
+                // Verify templateId and field name are present
                 toStringResult.contains("password-reset") shouldBe true
                 toStringResult.contains("invalidVariableReasons") shouldBe true
+                toStringResult.contains("RESET_TOKEN") shouldBe true
+                
+                // Verify sensitive value is NOT present
+                toStringResult.contains("super-secret-token-12345") shouldBe false
+                
+                // Verify sanitized value IS present
+                toStringResult.contains("su*********************45") shouldBe true
             }
         }
 

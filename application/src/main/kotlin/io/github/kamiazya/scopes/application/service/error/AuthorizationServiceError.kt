@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 /**
  * Authorization service errors for access control and permission violations.
  * 
@@ -75,7 +77,7 @@ sealed class AuthenticationError : AuthorizationServiceError() {
     data class InvalidToken(
         val tokenType: String,
         val reason: String,
-        val expirationTime: Long? = null,
+        val expiresAt: Instant? = null,
         val refreshable: Boolean = false
     ) : AuthenticationError()
 }

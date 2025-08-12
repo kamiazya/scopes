@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -68,13 +70,13 @@ class AuthorizationServiceErrorTest : DescribeSpec({
                 val error = AuthenticationError.InvalidToken(
                     tokenType = "ACCESS",
                     reason = "Token expired",
-                    expirationTime = 1640995200000L,
+                    expiresAt = Instant.fromEpochMilliseconds(1640995200000L),
                     refreshable = true
                 )
 
                 error.tokenType shouldBe "ACCESS"
                 error.reason shouldBe "Token expired"
-                error.expirationTime shouldBe 1640995200000L
+                error.expiresAt shouldBe Instant.fromEpochMilliseconds(1640995200000L)
                 error.refreshable shouldBe true
             }
         }
