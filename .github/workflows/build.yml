@@ -68,7 +68,8 @@ jobs:
       with:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-        dependency-graph: generate-and-submit
+        # Only submit dependency graph from main branch to avoid permission issues
+        dependency-graph: ${{ github.ref == 'refs/heads/main' && 'generate-and-submit' || 'generate' }}
         dependency-graph-continue-on-failure: true
 
     - name: Build Native Image (Windows)
@@ -101,6 +102,8 @@ jobs:
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
+        # Disable dependency graph on Windows to avoid path issues
+        GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
     - name: Build Native Image (Unix)
       if: matrix.platform != 'win32'
