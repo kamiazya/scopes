@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.application.service
 import arrow.core.right
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.should
@@ -109,10 +110,10 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val contextIds = listOf(ScopeId.generate(), ScopeId.generate())
 
                 coEvery {
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], TitleNormalizer.normalize(title))
                 } returns false.right()
                 coEvery {
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], TitleNormalizer.normalize(title))
                 } returns false.right()
 
                 // When
@@ -122,10 +123,10 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 result.isRight() shouldBe true
 
                 coVerify {
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[0], TitleNormalizer.normalize(title))
                 }
                 coVerify {
-                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextIds[1], TitleNormalizer.normalize(title))
                 }
             }
 
@@ -137,10 +138,10 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 val contextIds = listOf(contextId1, contextId2)
 
                 coEvery {
-                    mockScopeRepository.existsByParentIdAndTitle(contextId1, title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextId1, TitleNormalizer.normalize(title))
                 } returns false.right()
                 coEvery {
-                    mockScopeRepository.existsByParentIdAndTitle(contextId2, title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(contextId2, TitleNormalizer.normalize(title))
                 } returns true.right() // Conflict detected
 
                 // When
@@ -282,7 +283,7 @@ class CrossAggregateValidationServiceTest : DescribeSpec({
                 // Setup mocks for failures
                 coEvery { mockScopeRepository.existsById(parentId) } returns false.right()
                 coEvery {
-                    mockScopeRepository.existsByParentIdAndTitle(parentId, title.lowercase())
+                    mockScopeRepository.existsByParentIdAndTitle(parentId, TitleNormalizer.normalize(title))
                 } returns true.right()
 
                 // When - performing validations

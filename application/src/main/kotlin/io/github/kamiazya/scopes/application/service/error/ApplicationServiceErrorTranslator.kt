@@ -60,10 +60,10 @@ object ApplicationServiceErrorTranslator {
                     "Postcondition violated: ${validationError.postcondition}"
                 )
 
-            is AsyncValidationError.ValidationTimeout ->
+            is AsyncValidationError.ValidationTimeout<*> ->
                 CreateScopeError.ValidationFailed(
                     validationError.validationPhase,
-                    "Validation timed out after ${validationError.timeoutMillis}ms"
+                    "Validation timed out after ${validationError.timeout.inWholeMilliseconds}ms"
                 )
 
             is AsyncValidationError.ConcurrentValidationConflict ->

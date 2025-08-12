@@ -24,7 +24,26 @@ This document outlines the coding standards and conventions for the Scopes proje
 // Base domain error
 sealed class DomainError
 
-// Service-specific error hierarchies
+// Domain validation errors
+sealed class ScopeValidationError : DomainError() {
+    object EmptyScopeTitle : ScopeValidationError()
+    object ScopeTitleTooShort : ScopeValidationError()
+    data class ScopeTitleTooLong(val maxLength: Int, val actualLength: Int) : ScopeValidationError()
+    object ScopeTitleContainsNewline : ScopeValidationError()
+    data class ScopeDescriptionTooLong(val maxLength: Int, val actualLength: Int) : ScopeValidationError()
+    data class ScopeInvalidFormat(val field: String, val expected: String) : ScopeValidationError()
+}
+
+sealed class ScopeError : DomainError() {
+    object ScopeNotFound : ScopeError()
+    data class InvalidTitle(val reason: String) : ScopeError()
+    data class InvalidDescription(val reason: String) : ScopeError()
+    data class InvalidParent(val parentId: ScopeId, val reason: String) : ScopeError()
+    data class CircularReference(val scopeId: ScopeId, val parentId: ScopeId) : ScopeError()
+    object SelfParenting : ScopeError()
+}
+
+// Service-specific error hierarchies (in application layer)
 sealed class TitleValidationError : DomainError() {
     object EmptyTitle : TitleValidationError()
     data class TitleTooShort(val minLength: Int, val actualLength: Int, val title: String)
@@ -63,11 +82,9 @@ fun <T> List<ValidationResult<T>>.sequence(): ValidationResult<List<T>>
 ### Use Case Error Translation Pattern
 
 ```kotlin
-// Use case-specific errors with service error context
+// Use case-specific errors with detailed context
 sealed class CreateScopeError {
-    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
-    data class BusinessRuleViolationFailed(val businessRuleError: ScopeBusinessRuleError) : CreateScopeError()
-    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
+    data class ValidationFailed(val field: String, val reason: String) : CreateScopeError()
     object ParentNotFound : CreateScopeError()
     data class SaveFailure(val repositoryError: SaveScopeError) : CreateScopeError()
 }
@@ -75,7 +92,7 @@ sealed class CreateScopeError {
 // Translation in use case handlers
 private fun validateTitleWithServiceErrors(title: String): Either<CreateScopeError, Unit> =
     applicationScopeValidationService.validateTitleFormat(title)
-        .mapLeft { titleError -> CreateScopeError.TitleValidationFailed(titleError) }
+        .mapLeft { titleError -> CreateScopeError.ValidationFailed("title", titleError.toString()) }
 ```
 
 ## Strongly-Typed Domain Identifiers
@@ -208,41 +225,40 @@ class CreateScopeHandler(
 ### Comprehensive Error Mapping
 
 ```kotlin
-// Repository methods return specific error types
+// Repository methods return operation-specific error types
 interface ScopeRepository {
-    suspend fun findById(id: ScopeId): Either<FindScopeError, Scope?>
-    suspend fun existsById(id: ScopeId): Either<ExistsScopeError, Boolean>
     suspend fun save(scope: Scope): Either<SaveScopeError, Scope>
+    suspend fun existsById(id: ScopeId): Either<ExistsScopeError, Boolean>
+    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ExistsScopeError, Boolean>
     suspend fun countByParentId(parentId: ScopeId): Either<CountScopeError, Int>
+    suspend fun findHierarchyDepth(scopeId: ScopeId): Either<FindScopeError, Int>
 }
 
-// Detailed error mapping in validation services
-private fun mapExistsScopeError(existsError: ExistsScopeError, parentId: ScopeId?): DomainError =
-    when (existsError) {
-        is ExistsScopeError.IndexCorruption -> {
-            if (parentId != null) {
-                ScopeError.InvalidParent(
-                    parentId,
-                    "Index corruption detected: ${existsError.message}. ScopeId: ${existsError.scopeId}"
-                )
-            } else {
-                DomainInfrastructureError(
-                    RepositoryError.DataIntegrityError(
-                        "Index corruption in root-level check: ${existsError.message}",
-                        cause = RuntimeException("Index corruption")
-                    )
-                )
-            }
-        }
-        is ExistsScopeError.QueryTimeout -> 
-            DomainInfrastructureError(
-                RepositoryError.DatabaseError(
-                    "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms",
-                    RuntimeException("Query timeout: ${existsError.operation}")
-                )
-            )
-        // ... other error mappings
-    }
+// Operation-specific error types
+sealed class SaveScopeError : DomainError() {
+    data class ConcurrentModification(val scopeId: ScopeId, val expectedVersion: Int, val actualVersion: Int)
+    data class ValidationFailed(val violations: List<String>)
+    data class NetworkError(val message: String, val cause: Throwable?)
+    // ... other save-specific errors
+}
+
+sealed class ExistsScopeError : DomainError() {
+    data class IndexCorruption(val scopeId: ScopeId, val message: String)
+    data class QueryTimeout(val operation: String, val timeoutMs: Long)
+    // ... other exists-specific errors
+}
+
+sealed class CountScopeError : DomainError() {
+    data class IndexUnavailable(val parentId: ScopeId, val reason: String)
+    data class QueryTimeout(val operation: String, val timeoutMs: Long)
+    // ... other count-specific errors
+}
+
+sealed class FindScopeError : DomainError() {
+    data class HierarchyCorruption(val scopeId: ScopeId, val message: String)
+    data class DepthCalculationError(val scopeId: ScopeId, val cause: String)
+    // ... other find-specific errors
+}
 ```
 
 ## Testing Patterns
@@ -252,7 +268,7 @@ private fun mapExistsScopeError(existsError: ExistsScopeError, parentId: ScopeId
 ```kotlin
 class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
     describe("title validation error translation") {
-        it("should translate TitleValidationError.TitleTooShort to ValidationFailed") {
+        it("should translate ScopeValidationError.ScopeTitleTooShort to ValidationFailed") {
             val command = CreateScope(
                 title = "ab",
                 description = "Test description",
@@ -261,15 +277,14 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
             )
 
             coEvery { mockValidationService.validateTitleFormat("ab") } returns 
-                TitleValidationError.TitleTooShort(3, 2, "ab").left()
+                ScopeValidationError.ScopeTitleTooShort.left()
             
             val result = handler.invoke(command)
             
             result.isLeft() shouldBe true
-            val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.TitleValidationFailed>()
-            val titleError = error.titleError.shouldBeInstanceOf<TitleValidationError.TitleTooShort>()
-            titleError.minLength shouldBe 3
-            titleError.actualLength shouldBe 2
+            val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.ValidationFailed>()
+            error.field shouldBe "title"
+            error.reason shouldContain "too short"
         }
     }
 })

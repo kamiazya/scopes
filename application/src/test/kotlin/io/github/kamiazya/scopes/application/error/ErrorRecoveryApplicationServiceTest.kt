@@ -117,7 +117,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             errorFormatter = fakeErrorFormatter
         )
 
-        val failureResult = ValidationResult.Failure<String>(
+        val failureResult = ValidationResult.Failure(
             nonEmptyListOf(
                 ScopeValidationError.EmptyScopeTitle,
                 ScopeValidationError.ScopeTitleTooShort
