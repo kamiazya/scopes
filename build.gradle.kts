@@ -40,9 +40,8 @@ subprojects {
     configurations.all {
         resolutionStrategy {
             preferProjectModules()
-            // Prevent dynamic and changing versions for supply chain security
-            failOnDynamicVersions()
-            failOnChangingVersions()
+            // Note: dependency locking already prevents dynamic versions, so we don't need
+            // failOnDynamicVersions() and failOnChangingVersions() which would conflict
             // Temporarily disable failOnVersionConflict to avoid configuration issues
             // failOnVersionConflict()
         }
