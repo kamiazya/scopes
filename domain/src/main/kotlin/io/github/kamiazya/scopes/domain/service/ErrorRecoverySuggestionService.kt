@@ -92,16 +92,40 @@ class ErrorRecoverySuggestionService(
         error: BusinessRuleServiceError,
         context: SuggestionContext = SuggestionContext.NoContext
     ): RecoveryResult {
-        return RecoveryResult.NonRecoverable(
-            originalError = DomainInfrastructureError(
-                repositoryError = io.github.kamiazya.scopes.domain.error.RepositoryError.UnknownError(
-                    "BusinessRuleServiceError not supported in domain-level recovery",
-                    causeClass = RuntimeException::class,
-                    causeMessage = "BusinessRuleServiceError mapping"
+        return when (error) {
+            is HierarchyBusinessRuleError.SelfParenting -> 
+                RecoveryResult.NonRecoverable(
+                    originalError = ScopeError.SelfParenting,
+                    reason = "Self-parenting violates fundamental hierarchy rules and cannot be automatically fixed"
                 )
-            ),
-            reason = "This business rule error type requires manual intervention and cannot be automatically recovered"
-        )
+            is HierarchyBusinessRuleError.CircularReference ->
+                RecoveryResult.NonRecoverable(
+                    originalError = ScopeError.CircularReference(error.scopeId, error.parentId),
+                    reason = "Circular references require manual resolution to prevent infinite loops"
+                )
+            is DataIntegrityBusinessRuleError.ConsistencyCheckFailure ->
+                RecoveryResult.NonRecoverable(
+                    originalError = DomainInfrastructureError(
+                        repositoryError = RepositoryError.DataIntegrityError(
+                            "Data consistency check failed: ${error.checkType} for scope ${error.scopeId}",
+                            causeClass = RuntimeException::class,
+                            causeMessage = "Expected: ${error.expectedState}, Actual: ${error.actualState}"
+                        )
+                    ),
+                    reason = "Data integrity violations require manual investigation and resolution"
+                )
+            else ->
+                RecoveryResult.NonRecoverable(
+                    originalError = DomainInfrastructureError(
+                        repositoryError = RepositoryError.UnknownError(
+                            "Unknown BusinessRuleServiceError type: ${error::class.simpleName}",
+                            causeClass = RuntimeException::class,
+                            causeMessage = "BusinessRuleServiceError mapping for unknown type"
+                        )
+                    ),
+                    reason = "This business rule error type is not recognized and requires manual intervention"
+                )
+        }
     }
 
     /**
