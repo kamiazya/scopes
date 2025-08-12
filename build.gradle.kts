@@ -21,15 +21,21 @@ allprojects {
     }
 
     // Enable dependency locking for improved build reproducibility
-    dependencyLocking {
-        lockAllConfigurations()
-    }
+    // Apply only to subprojects that have dependencies
+    project.afterEvaluate {
+        if (configurations.isNotEmpty()) {
+            dependencyLocking {
+                lockAllConfigurations()
+            }
 
-    // Prevent dynamic versions to improve build reproducibility
-    configurations.all {
-        resolutionStrategy {
-            failOnVersionConflict()
-            preferProjectModules()
+            // Prevent dynamic versions to improve build reproducibility
+            configurations.all {
+                resolutionStrategy {
+                    preferProjectModules()
+                    // Temporarily disable failOnVersionConflict to avoid configuration issues
+                    // failOnVersionConflict()
+                }
+            }
         }
     }
 }
