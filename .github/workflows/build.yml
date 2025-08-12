@@ -69,8 +69,8 @@ jobs:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
         # Only submit dependency graph from main branch to avoid permission issues
-        dependency-graph: ${{ 
-          github.ref == 'refs/heads/main' && 'generate-and-submit' || 'generate' 
+        dependency-graph: ${{
+          github.ref == 'refs/heads/main' && 'generate-and-submit' || 'generate'
         }}
         dependency-graph-continue-on-failure: true
 
@@ -301,4 +301,5 @@ jobs:
         path: |
           binaries/*-grype-report.json
           binaries/*-sbom.json
+
 
