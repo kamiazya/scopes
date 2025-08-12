@@ -198,6 +198,36 @@ Dependencies are automatically monitored through:
 | **Integration** | Native GitHub UI | External reports |
 | **Maintenance** | GitHub managed | Self-managed |
 
+## Gradle Dependency Verification
+
+### Local Development
+For local development security, Gradle dependency verification is configured:
+
+```properties
+# gradle.properties (local development)
+org.gradle.dependency.verification=strict
+```
+
+This enables cryptographic verification of all dependencies using SHA-256 hashes stored in `gradle/verification-metadata.xml`.
+
+### CI Environment Considerations
+Currently disabled in CI due to environment-specific dependency version variations:
+```properties  
+# Note: Dependency verification disabled for CI compatibility - different dependency versions in CI vs local
+# org.gradle.dependency.verification=strict
+```
+
+**Alternative CI Security Measures:**
+- GitHub's Dependency Graph provides vulnerability scanning
+- Dependabot alerts for known security issues  
+- SBOM (Software Bill of Materials) generation for audit trails
+- Dependency Review Action for PR-level security checks
+
+### Future Improvements
+- Explore CI-specific verification metadata generation
+- Consider conditional verification based on environment
+- Evaluate plugin-specific verification rules
+
 ## Migration Notes
 
 Previous OWASP Dependency Check functionality is now handled by:
