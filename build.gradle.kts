@@ -19,6 +19,19 @@ allprojects {
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
     }
+
+    // Enable dependency locking for improved build reproducibility
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+
+    // Prevent dynamic versions to improve build reproducibility
+    configurations.all {
+        resolutionStrategy {
+            failOnVersionConflict()
+            preferProjectModules()
+        }
+    }
 }
 
 subprojects {

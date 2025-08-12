@@ -1,0 +1,19 @@
+# CODEOWNERS for security-critical files
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Gradle Wrapper - Require approval for changes to prevent supply chain attacks
+gradle/wrapper/ @kamiazya
+gradlew @kamiazya
+gradlew.bat @kamiazya
+
+# GitHub Actions workflows - Require approval for CI/CD changes
+.github/workflows/ @kamiazya
+
+# Security configurations
+.github/dependabot.yml @kamiazya
+.github/SECURITY.md @kamiazya
+
+# Build and dependency configurations
+build.gradle.kts @kamiazya
+settings.gradle.kts @kamiazya
+gradle.properties @kamiazya
