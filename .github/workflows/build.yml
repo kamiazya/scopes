@@ -210,9 +210,11 @@ jobs:
 
     - name: Install Grype
       uses: anchore/scan-action/download-grype@1638637db639e0ade3258b51db49a9a137574c3e # v6.5.1
+      id: grype
 
     - name: Install Syft
       uses: anchore/sbom-action/download-syft@7b36ad622f042cab6f59a75c2ac24ccb256e9b45 # v0.20.4
+      id: syft
 
     - name: Scan binaries with Grype
       run: |
@@ -226,8 +228,8 @@ jobs:
         for binary in binaries/"${PREFIX}"-*; do
           if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
             echo "Scanning: $binary"
-            grype "$binary" --output json --file "${binary}-grype-report.json" || true
-            grype "$binary" --output table || true
+            "${{ steps.grype.outputs.cmd }}" "$binary" --output json --file "${binary}-grype-report.json" || true
+            "${{ steps.grype.outputs.cmd }}" "$binary" --output table || true
             echo "---"
           fi
         done
@@ -244,8 +246,8 @@ jobs:
         for binary in binaries/"${PREFIX}"-*; do
           if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
             echo "Generating SBOM for: $binary"
-            syft "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
-            syft "$binary" --output table || true
+            "${{ steps.syft.outputs.cmd }}" "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
+            "${{ steps.syft.outputs.cmd }}" "$binary" --output table || true
             echo "---"
           fi
         done
