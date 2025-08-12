@@ -267,16 +267,27 @@ jobs:
           # Combine all hash files from all platforms, decoding individual hashes
           echo "Combining hashes from all platforms..."
           # Each file contains base64-encoded hash + filename, decode hashes back to sha256sum format
+          # Ensure explicit newline separators between files for robust concatenation
+
+          # Process first file (Linux)
           while IFS=' ' read -r encoded_hash filename; do
             decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
             echo "$decoded_hash $filename"
           done < linux-hashes/hashes-b64-linux-x64.txt > combined-hashes.txt
 
+          # Add explicit newline separator before next file
+          echo "" >> combined-hashes.txt
+
+          # Process second file (macOS)
           while IFS=' ' read -r encoded_hash filename; do
             decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
             echo "$decoded_hash $filename"
           done < darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes.txt
 
+          # Add explicit newline separator before final file
+          echo "" >> combined-hashes.txt
+
+          # Process final file (Windows)
           while IFS=' ' read -r encoded_hash filename; do
             decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
             echo "$decoded_hash $filename"
@@ -302,7 +313,7 @@ jobs:
       actions: read
       id-token: write
       contents: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@a40e0da705f26710077a7591f9dad05b7cd55acd # v2.1.0
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
