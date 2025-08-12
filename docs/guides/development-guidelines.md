@@ -54,6 +54,7 @@ flowchart TD
 - **Application Services**: ApplicationScopeValidationService for repository-dependent validation
 - **Error Translation**: Service errors mapped to use case-specific errors
 - **Comprehensive Validation**: ValidationResult for error accumulation
+- **DTO Mapping**: Domain entities mapped to application DTOs before reaching presentation layer
 
 #### Infrastructure Layer (`:infrastructure`)
 - **Repository Implementations**: Detailed error mapping from infrastructure concerns
@@ -62,8 +63,10 @@ flowchart TD
 
 #### Presentation Layer (`:presentation-cli`)
 - **CLI Commands**: User interface for scope operations
-- **DTO Mapping**: ScopeMapper for entity-to-response conversion
+- **Application DTO Consumption**: Consumes pre-mapped DTOs from application layer only
 - **Error Presentation**: User-friendly error messages from use case errors
+
+**Note**: Domain entities never leak to the presentation layer. All entity-to-DTO mapping must occur in the application layer or dedicated mappers before reaching presentation.
 
 ## Current Error Handling Architecture
 
@@ -195,17 +198,59 @@ class ApplicationScopeValidationService(
         return Unit.right()
     }
     
-    // Repository-dependent validation with business rule context
+    /**
+     * Validates hierarchy constraints with business rule-specific error context.
+     * Checks both depth constraints and children limit constraints.
+     * Returns specific BusinessRuleServiceError.ScopeBusinessRuleError types.
+     */
     suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<ScopeBusinessRuleError, Unit> = either {
         if (parentId == null) return@either
         
-        val depth = repository.findHierarchyDepth(parentId).bind()
+        // Check depth constraint
+        val depth = repository.findHierarchyDepth(parentId)
+            .fold(
+                ifLeft = { repositoryError ->
+                    // Map repository error to business rule error
+                    raise(ScopeBusinessRuleError.MaxDepthExceeded(
+                        maxDepth = MAX_HIERARCHY_DEPTH,
+                        actualDepth = 0,
+                        scopeId = parentId,
+                        parentPath = emptyList()
+                    ))
+                },
+                ifRight = { it }
+            )
+        
         if (depth >= MAX_HIERARCHY_DEPTH) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
                 actualDepth = depth + 1,
                 scopeId = parentId,
                 parentPath = emptyList()
+            ))
+        }
+        
+        // Check children limit constraint
+        val childrenCount = repository.countByParentId(parentId)
+            .fold(
+                ifLeft = { repositoryError ->
+                    // Map repository error to business rule error
+                    raise(ScopeBusinessRuleError.MaxChildrenExceeded(
+                        maxChildren = MAX_CHILDREN_PER_PARENT,
+                        currentChildren = 0,
+                        parentId = parentId,
+                        attemptedOperation = "create_child_scope"
+                    ))
+                },
+                ifRight = { it }
+            )
+        
+        if (childrenCount >= MAX_CHILDREN_PER_PARENT) {
+            raise(ScopeBusinessRuleError.MaxChildrenExceeded(
+                maxChildren = MAX_CHILDREN_PER_PARENT,
+                currentChildren = childrenCount,
+                parentId = parentId,
+                attemptedOperation = "create_child_scope"
             ))
         }
     }
@@ -507,33 +552,86 @@ scopes/
 │   │   └── ScopeRepository.kt         # Repository interface with detailed error types
 │   ├── error/
 │   │   ├── DomainError.kt             # Base domain error
-│   │   ├── TitleValidationError.kt    # Service-specific title errors
+│   │   ├── DomainInfrastructureError.kt # Infrastructure-related domain errors
+│   │   ├── DomainServiceError.kt      # Domain service errors
+│   │   ├── RepositoryError.kt         # Repository operation errors
+│   │   ├── BusinessRuleServiceError.kt # Business rule service errors
+│   │   ├── ScopeError.kt              # Basic scope errors (NotFound, AlreadyExists)
+│   │   ├── ScopeValidationError.kt    # Scope validation errors
 │   │   ├── ScopeBusinessRuleError.kt  # Business rule validation errors
+│   │   ├── ScopeBusinessRuleViolation.kt # Business rule violations
+│   │   ├── TitleValidationError.kt    # Service-specific title errors
 │   │   ├── UniquenessValidationError.kt # Uniqueness validation errors
-│   │   ├── ValidationResult.kt         # Error accumulation pattern
-│   │   └── ValidationResultExtensions.kt # Extension functions
+│   │   ├── ScopeValidationServiceError.kt # Validation service errors
+│   │   ├── ValidationResult.kt        # Error accumulation pattern (with Failure<Nothing>)
+│   │   ├── ValidationResultExtensions.kt # Extension functions
+│   │   ├── ErrorFormatter.kt          # Error formatting interface
+│   │   ├── ErrorRecoveryTypes.kt      # Error recovery type definitions
+│   │   ├── ScopeRecoveryTypes.kt      # Scope-specific recovery types
+│   │   ├── CountScopeError.kt         # Count operation errors
+│   │   ├── ExistsScopeError.kt        # Exists check errors
+│   │   ├── FindScopeError.kt          # Find operation errors
+│   │   └── SaveScopeError.kt          # Save operation errors
 │   ├── service/
-│   │   └── # Pure domain services (no repository dependencies)
+│   │   ├── ErrorRecoveryDomainService.kt # Error categorization and recovery
+│   │   ├── ErrorRecoverySuggestionService.kt # Recovery suggestion generation
+│   │   └── RecoveryStrategyDomainService.kt # Recovery strategy selection
 │   └── util/
 │       └── TitleNormalizer.kt         # Domain utility functions
 ├── application/
 │   ├── usecase/
+│   │   ├── UseCase.kt                 # Base use case interface
 │   │   ├── command/
+│   │   │   ├── Command.kt             # Base command interface
 │   │   │   └── CreateScope.kt         # Use case command
+│   │   ├── query/
+│   │   │   └── Query.kt               # Base query interface
 │   │   ├── handler/
 │   │   │   └── CreateScopeHandler.kt  # Use case handler with transaction boundary
 │   │   └── error/
 │   │       └── CreateScopeError.kt    # Use case-specific errors
-│   └── service/
-│       └── ApplicationScopeValidationService.kt # Repository-dependent validation
+│   ├── dto/
+│   │   ├── DTO.kt                     # Base DTO interface
+│   │   └── CreateScopeResult.kt       # Output DTOs consumed by presentation
+│   ├── mapper/
+│   │   └── ScopeMapper.kt             # Domain-to-DTO mapping (no domain leakage)
+│   ├── port/
+│   │   └── TransactionManager.kt      # Transaction management port
+│   ├── service/
+│   │   ├── ApplicationScopeValidationService.kt # Repository-dependent validation
+│   │   ├── CrossAggregateValidationService.kt   # Cross-aggregate validation
+│   │   └── error/
+│   │       ├── ApplicationServiceErrorTranslator.kt # Service error translator
+│   │       ├── ApplicationValidationError.kt    # Application validation errors
+│   │       ├── AuditServiceError.kt            # Audit service errors
+│   │       ├── AuthorizationServiceError.kt    # Authorization service errors
+│   │       ├── NotificationServiceError.kt     # Notification base errors
+│   │       ├── EventDistributionError.kt       # Event distribution errors
+│   │       ├── MessageDeliveryError.kt         # Message delivery errors
+│   │       ├── NotificationConfigurationError.kt # Notification config errors
+│   │       └── TemplateError.kt                # Template processing errors
+│   └── error/
+│       ├── CreateScopeErrorMessageTranslator.kt # Use-case error translator
+│       └── ErrorRecoveryApplicationService.kt   # Error recovery orchestration
 ├── infrastructure/
-│   └── repository/
-│       └── # Repository implementations with error mapping
+│   ├── repository/
+│   │   └── InMemoryScopeRepository.kt  # In-memory repository implementation
+│   ├── transaction/
+│   │   └── NoopTransactionManager.kt   # No-op transaction manager
+│   └── error/
+│       ├── InfrastructureAdapterError.kt # Base infrastructure error
+│       ├── DatabaseAdapterError.kt      # Database-specific errors
+│       ├── TransactionAdapterError.kt   # Transaction-specific errors
+│       ├── FileSystemAdapterError.kt    # File system errors
+│       ├── MessagingAdapterError.kt     # Messaging system errors
+│       ├── ExternalApiAdapterError.kt   # External API errors
+│       └── ConfigurationAdapterError.kt # Configuration errors
 └── presentation-cli/
-    ├── command/
-    │   └── # CLI command implementations
-    └── mapper/
-        └── ScopeMapper.kt             # Entity to DTO mapping
+    ├── Main.kt                         # Application entry point
+    ├── CompositionRoot.kt              # Dependency injection setup
+    ├── ScopesCommand.kt                # Main CLI command
+    └── commands/
+        └── CreateScopeCommand.kt       # Create scope CLI command
 ```
 
 ## Best Practices Summary
