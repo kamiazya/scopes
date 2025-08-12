@@ -17,3 +17,4 @@ gradlew.bat @kamiazya
 build.gradle.kts @kamiazya
 settings.gradle.kts @kamiazya
 gradle.properties @kamiazya
+gradle/libs.versions.toml @kamiazya

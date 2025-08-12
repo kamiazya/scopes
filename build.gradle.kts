@@ -40,6 +40,9 @@ subprojects {
     configurations.all {
         resolutionStrategy {
             preferProjectModules()
+            // Prevent dynamic and changing versions for supply chain security
+            failOnDynamicVersions()
+            failOnChangingVersions()
             // Temporarily disable failOnVersionConflict to avoid configuration issues
             // failOnVersionConflict()
         }
@@ -68,10 +71,11 @@ tasks.register("checkGraalVM") {
 
             if (!nativeImagePath.exists()) {
                 // Try alternative paths for different GraalVM installations
-                val altPaths = listOf(
-                    "$javaHome/../bin/$nativeImageExecutable",
-                    "$javaHome/bin/$nativeImageExecutable"
-                )
+                val altPaths =
+                    listOf(
+                        "$javaHome/../bin/$nativeImageExecutable",
+                        "$javaHome/bin/$nativeImageExecutable",
+                    )
 
                 val foundPath = altPaths.find { File(it).exists() }
                 if (foundPath == null) {
