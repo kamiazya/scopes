@@ -31,46 +31,49 @@ tasks.test {
     useJUnitPlatform()
 }
 
-graalvmNative {
-    binaries {
-        named("main") {
-            imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
-            useFatJar.set(true)
+// Configure GraalVM after project evaluation to avoid configuration cache issues
+afterEvaluate {
+    graalvmNative {
+        binaries {
+            named("main") {
+                imageName.set("scopes")
+                mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
+                useFatJar.set(true)
 
-            val commonArgs = listOf(
-                "-O2",
-                "--no-fallback",
-                "--gc=serial",
-                "--report-unsupported-elements-at-runtime",
-                "-H:+UnlockExperimentalVMOptions",
-                "-H:+ReportExceptionStackTraces",
-                "-H:+InstallExitHandlers",
-                "--initialize-at-build-time=kotlin",
-                "--initialize-at-build-time=kotlinx.coroutines",
-                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-            )
-
-            val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
-                System.getenv("RUNNER_OS") == "Windows" ||
-                System.getenv("OS")?.lowercase()?.contains("windows") == true
-            val windowsSpecificArgs = if (isWindows) {
-                listOf(
-                    "-H:+AllowIncompleteClasspath",
-                    "-H:+ReportUnsupportedElementsAtRuntime",
-                    "-H:DeadlockWatchdogInterval=0",
-                    "--allow-incomplete-classpath",
-                    "-H:+StaticExecutableWithDynamicLibC"
+                val commonArgs = listOf(
+                    "-O2",
+                    "--no-fallback",
+                    "--gc=serial",
+                    "--report-unsupported-elements-at-runtime",
+                    "-H:+UnlockExperimentalVMOptions",
+                    "-H:+ReportExceptionStackTraces",
+                    "-H:+InstallExitHandlers",
+                    "--initialize-at-build-time=kotlin",
+                    "--initialize-at-build-time=kotlinx.coroutines",
+                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
                 )
-            } else {
-                emptyList()
+
+                val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
+                    System.getenv("RUNNER_OS") == "Windows" ||
+                    System.getenv("OS")?.lowercase()?.contains("windows") == true
+                val windowsSpecificArgs = if (isWindows) {
+                    listOf(
+                        "-H:+AllowIncompleteClasspath",
+                        "-H:+ReportUnsupportedElementsAtRuntime",
+                        "-H:DeadlockWatchdogInterval=0",
+                        "--allow-incomplete-classpath",
+                        "-H:+StaticExecutableWithDynamicLibC"
+                    )
+                } else {
+                    emptyList()
+                }
+
+                buildArgs.addAll(commonArgs + windowsSpecificArgs)
             }
-
-            buildArgs.addAll(commonArgs + windowsSpecificArgs)
         }
-    }
 
-    toolchainDetection.set(false)
+        toolchainDetection.set(false)
+    }
 }
 
 // Windows-specific JAR handling to avoid module-info conflicts
