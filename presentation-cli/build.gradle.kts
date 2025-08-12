@@ -85,5 +85,17 @@ tasks.named("nativeCompileClasspathJar") {
 // Make nativeCompile depend on checkGraalVM
 tasks.named("nativeCompile") {
     dependsOn(":checkGraalVM")
+    // Disable configuration cache for this task due to GraalVM plugin compatibility issues
+    // See: https://github.com/graalvm/native-build-tools/issues/477
+    notCompatibleWithConfigurationCache("GraalVM plugin uses ConfigurationContainer at execution time")
+}
+
+// Disable configuration cache for GraalVM-related tasks
+tasks.matching {
+    it.name.contains("native") ||
+    it.name.contains("graal") ||
+    it.name == "generateResourcesConfigFile"
+}.configureEach {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
 }
 
