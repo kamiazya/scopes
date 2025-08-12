@@ -18,3 +18,8 @@ build.gradle.kts @kamiazya
 settings.gradle.kts @kamiazya
 gradle.properties @kamiazya
 gradle/libs.versions.toml @kamiazya
+
+# Dependency integrity and verification files
+gradle/verification-metadata.xml @kamiazya
+gradle.lockfile @kamiazya
+**/*.lockfile @kamiazya

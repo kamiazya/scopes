@@ -80,8 +80,8 @@ jobs:
         run: |
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
-          echo "Executing: .\gradlew.bat nativeCompile $VERSION_ARG"
-          & .\gradlew.bat nativeCompile $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon nativeCompile $VERSION_ARG"
+          & .\gradlew.bat --no-daemon nativeCompile $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -107,7 +107,9 @@ jobs:
         if: matrix.platform == 'win32'
         run: |
           Set-Location "C:\build-workspace\scopes"
-          & .\gradlew.bat presentation-cli:cycloneDxBom
+          $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+          echo "Executing: .\gradlew.bat --no-daemon presentation-cli:cycloneDxBom $VERSION_ARG"
+          & .\gradlew.bat --no-daemon presentation-cli:cycloneDxBom $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache

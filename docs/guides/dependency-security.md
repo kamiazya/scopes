@@ -200,33 +200,58 @@ Dependencies are automatically monitored through:
 
 ## Gradle Dependency Verification
 
-### Local Development
-For local development security, Gradle dependency verification is configured:
+### Overview
+Gradle dependency verification ensures supply chain security through cryptographic verification of all dependencies.
 
 ```properties
-# gradle.properties (local development)
-org.gradle.dependency.verification=strict
-```
-
-This enables cryptographic verification of all dependencies using SHA-256 hashes stored in `gradle/verification-metadata.xml`.
-
-### CI Environment Considerations
-Currently disabled in CI due to environment-specific dependency version variations:
-```properties  
-# Note: Dependency verification disabled for CI compatibility - different dependency versions in CI vs local
+# gradle.properties - Note: Currently evaluating CI compatibility
 # org.gradle.dependency.verification=strict
 ```
 
-**Alternative CI Security Measures:**
-- GitHub's Dependency Graph provides vulnerability scanning
-- Dependabot alerts for known security issues  
-- SBOM (Software Bill of Materials) generation for audit trails
-- Dependency Review Action for PR-level security checks
+### CI Environment Setup
+Dependencies are secured in CI using the Setup Gradle action:
 
-### Future Improvements
-- Explore CI-specific verification metadata generation
-- Consider conditional verification based on environment
-- Evaluate plugin-specific verification rules
+```yaml
+# .github/workflows/build.yml and other workflows
+- name: Setup Gradle
+  uses: gradle/actions/setup-gradle@v4
+  with:
+    validate-wrappers: true
+    dependency-graph: generate
+    dependency-graph-continue-on-failure: true
+```
+
+### Enabling Dependency Verification
+To enable full dependency verification:
+
+1. **Generate verification metadata** with all required tasks:
+  ```bash
+  ./gradlew --no-daemon --write-verification-metadata sha256 \
+    clean build test detekt ktlintCheck presentation-cli:cycloneDxBom
+  ```
+
+2. **Enable strict verification** in `gradle.properties`:
+  ```properties
+  org.gradle.dependency.verification=strict
+  ```
+
+3. **Best practices for metadata generation:**
+  - Prefer PGP entries for signed artifacts when available
+  - Use SHA256 hashes as fallback for unsigned dependencies
+  - Ensure no dynamic or snapshot versions in dependencies
+  - Include all CI tasks to capture complete dependency graph
+
+4. **Verify metadata locally** before pushing:
+  ```bash
+  ./gradlew --no-daemon test
+  ```
+
+### Integrated Security Measures
+- **Gradle Wrapper Validation**: Automatic verification of wrapper integrity
+- **Dependency Graph Submission**: Real-time vulnerability monitoring
+- **SBOM Generation**: Complete software bill of materials for auditing
+- **Dependency Review**: PR-level security analysis
+- **CODEOWNERS Protection**: Required review for verification metadata changes
 
 ## Migration Notes
 
