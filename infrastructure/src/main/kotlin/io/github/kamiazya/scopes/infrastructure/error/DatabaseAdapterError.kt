@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.infrastructure.error
 
 import kotlinx.datetime.Instant
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 
 /**
  * Database adapter errors for persistence operations.
@@ -31,7 +32,7 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
     data class QueryError(
         val query: String,
         val parameters: Map<String, Any>? = null,
-        val executionTimeMs: Long?,
+        val executionTime: Duration?,
         val errorType: QueryErrorType = QueryErrorType.OTHER,
         val causeClass: KClass<out Throwable>,
         val causeMessage: String? = null,
@@ -83,7 +84,7 @@ sealed class DatabaseAdapterError : InfrastructureAdapterError() {
         val resourceType: DatabaseResource,
         val currentUsage: Long,
         val limit: Long,
-        val estimatedRecoveryTime: Long? = null,
+        val estimatedRecoveryAt: Instant? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : DatabaseAdapterError() {

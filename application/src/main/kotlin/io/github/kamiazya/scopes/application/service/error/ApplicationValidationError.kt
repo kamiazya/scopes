@@ -1,5 +1,8 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlin.time.Duration
+import kotlinx.datetime.Instant
+
 /**
  * Application layer validation errors for input validation and business rule violations.
  * 
@@ -121,15 +124,12 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
  */
 sealed class AsyncValidationError : ApplicationValidationError() {
     
-    /**
-     * Validation operation timed out.
-     */
-    data class ValidationTimeout(
-        val operation: String,
-        val timeoutMillis: Long,
-        val validationPhase: String,
-        val partialResults: Map<String, Any>? = null
-    ) : AsyncValidationError()
+    data class ValidationTimeout<T>(
+    val operation: String,
+    val timeout: Duration,
+    val validationPhase: String,
+    val partialResults: Map<String, T>? = null
+) : AsyncValidationError()
     
     /**
      * Concurrent validation conflict detected.
@@ -137,7 +137,7 @@ sealed class AsyncValidationError : ApplicationValidationError() {
     data class ConcurrentValidationConflict(
         val resource: String,
         val conflictingOperations: List<String>,
-        val timestamp: Long,
+        val timestamp: Instant,
         val resolution: String? = null
     ) : AsyncValidationError()
 }

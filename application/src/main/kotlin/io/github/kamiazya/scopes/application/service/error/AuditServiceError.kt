@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 /**
  * Audit service errors for audit trail management and compliance failures.
  * 
@@ -27,7 +29,7 @@ sealed class AuditTrailError : AuditServiceError() {
      */
     data class AuditLogCorruption(
         val auditEntryId: String,
-        val detectedAt: Long,
+        val detectedAt: Instant,
         val corruptionType: String,
         val affectedEntries: List<String>,
         val integrityHash: String
@@ -49,8 +51,8 @@ sealed class AuditTrailError : AuditServiceError() {
         val auditEntryId: String,
         val attemptedOperation: String,
         val attemptedBy: String,
-        val detectedAt: Long,
-        val originalCreatedAt: Long
+        val detectedAt: Instant,
+        val originalCreatedAt: Instant
     ) : AuditTrailError()
 }
 
@@ -67,7 +69,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val eventId: String,
         val eventType: String,
         val serializationError: String,
-        val timestamp: Long
+        val timestamp: Instant
     ) : EventLoggingError()
     
     /**
@@ -105,7 +107,7 @@ sealed class ComplianceError : AuditServiceError() {
         val violationType: String,
         val affectedRecords: Int,
         val policyDetails: String,
-        val detectedAt: Long
+        val detectedAt: Instant
     ) : ComplianceError()
     
     /**
@@ -141,7 +143,7 @@ sealed class AuditSystemError : AuditServiceError() {
     data class AuditSystemUnavailable(
         val subsystem: String,
         val cause: Throwable,
-        val estimatedRecoveryTime: Long,
+        val estimatedRecoveryAt: Instant,
         val impactLevel: String
     ) : AuditSystemError()
     

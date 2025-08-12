@@ -313,7 +313,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
 
     private var simulateConnectionPoolExhaustion = false
     private var simulateQueryTimeout = false
-    private var queryTimeoutMs = 0L
+    private var queryTimeoutMs = 0L  // Duration conversion handled in usage
     private var simulateTransactionDeadlock = false
     private var simulateDataIntegrityViolation = false
     private var dataIntegrityConstraint = ""
@@ -322,7 +322,7 @@ class InMemoryScopeRepositoryWithErrorSimulation : InMemoryScopeRepository() {
     private var requiredSpace = 0L
     private var simulateConnectionInterruption = false
     private var simulateTableLockTimeout = false
-    private var lockTimeoutMs = 0L
+    private var lockTimeoutMs = 0L  // Duration conversion handled in usage
     private var simulateIsolationViolation = false
     private var isolationViolationType = ""
     private var simulateInfrastructureFailure = false

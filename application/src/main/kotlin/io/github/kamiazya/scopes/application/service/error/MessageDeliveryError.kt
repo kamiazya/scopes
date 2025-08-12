@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 /**
  * Message delivery errors for communication channel failures.
  * These represent failures in delivering notifications through various channels.
@@ -23,7 +25,7 @@ sealed class MessageDeliveryError : NotificationServiceError() {
     data class ChannelUnavailable(
         val channel: String,
         val reason: String,
-        val expectedRecoveryTime: Long?,
+        val expectedRecoveryAt: Instant?,
         val alternativeChannels: List<String>
     ) : MessageDeliveryError()
     
@@ -34,6 +36,6 @@ sealed class MessageDeliveryError : NotificationServiceError() {
         val channel: String,
         val limit: Int,
         val windowSeconds: Int,
-        val resetTime: Long
+        val resetAt: Instant
     ) : MessageDeliveryError()
 }

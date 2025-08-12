@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 
 /**
  * File system adapter errors for storage operations.
@@ -59,7 +60,7 @@ sealed class FileSystemAdapterError : InfrastructureAdapterError() {
         val path: String,
         val lockType: FileLockType,
         val heldBy: String? = null,
-        val waitTimeMs: Long? = null,
+        val waitTime: Duration? = null,
         override val timestamp: Instant,
         override val correlationId: String? = null
     ) : FileSystemAdapterError() {

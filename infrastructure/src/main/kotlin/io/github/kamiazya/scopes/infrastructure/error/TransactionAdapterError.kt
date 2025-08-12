@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.infrastructure.error
 
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 
 /**
  * Transaction adapter errors for distributed transaction management.
@@ -60,7 +61,7 @@ sealed class TransactionAdapterError : InfrastructureAdapterError() {
      */
     data class TimeoutError(
         val transactionId: String,
-        val timeoutMillis: Long,
+        val timeout: Duration,
         val phase: String, // "prepare", "commit", "rollback"
         val participants: List<String>,
         override val timestamp: Instant,

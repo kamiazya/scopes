@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -42,13 +44,13 @@ class NotificationServiceErrorTest : DescribeSpec({
                 val error = MessageDeliveryError.ChannelUnavailable(
                     channel = "SLACK",
                     reason = "API temporarily down",
-                    expectedRecoveryTime = 3600000L,
+                    expectedRecoveryAt = Instant.fromEpochMilliseconds(3600000L),
                     alternativeChannels = listOf("EMAIL")
                 )
 
                 error.channel shouldBe "SLACK"
                 error.reason shouldBe "API temporarily down"
-                error.expectedRecoveryTime shouldBe 3600000L
+                error.expectedRecoveryAt shouldBe Instant.fromEpochMilliseconds(3600000L)
                 error.alternativeChannels shouldBe listOf("EMAIL")
             }
 
@@ -57,13 +59,13 @@ class NotificationServiceErrorTest : DescribeSpec({
                     channel = "SMS",
                     limit = 100,
                     windowSeconds = 3600,
-                    resetTime = 1640999200000L
+                    resetAt = Instant.fromEpochMilliseconds(1640999200000L)
                 )
 
                 error.channel shouldBe "SMS"
                 error.limit shouldBe 100
                 error.windowSeconds shouldBe 3600
-                error.resetTime shouldBe 1640999200000L
+                error.resetAt shouldBe Instant.fromEpochMilliseconds(1640999200000L)
             }
         }
 

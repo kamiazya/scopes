@@ -5,6 +5,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -40,7 +41,7 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
                 val error = DatabaseAdapterError.QueryError(
                     query = "SELECT * FROM scopes",
                     parameters = mapOf("id" to "123"),
-                    executionTimeMs = 5000L,
+                    executionTime = Duration.parse("5s"),
                     causeClass = RuntimeException::class,
                     causeMessage = "Syntax error",
                     timestamp = Clock.System.now()
@@ -48,7 +49,7 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
 
                 error.query shouldBe "SELECT * FROM scopes"
                 error.parameters shouldBe mapOf("id" to "123")
-                error.executionTimeMs shouldBe 5000L
+                error.executionTime shouldBe Duration.parse("5s")
             }
         }
 

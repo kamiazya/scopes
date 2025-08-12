@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -25,14 +27,14 @@ class AuditServiceErrorTest : DescribeSpec({
             it("should create AuditLogCorruption with integrity details") {
                 val error = AuditTrailError.AuditLogCorruption(
                     auditEntryId = "audit-123",
-                    detectedAt = 1640995200000L,
+                    detectedAt = Instant.fromEpochMilliseconds(1640995200000L),
                     corruptionType = "HASH_MISMATCH",
                     affectedEntries = listOf("audit-121", "audit-122", "audit-123"),
                     integrityHash = "abc123def456"
                 )
 
                 error.auditEntryId shouldBe "audit-123"
-                error.detectedAt shouldBe 1640995200000L
+                error.detectedAt shouldBe Instant.fromEpochMilliseconds(1640995200000L)
                 error.corruptionType shouldBe "HASH_MISMATCH"
                 error.affectedEntries shouldBe listOf("audit-121", "audit-122", "audit-123")
                 error.integrityHash shouldBe "abc123def456"
@@ -55,15 +57,15 @@ class AuditServiceErrorTest : DescribeSpec({
                     auditEntryId = "audit-456",
                     attemptedOperation = "UPDATE",
                     attemptedBy = "malicious-user",
-                    detectedAt = 1640995300000L,
-                    originalCreatedAt = 1640994000000L
+                    detectedAt = Instant.fromEpochMilliseconds(1640995300000L),
+                    originalCreatedAt = Instant.fromEpochMilliseconds(1640994000000L)
                 )
 
                 error.auditEntryId shouldBe "audit-456"
                 error.attemptedOperation shouldBe "UPDATE"
                 error.attemptedBy shouldBe "malicious-user"
-                error.detectedAt shouldBe 1640995300000L
-                error.originalCreatedAt shouldBe 1640994000000L
+                error.detectedAt shouldBe Instant.fromEpochMilliseconds(1640995300000L)
+                error.originalCreatedAt shouldBe Instant.fromEpochMilliseconds(1640994000000L)
             }
         }
 
@@ -73,13 +75,13 @@ class AuditServiceErrorTest : DescribeSpec({
                     eventId = "event-789",
                     eventType = "ScopeDeleted",
                     serializationError = "Cannot serialize field: metadata",
-                    timestamp = 1640995400000L
+                    timestamp = Instant.fromEpochMilliseconds(1640995400000L)
                 )
 
                 error.eventId shouldBe "event-789"
                 error.eventType shouldBe "ScopeDeleted"
                 error.serializationError shouldBe "Cannot serialize field: metadata"
-                error.timestamp shouldBe 1640995400000L
+                error.timestamp shouldBe Instant.fromEpochMilliseconds(1640995400000L)
             }
 
             it("should create EventStorageFailure") {
@@ -118,14 +120,14 @@ class AuditServiceErrorTest : DescribeSpec({
                     violationType = "RETENTION_PERIOD_EXCEEDED",
                     affectedRecords = 1500,
                     policyDetails = "Data must be deleted after 3 years",
-                    detectedAt = 1640995500000L
+                    detectedAt = Instant.fromEpochMilliseconds(1640995500000L)
                 )
 
                 error.policyId shouldBe "gdpr-retention-policy"
                 error.violationType shouldBe "RETENTION_PERIOD_EXCEEDED"
                 error.affectedRecords shouldBe 1500
                 error.policyDetails shouldBe "Data must be deleted after 3 years"
-                error.detectedAt shouldBe 1640995500000L
+                error.detectedAt shouldBe Instant.fromEpochMilliseconds(1640995500000L)
             }
 
             it("should create DataClassificationError") {
@@ -162,13 +164,13 @@ class AuditServiceErrorTest : DescribeSpec({
                 val error = AuditSystemError.AuditSystemUnavailable(
                     subsystem = "event-store",
                     cause = RuntimeException("Database connection failed"),
-                    estimatedRecoveryTime = 3600000L, // 1 hour
+                    estimatedRecoveryAt = Instant.fromEpochMilliseconds(3600000L), // 1 hour
                     impactLevel = "HIGH"
                 )
 
                 error.subsystem shouldBe "event-store"
                 error.cause.message shouldBe "Database connection failed"
-                error.estimatedRecoveryTime shouldBe 3600000L
+                error.estimatedRecoveryAt shouldBe Instant.fromEpochMilliseconds(3600000L)
                 error.impactLevel shouldBe "HIGH"
             }
 
@@ -188,16 +190,16 @@ class AuditServiceErrorTest : DescribeSpec({
         describe("error hierarchy") {
             it("all errors should extend AuditServiceError") {
                 val trailError = AuditTrailError.AuditLogCorruption(
-                    "id", 1L, "type", emptyList(), "hash"
+                    "id", Instant.fromEpochMilliseconds(1L), "type", emptyList(), "hash"
                 )
                 val loggingError = EventLoggingError.EventSerializationFailure(
-                    "id", "type", "error", 1L
+                    "id", "type", "error", Instant.fromEpochMilliseconds(1L)
                 )
                 val complianceError = ComplianceError.RetentionPolicyViolation(
-                    "policy", "type", 0, "details", 1L
+                    "policy", "type", 0, "details", Instant.fromEpochMilliseconds(1L)
                 )
                 val systemError = AuditSystemError.AuditSystemUnavailable(
-                    "subsystem", RuntimeException(), 1L, "level"
+                    "subsystem", RuntimeException(), Instant.fromEpochMilliseconds(1L), "level"
                 )
 
                 trailError should beInstanceOf<AuditServiceError>()

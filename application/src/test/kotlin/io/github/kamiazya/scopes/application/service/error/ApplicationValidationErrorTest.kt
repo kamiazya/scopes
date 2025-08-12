@@ -1,5 +1,8 @@
 package io.github.kamiazya.scopes.application.service.error
 
+import kotlinx.datetime.Instant
+import kotlin.time.Duration
+
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -130,14 +133,14 @@ class ApplicationValidationErrorTest : DescribeSpec({
 
         describe("AsyncValidationError") {
             it("should create ValidationTimeout") {
-                val error = AsyncValidationError.ValidationTimeout(
+                val error = AsyncValidationError.ValidationTimeout<Any>(
                     operation = "cross_aggregate_check",
-                    timeoutMillis = 5000L,
+                    timeout = Duration.parse("5s"),
                     validationPhase = "consistency_check"
                 )
 
                 error.operation shouldBe "cross_aggregate_check"
-                error.timeoutMillis shouldBe 5000L
+                error.timeout shouldBe Duration.parse("5s")
                 error.validationPhase shouldBe "consistency_check"
             }
             
@@ -145,12 +148,12 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 val error = AsyncValidationError.ConcurrentValidationConflict(
                     resource = "scope_123",
                     conflictingOperations = listOf("update", "delete"),
-                    timestamp = 1234567890L
+                    timestamp = Instant.fromEpochSeconds(1234567890)
                 )
 
                 error.resource shouldBe "scope_123"
                 error.conflictingOperations shouldBe listOf("update", "delete")
-                error.timestamp shouldBe 1234567890L
+                error.timestamp shouldBe Instant.fromEpochSeconds(1234567890)
             }
         }
 
@@ -159,7 +162,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 val inputError: ApplicationValidationError = InputValidationError.MissingRequiredField("field", "Type")
                 val crossError: ApplicationValidationError = CrossAggregateValidationError.InvariantViolation("inv", listOf("id"), "desc")
                 val businessError: ApplicationValidationError = BusinessRuleValidationError.PreconditionViolation("op", "pre", "curr", "req")
-                val asyncError: ApplicationValidationError = AsyncValidationError.ValidationTimeout("op", 1000L, "phase")
+                val asyncError: ApplicationValidationError = AsyncValidationError.ValidationTimeout<Any>("op", Duration.parse("1s"), "phase")
 
                 inputError should beInstanceOf<InputValidationError>()
                 crossError should beInstanceOf<CrossAggregateValidationError>()
