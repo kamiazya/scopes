@@ -67,19 +67,23 @@ class SealedClassStructureTest : StringSpec({
                 // 3. Object classes (for singleton errors)
                 val subclasses = errorClass.classes()
                 val subinterfaces = errorClass.interfaces()
+                val subobjects = errorClass.objects()
 
+                // Allow sealed root error classes without direct nested children (they may be extended by other sealed classes in different files)
                 subclasses.all { subclass ->
                     when {
                         subclass.hasDataModifier -> !subclass.hasSealedModifier
                         subclass.hasSealedModifier -> !subclass.hasDataModifier
-                        // Allow object declarations (they don't have object modifier property in Konsist)
-                        subclass.text.contains("object ") -> !subclass.hasSealedModifier && !subclass.hasDataModifier
                         // Allow regular classes as well (for context/category classes in the new structure)
                         else -> !subclass.hasDataModifier && !subclass.hasSealedModifier
                     }
                 } && subinterfaces.all { subinterface ->
                     // Sealed interfaces in error hierarchies should not have data modifier (doesn't apply to interfaces)
                     // but they can be sealed for intermediate categories
+                    true
+                } && subobjects.all { subobject ->
+                    // Objects are by nature singular instances and cannot be sealed or data
+                    // (objects don't have these modifiers in Kotlin, so this is always true)
                     true
                 }
             }
@@ -122,18 +126,43 @@ class SealedClassStructureTest : StringSpec({
             .filter { it.hasSealedModifier }
             .assertTrue { sealedClass ->
                 val sealedPackage = sealedClass.packagee?.name ?: ""
+                val sealedFqName = "${sealedClass.packagee?.name ?: ""}.${sealedClass.name}"
 
                 // In Kotlin 1.5+, sealed class subclasses must be in the same package
                 // This is enforced by the compiler, but we verify the structure
-                val directSubclasses = sealedClass.classes()
-                val directSubinterfaces = sealedClass.interfaces()
+                // Find all classes, interfaces, and objects that directly extend/implement this sealed class
+                val scope = Konsist.scopeFromProduction()
+                
+                val childClasses = scope.classes().filter { childClass ->
+                    childClass.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
+                
+                val childInterfaces = scope.interfaces().filter { childInterface ->
+                    childInterface.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
+                
+                val childObjects = scope.objects().filter { childObject ->
+                    childObject.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
 
-                directSubclasses.all { subclass ->
-                    val subclassPackage = subclass.packagee?.name ?: ""
-                    subclassPackage == sealedPackage
-                } && directSubinterfaces.all { subinterface ->
-                    val subinterfacePackage = subinterface.packagee?.name ?: ""
-                    subinterfacePackage == sealedPackage
+                childClasses.all { childClass ->
+                    val childPackage = childClass.packagee?.name ?: ""
+                    childPackage == sealedPackage
+                } && childInterfaces.all { childInterface ->
+                    val childPackage = childInterface.packagee?.name ?: ""
+                    childPackage == sealedPackage
+                } && childObjects.all { childObject ->
+                    val childPackage = childObject.packagee?.name ?: ""
+                    childPackage == sealedPackage
                 }
             }
     }
@@ -145,18 +174,43 @@ class SealedClassStructureTest : StringSpec({
             .filter { it.hasSealedModifier }
             .assertTrue { sealedInterface ->
                 val sealedPackage = sealedInterface.packagee?.name ?: ""
+                val sealedFqName = "${sealedInterface.packagee?.name ?: ""}.${sealedInterface.name}"
 
                 // In Kotlin 1.5+, sealed interface subclasses must be in the same package
                 // This is enforced by the compiler, but we verify the structure
-                val directSubclasses = sealedInterface.classes()
-                val directSubinterfaces = sealedInterface.interfaces()
+                // Find all classes, interfaces, and objects that directly extend/implement this sealed interface
+                val scope = Konsist.scopeFromProduction()
+                
+                val childClasses = scope.classes().filter { childClass ->
+                    childClass.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
+                
+                val childInterfaces = scope.interfaces().filter { childInterface ->
+                    childInterface.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
+                
+                val childObjects = scope.objects().filter { childObject ->
+                    childObject.parents().any { parent ->
+                        val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
+                        parentFqName == sealedFqName
+                    }
+                }
 
-                directSubclasses.all { subclass ->
-                    val subclassPackage = subclass.packagee?.name ?: ""
-                    subclassPackage == sealedPackage
-                } && directSubinterfaces.all { subinterface ->
-                    val subinterfacePackage = subinterface.packagee?.name ?: ""
-                    subinterfacePackage == sealedPackage
+                childClasses.all { childClass ->
+                    val childPackage = childClass.packagee?.name ?: ""
+                    childPackage == sealedPackage
+                } && childInterfaces.all { childInterface ->
+                    val childPackage = childInterface.packagee?.name ?: ""
+                    childPackage == sealedPackage
+                } && childObjects.all { childObject ->
+                    val childPackage = childObject.packagee?.name ?: ""
+                    childPackage == sealedPackage
                 }
             }
     }
