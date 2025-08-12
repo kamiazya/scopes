@@ -19,25 +19,6 @@ allprojects {
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
     }
-
-    // Enable dependency locking for improved build reproducibility
-    // Apply only to subprojects that have dependencies
-    project.afterEvaluate {
-        if (configurations.isNotEmpty()) {
-            dependencyLocking {
-                lockAllConfigurations()
-            }
-
-            // Prevent dynamic versions to improve build reproducibility
-            configurations.all {
-                resolutionStrategy {
-                    preferProjectModules()
-                    // Temporarily disable failOnVersionConflict to avoid configuration issues
-                    // failOnVersionConflict()
-                }
-            }
-        }
-    }
 }
 
 subprojects {
@@ -47,6 +28,20 @@ subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
+    }
+
+    // Enable dependency locking for improved build reproducibility
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+
+    // Prevent dynamic versions to improve build reproducibility
+    configurations.all {
+        resolutionStrategy {
+            preferProjectModules()
+            // Temporarily disable failOnVersionConflict to avoid configuration issues
+            // failOnVersionConflict()
         }
     }
 }
