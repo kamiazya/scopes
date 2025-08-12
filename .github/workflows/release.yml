@@ -177,8 +177,8 @@ jobs:
             echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
           fi
 
-          # Create base64 encoded hash for SLSA (sha256sum format)
-          printf "%s %s" "$HASH" "${{ steps.binary.outputs.binary_name }}" > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          # Create base64 encoded hash for SLSA (encoded_hash artifact_name format)
+          printf "%s %s\n" "$(echo -n "$HASH" | base64)" "${{ steps.binary.outputs.binary_name }}" > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
           # Set output variable for downstream steps
           ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
@@ -264,13 +264,25 @@ jobs:
           echo "Downloaded artifacts structure:"
           find . -name "*.txt" -type f | sort
 
-          # Combine all hash files from all platforms in sha256sum format
+          # Combine all hash files from all platforms, decoding individual hashes
           echo "Combining hashes from all platforms..."
-          cat linux-hashes/hashes-b64-linux-x64.txt > combined-hashes.txt
-          cat darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes.txt
-          cat win32-hashes/hashes-b64-win32-x64.txt >> combined-hashes.txt
+          # Each file contains base64-encoded hash + filename, decode hashes back to sha256sum format
+          while IFS=' ' read -r encoded_hash filename; do
+            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
+            echo "$decoded_hash $filename"
+          done < linux-hashes/hashes-b64-linux-x64.txt > combined-hashes.txt
 
-          # Create base64 encoded string for SLSA (newline-separated hashes)
+          while IFS=' ' read -r encoded_hash filename; do
+            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
+            echo "$decoded_hash $filename"
+          done < darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes.txt
+
+          while IFS=' ' read -r encoded_hash filename; do
+            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
+            echo "$decoded_hash $filename"
+          done < win32-hashes/hashes-b64-win32-x64.txt >> combined-hashes.txt
+
+          # Create base64 encoded string for SLSA (sha256sum format)
           HASHES_B64=$(cat combined-hashes.txt | base64 -w0)
           echo "hashes=$HASHES_B64" >> $GITHUB_OUTPUT
 
