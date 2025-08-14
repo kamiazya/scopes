@@ -16,54 +16,12 @@ sealed class ValidationResult<out T> {
 
     /**
      * Represents a failed validation containing accumulated errors.
+     * Using Nothing as the type parameter ensures type safety and proper variance.
      */
-    data class Failure<T>(val errors: NonEmptyList<DomainError>) : ValidationResult<T>()
+    data class Failure(val errors: NonEmptyList<DomainError>) : ValidationResult<Nothing>()
 
-    /**
-     * Combines this ValidationResult with another, applying the given function if both are successful,
-     * or accumulating errors if either fails.
-     */
-    fun <U, V> combine(other: ValidationResult<U>, f: (T, U) -> V): ValidationResult<V> {
-        return when (this) {
-            is Success -> when (other) {
-                is Success -> Success(f(this.value, other.value))
-                is Failure -> Failure(other.errors)
-            }
-            is Failure -> when (other) {
-                is Success -> Failure(this.errors)
-                is Failure -> Failure(this.errors + other.errors)
-            }
-        }
-    }
-
-    /**
-     * Converts this ValidationResult to an Either.
-     */
-    fun toEither(): Either<NonEmptyList<DomainError>, T> {
-        return when (this) {
-            is Success -> Either.Right(value)
-            is Failure -> Either.Left(errors)
-        }
-    }
 
     companion object {
-        /**
-         * Creates a ValidationResult from an Either.
-         */
-        fun <T> fromEither(either: Either<NonEmptyList<DomainError>, T>): ValidationResult<T> {
-            return either.fold(
-                { errors -> Failure(errors) },
-                { value -> Success(value) }
-            )
-        }
-
-        /**
-         * Collects all validation errors from a list of ValidationResults.
-         */
-        fun <T> collectValidationErrors(results: List<ValidationResult<T>>): List<DomainError> {
-            return results.filterIsInstance<Failure<T>>()
-                .flatMap { it.errors }
-        }
 
         /**
          * Returns all successful values if all results are successful,

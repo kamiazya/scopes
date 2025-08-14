@@ -4,7 +4,9 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.error.FindScopeError
 import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
@@ -116,25 +118,25 @@ class InMemoryScopeRepositoryTest : StringSpec({
         }
     }
 
-    "should return incremented depth when scopeId does not exist" {
+    "should return OrphanedScope error when scopeId does not exist" {
         runTest {
             val repository = InMemoryScopeRepository()
             val nonExistentId = ScopeId.generate()
 
-            // Test with empty repository - should return 1 (0 + 1)
+            // Test with empty repository - should return OrphanedScope error
             val emptyDepthResult = repository.findHierarchyDepth(nonExistentId)
-            val emptyDepth = emptyDepthResult.shouldBeRight()
-            emptyDepth shouldBe 1
+            val emptyError = emptyDepthResult.shouldBeLeft()
+            emptyError shouldBe FindScopeError.OrphanedScope(nonExistentId, "Parent scope not found during traversal")
 
             // Add a root scope and test with non-existent child
             val rootId = ScopeId.generate()
             val root = createTestScope(id = rootId, title = "Root", description = null, parentId = null)
             repository.save(root)
 
-            // Test with non-existent scope - should still return 1 (0 + 1)
+            // Test with non-existent scope - should still return OrphanedScope error
             val nonExistentDepthResult = repository.findHierarchyDepth(nonExistentId)
-            val nonExistentDepth = nonExistentDepthResult.shouldBeRight()
-            nonExistentDepth shouldBe 1
+            val nonExistentError = nonExistentDepthResult.shouldBeLeft()
+            nonExistentError shouldBe FindScopeError.OrphanedScope(nonExistentId, "Parent scope not found during traversal")
         }
     }
 

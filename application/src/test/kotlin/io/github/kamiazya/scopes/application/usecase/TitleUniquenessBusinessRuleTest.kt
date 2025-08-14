@@ -1,15 +1,19 @@
 package io.github.kamiazya.scopes.application.usecase
 
+import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.beInstanceOf
 import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
+import io.github.kamiazya.scopes.application.usecase.command.CreateScope
+import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
+import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.kotest.assertions.arrow.core.shouldBeLeft
-import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
@@ -30,7 +34,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A user already has a "Website" project at root level
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             // Mock repository indicating duplicate exists at root level
             coEvery {
@@ -38,16 +42,17 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             } returns true.right() // Duplicate exists
 
             // When: User tries to create another "Website" project at root level
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "Website",
                 description = "Another website project",
                 parentId = null // Root level
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: The system prevents this to ensure clear project identification
-            val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -59,7 +64,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A user wants to organize different types of projects
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             // Mock repository showing no duplicate exists - all validations should pass
             coEvery {
@@ -85,15 +90,15 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             } returns resultScope.right()
 
             // When: User creates a descriptive, unique project name
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "Personal Portfolio Website",
                 description = "Modern React-based portfolio site",
                 parentId = null // Root level
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: The system allows this with clear, unique naming
-            result.shouldBeRight()
+            result.isRight() shouldBe true
         }
     }
 
@@ -102,7 +107,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A personal project already has a task named "Database Setup"
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             val projectId = ScopeId.generate()
 
@@ -115,16 +120,17 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             coEvery { mockRepository.countByParentId(projectId) } returns 1.right()
 
             // When: User tries to create another "Database Setup" task in the same project
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "Database Setup",
                 description = "Another database setup task",
-                parentId = projectId
+                parentId = projectId.toString()
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: The system prevents this to avoid confusion within the project
-            val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -136,7 +142,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A developer wants to work on learning projects
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             // Mock repository showing no duplicate exists for descriptive name - all validations should pass
             coEvery {
@@ -163,15 +169,15 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             } returns resultScope.right()
 
             // When: User creates a descriptive learning project
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "React Learning Todo App",
                 description = "Tutorial-based todo application for learning React fundamentals",
                 parentId = null
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: Clear naming helps maintain organized project structure
-            result.shouldBeRight()
+            result.isRight() shouldBe true
         }
     }
 
@@ -180,7 +186,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A personal project with well-organized task structure
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             val projectId = ScopeId.generate()
 
@@ -193,16 +199,17 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             coEvery { mockRepository.countByParentId(projectId) } returns 2.right()
 
             // When: User tries to add another "Testing" task to the same project
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "Testing",
                 description = "Additional testing work",
-                parentId = projectId
+                parentId = projectId.toString()
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: The system enforces unique naming at all levels for consistency
-            val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
         }
     }
 
@@ -211,7 +218,7 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             // Given: A user already has a "website" project (lowercase)
             val mockRepository = mockk<ScopeRepository>()
             val validationService = ApplicationScopeValidationService(mockRepository)
-            val useCase = CreateScopeUseCase(mockRepository, validationService)
+            val handler = CreateScopeHandler(mockRepository, validationService)
 
             // Mock repository indicating duplicate exists with lowercase title
             // Note: The repository should check case-insensitively
@@ -220,16 +227,17 @@ class TitleUniquenessBusinessRuleTest : StringSpec({
             } returns true.right() // Repository detects "website" exists (case-insensitive)
 
             // When: User tries to create "Website" project with different casing
-            val request = CreateScopeRequest(
+            val command = CreateScope(
                 title = "Website", // Different casing
                 description = "My personal website",
                 parentId = null // Root level
             )
-            val result = useCase.execute(request)
+            val result = handler(command)
 
             // Then: The system prevents this to avoid case-based duplicates
-            val error = result.shouldBeLeft()
-            error.shouldBeInstanceOf<ApplicationError.DomainErrors>()
+            result.isLeft() shouldBe true
+            val error = result.leftOrNull()!!
+            error should beInstanceOf<CreateScopeError>()
 
             // Verify that save was never called when validation fails
             coVerify(exactly = 0) { mockRepository.save(any()) }

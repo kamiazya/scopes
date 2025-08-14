@@ -2,10 +2,10 @@ package io.github.kamiazya.scopes.domain.error
 
 import io.github.kamiazya.scopes.domain.service.ErrorRecoveryDomainService
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Test for ErrorRecoveryDomainService.
@@ -24,11 +24,11 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val emptyTitleError = DomainError.ScopeValidationError.EmptyScopeTitle
-        val tooShortError = DomainError.ScopeValidationError.ScopeTitleTooShort
-        val tooLongError = DomainError.ScopeValidationError.ScopeTitleTooLong(200, 300)
-        val newlineError = DomainError.ScopeValidationError.ScopeTitleContainsNewline
-        val descTooLongError = DomainError.ScopeValidationError.ScopeDescriptionTooLong(1000, 1500)
+        val emptyTitleError = ScopeValidationError.EmptyScopeTitle
+        val tooShortError = ScopeValidationError.ScopeTitleTooShort
+        val tooLongError = ScopeValidationError.ScopeTitleTooLong(200, 300)
+        val newlineError = ScopeValidationError.ScopeTitleContainsNewline
+        val descTooLongError = ScopeValidationError.ScopeDescriptionTooLong(1000, 1500)
 
         service.categorizeError(emptyTitleError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
         service.categorizeError(tooShortError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
@@ -41,7 +41,7 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val invalidFormatError = DomainError.ScopeValidationError.ScopeInvalidFormat("title", "String")
+        val invalidFormatError = ScopeValidationError.ScopeInvalidFormat("title", "String")
 
         service.categorizeError(invalidFormatError) shouldBe ErrorRecoveryCategory.NON_RECOVERABLE
     }
@@ -50,9 +50,9 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val duplicateError = DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
-        val maxDepthError = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
-        val maxChildrenError = DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
+        val duplicateError = ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
+        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
+        val maxChildrenError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.categorizeError(duplicateError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
         service.categorizeError(maxDepthError) shouldBe ErrorRecoveryCategory.PARTIALLY_RECOVERABLE
@@ -63,7 +63,7 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val scopeNotFoundError = DomainError.ScopeError.ScopeNotFound
+        val scopeNotFoundError = ScopeError.ScopeNotFound
 
         service.categorizeError(scopeNotFoundError) shouldBe ErrorRecoveryCategory.NON_RECOVERABLE
     }
@@ -72,8 +72,8 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val emptyTitleError = DomainError.ScopeValidationError.EmptyScopeTitle
-        val duplicateError = DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
+        val emptyTitleError = ScopeValidationError.EmptyScopeTitle
+        val duplicateError = ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
 
         service.isRecoverable(emptyTitleError) shouldBe true
         service.isRecoverable(duplicateError) shouldBe true
@@ -83,8 +83,8 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         // Test setup
         val service = ErrorRecoveryDomainService()
 
-        val scopeNotFoundError = DomainError.ScopeError.ScopeNotFound
-        val invalidFormatError = DomainError.ScopeValidationError.ScopeInvalidFormat("title", "String")
+        val scopeNotFoundError = ScopeError.ScopeNotFound
+        val invalidFormatError = ScopeValidationError.ScopeInvalidFormat("title", "String")
 
         service.isRecoverable(scopeNotFoundError) shouldBe false
         service.isRecoverable(invalidFormatError) shouldBe false
@@ -95,22 +95,22 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         val service = ErrorRecoveryDomainService()
 
         // Simple errors - direct suggestions possible
-        val emptyTitleError = DomainError.ScopeValidationError.EmptyScopeTitle
-        val tooShortError = DomainError.ScopeValidationError.ScopeTitleTooShort
+        val emptyTitleError = ScopeValidationError.EmptyScopeTitle
+        val tooShortError = ScopeValidationError.ScopeTitleTooShort
 
         service.getRecoveryComplexity(emptyTitleError) shouldBe RecoveryComplexity.SIMPLE
         service.getRecoveryComplexity(tooShortError) shouldBe RecoveryComplexity.SIMPLE
 
         // Moderate errors - require user choices
-        val tooLongError = DomainError.ScopeValidationError.ScopeTitleTooLong(200, 300)
-        val duplicateError = DomainError.ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
+        val tooLongError = ScopeValidationError.ScopeTitleTooLong(200, 300)
+        val duplicateError = ScopeBusinessRuleViolation.ScopeDuplicateTitle("Task", null)
 
         service.getRecoveryComplexity(tooLongError) shouldBe RecoveryComplexity.MODERATE
         service.getRecoveryComplexity(duplicateError) shouldBe RecoveryComplexity.MODERATE
 
         // Complex errors - significant intervention needed
-        val maxDepthError = DomainError.ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
-        val maxChildrenError = DomainError.ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
+        val maxDepthError = ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(5, 8)
+        val maxChildrenError = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(10, 15)
 
         service.getRecoveryComplexity(maxDepthError) shouldBe RecoveryComplexity.COMPLEX
         service.getRecoveryComplexity(maxChildrenError) shouldBe RecoveryComplexity.COMPLEX
@@ -121,7 +121,7 @@ class ErrorRecoveryDomainServiceTest : StringSpec({
         val service1 = ErrorRecoveryDomainService()
         val service2 = ErrorRecoveryDomainService()
 
-        val error = DomainError.ScopeValidationError.EmptyScopeTitle
+        val error = ScopeValidationError.EmptyScopeTitle
 
         // Same configuration should produce identical results (pure functions)
         service1.categorizeError(error) shouldBe service2.categorizeError(error)

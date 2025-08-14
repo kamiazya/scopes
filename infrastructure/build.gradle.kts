@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":application"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)

@@ -1,13 +1,10 @@
 package io.github.kamiazya.scopes.presentation.cli
 
-import io.github.kamiazya.scopes.presentation.cli.di.cliModule
-import org.koin.core.context.startKoin
-
 fun main(args: Array<String>) {
-    startKoin {
-        modules(cliModule)
-    }
-
+    // Initialize all dependencies through the Composition Root
+    CompositionRoot.initialize()
+    
+    // Start the CLI application
     ScopesCommand().main(args)
 }
 

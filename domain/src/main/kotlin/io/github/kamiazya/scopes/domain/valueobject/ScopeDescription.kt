@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 import kotlinx.serialization.Serializable
 
 /**
@@ -23,7 +24,7 @@ value class ScopeDescription private constructor(val value: String) {
          * Returns Either with validation error or nullable ScopeDescription.
          * Null input or blank strings result in null ScopeDescription.
          */
-        fun create(description: String?): Either<DomainError.ScopeValidationError, ScopeDescription?> = either {
+        fun create(description: String?): Either<ScopeValidationError, ScopeDescription?> = either {
             when (description) {
                 null -> null
                 else -> {
@@ -32,7 +33,7 @@ value class ScopeDescription private constructor(val value: String) {
                         null
                     } else {
                         ensure(trimmedDescription.length <= MAX_LENGTH) {
-                            DomainError.ScopeValidationError.ScopeDescriptionTooLong(
+                            ScopeValidationError.ScopeDescriptionTooLong(
                                 MAX_LENGTH,
                                 trimmedDescription.length
                             )

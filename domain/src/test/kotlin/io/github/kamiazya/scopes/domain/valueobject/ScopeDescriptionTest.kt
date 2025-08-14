@@ -5,6 +5,7 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 
 /**
  * Tests for ScopeDescription focusing on user content creation and business context.
@@ -65,7 +66,7 @@ class ScopeDescriptionTest : StringSpec({
 
         // Then the system prevents this to maintain good system performance and UX
         val error = result.shouldBeLeft()
-        error shouldBe DomainError.ScopeValidationError.ScopeDescriptionTooLong(1000, 1001)
+        error shouldBe ScopeValidationError.ScopeDescriptionTooLong(1000, 1001)
     }
 
     "system supports comprehensive documentation up to reasonable limits" {

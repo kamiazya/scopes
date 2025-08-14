@@ -35,11 +35,11 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             return "Summary of ${errors.size} errors"
         }
 
-        override fun getValidationErrorMessage(error: DomainError.ScopeValidationError): String {
+        override fun getValidationErrorMessage(error: ScopeValidationError): String {
             return "Validation: $error"
         }
 
-        override fun getBusinessRuleViolationMessage(error: DomainError.ScopeBusinessRuleViolation): String {
+        override fun getBusinessRuleViolationMessage(error: ScopeBusinessRuleViolation): String {
             return "Business rule: $error"
         }
 
@@ -75,7 +75,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             errorFormatter = fakeErrorFormatter
         )
 
-        val error = DomainError.ScopeValidationError.EmptyScopeTitle
+        val error = ScopeValidationError.EmptyScopeTitle
         val context = SuggestionContext.TitleValidation("Test Title")
 
         val result = applicationService.recoverFromError(error, context)
@@ -95,8 +95,8 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             errorFormatter = fakeErrorFormatter
         )
 
-        val recoverableError = DomainError.ScopeValidationError.EmptyScopeTitle
-        val nonRecoverableError = DomainError.ScopeError.ScopeNotFound
+        val recoverableError = ScopeValidationError.EmptyScopeTitle
+        val nonRecoverableError = ScopeError.ScopeNotFound
 
         val recoverableResult = applicationService.recoverFromError(recoverableError)
         val nonRecoverableResult = applicationService.recoverFromError(nonRecoverableError)
@@ -117,10 +117,10 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
             errorFormatter = fakeErrorFormatter
         )
 
-        val failureResult = ValidationResult.Failure<String>(
+        val failureResult = ValidationResult.Failure(
             nonEmptyListOf(
-                DomainError.ScopeValidationError.EmptyScopeTitle,
-                DomainError.ScopeValidationError.ScopeTitleTooShort
+                ScopeValidationError.EmptyScopeTitle,
+                ScopeValidationError.ScopeTitleTooShort
             )
         )
         val context = SuggestionContext.TitleValidation("Test")
@@ -185,7 +185,7 @@ class ErrorRecoveryApplicationServiceTest : StringSpec({
         val recoveryStrategyService = RecoveryStrategyDomainService()
         val fakeErrorFormatter = FakeErrorFormatter("Test: ")
 
-        val nonRecoverableError = DomainError.ScopeError.ScopeNotFound
+        val nonRecoverableError = ScopeError.ScopeNotFound
 
         val applicationService = ErrorRecoveryApplicationService(
             errorCategorizationService = errorCategorizationService,

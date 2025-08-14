@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.domain.error.DomainError
+import io.github.kamiazya.scopes.domain.error.ScopeValidationError
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,19 +23,19 @@ value class ScopeTitle private constructor(val value: String) {
          * Create a validated ScopeTitle from a string.
          * Returns Either with validation error or valid ScopeTitle.
          */
-        fun create(title: String): Either<DomainError.ScopeValidationError, ScopeTitle> = either {
+        fun create(title: String): Either<ScopeValidationError, ScopeTitle> = either {
             val trimmedTitle = title.trim()
 
-            ensure(trimmedTitle.isNotBlank()) { DomainError.ScopeValidationError.EmptyScopeTitle }
+            ensure(trimmedTitle.isNotBlank()) { ScopeValidationError.EmptyScopeTitle }
             // MIN_LENGTH is currently 1, making this check unreachable after isNotBlank().
             // However, it's included to support future increases to MIN_LENGTH and is used
             // in recovery logic and formatting utilities.
-            ensure(trimmedTitle.length >= MIN_LENGTH) { DomainError.ScopeValidationError.ScopeTitleTooShort }
+            ensure(trimmedTitle.length >= MIN_LENGTH) { ScopeValidationError.ScopeTitleTooShort }
             ensure(trimmedTitle.length <= MAX_LENGTH) {
-                DomainError.ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
+                ScopeValidationError.ScopeTitleTooLong(MAX_LENGTH, trimmedTitle.length)
             }
             ensure(!trimmedTitle.contains('\n') && !trimmedTitle.contains('\r')) {
-                DomainError.ScopeValidationError.ScopeTitleContainsNewline
+                ScopeValidationError.ScopeTitleContainsNewline
             }
 
             ScopeTitle(trimmedTitle)
