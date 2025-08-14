@@ -71,18 +71,16 @@ jobs:
 
     - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
+      working-directory: ${{ github.workspace }}
       run: |
-        Set-Location "C:\build-workspace\scopes"
         $VERSION_ARG = ""
         if ("${{ inputs.version }}" -and "${{ inputs.version }}" -ne "") {
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG"
-        & .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG
       shell: powershell
-      env:
-        GRADLE_USER_HOME: C:\gradle-cache
 
     - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
