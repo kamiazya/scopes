@@ -712,10 +712,25 @@ Build Scans are configured in `settings.gradle.kts` using the Develocity plugin:
 
 #### Privacy and Security
 
-- Build Scans do not expose sensitive environment variables
-- Local-only data is never included in scans
-- Scans are public by default on scans.gradle.com
+- Build Scans can capture environment variables and local metadata (configurable with masking/obfuscation)
+- Scans on scans.gradle.com are **unlisted** - anyone with the URL can view them
 - Review scan contents before sharing URLs externally
+- Consider sensitive data exposure when sharing scan links
+
+##### Obfuscation and Data Capture
+
+Build Scans may capture the following information (commonly redacted items):
+- **Usernames and hostnames**: Local machine identifiers
+- **IP addresses**: Network configuration details
+- **Environment variables**: Selected system properties (can be masked)
+- **File paths**: Project structure and locations
+- **Build cache keys**: Internal build optimization data
+
+**Best practices:**
+- Review scan data before sharing with external parties
+- Use obfuscation features for sensitive values when needed
+- Be aware that unlisted does not mean private - URLs are accessible to anyone who has them
+- For sensitive projects, consider using a private Develocity instance instead of public scans.gradle.com
 
 #### Troubleshooting Builds
 

@@ -45,7 +45,7 @@ jobs:
       run: |
         # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
         # See: https://github.com/kamiazya/scopes/issues/36
-        ./gradlew --no-daemon --no-configuration-cache presentation-cli:cycloneDxBom
+        ./gradlew --no-daemon --no-configuration-cache --scan presentation-cli:cycloneDxBom
       continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     - name: Handle SBOM generation failure
