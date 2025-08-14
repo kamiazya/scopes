@@ -39,7 +39,7 @@ sealed class TemplateError : NotificationServiceError() {
          */
         override fun toString(): String =
             "TemplateRenderingFailure(templateId='$templateId', missingVariables=$missingVariables, " +
-            "invalidVariableReasons=$sanitizedReasons, cause=$cause::class.simpleName)"
+            "invalidVariableReasons=$sanitizedReasons, cause=${cause?.let { it::class.simpleName } ?: "null"})"
 
         /**
          * Sanitizes template error reason strings to prevent leakage of sensitive values.

@@ -176,7 +176,7 @@ class ApplicationScopeValidationService(
     /**
      * Comprehensive validation for scope creation using accumulating ValidationResult.
      * This single method handles all validation concerns and accumulates errors.
-     * Use .firstErrorOnly() for fail-fast behavior when needed.
+     * For fail-fast behavior, use errors.first() to get the first error from the NonEmptyList.
      */
     suspend fun validateScopeCreation(
         title: String,

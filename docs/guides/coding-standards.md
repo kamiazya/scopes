@@ -68,7 +68,7 @@ sealed class UniquenessValidationError : DomainError() {
 // For accumulating multiple validation errors
 sealed class ValidationResult<out T> {
     data class Success<T>(val value: T) : ValidationResult<T>()
-    data class Failure<T>(val errors: NonEmptyList<DomainError>) : ValidationResult<T>()
+    data class Failure(val errors: NonEmptyList<DomainError>) : ValidationResult<Nothing>()
 }
 
 // Extension functions for ergonomic usage

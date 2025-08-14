@@ -426,18 +426,21 @@ class InfrastructureAdapterErrorTest : DescribeSpec({
             }
 
             it("should never expose sensitive data in toString") {
+                val fakeStripeToken = "sk_live_secretkey123456" // gitleaks:allow
+                val expectedMaskedToken = "sk*******************56"
+                
                 val error = ConfigurationAdapterError.ValidationError(
                     configKey = "api.secret",
                     expectedType = "String",
-                    actualValue = "sk_live_secretkey123456",
+                    actualValue = fakeStripeToken,
                     validationRules = listOf("starts_with:sk_"),
                     timestamp = Clock.System.now(),
                     correlationId = "req-123"
                 )
 
                 val toStringResult = error.toString()
-                toStringResult.contains("sk_live_secretkey123456") shouldBe false
-                toStringResult.contains("sk*******************56") shouldBe true
+                toStringResult.contains(fakeStripeToken) shouldBe false
+                toStringResult.contains(expectedMaskedToken) shouldBe true
                 toStringResult.contains("api.secret") shouldBe true
             }
 

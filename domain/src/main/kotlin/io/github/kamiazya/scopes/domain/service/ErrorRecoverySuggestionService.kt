@@ -93,6 +93,35 @@ class ErrorRecoverySuggestionService(
         context: SuggestionContext = SuggestionContext.NoContext
     ): RecoveryResult {
         return when (error) {
+            // Handle ScopeBusinessRuleError variants by routing to existing helpers
+            is ScopeBusinessRuleError.MaxDepthExceeded -> {
+                // Convert to ScopeBusinessRuleViolation format for helper compatibility
+                val violation = ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
+                    maxDepth = error.maxDepth,
+                    actualDepth = error.actualDepth
+                )
+                suggestMaxDepthExceededRecovery(violation)
+            }
+            is ScopeBusinessRuleError.MaxChildrenExceeded -> {
+                // Convert to ScopeBusinessRuleViolation format for helper compatibility
+                val violation = ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded(
+                    maxChildren = error.maxChildren,
+                    actualChildren = error.currentChildren
+                )
+                suggestMaxChildrenExceededRecovery(violation)
+            }
+            is ScopeBusinessRuleError.DuplicateScope ->
+                RecoveryResult.NonRecoverable(
+                    originalError = DomainInfrastructureError(
+                        repositoryError = RepositoryError.DataIntegrityError(
+                            "Duplicate scope title: ${error.duplicateTitle} in parent ${error.parentId}",
+                            causeClass = RuntimeException::class,
+                            causeMessage = "Duplicate scope with ID ${error.existingScopeId} already exists"
+                        )
+                    ),
+                    reason = "Duplicate scope titles require manual resolution to ensure unique identification"
+                )
+            // Keep existing HierarchyBusinessRuleError cases
             is HierarchyBusinessRuleError.SelfParenting -> 
                 RecoveryResult.NonRecoverable(
                     originalError = ScopeError.SelfParenting,
@@ -103,6 +132,7 @@ class ErrorRecoverySuggestionService(
                     originalError = ScopeError.CircularReference(error.scopeId, error.parentId),
                     reason = "Circular references require manual resolution to prevent infinite loops"
                 )
+            // Handle DataIntegrityBusinessRuleError without wrapping
             is DataIntegrityBusinessRuleError.ConsistencyCheckFailure ->
                 RecoveryResult.NonRecoverable(
                     originalError = DomainInfrastructureError(
@@ -112,7 +142,7 @@ class ErrorRecoverySuggestionService(
                             causeMessage = "Expected: ${error.expectedState}, Actual: ${error.actualState}"
                         )
                     ),
-                    reason = "Data integrity violations require manual investigation and resolution"
+                    reason = "Data integrity violations require manual investigation and resolution: ${error.checkType} failed for scope ${error.scopeId} (expected: ${error.expectedState}, actual: ${error.actualState})"
                 )
             else ->
                 RecoveryResult.NonRecoverable(

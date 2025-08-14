@@ -70,7 +70,7 @@ class TemplateErrorTest : DescribeSpec({
                 toStringResult.contains("super-secret-token-12345") shouldBe false
                 
                 // Verify sanitized value IS present
-                toStringResult.contains("su*********************45") shouldBe true
+                toStringResult.contains("su********************45") shouldBe true
             }
         }
 

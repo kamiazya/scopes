@@ -113,7 +113,12 @@ sealed class ValidationResult<out T> {
 fun <T> T.validationSuccess(): ValidationResult<T> = ValidationResult.Success(this)
 fun <T> DomainError.validationFailure(): ValidationResult<T> = ValidationResult.Failure(nonEmptyListOf(this))
 fun <T> List<ValidationResult<T>>.sequence(): ValidationResult<List<T>>
-fun <T> ValidationResult<T>.firstErrorOnly(): ValidationResult<T>
+
+// For fail-fast behavior, use fold() to inspect the first error:
+// validationResult.fold(
+//     ifLeft = { errors -> handleFirstError(errors.first()) },
+//     ifRight = { value -> handleSuccess(value) }
+// )
 ```
 
 ### Use Case Error Translation Implementation
@@ -201,25 +206,24 @@ class ApplicationScopeValidationService(
     /**
      * Validates hierarchy constraints with business rule-specific error context.
      * Checks both depth constraints and children limit constraints.
-     * Returns specific BusinessRuleServiceError.ScopeBusinessRuleError types.
+     * Returns specific BusinessRuleServiceError types including repository errors.
      */
-    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<ScopeBusinessRuleError, Unit> = either {
+    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<BusinessRuleServiceError, Unit> = either {
         if (parentId == null) return@either
         
         // Check depth constraint
         val depth = repository.findHierarchyDepth(parentId)
-            .fold(
-                ifLeft = { repositoryError ->
-                    // Map repository error to business rule error
-                    raise(ScopeBusinessRuleError.MaxDepthExceeded(
-                        maxDepth = MAX_HIERARCHY_DEPTH,
-                        actualDepth = 0,
-                        scopeId = parentId,
-                        parentPath = emptyList()
-                    ))
-                },
-                ifRight = { it }
-            )
+            .mapLeft { repositoryError ->
+                // Create a data integrity error that preserves repository context
+                DataIntegrityBusinessRuleError.ConsistencyCheckFailure(
+                    scopeId = parentId,
+                    checkType = "hierarchy_depth_retrieval",
+                    expectedState = "accessible_hierarchy_data",
+                    actualState = "repository_error: ${repositoryError.message}",
+                    affectedFields = listOf("hierarchy_depth")
+                )
+            }
+            .bind()
         
         if (depth >= MAX_HIERARCHY_DEPTH) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
@@ -232,18 +236,17 @@ class ApplicationScopeValidationService(
         
         // Check children limit constraint
         val childrenCount = repository.countByParentId(parentId)
-            .fold(
-                ifLeft = { repositoryError ->
-                    // Map repository error to business rule error
-                    raise(ScopeBusinessRuleError.MaxChildrenExceeded(
-                        maxChildren = MAX_CHILDREN_PER_PARENT,
-                        currentChildren = 0,
-                        parentId = parentId,
-                        attemptedOperation = "create_child_scope"
-                    ))
-                },
-                ifRight = { it }
-            )
+            .mapLeft { repositoryError ->
+                // Create a data integrity error that preserves repository context
+                DataIntegrityBusinessRuleError.ConsistencyCheckFailure(
+                    scopeId = parentId,
+                    checkType = "children_count_retrieval",
+                    expectedState = "accessible_children_data",
+                    actualState = "repository_error: ${repositoryError.message}",
+                    affectedFields = listOf("children_count")
+                )
+            }
+            .bind()
         
         if (childrenCount >= MAX_CHILDREN_PER_PARENT) {
             raise(ScopeBusinessRuleError.MaxChildrenExceeded(
