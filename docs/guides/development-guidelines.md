@@ -9,7 +9,7 @@ Scopes follows **Clean Architecture** principles with **Domain-Driven Design (DD
 ### Current Architectural Implementation
 
 1. **Strongly-Typed Domain Identifiers** - ScopeId value objects replace raw strings
-2. **Service-Specific Error Hierarchies** - TitleValidationError, ScopeBusinessRuleError, UniquenessValidationError
+2. **Service-Specific Error Hierarchies** - TitleValidationError, ScopeBusinessRuleViolation, UniquenessValidationError, ApplicationValidationError
 3. **Clean Architecture with Functional DDD** - Domain layer isolation with repository-dependent validation in application layer
 4. **Error Translation Patterns** - Service errors mapped to use case errors with rich context
 5. **ValidationResult for Error Accumulation** - Comprehensive validation feedback with extension functions
@@ -605,7 +605,7 @@ scopes/
 │   │   ├── CrossAggregateValidationService.kt   # Cross-aggregate validation
 │   │   └── error/
 │   │       ├── ApplicationServiceErrorTranslator.kt # Service error translator
-│   │       ├── ApplicationValidationError.kt    # Application validation errors
+│   │       ├── ApplicationValidationError.kt    # Application validation errors (InputValidationError, CrossAggregateValidationError, BusinessRuleValidationError, AsyncValidationError)
 │   │       ├── AuditServiceError.kt            # Audit service errors
 │   │       ├── AuthorizationServiceError.kt    # Authorization service errors
 │   │       ├── NotificationServiceError.kt     # Notification base errors

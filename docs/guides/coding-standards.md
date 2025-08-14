@@ -54,14 +54,36 @@ sealed class TitleValidationError {
 // Note: Application errors are translated to domain errors at the application/domain boundary
 // This ensures callers receive appropriate domain-level errors while maintaining layer separation
 
-sealed class ScopeBusinessRuleError : DomainError() {
-    data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int, val scopeId: ScopeId, val parentPath: List<ScopeId>)
-    data class MaxChildrenExceeded(val maxChildren: Int, val currentChildren: Int, val parentId: ScopeId, val attemptedOperation: String)
-    data class DuplicateScope(val duplicateTitle: String, val parentId: ScopeId, val existingScopeId: ScopeId, val normalizedTitle: String)
+sealed class ScopeBusinessRuleViolation : DomainError() {
+    data class ScopeMaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : ScopeBusinessRuleViolation()
+    data class ScopeMaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : ScopeBusinessRuleViolation()
+    data class ScopeDuplicateTitle(val title: String, val parentId: ScopeId?) : ScopeBusinessRuleViolation()
 }
 
 sealed class UniquenessValidationError : DomainError() {
-    data class DuplicateTitle(val title: String, val normalizedTitle: String, val parentId: String?, val existingScopeId: String)
+    data class DuplicateTitle(
+        val title: String,
+        val normalizedTitle: String, 
+        val parentId: ScopeId?,
+        val existingScopeId: ScopeId
+    ) : UniquenessValidationError()
+}
+
+sealed class ApplicationValidationError {
+    sealed class InputValidationError : ApplicationValidationError() {
+        data class InvalidFieldFormat(
+            val fieldName: String,
+            val expectedFormat: String,
+            val actualValue: String,
+            val validationRule: String
+        ) : InputValidationError()
+        
+        data class MissingRequiredField(
+            val fieldName: String,
+            val entityType: String,
+            val context: String? = null
+        ) : InputValidationError()
+    }
 }
 ```
 
@@ -85,17 +107,38 @@ fun <T> List<ValidationResult<T>>.sequence(): ValidationResult<List<T>>
 ### Use Case Error Translation Pattern
 
 ```kotlin
-// Use case-specific errors with detailed context
+// Use case-specific errors with detailed context (current implementation)
 sealed class CreateScopeError {
+    data object ParentNotFound : CreateScopeError()
     data class ValidationFailed(val field: String, val reason: String) : CreateScopeError()
-    object ParentNotFound : CreateScopeError()
-    data class SaveFailure(val repositoryError: SaveScopeError) : CreateScopeError()
+    data class DomainRuleViolation(val domainError: DomainError) : CreateScopeError()
+    data class SaveFailure(val saveError: SaveScopeError) : CreateScopeError()
+    data class ExistenceCheckFailure(val existsError: ExistsScopeError) : CreateScopeError()
+    data class CountFailure(val countError: CountScopeError) : CreateScopeError()
+    data class HierarchyTraversalFailure(val findError: FindScopeError) : CreateScopeError()
+    data class HierarchyDepthExceeded(val maxDepth: Int, val currentDepth: Int) : CreateScopeError()
+    data class MaxChildrenExceeded(val parentId: ScopeId, val maxChildren: Int) : CreateScopeError()
+    
+    // Service-specific error mappings
+    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
+    data class BusinessRuleViolationFailed(val businessRuleError: BusinessRuleServiceError) : CreateScopeError()
+    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
 }
 
 // Translation in use case handlers
 private fun validateTitleWithServiceErrors(title: String): Either<CreateScopeError, Unit> =
     applicationScopeValidationService.validateTitleFormat(title)
         .mapLeft { titleError -> CreateScopeError.ValidationFailed("title", titleError.toString()) }
+
+private fun validateHierarchyWithServiceErrors(parentId: ScopeId?): Either<CreateScopeError, Unit> =
+    applicationScopeValidationService.validateHierarchyConstraints(parentId)
+        .mapLeft { domainError -> 
+            when (domainError) {
+                is ScopeBusinessRuleViolation -> CreateScopeError.ValidationFailed("hierarchy", domainError.toString())
+                is DomainInfrastructureError -> CreateScopeError.ValidationFailed("infrastructure", "Repository error: ${domainError.repositoryError}")
+                else -> CreateScopeError.ValidationFailed("unknown", domainError.toString())
+            }
+        }
 ```
 
 ## Strongly-Typed Domain Identifiers
@@ -155,24 +198,25 @@ class ApplicationScopeValidationService(
         return Unit.right()
     }
     
-    // Repository-dependent validations return business rule errors
-    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<ScopeBusinessRuleError, Unit> = either {
+    // Repository-dependent validations return domain errors (may include infrastructure errors)
+    suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<DomainError, Unit> = either {
         if (parentId == null) return@either
         
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { error -> 
-                ScopeBusinessRuleError.RepositoryFailure(
-                    operation = "findHierarchyDepth",
-                    cause = error
+            .mapLeft { repositoryError -> 
+                DomainInfrastructureError(
+                    repositoryError = RepositoryError.DatabaseError(
+                        "Failed to find hierarchy depth: operation='findHierarchyDepth', parentId=${parentId}",
+                        causeClass = repositoryError::class,
+                        causeMessage = repositoryError.toString()
+                    )
                 )
             }
             .bind()
         if (depth >= MAX_HIERARCHY_DEPTH) {
-            raise(ScopeBusinessRuleError.MaxDepthExceeded(
+            raise(ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
-                actualDepth = depth + 1,
-                scopeId = parentId,
-                parentPath = emptyList()
+                actualDepth = depth + 1
             ))
         }
     }
@@ -182,20 +226,36 @@ class ApplicationScopeValidationService(
 ### Error Mapping Functions
 
 ```kotlin
-// Centralized error translation
-private fun mapBusinessRuleErrorToScopeError(error: ScopeBusinessRuleError, parentId: ScopeId?): ScopeError =
+// Centralized error translation for scope business rule violations
+private fun mapScopeBusinessRuleViolationToScopeError(error: ScopeBusinessRuleViolation, parentId: ScopeId?): ScopeError =
     when (error) {
-        is ScopeBusinessRuleError.MaxDepthExceeded ->
+        is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
             ScopeError.InvalidParent(
                 parentId ?: ScopeId.generate(),
                 "Maximum hierarchy depth (${error.maxDepth}) would be exceeded"
             )
-        is ScopeBusinessRuleError.MaxChildrenExceeded ->
+        is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
             ScopeError.InvalidParent(
                 parentId ?: ScopeId.generate(), 
                 "Maximum children limit (${error.maxChildren}) would be exceeded"
             )
-        // ... other cases
+        is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+            ScopeError.InvalidTitle(
+                "Scope with title '${error.title}' already exists under parent ${error.parentId ?: "root"}"
+            )
+    }
+
+// General domain error mapping that delegates to specific mappers
+private fun mapDomainErrorToScopeError(error: DomainError, parentId: ScopeId?): ScopeError =
+    when (error) {
+        is ScopeBusinessRuleViolation -> mapScopeBusinessRuleViolationToScopeError(error, parentId)
+        is DomainInfrastructureError ->
+            ScopeError.InvalidParent(
+                parentId ?: ScopeId.generate(),
+                "Infrastructure error during validation: ${error.repositoryError}"
+            )
+        // ... other domain error cases
+        else -> ScopeError.InvalidTitle("Unexpected domain error: ${error}")
     }
 ```
 
@@ -276,9 +336,12 @@ sealed class FindScopeError : DomainError() {
 ### Service-Specific Error Testing
 
 ```kotlin
+// Import application-layer error types
+import io.github.kamiazya.scopes.domain.error.TitleValidationError
+
 class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
     describe("title validation error translation") {
-        it("should translate ScopeValidationError.ScopeTitleTooShort to ValidationFailed") {
+        it("should translate TitleValidationError.TitleTooShort to ValidationFailed") {
             val command = CreateScope(
                 title = "ab",
                 description = "Test description",
@@ -287,7 +350,11 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
             )
 
             coEvery { mockValidationService.validateTitleFormat("ab") } returns 
-                ScopeValidationError.ScopeTitleTooShort.left()
+                TitleValidationError.TitleTooShort(
+                    minLength = 3,
+                    actualLength = 2,
+                    title = "ab"
+                ).left()
             
             val result = handler.invoke(command)
             
@@ -367,15 +434,32 @@ sealed class Err
 ### Function Composition
 
 ```kotlin
-// ✅ Good: Function composition with Arrow Either
+// ✅ Good: Function composition with validated factory method
 fun createScope(request: CreateScopeRequest): Either<DomainError, Scope> =
+    validateParent(request.parentId)
+        .flatMap { _ ->
+            // Use validated factory that enforces domain invariants
+            Scope.create(
+                title = request.title,
+                description = request.description,
+                parentId = request.parentId,
+                metadata = request.metadata
+            ).mapLeft { validationError -> 
+                // Map ScopeValidationError to DomainError
+                validationError as DomainError
+            }
+        }
+
+// ❌ Bad: Direct construction bypasses domain invariants  
+fun createScopeUnsafe(request: CreateScopeRequest): Either<DomainError, Scope> =
     validateTitle(request.title)
         .flatMap { title -> validateParent(request.parentId) }
         .map { _ ->
+            // This bypasses ScopeTitle and ScopeDescription validation!
             Scope(
                 id = ScopeId.generate(),
-                title = request.title,
-                description = request.description,
+                title = request.title, // Should be ScopeTitle, not String
+                description = request.description, // Should be ScopeDescription?, not String?
                 parentId = request.parentId,
                 createdAt = Clock.System.now(),
                 updatedAt = Clock.System.now()
@@ -416,7 +500,7 @@ pre-commit:
 ### Current Implementation Patterns ✅
 
 - **Strongly-typed domain identifiers** (ScopeId instead of String)
-- **Service-specific error contexts** (TitleValidationError, ScopeBusinessRuleError)
+- **Service-specific error contexts** (TitleValidationError, UniquenessValidationError, ScopeBusinessRuleViolation, ApplicationValidationError)
 - **Error translation in use case handlers** (service errors → use case errors)
 - **ValidationResult for error accumulation** with extension functions
 - **Repository-dependent validation** in application layer

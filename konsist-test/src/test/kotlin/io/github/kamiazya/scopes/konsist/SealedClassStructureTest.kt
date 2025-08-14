@@ -102,20 +102,19 @@ class SealedClassStructureTest : StringSpec({
                 // 3. Object classes (for singleton errors)
                 val subclasses = errorInterface.classes()
                 val subinterfaces = errorInterface.interfaces()
+                val subobjects = errorInterface.objects()
 
-                subclasses.all { subclass ->
+                val hasChildren = subclasses.isNotEmpty() || subinterfaces.isNotEmpty() || subobjects.isNotEmpty()
+                val classesValid = subclasses.all { subclass ->
                     when {
                         subclass.hasDataModifier -> !subclass.hasSealedModifier
                         subclass.hasSealedModifier -> !subclass.hasDataModifier
-                        // Allow object declarations
-                        subclass.text.contains("object ") -> !subclass.hasSealedModifier && !subclass.hasDataModifier
-                        // Allow regular classes
                         else -> !subclass.hasDataModifier && !subclass.hasSealedModifier
                     }
-                } && subinterfaces.all { subinterface ->
-                    // Nested sealed interfaces are allowed for intermediate categories
-                    true
                 }
+                val interfacesValid = subinterfaces.all { true }
+                val objectsValid = subobjects.all { true }
+                hasChildren && classesValid && interfacesValid && objectsValid
             }
     }
 
@@ -132,21 +131,20 @@ class SealedClassStructureTest : StringSpec({
                 // This is enforced by the compiler, but we verify the structure
                 // Find all classes, interfaces, and objects that directly extend/implement this sealed class
                 val scope = Konsist.scopeFromProduction()
-                
                 val childClasses = scope.classes().filter { childClass ->
                     childClass.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
                         parentFqName == sealedFqName
                     }
                 }
-                
+
                 val childInterfaces = scope.interfaces().filter { childInterface ->
                     childInterface.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
                         parentFqName == sealedFqName
                     }
                 }
-                
+
                 val childObjects = scope.objects().filter { childObject ->
                     childObject.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
@@ -180,21 +178,20 @@ class SealedClassStructureTest : StringSpec({
                 // This is enforced by the compiler, but we verify the structure
                 // Find all classes, interfaces, and objects that directly extend/implement this sealed interface
                 val scope = Konsist.scopeFromProduction()
-                
                 val childClasses = scope.classes().filter { childClass ->
                     childClass.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
                         parentFqName == sealedFqName
                     }
                 }
-                
+
                 val childInterfaces = scope.interfaces().filter { childInterface ->
                     childInterface.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
                         parentFqName == sealedFqName
                     }
                 }
-                
+
                 val childObjects = scope.objects().filter { childObject ->
                     childObject.parents().any { parent ->
                         val parentFqName = "${parent.packagee?.name ?: ""}.${parent.name}"
