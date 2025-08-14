@@ -69,7 +69,7 @@ jobs:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
         # Generate and submit dependency graph
-        generate-and-submit: true
+        dependency-graph: generate-and-submit
         dependency-graph-continue-on-failure: true
 
     - name: Build Native Binary (Windows)

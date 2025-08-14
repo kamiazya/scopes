@@ -217,7 +217,7 @@ Dependency verification is enabled in CI environments using the Setup Gradle act
   uses: gradle/actions/setup-gradle@v4
   with:
     validate-wrappers: true
-    generate-and-submit: true
+    dependency-graph: generate-and-submit
     dependency-graph-continue-on-failure: true
 ```
 
