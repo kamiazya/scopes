@@ -50,6 +50,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+    - name: Setup Windows Build Environment
+      if: matrix.platform == 'win32'
+      uses: ./.github/actions/setup-windows-build
+      with:
+        version: ${{ inputs.version }}
+
     - name: Set up GraalVM
       uses: graalvm/setup-graalvm@7f488cf82a3629ee755e4e97342c01d6bed318fa # v1.3.5
       with:
@@ -65,16 +71,18 @@ jobs:
 
     - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
-      working-directory: ${{ github.workspace }}
       run: |
+        Set-Location "C:\build-workspace\scopes"
         $VERSION_ARG = ""
         if ("${{ inputs.version }}" -and "${{ inputs.version }}" -ne "") {
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG"
-        & .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG
       shell: powershell
+      env:
+        GRADLE_USER_HOME: C:\gradle-cache
 
     - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
@@ -97,7 +105,7 @@ jobs:
         BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="${BINARY_NAME}.exe"
-          cp presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
           cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
