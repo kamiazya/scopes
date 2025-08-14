@@ -31,19 +31,10 @@ subprojects {
         }
     }
 
-    // Enable dependency locking for improved build reproducibility
-    dependencyLocking {
-        lockAllConfigurations()
-    }
-
     // Prevent dynamic versions to improve build reproducibility
     configurations.all {
         resolutionStrategy {
             preferProjectModules()
-            // Note: dependency locking already prevents dynamic versions, so we don't need
-            // failOnDynamicVersions() and failOnChangingVersions() which would conflict
-            // Temporarily disable failOnVersionConflict to avoid configuration issues
-            // failOnVersionConflict()
         }
     }
 }

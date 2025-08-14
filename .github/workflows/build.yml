@@ -68,9 +68,6 @@ jobs:
       with:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-        # Temporarily disable dependency graph due to verification metadata issues
-        # dependency-graph: generate-and-submit
-        # dependency-graph-continue-on-failure: true
 
     - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
@@ -81,13 +78,11 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG"
-        & .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
-        # Disable dependency graph on Windows to avoid path issues
-        GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
     - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
@@ -96,7 +91,7 @@ jobs:
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        ./gradlew --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG
+        ./gradlew --no-configuration-cache nativeCompile $VERSION_ARG
 
     - name: Prepare binary for security check
       shell: bash

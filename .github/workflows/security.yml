@@ -14,8 +14,7 @@ concurrency:
 permissions:
   contents: write # Required for dependency graph submission
   actions: read
-  pull-requests: write # Required for commenting on PRs
-  issues: write # Required for issue comments
+  id-token: write # Required for OIDC authentication
 
 jobs:
   dependency-check:
