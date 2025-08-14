@@ -43,13 +43,16 @@ sealed class ScopeError : DomainError() {
     object SelfParenting : ScopeError()
 }
 
-// Service-specific error hierarchies (in application layer)
-sealed class TitleValidationError : DomainError() {
+// Application layer errors (do NOT extend DomainError)
+sealed class TitleValidationError {
     object EmptyTitle : TitleValidationError()
-    data class TitleTooShort(val minLength: Int, val actualLength: Int, val title: String)
-    data class TitleTooLong(val maxLength: Int, val actualLength: Int, val title: String)
-    data class InvalidCharacters(val title: String, val invalidCharacters: Set<Char>, val position: Int)
+    data class TitleTooShort(val minLength: Int, val actualLength: Int, val title: String) : TitleValidationError()
+    data class TitleTooLong(val maxLength: Int, val actualLength: Int, val title: String) : TitleValidationError()
+    data class InvalidCharacters(val title: String, val invalidCharacters: Set<Char>, val position: Int) : TitleValidationError()
 }
+
+// Note: Application errors are translated to domain errors at the application/domain boundary
+// This ensures callers receive appropriate domain-level errors while maintaining layer separation
 
 sealed class ScopeBusinessRuleError : DomainError() {
     data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int, val scopeId: ScopeId, val parentPath: List<ScopeId>)
@@ -156,7 +159,14 @@ class ApplicationScopeValidationService(
     suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<ScopeBusinessRuleError, Unit> = either {
         if (parentId == null) return@either
         
-        val depth = repository.findHierarchyDepth(parentId).bind()
+        val depth = repository.findHierarchyDepth(parentId)
+            .mapLeft { error -> 
+                ScopeBusinessRuleError.RepositoryFailure(
+                    operation = "findHierarchyDepth",
+                    cause = error
+                )
+            }
+            .bind()
         if (depth >= MAX_HIERARCHY_DEPTH) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
