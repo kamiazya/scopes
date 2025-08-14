@@ -1,0 +1,38 @@
+name: Gradle Wrapper Validation
+
+on:
+  push:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/**'
+  pull_request:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-wrapper:
+    name: Validate Gradle Wrapper
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      with:
+        validate-wrappers: true
+
+    - name: Verify wrapper validation
+      run: |
+        echo "✅ Gradle wrapper validation completed successfully"
+        echo "All wrapper files have been verified for integrity"

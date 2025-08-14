@@ -32,3 +32,8 @@ trim_trailing_whitespace = false
 [LICENSE]
 indent_style = unset
 indent_size = unset
+
+# Ignore Gradle-generated verification metadata
+[gradle/verification-metadata.xml]
+indent_style = unset
+indent_size = unset

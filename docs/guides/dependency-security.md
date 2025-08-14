@@ -97,23 +97,25 @@ For false positives or non-applicable vulnerabilities:
 3. Select appropriate reason
 4. Add comment explaining the dismissal
 
-## Dependency Submission Integration
+## Dependency Graph Integration
 
 ### How It Works
-The Dependency Submission Action ensures GitHub has complete visibility into your project's dependencies:
+The dependency graph is automatically submitted to GitHub through the gradle/actions setup-gradle action:
 
 ```yaml
-# Integrated into security-check.yml
-- name: Submit dependency graph to GitHub
-  uses: gradle/actions/dependency-submission@v4
+# Integrated into security.yml workflow
+- name: Setup Gradle
+  uses: gradle/actions/setup-gradle@v4
   with:
-    dependency-graph: generate-and-submit
+    validate-wrappers: true
+    cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+    dependency-graph: ${{ github.event_name == 'push' && 'generate-and-submit' || 'disabled' }}
 ```
 
 **Benefits:**
-- More accurate dependency detection
-- Better vulnerability coverage
-- Improved Dependabot functionality
+- Automatic dependency graph updates on push to main
+- More accurate vulnerability detection
+- Seamless integration with Dependabot
 
 ## Best Practices
 
@@ -155,9 +157,9 @@ The Dependency Submission Action ensures GitHub has complete visibility into you
 
 ### Security Check Workflow
 Dependencies are automatically monitored through:
-- **Dependency Submission**: Keeps GitHub's dependency graph current
-- **SBOM Generation**: Creates software bill of materials
-- **PR Reviews**: Analyzes changes for security impact
+- **Automatic Dependency Graph**: Updated on every push to main via gradle/actions
+- **SBOM Generation**: Creates CycloneDX software bill of materials
+- **Dependency Review Action**: Analyzes PR changes for security impact
 
 ### Automated Actions
 - Security alerts trigger Dependabot PRs
@@ -197,6 +199,114 @@ Dependencies are automatically monitored through:
 | **Updates** | Automatic PRs | Manual remediation |
 | **Integration** | Native GitHub UI | External reports |
 | **Maintenance** | GitHub managed | Self-managed |
+
+## Additional Security Considerations
+
+### Gradle Wrapper Validation
+
+#### Automatic Validation in Workflows
+The Setup Gradle action automatically validates the Gradle wrapper integrity in all CI workflows:
+
+```yaml
+# .github/workflows/build.yml and other workflows
+- name: Setup Gradle
+  uses: gradle/actions/setup-gradle@v4
+  with:
+    validate-wrappers: true
+```
+
+#### Dedicated Wrapper Validation Workflow
+For enhanced security, create a dedicated workflow that triggers only when wrapper files change and fails fast:
+
+```yaml
+# .github/workflows/wrapper-validation.yml
+name: Gradle Wrapper Validation
+
+on:
+  push:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/**'
+  pull_request:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-wrapper:
+    name: Validate Gradle Wrapper
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        validate-wrappers: true
+    
+    - name: Fail on validation error
+      run: |
+        echo "Gradle wrapper validation completed successfully"
+        exit 0
+```
+
+**Important:** Configure this workflow as a required status check so other build jobs are gated on successful wrapper validation.
+
+### Integrated Security Measures
+- **Gradle Wrapper Validation**: Automatic verification of wrapper integrity via gradle/actions
+- **Dependency Graph Submission**: Real-time vulnerability monitoring via gradle/actions
+- **SBOM Generation**: Complete software bill of materials for auditing
+- **Dependency Review**: PR-level security analysis via GitHub Actions
+
+### CI/CD Security Best Practices
+
+#### Least-Privilege Permissions
+Always specify minimal permissions in your workflows:
+
+```yaml
+# Example workflow with minimal permissions
+permissions:
+  contents: read
+  security-events: write  # Only when required by security scanners
+  actions: read          # Only when accessing workflow artifacts
+```
+
+#### Gradle CI Optimization
+Use the `--no-daemon` flag for all Gradle invocations in CI:
+
+```yaml
+- name: Run security scan
+  run: ./gradlew --no-daemon --no-configuration-cache cycloneDxBom
+
+- name: Run tests
+  run: ./gradlew --no-daemon test
+
+- name: Build application
+  run: ./gradlew --no-daemon build
+```
+
+**Benefits of --no-daemon:**
+- Prevents daemon process accumulation in CI
+- Ensures consistent, isolated builds
+- Reduces memory usage and build conflicts
+
+### Supply Chain Security Best Practices
+1. **Avoid Dynamic Versions**: Use specific version numbers instead of `+` or `latest`
+2. **Regular Updates**: Keep dependencies updated through Dependabot PRs
+3. **Vulnerability Monitoring**: Check Security tab regularly for new alerts
+4. **SBOM Generation**: Generate Software Bill of Materials for compliance
+5. **Minimal Permissions**: Grant only necessary permissions to workflows
+6. **No-Daemon Builds**: Use `--no-daemon` for consistent CI builds
 
 ## Migration Notes
 

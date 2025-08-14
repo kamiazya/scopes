@@ -23,6 +23,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   cross-platform-build:
@@ -64,46 +65,33 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      with:
+        validate-wrappers: true
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-    - name: Build Native Image (Windows)
+    - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
       run: |
-        echo "=== Windows Build Debug Info ==="
-        echo "Current directory: $(Get-Location)"
-        echo "GRADLE_USER_HOME: $env:GRADLE_USER_HOME"
-        echo "Checking if gradlew.bat exists..."
-
-        if (Test-Path "C:\build-workspace\scopes\gradlew.bat") {
-          echo "✅ gradlew.bat found at C:\build-workspace\scopes\"
-        } else {
-          echo "❌ gradlew.bat NOT found at C:\build-workspace\scopes\"
-          echo "Contents of C:\build-workspace\scopes:"
-          Get-ChildItem "C:\build-workspace\scopes" -ErrorAction SilentlyContinue
-        }
-
-        echo "=== Starting Build ==="
         Set-Location "C:\build-workspace\scopes"
-
         $VERSION_ARG = ""
         if ("${{ inputs.version }}" -and "${{ inputs.version }}" -ne "") {
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-
-        echo "Executing: .\gradlew.bat nativeCompile $VERSION_ARG"
-        & .\gradlew.bat nativeCompile $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
 
-    - name: Build Native Image (Unix)
+    - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
       run: |
         VERSION_ARG=""
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        ./gradlew nativeCompile $VERSION_ARG
+        ./gradlew --no-configuration-cache nativeCompile $VERSION_ARG
 
     - name: Prepare binary for security check
       shell: bash
@@ -114,11 +102,11 @@ jobs:
           PREFIX="scopes-build"
         fi
 
+        BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
-          BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+          BINARY_NAME="${BINARY_NAME}.exe"
           cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
-          BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
           cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
@@ -290,4 +278,5 @@ jobs:
         path: |
           binaries/*-grype-report.json
           binaries/*-sbom.json
+
 

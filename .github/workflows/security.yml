@@ -12,10 +12,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
-  pull-requests: write
+  contents: write # Required for dependency graph submission
   actions: read
-  id-token: write
+  id-token: write # Required for OIDC authentication
 
 jobs:
   dependency-check:
@@ -35,16 +34,18 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
-
-    - name: Submit dependency graph to GitHub
-      if: github.event_name == 'push'
-      uses: gradle/actions/dependency-submission@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
       with:
-        dependency-graph: generate-and-submit
+        validate-wrappers: true
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+        dependency-graph: ${{ github.event_name == 'push' && 'generate-and-submit' || 'disabled' }}
+        dependency-graph-continue-on-failure: true
 
     - name: Generate SBOM (CycloneDX)
       id: sbom_generation
-      run: ./gradlew presentation-cli:cycloneDxBom
+      run: |
+        # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
+        # See: https://github.com/kamiazya/scopes/issues/36
+        ./gradlew --no-daemon --no-configuration-cache presentation-cli:cycloneDxBom
       continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     - name: Handle SBOM generation failure

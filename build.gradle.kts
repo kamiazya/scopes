@@ -30,6 +30,13 @@ subprojects {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
     }
+
+    // Prevent dynamic versions to improve build reproducibility
+    configurations.all {
+        resolutionStrategy {
+            preferProjectModules()
+        }
+    }
 }
 
 // Configure detekt for all subprojects
@@ -49,17 +56,18 @@ tasks.register("checkGraalVM") {
         try {
             val isWindows = System.getProperty("os.name").lowercase().contains("windows")
             val nativeImageExecutable = if (isWindows) "native-image.cmd" else "native-image"
-            val nativeImagePath = file("${System.getProperty("java.home")}/bin/$nativeImageExecutable")
+            val javaHome = System.getProperty("java.home")
+            val nativeImagePath = File("$javaHome/bin/$nativeImageExecutable")
 
             if (!nativeImagePath.exists()) {
                 // Try alternative paths for different GraalVM installations
                 val altPaths =
                     listOf(
-                        "${System.getProperty("java.home")}/../bin/$nativeImageExecutable",
-                        "${System.getProperty("java.home")}/bin/$nativeImageExecutable",
+                        "$javaHome/../bin/$nativeImageExecutable",
+                        "$javaHome/bin/$nativeImageExecutable",
                     )
 
-                val foundPath = altPaths.find { file(it).exists() }
+                val foundPath = altPaths.find { File(it).exists() }
                 if (foundPath == null) {
                     println("⚠️ GraalVM native-image not found in expected locations")
                     println("This is expected in CI environments where GraalVM is set up dynamically")

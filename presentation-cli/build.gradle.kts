@@ -51,28 +51,35 @@ graalvmNative {
                 "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
             )
 
-            val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
+            val os = System.getProperty("os.name").lowercase()
+            val isWindows = os.contains("windows") ||
                 System.getenv("RUNNER_OS") == "Windows" ||
-                System.getenv("OS")?.lowercase()?.contains("windows") == true
-            val windowsSpecificArgs = if (isWindows) {
+                (System.getenv("OS")?.lowercase()?.contains("windows") == true)
+            val isLinux = os.contains("linux") ||
+                System.getenv("RUNNER_OS") == "Linux" ||
+                (System.getenv("OS")?.lowercase()?.contains("linux") == true)
+
+            // Only add minimal, non-duplicated platform specifics.
+            val platformSpecificArgs = if (isWindows) {
                 listOf(
                     "-H:+AllowIncompleteClasspath",
-                    "-H:+ReportUnsupportedElementsAtRuntime",
-                    "-H:DeadlockWatchdogInterval=0",
-                    "--allow-incomplete-classpath",
+                    "-H:DeadlockWatchdogInterval=0"
+                )
+            } else if (isLinux) {
+                listOf(
+                    // On Linux, allow mostly-static linking (libc dynamically).
                     "-H:+StaticExecutableWithDynamicLibC"
                 )
             } else {
                 emptyList()
             }
 
-            buildArgs.addAll(commonArgs + windowsSpecificArgs)
+            buildArgs.addAll(commonArgs + platformSpecificArgs)
         }
     }
 
     toolchainDetection.set(false)
 }
-
 // Windows-specific JAR handling to avoid module-info conflicts
 tasks.named("nativeCompileClasspathJar") {
     doFirst {
@@ -85,5 +92,21 @@ tasks.named("nativeCompileClasspathJar") {
 // Make nativeCompile depend on checkGraalVM
 tasks.named("nativeCompile") {
     dependsOn(":checkGraalVM")
+    // Disable configuration cache for this task due to GraalVM plugin compatibility issues
+    // See: https://github.com/graalvm/native-build-tools/issues/477
+    notCompatibleWithConfigurationCache("GraalVM plugin uses ConfigurationContainer at execution time")
+}
+
+// Disable configuration cache for GraalVM-related tasks
+tasks.withType<org.graalvm.buildtools.gradle.tasks.BuildNativeImageTask> {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
+}
+
+tasks.withType<org.graalvm.buildtools.gradle.tasks.NativeRunTask> {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
+}
+
+tasks.matching { it.name == "generateResourcesConfigFile" }.configureEach {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
 }
 
