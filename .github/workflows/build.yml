@@ -78,8 +78,8 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG"
-        & .\gradlew.bat --no-configuration-cache nativeCompile $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-configuration-cache --scan nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-configuration-cache --scan nativeCompile $VERSION_ARG
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
@@ -91,7 +91,7 @@ jobs:
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        ./gradlew --no-configuration-cache nativeCompile $VERSION_ARG
+        ./gradlew --no-configuration-cache --scan nativeCompile $VERSION_ARG
 
     - name: Prepare binary for security check
       shell: bash
