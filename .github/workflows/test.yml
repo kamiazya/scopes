@@ -36,8 +36,9 @@ jobs:
       with:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-        dependency-graph: generate-and-submit
-        dependency-graph-continue-on-failure: true
+        # Temporarily disable dependency graph due to verification metadata issues
+        # dependency-graph: generate-and-submit
+        # dependency-graph-continue-on-failure: true
 
     - name: Run tests
       run: ./gradlew --no-daemon test
