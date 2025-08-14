@@ -72,8 +72,7 @@ jobs:
         # dependency-graph: generate-and-submit
         # dependency-graph-continue-on-failure: true
 
-    # Temporarily disable native compilation due to GraalVM plugin verification issues
-    - name: Build JVM Application (Windows)
+    - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
       run: |
         Set-Location "C:\build-workspace\scopes"
@@ -82,24 +81,24 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-daemon build $VERSION_ARG"
-        & .\gradlew.bat --no-daemon build $VERSION_ARG
+        echo "Executing: .\gradlew.bat --no-daemon nativeCompile $VERSION_ARG"
+        & .\gradlew.bat --no-daemon nativeCompile $VERSION_ARG
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
         # Disable dependency graph on Windows to avoid path issues
         GITHUB_DEPENDENCY_GRAPH_ENABLED: false
 
-    - name: Build JVM Application (Unix)
+    - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
       run: |
         VERSION_ARG=""
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        ./gradlew --no-daemon build $VERSION_ARG
+        ./gradlew --no-daemon nativeCompile $VERSION_ARG
 
-    - name: Prepare JAR for security check
+    - name: Prepare binary for security check
       shell: bash
       run: |
         # Use a default prefix if none is provided
@@ -108,13 +107,14 @@ jobs:
           PREFIX="scopes-build"
         fi
 
-        JAR_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}.jar"
+        BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
-          cp /c/build-workspace/scopes/presentation-cli/build/libs/presentation-cli*.jar "$JAR_NAME"
+          BINARY_NAME="${BINARY_NAME}.exe"
+          cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
-          cp presentation-cli/build/libs/presentation-cli*.jar "$JAR_NAME"
+          cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
-        echo "binary_name=$JAR_NAME" >> $GITHUB_OUTPUT
+        echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
 
     - name: Generate binary hash
@@ -154,16 +154,13 @@ jobs:
           file "${{ steps.binary.outputs.binary_name }}"
         fi
 
-        # Check if file is valid JAR (since we're building JVM apps now)
+        # Check if binary is executable
         if [ "${{ matrix.platform }}" != "win32" ]; then
-          if [[ "${{ steps.binary.outputs.binary_name }}" == *.jar ]]; then
-            if java -jar "${{ steps.binary.outputs.binary_name }}" --help >/dev/null 2>&1 || java -jar "${{ steps.binary.outputs.binary_name }}" --version >/dev/null 2>&1; then
-              echo "✅ JAR is valid and executable via java -jar"
-            else
-              echo "⚠️ JAR exists but may not be executable (this is expected for some library JARs)"
-            fi
+          if [ -x "${{ steps.binary.outputs.binary_name }}" ]; then
+            echo "✅ Binary is executable"
           else
-            echo "⚠️ Expected JAR file but got different file type"
+            echo "❌ Binary is not executable"
+            exit 1
           fi
         fi
 
