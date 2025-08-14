@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.graalvm.native)
+    // Temporarily disable GraalVM native plugin due to verification metadata issues
+    // alias(libs.plugins.graalvm.native)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
     application
@@ -31,6 +32,8 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Temporarily disable GraalVM native configuration due to verification metadata issues
+/*
 graalvmNative {
     binaries {
         named("main") {
@@ -80,7 +83,10 @@ graalvmNative {
 
     toolchainDetection.set(false)
 }
+*/
 
+// Temporarily disable all GraalVM-related task configurations
+/*
 // Windows-specific JAR handling to avoid module-info conflicts
 tasks.named("nativeCompileClasspathJar") {
     doFirst {
@@ -110,4 +116,5 @@ tasks.withType<org.graalvm.buildtools.gradle.tasks.NativeRunTask> {
 tasks.matching { it.name == "generateResourcesConfigFile" }.configureEach {
     notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
 }
+*/
 
