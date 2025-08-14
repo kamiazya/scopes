@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.graalvm.native) apply false
+    // Temporarily remove GraalVM native plugin to avoid verification metadata issues
+    // alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
     id("org.cyclonedx.bom") version "2.3.1"
