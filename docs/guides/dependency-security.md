@@ -97,23 +97,25 @@ For false positives or non-applicable vulnerabilities:
 3. Select appropriate reason
 4. Add comment explaining the dismissal
 
-## Dependency Submission Integration
+## Dependency Graph Integration
 
 ### How It Works
-The Dependency Submission Action ensures GitHub has complete visibility into your project's dependencies:
+The dependency graph is automatically submitted to GitHub through the gradle/actions setup-gradle action:
 
 ```yaml
-# Integrated into security-check.yml
-- name: Submit dependency graph to GitHub
-  uses: gradle/actions/dependency-submission@v4
+# Integrated into security.yml workflow
+- name: Setup Gradle
+  uses: gradle/actions/setup-gradle@v4
   with:
-    dependency-graph: generate-and-submit
+    validate-wrappers: true
+    cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+    dependency-graph: ${{ github.event_name == 'push' && 'generate-and-submit' || 'disabled' }}
 ```
 
 **Benefits:**
-- More accurate dependency detection
-- Better vulnerability coverage
-- Improved Dependabot functionality
+- Automatic dependency graph updates on push to main
+- More accurate vulnerability detection
+- Seamless integration with Dependabot
 
 ## Best Practices
 
@@ -155,9 +157,9 @@ The Dependency Submission Action ensures GitHub has complete visibility into you
 
 ### Security Check Workflow
 Dependencies are automatically monitored through:
-- **Dependency Submission**: Keeps GitHub's dependency graph current
-- **SBOM Generation**: Creates software bill of materials
-- **PR Reviews**: Analyzes changes for security impact
+- **Automatic Dependency Graph**: Updated on every push to main via gradle/actions
+- **SBOM Generation**: Creates CycloneDX software bill of materials
+- **Dependency Review Action**: Analyzes PR changes for security impact
 
 ### Automated Actions
 - Security alerts trigger Dependabot PRs
@@ -198,18 +200,10 @@ Dependencies are automatically monitored through:
 | **Integration** | Native GitHub UI | External reports |
 | **Maintenance** | GitHub managed | Self-managed |
 
-## Gradle Dependency Verification
+## Additional Security Considerations
 
-### Overview
-Gradle dependency verification ensures supply chain security through cryptographic verification of all dependencies.
-
-```properties
-# gradle.properties - Dependency verification is enabled in CI
-org.gradle.dependency.verification=strict
-```
-
-### CI Environment Setup
-Dependency verification is enabled in CI environments using the Setup Gradle action:
+### Gradle Wrapper Validation
+The Setup Gradle action automatically validates the Gradle wrapper integrity in all CI workflows:
 
 ```yaml
 # .github/workflows/build.yml and other workflows
@@ -217,53 +211,19 @@ Dependency verification is enabled in CI environments using the Setup Gradle act
   uses: gradle/actions/setup-gradle@v4
   with:
     validate-wrappers: true
-    dependency-graph: generate-and-submit
-    dependency-graph-continue-on-failure: true
 ```
 
-#### Handling Metadata Mismatches in CI
-When CI fails due to dependency verification issues:
-
-1. **Regenerate verification metadata**:
-  ```bash
-  ./gradlew --no-daemon --write-verification-metadata sha256
-  ```
-
-2. **Prefer PGP entries** for signed artifacts when available
-
-3. **Ensure no dynamic/snapshot versions** in your dependencies
-
-### Enabling Dependency Verification
-To enable full dependency verification:
-
-1. **Generate verification metadata** with all required tasks:
-  ```bash
-  ./gradlew --no-daemon --write-verification-metadata sha256 \
-    clean build test detekt ktlintCheck presentation-cli:cycloneDxBom
-  ```
-
-2. **Enable strict verification** in `gradle.properties`:
-  ```properties
-  org.gradle.dependency.verification=strict
-  ```
-
-3. **Best practices for metadata generation:**
-  - Prefer PGP entries for signed artifacts when available
-  - Use SHA256 hashes as fallback for unsigned dependencies
-  - Ensure no dynamic or snapshot versions in dependencies
-  - Include all CI tasks to capture complete dependency graph
-
-4. **Verify metadata locally** before pushing:
-  ```bash
-  ./gradlew --no-daemon test
-  ```
-
 ### Integrated Security Measures
-- **Gradle Wrapper Validation**: Automatic verification of wrapper integrity
-- **Dependency Graph Submission**: Real-time vulnerability monitoring
+- **Gradle Wrapper Validation**: Automatic verification of wrapper integrity via gradle/actions
+- **Dependency Graph Submission**: Real-time vulnerability monitoring via gradle/actions
 - **SBOM Generation**: Complete software bill of materials for auditing
-- **Dependency Review**: PR-level security analysis
-- **CODEOWNERS Protection**: Required review for verification metadata changes
+- **Dependency Review**: PR-level security analysis via GitHub Actions
+
+### Supply Chain Security Best Practices
+1. **Avoid Dynamic Versions**: Use specific version numbers instead of `+` or `latest`
+2. **Regular Updates**: Keep dependencies updated through Dependabot PRs
+3. **Vulnerability Monitoring**: Check Security tab regularly for new alerts
+4. **SBOM Generation**: Generate Software Bill of Materials for compliance
 
 ## Migration Notes
 
