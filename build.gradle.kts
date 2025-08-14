@@ -109,3 +109,4 @@ tasks.register("konsistTest") {
     group = "verification"
     dependsOn(":konsist-test:test")
 }
+
