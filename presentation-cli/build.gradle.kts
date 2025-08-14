@@ -31,49 +31,49 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Configure GraalVM after project evaluation to avoid configuration cache issues
-afterEvaluate {
-    graalvmNative {
-        binaries {
-            named("main") {
-                imageName.set("scopes")
-                mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
-                useFatJar.set(true)
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("scopes")
+            mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
+            useFatJar.set(true)
 
-                val commonArgs = listOf(
-                    "-O2",
-                    "--no-fallback",
-                    "--gc=serial",
-                    "--report-unsupported-elements-at-runtime",
-                    "-H:+UnlockExperimentalVMOptions",
-                    "-H:+ReportExceptionStackTraces",
-                    "-H:+InstallExitHandlers",
-                    "--initialize-at-build-time=kotlin",
-                    "--initialize-at-build-time=kotlinx.coroutines",
-                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
+            val commonArgs = listOf(
+                "-O2",
+                "--no-fallback",
+                "--gc=serial",
+                "--report-unsupported-elements-at-runtime",
+                "-H:+UnlockExperimentalVMOptions",
+                "-H:+ReportExceptionStackTraces",
+                "-H:+InstallExitHandlers",
+                "--initialize-at-build-time=kotlin",
+                "--initialize-at-build-time=kotlinx.coroutines",
+                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
+            )
+
+            val os = System.getProperty("os.name").lowercase()
+            val isWindows = os.contains("windows") ||
+                System.getenv("RUNNER_OS") == "Windows" ||
+                (System.getenv("OS")?.lowercase()?.contains("windows") == true)
+
+            // Only add minimal, non-duplicated platform specifics.
+            val platformSpecificArgs = if (isWindows) {
+                listOf(
+                    "-H:+AllowIncompleteClasspath",
+                    "-H:DeadlockWatchdogInterval=0"
                 )
-
-                val isWindows = System.getProperty("os.name").lowercase().contains("windows") ||
-                    System.getenv("RUNNER_OS") == "Windows" ||
-                    System.getenv("OS")?.lowercase()?.contains("windows") == true
-                val windowsSpecificArgs = if (isWindows) {
-                    listOf(
-                        "-H:+AllowIncompleteClasspath",
-                        "-H:+ReportUnsupportedElementsAtRuntime",
-                        "-H:DeadlockWatchdogInterval=0",
-                        "--allow-incomplete-classpath",
-                        "-H:+StaticExecutableWithDynamicLibC"
-                    )
-                } else {
-                    emptyList()
-                }
-
-                buildArgs.addAll(commonArgs + windowsSpecificArgs)
+            } else {
+                listOf(
+                    // On Linux, allow mostly-static linking (libc dynamically).
+                    "-H:+StaticExecutableWithDynamicLibC"
+                )
             }
-        }
 
-        toolchainDetection.set(false)
+            buildArgs.addAll(commonArgs + platformSpecificArgs)
+        }
     }
+
+    toolchainDetection.set(false)
 }
 
 // Windows-specific JAR handling to avoid module-info conflicts
@@ -94,11 +94,15 @@ tasks.named("nativeCompile") {
 }
 
 // Disable configuration cache for GraalVM-related tasks
-tasks.matching {
-    it.name.contains("native") ||
-    it.name.contains("graal") ||
-    it.name == "generateResourcesConfigFile"
-}.configureEach {
+tasks.withType<org.graalvm.buildtools.gradle.tasks.BuildNativeImageTask> {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
+}
+
+tasks.withType<org.graalvm.buildtools.gradle.tasks.NativeRunTask> {
+    notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
+}
+
+tasks.matching { it.name == "generateResourcesConfigFile" }.configureEach {
     notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
 }
 

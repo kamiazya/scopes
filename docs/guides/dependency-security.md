@@ -204,12 +204,12 @@ Dependencies are automatically monitored through:
 Gradle dependency verification ensures supply chain security through cryptographic verification of all dependencies.
 
 ```properties
-# gradle.properties - Note: Currently evaluating CI compatibility
-# org.gradle.dependency.verification=strict
+# gradle.properties - Dependency verification is enabled in CI
+org.gradle.dependency.verification=strict
 ```
 
 ### CI Environment Setup
-Dependencies are secured in CI using the Setup Gradle action:
+Dependency verification is enabled in CI environments using the Setup Gradle action:
 
 ```yaml
 # .github/workflows/build.yml and other workflows
@@ -220,6 +220,18 @@ Dependencies are secured in CI using the Setup Gradle action:
     dependency-graph: generate
     dependency-graph-continue-on-failure: true
 ```
+
+#### Handling Metadata Mismatches in CI
+When CI fails due to dependency verification issues:
+
+1. **Regenerate verification metadata**:
+  ```bash
+  ./gradlew --no-daemon --write-verification-metadata sha256
+  ```
+
+2. **Prefer PGP entries** for signed artifacts when available
+
+3. **Ensure no dynamic/snapshot versions** in your dependencies
 
 ### Enabling Dependency Verification
 To enable full dependency verification:
