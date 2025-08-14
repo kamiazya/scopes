@@ -55,6 +55,9 @@ graalvmNative {
             val isWindows = os.contains("windows") ||
                 System.getenv("RUNNER_OS") == "Windows" ||
                 (System.getenv("OS")?.lowercase()?.contains("windows") == true)
+            val isLinux = os.contains("linux") ||
+                System.getenv("RUNNER_OS") == "Linux" ||
+                (System.getenv("OS")?.lowercase()?.contains("linux") == true)
 
             // Only add minimal, non-duplicated platform specifics.
             val platformSpecificArgs = if (isWindows) {
@@ -62,11 +65,13 @@ graalvmNative {
                     "-H:+AllowIncompleteClasspath",
                     "-H:DeadlockWatchdogInterval=0"
                 )
-            } else {
+            } else if (isLinux) {
                 listOf(
                     // On Linux, allow mostly-static linking (libc dynamically).
                     "-H:+StaticExecutableWithDynamicLibC"
                 )
+            } else {
+                emptyList()
             }
 
             buildArgs.addAll(commonArgs + platformSpecificArgs)
