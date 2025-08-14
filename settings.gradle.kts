@@ -30,6 +30,9 @@ develocity {
             !gradle.startParameter.isOffline
         }
 
+        // Disable background upload in CI for reliability
+        uploadInBackground = System.getenv("CI") == null
+
         // Capture build insights
         capture {
             buildLogging = true

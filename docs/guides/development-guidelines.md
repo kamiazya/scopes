@@ -672,3 +672,58 @@ scopes/
 - **Regular architecture review**: Ensure compliance with Clean Architecture principles
 
 This development approach ensures maintainability through clear separation of concerns, comprehensive error handling, and automated validation of architectural constraints.
+
+## Build and Development Tools
+
+### Gradle Build Scans
+
+The project uses Gradle Build Scans to improve build observability and troubleshooting. Build Scans provide detailed insights into build performance, test results, and dependency resolution.
+
+#### Configuration
+
+Build Scans are configured in `settings.gradle.kts` using the Develocity plugin:
+- **Automatic publishing**: CI builds automatically publish scans to [scans.gradle.com](https://scans.gradle.com)
+- **Terms of Service**: Automatically accepted for CI builds
+- **Metadata**: Includes git branch, CI/build environment tags, and GitHub Actions links
+
+#### Usage
+
+**For CI builds:**
+- Build Scans are automatically generated and published
+- Scan URLs appear in the CI output
+- Background uploading is disabled for reliability
+
+**For local development:**
+- Add `--scan` flag to any Gradle command: `./gradlew build --scan`
+- You'll be prompted to accept the Terms of Service on first use
+- Scans are uploaded in background by default for local builds
+
+**Example commands:**
+```bash
+# Run tests with Build Scan
+./gradlew test --scan
+
+# Build project with Build Scan
+./gradlew build --scan
+
+# Run specific task with Build Scan
+./gradlew ktlintCheck --scan
+```
+
+#### Privacy and Security
+
+- Build Scans do not expose sensitive environment variables
+- Local-only data is never included in scans
+- Scans are public by default on scans.gradle.com
+- Review scan contents before sharing URLs externally
+
+#### Troubleshooting Builds
+
+Build Scans help diagnose:
+- Test failures with full stack traces
+- Build performance bottlenecks
+- Dependency resolution issues
+- Task execution order problems
+- Configuration cache issues
+
+Access your Build Scan URL from the console output to view detailed build insights.
