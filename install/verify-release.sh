@@ -56,7 +56,9 @@ detect_platform() {
 detect_arch() {
     case "$(uname -m)" in
         x86_64|amd64) echo "x64" ;;
-        arm64|aarch64) echo "arm64" ;;
+        arm64|aarch64|armv8*) echo "arm64" ;;
+        i386|i686) echo "x32" ;;  # Legacy 32-bit x86 (not supported but detected)
+        armv7*) echo "armv7" ;;   # 32-bit ARM (not supported but detected)
         *) echo "unknown" ;;
     esac
 }
@@ -307,6 +309,7 @@ OPTIONS:
     --verify-sbom             Also verify SBOM files
     --platform PLATFORM       Override platform detection (linux/darwin/win32)
     --arch ARCH               Override architecture detection (x64/arm64)
+                              Supports: x64 (Intel/AMD), arm64 (Apple Silicon, ARM servers)
     --repo REPO               GitHub repository (default: kamiazya/scopes)
     --help                    Show this help message
 
@@ -324,7 +327,7 @@ ENVIRONMENT VARIABLES:
     SCOPES_ARCH                Override architecture detection
 
 EXAMPLES:
-    # Using environment variables
+    # Using environment variables (auto-detects architecture)
     export SCOPES_VERSION=v1.0.0
     export SCOPES_AUTO_DOWNLOAD=true
     $0
@@ -332,8 +335,23 @@ EXAMPLES:
     # Auto-download and verify with command line
     $0 --download --version v1.0.0
 
-    # Verify local files
+    # Auto-download for specific ARM64 platform
+    $0 --download --version v1.0.0 --platform linux --arch arm64
+
+    # Verify local files (Linux x64)
     $0 --binary scopes-v1.0.0-linux-x64 --provenance multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
+
+    # Verify ARM64 binary (macOS Apple Silicon)
+    $0 --binary scopes-v1.0.0-darwin-arm64 --provenance multiple.intoto.jsonl --hash-file binary-hash-darwin-arm64.txt
+
+    # Verify Windows ARM64 binary
+    $0 --binary scopes-v1.0.0-win32-arm64.exe --provenance multiple.intoto.jsonl --hash-file binary-hash-win32-arm64.txt
+
+    # Force specific architecture verification
+    $0 --download --version v1.0.0 --platform darwin --arch arm64
+
+    # Download Windows ARM64 binary
+    $0 --download --version v1.0.0 --platform win32 --arch arm64
 
     # Using environment for common settings
     export SCOPES_GITHUB_REPO=your-org/scopes-fork
@@ -434,8 +452,21 @@ main() {
     echo
 
     if [[ "$platform" == "unknown" ]] || [[ "$arch" == "unknown" ]]; then
-        print_error "Unsupported platform or architecture"
+        print_error "Unsupported platform or architecture: $platform-$arch"
         print_error "Please specify --platform and --arch manually"
+        print_error "Detected: $(uname -s) $(uname -m)"
+        exit 1
+    fi
+
+    # Check for supported architectures
+    if [[ "$arch" != "x64" && "$arch" != "arm64" ]]; then
+        print_error "Architecture '$arch' is not supported"
+        print_error "Supported architectures: x64 (Intel/AMD64), arm64 (Apple Silicon/ARM64)"
+        if [[ "$arch" == "x32" ]]; then
+            print_error "32-bit x86 systems are not supported"
+        elif [[ "$arch" == "armv7" ]]; then
+            print_error "32-bit ARM systems are not supported"
+        fi
         exit 1
     fi
 

@@ -21,12 +21,24 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    ```
 
 2. **Download the binary and provenance:**
-   - Download your platform's binary (e.g., `scopes-v1.0.0-linux-x64`)
+   - Download your platform's binary:
+     - Linux x64: `scopes-v1.0.0-linux-x64`
+     - Linux ARM64: `scopes-v1.0.0-linux-arm64`
+     - macOS x64: `scopes-v1.0.0-darwin-x64`
+     - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64`
+     - Windows x64: `scopes-v1.0.0-win32-x64.exe`
+     - Windows ARM64: `scopes-v1.0.0-win32-arm64.exe`
    - Download the provenance file (`multiple.intoto.jsonl`)
 
 3. **Verify the binary:**
    ```bash
+   # For Linux x64
    slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
+     --provenance-path multiple.intoto.jsonl \
+     --source-uri github.com/kamiazya/scopes
+   
+   # For macOS ARM64 (Apple Silicon)
+   slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
      --provenance-path multiple.intoto.jsonl \
      --source-uri github.com/kamiazya/scopes
    ```
@@ -75,8 +87,11 @@ chmod +x verify-release.sh
 # Method 2: Command line parameters
 ./verify-release.sh --download --version v1.0.0
 
-# Verify local files
+# Verify local files (auto-detects architecture)
 ./verify-release.sh --binary scopes-v1.0.0-linux-x64 --provenance multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
+
+# For ARM64 systems (e.g., Apple Silicon Mac)
+./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --provenance multiple.intoto.jsonl --hash-file binary-hash-darwin-arm64.txt
 ```
 
 #### Windows (PowerShell)
@@ -102,11 +117,23 @@ If you prefer manual verification:
 1. **Download the checksums file** (`binary-hash-<platform>-<arch>.txt`) from the release
 2. **Calculate the hash** of your downloaded binary:
    ```bash
-   # Linux/macOS
+   # Linux x64
    sha256sum scopes-v1.0.0-linux-x64
    
-   # Windows
+   # Linux ARM64
+   sha256sum scopes-v1.0.0-linux-arm64
+   
+   # macOS x64
+   shasum -a 256 scopes-v1.0.0-darwin-x64
+   
+   # macOS ARM64 (Apple Silicon)
+   shasum -a 256 scopes-v1.0.0-darwin-arm64
+   
+   # Windows x64
    certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
+   
+   # Windows ARM64
+   certutil -hashfile scopes-v1.0.0-win32-arm64.exe SHA256
    ```
 3. **Compare** the calculated hash with the value in the checksum file
 

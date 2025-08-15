@@ -24,7 +24,7 @@ graph LR
     Release --> Output{📦 Release Assets}
     
     %% Output types
-    Output --> Binaries[📱 Native Binaries<br/>Linux, macOS, Windows]
+    Output --> Binaries[📱 Native Binaries<br/>Linux/macOS/Windows<br/>x64 & ARM64]
     Output --> Verification[🛡️ Security Files<br/>SLSA + Dual SBOMs + Vulnerability Scans]
     Output --> Documentation[📄 Release Notes<br/>+ Installation Guide]
     
@@ -49,8 +49,11 @@ graph TB
     subgraph Matrix ["🔄 Build Matrix (Parallel Execution)"]
         direction TB
         Linux[🐧 Ubuntu Latest<br/>Linux x64]
-        MacOS[🍎 macOS Latest<br/>Darwin x64]  
+        LinuxARM[🐧 Ubuntu Latest<br/>Linux ARM64]
+        MacOS[🍎 macOS Latest<br/>Darwin x64]
+        MacOSARM[🍎 macOS Latest<br/>Darwin ARM64]
         Windows[🪟 Windows Latest<br/>Win32 x64]
+        WindowsARM[🪟 Windows Latest<br/>Win32 ARM64]
     end
     
     subgraph Steps ["📋 Build Steps (Each Platform)"]

@@ -26,6 +26,9 @@ permissions:
   actions: read
   security-events: write
 
+env:
+  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
+
 jobs:
   cross-platform-build:
     name: Cross-Platform Native Build
@@ -39,17 +42,33 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-latest
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: macos-13
             platform: darwin
             arch: x64
+          - os: macos-14
+            platform: darwin
+            arch: arm64
           - os: windows-latest
             platform: win32
             arch: x64
+            experimental: true
+          - os: windows-latest
+            platform: win32
+            arch: arm64
             experimental: true
 
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+    - name: Setup QEMU for ARM64 cross-compilation
+      if: matrix.platform == 'linux' && matrix.arch == 'arm64'
+      uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+      with:
+        platforms: linux/arm64
 
     - name: Setup Windows Build Environment
       if: matrix.platform == 'win32'
@@ -94,8 +113,15 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG"
-        & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG
+
+        # Add architecture-specific flags for ARM64
+        $ARCH_FLAGS = ""
+        if ("${{ matrix.arch }}" -eq "arm64") {
+          $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
+        }
+
+        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
+        & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
@@ -116,7 +142,14 @@ jobs:
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG
+
+        # Add architecture-specific flags for cross-compilation
+        ARCH_FLAGS=""
+        if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
+          ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477}"
+        fi
+
+        ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
 
     - name: Prepare binary for security check
       shell: bash

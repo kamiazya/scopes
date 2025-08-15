@@ -20,6 +20,9 @@ permissions:
   id-token: write
   attestations: write
 
+env:
+  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
+
 jobs:
   build-release:
     name: Build Release Artifacts
@@ -33,16 +36,32 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: x64
-          - os: macos-latest
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+          - os: macos-13
             platform: darwin
             arch: x64
+          - os: macos-14
+            platform: darwin
+            arch: arm64
           - os: windows-latest
             platform: win32
             arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+            experimental: true
 
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup QEMU for ARM64 cross-compilation
+        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+        with:
+          platforms: linux/arm64
 
       - name: Setup Windows Build Environment
         if: matrix.platform == 'win32'
@@ -80,10 +99,17 @@ jobs:
         run: |
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+
+          # Add architecture-specific flags for ARM64
+          $ARCH_FLAGS = ""
+          if ("${{ matrix.arch }}" -eq "arm64") {
+            $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
+          }
+
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -91,9 +117,15 @@ jobs:
       - name: Build native binary (Unix)
         if: matrix.platform != 'win32'
         run: |
+          # Add architecture-specific flags for cross-compilation
+          ARCH_FLAGS=""
+          if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
+            ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477}"
+          fi
+
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile -Pversion="${{ steps.version.outputs.version }}"
+          ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
 
       - name: Prepare binary for upload
         shell: bash
@@ -248,23 +280,11 @@ jobs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
     steps:
-      - name: Download Linux hash artifacts
+      - name: Download all hash artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: hashes-linux-x64
-          path: linux-hashes
-
-      - name: Download macOS hash artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: hashes-darwin-x64
-          path: darwin-hashes
-
-      - name: Download Windows hash artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: hashes-win32-x64
-          path: win32-hashes
+          pattern: hashes-*
+          path: all-hashes
 
       - name: Collect all hashes
         id: collect
@@ -274,36 +294,33 @@ jobs:
 
           # List all downloaded files for debugging
           echo "Downloaded artifacts structure:"
-          find . -name "*.txt" -type f | sort
+          find all-hashes -name "*.txt" -type f | sort
 
           # Combine all hash files from all platforms, decoding individual hashes
           echo "Combining hashes from all platforms..."
-          # Each file contains base64-encoded hash + filename, decode hashes back to sha256sum format
-          # Ensure explicit newline separators between files for robust concatenation
 
-          # Process first file (Linux)
-          while IFS=' ' read -r encoded_hash filename; do
-            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
-            echo "$decoded_hash $filename"
-          done < linux-hashes/hashes-b64-linux-x64.txt > combined-hashes.txt
+          # Initialize the combined hashes file
+          > combined-hashes.txt
 
-          # Add explicit newline separator before next file
-          echo "" >> combined-hashes.txt
+          # Process all hashes-b64-*.txt files dynamically
+          first=true
+          for hash_file in all-hashes/*/hashes-b64-*.txt; do
+            if [ -f "$hash_file" ]; then
+              echo "Processing: $hash_file"
 
-          # Process second file (macOS)
-          while IFS=' ' read -r encoded_hash filename; do
-            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
-            echo "$decoded_hash $filename"
-          done < darwin-hashes/hashes-b64-darwin-x64.txt >> combined-hashes.txt
+              # Add newline separator between files (except for first file)
+              if [ "$first" = false ]; then
+                echo "" >> combined-hashes.txt
+              fi
+              first=false
 
-          # Add explicit newline separator before final file
-          echo "" >> combined-hashes.txt
-
-          # Process final file (Windows)
-          while IFS=' ' read -r encoded_hash filename; do
-            decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
-            echo "$decoded_hash $filename"
-          done < win32-hashes/hashes-b64-win32-x64.txt >> combined-hashes.txt
+              # Decode each hash and append to combined file
+              while IFS=' ' read -r encoded_hash filename; do
+                decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
+                echo "$decoded_hash $filename" >> combined-hashes.txt
+              done < "$hash_file"
+            fi
+          done
 
           # Create base64 encoded string for SLSA (sha256sum format)
           HASHES_B64=$(cat combined-hashes.txt | base64 -w0)
@@ -313,7 +330,7 @@ jobs:
           cat combined-hashes.txt
 
           echo "Collected hashes (readable):"
-          cat linux-hashes/hashes.txt darwin-hashes/hashes.txt win32-hashes/hashes.txt
+          cat all-hashes/*/hashes.txt
 
           echo "Base64 encoded for SLSA:"
           echo "$HASHES_B64"

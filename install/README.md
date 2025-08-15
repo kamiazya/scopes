@@ -54,11 +54,11 @@ export SCOPES_SKIP_VERIFICATION=false     # Skip SLSA verification
 
 ### Platform-Specific Defaults
 
-| Platform | Default Install Directory | Requires sudo |
-|----------|--------------------------|---------------|
-| Linux    | `/usr/local/bin`         | Usually yes   |
-| macOS    | `/usr/local/bin`         | Usually yes   |
-| Windows  | `C:\Program Files\Scopes\bin` | Usually yes |
+| Platform | Architecture | Default Install Directory | Requires sudo |
+|----------|-------------|--------------------------|---------------|
+| Linux    | x64, ARM64  | `/usr/local/bin`         | Usually yes   |
+| macOS    | x64, ARM64 (Apple Silicon) | `/usr/local/bin`         | Usually yes   |
+| Windows  | x64, ARM64  | `C:\Program Files\Scopes\bin` | Usually yes |
 
 ## 📖 Usage Examples
 
@@ -116,13 +116,18 @@ chmod +x install.sh
 
 ### Standalone Verification
 ```bash
-# Download release files manually
+# Download release files manually (example for Linux x64)
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-linux-x64
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-linux-x64.txt
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/multiple.intoto.jsonl
 
 # Verify with standalone script
 ./verify-release.sh --binary scopes-v1.0.0-linux-x64 --hash-file binary-hash-linux-x64.txt --provenance multiple.intoto.jsonl
+
+# For ARM64 systems (e.g., Apple Silicon Mac)
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-darwin-arm64
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-darwin-arm64.txt
+./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --hash-file binary-hash-darwin-arm64.txt --provenance multiple.intoto.jsonl
 ```
 
 ### Windows PowerShell Advanced
