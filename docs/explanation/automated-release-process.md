@@ -25,7 +25,7 @@ graph LR
     
     %% Output types
     Output --> Binaries[📱 Native Binaries<br/>Linux, macOS, Windows]
-    Output --> Verification[🛡️ Security Files<br/>SLSA + SBOM + Checksums]
+    Output --> Verification[🛡️ Security Files<br/>SLSA + Dual SBOMs + Vulnerability Scans]
     Output --> Documentation[📄 Release Notes<br/>+ Installation Guide]
     
     %% Styling
@@ -57,10 +57,12 @@ graph TB
         direction TB
         A[📥 Checkout Code] --> B[⚙️ Setup Environment<br/>GraalVM + Gradle]
         B --> C[🏷️ Extract Version<br/>from Tag/Input]
-        C --> D[🔨 Native Compile<br/>Platform Binary]
-        D --> E[📋 Generate SBOM<br/>CycloneDX Format]
-        E --> F[#️⃣ Generate SHA-256<br/>Binary & SBOM Hashes]
-        F --> G[📤 Upload Artifacts<br/>Binary + SBOM + Hash]
+        C --> D[📋 Generate Source SBOM<br/>CycloneDX from Dependencies]
+        D --> E[🔨 Native Compile<br/>Platform Binary]
+        E --> F[🔍 Generate Binary SBOM<br/>Syft Scanner]
+        F --> G[🛡️ Vulnerability Scan<br/>Grype (SARIF + JSON)]
+        G --> H[#️⃣ Generate SHA-256<br/>All Artifact Hashes]
+        H --> I[📤 Upload Artifacts<br/>Binary + SBOMs + Scan Results]
     end
     
     Matrix --> Steps
@@ -70,10 +72,46 @@ graph TB
     classDef stepBox fill:#f1f8e9,stroke:#388e3c,stroke-width:1px
     
     class Matrix matrixBox
-    class A,B,C,D,E,F,G stepBox
+    class A,B,C,D,E,F,G,H,I stepBox
 ```
 
-#### 2. Security & Provenance Generation
+#### 2. Binary Security Scanning
+
+```mermaid
+graph TB
+    subgraph Download ["📦 Artifact Collection"]
+        direction TB
+        GetBin[📥 Download Binaries<br/>All Platforms]
+        GetSrcSBOM[📥 Download Source SBOMs<br/>CycloneDX Format]
+    end
+    
+    subgraph Scanning ["🔍 Security Analysis"]
+        direction TB
+        GrypeVuln[🛡️ Grype Vulnerability Scan<br/>JSON + SARIF Export]
+        SyftSBOM[📋 Syft Binary SBOM<br/>CycloneDX Generation]
+        VerifyIntegrity[🔐 Binary Integrity Check<br/>SHA-256 Verification]
+    end
+    
+    subgraph Upload ["📤 Results & Integration"]
+        direction TB
+        UploadArtifacts[📦 Upload Scan Results<br/>JSON + SARIF + SBOMs]
+        GitHubSecurity[🛡️ Upload SARIF to<br/>GitHub Security Tab]
+    end
+    
+    Download --> Scanning
+    Scanning --> Upload
+    
+    %% Styling
+    classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef scanBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef uploadBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    
+    class Download downloadBox
+    class Scanning scanBox
+    class Upload uploadBox
+```
+
+#### 3. Security & Provenance Generation
 
 ```mermaid
 graph TB
@@ -105,14 +143,16 @@ graph TB
     class Provenance provenanceBox
 ```
 
-#### 3. GitHub Release Creation
+#### 4. GitHub Release Creation
 
 ```mermaid
 graph TB
     subgraph Downloads ["📦 Artifact Collection"]
         direction TB
         GetBinaries[📥 Download Binaries<br/>All Platforms]
-        GetSBOM[📥 Download SBOM Files<br/>JSON & XML formats]  
+        GetSourceSBOM[📥 Download Source SBOMs<br/>CycloneDX from Dependencies]
+        GetBinarySBOM[📥 Download Binary SBOMs<br/>Syft Generated]
+        GetScanResults[📥 Download Vulnerability<br/>Scan Results (JSON + SARIF)]
         GetProvenance[📥 Download SLSA<br/>Provenance Files]
     end
     
@@ -161,14 +201,16 @@ Pull requests and commits are automatically categorized using labels defined in 
 - 📦 **Dependencies**: `dependencies`, `deps`, `dependency`
 - 🔄 **Other Changes**: `chore`, `maintenance`, or catch-all for unlabeled items
 
-### 2. Custom Security Content
+### 2. Enhanced Security Content
 
 Each release automatically includes:
 
 - **Verification Instructions**: Quick one-liner installation with verification
-- **Security Notice**: SLSA provenance and supply chain security information
+- **Dual-Level SBOM**: Source-level (dependencies) and binary-level (compiled artifacts) Software Bill of Materials
+- **Vulnerability Assessment**: Grype security scan results integrated with GitHub Security tab
+- **SLSA Provenance**: Level 3 compliance with cryptographic attestations
 - **Documentation Links**: Links to security guides and verification procedures
-- **Artifact Information**: Details about checksums, SBOM files, and provenance
+- **Artifact Information**: Details about checksums, SBOM files, scan results, and provenance
 
 ### 3. Release Notes Structure
 
@@ -229,14 +271,21 @@ Bot accounts (dependabot, github-actions) are automatically excluded.
 
 1. **Consistency**: Every release has the same structure and security information
 2. **Automation**: No manual release notes creation required
-3. **Security First**: Verification instructions are prominently displayed
-4. **User-Friendly**: Clear categorization makes it easy to find relevant changes
-5. **Maintainer-Friendly**: Simple labeling system for proper categorization
+3. **Security First**: Comprehensive vulnerability scanning and verification instructions
+4. **Supply Chain Security**: Dual-level SBOM generation and SLSA provenance
+5. **Transparency**: Vulnerability findings integrated with GitHub Security tab
+6. **User-Friendly**: Clear categorization makes it easy to find relevant changes
+7. **Maintainer-Friendly**: Simple labeling system for proper categorization
 
 ## Related Files
 
 - `.github/release.yml` - Release notes configuration
 - `.github/workflows/release.yml` - Release automation workflow
+- `.github/workflows/build.yml` - Enhanced build workflow with SBOM and vulnerability scanning
+- `build.gradle.kts` - CycloneDX plugin configuration for source-level SBOM
+- `presentation-cli/build.gradle.kts` - Application-specific SBOM configuration
 - `../guides/security-verification.md` - Security verification guide
 - `../guides/sbom-verification.md` - SBOM verification guide
+- `../guides/dependency-security.md` - Dependency security guide
 - `../../install/README.md` - Installation guide
+- `../../SECURITY.md` - Security policy and reporting
