@@ -102,10 +102,10 @@ ktlint {
 }
 
 // CycloneDX SBOM Configuration
-tasks.cyclonedxBom {
+cyclonedxBom {
     destination = file("build/reports")
-    outputName.set("bom")
-    outputFormat.set("json")
+    outputName = "bom"
+    outputFormat = "json"
 }
 
 // Task to run architecture tests
