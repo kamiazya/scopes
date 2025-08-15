@@ -111,9 +111,9 @@ tasks.matching { it.name == "generateResourcesConfigFile" }.configureEach {
 }
 
 // CycloneDX SBOM Configuration
-cyclonedxBom {
-    destination = file("build/reports")
-    outputName = "bom"
-    outputFormat = "json"
+tasks.cyclonedxBom {
+    setDestination(project.file("build/reports"))
+    setOutputName("bom")
+    setOutputFormat("json")
 }
 
