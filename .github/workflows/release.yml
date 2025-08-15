@@ -20,6 +20,9 @@ permissions:
   id-token: write
   attestations: write
 
+env:
+  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:latest"
+
 jobs:
   build-release:
     name: Build Release Artifacts
@@ -36,10 +39,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: arm64
-          - os: macos-latest
+          - os: macos-13
             platform: darwin
             arch: x64
-          - os: macos-latest
+          - os: macos-14
             platform: darwin
             arch: arm64
           - os: windows-latest
@@ -96,13 +99,13 @@ jobs:
         run: |
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
-          
+
           # Add architecture-specific flags for ARM64
           $ARCH_FLAGS = ""
           if ("${{ matrix.arch }}" -eq "arm64") {
             $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
           }
-          
+
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
           echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
@@ -117,9 +120,9 @@ jobs:
           # Add architecture-specific flags for cross-compilation
           ARCH_FLAGS=""
           if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-            ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=graalvm"
+            ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:latest}"
           fi
-          
+
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
           ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
@@ -295,22 +298,22 @@ jobs:
 
           # Combine all hash files from all platforms, decoding individual hashes
           echo "Combining hashes from all platforms..."
-          
+
           # Initialize the combined hashes file
           > combined-hashes.txt
-          
+
           # Process all hashes-b64-*.txt files dynamically
           first=true
           for hash_file in all-hashes/*/hashes-b64-*.txt; do
             if [ -f "$hash_file" ]; then
               echo "Processing: $hash_file"
-              
+
               # Add newline separator between files (except for first file)
               if [ "$first" = false ]; then
                 echo "" >> combined-hashes.txt
               fi
               first=false
-              
+
               # Decode each hash and append to combined file
               while IFS=' ' read -r encoded_hash filename; do
                 decoded_hash=$(echo -n "$encoded_hash" | base64 -d)

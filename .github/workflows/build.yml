@@ -26,6 +26,9 @@ permissions:
   actions: read
   security-events: write
 
+env:
+  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:latest"
+
 jobs:
   cross-platform-build:
     name: Cross-Platform Native Build
@@ -42,10 +45,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             arch: arm64
-          - os: macos-latest
+          - os: macos-13
             platform: darwin
             arch: x64
-          - os: macos-latest
+          - os: macos-14
             platform: darwin
             arch: arm64
           - os: windows-latest
@@ -110,13 +113,13 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ inputs.version }}"
           echo "Using version argument: $VERSION_ARG"
         }
-        
+
         # Add architecture-specific flags for ARM64
         $ARCH_FLAGS = ""
         if ("${{ matrix.arch }}" -eq "arm64") {
           $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
         }
-        
+
         echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
         & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
       shell: powershell
@@ -139,13 +142,13 @@ jobs:
         if [ -n "${{ inputs.version }}" ]; then
           VERSION_ARG="-Pversion=${{ inputs.version }}"
         fi
-        
+
         # Add architecture-specific flags for cross-compilation
         ARCH_FLAGS=""
         if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-          ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=graalvm"
+          ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:latest}"
         fi
-        
+
         ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
 
     - name: Prepare binary for security check
