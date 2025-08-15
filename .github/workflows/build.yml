@@ -332,10 +332,10 @@ jobs:
           source-sboms/*.json
 
     - name: Upload SARIF results to GitHub Security
-      uses: github/codeql-action/upload-sarif@8f99dd196b84b5d2a7d8efa06fb08b34e8d7bc15 # v3.30.0
+      uses: github/codeql-action/upload-sarif@76621b61decf072c1cee8dd1ce2d2a82d33c17ed # v3.29.8
       if: always()
       with:
-        sarif_file: binaries/
+        sarif_file: binaries
         category: vulnerability-scan
       continue-on-error: true
 
