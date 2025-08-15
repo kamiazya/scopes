@@ -82,8 +82,8 @@ jobs:
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache nativeCompile $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -93,7 +93,7 @@ jobs:
         run: |
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          ./gradlew --no-daemon --no-configuration-cache nativeCompile -Pversion="${{ steps.version.outputs.version }}"
+          ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile -Pversion="${{ steps.version.outputs.version }}"
 
       - name: Prepare binary for upload
         shell: bash
@@ -114,8 +114,8 @@ jobs:
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache presentation-cli:cycloneDxBom $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache presentation-cli:cycloneDxBom $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan presentation-cli:cycloneDxBom $VERSION_ARG"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan presentation-cli:cycloneDxBom $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -124,7 +124,7 @@ jobs:
         if: matrix.platform != 'win32'
         run: |
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          ./gradlew --no-daemon --no-configuration-cache presentation-cli:cycloneDxBom
+          ./gradlew --no-daemon --no-configuration-cache --scan presentation-cli:cycloneDxBom
 
 
       - name: Generate hash for SLSA provenance
