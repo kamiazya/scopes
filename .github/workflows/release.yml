@@ -27,6 +27,9 @@ jobs:
   build-release:
     name: Build Release Artifacts
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      actions: read
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
 
@@ -276,6 +279,9 @@ jobs:
     name: Collect Hashes for SLSA
     runs-on: ubuntu-latest
     needs: build-release
+    permissions:
+      contents: read
+      actions: read
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
@@ -352,6 +358,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-release, provenance]
     if: always() && needs.build-release.result == 'success'
+    permissions:
+      contents: write # Required for creating releases and uploading assets
+      actions: read
 
     steps:
       - name: Checkout code

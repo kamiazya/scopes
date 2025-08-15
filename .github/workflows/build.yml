@@ -34,6 +34,9 @@ jobs:
     name: Cross-Platform Native Build
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental == true }}
+    permissions:
+      contents: read
+      actions: read
 
     strategy:
       fail-fast: false
@@ -288,6 +291,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: cross-platform-build
     if: always() && needs.cross-platform-build.result == 'success'
+    permissions:
+      contents: read
+      actions: read
+      security-events: write # Required for uploading SARIF results to GitHub Security
 
     steps:
     - name: Checkout code
