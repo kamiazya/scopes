@@ -27,7 +27,7 @@ permissions:
   security-events: write
 
 env:
-  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:latest"
+  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
 
 jobs:
   cross-platform-build:
@@ -146,7 +146,7 @@ jobs:
         # Add architecture-specific flags for cross-compilation
         ARCH_FLAGS=""
         if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-          ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:latest}"
+          ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477}"
         fi
 
         ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
