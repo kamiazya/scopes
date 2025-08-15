@@ -58,7 +58,7 @@ export SCOPES_SKIP_VERIFICATION=false     # Skip SLSA verification
 |----------|-------------|--------------------------|---------------|
 | Linux    | x64, ARM64  | `/usr/local/bin`         | Usually yes   |
 | macOS    | x64, ARM64 (Apple Silicon) | `/usr/local/bin`         | Usually yes   |
-| Windows  | x64         | `C:\Program Files\Scopes\bin` | Usually yes |
+| Windows  | x64, ARM64  | `C:\Program Files\Scopes\bin` | Usually yes |
 
 ## 📖 Usage Examples
 

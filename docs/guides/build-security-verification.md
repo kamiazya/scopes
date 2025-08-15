@@ -25,6 +25,7 @@ Each platform builds a native binary independently:
 - macos-latest   (Darwin x64)
 - macos-latest   (Darwin ARM64 - Apple Silicon)
 - windows-latest (Windows x64)
+- windows-latest (Windows ARM64)
 ```
 
 ### 2. Binary Integrity Checks
@@ -45,6 +46,9 @@ shasum -a 256 scopes-build-darwin-arm64
 
 # Windows x64
 certutil -hashfile scopes-build-win32-x64.exe SHA256
+
+# Windows ARM64
+certutil -hashfile scopes-build-win32-arm64.exe SHA256
 ```
 
 **Integrity Verification**:
@@ -109,11 +113,13 @@ security-scan-results/
 ├── scopes-build-darwin-x64-grype-report.json
 ├── scopes-build-darwin-arm64-grype-report.json
 ├── scopes-build-win32-x64.exe-grype-report.json
+├── scopes-build-win32-arm64.exe-grype-report.json
 ├── scopes-build-linux-x64-sbom.json
 ├── scopes-build-linux-arm64-sbom.json
 ├── scopes-build-darwin-x64-sbom.json
 ├── scopes-build-darwin-arm64-sbom.json
-└── scopes-build-win32-x64.exe-sbom.json
+├── scopes-build-win32-x64.exe-sbom.json
+└── scopes-build-win32-arm64.exe-sbom.json
 ```
 
 ### Local Verification

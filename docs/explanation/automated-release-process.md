@@ -53,6 +53,7 @@ graph TB
         MacOS[🍎 macOS Latest<br/>Darwin x64]
         MacOSARM[🍎 macOS Latest<br/>Darwin ARM64]
         Windows[🪟 Windows Latest<br/>Win32 x64]
+        WindowsARM[🪟 Windows Latest<br/>Win32 ARM64]
     end
     
     subgraph Steps ["📋 Build Steps (Each Platform)"]

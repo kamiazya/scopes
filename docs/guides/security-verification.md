@@ -27,6 +27,7 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
      - macOS x64: `scopes-v1.0.0-darwin-x64`
      - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64`
      - Windows x64: `scopes-v1.0.0-win32-x64.exe`
+     - Windows ARM64: `scopes-v1.0.0-win32-arm64.exe`
    - Download the provenance file (`multiple.intoto.jsonl`)
 
 3. **Verify the binary:**
@@ -130,6 +131,9 @@ If you prefer manual verification:
    
    # Windows x64
    certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
+   
+   # Windows ARM64
+   certutil -hashfile scopes-v1.0.0-win32-arm64.exe SHA256
    ```
 3. **Compare** the calculated hash with the value in the checksum file
 

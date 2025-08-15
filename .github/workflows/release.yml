@@ -45,6 +45,10 @@ jobs:
           - os: windows-latest
             platform: win32
             arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+            experimental: true
 
     steps:
       - name: Checkout code
@@ -92,10 +96,17 @@ jobs:
         run: |
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+          
+          # Add architecture-specific flags for ARM64
+          $ARCH_FLAGS = ""
+          if ("${{ matrix.arch }}" -eq "arm64") {
+            $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
+          }
+          
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
