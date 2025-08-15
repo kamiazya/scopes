@@ -21,7 +21,9 @@ Each platform builds a native binary independently:
 ```bash
 # Build matrix covers:
 - ubuntu-latest  (Linux x64)
-- macos-latest   (Darwin x64) 
+- ubuntu-latest  (Linux ARM64 - via QEMU)
+- macos-latest   (Darwin x64)
+- macos-latest   (Darwin ARM64 - Apple Silicon)
 - windows-latest (Windows x64)
 ```
 
@@ -29,10 +31,19 @@ Each platform builds a native binary independently:
 
 **Hash Generation**:
 ```bash
-# Linux/macOS
+# Linux x64
 sha256sum scopes-build-linux-x64
 
-# Windows  
+# Linux ARM64
+sha256sum scopes-build-linux-arm64
+
+# macOS x64
+shasum -a 256 scopes-build-darwin-x64
+
+# macOS ARM64 (Apple Silicon)
+shasum -a 256 scopes-build-darwin-arm64
+
+# Windows x64
 certutil -hashfile scopes-build-win32-x64.exe SHA256
 ```
 
@@ -94,10 +105,14 @@ Security scan results are uploaded as artifacts:
 ```
 security-scan-results/
 ├── scopes-build-linux-x64-grype-report.json
-├── scopes-build-darwin-x64-grype-report.json  
+├── scopes-build-linux-arm64-grype-report.json
+├── scopes-build-darwin-x64-grype-report.json
+├── scopes-build-darwin-arm64-grype-report.json
 ├── scopes-build-win32-x64.exe-grype-report.json
 ├── scopes-build-linux-x64-sbom.json
+├── scopes-build-linux-arm64-sbom.json
 ├── scopes-build-darwin-x64-sbom.json
+├── scopes-build-darwin-arm64-sbom.json
 └── scopes-build-win32-x64.exe-sbom.json
 ```
 
