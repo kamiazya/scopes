@@ -110,3 +110,10 @@ tasks.matching { it.name == "generateResourcesConfigFile" }.configureEach {
     notCompatibleWithConfigurationCache("GraalVM plugin compatibility issue")
 }
 
+// CycloneDX SBOM Configuration
+tasks.cyclonedxBom {
+    setDestination(project.file("build/reports"))
+    setOutputName("bom")
+    setOutputFormat("json")
+}
+

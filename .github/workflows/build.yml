@@ -24,6 +24,7 @@ concurrency:
 permissions:
   contents: read
   actions: read
+  security-events: write
 
 jobs:
   cross-platform-build:
@@ -69,6 +70,21 @@ jobs:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+    - name: Generate source-level SBOM (Windows)
+      if: matrix.platform == 'win32'
+      run: |
+        Set-Location "C:\build-workspace\scopes"
+        $VERSION_ARG = ""
+        if ("${{ inputs.version }}" -and "${{ inputs.version }}" -ne "") {
+          $VERSION_ARG = "-Pversion=${{ inputs.version }}"
+          echo "Using version argument: $VERSION_ARG"
+        }
+        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache cycloneDx $VERSION_ARG"
+        & .\gradlew.bat --no-daemon --no-configuration-cache cycloneDx $VERSION_ARG
+      shell: powershell
+      env:
+        GRADLE_USER_HOME: C:\gradle-cache
+
     - name: Build Native Application (Windows)
       if: matrix.platform == 'win32'
       run: |
@@ -83,6 +99,15 @@ jobs:
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
+
+    - name: Generate source-level SBOM
+      if: matrix.platform != 'win32'
+      run: |
+        VERSION_ARG=""
+        if [ -n "${{ inputs.version }}" ]; then
+          VERSION_ARG="-Pversion=${{ inputs.version }}"
+        fi
+        ./gradlew --no-daemon --no-configuration-cache cycloneDx $VERSION_ARG
 
     - name: Build Native Application (Unix)
       if: matrix.platform != 'win32'
@@ -179,6 +204,52 @@ jobs:
           ${{ steps.binary.outputs.binary_name }}
           binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
+    - name: Rename source-level SBOM (Windows)
+      if: matrix.platform == 'win32'
+      run: |
+        Set-Location "C:\build-workspace\scopes"
+        $bomFiles = Get-ChildItem -Path "build\reports\bom.*" -ErrorAction SilentlyContinue
+        if ($bomFiles) {
+          foreach ($file in $bomFiles) {
+            $extension = $file.Extension
+            $newName = "bom-${{ matrix.platform }}-${{ matrix.arch }}$extension"
+            Copy-Item $file.FullName $newName
+            Write-Output "Renamed $($file.Name) to $newName"
+          }
+        } else {
+          Write-Output "No BOM files found in build\reports\"
+        }
+      shell: powershell
+
+    - name: Rename source-level SBOM (Unix)
+      if: matrix.platform != 'win32'
+      run: |
+        for bomfile in build/reports/bom.*; do
+          if [ -f "$bomfile" ]; then
+            extension="${bomfile##*.}"
+            newname="bom-${{ matrix.platform }}-${{ matrix.arch }}.${extension}"
+            cp "$bomfile" "$newname"
+            echo "Renamed $(basename $bomfile) to $newname"
+          fi
+        done
+        ls -la bom-* || echo "No renamed BOM files found"
+
+    - name: Upload source-level SBOM (Windows)
+      if: matrix.platform == 'win32'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: source-sbom-${{ matrix.platform }}-${{ matrix.arch }}
+        path: C:\build-workspace\scopes\bom-${{ matrix.platform }}-${{ matrix.arch }}.*
+      continue-on-error: true
+
+    - name: Upload source-level SBOM (Unix)
+      if: matrix.platform != 'win32'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: source-sbom-${{ matrix.platform }}-${{ matrix.arch }}
+        path: bom-${{ matrix.platform }}-${{ matrix.arch }}.*
+      continue-on-error: true
+
   binary-security-scan:
     name: Binary Security Scan
     runs-on: ubuntu-latest
@@ -195,6 +266,13 @@ jobs:
         pattern: build-binary-*
         path: binaries
         merge-multiple: true
+
+    - name: Download source-level SBOMs
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        pattern: source-sbom-*
+        path: source-sboms
+      continue-on-error: true
 
     - name: Install Grype
       uses: anchore/scan-action/download-grype@1638637db639e0ade3258b51db49a9a137574c3e # v6.5.1
@@ -217,6 +295,7 @@ jobs:
           if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
             echo "Scanning: $binary"
             "${{ steps.grype.outputs.cmd }}" "$binary" --output json --file "${binary}-grype-report.json" || true
+            "${{ steps.grype.outputs.cmd }}" "$binary" --output sarif --file "${binary}-grype-report.sarif" || true
             "${{ steps.grype.outputs.cmd }}" "$binary" --output table || true
             echo "---"
           fi
@@ -277,6 +356,16 @@ jobs:
         name: security-scan-results
         path: |
           binaries/*-grype-report.json
+          binaries/*-grype-report.sarif
           binaries/*-sbom.json
+          source-sboms/**/*
+
+    - name: Upload SARIF results to GitHub Security
+      uses: github/codeql-action/upload-sarif@76621b61decf072c1cee8dd1ce2d2a82d33c17ed # v3.29.8
+      if: always()
+      with:
+        sarif_file: binaries
+        category: vulnerability-scan
+      continue-on-error: true
 
 

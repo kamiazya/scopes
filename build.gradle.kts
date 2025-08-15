@@ -101,7 +101,12 @@ ktlint {
     }
 }
 
-// SBOM Configuration will be added to subprojects that need it
+// CycloneDX SBOM Configuration
+tasks.cyclonedxBom {
+    setDestination(project.file("build/reports"))
+    setOutputName("bom")
+    setOutputFormat("json")
+}
 
 // Task to run architecture tests
 tasks.register("konsistTest") {
