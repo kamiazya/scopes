@@ -282,6 +282,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
