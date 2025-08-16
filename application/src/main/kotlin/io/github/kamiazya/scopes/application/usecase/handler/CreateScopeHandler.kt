@@ -17,9 +17,11 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.AliasName
 
 /**
  * Handler for CreateScope command with proper transaction management.
@@ -34,7 +36,8 @@ class CreateScopeHandler(
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val hierarchyService: ScopeHierarchyService,
-    private val crossAggregateValidationService: CrossAggregateValidationService
+    private val crossAggregateValidationService: CrossAggregateValidationService,
+    private val aliasManagementService: ScopeAliasManagementService
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
     override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = 
@@ -121,10 +124,26 @@ class CreateScopeHandler(
                     aspectsData = aspects
                 ).bind()
 
-                // Save and return
+                // Save the scope
                 val savedScope = scopeRepository.save(scope).bind()
+                
+                // Handle alias generation or assignment
+                val alias = when {
+                    // If custom alias is provided, use it
+                    input.customAlias != null -> {
+                        val aliasName = AliasName.create(input.customAlias).bind()
+                        aliasManagementService.assignCanonicalAlias(savedScope.id, aliasName)
+                            .getOrNull() // Continue even if alias assignment fails
+                    }
+                    // If auto-generation is enabled, generate a canonical alias
+                    input.generateAlias -> {
+                        aliasManagementService.generateCanonicalAlias(savedScope.id)
+                            .getOrNull() // Continue even if alias generation fails
+                    }
+                    else -> null
+                }
 
-                ScopeMapper.toCreateScopeResult(savedScope)
+                ScopeMapper.toCreateScopeResult(savedScope, alias)
             }
         }
 }
