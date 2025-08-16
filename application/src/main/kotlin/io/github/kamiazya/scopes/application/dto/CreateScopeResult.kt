@@ -13,5 +13,5 @@ data class CreateScopeResult(
     val description: String?,
     val parentId: String?,
     val createdAt: Instant,
-    val metadata: Map<String, String>
+    val aspects: Map<String, List<String>>
 ) : DTO

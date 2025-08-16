@@ -1,7 +1,9 @@
 package io.github.kamiazya.scopes.application.usecase.query
 
+import io.github.kamiazya.scopes.application.dto.DTO
+
 /**
  * Marker interface for query inputs that read state.
  * Queries represent read operations in CQRS pattern.
  */
-interface Query
+interface Query : DTO
