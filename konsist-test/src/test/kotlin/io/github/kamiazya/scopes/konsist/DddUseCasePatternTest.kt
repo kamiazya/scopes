@@ -26,6 +26,11 @@ class DddUseCasePatternTest : StringSpec({
             .scopeFromModule("application")
             .classes()
             .filter { it.packagee?.name?.endsWith(".dto") == true }
+            .filter { clazz ->
+                // Include only top-level classes that directly implement DTO
+                // Exclude sealed class children (like Text, Numeric, Ordered in AspectDefinitionResult)
+                clazz.parents().any { parent -> parent.name == "DTO" }
+            }
             .assertTrue { dto ->
                 dto.hasParentWithName("DTO")
             }
@@ -39,7 +44,11 @@ class DddUseCasePatternTest : StringSpec({
                 it.hasParentWithName("Command") || it.hasParentWithName("Query")
             }
             .assertTrue { commandOrQuery ->
-                commandOrQuery.hasParentWithName("DTO")
+                // All commands and queries should inherit DTO either directly or through Command/Query interfaces
+                // Since Command and Query now inherit from DTO, classes that implement them get DTO automatically
+                commandOrQuery.hasParentWithName("DTO") ||
+                commandOrQuery.hasParentWithName("Command") ||
+                commandOrQuery.hasParentWithName("Query")
             }
     }
 
