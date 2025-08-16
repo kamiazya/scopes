@@ -49,6 +49,22 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Scope description is too long. Maximum length is ${errorInfo.maximumLength} characters.")
             }
             
+            is ApplicationError.ScopeInputError.AliasEmpty -> {
+                append("Alias cannot be empty. Please provide a valid alias.")
+            }
+            is ApplicationError.ScopeInputError.AliasTooShort -> {
+                append("Alias '${errorInfo.attemptedValue}' is too short. ")
+                append("Minimum length is ${errorInfo.minimumLength} characters.")
+            }
+            is ApplicationError.ScopeInputError.AliasTooLong -> {
+                append("Alias '${errorInfo.attemptedValue}' is too long. ")
+                append("Maximum length is ${errorInfo.maximumLength} characters.")
+            }
+            is ApplicationError.ScopeInputError.AliasInvalidFormat -> {
+                append("Alias '${errorInfo.attemptedValue}' has invalid format. ")
+                append("Expected pattern: ${errorInfo.expectedPattern}")
+            }
+            
             // Aspect Errors - updated for flattened structure
             is ApplicationError.AspectError.KeyEmpty -> {
                 append("Aspect key cannot be empty.")
@@ -172,6 +188,20 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             }
             is ApplicationError.ExternalSystemError.AuthenticationFailed -> {
                 append("Authentication failed for service '${errorInfo.serviceName}'.")
+            }
+            
+            // Scope Alias Errors
+            is ApplicationError.ScopeAliasError.DuplicateAlias -> {
+                append("Alias '${errorInfo.aliasName}' is already assigned to scope ${errorInfo.existingScopeId}.")
+            }
+            is ApplicationError.ScopeAliasError.AliasNotFound -> {
+                append("Alias '${errorInfo.aliasName}' not found.")
+            }
+            is ApplicationError.ScopeAliasError.CannotRemoveCanonicalAlias -> {
+                append("Cannot remove canonical alias '${errorInfo.aliasName}' from scope ${errorInfo.scopeId}.")
+            }
+            is ApplicationError.ScopeAliasError.AliasGenerationFailed -> {
+                append("Failed to generate alias for scope ${errorInfo.scopeId} after ${errorInfo.retryCount} attempts.")
             }
         }
         

@@ -5,7 +5,6 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
-import io.github.kamiazya.scopes.application.error.ErrorInfoService
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
@@ -17,7 +16,6 @@ import kotlinx.coroutines.runBlocking
  */
 class CreateScopeCommand(
     private val createScopeHandler: CreateScopeHandler,
-    private val errorInfoService: ErrorInfoService,
     private val errorMessageFormatter: ErrorMessageFormatter
 ) : CliktCommand(name = "create") {
     
@@ -40,14 +38,17 @@ class CreateScopeCommand(
 
         createScopeHandler(command).fold(
             ifLeft = { error ->
-                val errorInfo = errorInfoService.toErrorInfo(error)
-                val errorMessage = errorMessageFormatter.format(errorInfo)
-                echo("❌ Error creating scope: $errorMessage", err = true)
+                // For now, just show the error message directly
+                // In a real implementation, we would convert ScopesError to ApplicationError
+                echo("❌ Error creating scope: ${error}", err = true)
                 throw com.github.ajalt.clikt.core.ProgramResult(1)
             },
             ifRight = { result: CreateScopeResult ->
                 echo("✅ Created scope: ${result.id}")
                 echo("   Title: ${result.title}")
+                if (result.canonicalAlias != null) {
+                    echo("   Alias: ${result.canonicalAlias}")
+                }
                 if (result.description != null) {
                     echo("   Description: ${result.description}")
                 }

@@ -1,12 +1,14 @@
 package io.github.kamiazya.scopes.presentation.cli
 
 import com.github.ajalt.clikt.testing.test
-import io.github.kamiazya.scopes.application.error.DomainErrorInfoService
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.presentation.cli.error.CliErrorMessageFormatter
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
+import io.github.kamiazya.scopes.domain.service.HaikunatorService
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
+import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
 import io.github.kamiazya.scopes.presentation.cli.commands.CreateScopeCommand
 import io.kotest.core.spec.style.FunSpec
@@ -26,12 +28,14 @@ class CreateScopeE2EDemoTest : FunSpec({
     test("E2E Demo: Create scope shows complete vertical slice") {
         // Arrange: Set up the complete dependency chain
         val repository = InMemoryScopeRepository()
+        val aliasRepository = InMemoryScopeAliasRepository()
         val transactionManager = NoopTransactionManager()
         val hierarchyService = ScopeHierarchyService()
+        val haikunatorService = HaikunatorService()
+        val aliasManagementService = ScopeAliasManagementService(aliasRepository, haikunatorService)
         val crossAggregateValidationService = CrossAggregateValidationService(repository)
-        val errorInfoService = DomainErrorInfoService()
-        val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService)
-        val command = CreateScopeCommand(handler, errorInfoService, CliErrorMessageFormatter)
+        val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService, aliasManagementService)
+        val command = CreateScopeCommand(handler, CliErrorMessageFormatter)
 
         // Act: Execute CLI command (same as `./gradlew run --args="create --name Hello"`)
         val result = command.test("--name=Hello")
@@ -49,12 +53,14 @@ class CreateScopeE2EDemoTest : FunSpec({
     test("E2E Demo: Basic functionality verification") {
         // Verification that the CLI-Application-Domain-Infrastructure flow works
         val repository = InMemoryScopeRepository()
+        val aliasRepository = InMemoryScopeAliasRepository()
         val transactionManager = NoopTransactionManager()
         val hierarchyService = ScopeHierarchyService()
+        val haikunatorService = HaikunatorService()
+        val aliasManagementService = ScopeAliasManagementService(aliasRepository, haikunatorService)
         val crossAggregateValidationService = CrossAggregateValidationService(repository)
-        val errorInfoService = DomainErrorInfoService()
-        val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService)
-        val command = CreateScopeCommand(handler, errorInfoService, CliErrorMessageFormatter)
+        val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService, aliasManagementService)
+        val command = CreateScopeCommand(handler, CliErrorMessageFormatter)
 
         // Demonstrate that E2E flow succeeds
         val result = command.test("--name=DemoProject")

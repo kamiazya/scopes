@@ -1,14 +1,16 @@
 package io.github.kamiazya.scopes.presentation.cli
 
-import io.github.kamiazya.scopes.application.error.DomainErrorInfoService
-import io.github.kamiazya.scopes.application.error.ErrorInfoService
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
+import io.github.kamiazya.scopes.domain.service.HaikunatorService
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
+import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
 import io.github.kamiazya.scopes.presentation.cli.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.presentation.cli.error.CliErrorMessageFormatter
@@ -52,6 +54,7 @@ object CompositionRoot {
      */
     private val infrastructureModule = module {
         single<ScopeRepository> { InMemoryScopeRepository() }
+        single<ScopeAliasRepository> { InMemoryScopeAliasRepository() }
         single<TransactionManager> { NoopTransactionManager() }
     }
     
@@ -61,6 +64,8 @@ object CompositionRoot {
      */
     private val domainModule = module {
         single { ScopeHierarchyService() }
+        single { HaikunatorService() }
+        single { ScopeAliasManagementService(get(), get()) }
     }
     
     /**
@@ -68,9 +73,8 @@ object CompositionRoot {
      * Contains use case handlers, services, and application-specific implementations.
      */
     private val applicationModule = module {
-        single<ErrorInfoService> { DomainErrorInfoService() }
         single { CrossAggregateValidationService(get()) }
-        single { CreateScopeHandler(get(), get(), get(), get()) }
+        single { CreateScopeHandler(get(), get(), get(), get(), get()) }
     }
     
     /**
@@ -79,6 +83,6 @@ object CompositionRoot {
      */
     private val presentationModule = module {
         single<ErrorMessageFormatter> { CliErrorMessageFormatter }
-        single { CreateScopeCommand(get(), get(), get()) }
+        single { CreateScopeCommand(get(), get()) }
     }
 }
