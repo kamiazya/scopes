@@ -1,11 +1,17 @@
 package io.github.kamiazya.scopes.presentation.cli
 
+import io.github.kamiazya.scopes.application.error.DomainErrorInfoService
+import io.github.kamiazya.scopes.application.error.ErrorInfoService
+import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
 import io.github.kamiazya.scopes.application.port.TransactionManager
-import io.github.kamiazya.scopes.application.service.ApplicationScopeValidationService
+import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
+import io.github.kamiazya.scopes.presentation.cli.commands.CreateScopeCommand
+import io.github.kamiazya.scopes.presentation.cli.error.CliErrorMessageFormatter
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -32,6 +38,7 @@ object CompositionRoot {
             startKoin {
                 modules(
                     infrastructureModule,
+                    domainModule,
                     applicationModule,
                     presentationModule
                 )
@@ -49,12 +56,21 @@ object CompositionRoot {
     }
     
     /**
+     * Domain layer dependencies.
+     * Domain services that encapsulate business logic.
+     */
+    private val domainModule = module {
+        single { ScopeHierarchyService() }
+    }
+    
+    /**
      * Application layer dependencies.  
      * Contains use case handlers, services, and application-specific implementations.
      */
     private val applicationModule = module {
-        single { ApplicationScopeValidationService(get()) }
-        single { CreateScopeHandler(get(), get()) }
+        single<ErrorInfoService> { DomainErrorInfoService() }
+        single { CrossAggregateValidationService(get()) }
+        single { CreateScopeHandler(get(), get(), get(), get()) }
     }
     
     /**
@@ -62,7 +78,7 @@ object CompositionRoot {
      * Should be minimal - mainly configuration and presentation-specific services.
      */
     private val presentationModule = module {
-        // Add presentation-specific dependencies here if needed
-        // For now, everything is handled by application and infrastructure layers
+        single<ErrorMessageFormatter> { CliErrorMessageFormatter }
+        single { CreateScopeCommand(get(), get(), get()) }
     }
 }
