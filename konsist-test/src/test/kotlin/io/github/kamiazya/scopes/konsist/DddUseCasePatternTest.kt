@@ -232,6 +232,20 @@ class DddUseCasePatternTest : StringSpec({
             }
     }
 
+    "handlers should have exactly one invoke method" {
+        Konsist
+            .scopeFromModule("application")
+            .classes()
+            .filter { it.name.endsWith("Handler") }
+            .assertTrue { handler ->
+                val invokeMethods = handler.functions()
+                    .filter { it.name == "invoke" }
+                
+                // Each handler should have exactly one invoke method
+                invokeMethods.size == 1
+            }
+    }
+    
     "handlers should not directly use domain entities in Either generic parameters" {
         Konsist
             .scopeFromModule("application")

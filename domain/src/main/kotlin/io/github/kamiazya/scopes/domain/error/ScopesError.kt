@@ -8,7 +8,7 @@ import kotlinx.datetime.Instant
 /**
  * Scopes project error system reflecting domain knowledge.
  * Design centered on ubiquitous language and business concepts.
- * 
+ *
  * Note: Error messages are generated in the presentation layer,
  * not in the domain layer, following Clean Architecture principles.
  */
@@ -81,12 +81,12 @@ sealed class ScopeInputError : UserIntentionError() {
      * Errors related to Scope IDs.
      */
     sealed class IdError : ScopeInputError() {
-        
+
         data class Blank(
             override val occurredAt: Instant,
             val attemptedValue: String
         ) : IdError()
-        
+
         data class InvalidFormat(
             override val occurredAt: Instant,
             val attemptedValue: String,
@@ -133,6 +133,35 @@ sealed class ScopeInputError : UserIntentionError() {
             val attemptedValue: String,
             val maximumLength: Int
         ) : DescriptionError()
+    }
+
+    /**
+     * Errors related to Scope aliases.
+     */
+    sealed class AliasError : ScopeInputError() {
+
+        data class Empty(
+            override val occurredAt: Instant,
+            val attemptedValue: String
+        ) : AliasError()
+
+        data class TooShort(
+            override val occurredAt: Instant,
+            val attemptedValue: String,
+            val minimumLength: Int
+        ) : AliasError()
+
+        data class TooLong(
+            override val occurredAt: Instant,
+            val attemptedValue: String,
+            val maximumLength: Int
+        ) : AliasError()
+
+        data class InvalidFormat(
+            override val occurredAt: Instant,
+            val attemptedValue: String,
+            val expectedPattern: String
+        ) : AliasError()
     }
 }
 
@@ -264,24 +293,24 @@ sealed class ScopeHierarchyError : ConceptualModelError() {
         override val occurredAt: Instant,
         val scopeId: ScopeId
     ) : ScopeHierarchyError()
-    
+
     data class ParentNotFound(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
         val parentId: ScopeId
     ) : ScopeHierarchyError()
-    
+
     data class InvalidParentId(
         override val occurredAt: Instant,
         val invalidId: String
     ) : ScopeHierarchyError()
-    
+
     data class TooDeep(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
         val maxDepth: Int
     ) : ScopeHierarchyError()
-    
+
     data class TooManyChildren(
         override val occurredAt: Instant,
         val parentId: ScopeId,
@@ -300,6 +329,36 @@ sealed class ScopeUniquenessError : ConceptualModelError() {
         val parentScopeId: ScopeId?,
         val existingScopeId: ScopeId
     ) : ScopeUniquenessError()
+}
+
+/**
+ * Constraint violations related to Scope aliases.
+ */
+sealed class ScopeAliasError : ConceptualModelError() {
+
+    data class DuplicateAlias(
+        override val occurredAt: Instant,
+        val aliasName: String,
+        val existingScopeId: ScopeId,
+        val attemptedScopeId: ScopeId
+    ) : ScopeAliasError()
+
+    data class CanonicalAliasAlreadyExists(
+        override val occurredAt: Instant,
+        val scopeId: ScopeId,
+        val existingCanonicalAlias: String
+    ) : ScopeAliasError()
+
+    data class AliasNotFound(
+        override val occurredAt: Instant,
+        val aliasName: String
+    ) : ScopeAliasError()
+
+    data class CannotRemoveCanonicalAlias(
+        override val occurredAt: Instant,
+        val scopeId: ScopeId,
+        val canonicalAlias: String
+    ) : ScopeAliasError()
 }
 
 /**

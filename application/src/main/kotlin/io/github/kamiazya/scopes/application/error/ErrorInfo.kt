@@ -36,6 +36,21 @@ sealed class ApplicationError(
             val attemptedValue: String,
             val maximumLength: Int
         ) : ScopeInputError()
+
+        // Alias validation errors - structured like other errors
+        data class AliasEmpty(val attemptedValue: String) : ScopeInputError()
+        data class AliasTooShort(
+            val attemptedValue: String,
+            val minimumLength: Int
+        ) : ScopeInputError()
+        data class AliasTooLong(
+            val attemptedValue: String,
+            val maximumLength: Int
+        ) : ScopeInputError()
+        data class AliasInvalidFormat(
+            val attemptedValue: String,
+            val expectedPattern: String
+        ) : ScopeInputError()
     }
 
     // Aspect Errors - flattened to 2 levels
@@ -162,6 +177,29 @@ sealed class ApplicationError(
         ) : ExternalSystemError()
 
         data class AuthenticationFailed(val serviceName: String) : ExternalSystemError()
+    }
+
+    // Scope Alias Errors
+    sealed class ScopeAliasError(recoverable: Boolean = true) : ApplicationError(recoverable) {
+        data class DuplicateAlias(
+            val aliasName: String,
+            val existingScopeId: String,
+            val attemptedScopeId: String
+        ) : ScopeAliasError()
+
+        data class AliasNotFound(
+            val aliasName: String
+        ) : ScopeAliasError()
+
+        data class CannotRemoveCanonicalAlias(
+            val scopeId: String,
+            val aliasName: String
+        ) : ScopeAliasError()
+
+        data class AliasGenerationFailed(
+            val scopeId: String,
+            val retryCount: Int
+        ) : ScopeAliasError()
     }
 }
 
