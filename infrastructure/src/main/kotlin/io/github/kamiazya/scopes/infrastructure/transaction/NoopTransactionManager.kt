@@ -1,9 +1,9 @@
 package io.github.kamiazya.scopes.infrastructure.transaction
 
 import arrow.core.Either
+import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
-import java.util.*
 
 /**
  * No-operation implementation of TransactionManager.
@@ -41,7 +41,7 @@ private class NoopTransactionContext(
 ) : TransactionContext {
     
     private var markedForRollback = false
-    private val transactionId = UUID.randomUUID().toString()
+    private val transactionId = ULID.random()
     
     override fun markForRollback() {
         markedForRollback = true

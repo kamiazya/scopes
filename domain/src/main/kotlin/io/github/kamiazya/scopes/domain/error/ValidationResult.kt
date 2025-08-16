@@ -1,50 +1,42 @@
 package io.github.kamiazya.scopes.domain.error
 
-import arrow.core.Either
 import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
 
 /**
- * Represents the result of a validation operation that can accumulate multiple errors.
- * A key component for error accumulation support.
+ * Simple validation result for accumulating errors.
  */
 sealed class ValidationResult<out T> {
-
-    /**
-     * Represents a successful validation containing a valid value.
-     */
     data class Success<T>(val value: T) : ValidationResult<T>()
+    data class Failure(val errors: NonEmptyList<ScopesError>) : ValidationResult<Nothing>()
+    
+    fun <R> map(transform: (T) -> R): ValidationResult<R> = when(this) {
+        is Success -> Success(transform(value))
+        is Failure -> this
+    }
+}
 
-    /**
-     * Represents a failed validation containing accumulated errors.
-     * Using Nothing as the type parameter ensures type safety and proper variance.
-     */
-    data class Failure(val errors: NonEmptyList<DomainError>) : ValidationResult<Nothing>()
+/**
+ * Extension functions for ValidationResult.
+ */
+fun <T> T.validationSuccess(): ValidationResult<T> = ValidationResult.Success(this)
 
+fun ScopesError.validationFailure(): ValidationResult<Nothing> = 
+    ValidationResult.Failure(nonEmptyListOf(this))
 
-    companion object {
-
-        /**
-         * Returns all successful values if all results are successful,
-         * or accumulates all errors if any result fails.
-         */
-        fun <T> allSuccessOrAccumulateErrors(
-            results: List<ValidationResult<T>>
-        ): Either<NonEmptyList<DomainError>, List<T>> {
-            val successes = mutableListOf<T>()
-            val errors = mutableListOf<DomainError>()
-
-            results.forEach { result ->
-                when (result) {
-                    is Success -> successes.add(result.value)
-                    is Failure -> errors.addAll(result.errors)
-                }
-            }
-
-            return if (errors.isEmpty()) {
-                Either.Right(successes)
-            } else {
-                Either.Left(NonEmptyList(errors.first(), errors.drop(1)))
-            }
+fun <T> combineValidations(vararg validations: ValidationResult<T>): ValidationResult<Unit> {
+    val errors = mutableListOf<ScopesError>()
+    
+    validations.forEach { validation ->
+        when (validation) {
+            is ValidationResult.Failure -> errors.addAll(validation.errors)
+            is ValidationResult.Success -> { /* continue */ }
         }
+    }
+    
+    return if (errors.isEmpty()) {
+        ValidationResult.Success(Unit)
+    } else {
+        ValidationResult.Failure(NonEmptyList(errors.first(), errors.drop(1)))
     }
 }

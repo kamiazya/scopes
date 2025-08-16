@@ -3,48 +3,53 @@ package io.github.kamiazya.scopes.domain.repository
 import arrow.core.Either
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.error.SaveScopeError
-import io.github.kamiazya.scopes.domain.error.ExistsScopeError
-import io.github.kamiazya.scopes.domain.error.CountScopeError
-import io.github.kamiazya.scopes.domain.error.FindScopeError
+import io.github.kamiazya.scopes.domain.valueobject.AspectCriteria
+import io.github.kamiazya.scopes.domain.error.PersistenceError
 
 /**
  * Repository interface for Scope entity operations.
- * Updated to use operation-specific error types for better type safety and error handling.
- * Each operation now uses its specific error type rather than the generic RepositoryError.
+ * Follows Clean Architecture principles with basic CRUD operations.
+ * Complex business logic is handled by domain services.
  */
 interface ScopeRepository {
     /**
      * Save a scope (create or update).
-     * Uses SaveScopeError for operation-specific error scenarios.
      */
-    suspend fun save(scope: Scope): Either<SaveScopeError, Scope>
+    suspend fun save(scope: Scope): Either<PersistenceError, Scope>
+
+    /**
+     * Find a scope by ID.
+     */
+    suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?>
+
+    /**
+     * Find all scopes.
+     */
+    suspend fun findAll(): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Find scopes by parent ID.
+     */
+    suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Find scopes by aspect criteria.
+     */
+    suspend fun findByCriteria(criteria: AspectCriteria): Either<PersistenceError, List<Scope>>
 
     /**
      * Check if a scope exists.
-     * Uses ExistsScopeError for operation-specific error scenarios.
      */
-    suspend fun existsById(id: ScopeId): Either<ExistsScopeError, Boolean>
+    suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean>
 
     /**
      * Check if a scope exists with the given title and parent.
      * Used for efficient title uniqueness validation.
-     * Uses ExistsScopeError for operation-specific error scenarios.
      */
-    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ExistsScopeError, Boolean>
+    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean>
 
     /**
-     * Count children of a specific parent scope.
-     * Used for efficient children limit validation.
-     * Uses CountScopeError for operation-specific error scenarios.
+     * Delete a scope by ID.
      */
-    suspend fun countByParentId(parentId: ScopeId): Either<CountScopeError, Int>
-
-    /**
-     * Find the depth of a scope hierarchy from root to the given scope.
-     * Used for efficient hierarchy depth validation.
-     * Uses FindScopeError for operation-specific error scenarios.
-     */
-    suspend fun findHierarchyDepth(scopeId: ScopeId): Either<FindScopeError, Int>
+    suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>
 }
-

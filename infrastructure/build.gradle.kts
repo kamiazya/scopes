@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
+    implementation(libs.kulid)
 
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
