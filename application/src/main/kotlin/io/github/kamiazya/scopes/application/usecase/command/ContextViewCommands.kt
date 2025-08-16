@@ -1,0 +1,53 @@
+package io.github.kamiazya.scopes.application.usecase.command
+
+/**
+ * Commands for context view operations.
+ * These represent user intents and contain all necessary data for the operation.
+ */
+
+/**
+ * Create a new named context view.
+ */
+data class CreateContextView(
+    val name: String,
+    val filterExpression: String,
+    val description: String? = null
+)
+
+/**
+ * Update an existing context view.
+ */
+data class UpdateContextView(
+    val id: String,
+    val name: String? = null,
+    val filterExpression: String? = null,
+    val description: String? = null
+)
+
+/**
+ * Delete a context view.
+ */
+data class DeleteContextView(
+    val id: String
+)
+
+/**
+ * Switch to a different context view.
+ */
+data class SwitchContext(
+    val name: String
+)
+
+/**
+ * List context views with optional filtering.
+ */
+data class ListContextViews(
+    val includeInactive: Boolean = true
+)
+
+/**
+ * Apply current context filter to get filtered scopes.
+ */
+data class GetFilteredScopes(
+    val contextName: String? = null // If null, use currently active context
+)

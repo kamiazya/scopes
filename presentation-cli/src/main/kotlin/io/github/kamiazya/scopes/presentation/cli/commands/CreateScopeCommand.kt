@@ -5,9 +5,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
-import io.github.kamiazya.scopes.application.error.CreateScopeErrorMessageTranslator
+import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
-import io.github.kamiazya.scopes.application.usecase.error.CreateScopeError
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import kotlinx.coroutines.runBlocking
 
@@ -17,7 +16,7 @@ import kotlinx.coroutines.runBlocking
  */
 class CreateScopeCommand(
     private val createScopeHandler: CreateScopeHandler,
-    private val errorMessageTranslator: CreateScopeErrorMessageTranslator = CreateScopeErrorMessageTranslator(),
+    private val errorMessageFormatter: ErrorMessageFormatter
 ) : CliktCommand(name = "create") {
     
     private val name by option("--name", help = "Scope name").required()
@@ -38,14 +37,18 @@ class CreateScopeCommand(
         )
 
         createScopeHandler(command).fold(
-            ifLeft = { error: CreateScopeError ->
-                val errorMessage = errorMessageTranslator.toUserMessage(error)
-                echo("❌ Error creating scope: $errorMessage", err = true)
+            ifLeft = { error ->
+                // For now, just show the error message directly
+                // In a real implementation, we would convert ScopesError to ApplicationError
+                echo("❌ Error creating scope: ${error}", err = true)
                 throw com.github.ajalt.clikt.core.ProgramResult(1)
             },
             ifRight = { result: CreateScopeResult ->
                 echo("✅ Created scope: ${result.id}")
                 echo("   Title: ${result.title}")
+                if (result.canonicalAlias != null) {
+                    echo("   Alias: ${result.canonicalAlias}")
+                }
                 if (result.description != null) {
                     echo("   Description: ${result.description}")
                 }
@@ -56,6 +59,4 @@ class CreateScopeCommand(
             }
         )
     }
-
-
 }

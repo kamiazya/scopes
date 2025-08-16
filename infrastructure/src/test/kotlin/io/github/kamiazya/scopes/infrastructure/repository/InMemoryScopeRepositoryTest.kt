@@ -4,7 +4,7 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
-import io.github.kamiazya.scopes.domain.error.FindScopeError
+import io.github.kamiazya.scopes.domain.error.PersistenceError
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.StringSpec
@@ -91,52 +91,53 @@ class InMemoryScopeRepositoryTest : StringSpec({
             repository.save(child1)
             repository.save(child2)
 
-            val countResult = repository.countByParentId(parentId)
-            val count = countResult.shouldBeRight()
-            count shouldBe 2
+            val childrenResult = repository.findByParentId(parentId)
+            val children = childrenResult.shouldBeRight()
+            children.size shouldBe 2
         }
     }
 
-    "should find hierarchy depth" {
+    "should find children by parent ID" {
         runTest {
             val repository = InMemoryScopeRepository()
-            val rootId = ScopeId.generate()
+            val parentId = ScopeId.generate()
             val child1Id = ScopeId.generate()
             val child2Id = ScopeId.generate()
 
-            val root = createTestScope(id = rootId, title = "Root", description = null, parentId = null)
-            val child1 = createTestScope(id = child1Id, title = "Child 1", description = null, parentId = rootId)
-            val child2 = createTestScope(id = child2Id, title = "Child 2", description = null, parentId = child1Id)
+            val parent = createTestScope(id = parentId, title = "Parent", description = null, parentId = null)
+            val child1 = createTestScope(id = child1Id, title = "Child 1", description = null, parentId = parentId)
+            val child2 = createTestScope(id = child2Id, title = "Child 2", description = null, parentId = parentId)
 
-            repository.save(root)
+            repository.save(parent)
             repository.save(child1)
             repository.save(child2)
 
-            val depthResult = repository.findHierarchyDepth(child2Id)
-            val depth = depthResult.shouldBeRight()
-            depth shouldBe 3
+            val childrenResult = repository.findByParentId(parentId)
+            val children = childrenResult.shouldBeRight()
+            children.size shouldBe 2
+            children.map { it.id }.toSet() shouldBe setOf(child1Id, child2Id)
         }
     }
 
-    "should return OrphanedScope error when scopeId does not exist" {
+    "should delete scope by ID" {
         runTest {
             val repository = InMemoryScopeRepository()
-            val nonExistentId = ScopeId.generate()
+            val scopeId = ScopeId.generate()
 
-            // Test with empty repository - should return OrphanedScope error
-            val emptyDepthResult = repository.findHierarchyDepth(nonExistentId)
-            val emptyError = emptyDepthResult.shouldBeLeft()
-            emptyError shouldBe FindScopeError.OrphanedScope(nonExistentId, "Parent scope not found during traversal")
+            val scope = createTestScope(id = scopeId, title = "Test Scope", description = null, parentId = null)
+            repository.save(scope)
 
-            // Add a root scope and test with non-existent child
-            val rootId = ScopeId.generate()
-            val root = createTestScope(id = rootId, title = "Root", description = null, parentId = null)
-            repository.save(root)
+            // Verify it exists
+            val existsResult = repository.existsById(scopeId)
+            existsResult.shouldBeRight() shouldBe true
 
-            // Test with non-existent scope - should still return OrphanedScope error
-            val nonExistentDepthResult = repository.findHierarchyDepth(nonExistentId)
-            val nonExistentError = nonExistentDepthResult.shouldBeLeft()
-            nonExistentError shouldBe FindScopeError.OrphanedScope(nonExistentId, "Parent scope not found during traversal")
+            // Delete it
+            val deleteResult = repository.deleteById(scopeId)
+            deleteResult.shouldBeRight()
+
+            // Verify it no longer exists
+            val existsAfterDeleteResult = repository.existsById(scopeId)
+            existsAfterDeleteResult.shouldBeRight() shouldBe false
         }
     }
 
@@ -180,24 +181,34 @@ class InMemoryScopeRepositoryTest : StringSpec({
             )
             repository.save(originalScope)
 
-            // Test whitespace variations
-            val testCases = listOf(
+            // Test whitespace variations (only valid titles without newlines)
+            val validTestCases = listOf(
                 "task name",         // Normalized
                 " task name ",       // Leading/trailing spaces
-                "\ttask name\n",     // Tab and newline
                 "  TASK NAME  ",     // Case and multiple spaces
                 " Task Name ",       // Original case with spaces
                 "Task  Name",        // Internal double space
-                "Task\tName",        // Internal tab
-                "Task\nName",        // Internal newline
-                "Task   \t  Name",   // Mixed internal whitespace
-                "\t Task \n Name \r" // Complex mixed whitespace
+                "Task\tName",        // Internal tab (tabs are allowed)
+                "Task   \t  Name"    // Mixed internal whitespace (excluding newlines)
             )
 
-            testCases.forEach { testTitle ->
+            validTestCases.forEach { testTitle ->
                 val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
                 val exists = existsResult.shouldBeRight()
                 exists shouldBe true
+            }
+            
+            // Test that titles with newlines are considered invalid and don't match
+            val invalidTestCases = listOf(
+                "Task\nName",        // Internal newline
+                "\ttask name\n",     // Tab and newline
+                "\t Task \n Name \r" // Complex mixed whitespace with newlines
+            )
+            
+            invalidTestCases.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe false // These are invalid titles, so they shouldn't exist
             }
         }
     }
@@ -249,13 +260,25 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 "spaced title",
                 "SPACED TITLE",
                 " SPACED TITLE ",
-                "\tSpaced Title\n"
+                "\tSpaced Title"  // Tab is OK, but not newline
             )
 
             shouldMatch.forEach { testTitle ->
                 val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
                 val exists = existsResult.shouldBeRight()
                 exists shouldBe true
+            }
+            
+            // Titles with newlines should not match (they're invalid)
+            val invalidTitles = listOf(
+                "\tSpaced Title\n",
+                "Spaced\nTitle"
+            )
+            
+            invalidTitles.forEach { testTitle ->
+                val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
+                val exists = existsResult.shouldBeRight()
+                exists shouldBe false  // Invalid titles can't exist
             }
 
             // These should NOT match

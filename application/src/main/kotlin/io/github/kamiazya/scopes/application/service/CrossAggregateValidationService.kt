@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
@@ -89,11 +88,10 @@ class CrossAggregateValidationService(
         contextIds: List<ScopeId>
     ): Either<CrossAggregateValidationError, Unit> = either {
 
-        val normalizedTitle = TitleNormalizer.normalize(title)
-
         // Check uniqueness across all contexts
+        // Repository will handle title normalization internally
         for (contextId in contextIds) {
-            val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, normalizedTitle)
+            val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, title)
                 .mapLeft { existsError ->
                     CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
@@ -126,16 +124,14 @@ class CrossAggregateValidationService(
 
         // Validate all aggregates exist and are in valid state
         for (aggregateIdString in aggregateIds) {
-            val aggregateId = try {
-                ScopeId.from(aggregateIdString)
-            } catch (e: IllegalArgumentException) {
-                raise(CrossAggregateValidationError.AggregateConsistencyViolation(
+            val aggregateId = ScopeId.create(aggregateIdString).mapLeft { idError ->
+                CrossAggregateValidationError.AggregateConsistencyViolation(
                     operation = operation,
                     affectedAggregates = aggregateIds,
                     consistencyRule = consistencyRule,
                     violationDetails = "Invalid aggregate ID format: $aggregateIdString"
-                ))
-            }
+                )
+            }.bind()
 
             val aggregateExists = scopeRepository.existsById(aggregateId)
                 .mapLeft { existsError ->

@@ -1,25 +1,45 @@
 package io.github.kamiazya.scopes.domain.valueobject
 
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.github.guepardoapps.kulid.ULID
-import kotlinx.serialization.Serializable
+import io.github.kamiazya.scopes.domain.error.ScopeInputError
+import io.github.kamiazya.scopes.domain.error.currentTimestamp
 
 /**
  * Type-safe identifier for Scope entities using ULID for lexicographically sortable distributed system compatibility.
  */
-@Serializable
 @JvmInline
-value class ScopeId(
+value class ScopeId private constructor(
     val value: String,
 ) {
-    init {
-        require(value.isNotBlank()) { "ScopeId cannot be blank" }
-        require(ULID.isValid(value)) { "ScopeId must be a valid ULID format" }
-    }
-
     companion object {
+        /**
+         * Generate a new random ScopeId with ULID format.
+         */
         fun generate(): ScopeId = ScopeId(ULID.random())
 
-        fun from(value: String): ScopeId = ScopeId(value)
+        /**
+         * Create a ScopeId from a string value with validation.
+         * Returns Either with specific error types instead of throwing exceptions.
+         */
+        fun create(value: String): Either<ScopeInputError.IdError, ScopeId> = either {
+            ensure(value.isNotBlank()) { 
+                ScopeInputError.IdError.Blank(
+                    currentTimestamp(),
+                    value
+                )
+            }
+            ensure(ULID.isValid(value)) { 
+                ScopeInputError.IdError.InvalidFormat(
+                    currentTimestamp(),
+                    value
+                )
+            }
+            ScopeId(value)
+        }
+
     }
 
     override fun toString(): String = value
