@@ -98,6 +98,9 @@ sealed class ApplicationError(
             val contextName: String,
             val filterExpression: String
         ) : ContextError()
+        data class ActiveContextDeleteAttempt(
+            val contextId: String
+        ) : ContextError()
     }
 
     // Scope Hierarchy Errors

@@ -18,7 +18,7 @@ data class ContextViewResult(
     val isActive: Boolean = false, // Whether this context is currently active
     val createdAt: Instant,
     val updatedAt: Instant
-)
+) : DTO
 
 /**
  * List DTO containing multiple context views.
@@ -26,7 +26,7 @@ data class ContextViewResult(
 data class ContextViewListResult(
     val contexts: List<ContextViewResult>,
     val activeContext: ContextViewResult? = null
-)
+) : DTO
 
 /**
  * Filtered scopes result when applying a context filter.
@@ -36,7 +36,7 @@ data class FilteredScopesResult(
     val appliedContext: ContextViewResult?,
     val totalCount: Int,
     val filteredCount: Int
-)
+) : DTO
 
 /**
  * Simple scope result for filtered views.
@@ -49,4 +49,4 @@ data class ScopeResult(
     val aspects: Map<String, List<String>>,
     val createdAt: Instant,
     val updatedAt: Instant
-)
+) : DTO

@@ -120,6 +120,10 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Filter for context '${errorInfo.contextName}' produces no results.")
                 append("\nFilter expression: ${errorInfo.filterExpression}")
             }
+            is ApplicationError.ContextError.ActiveContextDeleteAttempt -> {
+                append("Cannot delete the currently active context (ID: '${errorInfo.contextId}').")
+                append("\nPlease switch to a different context before deleting this one.")
+            }
             
             // Scope Hierarchy Errors
             is ApplicationError.ScopeHierarchyError.CircularReference -> {
