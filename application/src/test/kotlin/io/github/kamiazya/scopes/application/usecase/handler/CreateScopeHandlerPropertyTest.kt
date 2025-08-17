@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.entity.ScopeAlias
@@ -42,7 +43,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 
 class CreateScopeHandlerPropertyTest : StringSpec({
-    
+
     // Balanced iteration count for quality testing without memory issues
     val iterations = 100  // Enough to find issues, but not cause memory problems
 
@@ -60,7 +61,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for successful creation
@@ -122,7 +124,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             val createdScopes = mutableListOf<Scope>()
@@ -178,7 +181,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for duplicate title
@@ -225,7 +229,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Act
@@ -251,7 +256,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for parent not found
@@ -286,7 +292,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for hierarchy too deep
@@ -323,7 +330,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for too many children
@@ -371,7 +379,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks
@@ -383,7 +392,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 savedScopes.add(scope)
                 scope.right()
             }
-            
+
             // Setup alias mocks if needed
             if (command.customAlias != null) {
                 val mockAlias = createMockScopeAlias(command.customAlias)
@@ -435,7 +444,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks
@@ -481,7 +491,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks
@@ -521,7 +532,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             val beforeCreation = Clock.System.now()
@@ -544,7 +556,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 coEvery { hierarchyService.validateChildrenLimit(any(), any()) } returns Unit.right()
                 coEvery { scopeRepository.findById(any()) } returns null.right()
             }
-            
+
             // Setup alias mocks if needed
             if (command.customAlias != null) {
                 val mockAlias = createMockScopeAlias(command.customAlias)
@@ -583,7 +595,8 @@ class CreateScopeHandlerPropertyTest : StringSpec({
                 transactionManager,
                 hierarchyService,
                 validationService,
-                aliasService
+                aliasService,
+                MockLogger()
             )
 
             // Setup mocks for repository error
@@ -621,7 +634,7 @@ private fun createMockScopeAlias(aliasName: String): ScopeAlias {
         // Fallback to a valid default if the provided name is invalid
         AliasName.create("default-alias").getOrNull()!!
     }
-    
+
     return mockk {
         every { this@mockk.aliasName } returns validatedAliasName
         every { scopeId } returns ScopeId.generate()
@@ -635,8 +648,8 @@ private fun createMockScopeAlias(aliasName: String): ScopeAlias {
 private fun validTitleArb(): Arb<String> = Arb.string(1..100)
     .filter { title ->
         val trimmed = title.trim()
-        trimmed.isNotEmpty() && 
-        !trimmed.contains('\n') && 
+        trimmed.isNotEmpty() &&
+        !trimmed.contains('\n') &&
         !trimmed.contains('\r') &&
         !trimmed.contains('\\') &&  // Exclude backslash to avoid issues
         trimmed.all { it.isLetterOrDigit() || it in " -_.,!?()[]{}@#$%&+=~" }  // Allow only safe characters
@@ -662,21 +675,21 @@ private fun validAliasNameArb(): Arb<String> = Arb.string(2..50)
         val chars = raw.lowercase()
             .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
             .ifEmpty { "alias" }
-        
+
         // Ensure it starts with alphanumeric
         val validStart = if (chars.isNotEmpty() && chars.first().isLetterOrDigit()) {
             chars
         } else {
             "a$chars"
         }
-        
+
         // Ensure it ends with alphanumeric
         val validEnd = if (validStart.isNotEmpty() && validStart.last().isLetterOrDigit()) {
             validStart
         } else {
             "${validStart}1"
         }
-        
+
         // Remove consecutive special characters and ensure length constraints
         validEnd
             .replace(Regex("[-_]{2,}"), "-")

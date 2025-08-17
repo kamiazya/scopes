@@ -1,31 +1,33 @@
 package io.github.kamiazya.scopes.application.usecase.handler
 
 import arrow.core.Either
-import arrow.core.raise.either
 import arrow.core.nonEmptyListOf
+import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
-import io.github.kamiazya.scopes.domain.error.ScopesError
+import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.domain.error.ScopeUniquenessError
-import io.github.kamiazya.scopes.domain.error.PersistenceError
+import io.github.kamiazya.scopes.domain.error.ScopesError
 import io.github.kamiazya.scopes.domain.error.currentTimestamp
-import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
+import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.AliasName
 
 /**
  * Handler for CreateScope command with proper transaction management.
- * 
+ *
+ * Uses CoroutineContext for implicit logger context propagation.
+ *
  * Following Clean Architecture and DDD principles:
  * - Uses TransactionManager for atomic operations
  * - Delegates hierarchy validation to domain service
@@ -37,11 +39,20 @@ class CreateScopeHandler(
     private val transactionManager: TransactionManager,
     private val hierarchyService: ScopeHierarchyService,
     private val crossAggregateValidationService: CrossAggregateValidationService,
-    private val aliasManagementService: ScopeAliasManagementService
+    private val aliasManagementService: ScopeAliasManagementService,
+    private val logger: Logger
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
-    override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = 
-        transactionManager.inTransaction {
+    override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> {
+        val contextMetadata = mapOf(
+            "title" to input.title,
+            "parentId" to (input.parentId ?: "none"),
+            "generateAlias" to input.generateAlias
+        )
+        
+        return transactionManager.inTransaction {
+            logger.info("Creating new scope", contextMetadata)
+
             either {
                 // Parse parent ID if provided
                 val parentId = input.parentId?.let { parentIdString ->
@@ -53,7 +64,7 @@ class CreateScopeHandler(
                         )
                     }.bind()
                 }
-                
+
                 // Validate hierarchy if parent is specified
                 if (parentId != null) {
                     // Validate parent exists using cross-aggregate validation
@@ -68,18 +79,18 @@ class CreateScopeHandler(
                             parentId
                         )
                     }.bind()
-                    
+
                     // Calculate and validate hierarchy depth
                     val currentDepth = hierarchyService.calculateHierarchyDepth(
                         parentId,
                         { id -> scopeRepository.findById(id).getOrNull() }
                     ).bind()
-                    
+
                     hierarchyService.validateHierarchyDepth(
                         parentId,
                         currentDepth
                     ).bind()
-                    
+
                     // Validate children limit
                     val existingChildren = scopeRepository.findByParentId(parentId).bind()
                     hierarchyService.validateChildrenLimit(
@@ -87,13 +98,13 @@ class CreateScopeHandler(
                         existingChildren.size
                     ).bind()
                 }
-                
+
                 // Check title uniqueness at the same level
                 val titleExists = scopeRepository.existsByParentIdAndTitle(
                     parentId,
                     input.title
                 ).bind()
-                
+
                 if (titleExists) {
                     // DuplicateTitle needs existingScopeId - we'll use a generated one for now
                     // In a real implementation, the repository would return the existing scope ID
@@ -104,7 +115,7 @@ class CreateScopeHandler(
                         ScopeId.generate() // Placeholder for existing scope ID
                     ))
                 }
-                
+
                 // Convert metadata to aspects
                 val aspects = input.metadata.mapNotNull { (key, value) ->
                     val aspectKey = AspectKey.create(key).getOrNull()
@@ -126,7 +137,9 @@ class CreateScopeHandler(
 
                 // Save the scope
                 val savedScope = scopeRepository.save(scope).bind()
-                
+
+                logger.debug("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
+
                 // Handle alias generation or assignment
                 val alias = when {
                     // If custom alias is provided, use it
@@ -143,7 +156,20 @@ class CreateScopeHandler(
                     else -> null
                 }
 
-                ScopeMapper.toCreateScopeResult(savedScope, alias)
+                val result = ScopeMapper.toCreateScopeResult(savedScope, alias)
+
+                logger.info("Scope created successfully", mapOf(
+                    "scopeId" to savedScope.id.value,
+                    "hasAlias" to (alias != null)
+                ))
+
+                result
+            }.mapLeft { error ->
+                logger.error("Failed to create scope", mapOf(
+                    "error" to (error::class.simpleName ?: "Unknown")
+                ))
+                error
             }
         }
+    }
 }

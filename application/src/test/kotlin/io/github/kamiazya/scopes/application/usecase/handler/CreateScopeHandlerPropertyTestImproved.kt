@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.domain.entity.Scope
@@ -330,7 +331,8 @@ private class TestContext {
         transactionManager,
         hierarchyService,
         validationService,
-        aliasService
+        aliasService,
+        MockLogger()
     )
 
     fun setupSuccessfulCreation(command: CreateScope) {
