@@ -7,11 +7,11 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
-import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
+import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
 
 /**
  * Handler for switching the active context view.
- * 
+ *
  * This handler:
  * 1. Validates the context name
  * 2. Switches to the specified context
@@ -19,9 +19,9 @@ import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
  */
 class SwitchContextHandler(
     private val activeContextService: ActiveContextService
-) : UseCase<SwitchContext, ApplicationError, ContextViewResult> {
+) : UseCase<SwitchContextView, ApplicationError, ContextViewResult> {
 
-    override suspend operator fun invoke(input: SwitchContext): Either<ApplicationError, ContextViewResult> {
+    override suspend operator fun invoke(input: SwitchContextView): Either<ApplicationError, ContextViewResult> {
         // Switch to the context by name
         return activeContextService.switchToContextByName(input.name).flatMap { contextView ->
             // Map to DTO

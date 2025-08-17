@@ -36,20 +36,22 @@ data class DeleteContextView(
 /**
  * Switch to a different context view.
  */
-data class SwitchContext(
+data class SwitchContextView(
     val name: String
 ) : Command
 
 /**
  * List context views with optional filtering.
  */
-data class ListContextViews(
+data class ListContextViewsQuery(
     val includeInactive: Boolean = true
 ) : Query
 
 /**
  * Apply current context filter to get filtered scopes.
  */
-data class GetFilteredScopes(
-    val contextName: String? = null // If null, use currently active context
+data class GetFilteredScopesQuery(
+    val contextName: String? = null, // If null, use currently active context
+    val limit: Int = 100,
+    val offset: Int = 0
 ) : Query

@@ -4,11 +4,11 @@ import kotlinx.datetime.Instant
 
 /**
  * Data Transfer Object for ScopeAlias entity.
- * 
+ *
  * Provides a presentation-layer-friendly representation of a scope alias,
  * abstracting away internal implementation details like ULID-based IDs.
  */
-data class ScopeAliasDTO(
+data class ScopeAliasResult(
     val scopeId: String,
     val aliasName: String,
     val aliasType: String,

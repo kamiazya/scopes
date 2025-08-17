@@ -9,13 +9,13 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
-import io.github.kamiazya.scopes.application.usecase.command.DeleteContext
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
+import io.github.kamiazya.scopes.application.usecase.command.DeleteContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 
 /**
  * Handler for deleting a context view.
- * 
+ *
  * This handler:
  * 1. Validates the context ID
  * 2. Checks if the context is currently active (cannot delete active context)
@@ -25,14 +25,14 @@ import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 class DeleteContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextService: ActiveContextService
-) : UseCase<DeleteContext, ApplicationError, EmptyResult> {
+) : UseCase<DeleteContextView, ApplicationError, EmptyResult> {
 
-    override suspend operator fun invoke(input: DeleteContext): Either<ApplicationError, EmptyResult> {
+    override suspend operator fun invoke(input: DeleteContextView): Either<ApplicationError, EmptyResult> {
         // Parse the context ID
-        val contextIdResult = ContextViewId.create(input.contextId).mapLeft { error ->
+        val contextIdResult = ContextViewId.create(input.id).mapLeft { error ->
             DomainErrorMapper.mapToApplicationError(error)
         }
-        
+
         return contextIdResult.flatMap { contextId ->
             // Check if this context is currently active
             val activeContext = activeContextService.getCurrentContext()
