@@ -42,9 +42,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 
 class CreateScopeHandlerPropertyTest : StringSpec({
+    
+    // Balanced iteration count for quality testing without memory issues
+    val iterations = 100  // Enough to find issues, but not cause memory problems
 
     "valid scope creation requests should always succeed" {
-        checkAll(20, validCreateScopeCommandArb()) { command ->  // Limit iterations
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -106,7 +109,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "scope creation should generate unique IDs" {
-        checkAll(100, validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -162,7 +165,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "duplicate titles at same level should fail" {
-        checkAll(10, validCreateScopeCommandArb()) { command ->  // Limit iterations
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -200,7 +203,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "invalid parent ID should fail" {
-        checkAll(10,  // Limit iterations
+        checkAll(iterations,
             validTitleArb(),
             invalidScopeIdArb()
         ) { title, invalidParentId ->
@@ -235,7 +238,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "parent not found should fail" {
-        checkAll(10, validCreateScopeCommandWithParentArb()) { command ->  // Limit iterations
+        checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -270,7 +273,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "hierarchy depth validation should be enforced" {
-        checkAll(10, validCreateScopeCommandWithParentArb()) { command ->  // Limit iterations
+        checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -307,7 +310,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "children limit validation should be enforced" {
-        checkAll(10, validCreateScopeCommandWithParentArb()) { command ->  // Limit iterations
+        checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -347,7 +350,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "metadata should be converted to aspects correctly" {
-        checkAll(10,  // Limit iterations
+        checkAll(iterations,
             validTitleArb(),
             validMetadataArb()
         ) { title, metadata ->
@@ -409,7 +412,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "custom alias should be assigned when provided" {
-        checkAll(10,  // Limit iterations
+        checkAll(iterations,
             validTitleArb(),
             validAliasNameArb()
         ) { title, customAlias ->
@@ -458,7 +461,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "alias should be generated when generateAlias is true" {
-        checkAll(validTitleArb()) { title ->
+        checkAll(iterations, validTitleArb()) { title ->
             // Arrange
             val command = CreateScope(
                 title = title,
@@ -505,7 +508,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "scope creation should set timestamps correctly" {
-        checkAll(10, validCreateScopeCommandArb()) { command ->  // Limit iterations to 10
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()
@@ -567,7 +570,7 @@ class CreateScopeHandlerPropertyTest : StringSpec({
     }
 
     "repository errors should be propagated correctly" {
-        checkAll(10, validCreateScopeCommandArb()) { command ->  // Limit iterations to 10
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val scopeRepository = mockk<ScopeRepository>()
             val transactionManager = TestTransactionManager()

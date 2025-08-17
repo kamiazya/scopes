@@ -53,15 +53,12 @@ import kotlinx.datetime.Clock
  * - Custom matchers for domain validation
  */
 class CreateScopeHandlerPropertyTestImproved : StringSpec({
-
-    // Optimized property test configuration
-    val testConfig = PropTestConfig(
-        iterations = 50,  // Reduced from default 1000 for faster execution
-        maxFailure = 5   // Stop after 5 failures to speed up debugging
-    )
+    
+    // Balanced iteration count for quality testing without memory issues
+    val iterations = 100  // Enough to find issues, but not cause memory problems
 
     "valid scope creation requests should always succeed" {
-        checkAll(testConfig, validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -78,7 +75,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "scope creation should generate unique IDs for identical inputs" {
-        checkAll(testConfig.copy(iterations = 20), validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -98,7 +95,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "duplicate titles at same level should fail with specific error" {
-        checkAll(testConfig, validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -114,7 +111,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "invalid parent ID formats should be rejected" {
-        checkAll(testConfig, invalidParentIdScenarioArb()) { (title, invalidParentId) ->
+        checkAll(iterations, invalidParentIdScenarioArb()) { (title, invalidParentId) ->
             // Arrange
             val command = CreateScope(
                 title = title,
@@ -134,7 +131,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "parent not found should trigger cross-aggregate validation error" {
-        checkAll(testConfig, validCreateScopeCommandWithParentArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -150,7 +147,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "hierarchy constraints should be enforced" {
-        checkAll(testConfig, hierarchyViolationScenarioArb()) { scenario ->
+        checkAll(iterations, hierarchyViolationScenarioArb()) { scenario ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -175,7 +172,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "metadata should be correctly transformed to aspects" {
-        checkAll(testConfig, metadataScenarioArb()) { (title, metadata) ->
+        checkAll(iterations, metadataScenarioArb()) { (title, metadata) ->
             // Arrange
             val command = CreateScope(title = title, metadata = metadata)
             val testContext = createTestContext()
@@ -193,7 +190,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "alias management should handle all scenarios correctly" {
-        checkAll(testConfig, aliasScenarioArb()) { scenario ->
+        checkAll(iterations, aliasScenarioArb()) { scenario ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -225,7 +222,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "timestamps should maintain chronological order" {
-        checkAll(testConfig.copy(iterations = 20), validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -245,7 +242,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "repository errors should be properly propagated" {
-        checkAll(testConfig, repositoryErrorScenarioArb()) { (command, error) ->
+        checkAll(iterations, repositoryErrorScenarioArb()) { (command, error) ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -262,7 +259,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "transaction rollback should occur on any failure" {
-        checkAll(testConfig, validCreateScopeCommandArb()) { command ->
+        checkAll(iterations, validCreateScopeCommandArb()) { command ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
@@ -285,7 +282,7 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
     }
 
     "concurrent scope creation should maintain consistency" {
-        checkAll(testConfig.copy(iterations = 10), validTitleArb()) { title ->
+        checkAll(iterations, validTitleArb()) { title ->
             // Arrange
             val testContext = createTestContext()
             val handler = testContext.createHandler()
