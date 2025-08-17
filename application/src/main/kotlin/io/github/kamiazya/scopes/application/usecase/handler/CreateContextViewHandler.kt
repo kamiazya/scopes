@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.application.dto.ContextViewInfo
+import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.port.TransactionManager
@@ -28,9 +28,9 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
 class CreateContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val transactionManager: TransactionManager
-) : CommandHandler<CreateContextView, ContextViewInfo> {
+) : CommandHandler<CreateContextView, ContextViewResult> {
 
-    override suspend fun invoke(command: CreateContextView): Either<ApplicationError, ContextViewInfo> {
+    override suspend fun invoke(command: CreateContextView): Either<ApplicationError, ContextViewResult> {
         return transactionManager.inTransaction {
             // Validate and create context name
             val contextName = ContextName.create(command.name).fold(
@@ -97,13 +97,14 @@ class CreateContextViewHandler(
                 },
                 ifRight = { saved ->
                     // Map to DTO
-                    ContextViewInfo(
+                    ContextViewResult(
                         id = saved.id.value,
                         name = saved.name.value,
                         filterExpression = saved.filter.value,
                         description = saved.description?.value,
-                        createdAt = saved.createdAt.toString(),
-                        updatedAt = saved.updatedAt.toString()
+                        isActive = false, // Newly created context is not active by default
+                        createdAt = saved.createdAt,
+                        updatedAt = saved.updatedAt
                     ).right()
                 }
             )

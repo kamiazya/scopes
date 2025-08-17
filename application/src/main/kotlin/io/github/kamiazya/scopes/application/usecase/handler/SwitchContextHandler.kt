@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.application.usecase.handler
 import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.right
-import io.github.kamiazya.scopes.application.dto.ContextViewInfo
+import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
@@ -18,19 +18,20 @@ import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
  */
 class SwitchContextHandler(
     private val activeContextService: ActiveContextService
-) : CommandHandler<SwitchContext, ContextViewInfo> {
+) : CommandHandler<SwitchContext, ContextViewResult> {
 
-    override suspend fun invoke(command: SwitchContext): Either<ApplicationError, ContextViewInfo> {
+    override suspend fun invoke(command: SwitchContext): Either<ApplicationError, ContextViewResult> {
         // Switch to the context by name
         return activeContextService.switchToContextByName(command.name).flatMap { contextView ->
             // Map to DTO
-            ContextViewInfo(
+            ContextViewResult(
                 id = contextView.id.value,
                 name = contextView.name.value,
                 filterExpression = contextView.filter.value,
                 description = contextView.description?.value,
-                createdAt = contextView.createdAt.toString(),
-                updatedAt = contextView.updatedAt.toString()
+                isActive = true, // This context is now active
+                createdAt = contextView.createdAt,
+                updatedAt = contextView.updatedAt
             ).right()
         }
     }

@@ -147,14 +147,20 @@ class UseCaseArchitectureTest : StringSpec({
             .classes()
             .filter { it.resideInPackage("..usecase.handler") }
             .assertTrue { handler ->
-                // Handlers should either have handle methods OR implement UseCase interface
+                // Handlers should either have handle methods OR implement UseCase/CommandHandler/QueryHandler interface
                 val hasHandleMethods = handler.functions().any { function ->
                     function.name.startsWith("handle")
                 }
                 val implementsUseCase = handler.hasParentWithName("UseCase") || 
                     handler.parents().any { it.name.startsWith("UseCase") }
+                val implementsCommandHandler = handler.hasParentWithName("CommandHandler") ||
+                    handler.parents().any { it.name == "CommandHandler" } ||
+                    handler.parents().any { parent -> parent.name.contains("CommandHandler") }
+                val implementsQueryHandler = handler.hasParentWithName("QueryHandler") ||
+                    handler.parents().any { it.name == "QueryHandler" } ||
+                    handler.parents().any { parent -> parent.name.contains("QueryHandler") }
                 
-                hasHandleMethods || implementsUseCase
+                hasHandleMethods || implementsUseCase || implementsCommandHandler || implementsQueryHandler
             }
     }
 
@@ -319,14 +325,20 @@ class UseCaseArchitectureTest : StringSpec({
             .classes()
             .filter { it.name.endsWith("Handler") }
             .assertTrue { handler ->
-                // Handlers should either have handle methods OR implement UseCase interface
+                // Handlers should either have handle methods OR implement UseCase/CommandHandler/QueryHandler interface
                 val hasHandleMethods = handler.functions().any { function ->
                     function.name.startsWith("handle")
                 }
                 val implementsUseCase = handler.hasParentWithName("UseCase") || 
                     handler.parents().any { it.name.startsWith("UseCase") }
+                val implementsCommandHandler = handler.hasParentWithName("CommandHandler") ||
+                    handler.parents().any { it.name == "CommandHandler" } ||
+                    handler.parents().any { parent -> parent.name.contains("CommandHandler") }
+                val implementsQueryHandler = handler.hasParentWithName("QueryHandler") ||
+                    handler.parents().any { it.name == "QueryHandler" } ||
+                    handler.parents().any { parent -> parent.name.contains("QueryHandler") }
                 
-                hasHandleMethods || implementsUseCase
+                hasHandleMethods || implementsUseCase || implementsCommandHandler || implementsQueryHandler
             }
     }
 
