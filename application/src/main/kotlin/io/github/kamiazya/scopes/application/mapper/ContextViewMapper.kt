@@ -21,7 +21,7 @@ object ContextViewMapper {
     ): ContextViewResult = ContextViewResult(
         id = contextView.id.toString(),
         name = contextView.name.value,
-        filterExpression = contextView.filter.expression,
+        filterExpression = contextView.filter.value,
         description = contextView.description?.value,
         isActive = isActive,
         createdAt = contextView.createdAt,

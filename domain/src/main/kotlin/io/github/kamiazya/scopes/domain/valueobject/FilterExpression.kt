@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.domain.error.ContextError
 import io.github.kamiazya.scopes.domain.error.currentTimestamp
 
 /**
- * Value object representing a filter for context views.
+ * Value object representing a filter expression for context views.
  * 
  * Filter expressions use a simple DSL for filtering scopes based on their aspects.
  * Examples:
@@ -16,17 +16,17 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
  * - "tag:bug OR tag:feature" - Either bug or feature tagged
  */
 @JvmInline
-value class ContextFilter private constructor(
+value class FilterExpression private constructor(
     val value: String
 ) {
     companion object {
         /**
-         * Create a ContextFilter with validation.
+         * Create a FilterExpression with validation.
          * 
          * @param value The filter expression string
-         * @return Either an error or a valid ContextFilter
+         * @return Either an error or a valid FilterExpression
          */
-        fun create(value: String): Either<ContextError.FilterError, ContextFilter> = either {
+        fun create(value: String): Either<ContextError.FilterError, FilterExpression> = either {
             ensure(value.isNotBlank()) {
                 ContextError.FilterError.InvalidSyntax(
                     occurredAt = currentTimestamp(),
@@ -49,18 +49,18 @@ value class ContextFilter private constructor(
             // TODO: Add more sophisticated validation for filter syntax
             // For now, accept any non-blank string without newlines
             
-            ContextFilter(value)
+            FilterExpression(value)
         }
         
         /**
-         * Create a filter that matches all scopes.
+         * Create a filter expression that matches all scopes.
          */
-        fun all(): ContextFilter = ContextFilter("*")
+        fun all(): FilterExpression = FilterExpression("*")
         
         /**
-         * Create a filter that matches no scopes.
+         * Create a filter expression that matches no scopes.
          */
-        fun none(): ContextFilter = ContextFilter("!*")
+        fun none(): FilterExpression = FilterExpression("!*")
     }
     
     override fun toString(): String = value
