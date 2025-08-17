@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.ListContextViews
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 
@@ -22,13 +23,13 @@ import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 class ListContextViewsHandler(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextService: ActiveContextService
-) : QueryHandler<ListContextViews, ContextViewListResult> {
+) : UseCase<ListContextViews, ApplicationError, ContextViewListResult> {
 
-    override suspend fun invoke(query: ListContextViews): Either<ApplicationError, ContextViewListResult> {
+    override suspend operator fun invoke(input: ListContextViews): Either<ApplicationError, ContextViewListResult> {
         // Get all context views
         return contextViewRepository.findAll().flatMap { contextViews ->
             // Get the currently active context if requested
-            val activeContext = if (query.includeInactive) {
+            val activeContext = if (input.includeInactive) {
                 activeContextService.getCurrentContext()
             } else {
                 null

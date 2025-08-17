@@ -6,6 +6,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
 
 /**
@@ -18,11 +19,11 @@ import io.github.kamiazya.scopes.application.usecase.command.SwitchContext
  */
 class SwitchContextHandler(
     private val activeContextService: ActiveContextService
-) : CommandHandler<SwitchContext, ContextViewResult> {
+) : UseCase<SwitchContext, ApplicationError, ContextViewResult> {
 
-    override suspend fun invoke(command: SwitchContext): Either<ApplicationError, ContextViewResult> {
+    override suspend operator fun invoke(input: SwitchContext): Either<ApplicationError, ContextViewResult> {
         // Switch to the context by name
-        return activeContextService.switchToContextByName(command.name).flatMap { contextView ->
+        return activeContextService.switchToContextByName(input.name).flatMap { contextView ->
             // Map to DTO
             ContextViewResult(
                 id = contextView.id.value,

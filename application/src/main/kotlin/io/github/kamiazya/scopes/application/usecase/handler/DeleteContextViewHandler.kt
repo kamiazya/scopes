@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.dto.EmptyResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.DeleteContext
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
@@ -24,11 +25,11 @@ import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 class DeleteContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextService: ActiveContextService
-) : CommandHandler<DeleteContext, EmptyResult> {
+) : UseCase<DeleteContext, ApplicationError, EmptyResult> {
 
-    override suspend fun invoke(command: DeleteContext): Either<ApplicationError, EmptyResult> {
+    override suspend operator fun invoke(input: DeleteContext): Either<ApplicationError, EmptyResult> {
         // Parse the context ID
-        val contextIdResult = ContextViewId.create(command.contextId).mapLeft { error ->
+        val contextIdResult = ContextViewId.create(input.contextId).mapLeft { error ->
             DomainErrorMapper.mapToApplicationError(error)
         }
         

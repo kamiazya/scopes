@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.query.GetFilteredScopes
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
@@ -29,22 +30,22 @@ class GetFilteredScopesHandler(
     private val contextViewRepository: ContextViewRepository,
     private val scopeRepository: ScopeRepository,
     private val activeContextService: ActiveContextService
-) : QueryHandler<GetFilteredScopes, FilteredScopesResult> {
+) : UseCase<GetFilteredScopes, ApplicationError, FilteredScopesResult> {
 
-    override suspend fun invoke(query: GetFilteredScopes): Either<ApplicationError, FilteredScopesResult> {
+    override suspend operator fun invoke(input: GetFilteredScopes): Either<ApplicationError, FilteredScopesResult> {
         // Resolve the context view
-        val contextViewResult: Either<ApplicationError, ContextView> = if (query.contextName != null) {
+        val contextViewResult: Either<ApplicationError, ContextView> = if (input.contextName != null) {
             // Find by name
-            ContextName.create(query.contextName).mapLeft { errorMessage ->
+            ContextName.create(input.contextName).mapLeft { errorMessage ->
                 ApplicationError.ContextError.NamingInvalidFormat(
-                    attemptedName = query.contextName
+                    attemptedName = input.contextName
                 )
             }.flatMap { contextName ->
                 contextViewRepository.findByName(contextName).mapLeft { error ->
                     DomainErrorMapper.mapToApplicationError(error)
                 }.flatMap { contextView ->
                     contextView?.right() ?: ApplicationError.ContextError.StateNotFound(
-                        contextName = query.contextName
+                        contextName = input.contextName
                     ).left()
                 }
             }
@@ -65,8 +66,8 @@ class GetFilteredScopesHandler(
                 
                 // Apply pagination
                 val paginatedScopes = filteredScopes
-                    .drop(query.offset)
-                    .take(query.limit)
+                    .drop(input.offset)
+                    .take(input.limit)
                 
                 // Map to DTOs
                 val scopeResults = paginatedScopes.map { scope ->

@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.application.port.TransactionManager
+import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
@@ -28,23 +29,23 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
 class CreateContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val transactionManager: TransactionManager
-) : CommandHandler<CreateContextView, ContextViewResult> {
+) : UseCase<CreateContextView, ApplicationError, ContextViewResult> {
 
-    override suspend fun invoke(command: CreateContextView): Either<ApplicationError, ContextViewResult> {
+    override suspend operator fun invoke(input: CreateContextView): Either<ApplicationError, ContextViewResult> {
         return transactionManager.inTransaction {
             // Validate and create context name
-            val contextName = ContextName.create(command.name).fold(
+            val contextName = ContextName.create(input.name).fold(
                 ifLeft = { errorMsg -> 
                     // Convert string error to ApplicationError
                     return@inTransaction ApplicationError.ContextError.NamingInvalidFormat(
-                        attemptedName = command.name
+                        attemptedName = input.name
                     ).left()
                 },
                 ifRight = { it }
             )
 
             // Validate and create filter
-            val contextFilter = ContextFilter.create(command.filterExpression).fold(
+            val contextFilter = ContextFilter.create(input.filterExpression).fold(
                 ifLeft = { error -> 
                     return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
                 },
@@ -59,14 +60,14 @@ class CreateContextViewHandler(
                 ifRight = { existingContext ->
                     if (existingContext != null) {
                         return@inTransaction ApplicationError.ContextError.NamingAlreadyExists(
-                            attemptedName = command.name
+                            attemptedName = input.name
                         ).left()
                     }
                 }
             )
 
             // Create description if provided
-            val description = command.description?.let { desc ->
+            val description = input.description?.let { desc ->
                 ContextDescription.create(desc).fold(
                     ifLeft = { errorMsg ->
                         // Convert string error to ApplicationError
