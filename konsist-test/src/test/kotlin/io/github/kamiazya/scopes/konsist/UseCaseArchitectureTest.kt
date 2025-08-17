@@ -132,9 +132,9 @@ class UseCaseArchitectureTest : StringSpec({
 
     "classes in handler package should follow Handler naming convention" {
         Konsist
-            .scopeFromModule("application")
+            .scopeFromProduction("application")  // Only production code, not test
             .classes()
-            .filter { it.packagee?.name?.endsWith(".usecase.handler") == true }
+            .filter { it.resideInPackage("..usecase.handler") }
             .assertTrue { handler ->
                 // All classes in handler package should end with "Handler"
                 handler.name.endsWith("Handler")
@@ -143,9 +143,9 @@ class UseCaseArchitectureTest : StringSpec({
 
     "handler classes should follow handler pattern" {
         Konsist
-            .scopeFromModule("application")
+            .scopeFromProduction("application")  // Only production code, not test
             .classes()
-            .filter { it.packagee?.name?.endsWith(".usecase.handler") == true }
+            .filter { it.resideInPackage("..usecase.handler") }
             .assertTrue { handler ->
                 // Handlers should either have handle methods OR implement UseCase interface
                 val hasHandleMethods = handler.functions().any { function ->
