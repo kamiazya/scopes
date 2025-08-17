@@ -1,10 +1,10 @@
 package io.github.kamiazya.scopes.application.usecase.handler
 
 import arrow.core.Either
-import arrow.core.flatMap
-import arrow.core.right
+import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
@@ -18,22 +18,42 @@ import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
  * 3. Returns the now-active context information
  */
 class SwitchContextHandler(
-    private val activeContextService: ActiveContextService
+    private val activeContextService: ActiveContextService,
+    private val logger: Logger
 ) : UseCase<SwitchContextView, ApplicationError, ContextViewResult> {
 
-    override suspend operator fun invoke(input: SwitchContextView): Either<ApplicationError, ContextViewResult> {
+    override suspend operator fun invoke(input: SwitchContextView): Either<ApplicationError, ContextViewResult> = either {
+        logger.info("Switching context", mapOf("contextName" to input.name))
+        
         // Switch to the context by name
-        return activeContextService.switchToContextByName(input.name).flatMap { contextView ->
-            // Map to DTO
-            ContextViewResult(
-                id = contextView.id.value,
-                name = contextView.name.value,
-                filterExpression = contextView.filter.value,
-                description = contextView.description?.value,
-                isActive = true, // This context is now active
-                createdAt = contextView.createdAt,
-                updatedAt = contextView.updatedAt
-            ).right()
-        }
+        val contextView = activeContextService.switchToContextByName(input.name)
+            .onLeft { error ->
+                logger.error("Failed to switch context", mapOf(
+                    "contextName" to input.name,
+                    "error" to (error::class.simpleName ?: "Unknown")
+                ))
+            }
+            .bind()
+        
+        logger.info("Context switched successfully", mapOf(
+            "contextId" to contextView.id.value,
+            "contextName" to contextView.name.value
+        ))
+        
+        // Map to DTO
+        ContextViewResult(
+            id = contextView.id.value,
+            name = contextView.name.value,
+            filterExpression = contextView.filter.value,
+            description = contextView.description?.value,
+            isActive = true, // This context is now active
+            createdAt = contextView.createdAt,
+            updatedAt = contextView.updatedAt
+        )
+    }.onLeft { error ->
+        logger.error("Context switch failed", mapOf(
+            "error" to (error::class.simpleName ?: "Unknown"),
+            "message" to error.toString()
+        ))
     }
 }

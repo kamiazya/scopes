@@ -6,6 +6,7 @@ import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.ContextViewListResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.ListContextViewsQuery
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError
@@ -30,7 +31,8 @@ class ListContextViewsHandlerTest : StringSpec({
 
     val contextViewRepository = mockk<ContextViewRepository>()
     val activeContextService = mockk<ActiveContextService>()
-    val handler = ListContextViewsHandler(contextViewRepository, activeContextService)
+    val logger = MockLogger()
+    val handler = ListContextViewsHandler(contextViewRepository, activeContextService, logger)
 
     "should list all context views with no active context" {
         // Given

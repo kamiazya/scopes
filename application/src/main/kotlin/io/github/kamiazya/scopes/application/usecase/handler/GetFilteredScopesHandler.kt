@@ -1,14 +1,14 @@
 package io.github.kamiazya.scopes.application.usecase.handler
 
 import arrow.core.Either
-import arrow.core.flatMap
-import arrow.core.left
-import arrow.core.right
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.dto.FilteredScopesResult
 import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.GetFilteredScopesQuery
@@ -30,84 +30,141 @@ import io.github.kamiazya.scopes.domain.entity.Scope
 class GetFilteredScopesHandler(
     private val contextViewRepository: ContextViewRepository,
     private val scopeRepository: ScopeRepository,
-    private val activeContextService: ActiveContextService
+    private val activeContextService: ActiveContextService,
+    private val logger: Logger
 ) : UseCase<GetFilteredScopesQuery, ApplicationError, FilteredScopesResult> {
 
-    override suspend operator fun invoke(input: GetFilteredScopesQuery): Either<ApplicationError, FilteredScopesResult> {
+    override suspend operator fun invoke(input: GetFilteredScopesQuery): Either<ApplicationError, FilteredScopesResult> = either {
+        logger.info("Getting filtered scopes", mapOf(
+            "contextName" to (input.contextName ?: "active"),
+            "offset" to input.offset,
+            "limit" to input.limit
+        ))
+        
         // Resolve the context view
-        val contextViewResult: Either<ApplicationError, ContextView> = if (input.contextName != null) {
+        val contextView = if (input.contextName != null) {
             // Find by name
-            ContextName.create(input.contextName).mapLeft { errorMessage ->
+            logger.debug("Finding context by name", mapOf("name" to input.contextName))
+            val contextName = ContextName.create(input.contextName).mapLeft { errorMessage ->
+                logger.warn("Invalid context name format", mapOf(
+                    "name" to input.contextName,
+                    "error" to errorMessage
+                ))
                 ApplicationError.ContextError.NamingInvalidFormat(
                     attemptedName = input.contextName
                 )
-            }.flatMap { contextName ->
-                contextViewRepository.findByName(contextName).mapLeft { error ->
-                    DomainErrorMapper.mapToApplicationError(error)
-                }.flatMap { contextView ->
-                    contextView?.right() ?: ApplicationError.ContextError.StateNotFound(
-                        contextName = input.contextName
-                    ).left()
-                }
+            }.bind()
+            
+            val foundContext = contextViewRepository.findByName(contextName).mapLeft { error ->
+                logger.error("Failed to find context by name", mapOf(
+                    "name" to contextName.value,
+                    "error" to (error::class.simpleName ?: "Unknown")
+                ))
+                DomainErrorMapper.mapToApplicationError(error)
+            }.bind()
+            
+            ensure(foundContext != null) {
+                logger.warn("Context not found", mapOf("name" to input.contextName))
+                ApplicationError.ContextError.StateNotFound(
+                    contextName = input.contextName
+                )
             }
+            foundContext
         } else {
             // Use active context
+            logger.debug("Using active context")
             val activeContext = activeContextService.getCurrentContext()
-            activeContext?.right() ?: ApplicationError.ContextError.StateNotFound(
-                contextName = "Active context"
-            ).left()
-        }
-
-        return contextViewResult.flatMap { contextView ->
-            // Get all scopes (for total count)
-            scopeRepository.findAll().flatMap { allScopes ->
-                // Parse and apply the filter expression
-                val filteredScopes = filterScopes(allScopes, contextView.filter.value)
-
-                // Apply pagination
-                val paginatedScopes = filteredScopes
-                    .drop(input.offset)
-                    .take(input.limit)
-
-                // Map to DTOs
-                val scopeResults = paginatedScopes.map { scope ->
-                    // Convert Aspects to Map<String, List<String>>
-                    val aspectsMap = mutableMapOf<String, List<String>>()
-                    scope.aspects.toMap().forEach { (key, values) ->
-                        aspectsMap[key.value] = values.map { it.value }
-                    }
-
-                    ScopeResult(
-                        id = scope.id.value,
-                        title = scope.title.value,
-                        description = scope.description?.value,
-                        parentId = scope.parentId?.value,
-                        aspects = aspectsMap,
-                        createdAt = scope.createdAt,
-                        updatedAt = scope.updatedAt
-                    )
-                }
-
-                val contextViewResult = ContextViewResult(
-                    id = contextView.id.value,
-                    name = contextView.name.value,
-                    filterExpression = contextView.filter.value,
-                    description = contextView.description?.value,
-                    isActive = activeContextService.getCurrentContext()?.id == contextView.id,
-                    createdAt = contextView.createdAt,
-                    updatedAt = contextView.updatedAt
+            ensure(activeContext != null) {
+                logger.warn("No active context found")
+                ApplicationError.ContextError.StateNotFound(
+                    contextName = "Active context"
                 )
-
-                FilteredScopesResult(
-                    scopes = scopeResults,
-                    appliedContext = contextViewResult,
-                    totalCount = allScopes.size,
-                    filteredCount = filteredScopes.size
-                ).right()
-            }.mapLeft { error ->
-                DomainErrorMapper.mapToApplicationError(error)
             }
+            activeContext
         }
+        
+        logger.debug("Context resolved", mapOf(
+            "id" to contextView.id.value,
+            "name" to contextView.name.value,
+            "filter" to contextView.filter.value
+        ))
+
+        // Get all scopes (for total count)
+        logger.debug("Fetching all scopes")
+        val allScopes = scopeRepository.findAll().mapLeft { error ->
+            logger.error("Failed to fetch scopes", mapOf(
+                "error" to (error::class.simpleName ?: "Unknown")
+            ))
+            DomainErrorMapper.mapToApplicationError(error)
+        }.bind()
+        
+        logger.debug("Total scopes found", mapOf("count" to allScopes.size))
+        
+        // Parse and apply the filter expression
+        val filteredScopes = filterScopes(allScopes, contextView.filter.value)
+        logger.debug("Scopes filtered", mapOf(
+            "total" to allScopes.size,
+            "filtered" to filteredScopes.size
+        ))
+
+        // Apply pagination
+        val paginatedScopes = filteredScopes
+            .drop(input.offset)
+            .take(input.limit)
+        
+        logger.debug("Pagination applied", mapOf(
+            "offset" to input.offset,
+            "limit" to input.limit,
+            "returned" to paginatedScopes.size
+        ))
+
+        // Map to DTOs
+        val scopeResults = paginatedScopes.map { scope ->
+            // Convert Aspects to Map<String, List<String>>
+            val aspectsMap = mutableMapOf<String, List<String>>()
+            scope.aspects.toMap().forEach { (key, values) ->
+                aspectsMap[key.value] = values.map { it.value }
+            }
+
+            ScopeResult(
+                id = scope.id.value,
+                title = scope.title.value,
+                description = scope.description?.value,
+                parentId = scope.parentId?.value,
+                aspects = aspectsMap,
+                createdAt = scope.createdAt,
+                updatedAt = scope.updatedAt
+            )
+        }
+
+        val contextViewResult = ContextViewResult(
+            id = contextView.id.value,
+            name = contextView.name.value,
+            filterExpression = contextView.filter.value,
+            description = contextView.description?.value,
+            isActive = activeContextService.getCurrentContext()?.id == contextView.id,
+            createdAt = contextView.createdAt,
+            updatedAt = contextView.updatedAt
+        )
+        
+        logger.info("Filtered scopes retrieved successfully", mapOf(
+            "contextId" to contextView.id.value,
+            "totalScopes" to allScopes.size,
+            "filteredScopes" to filteredScopes.size,
+            "returnedScopes" to scopeResults.size
+        ))
+
+        FilteredScopesResult(
+            scopes = scopeResults,
+            appliedContext = contextViewResult,
+            totalCount = allScopes.size,
+            filteredCount = filteredScopes.size
+        )
+    }.onLeft { error ->
+        logger.error("Failed to get filtered scopes", mapOf(
+            "error" to (error::class.simpleName ?: "Unknown"),
+            "message" to error.toString()
+        ))
     }
 
     /**

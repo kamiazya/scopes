@@ -6,6 +6,7 @@ import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.EmptyResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.DeleteContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError
@@ -27,12 +28,14 @@ class DeleteContextViewHandlerTest : StringSpec({
 
     lateinit var contextViewRepository: ContextViewRepository
     lateinit var activeContextService: ActiveContextService
+    lateinit var logger: MockLogger
     lateinit var handler: DeleteContextViewHandler
     
     beforeTest {
         contextViewRepository = mockk<ContextViewRepository>()
         activeContextService = mockk<ActiveContextService>()
-        handler = DeleteContextViewHandler(contextViewRepository, activeContextService)
+        logger = MockLogger()
+        handler = DeleteContextViewHandler(contextViewRepository, activeContextService, logger)
     }
 
     "should delete an inactive context view successfully" {

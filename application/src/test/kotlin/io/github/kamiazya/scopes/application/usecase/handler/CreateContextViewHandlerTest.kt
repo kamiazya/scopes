@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError
@@ -30,7 +31,8 @@ class CreateContextViewHandlerTest : StringSpec({
 
     val contextViewRepository = mockk<ContextViewRepository>()
     val transactionManager = mockk<TransactionManager>()
-    val handler = CreateContextViewHandler(contextViewRepository, transactionManager)
+    val logger = MockLogger()
+    val handler = CreateContextViewHandler(contextViewRepository, transactionManager, logger)
 
     beforeTest {
         // Setup transaction manager to execute the block directly

@@ -1,12 +1,12 @@
 package io.github.kamiazya.scopes.application.usecase.handler
 
 import arrow.core.Either
-import arrow.core.flatMap
-import arrow.core.left
-import arrow.core.right
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.UpdateContextView
@@ -28,111 +28,157 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
  */
 class UpdateContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
-    private val transactionManager: TransactionManager
+    private val transactionManager: TransactionManager,
+    private val logger: Logger
 ) : UseCase<UpdateContextView, ApplicationError, ContextViewResult> {
 
-    override suspend operator fun invoke(input: UpdateContextView): Either<ApplicationError, ContextViewResult> {
-        return transactionManager.inTransaction {
-            // Parse and validate the context ID
-            val contextId = ContextViewId.create(input.id).fold(
-                ifLeft = { error -> 
-                    return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
-                },
-                ifRight = { it }
-            )
+    override suspend operator fun invoke(input: UpdateContextView): Either<ApplicationError, ContextViewResult> = either {
+        logger.info("Updating context view", mapOf(
+            "id" to input.id,
+            "hasName" to (input.name != null),
+            "hasFilter" to (input.filterExpression != null),
+            "hasDescription" to (input.description != null)
+        ))
+        
+        transactionManager.inTransaction {
+            either {
+                // Parse and validate the context ID
+                logger.debug("Parsing context ID", mapOf("id" to input.id))
+                val contextId = ContextViewId.create(input.id).mapLeft { error ->
+                    logger.warn("Invalid context ID format", mapOf(
+                        "id" to input.id,
+                        "error" to (error::class.simpleName ?: "Unknown")
+                    ))
+                    DomainErrorMapper.mapToApplicationError(error)
+                }.bind()
 
-            // Find the existing context view
-            val existingContext = contextViewRepository.findById(contextId).fold(
-                ifLeft = { error -> 
-                    return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
-                },
-                ifRight = { context ->
-                    context ?: return@inTransaction ApplicationError.ContextError.StateNotFound(
+                // Find the existing context view
+                logger.debug("Finding existing context", mapOf("id" to contextId.value))
+                val existingContext = contextViewRepository.findById(contextId).mapLeft { error ->
+                    logger.error("Failed to find context", mapOf(
+                        "id" to contextId.value,
+                        "error" to (error::class.simpleName ?: "Unknown")
+                    ))
+                    DomainErrorMapper.mapToApplicationError(error)
+                }.bind()
+                
+                ensure(existingContext != null) {
+                    logger.warn("Context not found", mapOf("id" to input.id))
+                    ApplicationError.ContextError.StateNotFound(
                         contextId = input.id
-                    ).left()
+                    )
                 }
-            )
 
-            // Update name if provided
-            val newName = input.name?.let { name ->
-                ContextName.create(name).fold(
-                    ifLeft = { 
-                        return@inTransaction ApplicationError.ContextError.NamingInvalidFormat(
+                // Update name if provided
+                val newName = input.name?.let { name ->
+                    logger.debug("Validating new name", mapOf("name" to name))
+                    ContextName.create(name).mapLeft {
+                        logger.warn("Invalid name format", mapOf("name" to name))
+                        ApplicationError.ContextError.NamingInvalidFormat(
                             attemptedName = name
-                        ).left()
-                    },
-                    ifRight = { it }
-                )
-            } ?: existingContext.name
+                        )
+                    }.bind()
+                } ?: existingContext.name
 
-            // Check if new name would cause a duplicate
-            if (input.name != null && newName.value != existingContext.name.value) {
-                contextViewRepository.findByName(newName).fold(
-                    ifLeft = { error -> 
-                        return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
-                    },
-                    ifRight = { existing ->
-                        if (existing != null && existing.id != contextId) {
-                            return@inTransaction ApplicationError.ContextError.NamingAlreadyExists(
-                                attemptedName = input.name
-                            ).left()
-                        }
+                // Check if new name would cause a duplicate
+                if (input.name != null && newName.value != existingContext.name.value) {
+                    logger.debug("Checking for duplicate name", mapOf("name" to newName.value))
+                    val existing = contextViewRepository.findByName(newName).mapLeft { error ->
+                        logger.error("Failed to check duplicate name", mapOf(
+                            "name" to newName.value,
+                            "error" to (error::class.simpleName ?: "Unknown")
+                        ))
+                        DomainErrorMapper.mapToApplicationError(error)
+                    }.bind()
+                    
+                    ensure(existing == null || existing.id == contextId) {
+                        logger.warn("Duplicate name found", mapOf("name" to input.name))
+                        ApplicationError.ContextError.NamingAlreadyExists(
+                            attemptedName = input.name
+                        )
                     }
-                )
-            }
-
-            // Update filter if provided
-            val newFilter = input.filterExpression?.let { filter ->
-                ContextFilter.create(filter).fold(
-                    ifLeft = { error -> 
-                        return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
-                    },
-                    ifRight = { it }
-                )
-            } ?: existingContext.filter
-
-            // Update description if provided
-            val newDescription = when {
-                input.description == null -> existingContext.description // Not provided, keep existing
-                input.description.isEmpty() -> null // Empty string means clear description
-                else -> ContextDescription.create(input.description).fold(
-                    ifLeft = { 
-                        return@inTransaction ApplicationError.ScopeInputError.DescriptionTooLong(
-                            attemptedValue = input.description,
-                            maximumLength = 500
-                        ).left()
-                    },
-                    ifRight = { it }
-                )
-            }
-
-            // Create updated context view
-            val now = kotlinx.datetime.Clock.System.now()
-            val updatedContext = existingContext.copy(
-                name = newName,
-                filter = newFilter,
-                description = newDescription,
-                updatedAt = now
-            )
-
-            // Save the updated context
-            contextViewRepository.save(updatedContext).fold(
-                ifLeft = { error -> 
-                    return@inTransaction DomainErrorMapper.mapToApplicationError(error).left()
-                },
-                ifRight = { saved ->
-                    // Map to DTO
-                    ContextViewResult(
-                        id = saved.id.value,
-                        name = saved.name.value,
-                        filterExpression = saved.filter.value,
-                        description = saved.description?.value,
-                        isActive = false, // Active status should be checked separately
-                        createdAt = saved.createdAt,
-                        updatedAt = saved.updatedAt
-                    ).right()
                 }
-            )
-        }
+
+                // Update filter if provided
+                val newFilter = input.filterExpression?.let { filter ->
+                    logger.debug("Validating new filter", mapOf("filter" to filter))
+                    ContextFilter.create(filter).mapLeft { error ->
+                        logger.warn("Invalid filter expression", mapOf(
+                            "filter" to filter,
+                            "error" to (error::class.simpleName ?: "Unknown")
+                        ))
+                        DomainErrorMapper.mapToApplicationError(error)
+                    }.bind()
+                } ?: existingContext.filter
+
+                // Update description if provided
+                val newDescription = when {
+                    input.description == null -> {
+                        logger.debug("Keeping existing description")
+                        existingContext.description
+                    }
+                    input.description.isEmpty() -> {
+                        logger.debug("Clearing description")
+                        null
+                    }
+                    else -> {
+                        logger.debug("Validating new description", mapOf("length" to input.description.length))
+                        ContextDescription.create(input.description).mapLeft {
+                            logger.warn("Description validation failed", mapOf(
+                                "length" to input.description.length
+                            ))
+                            ApplicationError.ScopeInputError.DescriptionTooLong(
+                                attemptedValue = input.description,
+                                maximumLength = 500
+                            )
+                        }.bind()
+                    }
+                }
+
+                // Create updated context view
+                val now = kotlinx.datetime.Clock.System.now()
+                val updatedContext = existingContext.copy(
+                    name = newName,
+                    filter = newFilter,
+                    description = newDescription,
+                    updatedAt = now
+                )
+                
+                logger.debug("Saving updated context", mapOf(
+                    "id" to updatedContext.id.value,
+                    "name" to updatedContext.name.value
+                ))
+
+                // Save the updated context
+                val saved = contextViewRepository.save(updatedContext).mapLeft { error ->
+                    logger.error("Failed to save updated context", mapOf(
+                        "id" to updatedContext.id.value,
+                        "error" to (error::class.simpleName ?: "Unknown")
+                    ))
+                    DomainErrorMapper.mapToApplicationError(error)
+                }.bind()
+                
+                logger.info("Context view updated successfully", mapOf(
+                    "id" to saved.id.value,
+                    "name" to saved.name.value
+                ))
+                
+                // Map to DTO
+                ContextViewResult(
+                    id = saved.id.value,
+                    name = saved.name.value,
+                    filterExpression = saved.filter.value,
+                    description = saved.description?.value,
+                    isActive = false, // Active status should be checked separately
+                    createdAt = saved.createdAt,
+                    updatedAt = saved.updatedAt
+                )
+            }
+        }.bind()
+    }.onLeft { error ->
+        logger.error("Failed to update context view", mapOf(
+            "error" to (error::class.simpleName ?: "Unknown"),
+            "message" to error.toString()
+        ))
     }
 }

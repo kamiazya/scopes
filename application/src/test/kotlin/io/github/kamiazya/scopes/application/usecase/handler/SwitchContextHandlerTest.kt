@@ -6,6 +6,7 @@ import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.service.ActiveContextService
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
@@ -24,7 +25,8 @@ import kotlinx.datetime.Clock
 class SwitchContextHandlerTest : StringSpec({
 
     val activeContextService = mockk<ActiveContextService>()
-    val handler = SwitchContextHandler(activeContextService)
+    val logger = MockLogger()
+    val handler = SwitchContextHandler(activeContextService, logger)
 
     "should switch to a valid context successfully" {
         // Given
