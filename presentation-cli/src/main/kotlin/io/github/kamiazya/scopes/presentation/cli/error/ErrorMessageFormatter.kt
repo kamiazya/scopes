@@ -145,12 +145,6 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             is ApplicationError.ScopeHierarchyError.InvalidParentId -> {
                 append("Invalid parent ID format: '${errorInfo.invalidId}'. Please provide a valid ULID format.")
             }
-            is ApplicationError.ScopeHierarchyError.TooDeep -> {
-                append("Hierarchy depth exceeds maximum allowed depth of ${errorInfo.maxDepth}")
-            }
-            is ApplicationError.ScopeHierarchyError.TooManyChildren -> {
-                append("Parent scope already has the maximum number of children (${errorInfo.maxChildren})")
-            }
             
             // Scope Uniqueness Errors
             is ApplicationError.ScopeUniquenessError.DuplicateTitle -> {

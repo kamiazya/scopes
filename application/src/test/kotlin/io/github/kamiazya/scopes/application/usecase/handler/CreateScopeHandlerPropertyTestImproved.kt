@@ -153,14 +153,14 @@ class CreateScopeHandlerPropertyTestImproved : StringSpec({
             val handler = testContext.createHandler()
 
             when (scenario) {
-                is HierarchyScenario.TooDeep -> {
+                is HierarchyScenario.MaxDepthExceeded -> {
                     testContext.setupTooDeepHierarchy(scenario.command, scenario.depth)
 
                     // Act & Assert
                     val result = runBlocking { handler(scenario.command) }
                     result.shouldFailWithMaxDepthExceeded()
                 }
-                is HierarchyScenario.TooManyChildren -> {
+                is HierarchyScenario.MaxChildrenExceeded -> {
                     testContext.setupTooManyChildren(scenario.command, scenario.childCount)
 
                     // Act & Assert
@@ -598,8 +598,8 @@ private fun Scope.shouldHaveValidTimestamps(before: kotlinx.datetime.Instant, af
 // ============================================================================
 
 private sealed class HierarchyScenario {
-    data class TooDeep(val command: CreateScope, val depth: Int) : HierarchyScenario()
-    data class TooManyChildren(val command: CreateScope, val childCount: Int) : HierarchyScenario()
+    data class MaxDepthExceeded(val command: CreateScope, val depth: Int) : HierarchyScenario()
+    data class MaxChildrenExceeded(val command: CreateScope, val childCount: Int) : HierarchyScenario()
 }
 
 private sealed class AliasScenario {
@@ -704,10 +704,10 @@ private fun invalidParentIdScenarioArb(): Arb<Pair<String, String>> = Arb.bind(
 
 private fun hierarchyViolationScenarioArb(): Arb<HierarchyScenario> = Arb.choice(
     validCreateScopeCommandWithParentArb().map { command ->
-        HierarchyScenario.TooDeep(command, (11..20).random())
+        HierarchyScenario.MaxDepthExceeded(command, (11..20).random())
     },
     validCreateScopeCommandWithParentArb().map { command ->
-        HierarchyScenario.TooManyChildren(command, (101..200).random())
+        HierarchyScenario.MaxChildrenExceeded(command, (101..200).random())
     }
 )
 

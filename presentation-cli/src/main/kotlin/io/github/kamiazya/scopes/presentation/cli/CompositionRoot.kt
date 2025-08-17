@@ -8,7 +8,11 @@ import io.github.kamiazya.scopes.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
-import io.github.kamiazya.scopes.domain.service.HaikunatorService
+import io.github.kamiazya.scopes.domain.service.AliasGenerationService
+import io.github.kamiazya.scopes.domain.service.WordProvider
+import io.github.kamiazya.scopes.infrastructure.alias.generation.DefaultAliasGenerationService
+import io.github.kamiazya.scopes.infrastructure.alias.generation.strategies.HaikunatorStrategy
+import io.github.kamiazya.scopes.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
@@ -56,6 +60,13 @@ object CompositionRoot {
         single<ScopeRepository> { InMemoryScopeRepository() }
         single<ScopeAliasRepository> { InMemoryScopeAliasRepository() }
         single<TransactionManager> { NoopTransactionManager() }
+        
+        // Alias generation infrastructure
+        single { HaikunatorStrategy() }
+        single<WordProvider> { DefaultWordProvider() }
+        single<AliasGenerationService> { 
+            DefaultAliasGenerationService(get<HaikunatorStrategy>(), get()) 
+        }
     }
     
     /**
@@ -64,7 +75,6 @@ object CompositionRoot {
      */
     private val domainModule = module {
         single { ScopeHierarchyService() }
-        single { HaikunatorService() }
         single { ScopeAliasManagementService(get(), get()) }
     }
     

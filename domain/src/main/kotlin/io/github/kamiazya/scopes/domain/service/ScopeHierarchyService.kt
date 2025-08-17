@@ -126,10 +126,11 @@ class ScopeHierarchyService {
         maxChildren: Int = MAX_CHILDREN_PER_SCOPE
     ): Either<ScopeHierarchyError, Unit> = either {
         if (currentChildCount >= maxChildren) {
-            raise(ScopeHierarchyError.TooManyChildren(
-                currentTimestamp(),
-                parentId,
-                maxChildren
+            raise(ScopeHierarchyError.MaxChildrenExceeded(
+                occurredAt = currentTimestamp(),
+                parentScopeId = parentId,
+                currentChildrenCount = currentChildCount,
+                maximumChildren = maxChildren
             ))
         }
     }
@@ -147,10 +148,11 @@ class ScopeHierarchyService {
         maxDepth: Int = MAX_HIERARCHY_DEPTH
     ): Either<ScopeHierarchyError, Unit> = either {
         if (currentDepth >= maxDepth) {
-            raise(ScopeHierarchyError.TooDeep(
-                currentTimestamp(),
-                scopeId,
-                maxDepth
+            raise(ScopeHierarchyError.MaxDepthExceeded(
+                occurredAt = currentTimestamp(),
+                scopeId = scopeId,
+                attemptedDepth = currentDepth,
+                maximumDepth = maxDepth
             ))
         }
     }

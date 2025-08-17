@@ -11,7 +11,7 @@ import kotlin.random.Random
  *
  * Generates aliases in the format: adjective-noun-token (e.g., "bold-tiger-x7k")
  * This provides memorable yet unique identifiers for scopes.
- * 
+ *
  * The generation is deterministic based on the AliasId, making the alias
  * self-contained and not dependent on external factors like ScopeId.
  */
@@ -61,7 +61,7 @@ class HaikunatorService {
 
     /**
      * Generates a random alias using the haikunator pattern.
-     * 
+     *
      * This is non-deterministic and will generate different results each time.
      *
      * @return Either an error or the generated alias name

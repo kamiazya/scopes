@@ -3,11 +3,8 @@ package io.github.kamiazya.scopes.application.service
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.domain.error.ScopesError
-import io.github.kamiazya.scopes.domain.error.PersistenceError
-import io.github.kamiazya.scopes.domain.error.ContextError
-import io.github.kamiazya.scopes.domain.error.ContextStateError
-import io.github.kamiazya.scopes.domain.error.currentTimestamp
+import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import kotlinx.coroutines.sync.Mutex
@@ -41,34 +38,34 @@ class ActiveContextService(
 
     /**
      * Set the active context.
+     * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun setActiveContext(context: ContextView): Either<ScopesError, Unit> =
+    suspend fun setActiveContext(context: ContextView): Either<ApplicationError, Unit> =
         mutex.withLock {
             try {
                 activeContext = context
                 Unit.right()
             } catch (e: Exception) {
-                PersistenceError.StorageUnavailable(
-                    currentTimestamp(),
-                    "setActiveContext",
-                    e
+                ApplicationError.PersistenceError.StorageUnavailable(
+                    operation = "setActiveContext",
+                    cause = e.message
                 ).left()
             }
         }
 
     /**
      * Clear the active context.
+     * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun clearActiveContext(): Either<ScopesError, Unit> =
+    suspend fun clearActiveContext(): Either<ApplicationError, Unit> =
         mutex.withLock {
             try {
                 activeContext = null
                 Unit.right()
             } catch (e: Exception) {
-                PersistenceError.StorageUnavailable(
-                    currentTimestamp(),
-                    "clearActiveContext",
-                    e
+                ApplicationError.PersistenceError.StorageUnavailable(
+                    operation = "clearActiveContext",
+                    cause = e.message
                 ).left()
             }
         }
@@ -76,19 +73,21 @@ class ActiveContextService(
 
     /**
      * Switch to a context by name.
+     * Maps domain errors to application errors following Clean Architecture.
      */
     suspend fun switchToContextByName(
         name: String
-    ): Either<ScopesError, ContextView> = mutex.withLock {
+    ): Either<ApplicationError, ContextView> = mutex.withLock {
         try {
             val contextName = io.github.kamiazya.scopes.domain.valueobject.ContextName.create(name).getOrNull()
-                ?: return@withLock ContextError.NamingError.InvalidFormat(
-                    currentTimestamp(),
-                    name
+                ?: return@withLock ApplicationError.ContextError.NamingInvalidFormat(
+                    attemptedName = name
                 ).left()
             
             val context = contextViewRepository.findByName(contextName).fold(
-                ifLeft = { error -> return@withLock error.left() },
+                ifLeft = { error -> 
+                    return@withLock DomainErrorMapper.mapToApplicationError(error).left() 
+                },
                 ifRight = { it }
             )
 
@@ -97,16 +96,14 @@ class ActiveContextService(
                 return@withLock context.right()
             }
 
-            ContextStateError.NotFound(
-                currentTimestamp(),
-                null,
-                name
+            ApplicationError.ContextError.StateNotFound(
+                contextName = name,
+                contextId = null
             ).left()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                currentTimestamp(),
-                "switchToContextByName",
-                e
+            ApplicationError.PersistenceError.StorageUnavailable(
+                operation = "switchToContextByName",
+                cause = e.message
             ).left()
         }
     }

@@ -127,16 +127,6 @@ sealed class ApplicationError(
         ) : ScopeHierarchyError()
 
         data class InvalidParentId(val invalidId: String) : ScopeHierarchyError()
-
-        data class TooDeep(
-            val scopeId: String,
-            val maxDepth: Int
-        ) : ScopeHierarchyError()
-
-        data class TooManyChildren(
-            val parentId: String,
-            val maxChildren: Int
-        ) : ScopeHierarchyError()
     }
 
     // Scope Uniqueness Errors

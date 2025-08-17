@@ -304,18 +304,6 @@ sealed class ScopeHierarchyError : ConceptualModelError() {
         override val occurredAt: Instant,
         val invalidId: String
     ) : ScopeHierarchyError()
-
-    data class TooDeep(
-        override val occurredAt: Instant,
-        val scopeId: ScopeId,
-        val maxDepth: Int
-    ) : ScopeHierarchyError()
-
-    data class TooManyChildren(
-        override val occurredAt: Instant,
-        val parentId: ScopeId,
-        val maxChildren: Int
-    ) : ScopeHierarchyError()
 }
 
 /**

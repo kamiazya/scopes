@@ -6,6 +6,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.domain.error.ScopeAliasError
+import io.github.kamiazya.scopes.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.domain.valueobject.AliasName
@@ -21,7 +22,7 @@ import kotlinx.datetime.Clock
  */
 class ScopeAliasManagementService(
     private val aliasRepository: ScopeAliasRepository,
-    private val haikunatorService: HaikunatorService
+    private val aliasGenerationService: AliasGenerationService
 ) {
 
     /**
@@ -89,58 +90,102 @@ class ScopeAliasManagementService(
      * based on that ID. This makes the alias self-contained and not dependent
      * on the scope ID for name generation.
      *
+     * Uses an iterative approach with retry limit to avoid potential stack overflow
+     * from recursive calls in case of frequent name collisions.
+     *
      * @param scopeId The scope to generate an alias for
+     * @param maxRetries Maximum number of attempts to generate a unique alias (default: 10)
      * @return Either an error or the created alias
      */
-    suspend fun generateCanonicalAlias(scopeId: ScopeId): Either<ScopeAliasError, ScopeAlias> {
-        // Generate a new unique ID for the alias
-        val aliasId = AliasId.generate()
+    suspend fun generateCanonicalAlias(
+        scopeId: ScopeId,
+        maxRetries: Int = 10
+    ): Either<ScopeAliasError, ScopeAlias> {
+        // Iterative approach to avoid stack overflow
+        repeat(maxRetries) { attempt ->
+            // Generate a new unique ID for the alias
+            val aliasId = AliasId.generate()
 
-        // Generate deterministic name based on the alias ID
-        return haikunatorService.generateCanonicalAlias(aliasId)
-            .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), "generation-failed") }
-            .flatMap { aliasName ->
-                // Check if alias name is already taken
-                aliasRepository.findByAliasName(aliasName)
+            // Generate deterministic name based on the alias ID
+            val nameResult = aliasGenerationService.generateCanonicalAlias(aliasId)
+                .mapLeft { inputError ->
+                    // Convert ScopeInputError.AliasError to ScopeAliasError
+                    when (inputError) {
+                        is ScopeInputError.AliasError.InvalidFormat ->
+                            ScopeAliasError.DuplicateAlias(
+                                occurredAt = inputError.occurredAt,
+                                aliasName = inputError.attemptedValue,
+                                existingScopeId = scopeId,  // Generation failed, use same scope ID
+                                attemptedScopeId = scopeId
+                            )
+                        else ->
+                            ScopeAliasError.AliasNotFound(Clock.System.now(), "generation-failed")
+                    }
+                }
+
+            // If name generation failed, return the error
+            if (nameResult.isLeft()) {
+                return nameResult.leftOrNull()!!.left()
+            }
+
+            val aliasName = nameResult.getOrNull()!!
+
+            // Check if alias name is already taken
+            val existingAliasResult = aliasRepository.findByAliasName(aliasName)
+                .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+
+            if (existingAliasResult.isLeft()) {
+                return existingAliasResult.leftOrNull()!!.left()
+            }
+
+            val existingAlias = existingAliasResult.getOrNull()
+
+            // If name is not taken, proceed to create the alias
+            if (existingAlias == null) {
+                // Remove existing canonical alias if any
+                val removeResult = aliasRepository.findCanonicalByScopeId(scopeId)
                     .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
-                    .flatMap { existingAlias ->
-                        when {
-                            existingAlias != null -> {
-                                // If name collision, try again with new ID
-                                generateCanonicalAlias(scopeId)
-                            }
-                            else -> {
-                                // Remove existing canonical alias if any
-                                aliasRepository.findCanonicalByScopeId(scopeId)
-                                    .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
-                                    .flatMap { existingCanonical ->
-                                        if (existingCanonical != null) {
-                                            // Convert existing canonical to custom
-                                            val updatedAlias = existingCanonical.copy(
-                                                aliasType = AliasType.CUSTOM,
-                                                updatedAt = Clock.System.now()
-                                            )
-                                            aliasRepository.update(updatedAlias)
-                                                .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
-                                        } else {
-                                            Unit.right()
-                                        }
-                                    }
-                                    .flatMap {
-                                        // Create new canonical alias with the generated ID
-                                        val newAlias = ScopeAlias.createCanonicalWithId(
-                                            id = aliasId,
-                                            scopeId = scopeId,
-                                            aliasName = aliasName
-                                        )
-                                        aliasRepository.save(newAlias)
-                                            .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
-                                            .map { newAlias }
-                                    }
-                            }
+                    .flatMap { existingCanonical ->
+                        if (existingCanonical != null) {
+                            // Convert existing canonical to custom
+                            val updatedAlias = existingCanonical.copy(
+                                aliasType = AliasType.CUSTOM,
+                                updatedAt = Clock.System.now()
+                            )
+                            aliasRepository.update(updatedAlias)
+                                .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+                        } else {
+                            Unit.right()
                         }
                     }
+
+                if (removeResult.isLeft()) {
+                    return removeResult.leftOrNull()!!.left()
+                }
+
+                // Create new canonical alias with the generated ID
+                val newAlias = ScopeAlias.createCanonicalWithId(
+                    id = aliasId,
+                    scopeId = scopeId,
+                    aliasName = aliasName
+                )
+
+                return aliasRepository.save(newAlias)
+                    .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+                    .map { newAlias }
             }
+
+            // If name collision occurred, continue to next iteration
+            // The loop will generate a new ID and try again
+        }
+
+        // If all retries exhausted, return an error
+        return ScopeAliasError.DuplicateAlias(
+            occurredAt = Clock.System.now(),
+            aliasName = "Could not generate unique alias after $maxRetries attempts",
+            existingScopeId = scopeId,
+            attemptedScopeId = scopeId
+        ).left()
     }
 
     /**
