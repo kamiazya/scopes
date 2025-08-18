@@ -3,10 +3,10 @@ package io.github.kamiazya.scopes.application.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.toApplicationError
+import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -45,7 +45,7 @@ class ActiveContextService(
             try {
                 activeContext = context
             } catch (e: Exception) {
-                raise(ApplicationError.PersistenceError.StorageUnavailable(
+                raise(PersistenceError.StorageUnavailable(
                     operation = "setActiveContext",
                     cause = e.message
                 ))
@@ -62,7 +62,7 @@ class ActiveContextService(
             try {
                 activeContext = null
             } catch (e: Exception) {
-                raise(ApplicationError.PersistenceError.StorageUnavailable(
+                raise(PersistenceError.StorageUnavailable(
                     operation = "clearActiveContext",
                     cause = e.message
                 ))
@@ -82,7 +82,7 @@ class ActiveContextService(
             try {
                 val contextName = io.github.kamiazya.scopes.domain.valueobject.ContextName.create(name)
                     .mapLeft {
-                        ApplicationError.ContextError.NamingInvalidFormat(
+                        ContextError.NamingInvalidFormat(
                             attemptedName = name
                         )
                     }
@@ -90,12 +90,18 @@ class ActiveContextService(
 
                 val context = contextViewRepository.findByName(contextName)
                     .mapLeft { error ->
-                        error.toApplicationError()
+                        when (error) {
+                            is DomainPersistenceError -> error.toApplicationError()
+                            else -> PersistenceError.StorageUnavailable(
+                                operation = "findByName",
+                                cause = error.toString()
+                            )
+                        }
                     }
                     .bind()
 
                 ensure(context != null) {
-                    ApplicationError.ContextError.StateNotFound(
+                    ContextError.StateNotFound(
                         contextName = name,
                         contextId = null
                     )
@@ -104,7 +110,7 @@ class ActiveContextService(
                 activeContext = context
                 context
             } catch (e: Exception) {
-                raise(ApplicationError.PersistenceError.StorageUnavailable(
+                raise(PersistenceError.StorageUnavailable(
                     operation = "switchToContextByName",
                     cause = e.message
                 ))

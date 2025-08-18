@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.application.usecase.handler
 import arrow.core.Either
 import io.github.kamiazya.scopes.application.dto.ListAliasesResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.application.mapper.ScopeAliasMapper
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.query.FindAliasesByPrefixQuery
@@ -23,22 +24,22 @@ class FindAliasesByPrefixHandler(
             .mapLeft { aliasServiceError ->
                 when (aliasServiceError) {
                     is DomainScopeAliasError.DuplicateAlias ->
-                        ApplicationError.ScopeAliasError.DuplicateAlias(
+                        ScopeAliasError.DuplicateAlias(
                             aliasServiceError.aliasName,
                             aliasServiceError.existingScopeId.value,
                             aliasServiceError.attemptedScopeId.value
                         )
                     is DomainScopeAliasError.AliasNotFound ->
-                        ApplicationError.ScopeAliasError.AliasNotFound(
+                        ScopeAliasError.AliasNotFound(
                             aliasServiceError.aliasName
                         )
                     is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
-                        ApplicationError.ScopeAliasError.CannotRemoveCanonicalAlias(
+                        ScopeAliasError.CannotRemoveCanonicalAlias(
                             aliasServiceError.scopeId.value,
                             aliasServiceError.canonicalAlias
                         )
                     is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
-                        ApplicationError.ScopeAliasError.DuplicateAlias(
+                        ScopeAliasError.DuplicateAlias(
                             aliasServiceError.existingCanonicalAlias,
                             aliasServiceError.scopeId.value,
                             aliasServiceError.scopeId.value

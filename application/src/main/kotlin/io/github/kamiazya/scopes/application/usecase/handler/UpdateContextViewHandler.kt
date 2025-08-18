@@ -5,6 +5,8 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ContextError
+import io.github.kamiazya.scopes.application.error.ScopeInputError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.application.logging.Logger
@@ -65,7 +67,7 @@ class UpdateContextViewHandler(
 
                 ensure(existingContext != null) {
                     logger.warn("Context not found", mapOf("id" to input.id))
-                    ApplicationError.ContextError.StateNotFound(
+                    ContextError.StateNotFound(
                         contextId = input.id
                     )
                 }
@@ -75,7 +77,7 @@ class UpdateContextViewHandler(
                     logger.debug("Validating new name", mapOf("name" to name))
                     ContextName.create(name).mapLeft {
                         logger.warn("Invalid name format", mapOf("name" to name))
-                        ApplicationError.ContextError.NamingInvalidFormat(
+                        ContextError.NamingInvalidFormat(
                             attemptedName = name
                         )
                     }.bind()
@@ -94,7 +96,7 @@ class UpdateContextViewHandler(
 
                     ensure(existing == null || existing.id == contextId) {
                         logger.warn("Duplicate name found", mapOf("name" to input.name))
-                        ApplicationError.ContextError.NamingAlreadyExists(
+                        ContextError.NamingAlreadyExists(
                             attemptedName = input.name
                         )
                     }
@@ -128,7 +130,7 @@ class UpdateContextViewHandler(
                             logger.warn("Description validation failed", mapOf(
                                 "length" to input.description.length
                             ))
-                            ApplicationError.ScopeInputError.DescriptionTooLong(
+                            ScopeInputError.DescriptionTooLong(
                                 attemptedValue = input.description,
                                 maximumLength = 500
                             )

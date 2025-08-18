@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.EmptyResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ContextError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
@@ -50,7 +51,7 @@ class DeleteContextViewHandler(
                 "id" to contextId.value,
                 "activeContextId" to (activeContext?.id?.value ?: "null")
             ))
-            ApplicationError.ContextError.ActiveContextDeleteAttempt(
+            ContextError.ActiveContextDeleteAttempt(
                 contextId.value
             )
         }

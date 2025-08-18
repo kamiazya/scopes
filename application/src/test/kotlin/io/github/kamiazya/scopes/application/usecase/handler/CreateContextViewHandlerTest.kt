@@ -5,13 +5,13 @@ import arrow.core.left
 import arrow.core.right
 import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
-import io.github.kamiazya.scopes.domain.error.PersistenceError
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextName
@@ -125,7 +125,7 @@ class CreateContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ContextError.NamingInvalidFormat>()
+        error.shouldBeInstanceOf<ContextError.NamingInvalidFormat>()
     }
 
     "should return error when filter expression is invalid" {
@@ -142,7 +142,7 @@ class CreateContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ContextError.FilterInvalidSyntax>()
+        error.shouldBeInstanceOf<ContextError.FilterInvalidSyntax>()
     }
 
     "should return error when repository save fails" {
@@ -153,7 +153,7 @@ class CreateContextViewHandlerTest : StringSpec({
             description = "Test"
         )
 
-        val persistenceError = PersistenceError.StorageUnavailable(
+        val persistenceError = DomainPersistenceError.StorageUnavailable(
             occurredAt = Clock.System.now(),
             operation = "save",
             cause = Exception("Database error")
@@ -167,7 +167,7 @@ class CreateContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
+        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
     }
 
     "should handle very long valid names" {
@@ -238,7 +238,7 @@ class CreateContextViewHandlerTest : StringSpec({
             description = null
         )
 
-        val persistenceError = PersistenceError.StorageUnavailable(
+        val persistenceError = DomainPersistenceError.StorageUnavailable(
             occurredAt = Clock.System.now(),
             operation = "save",
             cause = Exception("Connection lost")
@@ -246,7 +246,7 @@ class CreateContextViewHandlerTest : StringSpec({
 
         // Mock the transaction manager to return an error
         coEvery { transactionManager.inTransaction<ApplicationError, ContextViewResult>(any()) } returns
-            ApplicationError.PersistenceError.StorageUnavailable(
+            PersistenceError.StorageUnavailable(
                 operation = "save",
                 cause = "Connection lost"
             ).left()
@@ -257,7 +257,7 @@ class CreateContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
+        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
     }
 })
 

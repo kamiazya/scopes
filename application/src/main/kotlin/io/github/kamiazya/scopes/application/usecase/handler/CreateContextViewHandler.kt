@@ -5,6 +5,8 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ContextError
+import io.github.kamiazya.scopes.application.error.ScopeInputError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.application.logging.Logger
@@ -48,7 +50,7 @@ class CreateContextViewHandler(
                         "name" to input.name,
                         "error" to errorMsg
                     ))
-                    ApplicationError.ContextError.NamingInvalidFormat(
+                    ContextError.NamingInvalidFormat(
                         attemptedName = input.name
                     )
                 }.bind()
@@ -77,7 +79,7 @@ class CreateContextViewHandler(
                     logger.warn("Context with same name already exists", mapOf(
                         "name" to input.name
                     ))
-                    ApplicationError.ContextError.NamingAlreadyExists(
+                    ContextError.NamingAlreadyExists(
                         attemptedName = input.name
                     )
                 }
@@ -90,7 +92,7 @@ class CreateContextViewHandler(
                             "length" to desc.length,
                             "error" to errorMsg
                         ))
-                        ApplicationError.ScopeInputError.DescriptionTooLong(
+                        ScopeInputError.DescriptionTooLong(
                             attemptedValue = desc,
                             maximumLength = 500
                         )

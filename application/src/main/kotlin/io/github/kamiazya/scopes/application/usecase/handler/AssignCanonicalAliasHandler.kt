@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.ScopeAliasResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ScopeAliasError
+import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
 import io.github.kamiazya.scopes.application.mapper.ScopeAliasMapper
 import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
@@ -44,8 +46,8 @@ class AssignCanonicalAliasHandler(
                             "error" to (idError::class.simpleName ?: "Unknown")
                         ))
                         when(idError) {
-                            is ScopeInputError.IdError.Blank -> ApplicationError.ScopeInputError.IdBlank(idError.attemptedValue)
-                            is ScopeInputError.IdError.InvalidFormat -> ApplicationError.ScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
+                            is ScopeInputError.IdError.Blank -> AppScopeInputError.IdBlank(idError.attemptedValue)
+                            is ScopeInputError.IdError.InvalidFormat -> AppScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
                         }
                     }.bind()
 
@@ -59,13 +61,13 @@ class AssignCanonicalAliasHandler(
                         ))
                         when(aliasError) {
                             is ScopeInputError.AliasError.Empty ->
-                                ApplicationError.ScopeInputError.AliasEmpty(aliasError.attemptedValue)
+                                AppScopeInputError.AliasEmpty(aliasError.attemptedValue)
                             is ScopeInputError.AliasError.TooShort ->
-                                ApplicationError.ScopeInputError.AliasTooShort(aliasError.attemptedValue, aliasError.minimumLength)
+                                AppScopeInputError.AliasTooShort(aliasError.attemptedValue, aliasError.minimumLength)
                             is ScopeInputError.AliasError.TooLong ->
-                                ApplicationError.ScopeInputError.AliasTooLong(aliasError.attemptedValue, aliasError.maximumLength)
+                                AppScopeInputError.AliasTooLong(aliasError.attemptedValue, aliasError.maximumLength)
                             is ScopeInputError.AliasError.InvalidFormat ->
-                                ApplicationError.ScopeInputError.AliasInvalidFormat(aliasError.attemptedValue, aliasError.expectedPattern)
+                                AppScopeInputError.AliasInvalidFormat(aliasError.attemptedValue, aliasError.expectedPattern)
                         }
                     }.bind()
 
@@ -83,22 +85,22 @@ class AssignCanonicalAliasHandler(
                         ))
                         when (aliasServiceError) {
                             is DomainScopeAliasError.DuplicateAlias ->
-                                ApplicationError.ScopeAliasError.DuplicateAlias(
+                                ScopeAliasError.DuplicateAlias(
                                     aliasServiceError.aliasName,
                                     aliasServiceError.existingScopeId.value,
                                     aliasServiceError.attemptedScopeId.value
                                 )
                             is DomainScopeAliasError.AliasNotFound ->
-                                ApplicationError.ScopeAliasError.AliasNotFound(
+                                ScopeAliasError.AliasNotFound(
                                     aliasServiceError.aliasName
                                 )
                             is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
-                                ApplicationError.ScopeAliasError.CannotRemoveCanonicalAlias(
+                                ScopeAliasError.CannotRemoveCanonicalAlias(
                                     aliasServiceError.scopeId.value,
                                     aliasServiceError.canonicalAlias
                                 )
                             is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
-                                ApplicationError.ScopeAliasError.DuplicateAlias(
+                                ScopeAliasError.DuplicateAlias(
                                     aliasServiceError.existingCanonicalAlias,
                                     aliasServiceError.scopeId.value,
                                     aliasServiceError.scopeId.value

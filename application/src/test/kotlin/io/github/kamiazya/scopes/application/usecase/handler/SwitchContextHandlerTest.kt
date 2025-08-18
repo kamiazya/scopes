@@ -4,11 +4,12 @@ import arrow.core.left
 import arrow.core.right
 import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextName
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
@@ -61,7 +62,7 @@ class SwitchContextHandlerTest : StringSpec({
         // Given
         val command = SwitchContextView(name = "Non-existent Context")
 
-        val error = ApplicationError.ContextError.StateNotFound(contextName = "Non-existent Context")
+        val error = ContextError.StateNotFound(contextName = "Non-existent Context")
         coEvery { activeContextService.switchToContextByName("Non-existent Context") } returns error.left()
 
         // When
@@ -70,15 +71,15 @@ class SwitchContextHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val actualError = result.leftOrNull()!!
-        actualError.shouldBeInstanceOf<ApplicationError.ContextError.StateNotFound>()
-        (actualError as ApplicationError.ContextError.StateNotFound).contextName shouldBe "Non-existent Context"
+        actualError.shouldBeInstanceOf<ContextError.StateNotFound>()
+        (actualError as ContextError.StateNotFound).contextName shouldBe "Non-existent Context"
     }
 
     "should handle empty context name" {
         // Given
         val command = SwitchContextView(name = "")
 
-        val error = ApplicationError.ContextError.NamingInvalidFormat(attemptedName = "")
+        val error = ContextError.NamingInvalidFormat(attemptedName = "")
         coEvery { activeContextService.switchToContextByName("") } returns error.left()
 
         // When
@@ -87,7 +88,7 @@ class SwitchContextHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val actualError = result.leftOrNull()!!
-        actualError.shouldBeInstanceOf<ApplicationError.ContextError.NamingInvalidFormat>()
+        actualError.shouldBeInstanceOf<ContextError.NamingInvalidFormat>()
     }
 
     "should preserve all context properties when switching" {
@@ -147,7 +148,7 @@ class SwitchContextHandlerTest : StringSpec({
         // Given
         val command = SwitchContextView(name = "Error Context")
 
-        val error = ApplicationError.PersistenceError.StorageUnavailable(
+        val error = PersistenceError.StorageUnavailable(
             operation = "switchContext",
             cause = "Database connection lost"
         )
@@ -159,7 +160,7 @@ class SwitchContextHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val actualError = result.leftOrNull()!!
-        actualError.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
+        actualError.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
     }
 })
 

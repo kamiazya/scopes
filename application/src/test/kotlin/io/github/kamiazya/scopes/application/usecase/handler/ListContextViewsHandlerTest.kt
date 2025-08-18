@@ -4,12 +4,12 @@ import arrow.core.left
 import arrow.core.right
 import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.ContextViewListResult
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.ListContextViewsQuery
 import io.github.kamiazya.scopes.domain.entity.ContextView
-import io.github.kamiazya.scopes.domain.error.PersistenceError
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextName
@@ -209,7 +209,7 @@ class ListContextViewsHandlerTest : StringSpec({
         // Given
         val query = ListContextViewsQuery(includeInactive = true)
 
-        val persistenceError = PersistenceError.StorageUnavailable(
+        val persistenceError = DomainPersistenceError.StorageUnavailable(
             occurredAt = Clock.System.now(),
             operation = "findAll",
             cause = Exception("Database unavailable")
@@ -222,7 +222,7 @@ class ListContextViewsHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
+        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
     }
 
     "should handle multiple contexts with mixed descriptions" {

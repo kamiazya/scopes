@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.flatMap
 import io.github.kamiazya.scopes.application.dto.ListAliasesResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ScopeAliasError
+import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
 import io.github.kamiazya.scopes.application.mapper.ScopeAliasMapper
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.query.ListAliasesForScopeQuery
@@ -25,8 +27,8 @@ class ListAliasesForScopeHandler(
         return ScopeId.create(input.scopeId)
             .mapLeft { idError ->
                 when(idError) {
-                    is ScopeInputError.IdError.Blank -> ApplicationError.ScopeInputError.IdBlank(idError.attemptedValue)
-                    is ScopeInputError.IdError.InvalidFormat -> ApplicationError.ScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
+                    is ScopeInputError.IdError.Blank -> AppScopeInputError.IdBlank(idError.attemptedValue)
+                    is ScopeInputError.IdError.InvalidFormat -> AppScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
                 }
             }
             .flatMap { scopeId ->
@@ -34,22 +36,22 @@ class ListAliasesForScopeHandler(
                     .mapLeft { aliasServiceError ->
                         when (aliasServiceError) {
                             is DomainScopeAliasError.DuplicateAlias ->
-                                ApplicationError.ScopeAliasError.DuplicateAlias(
+                                ScopeAliasError.DuplicateAlias(
                                     aliasServiceError.aliasName,
                                     aliasServiceError.existingScopeId.value,
                                     aliasServiceError.attemptedScopeId.value
                                 )
                             is DomainScopeAliasError.AliasNotFound ->
-                                ApplicationError.ScopeAliasError.AliasNotFound(
+                                ScopeAliasError.AliasNotFound(
                                     aliasServiceError.aliasName
                                 )
                             is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
-                                ApplicationError.ScopeAliasError.CannotRemoveCanonicalAlias(
+                                ScopeAliasError.CannotRemoveCanonicalAlias(
                                     aliasServiceError.scopeId.value,
                                     aliasServiceError.canonicalAlias
                                 )
                             is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
-                                ApplicationError.ScopeAliasError.DuplicateAlias(
+                                ScopeAliasError.DuplicateAlias(
                                     aliasServiceError.existingCanonicalAlias,
                                     aliasServiceError.scopeId.value,
                                     aliasServiceError.scopeId.value

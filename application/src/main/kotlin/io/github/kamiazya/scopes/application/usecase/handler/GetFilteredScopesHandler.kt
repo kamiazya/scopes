@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.dto.FilteredScopesResult
 import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.ContextError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
@@ -50,7 +51,7 @@ class GetFilteredScopesHandler(
                     "name" to input.contextName,
                     "error" to errorMessage
                 ))
-                ApplicationError.ContextError.NamingInvalidFormat(
+                ContextError.NamingInvalidFormat(
                     attemptedName = input.contextName
                 )
             }.bind()
@@ -65,7 +66,7 @@ class GetFilteredScopesHandler(
 
             ensure(foundContext != null) {
                 logger.warn("Context not found", mapOf("name" to input.contextName))
-                ApplicationError.ContextError.StateNotFound(
+                ContextError.StateNotFound(
                     contextName = input.contextName
                 )
             }
@@ -76,7 +77,7 @@ class GetFilteredScopesHandler(
             val activeContext = activeContextService.getCurrentContext()
             ensure(activeContext != null) {
                 logger.warn("No active context found")
-                ApplicationError.ContextError.StateNotFound(
+                ContextError.StateNotFound(
                     contextName = "Active context"
                 )
             }

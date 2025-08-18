@@ -1,8 +1,14 @@
 package io.github.kamiazya.scopes.application.error
 
-import io.github.kamiazya.scopes.domain.error.*
+import io.github.kamiazya.scopes.domain.error.ContextError
+import io.github.kamiazya.scopes.domain.error.ScopesError
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
+import io.github.kamiazya.scopes.domain.error.ScopeInputError as DomainScopeInputError
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.application.error.ContextError as AppContextError
+import io.github.kamiazya.scopes.application.error.PersistenceError as AppPersistenceError
+import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
 
 /**
  * Extension functions for mapping common domain errors to application errors.
@@ -12,22 +18,22 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 /**
  * Maps PersistenceError to ApplicationError.PersistenceError
  */
-fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
-    is PersistenceError.StorageUnavailable ->
-        ApplicationError.PersistenceError.StorageUnavailable(
+fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is DomainPersistenceError.StorageUnavailable ->
+        AppPersistenceError.StorageUnavailable(
             operation = this.operation,
-            cause = this.cause?.message
+            cause = this.cause?.toString()
         )
 
-    is PersistenceError.DataCorruption ->
-        ApplicationError.PersistenceError.DataCorruption(
+    is DomainPersistenceError.DataCorruption ->
+        AppPersistenceError.DataCorruption(
             entityType = this.entityType,
             entityId = this.entityId,
             reason = this.reason
         )
 
-    is PersistenceError.ConcurrencyConflict ->
-        ApplicationError.PersistenceError.ConcurrencyConflict(
+    is DomainPersistenceError.ConcurrencyConflict ->
+        AppPersistenceError.ConcurrencyConflict(
             entityType = this.entityType,
             entityId = this.entityId,
             expectedVersion = this.expectedVersion.toString(),
@@ -40,15 +46,15 @@ fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
  */
 fun ContextError.NamingError.toApplicationError(): ApplicationError = when (this) {
     is ContextError.NamingError.Empty ->
-        ApplicationError.ContextError.NamingEmpty
+        AppContextError.NamingEmpty
 
     is ContextError.NamingError.AlreadyExists ->
-        ApplicationError.ContextError.NamingAlreadyExists(
+        AppContextError.NamingAlreadyExists(
             attemptedName = this.attemptedName
         )
 
     is ContextError.NamingError.InvalidFormat ->
-        ApplicationError.ContextError.NamingInvalidFormat(
+        AppContextError.NamingInvalidFormat(
             attemptedName = this.attemptedName
         )
 }
@@ -58,20 +64,20 @@ fun ContextError.NamingError.toApplicationError(): ApplicationError = when (this
  */
 fun ContextError.FilterError.toApplicationError(): ApplicationError = when (this) {
     is ContextError.FilterError.InvalidSyntax ->
-        ApplicationError.ContextError.FilterInvalidSyntax(
+        AppContextError.FilterInvalidSyntax(
             position = this.position,
             reason = this.reason,
             expression = this.expression
         )
 
     is ContextError.FilterError.UnknownAspect ->
-        ApplicationError.ContextError.FilterUnknownAspect(
+        AppContextError.FilterUnknownAspect(
             unknownAspectKey = this.unknownAspectKey,
             expression = this.expression
         )
 
     is ContextError.FilterError.LogicalInconsistency ->
-        ApplicationError.ContextError.FilterLogicalInconsistency(
+        AppContextError.FilterLogicalInconsistency(
             reason = this.reason,
             expression = this.expression
         )
@@ -80,60 +86,60 @@ fun ContextError.FilterError.toApplicationError(): ApplicationError = when (this
 /**
  * Maps ScopeInputError to ApplicationError.ScopeInputError
  */
-fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
-    is ScopeInputError.IdError.Blank ->
-        ApplicationError.ScopeInputError.IdBlank("")
+fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
+    is DomainScopeInputError.IdError.Blank ->
+        AppScopeInputError.IdBlank(this.attemptedValue)
 
-    is ScopeInputError.IdError.InvalidFormat ->
-        ApplicationError.ScopeInputError.IdInvalidFormat(
+    is DomainScopeInputError.IdError.InvalidFormat ->
+        AppScopeInputError.IdInvalidFormat(
             attemptedValue = this.attemptedValue,
             expectedFormat = this.expectedFormat
         )
 
-    is ScopeInputError.TitleError.Empty ->
-        ApplicationError.ScopeInputError.TitleEmpty("")
+    is DomainScopeInputError.TitleError.Empty ->
+        AppScopeInputError.TitleEmpty(this.attemptedValue)
 
-    is ScopeInputError.TitleError.TooShort ->
-        ApplicationError.ScopeInputError.TitleTooShort(
+    is DomainScopeInputError.TitleError.TooShort ->
+        AppScopeInputError.TitleTooShort(
             attemptedValue = this.attemptedValue,
             minimumLength = this.minimumLength
         )
 
-    is ScopeInputError.TitleError.TooLong ->
-        ApplicationError.ScopeInputError.TitleTooLong(
+    is DomainScopeInputError.TitleError.TooLong ->
+        AppScopeInputError.TitleTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
 
-    is ScopeInputError.TitleError.ContainsProhibitedCharacters ->
-        ApplicationError.ScopeInputError.TitleContainsProhibitedCharacters(
+    is DomainScopeInputError.TitleError.ContainsProhibitedCharacters ->
+        AppScopeInputError.TitleContainsProhibitedCharacters(
             attemptedValue = this.attemptedValue,
             prohibitedCharacters = this.prohibitedCharacters
         )
 
-    is ScopeInputError.DescriptionError.TooLong ->
-        ApplicationError.ScopeInputError.DescriptionTooLong(
+    is DomainScopeInputError.DescriptionError.TooLong ->
+        AppScopeInputError.DescriptionTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
 
-    is ScopeInputError.AliasError.Empty ->
-        ApplicationError.ScopeInputError.AliasEmpty("")
+    is DomainScopeInputError.AliasError.Empty ->
+        AppScopeInputError.AliasEmpty(this.attemptedValue)
 
-    is ScopeInputError.AliasError.TooShort ->
-        ApplicationError.ScopeInputError.AliasTooShort(
+    is DomainScopeInputError.AliasError.TooShort ->
+        AppScopeInputError.AliasTooShort(
             attemptedValue = this.attemptedValue,
             minimumLength = this.minimumLength
         )
 
-    is ScopeInputError.AliasError.TooLong ->
-        ApplicationError.ScopeInputError.AliasTooLong(
+    is DomainScopeInputError.AliasError.TooLong ->
+        AppScopeInputError.AliasTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
 
-    is ScopeInputError.AliasError.InvalidFormat ->
-        ApplicationError.ScopeInputError.AliasInvalidFormat(
+    is DomainScopeInputError.AliasError.InvalidFormat ->
+        AppScopeInputError.AliasInvalidFormat(
             attemptedValue = this.attemptedValue,
             expectedPattern = this.expectedPattern
         )
@@ -144,14 +150,14 @@ fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
  * Use this sparingly - prefer context-specific mappings in handlers.
  */
 fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
-    is PersistenceError -> this.toApplicationError()
+    is DomainPersistenceError -> this.toApplicationError()
     is ContextError.NamingError -> this.toApplicationError()
     is ContextError.FilterError -> this.toApplicationError()
-    is ScopeInputError -> this.toApplicationError()
+    is DomainScopeInputError -> this.toApplicationError()
 
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
-    else -> ApplicationError.PersistenceError.StorageUnavailable(
+    else -> AppPersistenceError.StorageUnavailable(
         operation = "unknown",
         cause = "Unmapped domain error: ${this::class.simpleName}"
     )

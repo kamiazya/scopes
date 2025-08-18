@@ -4,12 +4,12 @@ import arrow.core.left
 import arrow.core.right
 import arrow.core.getOrElse
 import io.github.kamiazya.scopes.application.dto.EmptyResult
-import io.github.kamiazya.scopes.application.error.ApplicationError
+import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.DeleteContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
-import io.github.kamiazya.scopes.domain.error.PersistenceError
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextName
@@ -106,8 +106,8 @@ class DeleteContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ContextError.ActiveContextDeleteAttempt>()
-        (error as ApplicationError.ContextError.ActiveContextDeleteAttempt).contextId shouldBe contextId.value
+        error.shouldBeInstanceOf<ContextError.ActiveContextDeleteAttempt>()
+        (error as ContextError.ActiveContextDeleteAttempt).contextId shouldBe contextId.value
 
         coVerify(exactly = 0) { contextViewRepository.delete(any()) }
     }
@@ -122,7 +122,7 @@ class DeleteContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ScopeInputError.IdInvalidFormat>()
+        error.shouldBeInstanceOf<ScopeInputError.IdInvalidFormat>()
     }
 
     "should handle empty context ID" {
@@ -135,7 +135,7 @@ class DeleteContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ScopeInputError.IdBlank>()
+        error.shouldBeInstanceOf<ScopeInputError.IdBlank>()
     }
 
     "should handle repository deletion errors" {
@@ -145,7 +145,7 @@ class DeleteContextViewHandlerTest : StringSpec({
 
         coEvery { activeContextService.getCurrentContext() } returns null
 
-        val persistenceError = PersistenceError.StorageUnavailable(
+        val persistenceError = DomainPersistenceError.StorageUnavailable(
             occurredAt = Clock.System.now(),
             operation = "delete",
             cause = Exception("Database error")
@@ -158,7 +158,7 @@ class DeleteContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
+        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
     }
 
     "should handle context not found error" {
@@ -202,7 +202,7 @@ class DeleteContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ApplicationError.ContextError.ActiveContextDeleteAttempt>()
+        error.shouldBeInstanceOf<ContextError.ActiveContextDeleteAttempt>()
     }
 })
 
