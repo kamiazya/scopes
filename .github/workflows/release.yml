@@ -282,7 +282,6 @@ jobs:
     permissions:
       contents: read
       actions: read
-      id-token: write
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
@@ -345,18 +344,24 @@ jobs:
   provenance:
     name: Generate SLSA Provenance
     needs: [build-release, collect-hashes]
-    permissions:
-      actions: read
-      id-token: write
-      contents: write
-      attestations: write
+    # NOTE: This job intentionally does NOT specify job-level permissions.
+    # SLSA generator requires complex permissions that are difficult to minimize:
+    # - Repository metadata access (was incorrectly detecting public repo as private)
+    # - Binary download permissions (failed with exit code 127 when restricted)
+    # - Hash format processing (failed with malformed hash when restricted)
+    # 
+    # After multiple attempts with different permission combinations:
+    # - Adding private-repository: false (still detected as private)
+    # - Using compile-generator: true (hash format errors)
+    # - Various permission combinations (all failed)
+    #
+    # We inherit workflow-level permissions for this job only, while maintaining
+    # strict permission controls for all other jobs. This is a known limitation
+    # when using SLSA provenance generation with restricted GITHUB_TOKEN.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
-      provenance-name: "multiple.intoto.jsonl"
-      private-repository: false
-      compile-generator: true
 
   create-release:
     name: Create GitHub Release
