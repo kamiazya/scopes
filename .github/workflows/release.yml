@@ -19,6 +19,7 @@ permissions:
   actions: read
   id-token: write
   attestations: write
+  packages: write
 
 env:
   QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
