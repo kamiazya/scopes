@@ -341,36 +341,25 @@ jobs:
           echo "Base64 encoded for SLSA:"
           echo "$HASHES_B64"
 
-  # SLSA Provenance generation is temporarily disabled due to incompatibility
-  # with restricted GITHUB_TOKEN permissions. The SLSA generator requires
-  # broader permissions that conflict with our security-first approach.
-  #
-  # Issues encountered:
-  # 1. Binary download fails (exit code 127) even with workflow-level permissions
-  # 2. Repository incorrectly detected as private
-  # 3. Generator cannot function with job-level permission restrictions
-  #
-  # Future options:
-  # - Move SLSA generation to a separate workflow with full permissions
-  # - Wait for SLSA generator updates that support restricted permissions
-  # - Use alternative provenance generation methods
-  #
-  # Uncomment the following to re-enable SLSA generation (requires removing
-  # job-level permissions from other jobs or accepting security trade-offs):
-  #
-  # provenance:
-  #   name: Generate SLSA Provenance
-  #   needs: [build-release, collect-hashes]
-  #   uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
-  #   with:
-  #     base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
-  #     upload-assets: true
+  # SLSA Provenance generation uses workflow-level permissions
+  # This job intentionally does not specify job-level permissions to inherit
+  # the broader workflow-level permissions required by SLSA generator.
+  # Other jobs in this workflow use minimal job-level permissions for security.
+  provenance:
+    name: Generate SLSA Provenance
+    needs: [build-release, collect-hashes]
+    # NOTE: No permissions block here - inherits workflow-level permissions
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
+    with:
+      base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
+      upload-assets: true
+      provenance-name: "multiple.intoto.jsonl"
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-release]  # Changed: removed provenance dependency
-    if: always() && needs.build-release.result == 'success'
+    needs: [build-release, provenance]
+    if: always() && needs.build-release.result == 'success' && needs.provenance.result == 'success'
     permissions:
       contents: write # Required for creating releases and uploading assets
       actions: read
@@ -408,13 +397,12 @@ jobs:
           merge-multiple: true
 
 
-      # SLSA provenance download disabled - see provenance job comments above
-      # - name: Download SLSA provenance
-      #   if: needs.provenance.result == 'success'
-      #   uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      #   with:
-      #     name: "${{ needs.provenance.outputs.provenance-name }}"
-      #     path: provenance
+      - name: Download SLSA provenance
+        if: needs.provenance.result == 'success'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: "${{ needs.provenance.outputs.provenance-name }}"
+          path: provenance
 
       - name: Display downloaded artifacts
         run: find artifacts -type f -name "*" | head -20
@@ -489,10 +477,10 @@ jobs:
           find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
           find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
 
-          # SLSA provenance upload disabled - see provenance job comments above
-          # if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
-          #   find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          # fi
+          # Upload SLSA provenance if available
+          if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
+            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          fi
 
       - name: Enhance release notes with custom content
         env:
