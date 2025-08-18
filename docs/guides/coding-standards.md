@@ -227,41 +227,57 @@ class ApplicationScopeValidationService(
 }
 ```
 
-### Error Mapping Functions
+### Error Mapping Approach
+
+#### Context-Specific Error Mapping
+
+Instead of a centralized mapper, use context-specific error mappings in handlers:
 
 ```kotlin
-// Centralized error translation for scope business rule violations
-private fun mapScopeBusinessRuleViolationToScopeError(error: ScopeBusinessRuleViolation, parentId: ScopeId?): ScopeError =
-    when (error) {
-        is ScopeHierarchyError.MaxDepthExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Maximum hierarchy depth (${error.maximumDepth}) would be exceeded"
-            )
-        is ScopeHierarchyError.MaxChildrenExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(), 
-                "Maximum children limit (${error.maximumChildren}) would be exceeded"
-            )
-        is ScopeUniquenessError.DuplicateTitle ->
-            ScopeError.InvalidTitle(
-                "Scope with title '${error.title}' already exists under parent ${error.parentScopeId ?: "root"}"
-            )
-    }
-
-// General domain error mapping that delegates to specific mappers
-private fun mapDomainErrorToScopeError(error: DomainError, parentId: ScopeId?): ScopeError =
-    when (error) {
-        is ScopeBusinessRuleViolation -> mapScopeBusinessRuleViolationToScopeError(error, parentId)
-        is DomainInfrastructureError ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Infrastructure error during validation: ${error.repositoryError}"
-            )
-        // ... other domain error cases
-        else -> ScopeError.InvalidTitle("Unexpected domain error: ${error}")
-    }
+// In handler: Map errors based on specific context
+val parentScope = repository.findById(parentId)
+    .mapLeft { error ->
+        // Context-specific error for parent not found
+        ApplicationError.ScopeHierarchyError.ParentNotFound(
+            scopeId = "new",
+            parentId = parentId
+        )
+    }.bind()
 ```
+
+#### Extension Functions for Common Mappings
+
+Common error mappings are provided as extension functions:
+
+```kotlin
+// Extension functions in ErrorMappingExtensions.kt
+fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is StorageUnavailable -> ApplicationError.PersistenceError.StorageUnavailable(...)
+    is DataCorruption -> ApplicationError.PersistenceError.DataCorruption(...)
+    // ...
+}
+
+fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
+    is IdError.InvalidFormat -> ApplicationError.ScopeInputError.IdInvalidFormat(...)
+    is TitleError.TooLong -> ApplicationError.ScopeInputError.TitleTooLong(...)
+    // ...
+}
+
+// Usage in handlers
+repository.save(entity)
+    .mapLeft { error -> 
+        // Use extension function for common persistence errors
+        error.toApplicationError()
+    }.bind()
+```
+
+#### Benefits of This Approach
+
+1. **Contextual Clarity**: Errors are more meaningful when mapped in context
+2. **Flexibility**: Each handler can provide specific error messages
+3. **Reusability**: Common patterns are available as extension functions
+4. **Maintainability**: No central mapper to update for every new error
+5. **Type Safety**: Compiler ensures all error cases are handled
 
 ## Use Case Handler Patterns
 
@@ -296,7 +312,7 @@ class CreateScopeHandler(
 
 ## Repository Error Handling
 
-### Comprehensive Error Mapping
+### Error Handling Best Practices
 
 ```kotlin
 // Repository methods return operation-specific error types
@@ -646,7 +662,7 @@ class ValidationService(
 - **Flat structure with ensure()** for linear control flow
 - **Functional iteration** with forEach instead of for loops
 - **Architecture testing** with Konsist
-- **Comprehensive error mapping** with detailed context
+- **Context-aware error mapping** with extension functions
 - **Logging at boundaries** with structured context
 
 ### Avoid ❌
