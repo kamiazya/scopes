@@ -233,9 +233,9 @@ class ScopeAliasManagementService(
      * - Custom aliases can be removed freely
      *
      * @param aliasName The alias name to remove
-     * @return Either an error or true if removed
+     * @return Either an error or the removed alias
      */
-    suspend fun removeAlias(aliasName: AliasName): Either<ScopeAliasError, Boolean> {
+    suspend fun removeAlias(aliasName: AliasName): Either<ScopeAliasError, ScopeAlias> {
         return aliasRepository.findByAliasName(aliasName)
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
             .flatMap { alias ->
@@ -253,6 +253,7 @@ class ScopeAliasManagementService(
                     else -> {
                         aliasRepository.removeByAliasName(aliasName)
                             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+                            .map { alias }
                     }
                 }
             }
