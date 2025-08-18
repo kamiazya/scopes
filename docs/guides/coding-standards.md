@@ -499,6 +499,140 @@ pre-commit:
       run: ./gradlew detekt
 ```
 
+## Flat Structure Pattern (Functional Style)
+
+### Core Principle: Linear Control Flow
+
+Use Arrow's `either` blocks with `ensure()` to create flat, linear control flow instead of nested if-else statements.
+
+### Pattern Guidelines
+
+1. **Use `ensure()` for validation checks**
+   - Replace `if (!condition) raise(error)` with `ensure(condition) { error }`
+   - Makes the happy path more visible
+
+2. **Use `forEach` instead of `for` loops**
+   - More functional and composable
+   - Works well with `either` blocks
+
+3. **Single `either` block per function**
+   - Avoid nested `either` blocks
+   - Keep error handling flat and linear
+
+### Before (Nested Structure)
+```kotlin
+suspend fun validateHierarchyConsistency(
+    parentId: ScopeId,
+    childIds: List<ScopeId>
+): Either<Error, Unit> = either {
+    val parentExists = repository.existsById(parentId)
+        .mapLeft { error -> /* map error */ }
+        .bind()
+    
+    if (!parentExists) {
+        raise(Error.ParentNotFound(parentId))
+    }
+    
+    for (childId in childIds) {
+        val childExists = repository.existsById(childId)
+            .mapLeft { error -> /* map error */ }
+            .bind()
+        
+        if (!childExists) {
+            raise(Error.ChildNotFound(childId))
+        }
+    }
+}
+```
+
+### After (Flat Structure)
+```kotlin
+suspend fun validateHierarchyConsistency(
+    parentId: ScopeId,
+    childIds: List<ScopeId>
+): Either<Error, Unit> = either {
+    val parentExists = repository.existsById(parentId)
+        .mapLeft { /* map error */ }
+        .bind()
+    
+    ensure(parentExists) {
+        Error.ParentNotFound(parentId)
+    }
+    
+    childIds.forEach { childId ->
+        val childExists = repository.existsById(childId)
+            .mapLeft { /* map error */ }
+            .bind()
+        
+        ensure(childExists) {
+            Error.ChildNotFound(childId)
+        }
+    }
+}
+```
+
+### UseCase Handler Pattern
+
+```kotlin
+class CreateScopeHandler(
+    private val repository: ScopeRepository,
+    private val logger: Logger
+) : UseCase<Input, Error, Result> {
+    
+    override suspend fun invoke(input: Input): Either<Error, Result> = either {
+        // Log at the start
+        logger.info("Starting operation", mapOf("input" to input))
+        
+        // Linear validation steps with ensure()
+        val validatedTitle = validateTitle(input.title).bind()
+        
+        val parentExists = repository.existsById(input.parentId)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        ensure(parentExists) {
+            Error.ParentNotFound(input.parentId)
+        }
+        
+        // Create and save entity
+        val entity = createEntity(validatedTitle, input.parentId)
+        val saved = repository.save(entity)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        logger.info("Operation completed", mapOf("id" to saved.id))
+        
+        // Return result
+        mapToResult(saved)
+    }
+}
+```
+
+### Service Pattern
+
+```kotlin
+class ValidationService(
+    private val repository: Repository
+) {
+    suspend fun validate(data: Data): Either<Error, Unit> = either {
+        // Single flat either block
+        val exists = repository.exists(data.id)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        ensure(exists) {
+            Error.NotFound(data.id)
+        }
+        
+        ensure(data.value > 0) {
+            Error.InvalidValue(data.value)
+        }
+        
+        // More validations in linear fashion
+    }
+}
+```
+
 ## Summary
 
 ### Current Implementation Patterns ✅
@@ -509,8 +643,11 @@ pre-commit:
 - **ValidationResult for error accumulation** with extension functions
 - **Repository-dependent validation** in application layer
 - **Functional error handling** with Arrow Either
+- **Flat structure with ensure()** for linear control flow
+- **Functional iteration** with forEach instead of for loops
 - **Architecture testing** with Konsist
 - **Comprehensive error mapping** with detailed context
+- **Logging at boundaries** with structured context
 
 ### Avoid ❌
 
@@ -521,3 +658,7 @@ pre-commit:
 - Violating Clean Architecture layer dependencies
 - Missing error translation between layers
 - Incomplete error context information
+- Nested if-else chains (use ensure() instead)
+- Traditional for loops (use forEach/map/filter)
+- Multiple nested either blocks
+- Deep nesting in general
