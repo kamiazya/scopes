@@ -227,3 +227,4 @@ private fun createMockWordProvider(): WordProvider = mockk {
     every { getAdditionalWords(any()) } returns emptyList()
     every { getAvailableCategories() } returns listOf("adjectives", "nouns")
 }
+

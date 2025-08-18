@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.application.dto.FilteredScopesResult
 import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.toApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.GetFilteredScopesQuery
@@ -40,7 +40,7 @@ class GetFilteredScopesHandler(
             "offset" to input.offset,
             "limit" to input.limit
         ))
-        
+
         // Resolve the context view
         val contextView = if (input.contextName != null) {
             // Find by name
@@ -54,7 +54,7 @@ class GetFilteredScopesHandler(
                     attemptedName = input.contextName
                 )
             }.bind()
-            
+
             val foundContext = contextViewRepository.findByName(contextName).mapLeft { error ->
                 logger.error("Failed to find context by name", mapOf(
                     "name" to contextName.value,
@@ -62,7 +62,7 @@ class GetFilteredScopesHandler(
                 ))
                 error.toApplicationError()
             }.bind()
-            
+
             ensure(foundContext != null) {
                 logger.warn("Context not found", mapOf("name" to input.contextName))
                 ApplicationError.ContextError.StateNotFound(
@@ -82,7 +82,7 @@ class GetFilteredScopesHandler(
             }
             activeContext
         }
-        
+
         logger.debug("Context resolved", mapOf(
             "id" to contextView.id.value,
             "name" to contextView.name.value,
@@ -97,9 +97,9 @@ class GetFilteredScopesHandler(
             ))
             error.toApplicationError()
         }.bind()
-        
+
         logger.debug("Total scopes found", mapOf("count" to allScopes.size))
-        
+
         // Parse and apply the filter expression
         val filteredScopes = filterScopes(allScopes, contextView.filter.value)
         logger.debug("Scopes filtered", mapOf(
@@ -111,7 +111,7 @@ class GetFilteredScopesHandler(
         val paginatedScopes = filteredScopes
             .drop(input.offset)
             .take(input.limit)
-        
+
         logger.debug("Pagination applied", mapOf(
             "offset" to input.offset,
             "limit" to input.limit,
@@ -146,7 +146,7 @@ class GetFilteredScopesHandler(
             createdAt = contextView.createdAt,
             updatedAt = contextView.updatedAt
         )
-        
+
         logger.info("Filtered scopes retrieved successfully", mapOf(
             "contextId" to contextView.id.value,
             "totalScopes" to allScopes.size,
@@ -219,3 +219,4 @@ class GetFilteredScopesHandler(
         }
     }
 }
+

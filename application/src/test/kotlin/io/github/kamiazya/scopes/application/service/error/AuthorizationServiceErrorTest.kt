@@ -9,10 +9,10 @@ import io.kotest.matchers.types.beInstanceOf
 
 /**
  * Test for AuthorizationServiceError hierarchy.
- * 
+ *
  * This test validates that authorization service errors provide
  * comprehensive permission and role-based access control error information.
- * 
+ *
  * Following Serena MCP guidance on authorization patterns in DDD:
  * - Separation of authorization concerns from domain logic
  * - Type-safe error handling with Arrow Either

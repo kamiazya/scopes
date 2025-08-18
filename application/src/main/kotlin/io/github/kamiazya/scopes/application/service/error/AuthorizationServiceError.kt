@@ -4,16 +4,16 @@ import kotlinx.datetime.Instant
 
 /**
  * Authorization service errors for access control and permission violations.
- * 
+ *
  * This hierarchy provides comprehensive error types for authorization concerns
  * including permission management, authentication, context validation, and policy evaluation.
- * 
+ *
  * Based on Serena MCP research on authorization patterns:
  * - Role-based access control with fine-grained permissions
  * - Context-aware authorization with resource validation
  * - Policy-based authorization with rule evaluation
  * - Clear separation between authentication and authorization
- * 
+ *
  * Following functional error handling principles for composability.
  */
 sealed class AuthorizationServiceError
@@ -23,7 +23,7 @@ sealed class AuthorizationServiceError
  * These represent cases where authentication is valid but authorization fails.
  */
 sealed class PermissionDeniedError : AuthorizationServiceError() {
-    
+
     /**
      * General permission denied with specific details.
      */
@@ -34,7 +34,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
         val requiredPermissions: List<String>,
         val actualPermissions: List<String>
     ) : PermissionDeniedError()
-    
+
     /**
      * Insufficient permissions for the requested operation.
      */
@@ -44,7 +44,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
         val userRoles: List<String>,
         val additionalContext: Map<String, String>? = null
     ) : PermissionDeniedError()
-    
+
     /**
      * Role not found or invalid for the user.
      */
@@ -61,7 +61,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
  * These represent cases where user identity cannot be established.
  */
 sealed class AuthenticationError : AuthorizationServiceError() {
-    
+
     /**
      * User is not authenticated.
      */
@@ -70,7 +70,7 @@ sealed class AuthenticationError : AuthorizationServiceError() {
         val authenticationMethod: String?,
         val redirectUrl: String? = null
     ) : AuthenticationError()
-    
+
     /**
      * Authentication token is invalid or expired.
      */
@@ -87,7 +87,7 @@ sealed class AuthenticationError : AuthorizationServiceError() {
  * These represent problems with the authorization context itself.
  */
 sealed class AuthorizationContextError : AuthorizationServiceError() {
-    
+
     /**
      * Resource required for authorization check does not exist.
      */
@@ -97,7 +97,7 @@ sealed class AuthorizationContextError : AuthorizationServiceError() {
         val operation: String,
         val searchContext: Map<String, String>? = null
     ) : AuthorizationContextError()
-    
+
     /**
      * Invalid authorization context provided.
      */
@@ -114,7 +114,7 @@ sealed class AuthorizationContextError : AuthorizationServiceError() {
  * These handle failures in policy-based authorization systems.
  */
 sealed class PolicyEvaluationError : AuthorizationServiceError() {
-    
+
     /**
      * Authorization policy was violated.
      */
@@ -125,7 +125,7 @@ sealed class PolicyEvaluationError : AuthorizationServiceError() {
         val violatedRules: List<String>,
         val context: Map<String, Any>
     ) : PolicyEvaluationError()
-    
+
     /**
      * Policy evaluation failed due to system error.
      */

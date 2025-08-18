@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.ScopeAliasResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.mapper.ScopeAliasMapper
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.AssignCanonicalAlias
@@ -32,7 +32,7 @@ class AssignCanonicalAliasHandler(
             "scopeId" to input.scopeId,
             "aliasName" to input.aliasName
         ))
-        
+
         transactionManager.inTransaction {
             either {
                 // Parse and validate scope ID
@@ -48,7 +48,7 @@ class AssignCanonicalAliasHandler(
                             is ScopeInputError.IdError.InvalidFormat -> ApplicationError.ScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
                         }
                     }.bind()
-                
+
                 // Parse and validate alias name
                 logger.debug("Parsing alias name", mapOf("aliasName" to input.aliasName))
                 val aliasName = AliasName.create(input.aliasName)
@@ -68,7 +68,7 @@ class AssignCanonicalAliasHandler(
                                 ApplicationError.ScopeInputError.AliasInvalidFormat(aliasError.attemptedValue, aliasError.expectedPattern)
                         }
                     }.bind()
-                
+
                 // Assign canonical alias
                 logger.debug("Assigning canonical alias", mapOf(
                     "scopeId" to scopeId.value,
@@ -105,13 +105,13 @@ class AssignCanonicalAliasHandler(
                                 )
                         }
                     }.bind()
-                
+
                 logger.info("Canonical alias assigned successfully", mapOf(
                     "scopeId" to scopeId.value,
                     "aliasId" to alias.id.value,
                     "aliasName" to alias.aliasName.value
                 ))
-                
+
                 ScopeAliasMapper.toDto(alias)
             }
         }.bind()
@@ -122,3 +122,4 @@ class AssignCanonicalAliasHandler(
         ))
     }
 }
+

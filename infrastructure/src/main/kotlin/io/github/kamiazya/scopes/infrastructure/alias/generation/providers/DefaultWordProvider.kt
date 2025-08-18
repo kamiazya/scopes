@@ -39,3 +39,4 @@ class DefaultWordProvider : WordProvider {
 
     override fun getAvailableCategories(): List<String> = listOf("adjectives", "nouns")
 }
+

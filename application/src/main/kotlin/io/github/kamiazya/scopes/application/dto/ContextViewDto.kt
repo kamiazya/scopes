@@ -50,3 +50,4 @@ data class ScopeResult(
     val createdAt: Instant,
     val updatedAt: Instant
 ) : DTO
+

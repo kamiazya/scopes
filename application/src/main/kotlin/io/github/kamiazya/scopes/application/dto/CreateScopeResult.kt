@@ -16,3 +16,4 @@ data class CreateScopeResult(
     val createdAt: Instant,
     val aspects: Map<String, List<String>>
 ) : DTO
+

@@ -7,3 +7,4 @@ package io.github.kamiazya.scopes.application.usecase.query
 data class GetAspectDefinitionQuery(
     val key: String
 ) : Query
+

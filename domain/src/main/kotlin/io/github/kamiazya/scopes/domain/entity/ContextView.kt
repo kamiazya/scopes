@@ -88,3 +88,4 @@ data class ContextView(
     fun matchesName(searchName: String): Boolean =
         name.normalized() == searchName.lowercase()
 }
+

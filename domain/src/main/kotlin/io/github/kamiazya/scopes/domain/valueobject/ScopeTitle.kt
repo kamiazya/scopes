@@ -93,3 +93,4 @@ value class ScopeTitle private constructor(private val data: Pair<String, String
     fun equalsIgnoreCase(other: ScopeTitle): Boolean = 
         this.normalizedValue == other.normalizedValue
 }
+

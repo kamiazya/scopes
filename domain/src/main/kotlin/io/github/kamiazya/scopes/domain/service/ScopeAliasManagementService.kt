@@ -300,3 +300,4 @@ class ScopeAliasManagementService(
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), prefix) }
     }
 }
+

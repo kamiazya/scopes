@@ -245,7 +245,7 @@ class CreateContextViewHandlerTest : StringSpec({
         )
 
         // Mock the transaction manager to return an error
-        coEvery { transactionManager.inTransaction<ApplicationError, ContextViewResult>(any()) } returns 
+        coEvery { transactionManager.inTransaction<ApplicationError, ContextViewResult>(any()) } returns
             ApplicationError.PersistenceError.StorageUnavailable(
                 operation = "save",
                 cause = "Connection lost"
@@ -260,3 +260,4 @@ class CreateContextViewHandlerTest : StringSpec({
         error.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
     }
 })
+

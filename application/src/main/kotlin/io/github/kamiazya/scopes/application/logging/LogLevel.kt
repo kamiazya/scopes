@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.application.port
+package io.github.kamiazya.scopes.application.logging
 
 /**
  * Log levels for the Logger interface.
@@ -9,3 +9,4 @@ enum class LogLevel {
     WARN,
     ERROR
 }
+

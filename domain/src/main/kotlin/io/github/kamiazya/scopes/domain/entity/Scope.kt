@@ -206,3 +206,4 @@ data class Scope(
     fun isRoot(): Boolean = parentId == null
 }
 
+

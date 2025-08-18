@@ -6,7 +6,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.mapper.ScopeMapper
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -220,3 +220,4 @@ class CreateScopeHandler(
         ))
     }
 }
+

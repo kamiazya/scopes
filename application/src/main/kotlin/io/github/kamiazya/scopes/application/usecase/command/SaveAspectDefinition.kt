@@ -46,3 +46,4 @@ sealed class SaveAspectDefinition : Command {
         override val allowMultiple: Boolean = false
     ) : SaveAspectDefinition()
 }
+

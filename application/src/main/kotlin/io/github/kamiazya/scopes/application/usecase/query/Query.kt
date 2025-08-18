@@ -38,3 +38,4 @@ data class FindAliasesByPrefixQuery(
 data class GetScopeByAliasQuery(
     val aliasName: String
 ) : Query
+

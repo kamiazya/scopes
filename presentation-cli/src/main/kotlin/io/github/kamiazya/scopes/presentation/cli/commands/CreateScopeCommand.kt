@@ -5,8 +5,8 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
-import io.github.kamiazya.scopes.application.port.LoggingContext
-import io.github.kamiazya.scopes.application.port.loggingContextScope
+import io.github.kamiazya.scopes.application.logging.LoggingContext
+import io.github.kamiazya.scopes.application.logging.LoggingContextScope
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import kotlinx.coroutines.runBlocking
@@ -17,7 +17,8 @@ import kotlinx.coroutines.runBlocking
  */
 class CreateScopeCommand(
     private val handler: CreateScopeHandler,
-    private val errorMessageFormatter: ErrorMessageFormatter
+    private val errorMessageFormatter: ErrorMessageFormatter,
+    private val loggingContextScope: LoggingContextScope
 ) : CliktCommand(name = "create") {
 
     private val name by option("--name", help = "Scope name").required()
@@ -44,10 +45,10 @@ class CreateScopeCommand(
         )
 
         // Execute handler with logging context
-        val result = loggingContextScope?.withContext(loggingContext) {
+        val result = loggingContextScope.withContext(loggingContext) {
             handler(command)
-        } ?: handler(command)
-        
+        }
+
         result.fold(
             ifLeft = { error ->
                 // For now, just show the error message directly
@@ -72,3 +73,4 @@ class CreateScopeCommand(
         )
     }
 }
+

@@ -55,3 +55,4 @@ data class GetFilteredScopesQuery(
     val limit: Int = 100,
     val offset: Int = 0
 ) : Query
+

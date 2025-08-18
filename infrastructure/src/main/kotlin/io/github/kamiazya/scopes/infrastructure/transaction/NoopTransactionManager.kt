@@ -15,14 +15,14 @@ import io.github.kamiazya.scopes.application.port.TransactionManager
  * - Simple applications without complex transaction requirements
  */
 class NoopTransactionManager : TransactionManager {
-    
+
     override suspend fun <E, T> inTransaction(
         block: suspend TransactionContext.() -> Either<E, T>
     ): Either<E, T> {
         val context = NoopTransactionContext()
         return context.block()
     }
-    
+
     override suspend fun <E, T> inReadOnlyTransaction(
         block: suspend TransactionContext.() -> Either<E, T>
     ): Either<E, T> {
@@ -39,15 +39,16 @@ class NoopTransactionManager : TransactionManager {
 private class NoopTransactionContext(
     private val readOnly: Boolean = false
 ) : TransactionContext {
-    
+
     private var markedForRollback = false
     private val transactionId = ULID.random()
-    
+
     override fun markForRollback() {
         markedForRollback = true
     }
-    
+
     override fun isMarkedForRollback(): Boolean = markedForRollback
-    
+
     override fun getTransactionId(): String = transactionId
 }
+

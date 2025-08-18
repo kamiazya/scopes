@@ -18,24 +18,24 @@ class MultipleValueAspectTest : StringSpec({
 
     "AspectDefinition should support allowMultiple flag" {
         val key = AspectKey.create("tags").getOrElse { error("Invalid key") }
-        val values = listOf("frontend", "backend", "mobile").map { 
+        val values = listOf("frontend", "backend", "mobile").map {
             AspectValue.create(it).getOrElse { error("Invalid value") }
         }
-        
+
         val singleValueDef = AspectDefinition.createOrdered(
             key = key,
             allowedValues = values,
             description = "Tags",
             allowMultiple = false
         ).getOrElse { error("Failed to create definition") }
-        
+
         val multiValueDef = AspectDefinition.createOrdered(
             key = key,
             allowedValues = values,
             description = "Tags",
             allowMultiple = true
         ).getOrElse { error("Failed to create definition") }
-        
+
         singleValueDef.allowMultiple shouldBe false
         multiValueDef.allowMultiple shouldBe true
     }
@@ -51,7 +51,7 @@ class MultipleValueAspectTest : StringSpec({
 
         definitions shouldHaveSize 1
         val definition = definitions.first()
-        
+
         definition.key.value shouldBe "tags"
         definition.allowMultiple shouldBe true
         definition.type.shouldBeInstanceOf<AspectType.Ordered>()
@@ -61,12 +61,12 @@ class MultipleValueAspectTest : StringSpec({
         val tagKey = AspectKey.create("tags").getOrElse { error("Invalid key") }
         val frontendValue = AspectValue.create("frontend").getOrElse { error("Invalid value") }
         val backendValue = AspectValue.create("backend").getOrElse { error("Invalid value") }
-        
+
         val scope = Scope.create(
             title = "Test Scope",
             aspectsData = mapOf(tagKey to nonEmptyListOf(frontendValue, backendValue))
         ).getOrElse { error("Failed to create scope") }
-        
+
         val aspectsMap = scope.getAspects()
         aspectsMap.size shouldBe 1
         aspectsMap[tagKey] shouldNotBe null
@@ -78,32 +78,32 @@ class MultipleValueAspectTest : StringSpec({
     "Scope should provide convenience methods for single and multiple values" {
         val tagKey = AspectKey.create("tags").getOrElse { error("Invalid key") }
         val priorityKey = AspectKey.create("priority").getOrElse { error("Invalid key") }
-        
+
         val frontendValue = AspectValue.create("frontend").getOrElse { error("Invalid value") }
         val backendValue = AspectValue.create("backend").getOrElse { error("Invalid value") }
         val highValue = AspectValue.create("high").getOrElse { error("Invalid value") }
-        
+
         val scope = Scope.create(
             title = "Test Scope"
         ).getOrElse { error("Failed to create scope") }
             .setAspect(tagKey, nonEmptyListOf(frontendValue, backendValue))
             .setAspect(priorityKey, highValue) // Single value convenience method
-        
+
         // Test multiple values
         val tagValues = scope.getAspectValues(tagKey)
         tagValues shouldNotBe null
         tagValues!! shouldHaveSize 2
         tagValues shouldContain frontendValue
         tagValues shouldContain backendValue
-        
+
         // Test single value (first of multiple)
         val firstTag = scope.getAspectValue(tagKey)
         firstTag shouldBe frontendValue
-        
+
         // Test single value
         val priority = scope.getAspectValue(priorityKey)
         priority shouldBe highValue
-        
+
         val priorityValues = scope.getAspectValues(priorityKey)
         priorityValues shouldNotBe null
         priorityValues!! shouldHaveSize 1
@@ -112,12 +112,12 @@ class MultipleValueAspectTest : StringSpec({
 
     "Default aspects should include multiple value support" {
         val defaults = AspectDefinitionDefaults.all()
-        
+
         val tagsDef = defaults.find { it.key.value == "tags" }
         tagsDef shouldNotBe null
         tagsDef?.allowMultiple shouldBe true
         tagsDef?.type.shouldBeInstanceOf<AspectType.Ordered>()
-        
+
         // Other definitions should be single value by default
         val priorityDef = defaults.find { it.key.value == "priority" }
         priorityDef shouldNotBe null
@@ -140,17 +140,17 @@ class MultipleValueAspectTest : StringSpec({
 
         val definitionWithRules = definitions.first()
         definitionWithRules.definition.allowMultiple shouldBe true
-        
+
         val typeKey = AspectKey.create("type").getOrElse { error("Invalid key") }
         val developmentValue = AspectValue.create("development").getOrElse { error("Invalid value") }
         val kotlinValue = AspectValue.create("kotlin").getOrElse { error("Invalid value") }
         val reactValue = AspectValue.create("react").getOrElse { error("Invalid value") }
-        
+
         // Test with development type - skills should be required
         val devAspects = mapOf(typeKey to nonEmptyListOf(developmentValue))
         val noSkillsResult = definitionWithRules.validateRules(emptyList(), devAspects)
         noSkillsResult.any { it is io.github.kamiazya.scopes.domain.valueobject.RuleValidationResult.Invalid } shouldBe true
-        
+
         val withSkillsResult = definitionWithRules.validateRules(nonEmptyListOf(kotlinValue, reactValue), devAspects)
         withSkillsResult.all { it is io.github.kamiazya.scopes.domain.valueobject.RuleValidationResult.Valid } shouldBe true
     }

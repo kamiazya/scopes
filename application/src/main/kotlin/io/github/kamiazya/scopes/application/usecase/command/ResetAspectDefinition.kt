@@ -7,3 +7,4 @@ package io.github.kamiazya.scopes.application.usecase.command
 data class ResetAspectDefinition(
     val key: String
 ) : Command
+

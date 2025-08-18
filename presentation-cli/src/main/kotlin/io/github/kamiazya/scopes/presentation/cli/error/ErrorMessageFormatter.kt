@@ -27,7 +27,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Scope ID '${errorInfo.attemptedValue}' has invalid format. ")
                 append("Expected format: ${errorInfo.expectedFormat}")
             }
-            
+
             is ApplicationError.ScopeInputError.TitleEmpty -> {
                 append("Scope title cannot be empty. Please provide a meaningful title.")
             }
@@ -44,11 +44,11 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("${errorInfo.prohibitedCharacters.joinToString(", ")}. ")
                 append("Please use only allowed characters.")
             }
-            
+
             is ApplicationError.ScopeInputError.DescriptionTooLong -> {
                 append("Scope description is too long. Maximum length is ${errorInfo.maximumLength} characters.")
             }
-            
+
             is ApplicationError.ScopeInputError.AliasEmpty -> {
                 append("Alias cannot be empty. Please provide a valid alias.")
             }
@@ -64,7 +64,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Alias '${errorInfo.attemptedValue}' has invalid format. ")
                 append("Expected pattern: ${errorInfo.expectedPattern}")
             }
-            
+
             // Aspect Errors - updated for flattened structure
             is ApplicationError.AspectError.KeyEmpty -> {
                 append("Aspect key cannot be empty.")
@@ -76,7 +76,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             is ApplicationError.AspectError.KeyReserved -> {
                 append("Aspect key '${errorInfo.attemptedKey}' is reserved and cannot be used.")
             }
-            
+
             is ApplicationError.AspectError.ValueEmpty -> {
                 append("Value for aspect '${errorInfo.aspectKey}' cannot be empty.")
             }
@@ -84,7 +84,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Value '${errorInfo.attemptedValue}' for aspect '${errorInfo.aspectKey}' is not allowed. ")
                 append("Allowed values: ${errorInfo.allowedValues.joinToString(", ")}")
             }
-            
+
             // Context Errors - updated for flattened structure
             is ApplicationError.ContextError.NamingEmpty -> {
                 append("Context name cannot be empty.")
@@ -95,7 +95,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             is ApplicationError.ContextError.NamingInvalidFormat -> {
                 append("Context name '${errorInfo.attemptedName}' has invalid format.")
             }
-            
+
             is ApplicationError.ContextError.FilterInvalidSyntax -> {
                 append("Invalid filter syntax at position ${errorInfo.position}: ${errorInfo.reason}")
                 append("\nExpression: ${errorInfo.expression}")
@@ -108,7 +108,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Logical inconsistency in filter expression: ${errorInfo.reason}")
                 append("\nExpression: ${errorInfo.expression}")
             }
-            
+
             is ApplicationError.ContextError.StateNotFound -> {
                 when {
                     errorInfo.contextName != null -> append("Context '${errorInfo.contextName}' not found.")
@@ -124,7 +124,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Cannot delete the currently active context (ID: '${errorInfo.contextId}').")
                 append("\nPlease switch to a different context before deleting this one.")
             }
-            
+
             // Scope Hierarchy Errors
             is ApplicationError.ScopeHierarchyError.CircularReference -> {
                 append("Circular reference detected: Cannot set parent that would create a cycle.")
@@ -149,7 +149,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             is ApplicationError.ScopeHierarchyError.InvalidParentId -> {
                 append("Invalid parent ID format: '${errorInfo.invalidId}'. Please provide a valid ULID format.")
             }
-            
+
             // Scope Uniqueness Errors
             is ApplicationError.ScopeUniquenessError.DuplicateTitle -> {
                 append("A scope with title '${errorInfo.title}' already exists ")
@@ -159,7 +159,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                     append("at the root level.")
                 }
             }
-            
+
             // Persistence Errors
             is ApplicationError.PersistenceError.StorageUnavailable -> {
                 append("Storage unavailable during operation '${errorInfo.operation}'.")
@@ -179,7 +179,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Expected version: ${errorInfo.expectedVersion}, ")
                 append("Actual version: ${errorInfo.actualVersion}")
             }
-            
+
             // External System Errors
             is ApplicationError.ExternalSystemError.ServiceUnavailable -> {
                 append("Service '${errorInfo.serviceName}' is unavailable for operation '${errorInfo.operation}'.")
@@ -187,7 +187,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
             is ApplicationError.ExternalSystemError.AuthenticationFailed -> {
                 append("Authentication failed for service '${errorInfo.serviceName}'.")
             }
-            
+
             // Scope Alias Errors
             is ApplicationError.ScopeAliasError.DuplicateAlias -> {
                 append("Alias '${errorInfo.aliasName}' is already assigned to scope ${errorInfo.existingScopeId}.")
@@ -202,7 +202,7 @@ object CliErrorMessageFormatter : io.github.kamiazya.scopes.application.error.Er
                 append("Failed to generate alias for scope ${errorInfo.scopeId} after ${errorInfo.retryCount} attempts.")
             }
         }
-        
+
         // Add recovery suggestions based on error recoverability
         if (errorInfo.recoverable) {
             append("\nPlease review and correct your input.")

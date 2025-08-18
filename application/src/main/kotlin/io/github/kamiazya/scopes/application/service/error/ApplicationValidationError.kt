@@ -5,16 +5,16 @@ import kotlinx.datetime.Instant
 
 /**
  * Application layer validation errors for input validation and business rule violations.
- * 
+ *
  * This hierarchy provides comprehensive error types for application-level validation
  * including input validation, cross-aggregate validation, business rules, and async validation.
- * 
+ *
  * Based on Serena MCP research on validation patterns:
  * - Field-level input validation with detailed feedback
  * - Cross-aggregate consistency enforcement
  * - Business rule validation at application boundaries
  * - Async validation with timeout handling
- * 
+ *
  * Following Arrow Either patterns for type-safe error handling.
  */
 sealed class ApplicationValidationError
@@ -24,7 +24,7 @@ sealed class ApplicationValidationError
  * These represent issues with the structure and format of input data.
  */
 sealed class InputValidationError : ApplicationValidationError() {
-    
+
     /**
      * A field has an invalid format according to validation rules.
      */
@@ -34,7 +34,7 @@ sealed class InputValidationError : ApplicationValidationError() {
         val actualValue: String,
         val validationRule: String
     ) : InputValidationError()
-    
+
     /**
      * A required field is missing from the input.
      */
@@ -43,7 +43,7 @@ sealed class InputValidationError : ApplicationValidationError() {
         val entityType: String,
         val context: String? = null
     ) : InputValidationError()
-    
+
     /**
      * A field value is outside the allowed range.
      */
@@ -60,7 +60,7 @@ sealed class InputValidationError : ApplicationValidationError() {
  * These represent violations that span aggregate boundaries.
  */
 sealed class CrossAggregateValidationError : ApplicationValidationError() {
-    
+
     /**
      * Consistency violation affecting multiple aggregates.
      */
@@ -70,7 +70,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
         val consistencyRule: String,
         val violationDetails: String
     ) : CrossAggregateValidationError()
-    
+
     /**
      * Invalid reference between aggregates.
      */
@@ -80,7 +80,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
         val referenceType: String,
         val violation: String
     ) : CrossAggregateValidationError()
-    
+
     /**
      * Invariant violation across multiple aggregates.
      */
@@ -96,7 +96,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
  * These represent violations of business rules at the application layer.
  */
 sealed class BusinessRuleValidationError : ApplicationValidationError() {
-    
+
     /**
      * A precondition for an operation was not met.
      */
@@ -106,7 +106,7 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
         val currentState: String,
         val requiredState: String
     ) : BusinessRuleValidationError()
-    
+
     /**
      * A postcondition check failed after an operation.
      */
@@ -123,14 +123,14 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
  * These handle validation issues that occur in async contexts.
  */
 sealed class AsyncValidationError : ApplicationValidationError() {
-    
+
     data class ValidationTimeout<T>(
     val operation: String,
     val timeout: Duration,
     val validationPhase: String,
     val partialResults: Map<String, T>? = null
 ) : AsyncValidationError()
-    
+
     /**
      * Concurrent validation conflict detected.
      */

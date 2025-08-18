@@ -40,3 +40,4 @@ data class RemoveAlias(
 data class GenerateCanonicalAlias(
     val scopeId: String
 ) : Command
+

@@ -217,3 +217,4 @@ interface ErrorMessageFormatter {
      */
     fun format(errorInfo: ApplicationError): String
 }
+

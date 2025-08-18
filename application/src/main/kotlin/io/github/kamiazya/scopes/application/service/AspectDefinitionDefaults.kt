@@ -5,7 +5,7 @@ import io.github.kamiazya.scopes.domain.entity.AspectDefinition
 /**
  * Default aspect definitions for development workflows.
  * Provides common aspects that most development teams use.
- * 
+ *
  * Now uses DSL for improved readability and maintainability.
  */
 object AspectDefinitionDefaults {
@@ -63,7 +63,7 @@ object AspectDefinitionDefaults {
     /**
      * Get a specific default definition by key name.
      */
-    fun getByKey(keyName: String): AspectDefinition? = 
+    fun getByKey(keyName: String): AspectDefinition? =
         all().find { it.key.value == keyName }
 
     /**
@@ -71,3 +71,4 @@ object AspectDefinitionDefaults {
      */
     fun availableKeys(): List<String> = all().map { it.key.value }
 }
+

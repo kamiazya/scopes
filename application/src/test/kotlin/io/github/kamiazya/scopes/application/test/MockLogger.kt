@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.application.test
 
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
+import io.github.kamiazya.scopes.application.logging.LogLevel
 
 /**
  * A no-op logger implementation for testing.
@@ -29,4 +30,9 @@ class MockLogger : Logger {
     override fun withName(name: String): Logger {
         return this
     }
+
+    override fun isEnabledFor(level: LogLevel): Boolean {
+        return true
+    }
 }
+

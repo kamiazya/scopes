@@ -51,3 +51,4 @@ sealed class AspectDefinitionResult : DTO {
         override val allowMultiple: kotlin.Boolean = false
     ) : AspectDefinitionResult()
 }
+

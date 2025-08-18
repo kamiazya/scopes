@@ -40,3 +40,4 @@ interface AliasGenerationStrategy {
      */
     fun getName(): String
 }
+

@@ -8,3 +8,4 @@ package io.github.kamiazya.scopes.application.dto
 data class ListAliasesResult(
     val aliases: List<ScopeAliasResult>
 ) : DTO
+

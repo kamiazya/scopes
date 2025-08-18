@@ -11,7 +11,7 @@ import io.github.kamiazya.scopes.domain.entity.Scope
  * Prevents domain entities from leaking to presentation layer.
  */
 object ContextViewMapper {
-    
+
     /**
      * Map ContextView entity to ContextViewResult DTO.
      */
@@ -27,7 +27,7 @@ object ContextViewMapper {
         createdAt = contextView.createdAt,
         updatedAt = contextView.updatedAt
     )
-    
+
     /**
      * Map list of ContextView entities to ContextViewListResult DTO.
      */
@@ -38,15 +38,15 @@ object ContextViewMapper {
         val results = contextViews.map { context ->
             toResult(context, isActive = context.id == activeContext?.id)
         }
-        
+
         val activeResult = activeContext?.let { toResult(it, isActive = true) }
-        
+
         return ContextViewListResult(
             contexts = results,
             activeContext = activeResult
         )
     }
-    
+
     /**
      * Map Scope entity to ScopeResult DTO for filtered views.
      */

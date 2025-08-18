@@ -15,3 +15,4 @@ data class ScopeAliasResult(
     val createdAt: Instant,
     val updatedAt: Instant
 ) : DTO
+

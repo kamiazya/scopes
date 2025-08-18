@@ -59,7 +59,7 @@ object AspectDefinitionDefaultsWithRules {
     /**
      * Get a specific default definition by key name.
      */
-    fun getByKey(keyName: String): AspectDefinitionWithRules? = 
+    fun getByKey(keyName: String): AspectDefinitionWithRules? =
         all().find { it.definition.key.value == keyName }
 
     /**

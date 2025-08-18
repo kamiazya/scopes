@@ -21,11 +21,11 @@ class AspectDefinitionService(
     suspend fun getAllDefinitions(): Either<PersistenceError, List<AspectDefinition>> = either {
         val userDefinitions = repository.findAll().bind()
         val defaults = getDefaultDefinitions()
-        
+
         // Merge user definitions with defaults (user definitions override defaults)
         val userKeys = userDefinitions.map { it.key }.toSet()
         val finalDefinitions = userDefinitions + defaults.filter { it.key !in userKeys }
-        
+
         finalDefinitions
     }
 

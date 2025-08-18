@@ -575,3 +575,4 @@ class DddUseCasePatternTest : StringSpec({
             }
     }
 })
+

@@ -21,3 +21,4 @@ data class ScopeDTO(
     val updatedAt: Instant,
     val aspects: Map<String, List<String>> = emptyMap()
 ) : DTO
+

@@ -42,12 +42,12 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val result1 = runBlocking { service.generateCanonicalAlias(aliasId) }
             val result2 = runBlocking { service.generateCanonicalAlias(aliasId) }
             val result3 = runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert - Same ID should produce same result
             result1.shouldBeRight()
             result1 shouldBe result2
@@ -60,7 +60,7 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             // Arrange
             val expectedSeed = aliasId.value.hashCode().toLong()
             var capturedSeed: Long? = null
-            
+
             val strategy = mockk<AliasGenerationStrategy> {
                 every { generate(any(), any()) } answers {
                     capturedSeed = firstArg()
@@ -69,17 +69,17 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert
             capturedSeed shouldBe expectedSeed
         }
     }
 
     "should propagate valid alias names from strategy" {
-        checkAll(iterations, 
+        checkAll(iterations,
             validAliasIdArb(),
             validAliasNameStringArb()
         ) { aliasId, aliasNameString ->
@@ -89,10 +89,10 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val result = runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert
             result.shouldBeRight()
             result.getOrNull()?.value shouldBe aliasNameString
@@ -110,10 +110,10 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val result = runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert
             result.shouldBeLeft()
             result.leftOrNull().shouldBeInstanceOf<ScopeInputError.AliasError>()
@@ -129,10 +129,10 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val result = runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert
             result.shouldBeLeft()
             result.leftOrNull().shouldBeInstanceOf<ScopeInputError.AliasError.InvalidFormat>()
@@ -147,10 +147,10 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val result = runBlocking { service.generateRandomAlias() }
-            
+
             // Assert
             result.shouldBeRight()
             result.getOrNull()?.value shouldBe aliasNameString
@@ -167,12 +167,12 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
         }
         val wordProvider = mockk<WordProvider>()
         val service = DefaultAliasGenerationService(strategy, wordProvider)
-        
+
         // Act
         val results = (1..10).map {
             runBlocking { service.generateRandomAlias() }
         }
-        
+
         // Assert - Should have different values
         val uniqueValues = results.mapNotNull { it.getOrNull()?.value }.distinct()
         uniqueValues.size shouldBe 10
@@ -183,7 +183,7 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             // Arrange
             val wordProvider = mockk<WordProvider>()
             var capturedProvider: WordProvider? = null
-            
+
             val strategy = mockk<AliasGenerationStrategy> {
                 every { generate(any(), any()) } answers {
                     capturedProvider = secondArg()
@@ -191,10 +191,10 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
                 }
             }
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             runBlocking { service.generateCanonicalAlias(aliasId) }
-            
+
             // Assert
             capturedProvider shouldBe wordProvider
         }
@@ -216,15 +216,15 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
                 }
                 val wordProvider = mockk<WordProvider>()
                 val service = DefaultAliasGenerationService(strategy, wordProvider)
-                
+
                 // Act
                 val result1 = runBlocking { service.generateCanonicalAlias(aliasId1) }
                 val result2 = runBlocking { service.generateCanonicalAlias(aliasId2) }
-                
+
                 // Assert - Both should succeed
                 result1.shouldBeRight()
                 result2.shouldBeRight()
-                
+
                 // Different IDs often (but not always) produce different aliases
                 // We can't assert they're always different due to hash collisions
             }
@@ -232,7 +232,7 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
     }
 
     "service should be reusable for multiple generations" {
-        checkAll(iterations, 
+        checkAll(iterations,
             Arb.list(validAliasIdArb(), 1..5)
         ) { aliasIds ->
             // Arrange
@@ -244,12 +244,12 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
             }
             val wordProvider = mockk<WordProvider>()
             val service = DefaultAliasGenerationService(strategy, wordProvider)
-            
+
             // Act
             val results = aliasIds.map { aliasId ->
                 runBlocking { service.generateCanonicalAlias(aliasId) }
             }
-            
+
             // Assert - All should succeed
             results.forEach { it.shouldBeRight() }
             callCount shouldBe aliasIds.size
@@ -259,8 +259,8 @@ class DefaultAliasGenerationServicePropertyTest : StringSpec({
 
 // Helper Arbitraries
 
-private fun validAliasIdArb(): Arb<AliasId> = Arb.uuid().map { 
-    AliasId.generate() 
+private fun validAliasIdArb(): Arb<AliasId> = Arb.uuid().map {
+    AliasId.generate()
 }
 
 private fun validAliasNameStringArb(): Arb<String> = Arb.string(2..50).map { raw ->
@@ -269,14 +269,14 @@ private fun validAliasNameStringArb(): Arb<String> = Arb.string(2..50).map { raw
         .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
         .replace(Regex("[-_]{2,}"), "-") // No consecutive special chars
         .trim('-', '_') // No leading/trailing special chars
-    
+
     // Ensure starts with letter
     val withValidStart = if (clean.isEmpty() || !clean[0].isLetter()) {
         "alias${if (clean.isNotEmpty()) "-$clean" else ""}"
     } else {
         clean
     }
-    
+
     // Ensure valid length
     if (withValidStart.length < 2) {
         "alias"

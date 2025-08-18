@@ -3,7 +3,10 @@ package io.github.kamiazya.scopes.presentation.cli
 import com.github.ajalt.clikt.testing.test
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
-import io.github.kamiazya.scopes.infrastructure.logger.ConsoleLogger
+import io.github.kamiazya.scopes.application.logging.StructuredLogger
+import io.github.kamiazya.scopes.application.logging.DefaultLoggingContextScope
+import io.github.kamiazya.scopes.infrastructure.logging.formatter.PlainTextLogFormatter
+import io.github.kamiazya.scopes.infrastructure.logging.appender.ConsoleLogAppender
 import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.infrastructure.alias.generation.DefaultAliasGenerationService
@@ -39,9 +42,14 @@ class CreateScopeE2EDemoTest : FunSpec({
         val aliasGenerationService = DefaultAliasGenerationService(haikunatorStrategy, wordProvider)
         val aliasManagementService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
         val crossAggregateValidationService = CrossAggregateValidationService(repository)
-        val logger = ConsoleLogger("Test")
+        val logger = StructuredLogger(
+            name = "Test",
+            appenders = listOf(
+                ConsoleLogAppender(PlainTextLogFormatter())
+            )
+        )
         val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService, aliasManagementService, logger)
-        val command = CreateScopeCommand(handler, CliErrorMessageFormatter)
+        val command = CreateScopeCommand(handler, CliErrorMessageFormatter, DefaultLoggingContextScope)
 
         // Act: Execute CLI command (same as `./gradlew run --args="create --name Hello"`)
         val result = command.test("--name=Hello")
@@ -67,9 +75,14 @@ class CreateScopeE2EDemoTest : FunSpec({
         val aliasGenerationService = DefaultAliasGenerationService(haikunatorStrategy, wordProvider)
         val aliasManagementService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
         val crossAggregateValidationService = CrossAggregateValidationService(repository)
-        val logger = ConsoleLogger("Test")
+        val logger = StructuredLogger(
+            name = "Test",
+            appenders = listOf(
+                ConsoleLogAppender(PlainTextLogFormatter())
+            )
+        )
         val handler = CreateScopeHandler(repository, transactionManager, hierarchyService, crossAggregateValidationService, aliasManagementService, logger)
-        val command = CreateScopeCommand(handler, CliErrorMessageFormatter)
+        val command = CreateScopeCommand(handler, CliErrorMessageFormatter, DefaultLoggingContextScope)
 
         // Demonstrate that E2E flow succeeds
         val result = command.test("--name=DemoProject")
@@ -80,3 +93,4 @@ class CreateScopeE2EDemoTest : FunSpec({
         result.output shouldContain "Title: DemoProject"
     }
 })
+

@@ -87,9 +87,9 @@ class ActiveContextService(
                         )
                     }
                     .bind()
-                
+
                 val context = contextViewRepository.findByName(contextName)
-                    .mapLeft { error -> 
+                    .mapLeft { error ->
                         error.toApplicationError()
                     }
                     .bind()
@@ -138,3 +138,4 @@ class ActiveContextService(
             get() = activeContext != null
     }
 }
+

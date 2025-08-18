@@ -211,3 +211,4 @@ class DefaultWordProviderPropertyTest : StringSpec({
         (nounStartLetters.size > 10) shouldBe true
     }
 })
+

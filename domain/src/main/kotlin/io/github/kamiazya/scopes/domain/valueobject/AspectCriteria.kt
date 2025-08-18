@@ -244,3 +244,4 @@ sealed class AspectCriteria {
         definitions: Map<AspectKey, AspectDefinition>
     ): Boolean = evaluateWithMultipleValues(aspects.toMap(), definitions)
 }
+

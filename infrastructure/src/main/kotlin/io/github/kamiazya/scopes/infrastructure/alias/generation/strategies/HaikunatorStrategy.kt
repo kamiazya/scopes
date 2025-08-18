@@ -50,3 +50,4 @@ class HaikunatorStrategy : AliasGenerationStrategy {
             .joinToString("")
     }
 }
+

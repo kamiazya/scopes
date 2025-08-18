@@ -30,7 +30,7 @@ class DeleteContextViewHandlerTest : StringSpec({
     lateinit var activeContextService: ActiveContextService
     lateinit var logger: MockLogger
     lateinit var handler: DeleteContextViewHandler
-    
+
     beforeTest {
         contextViewRepository = mockk<ContextViewRepository>()
         activeContextService = mockk<ActiveContextService>()
@@ -205,3 +205,4 @@ class DeleteContextViewHandlerTest : StringSpec({
         error.shouldBeInstanceOf<ApplicationError.ContextError.ActiveContextDeleteAttempt>()
     }
 })
+

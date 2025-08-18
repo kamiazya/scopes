@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.UpdateContextView
@@ -19,7 +19,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
 
 /**
  * Handler for updating an existing context view.
- * 
+ *
  * This handler:
  * 1. Validates the context ID and finds the existing context
  * 2. Updates only the provided fields (name, filter, description)
@@ -40,7 +40,7 @@ class UpdateContextViewHandler(
             "hasFilter" to (input.filterExpression != null),
             "hasDescription" to (input.description != null)
         ))
-        
+
         transactionManager.inTransaction {
             either {
                 // Parse and validate the context ID
@@ -62,7 +62,7 @@ class UpdateContextViewHandler(
                     ))
                     error.toGenericApplicationError()
                 }.bind()
-                
+
                 ensure(existingContext != null) {
                     logger.warn("Context not found", mapOf("id" to input.id))
                     ApplicationError.ContextError.StateNotFound(
@@ -91,7 +91,7 @@ class UpdateContextViewHandler(
                         ))
                         error.toGenericApplicationError()
                     }.bind()
-                    
+
                     ensure(existing == null || existing.id == contextId) {
                         logger.warn("Duplicate name found", mapOf("name" to input.name))
                         ApplicationError.ContextError.NamingAlreadyExists(
@@ -144,7 +144,7 @@ class UpdateContextViewHandler(
                     description = newDescription,
                     updatedAt = now
                 )
-                
+
                 logger.debug("Saving updated context", mapOf(
                     "id" to updatedContext.id.value,
                     "name" to updatedContext.name.value
@@ -158,12 +158,12 @@ class UpdateContextViewHandler(
                     ))
                     error.toGenericApplicationError()
                 }.bind()
-                
+
                 logger.info("Context view updated successfully", mapOf(
                     "id" to saved.id.value,
                     "name" to saved.name.value
                 ))
-                
+
                 // Map to DTO
                 ContextViewResult(
                     id = saved.id.value,

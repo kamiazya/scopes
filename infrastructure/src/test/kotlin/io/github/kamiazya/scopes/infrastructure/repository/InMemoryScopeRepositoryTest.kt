@@ -197,14 +197,14 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 val exists = existsResult.shouldBeRight()
                 exists shouldBe true
             }
-            
+
             // Test that titles with newlines are considered invalid and don't match
             val invalidTestCases = listOf(
                 "Task\nName",        // Internal newline
                 "\ttask name\n",     // Tab and newline
                 "\t Task \n Name \r" // Complex mixed whitespace with newlines
             )
-            
+
             invalidTestCases.forEach { testTitle ->
                 val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
                 val exists = existsResult.shouldBeRight()
@@ -268,13 +268,13 @@ class InMemoryScopeRepositoryTest : StringSpec({
                 val exists = existsResult.shouldBeRight()
                 exists shouldBe true
             }
-            
+
             // Titles with newlines should not match (they're invalid)
             val invalidTitles = listOf(
                 "\tSpaced Title\n",
                 "Spaced\nTitle"
             )
-            
+
             invalidTitles.forEach { testTitle ->
                 val existsResult = repository.existsByParentIdAndTitle(parentId, testTitle)
                 val exists = existsResult.shouldBeRight()
@@ -296,3 +296,4 @@ class InMemoryScopeRepositoryTest : StringSpec({
         }
     }
 })
+

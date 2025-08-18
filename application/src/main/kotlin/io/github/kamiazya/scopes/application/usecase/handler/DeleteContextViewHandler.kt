@@ -6,7 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.EmptyResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.toApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.DeleteContextView
@@ -30,7 +30,7 @@ class DeleteContextViewHandler(
 
     override suspend operator fun invoke(input: DeleteContextView): Either<ApplicationError, EmptyResult> = either {
         logger.info("Deleting context view", mapOf("id" to input.id))
-        
+
         // Parse the context ID
         logger.debug("Parsing context ID", mapOf("id" to input.id))
         val contextId = ContextViewId.create(input.id).mapLeft { error ->
@@ -44,7 +44,7 @@ class DeleteContextViewHandler(
         // Check if this context is currently active
         logger.debug("Checking if context is active", mapOf("id" to contextId.value))
         val activeContext = activeContextService.getCurrentContext()
-        
+
         ensure(activeContext?.id != contextId) {
             logger.error("Cannot delete active context", mapOf(
                 "id" to contextId.value,
@@ -54,7 +54,7 @@ class DeleteContextViewHandler(
                 contextId.value
             )
         }
-        
+
         // Delete the context view
         logger.debug("Deleting context from repository", mapOf("id" to contextId.value))
         contextViewRepository.delete(contextId).mapLeft { error ->
@@ -64,7 +64,7 @@ class DeleteContextViewHandler(
             ))
             error.toApplicationError()
         }.bind()
-        
+
         logger.info("Context view deleted successfully", mapOf("id" to contextId.value))
         EmptyResult
     }.onLeft { error ->
@@ -74,3 +74,4 @@ class DeleteContextViewHandler(
         ))
     }
 }
+

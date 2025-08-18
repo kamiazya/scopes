@@ -15,7 +15,7 @@ import io.github.kamiazya.scopes.domain.valueobject.AliasName
 
 /**
  * Handler for removing an alias.
- * 
+ *
  * Business rules:
  * - Cannot remove canonical aliases (must replace instead)
  * - Custom aliases can be removed freely
@@ -29,34 +29,34 @@ class RemoveAliasHandler(
         transactionManager.inTransaction {
             either {
                 val aliasName = AliasName.create(input.aliasName)
-                    .mapLeft { aliasError -> 
+                    .mapLeft { aliasError ->
                         when(aliasError) {
-                            is ScopeInputError.AliasError.Empty -> 
+                            is ScopeInputError.AliasError.Empty ->
                                 ApplicationError.ScopeInputError.AliasEmpty(aliasError.attemptedValue)
-                            is ScopeInputError.AliasError.TooShort -> 
+                            is ScopeInputError.AliasError.TooShort ->
                                 ApplicationError.ScopeInputError.AliasTooShort(aliasError.attemptedValue, aliasError.minimumLength)
-                            is ScopeInputError.AliasError.TooLong -> 
+                            is ScopeInputError.AliasError.TooLong ->
                                 ApplicationError.ScopeInputError.AliasTooLong(aliasError.attemptedValue, aliasError.maximumLength)
-                            is ScopeInputError.AliasError.InvalidFormat -> 
+                            is ScopeInputError.AliasError.InvalidFormat ->
                                 ApplicationError.ScopeInputError.AliasInvalidFormat(aliasError.attemptedValue, aliasError.expectedPattern)
                         }
                     }
                     .bind()
-                
+
                 val removedAlias = aliasManagementService.removeAlias(aliasName)
-                    .mapLeft { aliasServiceError -> 
+                    .mapLeft { aliasServiceError ->
                         when (aliasServiceError) {
-                            is DomainScopeAliasError.DuplicateAlias -> 
+                            is DomainScopeAliasError.DuplicateAlias ->
                                 ApplicationError.ScopeAliasError.DuplicateAlias(
                                     aliasServiceError.aliasName,
                                     aliasServiceError.existingScopeId.value,
                                     aliasServiceError.attemptedScopeId.value
                                 )
-                            is DomainScopeAliasError.AliasNotFound -> 
+                            is DomainScopeAliasError.AliasNotFound ->
                                 ApplicationError.ScopeAliasError.AliasNotFound(
                                     aliasServiceError.aliasName
                                 )
-                            is DomainScopeAliasError.CannotRemoveCanonicalAlias -> 
+                            is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
                                 ApplicationError.ScopeAliasError.CannotRemoveCanonicalAlias(
                                     aliasServiceError.scopeId.value,
                                     aliasServiceError.canonicalAlias
@@ -70,7 +70,7 @@ class RemoveAliasHandler(
                         }
                     }
                     .bind()
-                
+
                 RemoveAliasResult(
                     aliasId = removedAlias.id.value,
                     aliasName = removedAlias.aliasName.value,

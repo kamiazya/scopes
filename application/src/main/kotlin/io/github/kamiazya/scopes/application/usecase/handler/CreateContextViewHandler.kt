@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
@@ -20,7 +20,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
 
 /**
  * Handler for creating a new context view.
- * 
+ *
  * This handler:
  * 1. Validates the context name and filter expression
  * 2. Creates a new context view entity
@@ -38,7 +38,7 @@ class CreateContextViewHandler(
             "name" to input.name,
             "filterExpression" to input.filterExpression
         ))
-        
+
         transactionManager.inTransaction {
             either {
                 // Validate and create context name
@@ -72,7 +72,7 @@ class CreateContextViewHandler(
                     ))
                     error.toApplicationError()
                 }.bind()
-                
+
                 ensure(existingContext == null) {
                     logger.warn("Context with same name already exists", mapOf(
                         "name" to input.name
@@ -107,7 +107,7 @@ class CreateContextViewHandler(
                     createdAt = now,
                     updatedAt = now
                 )
-                
+
                 logger.debug("Saving context view", mapOf(
                     "id" to contextView.id.value,
                     "name" to contextView.name.value
@@ -121,7 +121,7 @@ class CreateContextViewHandler(
                     ))
                     error.toApplicationError()
                 }.bind()
-                
+
                 logger.info("Context view created successfully", mapOf(
                     "id" to saved.id.value,
                     "name" to saved.name.value

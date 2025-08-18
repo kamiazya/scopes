@@ -52,3 +52,4 @@ interface ContextViewRepository {
      */
     suspend fun existsByName(name: ContextName): Either<PersistenceError, Boolean>
 }
+

@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
@@ -24,7 +24,7 @@ class SwitchContextHandler(
 
     override suspend operator fun invoke(input: SwitchContextView): Either<ApplicationError, ContextViewResult> = either {
         logger.info("Switching context", mapOf("contextName" to input.name))
-        
+
         // Switch to the context by name
         val contextView = activeContextService.switchToContextByName(input.name)
             .onLeft { error ->
@@ -34,12 +34,12 @@ class SwitchContextHandler(
                 ))
             }
             .bind()
-        
+
         logger.info("Context switched successfully", mapOf(
             "contextId" to contextView.id.value,
             "contextName" to contextView.name.value
         ))
-        
+
         // Map to DTO
         ContextViewResult(
             id = contextView.id.value,
@@ -57,3 +57,4 @@ class SwitchContextHandler(
         ))
     }
 }
+

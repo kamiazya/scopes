@@ -25,3 +25,4 @@ sealed class AspectType {
      */
     data class Ordered(val allowedValues: List<AspectValue>) : AspectType()
 }
+

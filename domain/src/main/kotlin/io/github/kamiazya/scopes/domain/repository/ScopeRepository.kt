@@ -55,3 +55,4 @@ interface ScopeRepository {
      */
     suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>
 }
+

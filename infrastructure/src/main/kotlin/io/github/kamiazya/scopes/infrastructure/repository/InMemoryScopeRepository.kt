@@ -116,7 +116,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                 // For now, we need to create empty definitions map
                 // In production, this would be loaded from configuration or database
                 val definitions = emptyMap<AspectKey, AspectDefinition>()
-                
+
                 val matchingScopes = scopes.values.filter { scope ->
                     // Use the new evaluateWithAspects method that supports multiple values
                     criteria.evaluateWithAspects(scope.aspects, definitions)
@@ -143,4 +143,5 @@ open class InMemoryScopeRepository : ScopeRepository {
     }
 
 }
+
 

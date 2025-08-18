@@ -8,3 +8,4 @@ package io.github.kamiazya.scopes.application.dto
 data class ResolveAliasResult(
     val scopeId: String
 ) : DTO
+

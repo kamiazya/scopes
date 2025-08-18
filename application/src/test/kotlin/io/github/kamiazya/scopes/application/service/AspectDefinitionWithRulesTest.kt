@@ -24,10 +24,10 @@ class AspectDefinitionWithRulesTest : StringSpec({
 
         definitions shouldHaveSize 1
         val definitionWithRules = definitions.first()
-        
+
         val validValue = AspectValue.create("10.5").getOrElse { error("Invalid value") }
         val invalidValue = AspectValue.create("not_a_number").getOrElse { error("Invalid value") }
-        
+
         definitionWithRules.isValidValue(validValue) shouldBe true
         definitionWithRules.isValidValue(invalidValue) shouldBe false
     }
@@ -46,13 +46,13 @@ class AspectDefinitionWithRulesTest : StringSpec({
         val validValue = AspectValue.create("10.5").getOrElse { error("Invalid value") }
         val tooSmallValue = AspectValue.create("0.1").getOrElse { error("Invalid value") }
         val tooLargeValue = AspectValue.create("150.0").getOrElse { error("Invalid value") }
-        
+
         val allAspects = emptyMap<AspectKey, NonEmptyList<AspectValue>>()
-        
+
         definitionWithRules.isValidWithRules(validValue, allAspects) shouldBe true
         definitionWithRules.isValidWithRules(tooSmallValue, allAspects) shouldBe false
         definitionWithRules.isValidWithRules(tooLargeValue, allAspects) shouldBe false
-        
+
         val errorMessages = definitionWithRules.getValidationMessages(tooSmallValue, allAspects)
         errorMessages shouldHaveSize 1
         errorMessages.first() shouldBe "Effort must be between 0.5 and 100 hours"
@@ -75,12 +75,12 @@ class AspectDefinitionWithRulesTest : StringSpec({
         val inProgressValue = AspectValue.create("in_progress").getOrElse { error("Invalid value") }
         val todoValue = AspectValue.create("todo").getOrElse { error("Invalid value") }
         val effortValue = AspectValue.create("5.0").getOrElse { error("Invalid value") }
-        
+
         // When status is in_progress, effort is required
         val aspectsInProgress = mapOf(statusKey to nonEmptyListOf(inProgressValue))
         definitionWithRules.isValidWithRules(null, aspectsInProgress) shouldBe false
         definitionWithRules.isValidWithRules(effortValue, aspectsInProgress) shouldBe true
-        
+
         // When status is todo, effort is not required
         val aspectsTodo = mapOf(statusKey to nonEmptyListOf(todoValue))
         definitionWithRules.isValidWithRules(null, aspectsTodo) shouldBe true
@@ -100,12 +100,12 @@ class AspectDefinitionWithRulesTest : StringSpec({
         val definitionWithRules = definitions.first()
         val validComment = AspectValue.create("This is a valid comment!").getOrElse { error("Invalid value") }
         val invalidComment = AspectValue.create("Invalid @#$% symbols").getOrElse { error("Invalid value") }
-        
+
         val allAspects = emptyMap<AspectKey, NonEmptyList<AspectValue>>()
-        
+
         definitionWithRules.isValidWithRules(validComment, allAspects) shouldBe true
         definitionWithRules.isValidWithRules(invalidComment, allAspects) shouldBe false
-        
+
         val errorMessages = definitionWithRules.getValidationMessages(invalidComment, allAspects)
         errorMessages shouldHaveSize 1
         errorMessages.first() shouldBe "Comments must contain only alphanumeric characters and basic punctuation"
@@ -113,19 +113,19 @@ class AspectDefinitionWithRulesTest : StringSpec({
 
     "AspectDefinitionDefaultsWithRules should provide defaults with rules" {
         val defaults = AspectDefinitionDefaultsWithRules.all()
-        
+
         defaults.isNotEmpty() shouldBe true
-        
+
         val effortDef = defaults.find { it.definition.key.value == "effort" }
         effortDef shouldNotBe null
         effortDef?.definition?.type shouldBe AspectType.Numeric
         effortDef?.rules?.isNotEmpty() shouldBe true
-        
+
         // Test the range rule on effort
         val effortValue = AspectValue.create("10.0").getOrElse { error("Invalid value") }
         val tooLargeValue = AspectValue.create("150.0").getOrElse { error("Invalid value") }
         val allAspects = emptyMap<AspectKey, NonEmptyList<AspectValue>>()
-        
+
         effortDef?.isValidWithRules(effortValue, allAspects) shouldBe true
         effortDef?.isValidWithRules(tooLargeValue, allAspects) shouldBe false
     }

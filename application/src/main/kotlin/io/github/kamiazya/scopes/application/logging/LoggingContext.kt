@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.application.port
+package io.github.kamiazya.scopes.application.logging
 
 import kotlinx.datetime.Clock
 import kotlin.random.Random
@@ -21,6 +21,14 @@ data class LoggingContext(
     }
 
     /**
+     * Creates a new LoggingContext with additional metadata.
+     * Alias for withMetadata for consistency with the interface.
+     */
+    fun withAdditionalMetadata(additionalMetadata: Map<String, Any>): LoggingContext {
+        return withMetadata(additionalMetadata)
+    }
+
+    /**
      * Creates a new LoggingContext with a specific logger name.
      */
     fun withLoggerName(name: String): LoggingContext {
@@ -38,7 +46,14 @@ data class LoggingContext(
             putAll(metadata)
         }
     }
-    
+
+    /**
+     * Converts this context to a map with LogValue for type-safe serialization.
+     */
+    fun toLogValueMap(): Map<String, LogValue> {
+        return toMap().toLogValueMap()
+    }
+
     companion object {
         /**
          * Generates a unique session ID.
@@ -50,3 +65,4 @@ data class LoggingContext(
         }
     }
 }
+

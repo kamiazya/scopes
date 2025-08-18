@@ -244,3 +244,4 @@ class SealedClassStructureTest : StringSpec({
         }
     }
 })
+

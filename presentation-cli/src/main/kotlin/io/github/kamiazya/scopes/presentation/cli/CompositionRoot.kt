@@ -1,7 +1,8 @@
 package io.github.kamiazya.scopes.presentation.cli
 
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
+import io.github.kamiazya.scopes.application.logging.LogLevel
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
@@ -14,9 +15,12 @@ import io.github.kamiazya.scopes.domain.service.WordProvider
 import io.github.kamiazya.scopes.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.infrastructure.alias.generation.strategies.HaikunatorStrategy
-import io.github.kamiazya.scopes.infrastructure.logger.ConsoleLogger
-import io.github.kamiazya.scopes.infrastructure.coroutine.CoroutineLoggingContextScope
-import io.github.kamiazya.scopes.application.port.loggingContextScope
+import io.github.kamiazya.scopes.application.logging.logger
+import io.github.kamiazya.scopes.application.logging.ApplicationType
+import io.github.kamiazya.scopes.infrastructure.logging.runtime.NativeRuntimeInfoProvider
+import io.github.kamiazya.scopes.infrastructure.logging.CoroutineLoggingContextScope
+import io.github.kamiazya.scopes.application.logging.LoggingContextScope
+import io.github.kamiazya.scopes.infrastructure.logging.LoggerComponentInitializer
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
@@ -24,6 +28,7 @@ import io.github.kamiazya.scopes.presentation.cli.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.presentation.cli.error.CliErrorMessageFormatter
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -45,9 +50,9 @@ object CompositionRoot {
      */
     fun initialize() {
         if (GlobalContext.getOrNull() == null) {
-            // Configure logging context for coroutine-based context propagation
-            loggingContextScope = CoroutineLoggingContextScope()
-            
+            // Initialize logger components
+            LoggerComponentInitializer.initialize()
+
             startKoin {
                 modules(
                     infrastructureModule,
@@ -74,6 +79,56 @@ object CompositionRoot {
         single<AliasGenerationService> {
             DefaultAliasGenerationService(get<HaikunatorStrategy>(), get())
         }
+
+        // Logging context scope for coroutine-based context propagation
+        single<LoggingContextScope> { CoroutineLoggingContextScope() }
+
+        // Logger configuration - available to all layers
+        single<Logger>(named("app")) {
+            logger {
+                name = "ScopesApp"
+
+                application {
+                    name = "scopes-cli"
+                    version = getApplicationVersion()
+                    type = ApplicationType.CLI
+                }
+
+                runtime(NativeRuntimeInfoProvider.get())
+
+                console {
+                    plainText()
+                }
+
+                context {
+                    put("environment", System.getenv("ENV") ?: "development")
+                }
+
+                contextScope(get())
+            }
+        }
+
+        // CLI-specific logger
+        single<Logger>(named("cli")) {
+            logger {
+                name = "ScopesCLI"
+
+                application {
+                    name = "scopes-cli"
+                    version = getApplicationVersion()
+                    type = ApplicationType.CLI
+                }
+
+                runtime(NativeRuntimeInfoProvider.get())
+
+                console {
+                    plainText()
+                    level = LogLevel.INFO // Less verbose for CLI output
+                }
+
+                contextScope(get())
+            }
+        }
     }
 
     /**
@@ -90,7 +145,6 @@ object CompositionRoot {
      * Contains use case handlers, services, and application-specific implementations.
      */
     private val applicationModule = module {
-        single<Logger> { ConsoleLogger("ScopesApp") }
         single { CrossAggregateValidationService(get()) }
         single {
             CreateScopeHandler(
@@ -99,7 +153,7 @@ object CompositionRoot {
                 hierarchyService = get(),
                 crossAggregateValidationService = get(),
                 aliasManagementService = get(),
-                logger = get()
+                logger = get(named("app"))
             )
         }
     }
@@ -110,6 +164,14 @@ object CompositionRoot {
      */
     private val presentationModule = module {
         single<ErrorMessageFormatter> { CliErrorMessageFormatter }
-        single { CreateScopeCommand(get(), get()) }
+        single { CreateScopeCommand(get(), get(), get()) }
+    }
+
+    /**
+     * Gets the application version from system properties or defaults to "dev".
+     */
+    private fun getApplicationVersion(): String {
+        return System.getProperty("app.version") ?: "dev"
     }
 }
+

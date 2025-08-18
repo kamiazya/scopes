@@ -15,3 +15,4 @@ data class CreateScope(
     val generateAlias: Boolean = true,  // Auto-generate canonical alias by default
     val customAlias: String? = null     // Optionally provide a custom canonical alias
 ) : Command, DTO
+

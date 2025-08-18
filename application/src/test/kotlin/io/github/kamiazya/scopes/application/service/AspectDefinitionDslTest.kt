@@ -18,11 +18,11 @@ class AspectDefinitionDslTest : StringSpec({
 
         definitions shouldHaveSize 1
         val definition = definitions.first()
-        
+
         definition.key.value shouldBe "priority"
         definition.description shouldBe "Task priority level"
         (definition.type is AspectType.Ordered) shouldBe true
-        
+
         val orderedType = definition.type as AspectType.Ordered
         orderedType.allowedValues shouldHaveSize 4
         orderedType.allowedValues.map { it.value } shouldBe listOf("low", "medium", "high", "critical")
@@ -37,7 +37,7 @@ class AspectDefinitionDslTest : StringSpec({
 
         definitions shouldHaveSize 1
         val definition = definitions.first()
-        
+
         definition.key.value shouldBe "effort"
         definition.description shouldBe "Estimated effort in hours"
         definition.type shouldBe AspectType.Numeric
@@ -52,7 +52,7 @@ class AspectDefinitionDslTest : StringSpec({
 
         definitions shouldHaveSize 1
         val definition = definitions.first()
-        
+
         definition.key.value shouldBe "comment"
         definition.description shouldBe "Additional comments"
         definition.type shouldBe AspectType.Text
@@ -64,11 +64,11 @@ class AspectDefinitionDslTest : StringSpec({
                 description = "Task priority level"
                 values("low", "medium", "high")
             }
-            
+
             numeric("effort") {
                 description = "Estimated effort"
             }
-            
+
             text("comment") {
                 description = "Comments"
             }
@@ -80,14 +80,14 @@ class AspectDefinitionDslTest : StringSpec({
 
     "AspectDefinitionDefaults should work with DSL" {
         val defaults = AspectDefinitionDefaults.all()
-        
+
         defaults shouldNotBe emptyList<Any>()
         defaults shouldHaveSize 8
-        
+
         val priorityDef = defaults.find { it.key.value == "priority" }
         priorityDef shouldNotBe null
         priorityDef?.description shouldBe "Task priority level"
-        
+
         val effortDef = defaults.find { it.key.value == "effort" }
         effortDef shouldNotBe null
         effortDef?.type shouldBe AspectType.Numeric

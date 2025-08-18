@@ -48,3 +48,4 @@ class FindAliasesByPrefixHandler(
             .map { aliases -> ListAliasesResult(ScopeAliasMapper.toDtoList(aliases)) }
     }
 }
+

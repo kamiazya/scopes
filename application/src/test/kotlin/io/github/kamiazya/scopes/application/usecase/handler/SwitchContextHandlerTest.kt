@@ -162,3 +162,4 @@ class SwitchContextHandlerTest : StringSpec({
         actualError.shouldBeInstanceOf<ApplicationError.PersistenceError.StorageUnavailable>()
     }
 })
+

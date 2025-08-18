@@ -202,7 +202,7 @@ class OrderedAspectBuilder(private val key: String) {
             error("Failed to create ordered aspect definition for key: $key")
         }
     }
-    
+
     fun buildWithRules(): AspectDefinitionWithRules {
         return AspectDefinitionWithRules(build(), rules)
     }
@@ -236,7 +236,7 @@ class NumericAspectBuilder(private val key: String) {
             allowMultiple = allowMultiple
         )
     }
-    
+
     fun buildWithRules(): AspectDefinitionWithRules {
         return AspectDefinitionWithRules(build(), rules)
     }
@@ -270,7 +270,7 @@ class TextAspectBuilder(private val key: String) {
             allowMultiple = allowMultiple
         )
     }
-    
+
     fun buildWithRules(): AspectDefinitionWithRules {
         return AspectDefinitionWithRules(build(), rules)
     }
@@ -304,7 +304,7 @@ class BooleanAspectBuilder(private val key: String) {
             allowMultiple = allowMultiple
         )
     }
-    
+
     fun buildWithRules(): AspectDefinitionWithRules {
         return AspectDefinitionWithRules(build(), rules)
     }
@@ -390,3 +390,4 @@ class ConditionBuilder {
     fun not(condition: AspectCondition): AspectCondition =
         AspectCondition.Not(condition)
 }
+

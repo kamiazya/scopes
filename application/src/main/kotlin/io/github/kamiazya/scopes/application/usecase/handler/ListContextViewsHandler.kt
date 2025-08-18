@@ -6,7 +6,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewListResult
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.toApplicationError
-import io.github.kamiazya.scopes.application.port.Logger
+import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.ListContextViewsQuery
@@ -30,7 +30,7 @@ class ListContextViewsHandler(
         logger.info("Listing context views", mapOf(
             "includeInactive" to input.includeInactive
         ))
-        
+
         // Get all context views
         logger.debug("Fetching all context views from repository")
         val contextViews = contextViewRepository.findAll().mapLeft { error ->
@@ -39,9 +39,9 @@ class ListContextViewsHandler(
             ))
             error.toApplicationError()
         }.bind()
-        
+
         logger.debug("Found context views", mapOf("count" to contextViews.size))
-        
+
         // Get the currently active context if requested
         val activeContext = if (input.includeInactive) {
             logger.debug("Fetching active context")
@@ -76,7 +76,7 @@ class ListContextViewsHandler(
         val activeContextResult = activeContext?.let { active ->
             contextResults.find { it.id == active.id.value }
         }
-        
+
         logger.info("Context views listed successfully", mapOf(
             "total" to contextResults.size,
             "hasActive" to (activeContextResult != null)
@@ -93,3 +93,4 @@ class ListContextViewsHandler(
         ))
     }
 }
+

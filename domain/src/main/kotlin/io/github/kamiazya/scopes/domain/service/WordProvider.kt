@@ -44,3 +44,4 @@ interface WordProvider {
      */
     fun getAvailableCategories(): List<String> = listOf("adjectives", "nouns")
 }
+

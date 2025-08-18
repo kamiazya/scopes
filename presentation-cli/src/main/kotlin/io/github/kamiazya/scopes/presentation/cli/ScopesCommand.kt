@@ -25,3 +25,4 @@ class ScopesCommand : CliktCommand(name = "scopes"), KoinComponent {
     }
 }
 
+

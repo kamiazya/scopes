@@ -18,14 +18,14 @@ fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
             operation = this.operation,
             cause = this.cause?.message
         )
-    
+
     is PersistenceError.DataCorruption ->
         ApplicationError.PersistenceError.DataCorruption(
             entityType = this.entityType,
             entityId = this.entityId,
             reason = this.reason
         )
-    
+
     is PersistenceError.ConcurrencyConflict ->
         ApplicationError.PersistenceError.ConcurrencyConflict(
             entityType = this.entityType,
@@ -41,12 +41,12 @@ fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
 fun ContextError.NamingError.toApplicationError(): ApplicationError = when (this) {
     is ContextError.NamingError.Empty ->
         ApplicationError.ContextError.NamingEmpty
-    
+
     is ContextError.NamingError.AlreadyExists ->
         ApplicationError.ContextError.NamingAlreadyExists(
             attemptedName = this.attemptedName
         )
-    
+
     is ContextError.NamingError.InvalidFormat ->
         ApplicationError.ContextError.NamingInvalidFormat(
             attemptedName = this.attemptedName
@@ -63,13 +63,13 @@ fun ContextError.FilterError.toApplicationError(): ApplicationError = when (this
             reason = this.reason,
             expression = this.expression
         )
-    
+
     is ContextError.FilterError.UnknownAspect ->
         ApplicationError.ContextError.FilterUnknownAspect(
             unknownAspectKey = this.unknownAspectKey,
             expression = this.expression
         )
-    
+
     is ContextError.FilterError.LogicalInconsistency ->
         ApplicationError.ContextError.FilterLogicalInconsistency(
             reason = this.reason,
@@ -83,55 +83,55 @@ fun ContextError.FilterError.toApplicationError(): ApplicationError = when (this
 fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is ScopeInputError.IdError.Blank ->
         ApplicationError.ScopeInputError.IdBlank("")
-    
+
     is ScopeInputError.IdError.InvalidFormat ->
         ApplicationError.ScopeInputError.IdInvalidFormat(
             attemptedValue = this.attemptedValue,
             expectedFormat = this.expectedFormat
         )
-    
+
     is ScopeInputError.TitleError.Empty ->
         ApplicationError.ScopeInputError.TitleEmpty("")
-    
+
     is ScopeInputError.TitleError.TooShort ->
         ApplicationError.ScopeInputError.TitleTooShort(
             attemptedValue = this.attemptedValue,
             minimumLength = this.minimumLength
         )
-    
+
     is ScopeInputError.TitleError.TooLong ->
         ApplicationError.ScopeInputError.TitleTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
-    
+
     is ScopeInputError.TitleError.ContainsProhibitedCharacters ->
         ApplicationError.ScopeInputError.TitleContainsProhibitedCharacters(
             attemptedValue = this.attemptedValue,
             prohibitedCharacters = this.prohibitedCharacters
         )
-    
+
     is ScopeInputError.DescriptionError.TooLong ->
         ApplicationError.ScopeInputError.DescriptionTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
-    
+
     is ScopeInputError.AliasError.Empty ->
         ApplicationError.ScopeInputError.AliasEmpty("")
-    
+
     is ScopeInputError.AliasError.TooShort ->
         ApplicationError.ScopeInputError.AliasTooShort(
             attemptedValue = this.attemptedValue,
             minimumLength = this.minimumLength
         )
-    
+
     is ScopeInputError.AliasError.TooLong ->
         ApplicationError.ScopeInputError.AliasTooLong(
             attemptedValue = this.attemptedValue,
             maximumLength = this.maximumLength
         )
-    
+
     is ScopeInputError.AliasError.InvalidFormat ->
         ApplicationError.ScopeInputError.AliasInvalidFormat(
             attemptedValue = this.attemptedValue,
@@ -148,7 +148,7 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     is ContextError.NamingError -> this.toApplicationError()
     is ContextError.FilterError -> this.toApplicationError()
     is ScopeInputError -> this.toApplicationError()
-    
+
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
     else -> ApplicationError.PersistenceError.StorageUnavailable(
