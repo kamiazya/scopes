@@ -355,6 +355,7 @@ jobs:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
       provenance-name: "multiple.intoto.jsonl"
+      private-repository: false
 
   create-release:
     name: Create GitHub Release
