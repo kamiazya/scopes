@@ -45,6 +45,8 @@ interface ScopeRepository {
     /**
      * Check if a scope exists with the given title and parent.
      * Used for efficient title uniqueness validation.
+     * When parentId is null, checks for root-level title uniqueness.
+     * Title uniqueness is enforced at ALL levels including root level.
      */
     suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean>
 

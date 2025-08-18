@@ -83,16 +83,18 @@ sealed class TitleValidationError : DomainError() {
     data class InvalidCharacters(val title: String, val invalidCharacters: Set<Char>, val position: Int) : TitleValidationError()
 }
 
-// Business rule validation with hierarchy context  
-sealed class ScopeBusinessRuleError : DomainError() {
-    data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int, val scopeId: ScopeId, val parentPath: List<ScopeId>) : ScopeBusinessRuleError()
-    data class MaxChildrenExceeded(val maxChildren: Int, val currentChildren: Int, val parentId: ScopeId, val attemptedOperation: String) : ScopeBusinessRuleError()
-    data class DuplicateScope(val duplicateTitle: String, val parentId: ScopeId, val existingScopeId: ScopeId, val normalizedTitle: String) : ScopeBusinessRuleError()
+// Hierarchy validation errors (matching actual implementation)
+sealed class ScopeHierarchyError : ConceptualModelError() {
+    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
+    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
+    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 }
 
-// Uniqueness validation with detailed context
-sealed class UniquenessValidationError : DomainError() {
-    data class DuplicateTitle(val title: String, val normalizedTitle: String, val parentId: String?, val existingScopeId: String) : UniquenessValidationError()
+// Uniqueness validation with detailed context (matching actual implementation)
+sealed class ScopeUniquenessError : ConceptualModelError() {
+    // Title uniqueness is enforced at ALL levels including root level
+    data class DuplicateTitle(val occurredAt: Instant, val title: String, val parentScopeId: ScopeId?, val existingScopeId: ScopeId) : ScopeUniquenessError()
 }
 ```
 
@@ -127,9 +129,9 @@ The current architecture implements systematic error translation from service-sp
 
 ```kotlin
 sealed class CreateScopeError {
-    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
-    data class BusinessRuleViolationFailed(val businessRuleError: ScopeBusinessRuleError) : CreateScopeError()
-    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
+    data class TitleValidationFailed(val titleError: ScopeInputError.TitleError) : CreateScopeError()
+    data class HierarchyViolationFailed(val hierarchyError: ScopeHierarchyError) : CreateScopeError()
+    data class DuplicateTitleFailed(val uniquenessError: ScopeUniquenessError) : CreateScopeError()
     object ParentNotFound : CreateScopeError()
     data class SaveFailure(val repositoryError: SaveScopeError) : CreateScopeError()
     data class ExistenceCheckFailure(val repositoryError: ExistsScopeError) : CreateScopeError()
@@ -142,7 +144,7 @@ private fun validateTitleWithServiceErrors(title: String): Either<CreateScopeErr
 
 private suspend fun validateHierarchyWithServiceErrors(parentId: ScopeId?): Either<CreateScopeError, Unit> =
     applicationScopeValidationService.validateHierarchyConstraints(parentId)
-        .mapLeft { businessRuleError -> CreateScopeError.BusinessRuleViolationFailed(businessRuleError) }
+        .mapLeft { hierarchyError -> CreateScopeError.HierarchyViolationFailed(hierarchyError) }
 ```
 
 ## Strongly-Typed Domain Implementation

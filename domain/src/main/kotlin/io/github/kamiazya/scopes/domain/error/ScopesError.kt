@@ -308,9 +308,16 @@ sealed class ScopeHierarchyError : ConceptualModelError() {
 
 /**
  * Constraint violations related to Scope uniqueness.
+ * Title uniqueness is enforced at ALL levels including root level.
  */
 sealed class ScopeUniquenessError : ConceptualModelError() {
 
+    /**
+     * Title duplication error.
+     * Duplicate titles are forbidden at all levels (root and child).
+     * @param parentScopeId The parent scope ID (null for root level)
+     * @param existingScopeId The ID of the existing scope with the same title
+     */
     data class DuplicateTitle(
         override val occurredAt: Instant,
         val title: String,

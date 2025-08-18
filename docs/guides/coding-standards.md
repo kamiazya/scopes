@@ -54,19 +54,23 @@ sealed class TitleValidationError {
 // Note: Application errors are translated to domain errors at the application/domain boundary
 // This ensures callers receive appropriate domain-level errors while maintaining layer separation
 
-sealed class ScopeBusinessRuleViolation : DomainError() {
-    data class ScopeMaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : ScopeBusinessRuleViolation()
-    data class ScopeMaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : ScopeBusinessRuleViolation()
-    data class ScopeDuplicateTitle(val title: String, val parentId: ScopeId?) : ScopeBusinessRuleViolation()
+// Hierarchy validation errors (matching actual implementation)
+sealed class ScopeHierarchyError : ConceptualModelError() {
+    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
+    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
+    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 }
 
-sealed class UniquenessValidationError : DomainError() {
+// Uniqueness validation (matching actual implementation)
+// Title uniqueness is enforced at ALL levels including root level
+sealed class ScopeUniquenessError : ConceptualModelError() {
     data class DuplicateTitle(
+        val occurredAt: Instant,
         val title: String,
-        val normalizedTitle: String, 
-        val parentId: ScopeId?,
+        val parentScopeId: ScopeId?,
         val existingScopeId: ScopeId
-    ) : UniquenessValidationError()
+    ) : ScopeUniquenessError()
 }
 
 sealed class ApplicationValidationError {
@@ -120,9 +124,9 @@ sealed class CreateScopeError {
     data class MaxChildrenExceeded(val parentId: ScopeId, val maxChildren: Int) : CreateScopeError()
     
     // Service-specific error mappings
-    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
-    data class BusinessRuleViolationFailed(val businessRuleError: BusinessRuleServiceError) : CreateScopeError()
-    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
+    data class TitleValidationFailed(val titleError: ScopeInputError.TitleError) : CreateScopeError()
+    data class HierarchyViolationFailed(val hierarchyError: ScopeHierarchyError) : CreateScopeError()
+    data class DuplicateTitleFailed(val uniquenessError: ScopeUniquenessError) : CreateScopeError()
 }
 
 // Translation in use case handlers
@@ -229,19 +233,19 @@ class ApplicationScopeValidationService(
 // Centralized error translation for scope business rule violations
 private fun mapScopeBusinessRuleViolationToScopeError(error: ScopeBusinessRuleViolation, parentId: ScopeId?): ScopeError =
     when (error) {
-        is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
+        is ScopeHierarchyError.MaxDepthExceeded ->
             ScopeError.InvalidParent(
                 parentId ?: ScopeId.generate(),
-                "Maximum hierarchy depth (${error.maxDepth}) would be exceeded"
+                "Maximum hierarchy depth (${error.maximumDepth}) would be exceeded"
             )
-        is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
+        is ScopeHierarchyError.MaxChildrenExceeded ->
             ScopeError.InvalidParent(
                 parentId ?: ScopeId.generate(), 
-                "Maximum children limit (${error.maxChildren}) would be exceeded"
+                "Maximum children limit (${error.maximumChildren}) would be exceeded"
             )
-        is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
+        is ScopeUniquenessError.DuplicateTitle ->
             ScopeError.InvalidTitle(
-                "Scope with title '${error.title}' already exists under parent ${error.parentId ?: "root"}"
+                "Scope with title '${error.title}' already exists under parent ${error.parentScopeId ?: "root"}"
             )
     }
 
@@ -500,7 +504,7 @@ pre-commit:
 ### Current Implementation Patterns ✅
 
 - **Strongly-typed domain identifiers** (ScopeId instead of String)
-- **Service-specific error contexts** (TitleValidationError, UniquenessValidationError, ScopeBusinessRuleViolation, ApplicationValidationError)
+- **Service-specific error contexts** (ScopeInputError, ScopeUniquenessError, ScopeHierarchyError, ApplicationValidationError)
 - **Error translation in use case handlers** (service errors → use case errors)
 - **ValidationResult for error accumulation** with extension functions
 - **Repository-dependent validation** in application layer
