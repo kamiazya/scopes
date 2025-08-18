@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.EmptyResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -38,7 +38,7 @@ class DeleteContextViewHandler(
                 "id" to input.id,
                 "error" to (error::class.simpleName ?: "Unknown")
             ))
-            DomainErrorMapper.mapToApplicationError(error)
+            error.toApplicationError()
         }.bind()
 
         // Check if this context is currently active
@@ -62,7 +62,7 @@ class DeleteContextViewHandler(
                 "id" to contextId.value,
                 "error" to (error::class.simpleName ?: "Unknown")
             ))
-            DomainErrorMapper.mapToApplicationError(error)
+            error.toApplicationError()
         }.bind()
         
         logger.info("Context view deleted successfully", mapOf("id" to contextId.value))

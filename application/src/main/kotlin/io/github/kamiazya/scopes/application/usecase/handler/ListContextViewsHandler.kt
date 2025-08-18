@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.application.dto.ContextViewListResult
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -37,7 +37,7 @@ class ListContextViewsHandler(
             logger.error("Failed to fetch context views", mapOf(
                 "error" to (error::class.simpleName ?: "Unknown")
             ))
-            DomainErrorMapper.mapToApplicationError(error)
+            error.toApplicationError()
         }.bind()
         
         logger.debug("Found context views", mapOf("count" to contextViews.size))

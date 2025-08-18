@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.dto.FilteredScopesResult
 import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.service.ActiveContextService
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -60,7 +60,7 @@ class GetFilteredScopesHandler(
                     "name" to contextName.value,
                     "error" to (error::class.simpleName ?: "Unknown")
                 ))
-                DomainErrorMapper.mapToApplicationError(error)
+                error.toApplicationError()
             }.bind()
             
             ensure(foundContext != null) {
@@ -95,7 +95,7 @@ class GetFilteredScopesHandler(
             logger.error("Failed to fetch scopes", mapOf(
                 "error" to (error::class.simpleName ?: "Unknown")
             ))
-            DomainErrorMapper.mapToApplicationError(error)
+            error.toApplicationError()
         }.bind()
         
         logger.debug("Total scopes found", mapOf("count" to allScopes.size))

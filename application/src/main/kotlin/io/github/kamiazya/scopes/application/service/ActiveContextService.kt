@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.error.toApplicationError
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import kotlinx.coroutines.sync.Mutex
@@ -90,7 +90,7 @@ class ActiveContextService(
                 
                 val context = contextViewRepository.findByName(contextName)
                     .mapLeft { error -> 
-                        DomainErrorMapper.mapToApplicationError(error)
+                        error.toApplicationError()
                     }
                     .bind()
 

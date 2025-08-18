@@ -5,7 +5,8 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.DomainErrorMapper
+import io.github.kamiazya.scopes.application.error.toApplicationError
+import io.github.kamiazya.scopes.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.application.port.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -49,7 +50,7 @@ class UpdateContextViewHandler(
                         "id" to input.id,
                         "error" to (error::class.simpleName ?: "Unknown")
                     ))
-                    DomainErrorMapper.mapToApplicationError(error)
+                    error.toGenericApplicationError()
                 }.bind()
 
                 // Find the existing context view
@@ -59,7 +60,7 @@ class UpdateContextViewHandler(
                         "id" to contextId.value,
                         "error" to (error::class.simpleName ?: "Unknown")
                     ))
-                    DomainErrorMapper.mapToApplicationError(error)
+                    error.toGenericApplicationError()
                 }.bind()
                 
                 ensure(existingContext != null) {
@@ -88,7 +89,7 @@ class UpdateContextViewHandler(
                             "name" to newName.value,
                             "error" to (error::class.simpleName ?: "Unknown")
                         ))
-                        DomainErrorMapper.mapToApplicationError(error)
+                        error.toGenericApplicationError()
                     }.bind()
                     
                     ensure(existing == null || existing.id == contextId) {
@@ -107,7 +108,7 @@ class UpdateContextViewHandler(
                             "filter" to filter,
                             "error" to (error::class.simpleName ?: "Unknown")
                         ))
-                        DomainErrorMapper.mapToApplicationError(error)
+                        error.toGenericApplicationError()
                     }.bind()
                 } ?: existingContext.filter
 
@@ -155,7 +156,7 @@ class UpdateContextViewHandler(
                         "id" to updatedContext.id.value,
                         "error" to (error::class.simpleName ?: "Unknown")
                     ))
-                    DomainErrorMapper.mapToApplicationError(error)
+                    error.toGenericApplicationError()
                 }.bind()
                 
                 logger.info("Context view updated successfully", mapOf(
