@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.application.service
 
 import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.DomainErrorMapper
 import io.github.kamiazya.scopes.domain.entity.ContextView
@@ -40,35 +40,35 @@ class ActiveContextService(
      * Set the active context.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun setActiveContext(context: ContextView): Either<ApplicationError, Unit> =
+    suspend fun setActiveContext(context: ContextView): Either<ApplicationError, Unit> = either {
         mutex.withLock {
             try {
                 activeContext = context
-                Unit.right()
             } catch (e: Exception) {
-                ApplicationError.PersistenceError.StorageUnavailable(
+                raise(ApplicationError.PersistenceError.StorageUnavailable(
                     operation = "setActiveContext",
                     cause = e.message
-                ).left()
+                ))
             }
         }
+    }
 
     /**
      * Clear the active context.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun clearActiveContext(): Either<ApplicationError, Unit> =
+    suspend fun clearActiveContext(): Either<ApplicationError, Unit> = either {
         mutex.withLock {
             try {
                 activeContext = null
-                Unit.right()
             } catch (e: Exception) {
-                ApplicationError.PersistenceError.StorageUnavailable(
+                raise(ApplicationError.PersistenceError.StorageUnavailable(
                     operation = "clearActiveContext",
                     cause = e.message
-                ).left()
+                ))
             }
         }
+    }
 
 
     /**
@@ -77,34 +77,38 @@ class ActiveContextService(
      */
     suspend fun switchToContextByName(
         name: String
-    ): Either<ApplicationError, ContextView> = mutex.withLock {
-        try {
-            val contextName = io.github.kamiazya.scopes.domain.valueobject.ContextName.create(name).getOrNull()
-                ?: return@withLock ApplicationError.ContextError.NamingInvalidFormat(
-                    attemptedName = name
-                ).left()
-            
-            val context = contextViewRepository.findByName(contextName).fold(
-                ifLeft = { error -> 
-                    return@withLock DomainErrorMapper.mapToApplicationError(error).left() 
-                },
-                ifRight = { it }
-            )
+    ): Either<ApplicationError, ContextView> = either {
+        mutex.withLock {
+            try {
+                val contextName = io.github.kamiazya.scopes.domain.valueobject.ContextName.create(name)
+                    .mapLeft {
+                        ApplicationError.ContextError.NamingInvalidFormat(
+                            attemptedName = name
+                        )
+                    }
+                    .bind()
+                
+                val context = contextViewRepository.findByName(contextName)
+                    .mapLeft { error -> 
+                        DomainErrorMapper.mapToApplicationError(error)
+                    }
+                    .bind()
 
-            if (context != null) {
+                ensure(context != null) {
+                    ApplicationError.ContextError.StateNotFound(
+                        contextName = name,
+                        contextId = null
+                    )
+                }
+
                 activeContext = context
-                return@withLock context.right()
+                context
+            } catch (e: Exception) {
+                raise(ApplicationError.PersistenceError.StorageUnavailable(
+                    operation = "switchToContextByName",
+                    cause = e.message
+                ))
             }
-
-            ApplicationError.ContextError.StateNotFound(
-                contextName = name,
-                contextId = null
-            ).left()
-        } catch (e: Exception) {
-            ApplicationError.PersistenceError.StorageUnavailable(
-                operation = "switchToContextByName",
-                cause = e.message
-            ).left()
         }
     }
 
