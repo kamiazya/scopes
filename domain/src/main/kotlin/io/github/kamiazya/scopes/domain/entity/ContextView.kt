@@ -3,10 +3,11 @@ package io.github.kamiazya.scopes.domain.entity
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
-import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextName
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -16,15 +17,17 @@ import kotlinx.datetime.Instant
  * to scope lists to show only relevant scopes for different work contexts.
  *
  * Business rules:
- * - Context name must be unique
+ * - Context key must be unique (used for programmatic access)
+ * - Context name is for display purposes and can contain spaces
  * - Filter must be valid and evaluable
  * - Description is optional but recommended for clarity
  */
 data class ContextView(
     val id: ContextViewId,
-    val name: ContextName,
-    val filter: ContextFilter,
-    val description: ContextDescription? = null,
+    val key: ContextViewKey,
+    val name: ContextViewName,
+    val filter: ContextViewFilter,
+    val description: ContextViewDescription? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
@@ -34,19 +37,25 @@ data class ContextView(
          * Create a new context view with validation.
          */
         fun create(
-            name: ContextName,
-            filter: ContextFilter,
+            key: ContextViewKey,
+            name: ContextViewName,
+            filter: ContextViewFilter,
             description: String? = null
         ): Either<String, ContextView> {
-            // Create optional ContextDescription
-            val contextDescription = when (val result = ContextDescription.createOptional(description)) {
-                is Either.Left -> return result.value.left()
-                is Either.Right -> result.value
+            // Create optional ContextViewDescription
+            val contextDescription = if (description.isNullOrBlank()) {
+                null
+            } else {
+                when (val result = ContextViewDescription.create(description)) {
+                    is Either.Left -> return result.value.left()
+                    is Either.Right -> result.value
+                }
             }
 
             val now = Clock.System.now()
             return ContextView(
                 id = ContextViewId.generate(),
+                key = key,
                 name = name,
                 filter = filter,
                 description = contextDescription,
@@ -60,7 +69,7 @@ data class ContextView(
      * Update the filter for this context view.
      * Returns a new instance with updated filter and timestamp.
      */
-    fun updateFilter(newFilter: ContextFilter): ContextView = copy(
+    fun updateFilter(newFilter: ContextViewFilter): ContextView = copy(
         filter = newFilter,
         updatedAt = Clock.System.now()
     )
@@ -70,10 +79,14 @@ data class ContextView(
      * Returns Either.Left if description is too long.
      */
     fun updateDescription(newDescription: String?): Either<String, ContextView> {
-        // Create optional ContextDescription
-        val contextDescription = when (val result = ContextDescription.createOptional(newDescription)) {
-            is Either.Left -> return result.value.left()
-            is Either.Right -> result.value
+        // Create optional ContextViewDescription
+        val contextDescription = if (newDescription.isNullOrBlank()) {
+            null
+        } else {
+            when (val result = ContextViewDescription.create(newDescription)) {
+                is Either.Left -> return result.value.left()
+                is Either.Right -> result.value
+            }
         }
 
         return copy(
@@ -83,9 +96,18 @@ data class ContextView(
     }
 
     /**
-     * Check if this context view matches the given name (case-insensitive).
+     * Update the name for this context view.
+     * Returns a new instance with updated name and timestamp.
      */
-    fun matchesName(searchName: String): Boolean =
-        name.normalized() == searchName.lowercase()
+    fun updateName(newName: ContextViewName): ContextView = copy(
+        name = newName,
+        updatedAt = Clock.System.now()
+    )
+
+    /**
+     * Check if this context view matches the given key.
+     */
+    fun matchesKey(searchKey: String): Boolean =
+        key.value == searchKey
 }
 

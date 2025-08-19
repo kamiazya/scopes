@@ -1,17 +1,15 @@
 package io.github.kamiazya.scopes.domain.entity
 
 import arrow.core.Either
-import arrow.core.raise.either
 import arrow.core.NonEmptyList
+import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.ScopesError
-import io.github.kamiazya.scopes.domain.error.ScopeInputError
-import io.github.kamiazya.scopes.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
-import io.github.kamiazya.scopes.domain.valueobject.Aspects
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -205,5 +203,3 @@ data class Scope(
      */
     fun isRoot(): Boolean = parentId == null
 }
-
-
