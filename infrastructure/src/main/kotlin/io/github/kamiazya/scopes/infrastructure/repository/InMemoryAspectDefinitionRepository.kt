@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.infrastructure.repository
 
 import arrow.core.Either
+import arrow.core.raise.catch
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.domain.error.PersistenceError
@@ -20,53 +21,53 @@ class InMemoryAspectDefinitionRepository : AspectDefinitionRepository {
     private val mutex = Mutex()
 
     override suspend fun save(definition: AspectDefinition): Either<PersistenceError, AspectDefinition> = either {
-        mutex.withLock {
-            try {
+        catch({
+            mutex.withLock {
                 definitions[definition.key] = definition
                 definition
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "save", e))
             }
+        }) { e: Throwable ->
+            raise(PersistenceError.StorageUnavailable(currentTimestamp(), "save", e))
         }
     }
 
     override suspend fun findByKey(key: AspectKey): Either<PersistenceError, AspectDefinition?> = either {
-        mutex.withLock {
-            try {
+        catch({
+            mutex.withLock {
                 definitions[key]
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByKey", e))
             }
+        }) { e: Throwable ->
+            raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByKey", e))
         }
     }
 
     override suspend fun existsByKey(key: AspectKey): Either<PersistenceError, Boolean> = either {
-        mutex.withLock {
-            try {
+        catch({
+            mutex.withLock {
                 definitions.containsKey(key)
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsByKey", e))
             }
+        }) { e: Throwable ->
+            raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsByKey", e))
         }
     }
 
     override suspend fun findAll(): Either<PersistenceError, List<AspectDefinition>> = either {
-        mutex.withLock {
-            try {
+        catch({
+            mutex.withLock {
                 definitions.values.toList()
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
             }
+        }) { e: Throwable ->
+            raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
         }
     }
 
     override suspend fun deleteByKey(key: AspectKey): Either<PersistenceError, Boolean> = either {
-        mutex.withLock {
-            try {
+        catch({
+            mutex.withLock {
                 definitions.remove(key) != null
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "deleteByKey", e))
             }
+        }) { e: Throwable ->
+            raise(PersistenceError.StorageUnavailable(currentTimestamp(), "deleteByKey", e))
         }
     }
 
