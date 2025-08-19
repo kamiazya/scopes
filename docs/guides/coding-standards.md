@@ -217,11 +217,12 @@ class ApplicationScopeValidationService(
                 )
             }
             .bind()
-        if (depth >= MAX_HIERARCHY_DEPTH) {
-            raise(ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
+        
+        ensure(depth < MAX_HIERARCHY_DEPTH) {
+            ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
                 actualDepth = depth + 1
-            ))
+            )
         }
     }
 }
@@ -519,23 +520,32 @@ pre-commit:
 
 ### Core Principle: Linear Control Flow
 
-Use Arrow's `either` blocks with `ensure()` to create flat, linear control flow instead of nested if-else statements.
+Use Arrow's `either` blocks with `ensure()`, `ensureNotNull()` to create flat, linear control flow instead of nested if-else statements.
 
 ### Pattern Guidelines
 
 1. **Use `ensure()` for validation checks**
    - Replace `if (!condition) raise(error)` with `ensure(condition) { error }`
    - Makes the happy path more visible
+   - **NEVER use `raise()` directly** - always prefer `ensure()` or `ensureNotNull()`
 
-2. **Use `forEach` instead of `for` loops**
+2. **Use `ensureNotNull()` for null checks**
+   - Replace `if (value == null) raise(error)` with `ensureNotNull(value) { error }`
+   - Provides smart casting after the check
+
+3. **Use `forEach` instead of `for` loops**
    - More functional and composable
    - Works well with `either` blocks
 
-3. **Single `either` block per function**
+4. **Single `either` block per function**
    - Avoid nested `either` blocks
    - Keep error handling flat and linear
 
-### Before (Nested Structure)
+5. **Special cases for `ensure(false)`**
+   - Only use `ensure(false) { error }` when you need to always fail (e.g., after exhausting retries)
+   - This is equivalent to `raise(error)` but maintains consistency with the ensure pattern
+
+### Before (Nested Structure - Avoid This)
 ```kotlin
 suspend fun validateHierarchyConsistency(
     parentId: ScopeId,
@@ -546,15 +556,15 @@ suspend fun validateHierarchyConsistency(
         .bind()
     
     if (!parentExists) {
-        raise(Error.ParentNotFound(parentId))
+        raise(Error.ParentNotFound(parentId))  // ❌ Avoid raise()
     }
     
-    for (childId in childIds) {
+    for (childId in childIds) {  // ❌ Avoid traditional for loops
         val childExists = repository.existsById(childId)
             .mapLeft { error -> /* map error */ }
             .bind()
         
-        if (!childExists) {
+        if (!childExists) {  // ❌ Avoid if-else for validation
             raise(Error.ChildNotFound(childId))
         }
     }
@@ -659,7 +669,7 @@ class ValidationService(
 - **ValidationResult for error accumulation** with extension functions
 - **Repository-dependent validation** in application layer
 - **Functional error handling** with Arrow Either
-- **Flat structure with ensure()** for linear control flow
+- **Flat structure with ensure()/ensureNotNull()** for linear control flow
 - **Functional iteration** with forEach instead of for loops
 - **Architecture testing** with Konsist
 - **Context-aware error mapping** with extension functions
@@ -674,6 +684,7 @@ class ValidationService(
 - Violating Clean Architecture layer dependencies
 - Missing error translation between layers
 - Incomplete error context information
+- **Using raise() directly** (use ensure()/ensureNotNull() instead)
 - Nested if-else chains (use ensure() instead)
 - Traditional for loops (use forEach/map/filter)
 - Multiple nested either blocks
