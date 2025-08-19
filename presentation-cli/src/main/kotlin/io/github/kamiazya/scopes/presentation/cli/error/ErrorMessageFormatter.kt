@@ -94,14 +94,28 @@ object CliErrorMessageFormatter : AppErrorMessageFormatter {
                 append("Allowed values: ${errorInfo.allowedValues.joinToString(", ")}")
             }
 
-            // Context Errors - updated for flattened structure
-            is ContextError.NamingEmpty -> {
+            // Context Errors - updated for Key/Name separation
+            // Key-related errors
+            is ContextError.KeyEmpty -> {
+                append("Context key cannot be empty.")
+            }
+            is ContextError.KeyAlreadyExists -> {
+                append("Context with key '${errorInfo.attemptedKey}' already exists.")
+            }
+            is ContextError.KeyInvalidFormat -> {
+                append("Context key '${errorInfo.attemptedKey}' has invalid format. ")
+                append("Keys must start with a letter and contain only letters, numbers, underscores, and hyphens.")
+            }
+            
+            // Name-related errors
+            is ContextError.NameEmpty -> {
                 append("Context name cannot be empty.")
             }
-            is ContextError.NamingAlreadyExists -> {
-                append("Context with name '${errorInfo.attemptedName}' already exists.")
+            is ContextError.NameTooLong -> {
+                append("Context name '${errorInfo.attemptedName}' is too long. ")
+                append("Maximum length is ${errorInfo.maximumLength} characters.")
             }
-            is ContextError.NamingInvalidFormat -> {
+            is ContextError.NameInvalidFormat -> {
                 append("Context name '${errorInfo.attemptedName}' has invalid format.")
             }
 
@@ -119,11 +133,7 @@ object CliErrorMessageFormatter : AppErrorMessageFormatter {
             }
 
             is ContextError.StateNotFound -> {
-                when {
-                    errorInfo.contextName != null -> append("Context '${errorInfo.contextName}' not found.")
-                    errorInfo.contextId != null -> append("Context with ID '${errorInfo.contextId}' not found.")
-                    else -> append("Context not found.")
-                }
+                append("Context with ID '${errorInfo.contextId}' not found.")
             }
             is ContextError.StateFilterProducesNoResults -> {
                 append("Filter for context '${errorInfo.contextName}' produces no results.")
