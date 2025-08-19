@@ -2,13 +2,11 @@ package io.github.kamiazya.scopes.application.error
 
 import io.github.kamiazya.scopes.domain.error.ContextError
 import io.github.kamiazya.scopes.domain.error.ScopesError
-import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
-import io.github.kamiazya.scopes.domain.error.ScopeInputError as DomainScopeInputError
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.application.error.ContextError as AppContextError
 import io.github.kamiazya.scopes.application.error.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
+import io.github.kamiazya.scopes.domain.error.ScopeInputError as DomainScopeInputError
 
 /**
  * Extension functions for mapping common domain errors to application errors.
@@ -43,19 +41,20 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
 
 /**
  * Maps ContextError.NamingError to ApplicationError.ContextError
+ * Updated to handle separate Key and Name errors
  */
 fun ContextError.NamingError.toApplicationError(): ApplicationError = when (this) {
     is ContextError.NamingError.Empty ->
-        AppContextError.NamingEmpty
+        AppContextError.KeyEmpty // Default to key for backward compatibility
 
     is ContextError.NamingError.AlreadyExists ->
-        AppContextError.NamingAlreadyExists(
-            attemptedName = this.attemptedName
+        AppContextError.KeyAlreadyExists(
+            attemptedKey = this.attemptedName
         )
 
     is ContextError.NamingError.InvalidFormat ->
-        AppContextError.NamingInvalidFormat(
-            attemptedName = this.attemptedName
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = this.attemptedName
         )
 }
 

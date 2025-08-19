@@ -16,7 +16,7 @@ import io.github.kamiazya.scopes.application.usecase.command.GetFilteredScopesQu
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.valueobject.ContextName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.domain.entity.Scope
 
 /**
@@ -37,37 +37,37 @@ class GetFilteredScopesHandler(
 
     override suspend operator fun invoke(input: GetFilteredScopesQuery): Either<ApplicationError, FilteredScopesResult> = either {
         logger.info("Getting filtered scopes", mapOf(
-            "contextName" to (input.contextName ?: "active"),
+            "contextKey" to (input.contextKey ?: "active"),
             "offset" to input.offset,
             "limit" to input.limit
         ))
 
         // Resolve the context view
-        val contextView = if (input.contextName != null) {
-            // Find by name
-            logger.debug("Finding context by name", mapOf("name" to input.contextName))
-            val contextName = ContextName.create(input.contextName).mapLeft { errorMessage ->
-                logger.warn("Invalid context name format", mapOf(
-                    "name" to input.contextName,
+        val contextView = if (input.contextKey != null) {
+            // Find by key
+            logger.debug("Finding context by key", mapOf("key" to input.contextKey))
+            val contextKey = ContextViewKey.create(input.contextKey).mapLeft { errorMessage ->
+                logger.warn("Invalid context key format", mapOf(
+                    "key" to input.contextKey,
                     "error" to errorMessage
                 ))
-                ContextError.NamingInvalidFormat(
-                    attemptedName = input.contextName
+                ContextError.KeyInvalidFormat(
+                    attemptedKey = input.contextKey
                 )
             }.bind()
 
-            val foundContext = contextViewRepository.findByName(contextName).mapLeft { error ->
-                logger.error("Failed to find context by name", mapOf(
-                    "name" to contextName.value,
+            val foundContext = contextViewRepository.findByKey(contextKey).mapLeft { error ->
+                logger.error("Failed to find context by key", mapOf(
+                    "key" to contextKey.value,
                     "error" to (error::class.simpleName ?: "Unknown")
                 ))
                 error.toApplicationError()
             }.bind()
 
             ensure(foundContext != null) {
-                logger.warn("Context not found", mapOf("name" to input.contextName))
+                logger.warn("Context not found", mapOf("key" to input.contextKey))
                 ContextError.StateNotFound(
-                    contextName = input.contextName
+                    contextId = input.contextKey
                 )
             }
             foundContext
@@ -78,7 +78,7 @@ class GetFilteredScopesHandler(
             ensure(activeContext != null) {
                 logger.warn("No active context found")
                 ContextError.StateNotFound(
-                    contextName = "Active context"
+                    contextId = "active"
                 )
             }
             activeContext
@@ -140,6 +140,7 @@ class GetFilteredScopesHandler(
 
         val contextViewResult = ContextViewResult(
             id = contextView.id.value,
+            key = contextView.key.value,
             name = contextView.name.value,
             filterExpression = contextView.filter.value,
             description = contextView.description?.value,

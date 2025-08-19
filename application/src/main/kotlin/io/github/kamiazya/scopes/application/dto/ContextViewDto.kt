@@ -12,6 +12,7 @@ import kotlinx.datetime.Instant
  */
 data class ContextViewResult(
     val id: String,
+    val key: String,
     val name: String,
     val filterExpression: String,
     val description: String? = null,

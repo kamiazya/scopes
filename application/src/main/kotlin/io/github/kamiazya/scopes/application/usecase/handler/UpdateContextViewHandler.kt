@@ -15,9 +15,9 @@ import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.UpdateContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
-import io.github.kamiazya.scopes.domain.valueobject.ContextName
-import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextDescription
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 
 /**
  * Handler for updating an existing context view.
@@ -75,42 +75,35 @@ class UpdateContextViewHandler(
                 // Update name if provided
                 val newName = input.name?.let { name ->
                     logger.debug("Validating new name", mapOf("name" to name))
-                    ContextName.create(name).mapLeft {
+                    ContextViewName.create(name).mapLeft { errorMsg ->
                         logger.warn("Invalid name format", mapOf("name" to name))
-                        ContextError.NamingInvalidFormat(
-                            attemptedName = name
-                        )
+                        when {
+                            errorMsg.contains("empty", ignoreCase = true) -> ContextError.NameEmpty
+                            errorMsg.contains("exceed", ignoreCase = true) || errorMsg.contains("too long", ignoreCase = true) -> 
+                                ContextError.NameTooLong(
+                                    attemptedName = name,
+                                    maximumLength = 100
+                                )
+                            else -> ContextError.NameInvalidFormat(attemptedName = name)
+                        }
                     }.bind()
                 } ?: existingContext.name
 
-                // Check if new name would cause a duplicate
-                if (input.name != null && newName.value != existingContext.name.value) {
-                    logger.debug("Checking for duplicate name", mapOf("name" to newName.value))
-                    val existing = contextViewRepository.findByName(newName).mapLeft { error ->
-                        logger.error("Failed to check duplicate name", mapOf(
-                            "name" to newName.value,
-                            "error" to (error::class.simpleName ?: "Unknown")
-                        ))
-                        error.toGenericApplicationError()
-                    }.bind()
-
-                    ensure(existing == null || existing.id == contextId) {
-                        logger.warn("Duplicate name found", mapOf("name" to input.name))
-                        ContextError.NamingAlreadyExists(
-                            attemptedName = input.name
-                        )
-                    }
-                }
+                // Name changes are allowed without uniqueness check since only keys must be unique
 
                 // Update filter if provided
                 val newFilter = input.filterExpression?.let { filter ->
                     logger.debug("Validating new filter", mapOf("filter" to filter))
-                    ContextFilter.create(filter).mapLeft { error ->
+                    ContextViewFilter.create(filter).mapLeft { errorMsg ->
                         logger.warn("Invalid filter expression", mapOf(
                             "filter" to filter,
-                            "error" to (error::class.simpleName ?: "Unknown")
+                            "error" to errorMsg
                         ))
-                        error.toGenericApplicationError()
+                        ContextError.FilterInvalidSyntax(
+                            position = 0,
+                            reason = errorMsg,
+                            expression = filter
+                        )
                     }.bind()
                 } ?: existingContext.filter
 
@@ -126,7 +119,7 @@ class UpdateContextViewHandler(
                     }
                     else -> {
                         logger.debug("Validating new description", mapOf("length" to input.description.length))
-                        ContextDescription.create(input.description).mapLeft {
+                        ContextViewDescription.create(input.description).mapLeft {
                             logger.warn("Description validation failed", mapOf(
                                 "length" to input.description.length
                             ))
@@ -169,6 +162,7 @@ class UpdateContextViewHandler(
                 // Map to DTO
                 ContextViewResult(
                     id = saved.id.value,
+                    key = saved.key.value,
                     name = saved.name.value,
                     filterExpression = saved.filter.value,
                     description = saved.description?.value,

@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.domain.valueobject.AspectCriterion
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.domain.valueobject.ComparisonOperator
-import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
 
 /**
  * Service for parsing filter expressions into AspectCriteria.
@@ -36,14 +36,14 @@ class FilterExpressionParser {
     /**
      * Parse a filter expression string into a ContextFilter.
      */
-    fun parse(expression: String): Either<String, ContextFilter> {
+    fun parse(expression: String): Either<String, ContextViewFilter> {
         if (expression.trim().isEmpty() || expression.trim() == "*") {
-            return ContextFilter.all().right()
+            return ContextViewFilter.all().right()
         }
 
-        // TODO: Fix this to properly create ContextFilter
+        // TODO: Fix this to properly create ContextViewFilter
         // For now, just use the create method directly
-        return ContextFilter.create(expression).mapLeft { error ->
+        return ContextViewFilter.create(expression).mapLeft { error ->
             "Parse error: Invalid filter expression"
         }
     }

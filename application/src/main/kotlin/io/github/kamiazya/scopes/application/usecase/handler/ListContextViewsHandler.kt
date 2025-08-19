@@ -64,6 +64,7 @@ class ListContextViewsHandler(
         val contextResults = contextViews.map { contextView ->
             ContextViewResult(
                 id = contextView.id.value,
+                key = contextView.key.value,
                 name = contextView.name.value,
                 filterExpression = contextView.filter.value,
                 description = contextView.description?.value,

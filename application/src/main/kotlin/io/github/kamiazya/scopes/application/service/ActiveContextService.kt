@@ -72,28 +72,28 @@ class ActiveContextService(
 
 
     /**
-     * Switch to a context by name.
+     * Switch to a context by key.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun switchToContextByName(
-        name: String
+    suspend fun switchToContextByKey(
+        key: String
     ): Either<ApplicationError, ContextView> = either {
         mutex.withLock {
             try {
-                val contextName = io.github.kamiazya.scopes.domain.valueobject.ContextName.create(name)
-                    .mapLeft {
-                        ContextError.NamingInvalidFormat(
-                            attemptedName = name
+                val contextKey = io.github.kamiazya.scopes.domain.valueobject.ContextViewKey.create(key)
+                    .mapLeft { errorMsg ->
+                        ContextError.KeyInvalidFormat(
+                            attemptedKey = key
                         )
                     }
                     .bind()
 
-                val context = contextViewRepository.findByName(contextName)
+                val context = contextViewRepository.findByKey(contextKey)
                     .mapLeft { error ->
                         when (error) {
                             is DomainPersistenceError -> error.toApplicationError()
                             else -> PersistenceError.StorageUnavailable(
-                                operation = "findByName",
+                                operation = "findByKey",
                                 cause = error.toString()
                             )
                         }
@@ -102,8 +102,7 @@ class ActiveContextService(
 
                 ensure(context != null) {
                     ContextError.StateNotFound(
-                        contextName = name,
-                        contextId = null
+                        contextId = key
                     )
                 }
 
@@ -111,7 +110,7 @@ class ActiveContextService(
                 context
             } catch (e: Exception) {
                 raise(PersistenceError.StorageUnavailable(
-                    operation = "switchToContextByName",
+                    operation = "switchToContextByKey",
                     cause = e.message
                 ))
             }

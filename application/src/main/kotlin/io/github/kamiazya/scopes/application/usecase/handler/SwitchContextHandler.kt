@@ -13,7 +13,7 @@ import io.github.kamiazya.scopes.application.usecase.command.SwitchContextView
  * Handler for switching the active context view.
  *
  * This handler:
- * 1. Validates the context name
+ * 1. Validates the context key
  * 2. Switches to the specified context
  * 3. Returns the now-active context information
  */
@@ -23,13 +23,13 @@ class SwitchContextHandler(
 ) : UseCase<SwitchContextView, ApplicationError, ContextViewResult> {
 
     override suspend operator fun invoke(input: SwitchContextView): Either<ApplicationError, ContextViewResult> = either {
-        logger.info("Switching context", mapOf("contextName" to input.name))
+        logger.info("Switching context", mapOf("contextKey" to input.key))
 
-        // Switch to the context by name
-        val contextView = activeContextService.switchToContextByName(input.name)
+        // Switch to the context by key
+        val contextView = activeContextService.switchToContextByKey(input.key)
             .onLeft { error ->
                 logger.error("Failed to switch context", mapOf(
-                    "contextName" to input.name,
+                    "contextKey" to input.key,
                     "error" to (error::class.simpleName ?: "Unknown")
                 ))
             }
@@ -37,12 +37,14 @@ class SwitchContextHandler(
 
         logger.info("Context switched successfully", mapOf(
             "contextId" to contextView.id.value,
+            "contextKey" to contextView.key.value,
             "contextName" to contextView.name.value
         ))
 
         // Map to DTO
         ContextViewResult(
             id = contextView.id.value,
+            key = contextView.key.value,
             name = contextView.name.value,
             filterExpression = contextView.filter.value,
             description = contextView.description?.value,

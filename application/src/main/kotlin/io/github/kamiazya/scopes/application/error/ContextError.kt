@@ -1,9 +1,15 @@
 package io.github.kamiazya.scopes.application.error
 
 sealed class ContextError(recoverable: Boolean = true) : ApplicationError(recoverable) {
-    data object NamingEmpty : ContextError()
-    data class NamingAlreadyExists(val attemptedName: String) : ContextError()
-    data class NamingInvalidFormat(val attemptedName: String) : ContextError()
+    // Key-related errors
+    data object KeyEmpty : ContextError()
+    data class KeyAlreadyExists(val attemptedKey: String) : ContextError()
+    data class KeyInvalidFormat(val attemptedKey: String) : ContextError()
+
+    // Name-related errors
+    data object NameEmpty : ContextError()
+    data class NameTooLong(val attemptedName: String, val maximumLength: Int) : ContextError()
+    data class NameInvalidFormat(val attemptedName: String) : ContextError()
 
     data class FilterInvalidSyntax(
         val position: Int,
@@ -20,8 +26,7 @@ sealed class ContextError(recoverable: Boolean = true) : ApplicationError(recove
     ) : ContextError()
 
     data class StateNotFound(
-        val contextName: String? = null,
-        val contextId: String? = null
+        val contextId: String
     ) : ContextError()
     data class StateFilterProducesNoResults(
         val contextName: String,

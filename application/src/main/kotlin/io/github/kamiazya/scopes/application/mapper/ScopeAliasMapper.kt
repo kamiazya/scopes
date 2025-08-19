@@ -28,4 +28,3 @@ object ScopeAliasMapper {
     fun toDtoList(aliases: List<ScopeAlias>): List<ScopeAliasResult> =
         aliases.map { toDto(it) }
 }
-

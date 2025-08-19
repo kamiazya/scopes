@@ -20,6 +20,7 @@ object ContextViewMapper {
         isActive: Boolean = false
     ): ContextViewResult = ContextViewResult(
         id = contextView.id.toString(),
+        key = contextView.key.value,
         name = contextView.name.value,
         filterExpression = contextView.filter.value,
         description = contextView.description?.value,
