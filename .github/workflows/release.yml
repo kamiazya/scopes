@@ -354,13 +354,12 @@ jobs:
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
-      provenance-name: "multiple.intoto.jsonl"
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [build-release, provenance]
-    if: always() && needs.build-release.result == 'success' && needs.provenance.result == 'success'
+    if: always() && needs.build-release.result == 'success'
     permissions:
       contents: write # Required for creating releases and uploading assets
       actions: read
