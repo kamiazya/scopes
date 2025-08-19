@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.domain.service
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.domain.error.currentTimestamp
@@ -38,22 +40,22 @@ class ScopeHierarchyService {
                 null -> depth
                 else -> {
                     // Check for circular reference
-                    if (visited.contains(currentId)) {
-                        raise(ScopeHierarchyError.CircularReference(
+                    ensure(!visited.contains(currentId)) {
+                        ScopeHierarchyError.CircularReference(
                             currentTimestamp(),
                             currentId,
                             visited.toList()
-                        ))
+                        )
                     }
                     visited.add(currentId)
                     
                     val scope = getScopeById(currentId)
-                    if (scope == null) {
-                        raise(ScopeHierarchyError.ParentNotFound(
+                    ensureNotNull(scope) {
+                        ScopeHierarchyError.ParentNotFound(
                             currentTimestamp(),
                             currentId,
                             currentId
-                        ))
+                        )
                     }
                     
                     calculateDepthRecursive(scope.parentId, depth + 1).bind()
@@ -78,11 +80,11 @@ class ScopeHierarchyService {
         getScopeById: suspend (ScopeId) -> Scope?
     ): Either<ScopeHierarchyError, Unit> = either {
         // Check self-parenting
-        if (parentScope.id == childScope.id) {
-            raise(ScopeHierarchyError.SelfParenting(
+        ensure(parentScope.id != childScope.id) {
+            ScopeHierarchyError.SelfParenting(
                 currentTimestamp(),
                 childScope.id
-            ))
+            )
         }
         
         // Check if parent is already a descendant of child
@@ -90,21 +92,21 @@ class ScopeHierarchyService {
         val visited = mutableSetOf<ScopeId>()
         
         while (currentParent != null) {
-            if (visited.contains(currentParent)) {
-                raise(ScopeHierarchyError.CircularReference(
+            ensure(!visited.contains(currentParent)) {
+                ScopeHierarchyError.CircularReference(
                     currentTimestamp(),
                     childScope.id,
                     visited.toList()
-                ))
+                )
             }
             visited.add(currentParent)
             
-            if (currentParent == childScope.id) {
-                raise(ScopeHierarchyError.CircularReference(
+            ensure(currentParent != childScope.id) {
+                ScopeHierarchyError.CircularReference(
                     currentTimestamp(),
                     childScope.id,
                     listOf(parentScope.id, childScope.id)
-                ))
+                )
             }
             
             val parent = getScopeById(currentParent)
@@ -125,13 +127,13 @@ class ScopeHierarchyService {
         currentChildCount: Int,
         maxChildren: Int = MAX_CHILDREN_PER_SCOPE
     ): Either<ScopeHierarchyError, Unit> = either {
-        if (currentChildCount >= maxChildren) {
-            raise(ScopeHierarchyError.MaxChildrenExceeded(
+        ensure(currentChildCount < maxChildren) {
+            ScopeHierarchyError.MaxChildrenExceeded(
                 occurredAt = currentTimestamp(),
                 parentScopeId = parentId,
                 currentChildrenCount = currentChildCount,
                 maximumChildren = maxChildren
-            ))
+            )
         }
     }
     
@@ -147,13 +149,13 @@ class ScopeHierarchyService {
         currentDepth: Int,
         maxDepth: Int = MAX_HIERARCHY_DEPTH
     ): Either<ScopeHierarchyError, Unit> = either {
-        if (currentDepth >= maxDepth) {
-            raise(ScopeHierarchyError.MaxDepthExceeded(
+        ensure(currentDepth < maxDepth) {
+            ScopeHierarchyError.MaxDepthExceeded(
                 occurredAt = currentTimestamp(),
                 scopeId = scopeId,
                 attemptedDepth = currentDepth,
                 maximumDepth = maxDepth
-            ))
+            )
         }
     }
     
