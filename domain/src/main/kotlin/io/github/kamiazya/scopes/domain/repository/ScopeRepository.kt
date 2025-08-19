@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.domain.repository
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.domain.entity.Scope
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.AspectCriteria
 import io.github.kamiazya.scopes.domain.error.PersistenceError
+import io.github.kamiazya.scopes.domain.valueobject.AspectCriteria
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Repository interface for Scope entity operations.
@@ -54,5 +54,10 @@ interface ScopeRepository {
      * Delete a scope by ID.
      */
     suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>
-}
 
+    /**
+     * Update an existing scope.
+     * This is used by the command handler to update the read model after events are applied.
+     */
+    suspend fun update(scope: Scope): Either<PersistenceError, Scope>
+}
