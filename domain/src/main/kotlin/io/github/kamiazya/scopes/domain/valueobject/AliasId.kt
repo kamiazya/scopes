@@ -4,13 +4,14 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import com.github.guepardoapps.kulid.ULID
+import io.github.kamiazya.scopes.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.domain.error.ScopeInputError
 import kotlinx.datetime.Clock
 
 /**
  * Value object representing a unique identifier for scope aliases.
  * Uses ULID (Universally Unique Lexicographically Sortable Identifier) format.
- * 
+ *
  * This ID is immutable and allows tracking aliases even when their names change.
  */
 @JvmInline
@@ -50,6 +51,14 @@ value class AliasId private constructor(val value: String) {
             return AliasId(ULID.random())
         }
     }
+
+    /**
+     * Convert this AliasId to its corresponding AggregateId.
+     *
+     * @return Either an error or the AggregateId in URI format
+     */
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> =
+        AggregateId.create("ScopeAlias", value)
 
     override fun toString(): String = value
 }

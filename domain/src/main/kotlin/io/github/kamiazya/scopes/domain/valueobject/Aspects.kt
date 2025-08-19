@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.domain.valueobject
 
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
+import arrow.core.toNonEmptyListOrNull
 
 /**
  * Value Object representing a collection of aspects for a Scope.
@@ -87,6 +88,26 @@ data class Aspects private constructor(
      */
     fun remove(keys: Set<AspectKey>): Aspects = 
         copy(map = map - keys)
+    
+    /**
+     * Remove a specific value from an aspect key.
+     * If this was the last value, the key is removed entirely.
+     * Pure function that returns a new instance.
+     */
+    fun remove(key: AspectKey, value: AspectValue): Aspects {
+        val currentValues = map[key] ?: return this
+        val newValues = currentValues.filter { it != value }
+        return if (newValues.isEmpty()) {
+            copy(map = map - key)
+        } else {
+            val nonEmptyValues = newValues.toNonEmptyListOrNull()
+            if (nonEmptyValues != null) {
+                copy(map = map + (key to nonEmptyValues))
+            } else {
+                copy(map = map - key)
+            }
+        }
+    }
     
     /**
      * Check if an aspect key exists.

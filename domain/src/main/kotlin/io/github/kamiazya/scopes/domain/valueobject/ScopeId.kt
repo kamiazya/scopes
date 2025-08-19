@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import com.github.guepardoapps.kulid.ULID
+import io.github.kamiazya.scopes.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.domain.error.currentTimestamp
 
@@ -41,6 +42,14 @@ value class ScopeId private constructor(
         }
 
     }
+
+    /**
+     * Convert this ScopeId to its corresponding AggregateId.
+     * 
+     * @return Either an error or the AggregateId in URI format
+     */
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = 
+        AggregateId.create("Scope", value)
 
     override fun toString(): String = value
 }

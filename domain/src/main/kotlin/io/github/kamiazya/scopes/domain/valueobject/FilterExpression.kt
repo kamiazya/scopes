@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
 
 /**
  * Value object representing a filter expression for context views.
- * 
+ *
  * Filter expressions use a simple DSL for filtering scopes based on their aspects.
  * Examples:
  * - "status:active" - Scopes with status aspect set to "active"
@@ -22,7 +22,7 @@ value class FilterExpression private constructor(
     companion object {
         /**
          * Create a FilterExpression with validation.
-         * 
+         *
          * @param value The filter expression string
          * @return Either an error or a valid FilterExpression
          */
@@ -35,7 +35,7 @@ value class FilterExpression private constructor(
                     expression = value
                 )
             }
-            
+
             // Basic validation - ensure it doesn't contain invalid characters
             ensure(!value.contains('\n') && !value.contains('\r')) {
                 ContextError.FilterError.InvalidSyntax(
@@ -45,23 +45,23 @@ value class FilterExpression private constructor(
                     expression = value
                 )
             }
-            
+
             // TODO: Add more sophisticated validation for filter syntax
             // For now, accept any non-blank string without newlines
-            
+
             FilterExpression(value)
         }
-        
+
         /**
          * Create a filter expression that matches all scopes.
          */
         fun all(): FilterExpression = FilterExpression("*")
-        
+
         /**
          * Create a filter expression that matches no scopes.
          */
         fun none(): FilterExpression = FilterExpression("!*")
     }
-    
+
     override fun toString(): String = value
 }
