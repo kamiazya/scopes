@@ -354,6 +354,8 @@ jobs:
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
+      upload-tag-name: "${{ github.ref_name }}"
+      private-repository: false
 
   create-release:
     name: Create GitHub Release
