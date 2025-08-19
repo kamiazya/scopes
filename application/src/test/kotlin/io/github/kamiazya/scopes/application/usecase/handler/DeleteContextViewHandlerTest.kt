@@ -11,8 +11,9 @@ import io.github.kamiazya.scopes.application.usecase.command.DeleteContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
-import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -65,8 +66,9 @@ class DeleteContextViewHandlerTest : StringSpec({
 
         val activeContext = ContextView(
             id = activeContextId,
-            name = ContextName.create("ActiveContext").getOrElse { throw AssertionError("Failed to create value object") },
-            filter = ContextFilter.create("status:active").getOrElse { throw AssertionError("Failed to create value object") },
+            key = ContextViewKey.create("active-context").getOrElse { throw AssertionError("Failed to create value object") },
+            name = ContextViewName.create("ActiveContext").getOrElse { throw AssertionError("Failed to create value object") },
+            filter = ContextViewFilter.create("status:active").getOrElse { throw AssertionError("Failed to create value object") },
             description = null,
             createdAt = Clock.System.now(),
             updatedAt = Clock.System.now()
@@ -90,8 +92,9 @@ class DeleteContextViewHandlerTest : StringSpec({
 
         val activeContext = ContextView(
             id = contextId,  // Same ID as the one to delete
-            name = ContextName.create("ActiveContext").getOrElse { throw AssertionError("Failed to create value object") },
-            filter = ContextFilter.create("status:active").getOrElse { throw AssertionError("Failed to create value object") },
+            key = ContextViewKey.create("active-context").getOrElse { throw AssertionError("Failed to create value object") },
+            name = ContextViewName.create("ActiveContext").getOrElse { throw AssertionError("Failed to create value object") },
+            filter = ContextViewFilter.create("status:active").getOrElse { throw AssertionError("Failed to create value object") },
             description = null,
             createdAt = Clock.System.now(),
             updatedAt = Clock.System.now()
@@ -187,8 +190,9 @@ class DeleteContextViewHandlerTest : StringSpec({
 
         val activeContext = ContextView(
             id = contextId,  // Same ID value
-            name = ContextName.create("Active").getOrElse { throw AssertionError("Failed to create value object") },
-            filter = ContextFilter.create("all").getOrElse { throw AssertionError("Failed to create value object") },
+            key = ContextViewKey.create("active").getOrElse { throw AssertionError("Failed to create value object") },
+            name = ContextViewName.create("Active").getOrElse { throw AssertionError("Failed to create value object") },
+            filter = ContextViewFilter.create("all").getOrElse { throw AssertionError("Failed to create value object") },
             description = null,
             createdAt = Clock.System.now(),
             updatedAt = Clock.System.now()

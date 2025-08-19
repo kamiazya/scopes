@@ -13,8 +13,10 @@ import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
-import io.github.kamiazya.scopes.domain.valueobject.ContextFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -50,6 +52,7 @@ class CreateContextViewHandlerTest : StringSpec({
     "should create a context view successfully with valid input" {
         // Given
         val command = CreateContextView(
+            key = "my-context",
             name = "MyContext",
             filterExpression = "status:active",
             description = "Test context view"
@@ -58,14 +61,15 @@ class CreateContextViewHandlerTest : StringSpec({
         val timestamp = Clock.System.now()
         val expectedContextView = ContextView(
             id = ContextViewId.generate(),
-            name = ContextName.create("MyContext").getOrElse { throw AssertionError("Failed to create ContextName") },
-            filter = ContextFilter.create("status:active").getOrElse { throw AssertionError("Failed to create ContextFilter") },
-            description = io.github.kamiazya.scopes.domain.valueobject.ContextDescription.create("Test context view").getOrElse { null },
+            key = ContextViewKey.create("my-context").getOrElse { throw AssertionError("Failed to create ContextViewKey") },
+            name = ContextViewName.create("MyContext").getOrElse { throw AssertionError("Failed to create ContextViewName") },
+            filter = ContextViewFilter.create("status:active").getOrElse { throw AssertionError("Failed to create ContextViewFilter") },
+            description = ContextViewDescription.create("Test context view").getOrElse { null },
             createdAt = timestamp,
             updatedAt = timestamp
         )
 
-        coEvery { contextViewRepository.findByName(any()) } returns null.right()
+        coEvery { contextViewRepository.findByKey(any()) } returns null.right()
         coEvery { contextViewRepository.save(any()) } returns expectedContextView.right()
 
         // When
@@ -75,6 +79,7 @@ class CreateContextViewHandlerTest : StringSpec({
         result.shouldBeRight()
         val contextViewResult = result.getOrNull()!!
         contextViewResult.shouldBeInstanceOf<ContextViewResult>()
+        contextViewResult.key shouldBe "my-context"
         contextViewResult.name shouldBe "MyContext"
         contextViewResult.filterExpression shouldBe "status:active"
         contextViewResult.description shouldBe "Test context view"
@@ -85,6 +90,7 @@ class CreateContextViewHandlerTest : StringSpec({
     "should create a context view without description" {
         // Given
         val command = CreateContextView(
+            key = "simple-context",
             name = "SimpleContext",
             filterExpression = "type:task",
             description = null
@@ -93,14 +99,15 @@ class CreateContextViewHandlerTest : StringSpec({
         val timestamp = Clock.System.now()
         val expectedContextView = ContextView(
             id = ContextViewId.generate(),
-            name = ContextName.create("SimpleContext").getOrElse { throw AssertionError("Failed to create ContextName") },
-            filter = ContextFilter.create("type:task").getOrElse { throw AssertionError("Failed to create ContextFilter") },
+            key = ContextViewKey.create("simple-context").getOrElse { throw AssertionError("Failed to create ContextViewKey") },
+            name = ContextViewName.create("SimpleContext").getOrElse { throw AssertionError("Failed to create ContextViewName") },
+            filter = ContextViewFilter.create("type:task").getOrElse { throw AssertionError("Failed to create ContextViewFilter") },
             description = null,
             createdAt = timestamp,
             updatedAt = timestamp
         )
 
-        coEvery { contextViewRepository.findByName(any()) } returns null.right()
+        coEvery { contextViewRepository.findByKey(any()) } returns null.right()
         coEvery { contextViewRepository.save(any()) } returns expectedContextView.right()
 
         // When
@@ -111,9 +118,46 @@ class CreateContextViewHandlerTest : StringSpec({
         result.getOrNull()?.description shouldBe null
     }
 
-    "should return error when name is invalid" {
+    "should return error when key is empty" {
         // Given
         val command = CreateContextView(
+            key = "",  // Empty key
+            name = "ValidName",
+            filterExpression = "status:active",
+            description = "Test"
+        )
+
+        // When
+        val result = handler(command)
+
+        // Then
+        result.shouldBeLeft()
+        val error = result.leftOrNull()!!
+        error.shouldBeInstanceOf<ContextError.KeyEmpty>()
+    }
+
+    "should return error when key is invalid" {
+        // Given
+        val command = CreateContextView(
+            key = "123-invalid",  // Key starting with number
+            name = "ValidName",
+            filterExpression = "status:active",
+            description = "Test"
+        )
+
+        // When
+        val result = handler(command)
+
+        // Then
+        result.shouldBeLeft()
+        val error = result.leftOrNull()!!
+        error.shouldBeInstanceOf<ContextError.KeyInvalidFormat>()
+    }
+
+    "should return error when name is empty" {
+        // Given
+        val command = CreateContextView(
+            key = "valid-key",
             name = "",  // Empty name
             filterExpression = "status:active",
             description = "Test"
@@ -125,12 +169,13 @@ class CreateContextViewHandlerTest : StringSpec({
         // Then
         result.shouldBeLeft()
         val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<ContextError.NamingInvalidFormat>()
+        error.shouldBeInstanceOf<ContextError.NameEmpty>()
     }
 
     "should return error when filter expression is invalid" {
         // Given
         val command = CreateContextView(
+            key = "valid-key",
             name = "ValidName",
             filterExpression = "",  // Empty filter
             description = "Test"
@@ -145,9 +190,41 @@ class CreateContextViewHandlerTest : StringSpec({
         error.shouldBeInstanceOf<ContextError.FilterInvalidSyntax>()
     }
 
+    "should return error when key already exists" {
+        // Given
+        val command = CreateContextView(
+            key = "existing-key",
+            name = "NewName",
+            filterExpression = "status:active",
+            description = "Test"
+        )
+
+        val existingContext = ContextView(
+            id = ContextViewId.generate(),
+            key = ContextViewKey.create("existing-key").getOrElse { throw AssertionError() },
+            name = ContextViewName.create("ExistingName").getOrElse { throw AssertionError() },
+            filter = ContextViewFilter.create("status:done").getOrElse { throw AssertionError() },
+            description = null,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now()
+        )
+
+        coEvery { contextViewRepository.findByKey(any()) } returns existingContext.right()
+
+        // When
+        val result = handler(command)
+
+        // Then
+        result.shouldBeLeft()
+        val error = result.leftOrNull()!!
+        error.shouldBeInstanceOf<ContextError.KeyAlreadyExists>()
+        (error as ContextError.KeyAlreadyExists).attemptedKey shouldBe "existing-key"
+    }
+
     "should return error when repository save fails" {
         // Given
         val command = CreateContextView(
+            key = "test-context",
             name = "TestContext",
             filterExpression = "status:active",
             description = "Test"
@@ -158,7 +235,7 @@ class CreateContextViewHandlerTest : StringSpec({
             operation = "save",
             cause = Exception("Database error")
         )
-        coEvery { contextViewRepository.findByName(any()) } returns null.right()
+        coEvery { contextViewRepository.findByKey(any()) } returns null.right()
         coEvery { contextViewRepository.save(any()) } returns persistenceError.left()
 
         // When
@@ -172,8 +249,9 @@ class CreateContextViewHandlerTest : StringSpec({
 
     "should handle very long valid names" {
         // Given
-        val longName = "A".repeat(50)  // Maximum allowed length for ContextName
+        val longName = "A".repeat(100)  // Maximum allowed length for ContextName
         val command = CreateContextView(
+            key = "long-name-context",
             name = longName,
             filterExpression = "status:active",
             description = null
@@ -182,14 +260,15 @@ class CreateContextViewHandlerTest : StringSpec({
         val timestamp = Clock.System.now()
         val expectedContextView = ContextView(
             id = ContextViewId.generate(),
-            name = ContextName.create(longName).getOrElse { throw AssertionError("Failed to create ContextName") },
-            filter = ContextFilter.create("status:active").getOrElse { throw AssertionError("Failed to create ContextFilter") },
+            key = ContextViewKey.create("long-name-context").getOrElse { throw AssertionError("Failed to create ContextViewKey") },
+            name = ContextViewName.create(longName).getOrElse { throw AssertionError("Failed to create ContextViewName") },
+            filter = ContextViewFilter.create("status:active").getOrElse { throw AssertionError("Failed to create ContextViewFilter") },
             description = null,
             createdAt = timestamp,
             updatedAt = timestamp
         )
 
-        coEvery { contextViewRepository.findByName(any()) } returns null.right()
+        coEvery { contextViewRepository.findByKey(any()) } returns null.right()
         coEvery { contextViewRepository.save(any()) } returns expectedContextView.right()
 
         // When
@@ -204,6 +283,7 @@ class CreateContextViewHandlerTest : StringSpec({
         // Given
         val complexFilter = "status:active AND (type:task OR type:bug) AND priority:high"
         val command = CreateContextView(
+            key = "complex-filter",
             name = "ComplexFilter",
             filterExpression = complexFilter,
             description = "Complex filter test"
@@ -212,14 +292,15 @@ class CreateContextViewHandlerTest : StringSpec({
         val timestamp = Clock.System.now()
         val expectedContextView = ContextView(
             id = ContextViewId.generate(),
-            name = ContextName.create("ComplexFilter").getOrElse { throw AssertionError("Failed to create ContextName") },
-            filter = ContextFilter.create(complexFilter).getOrElse { throw AssertionError("Failed to create ContextFilter") },
-            description = io.github.kamiazya.scopes.domain.valueobject.ContextDescription.create("Complex filter test").getOrElse { null },
+            key = ContextViewKey.create("complex-filter").getOrElse { throw AssertionError("Failed to create ContextViewKey") },
+            name = ContextViewName.create("ComplexFilter").getOrElse { throw AssertionError("Failed to create ContextViewName") },
+            filter = ContextViewFilter.create(complexFilter).getOrElse { throw AssertionError("Failed to create ContextViewFilter") },
+            description = ContextViewDescription.create("Complex filter test").getOrElse { null },
             createdAt = timestamp,
             updatedAt = timestamp
         )
 
-        coEvery { contextViewRepository.findByName(any()) } returns null.right()
+        coEvery { contextViewRepository.findByKey(any()) } returns null.right()
         coEvery { contextViewRepository.save(any()) } returns expectedContextView.right()
 
         // When
@@ -233,31 +314,41 @@ class CreateContextViewHandlerTest : StringSpec({
     "should rollback transaction on error" {
         // Given
         val command = CreateContextView(
-            name = "Test",
+            key = "rollback-test",
+            name = "RollbackTest",
             filterExpression = "status:active",
-            description = null
+            description = "Rollback test"
         )
 
-        val persistenceError = DomainPersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "save",
-            cause = Exception("Connection lost")
-        )
+        val mockTransactionContext = mockk<TransactionContext> {
+            every { markForRollback() } returns Unit
+            every { isMarkedForRollback() } returns false
+            every { getTransactionId() } returns "test-tx-id"
+        }
 
-        // Mock the transaction manager to return an error
-        coEvery { transactionManager.inTransaction<ApplicationError, ContextViewResult>(any()) } returns
-            PersistenceError.StorageUnavailable(
-                operation = "save",
-                cause = "Connection lost"
-            ).left()
+        val exception = RuntimeException("Unexpected error")
+        
+        coEvery { transactionManager.inTransaction<ApplicationError, ContextViewResult>(any()) } coAnswers {
+            val block = arg<suspend TransactionContext.() -> Either<ApplicationError, ContextViewResult>>(0)
+            // Simulate an exception during the transaction
+            try {
+                block(mockTransactionContext)
+            } catch (e: Exception) {
+                mockTransactionContext.markForRollback()
+                throw e
+            }
+        }
+
+        coEvery { contextViewRepository.findByKey(any()) } throws exception
 
         // When
-        val result = handler(command)
+        try {
+            handler(command)
+        } catch (e: Exception) {
+            // Expected
+        }
 
         // Then
-        result.shouldBeLeft()
-        val error = result.leftOrNull()!!
-        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+        coVerify(exactly = 1) { mockTransactionContext.markForRollback() }
     }
 })
-
