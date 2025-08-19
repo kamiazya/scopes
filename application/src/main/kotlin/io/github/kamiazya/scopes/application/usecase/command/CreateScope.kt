@@ -12,4 +12,7 @@ data class CreateScope(
     val description: String? = null,
     val parentId: String? = null,
     val metadata: Map<String, String> = emptyMap(),
+    val generateAlias: Boolean = true,  // Auto-generate canonical alias by default
+    val customAlias: String? = null     // Optionally provide a custom canonical alias
 ) : Command, DTO
+

@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.domain.util.TitleNormalizer
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
@@ -33,10 +33,9 @@ class CrossAggregateValidationService(
         parentId: ScopeId,
         childIds: List<ScopeId>
     ): Either<CrossAggregateValidationError, Unit> = either {
-
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
-            .mapLeft { existsError ->
+            .mapLeft {
                 CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "children",
                     targetAggregate = parentId.value,
@@ -46,19 +45,19 @@ class CrossAggregateValidationService(
             }
             .bind()
 
-        if (!parentExists) {
-            raise(CrossAggregateValidationError.CrossReferenceViolation(
+        ensure(parentExists) {
+            CrossAggregateValidationError.CrossReferenceViolation(
                 sourceAggregate = "children",
                 targetAggregate = parentId.value,
                 referenceType = "parentId",
                 violation = "Parent scope does not exist"
-            ))
+            )
         }
 
         // Validate all children exist
-        for (childId in childIds) {
+        childIds.forEach { childId ->
             val childExists = scopeRepository.existsById(childId)
-                .mapLeft { existsError ->
+                .mapLeft {
                     CrossAggregateValidationError.CrossReferenceViolation(
                         sourceAggregate = "parentId",
                         targetAggregate = childId.value,
@@ -68,13 +67,13 @@ class CrossAggregateValidationService(
                 }
                 .bind()
 
-            if (!childExists) {
-                raise(CrossAggregateValidationError.CrossReferenceViolation(
+            ensure(childExists) {
+                CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "parentId",
                     targetAggregate = childId.value,
                     referenceType = "childId",
                     violation = "Child scope does not exist"
-                ))
+                )
             }
         }
     }
@@ -88,13 +87,11 @@ class CrossAggregateValidationService(
         title: String,
         contextIds: List<ScopeId>
     ): Either<CrossAggregateValidationError, Unit> = either {
-
-        val normalizedTitle = TitleNormalizer.normalize(title)
-
         // Check uniqueness across all contexts
-        for (contextId in contextIds) {
-            val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, normalizedTitle)
-                .mapLeft { existsError ->
+        // Repository will handle title normalization internally
+        contextIds.forEach { contextId ->
+            val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, title)
+                .mapLeft {
                     CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
                         aggregateIds = contextIds.map { it.value },
@@ -103,12 +100,12 @@ class CrossAggregateValidationService(
                 }
                 .bind()
 
-            if (existsInContext) {
-                raise(CrossAggregateValidationError.InvariantViolation(
+            ensure(!existsInContext) {
+                CrossAggregateValidationError.InvariantViolation(
                     invariantName = "crossAggregateUniqueness",
                     aggregateIds = contextIds.map { it.value },
                     violationDescription = "Title '$title' conflicts across aggregates"
-                ))
+                )
             }
         }
     }
@@ -123,22 +120,21 @@ class CrossAggregateValidationService(
         aggregateIds: Set<String>,
         consistencyRule: String
     ): Either<CrossAggregateValidationError, Unit> = either {
-
         // Validate all aggregates exist and are in valid state
-        for (aggregateIdString in aggregateIds) {
-            val aggregateId = try {
-                ScopeId.from(aggregateIdString)
-            } catch (e: IllegalArgumentException) {
-                raise(CrossAggregateValidationError.AggregateConsistencyViolation(
-                    operation = operation,
-                    affectedAggregates = aggregateIds,
-                    consistencyRule = consistencyRule,
-                    violationDetails = "Invalid aggregate ID format: $aggregateIdString"
-                ))
-            }
+        aggregateIds.forEach { aggregateIdString ->
+            val aggregateId = ScopeId.create(aggregateIdString)
+                .mapLeft {
+                    CrossAggregateValidationError.AggregateConsistencyViolation(
+                        operation = operation,
+                        affectedAggregates = aggregateIds,
+                        consistencyRule = consistencyRule,
+                        violationDetails = "Invalid aggregate ID format: $aggregateIdString"
+                    )
+                }
+                .bind()
 
             val aggregateExists = scopeRepository.existsById(aggregateId)
-                .mapLeft { existsError ->
+                .mapLeft {
                     CrossAggregateValidationError.AggregateConsistencyViolation(
                         operation = operation,
                         affectedAggregates = aggregateIds,
@@ -148,13 +144,13 @@ class CrossAggregateValidationService(
                 }
                 .bind()
 
-            if (!aggregateExists) {
-                raise(CrossAggregateValidationError.AggregateConsistencyViolation(
+            ensure(aggregateExists) {
+                CrossAggregateValidationError.AggregateConsistencyViolation(
                     operation = operation,
                     affectedAggregates = aggregateIds,
                     consistencyRule = consistencyRule,
                     violationDetails = "Aggregate $aggregateIdString does not exist or is in invalid state"
-                ))
+                )
             }
         }
     }
@@ -187,3 +183,4 @@ class CrossAggregateValidationService(
         }
     }
 }
+

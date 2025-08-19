@@ -9,10 +9,10 @@ import io.kotest.matchers.types.beInstanceOf
 
 /**
  * Test for AuditServiceError hierarchy.
- * 
+ *
  * This test validates audit service errors for audit trail management,
  * event logging, and compliance tracking failures.
- * 
+ *
  * Based on Serena MCP research on audit patterns:
  * - Immutable audit trail management
  * - Event sourcing error handling

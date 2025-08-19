@@ -1,9 +1,9 @@
 package io.github.kamiazya.scopes.infrastructure.transaction
 
 import arrow.core.Either
+import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
-import java.util.*
 
 /**
  * No-operation implementation of TransactionManager.
@@ -15,14 +15,14 @@ import java.util.*
  * - Simple applications without complex transaction requirements
  */
 class NoopTransactionManager : TransactionManager {
-    
+
     override suspend fun <E, T> inTransaction(
         block: suspend TransactionContext.() -> Either<E, T>
     ): Either<E, T> {
         val context = NoopTransactionContext()
         return context.block()
     }
-    
+
     override suspend fun <E, T> inReadOnlyTransaction(
         block: suspend TransactionContext.() -> Either<E, T>
     ): Either<E, T> {
@@ -39,15 +39,16 @@ class NoopTransactionManager : TransactionManager {
 private class NoopTransactionContext(
     private val readOnly: Boolean = false
 ) : TransactionContext {
-    
+
     private var markedForRollback = false
-    private val transactionId = UUID.randomUUID().toString()
-    
+    private val transactionId = ULID.random()
+
     override fun markForRollback() {
         markedForRollback = true
     }
-    
+
     override fun isMarkedForRollback(): Boolean = markedForRollback
-    
+
     override fun getTransactionId(): String = transactionId
 }
+

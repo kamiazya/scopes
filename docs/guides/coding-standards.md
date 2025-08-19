@@ -54,19 +54,23 @@ sealed class TitleValidationError {
 // Note: Application errors are translated to domain errors at the application/domain boundary
 // This ensures callers receive appropriate domain-level errors while maintaining layer separation
 
-sealed class ScopeBusinessRuleViolation : DomainError() {
-    data class ScopeMaxDepthExceeded(val maxDepth: Int, val actualDepth: Int) : ScopeBusinessRuleViolation()
-    data class ScopeMaxChildrenExceeded(val maxChildren: Int, val actualChildren: Int) : ScopeBusinessRuleViolation()
-    data class ScopeDuplicateTitle(val title: String, val parentId: ScopeId?) : ScopeBusinessRuleViolation()
+// Hierarchy validation errors (matching actual implementation)
+sealed class ScopeHierarchyError : ConceptualModelError() {
+    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
+    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
+    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 }
 
-sealed class UniquenessValidationError : DomainError() {
+// Uniqueness validation (matching actual implementation)
+// Title uniqueness is enforced at ALL levels including root level
+sealed class ScopeUniquenessError : ConceptualModelError() {
     data class DuplicateTitle(
+        val occurredAt: Instant,
         val title: String,
-        val normalizedTitle: String, 
-        val parentId: ScopeId?,
+        val parentScopeId: ScopeId?,
         val existingScopeId: ScopeId
-    ) : UniquenessValidationError()
+    ) : ScopeUniquenessError()
 }
 
 sealed class ApplicationValidationError {
@@ -120,9 +124,9 @@ sealed class CreateScopeError {
     data class MaxChildrenExceeded(val parentId: ScopeId, val maxChildren: Int) : CreateScopeError()
     
     // Service-specific error mappings
-    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
-    data class BusinessRuleViolationFailed(val businessRuleError: BusinessRuleServiceError) : CreateScopeError()
-    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
+    data class TitleValidationFailed(val titleError: ScopeInputError.TitleError) : CreateScopeError()
+    data class HierarchyViolationFailed(val hierarchyError: ScopeHierarchyError) : CreateScopeError()
+    data class DuplicateTitleFailed(val uniquenessError: ScopeUniquenessError) : CreateScopeError()
 }
 
 // Translation in use case handlers
@@ -213,51 +217,68 @@ class ApplicationScopeValidationService(
                 )
             }
             .bind()
-        if (depth >= MAX_HIERARCHY_DEPTH) {
-            raise(ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
+        
+        ensure(depth < MAX_HIERARCHY_DEPTH) {
+            ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
                 actualDepth = depth + 1
-            ))
+            )
         }
     }
 }
 ```
 
-### Error Mapping Functions
+### Error Mapping Approach
+
+#### Context-Specific Error Mapping
+
+Instead of a centralized mapper, use context-specific error mappings in handlers:
 
 ```kotlin
-// Centralized error translation for scope business rule violations
-private fun mapScopeBusinessRuleViolationToScopeError(error: ScopeBusinessRuleViolation, parentId: ScopeId?): ScopeError =
-    when (error) {
-        is ScopeBusinessRuleViolation.ScopeMaxDepthExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Maximum hierarchy depth (${error.maxDepth}) would be exceeded"
-            )
-        is ScopeBusinessRuleViolation.ScopeMaxChildrenExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(), 
-                "Maximum children limit (${error.maxChildren}) would be exceeded"
-            )
-        is ScopeBusinessRuleViolation.ScopeDuplicateTitle ->
-            ScopeError.InvalidTitle(
-                "Scope with title '${error.title}' already exists under parent ${error.parentId ?: "root"}"
-            )
-    }
-
-// General domain error mapping that delegates to specific mappers
-private fun mapDomainErrorToScopeError(error: DomainError, parentId: ScopeId?): ScopeError =
-    when (error) {
-        is ScopeBusinessRuleViolation -> mapScopeBusinessRuleViolationToScopeError(error, parentId)
-        is DomainInfrastructureError ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Infrastructure error during validation: ${error.repositoryError}"
-            )
-        // ... other domain error cases
-        else -> ScopeError.InvalidTitle("Unexpected domain error: ${error}")
-    }
+// In handler: Map errors based on specific context
+val parentScope = repository.findById(parentId)
+    .mapLeft { error ->
+        // Context-specific error for parent not found
+        ApplicationError.ScopeHierarchyError.ParentNotFound(
+            scopeId = "new",
+            parentId = parentId
+        )
+    }.bind()
 ```
+
+#### Extension Functions for Common Mappings
+
+Common error mappings are provided as extension functions:
+
+```kotlin
+// Extension functions in ErrorMappingExtensions.kt
+fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is StorageUnavailable -> ApplicationError.PersistenceError.StorageUnavailable(...)
+    is DataCorruption -> ApplicationError.PersistenceError.DataCorruption(...)
+    // ...
+}
+
+fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
+    is IdError.InvalidFormat -> ApplicationError.ScopeInputError.IdInvalidFormat(...)
+    is TitleError.TooLong -> ApplicationError.ScopeInputError.TitleTooLong(...)
+    // ...
+}
+
+// Usage in handlers
+repository.save(entity)
+    .mapLeft { error -> 
+        // Use extension function for common persistence errors
+        error.toApplicationError()
+    }.bind()
+```
+
+#### Benefits of This Approach
+
+1. **Contextual Clarity**: Errors are more meaningful when mapped in context
+2. **Flexibility**: Each handler can provide specific error messages
+3. **Reusability**: Common patterns are available as extension functions
+4. **Maintainability**: No central mapper to update for every new error
+5. **Type Safety**: Compiler ensures all error cases are handled
 
 ## Use Case Handler Patterns
 
@@ -292,7 +313,7 @@ class CreateScopeHandler(
 
 ## Repository Error Handling
 
-### Comprehensive Error Mapping
+### Error Handling Best Practices
 
 ```kotlin
 // Repository methods return operation-specific error types
@@ -495,18 +516,164 @@ pre-commit:
       run: ./gradlew detekt
 ```
 
+## Flat Structure Pattern (Functional Style)
+
+### Core Principle: Linear Control Flow
+
+Use Arrow's `either` blocks with `ensure()`, `ensureNotNull()` to create flat, linear control flow instead of nested if-else statements.
+
+### Pattern Guidelines
+
+1. **Use `ensure()` for validation checks**
+   - Replace `if (!condition) raise(error)` with `ensure(condition) { error }`
+   - Makes the happy path more visible
+   - **NEVER use `raise()` directly** - always prefer `ensure()` or `ensureNotNull()`
+
+2. **Use `ensureNotNull()` for null checks**
+   - Replace `if (value == null) raise(error)` with `ensureNotNull(value) { error }`
+   - Provides smart casting after the check
+
+3. **Use `forEach` instead of `for` loops**
+   - More functional and composable
+   - Works well with `either` blocks
+
+4. **Single `either` block per function**
+   - Avoid nested `either` blocks
+   - Keep error handling flat and linear
+
+5. **Special cases for `ensure(false)`**
+   - Only use `ensure(false) { error }` when you need to always fail (e.g., after exhausting retries)
+   - This is equivalent to `raise(error)` but maintains consistency with the ensure pattern
+
+### Before (Nested Structure - Avoid This)
+```kotlin
+suspend fun validateHierarchyConsistency(
+    parentId: ScopeId,
+    childIds: List<ScopeId>
+): Either<Error, Unit> = either {
+    val parentExists = repository.existsById(parentId)
+        .mapLeft { error -> /* map error */ }
+        .bind()
+    
+    if (!parentExists) {
+        raise(Error.ParentNotFound(parentId))  // ❌ Avoid raise()
+    }
+    
+    for (childId in childIds) {  // ❌ Avoid traditional for loops
+        val childExists = repository.existsById(childId)
+            .mapLeft { error -> /* map error */ }
+            .bind()
+        
+        if (!childExists) {  // ❌ Avoid if-else for validation
+            raise(Error.ChildNotFound(childId))
+        }
+    }
+}
+```
+
+### After (Flat Structure)
+```kotlin
+suspend fun validateHierarchyConsistency(
+    parentId: ScopeId,
+    childIds: List<ScopeId>
+): Either<Error, Unit> = either {
+    val parentExists = repository.existsById(parentId)
+        .mapLeft { /* map error */ }
+        .bind()
+    
+    ensure(parentExists) {
+        Error.ParentNotFound(parentId)
+    }
+    
+    childIds.forEach { childId ->
+        val childExists = repository.existsById(childId)
+            .mapLeft { /* map error */ }
+            .bind()
+        
+        ensure(childExists) {
+            Error.ChildNotFound(childId)
+        }
+    }
+}
+```
+
+### UseCase Handler Pattern
+
+```kotlin
+class CreateScopeHandler(
+    private val repository: ScopeRepository,
+    private val logger: Logger
+) : UseCase<Input, Error, Result> {
+    
+    override suspend fun invoke(input: Input): Either<Error, Result> = either {
+        // Log at the start
+        logger.info("Starting operation", mapOf("input" to input))
+        
+        // Linear validation steps with ensure()
+        val validatedTitle = validateTitle(input.title).bind()
+        
+        val parentExists = repository.existsById(input.parentId)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        ensure(parentExists) {
+            Error.ParentNotFound(input.parentId)
+        }
+        
+        // Create and save entity
+        val entity = createEntity(validatedTitle, input.parentId)
+        val saved = repository.save(entity)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        logger.info("Operation completed", mapOf("id" to saved.id))
+        
+        // Return result
+        mapToResult(saved)
+    }
+}
+```
+
+### Service Pattern
+
+```kotlin
+class ValidationService(
+    private val repository: Repository
+) {
+    suspend fun validate(data: Data): Either<Error, Unit> = either {
+        // Single flat either block
+        val exists = repository.exists(data.id)
+            .mapLeft { mapError(it) }
+            .bind()
+        
+        ensure(exists) {
+            Error.NotFound(data.id)
+        }
+        
+        ensure(data.value > 0) {
+            Error.InvalidValue(data.value)
+        }
+        
+        // More validations in linear fashion
+    }
+}
+```
+
 ## Summary
 
 ### Current Implementation Patterns ✅
 
 - **Strongly-typed domain identifiers** (ScopeId instead of String)
-- **Service-specific error contexts** (TitleValidationError, UniquenessValidationError, ScopeBusinessRuleViolation, ApplicationValidationError)
+- **Service-specific error contexts** (ScopeInputError, ScopeUniquenessError, ScopeHierarchyError, ApplicationValidationError)
 - **Error translation in use case handlers** (service errors → use case errors)
 - **ValidationResult for error accumulation** with extension functions
 - **Repository-dependent validation** in application layer
 - **Functional error handling** with Arrow Either
+- **Flat structure with ensure()/ensureNotNull()** for linear control flow
+- **Functional iteration** with forEach instead of for loops
 - **Architecture testing** with Konsist
-- **Comprehensive error mapping** with detailed context
+- **Context-aware error mapping** with extension functions
+- **Logging at boundaries** with structured context
 
 ### Avoid ❌
 
@@ -517,3 +684,8 @@ pre-commit:
 - Violating Clean Architecture layer dependencies
 - Missing error translation between layers
 - Incomplete error context information
+- **Using raise() directly** (use ensure()/ensureNotNull() instead)
+- Nested if-else chains (use ensure() instead)
+- Traditional for loops (use forEach/map/filter)
+- Multiple nested either blocks
+- Deep nesting in general

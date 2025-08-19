@@ -4,16 +4,16 @@ import kotlinx.datetime.Instant
 
 /**
  * Audit service errors for audit trail management and compliance failures.
- * 
+ *
  * This hierarchy provides comprehensive error types for audit concerns
  * including audit trail integrity, event logging, compliance violations, and system failures.
- * 
+ *
  * Based on Serena MCP research on audit patterns:
  * - Immutable audit trail management with integrity verification
  * - Event sourcing error handling with ordering guarantees
  * - Compliance and regulatory requirement violations
  * - Audit log security and tamper detection
- * 
+ *
  * Following functional error handling principles for audit integrity and compliance.
  */
 sealed class AuditServiceError
@@ -23,7 +23,7 @@ sealed class AuditServiceError
  * These represent violations of audit trail immutability and integrity.
  */
 sealed class AuditTrailError : AuditServiceError() {
-    
+
     /**
      * Audit log corruption detected through integrity checks.
      */
@@ -34,7 +34,7 @@ sealed class AuditTrailError : AuditServiceError() {
         val affectedEntries: List<String>,
         val integrityHash: String
     ) : AuditTrailError()
-    
+
     /**
      * Required audit entry cannot be found.
      */
@@ -43,7 +43,7 @@ sealed class AuditTrailError : AuditServiceError() {
         val requestedBy: String,
         val searchCriteria: Map<String, String>
     ) : AuditTrailError()
-    
+
     /**
      * Attempt to modify immutable audit entry detected.
      */
@@ -61,7 +61,7 @@ sealed class AuditTrailError : AuditServiceError() {
  * These handle failures in capturing and storing audit events.
  */
 sealed class EventLoggingError : AuditServiceError() {
-    
+
     /**
      * Failed to serialize event for audit logging.
      */
@@ -71,7 +71,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val serializationError: String,
         val timestamp: Instant
     ) : EventLoggingError()
-    
+
     /**
      * Failed to store audit event to persistent storage.
      */
@@ -81,7 +81,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val cause: Throwable,
         val retryAttempts: Int
     ) : EventLoggingError()
-    
+
     /**
      * Event ordering violation in audit sequence.
      */
@@ -98,7 +98,7 @@ sealed class EventLoggingError : AuditServiceError() {
  * These handle failures to meet compliance and regulatory requirements.
  */
 sealed class ComplianceError : AuditServiceError() {
-    
+
     /**
      * Data retention policy violation detected.
      */
@@ -109,7 +109,7 @@ sealed class ComplianceError : AuditServiceError() {
         val policyDetails: String,
         val detectedAt: Instant
     ) : ComplianceError()
-    
+
     /**
      * Data classification error for sensitive information.
      */
@@ -119,7 +119,7 @@ sealed class ComplianceError : AuditServiceError() {
         val actualClassification: String,
         val complianceRegulation: String
     ) : ComplianceError()
-    
+
     /**
      * Audit requirement not met for compliance framework.
      */
@@ -136,7 +136,7 @@ sealed class ComplianceError : AuditServiceError() {
  * These handle technical failures in the audit system itself.
  */
 sealed class AuditSystemError : AuditServiceError() {
-    
+
     /**
      * Audit system or subsystem is unavailable.
      */
@@ -146,7 +146,7 @@ sealed class AuditSystemError : AuditServiceError() {
         val estimatedRecoveryAt: Instant,
         val impactLevel: String
     ) : AuditSystemError()
-    
+
     /**
      * Configuration error in audit system setup.
      */

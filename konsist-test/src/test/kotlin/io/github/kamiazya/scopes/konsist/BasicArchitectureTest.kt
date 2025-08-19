@@ -166,4 +166,29 @@ class BasicArchitectureTest : StringSpec({
                 }
             }
     }
+
+    "domain layer should not use kotlinx.serialization.Serializable" {
+        Konsist
+            .scopeFromModule("domain")
+            .files
+            .filter { it.path.contains("src/main") }
+            .assertFalse { file ->
+                file.imports.any { import ->
+                    import.name == "kotlinx.serialization.Serializable"
+                }
+            }
+    }
+
+    "domain layer classes should not have @Serializable annotation" {
+        Konsist
+            .scopeFromModule("domain")
+            .classes()
+            .filter { !it.name.endsWith("Test") }
+            .assertFalse { clazz ->
+                clazz.annotations.any { annotation ->
+                    annotation.name == "Serializable"
+                }
+            }
+    }
 })
+

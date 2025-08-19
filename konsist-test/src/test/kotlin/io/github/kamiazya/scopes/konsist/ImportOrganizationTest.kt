@@ -36,9 +36,7 @@ class ImportOrganizationTest : StringSpec({
                     val filePackage = file.packagee?.name ?: ""
 
                     when {
-                        // Allow standard library wildcard imports
-                        importPath.startsWith("java.") ||
-                        importPath.startsWith("javax.") ||
+                        // Allow Kotlin standard library wildcard imports only (no java.* for KMP compatibility)
                         importPath.startsWith("kotlin.") ||
                         importPath.startsWith("kotlinx.") -> true
 
@@ -103,4 +101,16 @@ class ImportOrganizationTest : StringSpec({
                 imports.size != imports.distinct().size
             }
     }
+
+    "no java.* imports for Kotlin Multiplatform compatibility" {
+        Konsist
+            .scopeFromProduction()
+            .files
+            .assertFalse { file ->
+                file.imports.any { import ->
+                    import.name.startsWith("java.")
+                }
+            }
+    }
 })
+

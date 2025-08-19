@@ -1,23 +1,24 @@
 package io.github.kamiazya.scopes.domain.entity
 
 import arrow.core.Either
+import arrow.core.NonEmptyList
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.domain.error.DomainError
-import io.github.kamiazya.scopes.domain.error.ScopeValidationError
+import io.github.kamiazya.scopes.domain.error.ScopesError
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.Aspects
+import io.github.kamiazya.scopes.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.domain.valueobject.AspectValue
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 
 /**
  * Core domain entity representing a unified "Scope" that can be a project, epic, or task.
  * This implements the recursive structure where all entities share the same operations.
  * Follows functional DDD principles with immutability and pure functions.
- * Priority and Status will be implemented as Aspects in the future.
+ * Supports aspect-based classification for flexible metadata management.
  */
-@Serializable
 data class Scope(
     val id: ScopeId,
     val title: ScopeTitle,
@@ -25,7 +26,7 @@ data class Scope(
     val parentId: ScopeId? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val metadata: Map<String, String> = emptyMap(),
+    val aspects: Aspects = Aspects.empty(),
 ) {
     companion object {
         /**
@@ -36,8 +37,8 @@ data class Scope(
             title: String,
             description: String? = null,
             parentId: ScopeId? = null,
-            metadata: Map<String, String> = emptyMap()
-        ): Either<ScopeValidationError, Scope> = either {
+            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
+        ): Either<ScopesError, Scope> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
 
@@ -49,7 +50,7 @@ data class Scope(
                 parentId = parentId,
                 createdAt = now,
                 updatedAt = now,
-                metadata = metadata
+                aspects = Aspects.from(aspectsData)
             )
         }
 
@@ -63,7 +64,7 @@ data class Scope(
             title: ScopeTitle,
             description: ScopeDescription? = null,
             parentId: ScopeId? = null,
-            metadata: Map<String, String> = emptyMap()
+            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
         ): Scope {
             val now = Clock.System.now()
             return Scope(
@@ -73,7 +74,7 @@ data class Scope(
                 parentId = parentId,
                 createdAt = now,
                 updatedAt = now,
-                metadata = metadata
+                aspects = Aspects.from(aspectsData)
             )
         }
     }
@@ -82,7 +83,7 @@ data class Scope(
      * Update the scope title with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateTitle(newTitle: String): Either<ScopeValidationError, Scope> = either {
+    fun updateTitle(newTitle: String): Either<ScopesError, Scope> = either {
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
     }
@@ -91,7 +92,7 @@ data class Scope(
      * Update the scope description with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun updateDescription(newDescription: String?): Either<ScopeValidationError, Scope> = either {
+    fun updateDescription(newDescription: String?): Either<ScopesError, Scope> = either {
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
     }
@@ -103,19 +104,86 @@ data class Scope(
     fun moveToParent(newParentId: ScopeId?): Scope =
         copy(parentId = newParentId, updatedAt = Clock.System.now())
 
-    /**
-     * Add or update metadata with new timestamp.
-     * Pure function that returns a new instance.
-     */
-    fun updateMetadata(key: String, value: String): Scope =
-        copy(metadata = metadata + (key to value), updatedAt = Clock.System.now())
+    // ===== ASPECT MANAGEMENT METHODS =====
 
     /**
-     * Remove metadata with new timestamp.
+     * Set an aspect with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun removeMetadata(key: String): Scope =
-        copy(metadata = metadata - key, updatedAt = Clock.System.now())
+    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope =
+        copy(
+            aspects = aspects.set(key, values),
+            updatedAt = Clock.System.now()
+        )
+
+    /**
+     * Set a single aspect value (convenience method).
+     * Pure function that returns a new instance.
+     */
+    fun setAspect(key: AspectKey, value: AspectValue): Scope =
+        copy(
+            aspects = aspects.set(key, value),
+            updatedAt = Clock.System.now()
+        )
+
+    /**
+     * Remove an aspect with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun removeAspect(key: AspectKey): Scope =
+        copy(
+            aspects = aspects.remove(key),
+            updatedAt = Clock.System.now()
+        )
+
+    /**
+     * Get all aspects as a map of AspectKey to NonEmptyList<AspectValue>.
+     */
+    fun getAspects(): Map<AspectKey, NonEmptyList<AspectValue>> = aspects.toMap()
+
+    /**
+     * Get a specific aspect value (returns first value if multiple).
+     */
+    fun getAspectValue(key: AspectKey): AspectValue? = aspects.getFirst(key)
+
+    /**
+     * Get all values for a specific aspect.
+     */
+    fun getAspectValues(key: AspectKey): NonEmptyList<AspectValue>? = aspects.get(key)
+
+    /**
+     * Check if this scope has a specific aspect.
+     */
+    fun hasAspect(key: AspectKey): Boolean = aspects.contains(key)
+
+    /**
+     * Set multiple aspects with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun setAspects(newAspects: Map<AspectKey, NonEmptyList<AspectValue>>): Scope =
+        copy(
+            aspects = aspects.merge(Aspects.from(newAspects)),
+            updatedAt = Clock.System.now()
+        )
+
+    /**
+     * Remove multiple aspects with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun removeAspects(keys: List<AspectKey>): Scope =
+        copy(
+            aspects = aspects.remove(keys.toSet()),
+            updatedAt = Clock.System.now()
+        )
+
+    /**
+     * Clear all aspects with new timestamp.
+     * Pure function that returns a new instance.
+     */
+    fun clearAspects(): Scope =
+        copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
+
+    // ===== BUSINESS RULES =====
 
     /**
      * Business rule: Check if this scope can be a parent of another scope.
@@ -135,4 +203,3 @@ data class Scope(
      */
     fun isRoot(): Boolean = parentId == null
 }
-

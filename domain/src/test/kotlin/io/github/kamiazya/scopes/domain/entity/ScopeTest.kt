@@ -79,3 +79,4 @@ class ScopeTest : StringSpec({
         result.description shouldBe null
     }
 })
+

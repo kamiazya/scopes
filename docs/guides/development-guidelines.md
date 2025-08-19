@@ -83,16 +83,18 @@ sealed class TitleValidationError : DomainError() {
     data class InvalidCharacters(val title: String, val invalidCharacters: Set<Char>, val position: Int) : TitleValidationError()
 }
 
-// Business rule validation with hierarchy context  
-sealed class ScopeBusinessRuleError : DomainError() {
-    data class MaxDepthExceeded(val maxDepth: Int, val actualDepth: Int, val scopeId: ScopeId, val parentPath: List<ScopeId>) : ScopeBusinessRuleError()
-    data class MaxChildrenExceeded(val maxChildren: Int, val currentChildren: Int, val parentId: ScopeId, val attemptedOperation: String) : ScopeBusinessRuleError()
-    data class DuplicateScope(val duplicateTitle: String, val parentId: ScopeId, val existingScopeId: ScopeId, val normalizedTitle: String) : ScopeBusinessRuleError()
+// Hierarchy validation errors (matching actual implementation)
+sealed class ScopeHierarchyError : ConceptualModelError() {
+    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
+    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
+    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 }
 
-// Uniqueness validation with detailed context
-sealed class UniquenessValidationError : DomainError() {
-    data class DuplicateTitle(val title: String, val normalizedTitle: String, val parentId: String?, val existingScopeId: String) : UniquenessValidationError()
+// Uniqueness validation with detailed context (matching actual implementation)
+sealed class ScopeUniquenessError : ConceptualModelError() {
+    // Title uniqueness is enforced at ALL levels including root level
+    data class DuplicateTitle(val occurredAt: Instant, val title: String, val parentScopeId: ScopeId?, val existingScopeId: ScopeId) : ScopeUniquenessError()
 }
 ```
 
@@ -127,9 +129,9 @@ The current architecture implements systematic error translation from service-sp
 
 ```kotlin
 sealed class CreateScopeError {
-    data class TitleValidationFailed(val titleError: TitleValidationError) : CreateScopeError()
-    data class BusinessRuleViolationFailed(val businessRuleError: ScopeBusinessRuleError) : CreateScopeError()
-    data class DuplicateTitleFailed(val uniquenessError: UniquenessValidationError) : CreateScopeError()
+    data class TitleValidationFailed(val titleError: ScopeInputError.TitleError) : CreateScopeError()
+    data class HierarchyViolationFailed(val hierarchyError: ScopeHierarchyError) : CreateScopeError()
+    data class DuplicateTitleFailed(val uniquenessError: ScopeUniquenessError) : CreateScopeError()
     object ParentNotFound : CreateScopeError()
     data class SaveFailure(val repositoryError: SaveScopeError) : CreateScopeError()
     data class ExistenceCheckFailure(val repositoryError: ExistsScopeError) : CreateScopeError()
@@ -142,7 +144,7 @@ private fun validateTitleWithServiceErrors(title: String): Either<CreateScopeErr
 
 private suspend fun validateHierarchyWithServiceErrors(parentId: ScopeId?): Either<CreateScopeError, Unit> =
     applicationScopeValidationService.validateHierarchyConstraints(parentId)
-        .mapLeft { businessRuleError -> CreateScopeError.BusinessRuleViolationFailed(businessRuleError) }
+        .mapLeft { hierarchyError -> CreateScopeError.HierarchyViolationFailed(hierarchyError) }
 ```
 
 ## Strongly-Typed Domain Implementation
@@ -279,56 +281,75 @@ class ApplicationScopeValidationService(
 
 ### Error Mapping Implementation
 
-The current codebase implements systematic error mapping between layers:
+The current codebase uses a context-aware error mapping approach:
+
+#### Context-Specific Mapping in Handlers
 
 ```kotlin
-// Centralized error mapping functions
-private fun mapBusinessRuleErrorToScopeError(error: ScopeBusinessRuleError, parentId: ScopeId?): ScopeError =
-    when (error) {
-        is ScopeBusinessRuleError.MaxDepthExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Maximum hierarchy depth (${error.maxDepth}) would be exceeded"
-            )
-        is ScopeBusinessRuleError.MaxChildrenExceeded ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Maximum children limit (${error.maxChildren}) would be exceeded"
-            )
-        is ScopeBusinessRuleError.DuplicateScope ->
-            ScopeError.InvalidParent(
-                parentId ?: ScopeId.generate(),
-                "Duplicate scope detected: ${error.existingScopeId}"
-            )
+// Map errors based on the specific operation context
+class CreateScopeHandler {
+    override suspend fun invoke(input: CreateScope) = either {
+        // Context-specific error for parent validation
+        val parent = repository.findById(input.parentId)
+            .mapLeft { error ->
+                ApplicationError.ScopeHierarchyError.ParentNotFound(
+                    scopeId = "new",
+                    parentId = input.parentId
+                )
+            }.bind()
+        
+        // Context-specific error for duplicate title
+        val exists = repository.existsByTitle(input.title)
+            .mapLeft { error ->
+                ApplicationError.ScopeUniquenessError.DuplicateTitle(
+                    title = input.title,
+                    parentScopeId = input.parentId,
+                    existingScopeId = "unknown"
+                )
+            }.bind()
     }
+}
+```
 
-// Comprehensive repository error mapping
-private fun mapExistsScopeError(existsError: ExistsScopeError, parentId: ScopeId?): DomainError =
-    when (existsError) {
-        is ExistsScopeError.IndexCorruption -> {
-            if (parentId != null) {
-                ScopeError.InvalidParent(
-                    parentId,
-                    "Index corruption detected: ${existsError.message}. ScopeId: ${existsError.scopeId}"
-                )
-            } else {
-                DomainInfrastructureError(
-                    RepositoryError.DataIntegrityError(
-                        "Index corruption in root-level check: ${existsError.message}",
-                        cause = RuntimeException("Index corruption")
-                    )
-                )
-            }
-        }
-        is ExistsScopeError.QueryTimeout -> 
-            DomainInfrastructureError(
-                RepositoryError.DatabaseError(
-                    "Query timeout: operation='${existsError.operation}', timeout=${existsError.timeoutMs}ms",
-                    RuntimeException("Query timeout: ${existsError.operation}")
-                )
-            )
-        // ... comprehensive coverage of all error cases
+#### Extension Functions for Common Patterns
+
+```kotlin
+// ErrorMappingExtensions.kt provides reusable mappings
+fun PersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is StorageUnavailable -> ApplicationError.PersistenceError.StorageUnavailable(
+        operation = this.operation,
+        cause = this.cause?.message
+    )
+    is DataCorruption -> ApplicationError.PersistenceError.DataCorruption(
+        entityType = this.entityType,
+        entityId = this.entityId,
+        reason = this.reason
+    )
+    // Other common persistence errors...
+}
+
+// Usage in handlers - combine context-specific and extension functions
+class UpdateScopeHandler {
+    override suspend fun invoke(input: UpdateScope) = either {
+        // Use extension function for common persistence errors
+        val scope = repository.findById(input.id)
+            .mapLeft { it.toApplicationError() }
+            .bind()
+        
+        // Context-specific error when needed
+        val updated = repository.save(scope)
+            .mapLeft { error ->
+                when (error) {
+                    is ConcurrencyConflict -> 
+                        ApplicationError.UpdateConflict(
+                            scopeId = input.id,
+                            message = "Scope was modified by another user"
+                        )
+                    else -> error.toApplicationError()
+                }
+            }.bind()
     }
+}
 ```
 
 ## Use Case Handler Implementation
@@ -649,7 +670,7 @@ scopes/
 - **Functional error handling**: Arrow Either for explicit error propagation
 - **Architecture testing**: Konsist validation of Clean Architecture principles
 - **Transaction boundary clarity**: Clear separation of concerns in use case handlers
-- **Detailed error mapping**: Infrastructure errors mapped to domain errors
+- **Context-aware error mapping**: Errors mapped based on specific operation context
 
 ### Implementation Patterns to Follow
 
@@ -668,7 +689,7 @@ scopes/
 - **Maintain error translation consistency**: Always map between layers
 - **Update Konsist tests**: Validate new architectural patterns
 - **Comprehensive test coverage**: Test error translation and context preservation
-- **Document error mapping rationale**: Explain complex error translation logic
+- **Document context-specific error mappings**: Explain why certain errors are mapped differently in different contexts
 - **Regular architecture review**: Ensure compliance with Clean Architecture principles
 
 This development approach ensures maintainability through clear separation of concerns, comprehensive error handling, and automated validation of architectural constraints.

@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.presentation.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
-import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.presentation.cli.commands.CreateScopeCommand
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -13,11 +12,11 @@ import org.koin.core.component.inject
  * Uses Koin dependency injection for Clean Architecture compliance.
  */
 class ScopesCommand : CliktCommand(name = "scopes"), KoinComponent {
-    private val createScopeHandler: CreateScopeHandler by inject()
+    private val createScopeCommand: CreateScopeCommand by inject()
 
     init {
         subcommands(
-            CreateScopeCommand(createScopeHandler),
+            createScopeCommand,
         )
     }
 
@@ -25,4 +24,5 @@ class ScopesCommand : CliktCommand(name = "scopes"), KoinComponent {
         // Main command logic - show help if no subcommand
     }
 }
+
 

@@ -10,10 +10,10 @@ import io.kotest.matchers.types.beInstanceOf
 
 /**
  * Test for ApplicationValidationError hierarchy.
- * 
+ *
  * This test validates that application-level validation errors provide
  * comprehensive field-level error information for cross-aggregate validations.
- * 
+ *
  * Following Serena MCP guidance on validation error patterns in DDD.
  */
 class ApplicationValidationErrorTest : DescribeSpec({
@@ -34,7 +34,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.expectedFormat shouldBe "valid email format"
                 error.validationRule shouldBe "RFC 5322 compliant"
             }
-            
+
             it("should create MissingRequiredField with context") {
                 val error = InputValidationError.MissingRequiredField(
                     fieldName = "title",
@@ -44,7 +44,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.fieldName shouldBe "title"
                 error.entityType shouldBe "Scope"
             }
-            
+
             it("should create ValueOutOfRange with bounds") {
                 val error = InputValidationError.ValueOutOfRange(
                     fieldName = "priority",
@@ -73,11 +73,11 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.consistencyRule shouldBe "unique_title_per_parent"
                 error.violationDetails shouldBe "Title already exists in parent scope"
             }
-            
+
             it("should create CrossReferenceViolation") {
                 val error = CrossAggregateValidationError.CrossReferenceViolation(
                     sourceAggregate = "Scope",
-                    targetAggregate = "Project", 
+                    targetAggregate = "Project",
                     referenceType = "parent",
                     violation = "Parent does not exist"
                 )
@@ -87,7 +87,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.referenceType shouldBe "parent"
                 error.violation shouldBe "Parent does not exist"
             }
-            
+
             it("should create InvariantViolation") {
                 val error = CrossAggregateValidationError.InvariantViolation(
                     invariantName = "scope_hierarchy_limit",
@@ -115,7 +115,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.currentState shouldBe "has_children"
                 error.requiredState shouldBe "no_children"
             }
-            
+
             it("should create PostconditionViolation") {
                 val error = BusinessRuleValidationError.PostconditionViolation(
                     operation = "create_scope",
@@ -143,7 +143,7 @@ class ApplicationValidationErrorTest : DescribeSpec({
                 error.timeout shouldBe Duration.parse("5s")
                 error.validationPhase shouldBe "consistency_check"
             }
-            
+
             it("should create ConcurrentValidationConflict") {
                 val error = AsyncValidationError.ConcurrentValidationConflict(
                     resource = "scope_123",

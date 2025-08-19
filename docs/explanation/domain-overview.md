@@ -51,7 +51,6 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 **Properties:**
 - **Identity**: Unique ULID identifier
 - **Hierarchy**: Parent-child relationships (up to 10 levels by default, configurable)
-- **State**: Lifecycle status (pending → in_progress → completed → logged)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
 
