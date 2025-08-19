@@ -4,12 +4,12 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.domain.entity.Scope
-import io.github.kamiazya.scopes.domain.valueobject.AspectCriteria
-import io.github.kamiazya.scopes.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.error.PersistenceError
 import io.github.kamiazya.scopes.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.domain.valueobject.AspectCriteria
+import io.github.kamiazya.scopes.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -128,6 +128,19 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun update(scope: Scope): Either<PersistenceError, Scope> = either {
+        mutex.withLock {
+            try {
+                // For in-memory implementation, update is the same as save
+                // In a real database implementation, this might check for existence first
+                scopes[scope.id] = scope
+                scope
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "update", e))
+            }
+        }
+    }
+
     /**
      * Utility method for testing - clear all scopes.
      */
@@ -141,7 +154,4 @@ open class InMemoryScopeRepository : ScopeRepository {
     suspend fun size(): Int = mutex.withLock {
         scopes.size
     }
-
 }
-
-
