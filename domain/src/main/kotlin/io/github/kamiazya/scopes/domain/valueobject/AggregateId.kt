@@ -44,7 +44,7 @@ value class AggregateId private constructor(val value: String) {
     companion object {
         private const val SCHEMA = "gid"
         private const val NAMESPACE = "scopes"
-        private val URI_PATTERN = Regex("^gid://scopes/[A-Z][A-Za-z]+/[A-Z0-9]+$")
+        private val URI_PATTERN = Regex("^$SCHEMA://$NAMESPACE/[A-Z][A-Za-z]+/[0-9A-HJKMNP-TV-Z]{26}$")
 
         // Supported aggregate types
         private val VALID_TYPES = setOf(
@@ -138,15 +138,9 @@ value class AggregateId private constructor(val value: String) {
                         ).left()
                     } else {
                         val type = parts[3]
-                        if (type !in VALID_TYPES) {
-                            AggregateIdError.InvalidType(
-                                occurredAt = now,
-                                attemptedType = type,
-                                validTypes = VALID_TYPES
-                            ).left()
-                        } else {
-                            AggregateId(uri).right()
-                        }
+                        val id = parts[4]
+                        // Delegate to `create` for consistent type and ULID validation.
+                        create(type, id)
                     }
                 }
             }
