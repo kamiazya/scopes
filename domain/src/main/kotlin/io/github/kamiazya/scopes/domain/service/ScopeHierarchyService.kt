@@ -51,9 +51,8 @@ class ScopeHierarchyService {
 
                     val scope = getScopeById(currentId)
                     ensureNotNull(scope) {
-                        ScopeHierarchyError.ParentNotFound(
+                        ScopeHierarchyError.ScopeInHierarchyNotFound(
                             currentTimestamp(),
-                            currentId,
                             currentId
                         )
                     }

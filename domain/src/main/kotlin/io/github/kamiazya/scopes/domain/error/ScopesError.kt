@@ -304,6 +304,11 @@ sealed class ScopeHierarchyError : ConceptualModelError() {
         override val occurredAt: Instant,
         val invalidId: String
     ) : ScopeHierarchyError()
+
+    data class ScopeInHierarchyNotFound(
+        override val occurredAt: Instant,
+        val scopeId: ScopeId
+    ) : ScopeHierarchyError()
 }
 
 /**
