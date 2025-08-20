@@ -216,7 +216,8 @@ class AggregateIdPropertyTest : StringSpec({
     }
 
     "aggregate ID equality should be value-based" {
-        val uri = "gid://scopes/Scope/01HX3BQXYZ"
+        val ulid = ULID.random()
+        val uri = "gid://scopes/Scope/$ulid"
         val result1 = AggregateId.parse(uri)
         val result2 = AggregateId.parse(uri)
 

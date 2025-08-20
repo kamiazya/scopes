@@ -45,7 +45,7 @@ value class EventId private constructor(val value: String) {
     companion object {
         private const val SCHEMA = "evt"
         private const val NAMESPACE = "scopes"
-        private val URI_PATTERN = Regex("^evt://scopes/[A-Z][A-Za-z]+/[0-9A-HJKMNP-TV-Z]{26}$")
+        private val URI_PATTERN = Regex("^${SCHEMA}://${NAMESPACE}/[A-Z][A-Za-z]+/[0-9A-HJKMNP-TV-Z]{26}$")
 
         /**
          * Create an EventId for a specific event type.
