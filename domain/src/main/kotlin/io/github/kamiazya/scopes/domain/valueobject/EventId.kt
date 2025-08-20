@@ -69,7 +69,7 @@ value class EventId private constructor(val value: String) {
                 ).left()
                 else -> {
                     try {
-                        val ulid = ULID().toString()
+                        val ulid = ULID.random()
                         val uri = "$SCHEMA://$NAMESPACE/$eventType/$ulid"
                         EventId(uri).right()
                     } catch (e: Exception) {
