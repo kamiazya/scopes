@@ -255,13 +255,15 @@ class ScopeEventsPropertyTest : StringSpec({
 
     "ScopeChanges should handle all combinations of changes" {
         checkAll(
-            validScopeTitleArb().orNull(0.3).map { it?.let { old ->
-                ScopeChanges.TitleChange(old, ScopeTitle.create("New Title").getOrElse { throw AssertionError() })
+            arbitrary { validScopeTitleArb().orNull(0.3).bind()?.let { old ->
+                val newTitle = validScopeTitleArb().bind()
+                ScopeChanges.TitleChange(old, newTitle)
             }},
-            validScopeDescriptionArb().orNull(0.5).map { it?.let { old ->
-                ScopeChanges.DescriptionChange(old, ScopeDescription.create("New Description").getOrElse { throw AssertionError() })
+            arbitrary { validScopeDescriptionArb().orNull(0.5).bind()?.let { old ->
+                val newDesc = validScopeDescriptionArb().bind()
+                ScopeChanges.DescriptionChange(old, newDesc)
             }},
-            validScopeIdArb().orNull(0.3).map { it?.let { old ->
+            arbitrary { validScopeIdArb().orNull(0.3).bind()?.let { old ->
                 ScopeChanges.ParentChange(old, ScopeId.generate())
             }},
             Arb.list(validAspectChangeArb(), 0..5)
@@ -309,32 +311,30 @@ private fun validScopeIdArb(): Arb<ScopeId> = arbitrary {
 }
 
 private fun validScopeTitleArb(): Arb<ScopeTitle> = arbitrary {
-    val titles = listOf(
-        "Project Alpha", "Sprint 1", "Bug Fix", "Feature Development",
-        "Documentation", "Testing Phase", "Release Planning", "Code Review"
-    )
-    ScopeTitle.create(titles.random()).getOrElse { throw AssertionError() }
+    val title = Arb.string(1..200)
+        .filter { it.trim().isNotEmpty() && !it.contains('\n') && !it.contains('\r') }
+        .bind()
+    ScopeTitle.create(title).getOrElse { throw AssertionError("Failed to create ScopeTitle: $it") }
 }
 
 private fun validScopeDescriptionArb(): Arb<ScopeDescription> = arbitrary {
-    val descriptions = listOf(
-        "This is a detailed description of the scope",
-        "Implementation of new feature with enhanced functionality",
-        "Bug fix for critical issue in production",
-        "Performance optimization for database queries",
-        "Refactoring legacy code to improve maintainability"
-    )
-    ScopeDescription.create(descriptions.random()).getOrElse { throw AssertionError() }!!
+    val description = Arb.string(1..1000)
+        .filter { it.trim().isNotEmpty() && it.trim().length <= 1000 }
+        .bind()
+    val result = ScopeDescription.create(description).getOrElse { throw AssertionError("Failed to create ScopeDescription: $it") }
+    result ?: throw AssertionError("ScopeDescription.create returned null for non-empty description: $description")
 }
 
 private fun validAspectKeyArb(): Arb<AspectKey> = arbitrary {
-    val keys = listOf("status", "priority", "category", "type", "stage", "environment")
-    AspectKey.create(keys.random()).getOrElse { throw AssertionError() }
+    val key = Arb.stringPattern("[a-z][a-z0-9_]{0,49}").bind()
+    AspectKey.create(key).getOrElse { throw AssertionError("Failed to create AspectKey: $it") }
 }
 
 private fun validAspectValueArb(): Arb<AspectValue> = arbitrary {
-    val values = listOf("active", "high", "bug", "feature", "development", "production", "testing")
-    AspectValue.create(values.random()).getOrElse { throw AssertionError() }
+    val value = Arb.string(1..100)
+        .filter { it.trim().isNotEmpty() && it.trim().length <= 100 }
+        .bind()
+    AspectValue.create(value).getOrElse { throw AssertionError("Failed to create AspectValue: $it") }
 }
 
 private fun validAspectsArb(): Arb<Map<AspectKey, NonEmptyList<AspectValue>>> = arbitrary {
