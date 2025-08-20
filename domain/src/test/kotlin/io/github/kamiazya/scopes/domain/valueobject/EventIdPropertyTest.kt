@@ -15,6 +15,7 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
 import kotlinx.datetime.Clock
 import com.github.guepardoapps.kulid.ULID
@@ -258,13 +259,7 @@ class EventIdPropertyTest : StringSpec({
 })
 
 // Custom Arbitrary generators
-private fun validEventTypeArb(): Arb<String> = arbitrary {
-    val prefixes = listOf("Scope", "Context", "Alias", "Aspect", "Filter", "View")
-    val suffixes = listOf("Created", "Updated", "Deleted", "Archived", "Restored", "Added", "Removed", "Changed")
-    val prefix = prefixes.random()
-    val suffix = suffixes.random()
-    "$prefix$suffix"
-}
+private fun validEventTypeArb(): Arb<String> = Arb.stringPattern("[A-Z][a-zA-Z]{4,20}")
 
 private fun invalidEventTypeArb(): Arb<String> = Arb.choice(
     // lowercase start
