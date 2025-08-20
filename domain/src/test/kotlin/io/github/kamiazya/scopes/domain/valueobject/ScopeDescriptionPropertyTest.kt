@@ -140,10 +140,10 @@ class ScopeDescriptionPropertyTest : StringSpec({
         checkAll(validDescriptionArb()) { description ->
             val result1 = ScopeDescription.create(description)
             val result2 = ScopeDescription.create(description)
-            
+
             result1.isRight() shouldBe true
             result2.isRight() shouldBe true
-            
+
             result1.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { desc1 ->
@@ -200,10 +200,10 @@ class ScopeDescriptionPropertyTest : StringSpec({
             if (desc1.trim() != desc2.trim()) {
                 val result1 = ScopeDescription.create(desc1)
                 val result2 = ScopeDescription.create(desc2)
-                
+
                 result1.isRight() shouldBe true
                 result2.isRight() shouldBe true
-                
+
                 result1.fold(
                     { throw AssertionError("Expected Right but got Left") },
                     { scopeDesc1 ->

@@ -17,10 +17,10 @@ import io.kotest.property.checkAll
 class SimpleScopePropertyTest : StringSpec({
 
     "valid titles should create valid scopes" {
-        checkAll(Arb.string(1..100).filter { 
-            it.trim().isNotEmpty() && 
-            !it.contains('\n') && 
-            !it.contains('\r') 
+        checkAll(Arb.string(1..100).filter {
+            it.trim().isNotEmpty() &&
+            !it.contains('\n') &&
+            !it.contains('\r')
         }) { title ->
             val result = Scope.create(title = title)
             result.shouldBeRight()
@@ -59,10 +59,10 @@ class SimpleScopePropertyTest : StringSpec({
     }
 
     "scope IDs should be unique" {
-        val ids = (1..100).map { 
-            Scope.create(title = "Test $it").getOrNull()?.id 
+        val ids = (1..100).map {
+            Scope.create(title = "Test $it").getOrNull()?.id
         }.filterNotNull()
-        
+
         ids.distinct().size shouldBe ids.size
     }
 
@@ -91,12 +91,12 @@ class SimpleScopePropertyTest : StringSpec({
                 // Test with a known valid aspect key/value
                 val key = AspectKey.create("status").getOrNull()!!
                 val value = AspectValue.create("active").getOrNull()!!
-                
+
                 // Add aspect
                 val withAspect = scope.setAspect(key, value)
                 withAspect.hasAspect(key) shouldBe true
                 withAspect.getAspectValue(key) shouldBe value
-                
+
                 // Remove aspect
                 val withoutAspect = withAspect.removeAspect(key)
                 withoutAspect.hasAspect(key) shouldBe false

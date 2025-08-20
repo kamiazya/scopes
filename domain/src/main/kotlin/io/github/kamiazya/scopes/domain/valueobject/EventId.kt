@@ -46,7 +46,7 @@ value class EventId private constructor(val value: String) {
         private const val SCHEMA = "evt"
         private const val NAMESPACE = "scopes"
         private val URI_PATTERN = Regex("^evt://scopes/[A-Z][A-Za-z]+/[0-9A-Z]{26}$")
-        
+
         /**
          * Create an EventId for a specific event type.
          * Generates a new ULID for uniqueness and time-ordering.
@@ -56,7 +56,7 @@ value class EventId private constructor(val value: String) {
          */
         fun create(eventType: String): Either<EventIdError, EventId> {
             val now = Clock.System.now()
-            
+
             return when {
                 eventType.isBlank() -> EventIdError.EmptyValue(
                     occurredAt = now,
@@ -81,7 +81,7 @@ value class EventId private constructor(val value: String) {
                 }
             }
         }
-        
+
         /**
          * Create an EventId from a domain event class.
          * The class simple name will be used as the event type.
@@ -97,14 +97,14 @@ value class EventId private constructor(val value: String) {
             ).left()
             return create(eventType)
         }
-        
+
         /**
          * Create an EventId from a domain event class (Java-friendly version).
          */
         fun <T : Any> create(clazz: Class<T>): Either<EventIdError, EventId> {
             return create(clazz.kotlin)
         }
-        
+
         /**
          * Parse an EventId from a URI string.
          *
@@ -113,7 +113,7 @@ value class EventId private constructor(val value: String) {
          */
         fun parse(uri: String): Either<EventIdError, EventId> {
             val now = Clock.System.now()
-            
+
             return when {
                 uri.isBlank() -> EventIdError.EmptyValue(
                     occurredAt = now,

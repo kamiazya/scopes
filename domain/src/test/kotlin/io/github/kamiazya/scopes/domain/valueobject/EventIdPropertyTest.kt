@@ -38,7 +38,7 @@ class EventIdPropertyTest : StringSpec({
 
     "event IDs created with the same type should be unique" {
         checkAll(validEventTypeArb()) { eventType ->
-            val ids = (1..100).mapNotNull { 
+            val ids = (1..100).mapNotNull {
                 EventId.create(eventType).fold({ null }, { it })
             }
             ids.distinct().size shouldBe ids.size
@@ -132,9 +132,9 @@ class EventIdPropertyTest : StringSpec({
 
     "parsing URIs with wrong schema should return error" {
         checkAll(
-            Arb.of("gid://scopes/ScopeCreated/01HX3BQXYZ", 
-                   "http://scopes/ScopeCreated/01HX3BQXYZ",
-                   "evt://wrong/ScopeCreated/01HX3BQXYZ")
+            Arb.of("gid://scopes/ScopeCreated/01HX3BQXYZ",
+                "http://scopes/ScopeCreated/01HX3BQXYZ",
+                "evt://wrong/ScopeCreated/01HX3BQXYZ")
         ) { wrongUri ->
             val result = EventId.parse(wrongUri)
             result.isLeft() shouldBe true
@@ -198,10 +198,10 @@ class EventIdPropertyTest : StringSpec({
         val uri = "evt://scopes/ScopeCreated/$ulid"
         val result1 = EventId.parse(uri)
         val result2 = EventId.parse(uri)
-        
+
         result1.isRight() shouldBe true
         result2.isRight() shouldBe true
-        
+
         result1.fold(
             { throw AssertionError("Expected Right but got Left") },
             { id1 ->
@@ -221,10 +221,10 @@ class EventIdPropertyTest : StringSpec({
     "different event IDs should not be equal" {
         val result1 = EventId.create("EventA")
         val result2 = EventId.create("EventB")
-        
+
         result1.isRight() shouldBe true
         result2.isRight() shouldBe true
-        
+
         result1.fold(
             { throw AssertionError("Expected Right but got Left") },
             { id1 ->
@@ -243,7 +243,7 @@ class EventIdPropertyTest : StringSpec({
         checkAll(validEventTypeArb(), validUlidArb()) { eventType, ulid ->
             val uri = "evt://scopes/$eventType/$ulid"
             val result = EventId.parse(uri)
-            
+
             result.isRight() shouldBe true
             result.fold(
                 { throw AssertionError("Expected Right but got Left") },
@@ -288,5 +288,5 @@ private fun invalidEventTypeArb(): Arb<String> = Arb.choice(
 ).filter { it.isNotBlank() }
 
 private fun validUlidArb(): Arb<String> = arbitrary {
-    ULID().toString()
+    ULID.random()
 }

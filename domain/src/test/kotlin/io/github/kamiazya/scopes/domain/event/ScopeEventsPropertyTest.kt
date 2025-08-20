@@ -35,14 +35,14 @@ class ScopeEventsPropertyTest : StringSpec({
                 parentId = parentId,
                 aspectsData = aspects
             )
-            
+
             scopeResult.isRight() shouldBe true
             scopeResult.fold(
                 { throw AssertionError("Failed to create scope: $it") },
                 { scope ->
                     val eventId = EventId.create("ScopeCreated").getOrElse { throw AssertionError() }
                     val result = ScopeCreated.from(scope, eventId)
-                    
+
                     result.isRight() shouldBe true
                     result.fold(
                         { throw AssertionError("Failed to create event: $it") },
@@ -76,7 +76,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
                 val eventId = EventId.create("ScopeTitleUpdated").getOrElse { throw AssertionError() }
                 val occurredAt = Clock.System.now()
-                
+
                 val event = ScopeTitleUpdated(
                     aggregateId = aggregateId,
                     eventId = eventId,
@@ -86,7 +86,7 @@ class ScopeEventsPropertyTest : StringSpec({
                     oldTitle = oldTitle,
                     newTitle = newTitle
                 )
-                
+
                 event.oldTitle shouldNotBe event.newTitle
                 event.scopeId shouldBe scopeId
                 event.version shouldBe version
@@ -105,7 +105,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
             val eventId = EventId.create("ScopeDescriptionUpdated").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
-            
+
             val event = ScopeDescriptionUpdated(
                 aggregateId = aggregateId,
                 eventId = eventId,
@@ -115,7 +115,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 oldDescription = oldDescription,
                 newDescription = newDescription
             )
-            
+
             event.oldDescription shouldBe oldDescription
             event.newDescription shouldBe newDescription
             event.eventType shouldBe "ScopeDescriptionUpdated"
@@ -133,7 +133,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
                 val eventId = EventId.create("ScopeParentChanged").getOrElse { throw AssertionError() }
                 val occurredAt = Clock.System.now()
-                
+
                 val event = ScopeParentChanged(
                     aggregateId = aggregateId,
                     eventId = eventId,
@@ -143,7 +143,7 @@ class ScopeEventsPropertyTest : StringSpec({
                     oldParentId = oldParentId,
                     newParentId = newParentId
                 )
-                
+
                 event.oldParentId shouldBe oldParentId
                 event.newParentId shouldBe newParentId
                 event.eventType shouldBe "ScopeParentChanged"
@@ -161,7 +161,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
             val eventId = EventId.create("ScopeAspectAdded").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
-            
+
             val event = ScopeAspectAdded(
                 aggregateId = aggregateId,
                 eventId = eventId,
@@ -171,7 +171,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 aspectKey = aspectKey,
                 aspectValue = aspectValue
             )
-            
+
             event.aspectKey shouldBe aspectKey
             event.aspectValue shouldBe aspectValue
             event.eventType shouldBe "ScopeAspectAdded"
@@ -187,7 +187,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val eventId = EventId.create("ScopeDeleted").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
             val deletedAt = occurredAt
-            
+
             val event = ScopeDeleted(
                 aggregateId = aggregateId,
                 eventId = eventId,
@@ -196,7 +196,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 scopeId = scopeId,
                 deletedAt = deletedAt
             )
-            
+
             event.scopeId shouldBe scopeId
             event.deletedAt shouldBe deletedAt
             event.deletedAt shouldBe event.occurredAt
@@ -209,7 +209,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
             val eventId = EventId.create("ScopeCreated").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
-            
+
             val title = ScopeTitle.create("Test").getOrElse { throw AssertionError() }
             val event = ScopeCreated(
                 aggregateId = aggregateId,
@@ -222,7 +222,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 parentId = null,
                 aspects = emptyMap()
             )
-            
+
             // Verify aggregate ID properties
             event.aggregateId.value shouldBe "gid://scopes/Scope/${scopeId.value}"
             event.aggregateId.aggregateType shouldBe "Scope"
@@ -238,7 +238,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
             val eventId = EventId.create("ScopeArchived").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
-            
+
             val event = ScopeArchived(
                 aggregateId = aggregateId,
                 eventId = eventId,
@@ -247,7 +247,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 scopeId = scopeId,
                 reason = "Archived for testing"
             )
-            
+
             event.version shouldBe version
             (event.version > 0) shouldBe true
         }
@@ -255,7 +255,7 @@ class ScopeEventsPropertyTest : StringSpec({
 
     "ScopeChanges should handle all combinations of changes" {
         checkAll(
-            validScopeTitleArb().orNull(0.3).map { it?.let { old -> 
+            validScopeTitleArb().orNull(0.3).map { it?.let { old ->
                 ScopeChanges.TitleChange(old, ScopeTitle.create("New Title").getOrElse { throw AssertionError() })
             }},
             validScopeDescriptionArb().orNull(0.5).map { it?.let { old ->
@@ -272,7 +272,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 parentChange = parentChange,
                 aspectChanges = aspectChanges
             )
-            
+
             changes.titleChange shouldBe titleChange
             changes.descriptionChange shouldBe descriptionChange
             changes.parentChange shouldBe parentChange
@@ -285,7 +285,7 @@ class ScopeEventsPropertyTest : StringSpec({
             val aggregateId = scopeId.toAggregateId().getOrElse { throw AssertionError() }
             val eventId = EventId.create("ScopeRestored").getOrElse { throw AssertionError() }
             val occurredAt = Clock.System.now()
-            
+
             val event = ScopeRestored(
                 aggregateId = aggregateId,
                 eventId = eventId,
@@ -293,7 +293,7 @@ class ScopeEventsPropertyTest : StringSpec({
                 version = 2,
                 scopeId = scopeId
             )
-            
+
             // Verify timestamp is recent (within last hour)
             val now = Clock.System.now()
             val oneHourAgo = now - 1.hours
@@ -340,7 +340,7 @@ private fun validAspectValueArb(): Arb<AspectValue> = arbitrary {
 private fun validAspectsArb(): Arb<Map<AspectKey, NonEmptyList<AspectValue>>> = arbitrary {
     val aspectCount = Arb.int(0..3).bind()
     val aspects = mutableMapOf<AspectKey, NonEmptyList<AspectValue>>()
-    
+
     repeat(aspectCount) {
         val key = validAspectKeyArb().bind()
         val valueCount = Arb.int(1..3).bind()
@@ -349,14 +349,14 @@ private fun validAspectsArb(): Arb<Map<AspectKey, NonEmptyList<AspectValue>>> = 
             aspects[key] = nonEmptyListOf(values.first(), *values.drop(1).toTypedArray())
         }
     }
-    
+
     aspects
 }
 
 private fun validAspectChangeArb(): Arb<ScopeChanges.AspectChange> = arbitrary {
     val key = validAspectKeyArb().bind()
     val value = validAspectValueArb().bind()
-    
+
     if (Arb.boolean().bind()) {
         ScopeChanges.AspectChange.Added(key, value)
     } else {

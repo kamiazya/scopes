@@ -142,7 +142,7 @@ class ScopeIdPropertyTest : StringSpec({
             ids.add(ScopeId.generate().value)
             Thread.sleep(2) // Ensure different timestamps
         }
-        
+
         // Check if IDs are in ascending order
         for (i in 1 until ids.size) {
             (ids[i] > ids[i - 1]) shouldBe true
@@ -181,11 +181,11 @@ class ScopeIdPropertyTest : StringSpec({
         // ULIDs are case-insensitive in Crockford's base32
         val upperCase = "01HQ5JJGQKX9NPZB0X3Q5VWXYZ"
         val lowerCase = "01hq5jjgqkx9npzb0x3q5vwxyz"
-        
+
         // Both should be valid if the library handles case normalization
         val upperResult = ScopeId.create(upperCase)
         val lowerResult = ScopeId.create(lowerCase)
-        
+
         // At least one should succeed (depends on ULID library implementation)
         (upperResult.isRight() || lowerResult.isRight()) shouldBe true
     }
@@ -210,7 +210,7 @@ private fun invalidUlidArb(): Arb<String> = Arb.choice(
         "!@#$%^&*()_+-=[]{}|;:,.<>?",  // Special characters
         "IIIIIIIIIIIIIIIIIIIIIIIIII", // All invalid characters
         "LLLLLLLLLLLLLLLLLLLLLLLLLL", // All invalid characters
-        "OOOOOOOOOOOOOOOOOOOOOOOOOO", // All invalid characters  
+        "OOOOOOOOOOOOOOOOOOOOOOOOOO", // All invalid characters
         "UUUUUUUUUUUUUUUUUUUUUUUUUU"  // All invalid characters
     )
 )

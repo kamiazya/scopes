@@ -25,7 +25,7 @@ class ScopeTitlePropertyTest : StringSpec({
             result.isLeft() shouldBe true
             val error = result.leftOrNull()
             // Can be either Empty or ContainsProhibitedCharacters if the string contains newlines
-            (error is ScopeInputError.TitleError.Empty || 
+            (error is ScopeInputError.TitleError.Empty ||
              error is ScopeInputError.TitleError.ContainsProhibitedCharacters) shouldBe true
         }
     }

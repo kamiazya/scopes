@@ -176,7 +176,7 @@ data class ScopeChanges(
     data class TitleChange(val oldTitle: ScopeTitle, val newTitle: ScopeTitle)
     data class DescriptionChange(val oldDescription: ScopeDescription?, val newDescription: ScopeDescription?)
     data class ParentChange(val oldParentId: ScopeId?, val newParentId: ScopeId?)
-    
+
     sealed class AspectChange {
         data class Added(val key: AspectKey, val value: AspectValue) : AspectChange()
         data class Removed(val key: AspectKey, val value: AspectValue) : AspectChange()

@@ -76,10 +76,10 @@ value class AggregateId private constructor(val value: String) {
                     attemptedType = type,
                     validTypes = VALID_TYPES
                 ).left()
-                !id.matches(Regex("^[A-Z0-9]+$")) -> AggregateIdError.InvalidIdFormat(
+                !id.matches(Regex("^[0-9A-HJKMNP-TV-Z]{26}$")) -> AggregateIdError.InvalidIdFormat(
                     occurredAt = now,
                     attemptedId = id,
-                    expectedFormat = "ULID format (uppercase letters and numbers only)"
+                    expectedFormat = "ULID format (26 characters, excluding I, L, O, U)"
                 ).left()
                 else -> {
                     val uri = "$SCHEMA://$NAMESPACE/$type/$id"

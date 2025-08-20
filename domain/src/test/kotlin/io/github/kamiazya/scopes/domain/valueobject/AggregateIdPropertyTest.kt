@@ -12,6 +12,7 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -131,10 +132,12 @@ class AggregateIdPropertyTest : StringSpec({
                         is AggregateIdError.InvalidIdFormat -> {
                             error.attemptedId shouldBe invalidId
                         }
-                        else -> throw AssertionError("Expected InvalidIdFormat but got $error")
+                        else -> throw AssertionError("Expected InvalidIdFormat but got $error for type=$type, id=$invalidId")
                     }
                 },
-                { throw AssertionError("Expected Left but got Right") }
+                { aggregateId ->
+                    throw AssertionError("Expected Left but got Right: $aggregateId for type=$type, id=$invalidId")
+                }
             )
         }
     }
@@ -157,9 +160,9 @@ class AggregateIdPropertyTest : StringSpec({
 
     "parsing URIs with wrong schema should return error" {
         checkAll(
-            Arb.of("evt://scopes/Scope/01HX3BQXYZ", 
-                   "http://scopes/Scope/01HX3BQXYZ",
-                   "gid://wrong/Scope/01HX3BQXYZ")
+            Arb.of("evt://scopes/Scope/01HX3BQXYZ",
+                "http://scopes/Scope/01HX3BQXYZ",
+                "gid://wrong/Scope/01HX3BQXYZ")
         ) { wrongUri ->
             val result = AggregateId.parse(wrongUri)
             result.isLeft() shouldBe true
@@ -196,7 +199,7 @@ class AggregateIdPropertyTest : StringSpec({
         class TestAggregate
         val id = ULID().toString()
         val result = AggregateId.create(TestAggregate::class, id)
-        
+
         // Since TestAggregate is not in the valid types, it should fail
         result.isLeft() shouldBe true
         result.fold(
@@ -216,10 +219,10 @@ class AggregateIdPropertyTest : StringSpec({
         val uri = "gid://scopes/Scope/01HX3BQXYZ"
         val result1 = AggregateId.parse(uri)
         val result2 = AggregateId.parse(uri)
-        
+
         result1.isRight() shouldBe true
         result2.isRight() shouldBe true
-        
+
         result1.fold(
             { throw AssertionError("Expected Right but got Left") },
             { id1 ->
@@ -238,12 +241,12 @@ class AggregateIdPropertyTest : StringSpec({
 
     "different aggregate IDs should not be equal" {
         checkAll(validAggregateTypeArb()) { type ->
-            val result1 = AggregateId.create(type, ULID().toString())
-            val result2 = AggregateId.create(type, ULID().toString())
-            
+            val result1 = AggregateId.create(type, ULID.random())
+            val result2 = AggregateId.create(type, ULID.random())
+
             result1.isRight() shouldBe true
             result2.isRight() shouldBe true
-            
+
             result1.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { id1 ->
@@ -263,7 +266,7 @@ class AggregateIdPropertyTest : StringSpec({
         checkAll(validAggregateTypeArb(), validIdArb()) { type, id ->
             val uri = "gid://scopes/$type/$id"
             val result = AggregateId.parse(uri)
-            
+
             result.isRight() shouldBe true
             result.fold(
                 { throw AssertionError("Expected Right but got Left") },
@@ -288,10 +291,10 @@ class AggregateIdPropertyTest : StringSpec({
         checkAll(validAggregateTypeArb(), validIdArb()) { type, id ->
             val result1 = AggregateId.create(type, id)
             val result2 = AggregateId.create(type, id)
-            
+
             result1.isRight() shouldBe true
             result2.isRight() shouldBe true
-            
+
             result1.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { id1 ->
@@ -325,21 +328,27 @@ private fun invalidAggregateTypeArb(): Arb<String> = Arb.choice(
 ).filter { it.isNotBlank() }
 
 private fun validIdArb(): Arb<String> = arbitrary {
-    ULID().toString()
+    ULID.random()
 }
 
 private fun invalidIdArb(): Arb<String> = Arb.choice(
-    // Contains lowercase letters
-    Arb.string(26..26).map { it.lowercase() },
+    // Contains lowercase letters (ULID should be uppercase)
+    Arb.constant("01HX3BQXYZabcdefghijklmnop"),
     // Contains special characters
-    Arb.string(20..30).map { base ->
-        val specialChars = listOf("-", "_", "!", "@", "#", "$", " ")
-        val insertPos = (0..base.length).random()
-        base.substring(0, insertPos) + specialChars.random() + base.substring(insertPos)
-    },
+    Arb.constant("01HX3BQXYZ-123456789012345"),
+    Arb.constant("01HX3BQXYZ_123456789012345"),
+    Arb.constant("01HX3BQXYZ!123456789012345"),
     // Wrong length
-    Arb.choice(
-        Arb.string(1..25),  // Too short
-        Arb.string(27..50)  // Too long
-    )
-).filter { it.isNotBlank() }
+    Arb.constant("01HX3BQXYZ"),  // Too short (10 chars)
+    Arb.constant("01HX3BQXYZ12345678901234567890"),  // Too long (30 chars)
+    // Contains spaces
+    Arb.constant("01HX3BQX Z123456789012345"),
+    // Invalid characters for ULID
+    Arb.constant("not-a-ulid-at-all"),
+    Arb.constant("26_CHARS_BUT_NOT_VALID_ID!"),
+    // Contains invalid letters for ULID (I, L, O, U)
+    Arb.constant("01IX3BQXYZ123456789012345I"),
+    Arb.constant("01LX3BQXYZ123456789012345L"),
+    Arb.constant("01OX3BQXYZ123456789012345O"),
+    Arb.constant("01UX3BQXYZ123456789012345U")
+)

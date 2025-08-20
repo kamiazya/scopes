@@ -12,7 +12,7 @@ import kotlinx.datetime.Instant
  *
  * Each alias is an alternative identifier for a scope, allowing users to reference
  * scopes using memorable names instead of ULIDs.
- * 
+ *
  * The alias has its own unique ID (ULID) for tracking purposes, allowing the alias
  * name to be changed while maintaining identity and audit trail.
  *

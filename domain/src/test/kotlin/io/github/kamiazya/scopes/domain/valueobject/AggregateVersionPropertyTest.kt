@@ -55,7 +55,7 @@ class AggregateVersionPropertyTest : StringSpec({
             AggregateVersion.MAX_VERSION + 1,
             Int.MAX_VALUE
         )
-        
+
         overflowValues.forEach { overflowVersion ->
             val result = AggregateVersion.create(overflowVersion)
             result.isLeft() shouldBe true
@@ -131,10 +131,10 @@ class AggregateVersionPropertyTest : StringSpec({
         checkAll(validVersionArb().filter { it < AggregateVersion.MAX_VERSION }) { version ->
             val currentResult = AggregateVersion.create(version)
             val nextResult = AggregateVersion.create(version + 1)
-            
+
             currentResult.isRight() shouldBe true
             nextResult.isRight() shouldBe true
-            
+
             currentResult.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { current ->
@@ -157,10 +157,10 @@ class AggregateVersionPropertyTest : StringSpec({
         ) { version, jump ->
             val currentResult = AggregateVersion.create(version)
             val jumpedResult = AggregateVersion.create(version + jump)
-            
+
             currentResult.isRight() shouldBe true
             jumpedResult.isRight() shouldBe true
-            
+
             currentResult.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { current ->
@@ -192,10 +192,10 @@ class AggregateVersionPropertyTest : StringSpec({
         checkAll(validVersionArb().filter { it > 0 }) { version ->
             val currentResult = AggregateVersion.create(version)
             val previousResult = AggregateVersion.create(version - 1)
-            
+
             currentResult.isRight() shouldBe true
             previousResult.isRight() shouldBe true
-            
+
             currentResult.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { current ->
@@ -218,10 +218,10 @@ class AggregateVersionPropertyTest : StringSpec({
         ) { v1, v2 ->
             val result1 = AggregateVersion.create(v1)
             val result2 = AggregateVersion.create(v2)
-            
+
             result1.isRight() shouldBe true
             result2.isRight() shouldBe true
-            
+
             result1.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { version1 ->
@@ -271,10 +271,10 @@ class AggregateVersionPropertyTest : StringSpec({
         checkAll(validVersionArb()) { version ->
             val result1 = AggregateVersion.create(version)
             val result2 = AggregateVersion.create(version)
-            
+
             result1.isRight() shouldBe true
             result2.isRight() shouldBe true
-            
+
             result1.fold(
                 { throw AssertionError("Expected Right but got Left") },
                 { v1 ->
@@ -298,10 +298,10 @@ class AggregateVersionPropertyTest : StringSpec({
             if (v1 != v2) {
                 val result1 = AggregateVersion.create(v1)
                 val result2 = AggregateVersion.create(v2)
-                
+
                 result1.isRight() shouldBe true
                 result2.isRight() shouldBe true
-                
+
                 result1.fold(
                     { throw AssertionError("Expected Right but got Left") },
                     { version1 ->
@@ -320,10 +320,10 @@ class AggregateVersionPropertyTest : StringSpec({
     "sequential increments should maintain order" {
         val startVersion = 0
         val iterations = 100
-        
+
         var currentResult = AggregateVersion.create(startVersion)
         currentResult.isRight() shouldBe true
-        
+
         for (i in 1..iterations) {
             currentResult = currentResult.fold(
                 { throw AssertionError("Expected Right but got Left") },

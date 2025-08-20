@@ -121,16 +121,16 @@ data class AspectCriterion(
         if (actualValues.isNullOrEmpty()) return false
 
         return when (operator) {
-            ComparisonOperator.EQUALS -> 
+            ComparisonOperator.EQUALS ->
                 // Any value equals the criterion value
                 actualValues.any { it == value }
-            ComparisonOperator.NOT_EQUALS -> 
+            ComparisonOperator.NOT_EQUALS ->
                 // All values don't equal the criterion value
                 actualValues.all { it != value }
-            ComparisonOperator.CONTAINS -> 
+            ComparisonOperator.CONTAINS ->
                 // Any value contains the criterion value
                 actualValues.any { it.value.contains(value.value, ignoreCase = true) }
-            ComparisonOperator.NOT_CONTAINS -> 
+            ComparisonOperator.NOT_CONTAINS ->
                 // All values don't contain the criterion value
                 actualValues.all { !it.value.contains(value.value, ignoreCase = true) }
             ComparisonOperator.GREATER_THAN,
