@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
  * A URI-based event identifier following the event ID pattern.
  *
  * Format: evt://scopes/{EventType}/{ULID}
- * Example: evt://scopes/ScopeCreated/01HX3BQXYZ
+ * Example: evt://scopes/ScopeCreated/01HX3BQXYZABCDEFGHJKMNPQR
  *
  * This provides a globally unique, self-describing identifier that includes:
  * - The schema (evt)
@@ -25,14 +25,14 @@ value class EventId private constructor(val value: String) {
 
     /**
      * Extract the event type from the URI.
-     * For "evt://scopes/ScopeCreated/01HX3BQXYZ", returns "ScopeCreated"
+     * For "evt://scopes/ScopeCreated/01HX3BQXYZABCDEFGHJKMNPQR", returns "ScopeCreated"
      */
     val eventType: String
         get() = value.split("/")[3]
 
     /**
      * Extract the ULID portion from the URI.
-     * For "evt://scopes/ScopeCreated/01HX3BQXYZ", returns "01HX3BQXYZ"
+     * For "evt://scopes/ScopeCreated/01HX3BQXYZABCDEFGHJKMNPQR", returns "01HX3BQXYZABCDEFGHJKMNPQR"
      */
     val ulid: String
         get() = value.split("/")[4]
