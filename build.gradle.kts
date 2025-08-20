@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
+    id("com.diffplug.spotless") version "7.0.0.BETA4"
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
 }
@@ -98,6 +99,46 @@ ktlint {
         exclude("**/generated/**")
         include("**/src/**/*.kt")
         exclude("**/build/**")
+    }
+}
+
+// Spotless configuration
+spotless {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**", "**/generated/**", ".gradle/**")
+        ktlint("1.5.0")
+            .editorConfigOverride(
+                mapOf(
+                    "indent_size" to "4",
+                    "continuation_indent_size" to "4",
+                    "max_line_length" to "150",
+                    "insert_final_newline" to "true",
+                    "ktlint_standard_no-wildcard-imports" to "disabled",
+                    "ktlint_standard_package-name" to "disabled",
+                    "ktlint_standard_filename" to "disabled",
+                    "ktlint_standard_function-naming" to "disabled",
+                    "ktlint_standard_value-parameter-comment" to "disabled",
+                    "ktlint_standard_max-line-length" to "disabled",
+                ),
+            )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        targetExclude("**/build/**", ".gradle/**")
+        ktlint("1.5.0")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    format("misc") {
+        target("**/*.md", "**/*.yml", "**/*.yaml", "**/*.json")
+        targetExclude("**/build/**", ".gradle/**", "**/node_modules/**")
+        trimTrailingWhitespace()
+        endWithNewline()
     }
 }
 

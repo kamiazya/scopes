@@ -4,6 +4,17 @@
 pre-commit:
   parallel: true
   commands:
+    spotless:
+      glob: "**/*.{kt,kts,md,yml,yaml,json}"
+      run: |
+        echo "🎨 Running Spotless formatting..."
+        ./gradlew spotlessApply --daemon
+        echo "✅ Spotless formatting completed"
+      stage_fixed: true
+      skip:
+        - merge
+        - rebase
+
     editorconfig:
       glob: "*"
       exclude: '.claude/.*|tmp/.*|LICENSE'
@@ -43,20 +54,27 @@ pre-commit:
 post-tool-use-edit:
   parallel: true
   commands:
+    spotless-format:
+      glob: "**/*.{kt,kts,md,yml,yaml,json}"
+      run: |
+        echo "🎨 Auto-formatting files with Spotless: {files}"
+        ./gradlew spotlessApply --daemon --quiet
+        echo "✅ Spotless formatting completed"
+
     ktlint-format:
       glob: "**/*.kt"
       run: |
         echo "🔧 Auto-formatting Kotlin file: {files}"
         ./gradlew ktlintFormat --daemon --quiet
         echo "✅ KtLint formatting completed"
-      
+
     detekt-check:
       glob: "**/*.kt"
       run: |
         echo "🔍 Running Detekt analysis with auto-correction"
         ./gradlew detekt -Pdetekt.autoCorrect=true --daemon --quiet || true
         echo "✅ Detekt analysis completed"
-      
+
     # Optional: Run tests for the affected module only
     module-test:
       glob: "**/*.kt"
