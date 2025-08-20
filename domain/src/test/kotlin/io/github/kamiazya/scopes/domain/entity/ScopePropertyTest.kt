@@ -22,7 +22,7 @@ class ScopePropertyTest : StringSpec({
                 title = title,
                 description = description
             )
-            
+
             result.shouldBeRight()
             val scope = result.getOrNull()
             scope shouldNotBe null
@@ -42,7 +42,7 @@ class ScopePropertyTest : StringSpec({
         checkAll(100, validTitleArb()) { title ->
             val scope1 = Scope.create(title = title).getOrNull()!!
             val scope2 = Scope.create(title = title).getOrNull()!!
-            
+
             scope1.id shouldNotBe scope2.id
         }
     }
@@ -52,7 +52,7 @@ class ScopePropertyTest : StringSpec({
             val beforeCreation = Clock.System.now()
             val scope = Scope.create(title = title).getOrNull()!!
             val afterCreation = Clock.System.now()
-            
+
             (scope.createdAt >= beforeCreation) shouldBe true
             (scope.createdAt <= afterCreation) shouldBe true
             scope.createdAt shouldBe scope.updatedAt
@@ -66,7 +66,7 @@ class ScopePropertyTest : StringSpec({
                 title = title,
                 parentId = parentId
             ).getOrNull()!!
-            
+
             scope.parentId shouldBe parentId
         }
     }
@@ -77,7 +77,7 @@ class ScopePropertyTest : StringSpec({
                 title = originalTitle,
                 description = "Test description"
             ).getOrNull()
-            
+
             if (originalScope != null) {
                 Thread.sleep(1) // Ensure timestamp difference
                 val updateResult = originalScope.updateTitle(newTitle)
@@ -122,10 +122,10 @@ class ScopePropertyTest : StringSpec({
         checkAll(validTitleArb()) { title ->
             val originalScope = Scope.create(title = title).getOrNull()!!
             val newParentId = ScopeId.generate()
-            
+
             Thread.sleep(1) // Ensure timestamp difference
             val movedScope = originalScope.moveToParent(newParentId)
-            
+
             movedScope.id shouldBe originalScope.id
             movedScope.title shouldBe originalScope.title
             movedScope.parentId shouldBe newParentId
@@ -138,18 +138,18 @@ class ScopePropertyTest : StringSpec({
             val scope = Scope.create(title = title).getOrNull()!!
             val aspectKey = AspectKey.create(key).getOrNull()!!
             val aspectValue = AspectValue.create(value).getOrNull()!!
-            
+
             // Initially no aspects
             scope.hasAspect(aspectKey) shouldBe false
             scope.getAspectValue(aspectKey) shouldBe null
-            
+
             Thread.sleep(1) // Ensure timestamp difference
             // Set aspect
             val withAspect = scope.setAspect(aspectKey, aspectValue)
             withAspect.hasAspect(aspectKey) shouldBe true
             withAspect.getAspectValue(aspectKey) shouldBe aspectValue
             (withAspect.updatedAt > scope.updatedAt) shouldBe true
-            
+
             Thread.sleep(1) // Ensure timestamp difference
             // Remove aspect
             val withoutAspect = withAspect.removeAspect(aspectKey)
@@ -168,11 +168,11 @@ class ScopePropertyTest : StringSpec({
             val scope = Scope.create(title = title).getOrNull()!!
             val aspectKey = AspectKey.create(key).getOrNull()!!
             val aspectValues = values.mapNotNull { AspectValue.create(it).getOrNull() }
-            
+
             if (aspectValues.isNotEmpty()) {
                 val nonEmptyValues = nonEmptyListOf(aspectValues.first(), *aspectValues.drop(1).toTypedArray())
                 val withAspects = scope.setAspect(aspectKey, nonEmptyValues)
-                
+
                 withAspects.hasAspect(aspectKey) shouldBe true
                 withAspects.getAspectValues(aspectKey) shouldBe nonEmptyValues
                 withAspects.getAspectValue(aspectKey) shouldBe nonEmptyValues.head
@@ -188,7 +188,7 @@ class ScopePropertyTest : StringSpec({
             val scopeResult = Scope.create(title = title)
             if (scopeResult.isRight()) {
                 val scope = scopeResult.getOrNull()!!
-            
+
                 // Add multiple aspects
                 var withAspects: Scope = scope
                 aspectsList.forEach { (key, value) ->
@@ -196,7 +196,7 @@ class ScopePropertyTest : StringSpec({
                     val aspectValue = AspectValue.create(value).getOrNull()!!
                     withAspects = withAspects.setAspect(aspectKey, aspectValue)
                 }
-                
+
                 Thread.sleep(1) // Ensure timestamp difference
                 // Clear all aspects
                 val cleared = withAspects.clearAspects()
@@ -209,11 +209,11 @@ class ScopePropertyTest : StringSpec({
     "scope immutability - operations should return new instances" {
         checkAll(validTitleArb()) { title ->
             val original = Scope.create(title = title).getOrNull()!!
-            
+
             val updated = original.updateTitle("New Title").getOrNull()!!
             original shouldNotBeSameInstanceAs updated
             original.title.value shouldBe title.trim()
-            
+
             val moved = original.moveToParent(ScopeId.generate())
             original shouldNotBeSameInstanceAs moved
             original.parentId shouldBe null
@@ -224,7 +224,7 @@ class ScopePropertyTest : StringSpec({
         checkAll(validTitleArb()) { title ->
             val rootScope = Scope.create(title = title).getOrNull()!!
             rootScope.isRoot() shouldBe true
-            
+
             val childScope = Scope.create(
                 title = title,
                 parentId = ScopeId.generate()
@@ -241,7 +241,7 @@ class ScopePropertyTest : StringSpec({
                 parentId = parent.id
             ).getOrNull()!!
             val unrelated = Scope.create(title = "Unrelated").getOrNull()!!
-            
+
             child.isChildOf(parent) shouldBe true
             child.isChildOf(unrelated) shouldBe false
             parent.isChildOf(child) shouldBe false
@@ -262,7 +262,7 @@ class ScopePropertyTest : StringSpec({
                 title = title,
                 parentId = parent.id
             ).getOrNull()!!
-            
+
             parent.canBeParentOf(child) shouldBe false // Would create circular reference
         }
     }
@@ -291,11 +291,11 @@ class ScopePropertyTest : StringSpec({
             val key2 = AspectKey.create("status").getOrNull()!!
             val value1 = AspectValue.create("high").getOrNull()!!
             val value2 = AspectValue.create("active").getOrNull()!!
-            
+
             val chained = scope
                 .setAspect(key1, value1)
                 .setAspect(key2, value2)
-            
+
             chained.getAspectValue(key1) shouldBe value1
             chained.getAspectValue(key2) shouldBe value2
         }
@@ -315,7 +315,7 @@ private fun invalidTitleArb(): Arb<String> = Arb.choice(
     Arb.of("", " ", "  ", "\t"),
     Arb.string(201..300).filter { it.trim().length > 200 }, // Too long after trimming
     Arb.string(2..50).filter { it.trim().length >= 2 && !it.contains('\n') && !it.contains('\r') }
-        .map { base -> 
+        .map { base ->
             val trimmed = base.trim()
             val midpoint = trimmed.length / 2
             if (midpoint > 0) {
@@ -325,7 +325,7 @@ private fun invalidTitleArb(): Arb<String> = Arb.choice(
             }
         }, // Newline in middle
     Arb.string(2..50).filter { it.trim().length >= 2 && !it.contains('\n') && !it.contains('\r') }
-        .map { base -> 
+        .map { base ->
             val trimmed = base.trim()
             val midpoint = trimmed.length / 2
             if (midpoint > 0) {

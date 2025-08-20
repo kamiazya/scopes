@@ -11,17 +11,17 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
 /**
  * Domain service for handling scope hierarchy business logic.
- * 
+ *
  * This service encapsulates complex hierarchy operations that don't naturally
  * belong to a single aggregate. Following DDD principles, it maintains
  * domain logic within the domain layer while coordinating between aggregates.
  */
 class ScopeHierarchyService {
-    
+
     /**
      * Validates and calculates the depth of a scope hierarchy.
      * Detects circular references and ensures hierarchy integrity.
-     * 
+     *
      * @param scopeId The ID of the scope to calculate depth for
      * @param getScopeById Function to retrieve a scope by its ID
      * @return Either an error or the calculated depth
@@ -31,7 +31,7 @@ class ScopeHierarchyService {
         getScopeById: suspend (ScopeId) -> Scope?
     ): Either<ScopeHierarchyError, Int> = either {
         val visited = mutableSetOf<ScopeId>()
-        
+
         suspend fun calculateDepthRecursive(
             currentId: ScopeId?,
             depth: Int
@@ -48,27 +48,26 @@ class ScopeHierarchyService {
                         )
                     }
                     visited.add(currentId)
-                    
+
                     val scope = getScopeById(currentId)
                     ensureNotNull(scope) {
-                        ScopeHierarchyError.ParentNotFound(
+                        ScopeHierarchyError.ScopeInHierarchyNotFound(
                             currentTimestamp(),
-                            currentId,
                             currentId
                         )
                     }
-                    
+
                     calculateDepthRecursive(scope.parentId, depth + 1).bind()
                 }
             }
         }
-        
+
         calculateDepthRecursive(scopeId, 0).bind()
     }
-    
+
     /**
      * Validates parent-child relationship to prevent circular references.
-     * 
+     *
      * @param parentScope The potential parent scope
      * @param childScope The potential child scope
      * @param getScopeById Function to retrieve a scope by its ID
@@ -86,11 +85,11 @@ class ScopeHierarchyService {
                 childScope.id
             )
         }
-        
+
         // Check if parent is already a descendant of child
         var currentParent = parentScope.parentId
         val visited = mutableSetOf<ScopeId>()
-        
+
         while (currentParent != null) {
             ensure(!visited.contains(currentParent)) {
                 ScopeHierarchyError.CircularReference(
@@ -100,7 +99,7 @@ class ScopeHierarchyService {
                 )
             }
             visited.add(currentParent)
-            
+
             ensure(currentParent != childScope.id) {
                 ScopeHierarchyError.CircularReference(
                     currentTimestamp(),
@@ -108,15 +107,15 @@ class ScopeHierarchyService {
                     listOf(parentScope.id, childScope.id)
                 )
             }
-            
+
             val parent = getScopeById(currentParent)
             currentParent = parent?.parentId
         }
     }
-    
+
     /**
      * Validates that a scope can have more children.
-     * 
+     *
      * @param parentId The ID of the parent scope
      * @param currentChildCount The current number of children
      * @param maxChildren Maximum allowed children (configurable)
@@ -136,10 +135,10 @@ class ScopeHierarchyService {
             )
         }
     }
-    
+
     /**
      * Validates hierarchy depth doesn't exceed maximum.
-     * 
+     *
      * @param currentDepth The current depth of the hierarchy
      * @param maxDepth Maximum allowed depth (configurable)
      * @return Either an error or Unit if valid
@@ -158,7 +157,7 @@ class ScopeHierarchyService {
             )
         }
     }
-    
+
     companion object {
         const val MAX_HIERARCHY_DEPTH = 10
         const val MAX_CHILDREN_PER_SCOPE = 100

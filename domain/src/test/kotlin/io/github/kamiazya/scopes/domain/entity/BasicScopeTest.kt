@@ -11,20 +11,20 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  * Basic tests to verify Scope validation works correctly.
  */
 class BasicScopeTest : StringSpec({
-    
+
     "valid title creates scope successfully" {
         val result = Scope.create(title = "Valid Title")
         result.shouldBeRight()
         result.getOrNull()?.title?.value shouldBe "Valid Title"
     }
-    
+
     "empty title fails with Empty error" {
         val result = Scope.create(title = "")
         result.shouldBeLeft()
         val error = result.leftOrNull()
         error.shouldBeInstanceOf<ScopeInputError.TitleError.Empty>()
     }
-    
+
     "title with newline fails with ContainsProhibitedCharacters error" {
         val result = Scope.create(title = "Title\nWith Newline")
         result.shouldBeLeft()
@@ -34,7 +34,7 @@ class BasicScopeTest : StringSpec({
             error.prohibitedCharacters shouldBe listOf('\n', '\r')
         }
     }
-    
+
     "very long title fails with TooLong error" {
         val longTitle = "a".repeat(201)
         val result = Scope.create(title = longTitle)
@@ -45,7 +45,7 @@ class BasicScopeTest : StringSpec({
             error.maximumLength shouldBe 200
         }
     }
-    
+
     "valid description creates scope successfully" {
         val result = Scope.create(
             title = "Valid Title",
@@ -54,7 +54,7 @@ class BasicScopeTest : StringSpec({
         result.shouldBeRight()
         result.getOrNull()?.description?.value shouldBe "This is a valid description"
     }
-    
+
     "empty description results in null" {
         val result = Scope.create(
             title = "Valid Title",
@@ -63,7 +63,7 @@ class BasicScopeTest : StringSpec({
         result.shouldBeRight()
         result.getOrNull()?.description shouldBe null
     }
-    
+
     "very long description fails with TooLong error" {
         val longDescription = "a".repeat(1001)
         val result = Scope.create(

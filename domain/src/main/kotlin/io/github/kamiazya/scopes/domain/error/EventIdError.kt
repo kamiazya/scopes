@@ -4,14 +4,14 @@ import kotlinx.datetime.Instant
 
 /**
  * Errors specific to EventId operations.
- * 
+ *
  * These errors represent violations of event ID constraints:
  * - Format violations
  * - Invalid event types
  * - Parsing errors
  */
 sealed class EventIdError : ConceptualModelError() {
-    
+
     /**
      * The value provided for EventId is empty.
      */
@@ -19,7 +19,7 @@ sealed class EventIdError : ConceptualModelError() {
         override val occurredAt: Instant,
         val field: String
     ) : EventIdError()
-    
+
     /**
      * Invalid event type provided.
      */
@@ -28,7 +28,7 @@ sealed class EventIdError : ConceptualModelError() {
         val attemptedType: String,
         val reason: String
     ) : EventIdError()
-    
+
     /**
      * Invalid URI format for EventId.
      */
@@ -37,7 +37,7 @@ sealed class EventIdError : ConceptualModelError() {
         val attemptedUri: String,
         val reason: String
     ) : EventIdError()
-    
+
     /**
      * ULID generation or parsing failed.
      */

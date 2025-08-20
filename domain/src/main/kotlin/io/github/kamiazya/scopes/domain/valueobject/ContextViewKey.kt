@@ -7,7 +7,7 @@ import arrow.core.right
 /**
  * ContextViewKey represents a unique identifier key for a ContextView.
  * Used for uniqueness constraints and programmatic access.
- * 
+ *
  * Constraints:
  * - Must start with a letter
  * - Can contain only letters, numbers, dashes, and underscores

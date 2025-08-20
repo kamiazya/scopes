@@ -26,16 +26,17 @@ value class ScopeId private constructor(
          * Returns Either with specific error types instead of throwing exceptions.
          */
         fun create(value: String): Either<ScopeInputError.IdError, ScopeId> = either {
-            ensure(value.isNotBlank()) { 
+            ensure(value.isNotBlank()) {
                 ScopeInputError.IdError.Blank(
                     currentTimestamp(),
                     value
                 )
             }
-            ensure(ULID.isValid(value)) { 
+            ensure(ULID.isValid(value)) {
                 ScopeInputError.IdError.InvalidFormat(
                     currentTimestamp(),
-                    value
+                    value,
+                    "ULID"
                 )
             }
             ScopeId(value)
@@ -45,10 +46,10 @@ value class ScopeId private constructor(
 
     /**
      * Convert this ScopeId to its corresponding AggregateId.
-     * 
+     *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> = 
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> =
         AggregateId.create("Scope", value)
 
     override fun toString(): String = value
