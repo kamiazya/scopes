@@ -172,19 +172,19 @@ if gh release view "$TEST_VERSION" > /dev/null 2>&1; then
     # Count and verify artifacts
     ASSETS=$(gh release view "$TEST_VERSION" --json assets | jq '.assets')
     ASSET_COUNT=$(echo "$ASSETS" | jq 'length')
-    
+
     echo "📦 Found $ASSET_COUNT artifacts:"
     echo "$ASSETS" | jq -r '.[].name' | head -10
-    
+
     # Verify minimum expected artifacts
     MIN_ARTIFACTS=$(($(gh run view "$RUN_ID" --json jobs | jq '[.jobs[] | select(.name | contains("Build Release"))] | length') * 3))
-    
+
     if [ "$ASSET_COUNT" -ge "$MIN_ARTIFACTS" ]; then
         echo "✅ Artifact count verified ($ASSET_COUNT >= $MIN_ARTIFACTS)"
     else
         echo "⚠️ Unexpected artifact count ($ASSET_COUNT < $MIN_ARTIFACTS)"
     fi
-    
+
     # Cleanup if requested
     if [ "$CLEANUP" = "true" ]; then
         echo "🧹 Cleaning up test release..."

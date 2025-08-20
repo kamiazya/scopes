@@ -24,31 +24,31 @@ changelog:
         - "enhancement"
         - "feat"
         - "new-feature"
-    
+
     - title: "🐛 Bug Fixes"
       labels:
         - "bug"
         - "bugfix"
         - "fix"
         - "hotfix"
-    
+
     - title: "📚 Documentation"
       labels:
         - "documentation"
         - "docs"
-    
+
     - title: "🔒 Security"
       labels:
         - "security"
         - "vulnerability"
         - "cve"
-    
+
     - title: "⚡ Performance"
       labels:
         - "performance"
         - "perf"
         - "optimization"
-    
+
     - title: "🧹 Code Quality"
       labels:
         - "refactor"
@@ -56,7 +56,7 @@ changelog:
         - "cleanup"
         - "code-quality"
         - "style"
-    
+
     - title: "🔧 Infrastructure & CI/CD"
       labels:
         - "ci"
@@ -65,13 +65,13 @@ changelog:
         - "build"
         - "workflow"
         - "github-actions"
-    
+
     - title: "📦 Dependencies"
       labels:
         - "dependencies"
         - "deps"
         - "dependency"
-    
+
     - title: "🔄 Other Changes"
       labels:
         - "chore"

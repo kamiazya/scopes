@@ -38,4 +38,3 @@ interface AliasGenerationService {
      */
     suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName>
 }
-

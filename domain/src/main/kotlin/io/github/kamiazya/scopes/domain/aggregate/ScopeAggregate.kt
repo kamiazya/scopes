@@ -8,26 +8,26 @@ import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.domain.aggregate.AggregateRoot
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.*
+import io.github.kamiazya.scopes.domain.event.DomainEvent
+import io.github.kamiazya.scopes.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.domain.event.ScopeAspectAdded
+import io.github.kamiazya.scopes.domain.event.ScopeAspectCleared
+import io.github.kamiazya.scopes.domain.event.ScopeAspectRemoved
 import io.github.kamiazya.scopes.domain.event.ScopeCreated
-import io.github.kamiazya.scopes.domain.event.ScopeTitleUpdated
+import io.github.kamiazya.scopes.domain.event.ScopeDeleted
 import io.github.kamiazya.scopes.domain.event.ScopeDescriptionUpdated
 import io.github.kamiazya.scopes.domain.event.ScopeParentChanged
-import io.github.kamiazya.scopes.domain.event.ScopeAspectAdded
-import io.github.kamiazya.scopes.domain.event.ScopeAspectRemoved
-import io.github.kamiazya.scopes.domain.event.ScopeAspectCleared
-import io.github.kamiazya.scopes.domain.event.ScopeDeleted
-import io.github.kamiazya.scopes.domain.event.ScopeArchived
 import io.github.kamiazya.scopes.domain.event.ScopeRestored
-import io.github.kamiazya.scopes.domain.event.DomainEvent
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
-import io.github.kamiazya.scopes.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.domain.event.ScopeTitleUpdated
 import io.github.kamiazya.scopes.domain.valueobject.AggregateId
 import io.github.kamiazya.scopes.domain.valueobject.AggregateVersion
+import io.github.kamiazya.scopes.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.domain.valueobject.EventId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -55,7 +55,7 @@ data class ScopeAggregate(
     val parentId: ScopeId?,
     val aspects: Aspects,
     val isArchived: Boolean = false,
-    val archivedAt: Instant? = null
+    val archivedAt: Instant? = null,
 ) : AggregateRoot<ScopeAggregate>() {
 
     companion object {
@@ -74,7 +74,7 @@ data class ScopeAggregate(
             title: String,
             description: String? = null,
             parentId: ScopeId? = null,
-            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
+            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
         ): Either<ScopesError, ScopeAggregate> = either {
             // Create the scope entity first to validate all inputs
             val scope = Scope.create(title, description, parentId, aspectsData).bind()
@@ -95,13 +95,13 @@ data class ScopeAggregate(
                 title = scope.title,
                 description = scope.description,
                 parentId = scope.parentId,
-                aspects = scope.getAspects()
+                aspects = scope.getAspects(),
             )
 
             // Create the initial aggregate state
             val aggregate = ScopeAggregate(
                 id = aggregateId,
-                version = AggregateVersion.INITIAL,  // Will be 1 after event is applied
+                version = AggregateVersion.INITIAL, // Will be 1 after event is applied
                 createdAt = scope.createdAt,
                 updatedAt = scope.createdAt,
                 scopeId = scope.id,
@@ -110,7 +110,7 @@ data class ScopeAggregate(
                 parentId = scope.parentId,
                 aspects = scope.aspects,
                 isArchived = false,
-                archivedAt = null
+                archivedAt = null,
             )
 
             // Apply the event to get the final aggregate with uncommitted event
@@ -127,7 +127,7 @@ data class ScopeAggregate(
             ensure(events.isNotEmpty()) {
                 AggregateIdError.EmptyValue(
                     occurredAt = Clock.System.now(),
-                    field = "events"
+                    field = "events",
                 )
             }
 
@@ -136,7 +136,7 @@ data class ScopeAggregate(
                 AggregateConcurrencyError.InvalidEventSequence(
                     aggregateId = events.first().aggregateId,
                     expectedEventVersion = 1,
-                    actualEventVersion = events.first().version
+                    actualEventVersion = events.first().version,
                 )
             }
 
@@ -152,7 +152,7 @@ data class ScopeAggregate(
                 parentId = firstEvent.parentId,
                 aspects = Aspects.from(firstEvent.aspects),
                 isArchived = false,
-                archivedAt = null
+                archivedAt = null,
             )
 
             // Replay all events
@@ -172,7 +172,7 @@ data class ScopeAggregate(
             ScopeOperationError.OperationOnArchivedScope(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                operation = "updateTitle"
+                operation = "updateTitle",
             )
         }
 
@@ -191,7 +191,7 @@ data class ScopeAggregate(
                 version = version,
                 scopeId = scopeId,
                 oldTitle = title,
-                newTitle = validatedTitle
+                newTitle = validatedTitle,
             )
         }.bind()
 
@@ -210,7 +210,7 @@ data class ScopeAggregate(
             ScopeOperationError.OperationOnArchivedScope(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                operation = "updateDescription"
+                operation = "updateDescription",
             )
         }
 
@@ -229,7 +229,7 @@ data class ScopeAggregate(
                 version = version,
                 scopeId = scopeId,
                 oldDescription = description,
-                newDescription = validatedDescription
+                newDescription = validatedDescription,
             )
         }.bind()
 
@@ -248,7 +248,7 @@ data class ScopeAggregate(
             ScopeOperationError.OperationOnArchivedScope(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                operation = "changeParent"
+                operation = "changeParent",
             )
         }
 
@@ -257,7 +257,7 @@ data class ScopeAggregate(
             ensure(newParentId != scopeId) {
                 ScopeHierarchyError.SelfParenting(
                     occurredAt = Clock.System.now(),
-                    scopeId = scopeId
+                    scopeId = scopeId,
                 )
             }
         }
@@ -275,7 +275,7 @@ data class ScopeAggregate(
                 version = version,
                 scopeId = scopeId,
                 oldParentId = parentId,
-                newParentId = newParentId
+                newParentId = newParentId,
             )
         }.bind()
 
@@ -295,7 +295,7 @@ data class ScopeAggregate(
             ScopeOperationError.OperationOnArchivedScope(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                operation = "addAspect"
+                operation = "addAspect",
             )
         }
 
@@ -307,7 +307,7 @@ data class ScopeAggregate(
                 version = version,
                 scopeId = scopeId,
                 aspectKey = key,
-                aspectValue = value
+                aspectValue = value,
             )
         }.bind()
 
@@ -327,7 +327,7 @@ data class ScopeAggregate(
             ScopeOperationError.OperationOnArchivedScope(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                operation = "removeAspect"
+                operation = "removeAspect",
             )
         }
 
@@ -337,7 +337,7 @@ data class ScopeAggregate(
             ScopeOperationError.AspectNotFound(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
-                aspectKey = key
+                aspectKey = key,
             )
         }
 
@@ -346,7 +346,7 @@ data class ScopeAggregate(
                 occurredAt = Clock.System.now(),
                 scopeId = scopeId,
                 aspectKey = key,
-                aspectValue = value
+                aspectValue = value,
             )
         }
 
@@ -358,7 +358,7 @@ data class ScopeAggregate(
                 version = version,
                 scopeId = scopeId,
                 aspectKey = key,
-                aspectValue = value
+                aspectValue = value,
             )
         }.bind()
 
@@ -376,7 +376,7 @@ data class ScopeAggregate(
         ensure(!isArchived) {
             ScopeOperationError.AlreadyArchived(
                 occurredAt = Clock.System.now(),
-                scopeId = scopeId
+                scopeId = scopeId,
             )
         }
 
@@ -387,7 +387,7 @@ data class ScopeAggregate(
                 occurredAt = occurredAt,
                 version = version,
                 scopeId = scopeId,
-                reason = reason
+                reason = reason,
             )
         }.bind()
 
@@ -404,7 +404,7 @@ data class ScopeAggregate(
         ensure(isArchived) {
             ScopeOperationError.NotArchived(
                 occurredAt = Clock.System.now(),
-                scopeId = scopeId
+                scopeId = scopeId,
             )
         }
 
@@ -414,7 +414,7 @@ data class ScopeAggregate(
                 eventId = eventId,
                 occurredAt = occurredAt,
                 version = version,
-                scopeId = scopeId
+                scopeId = scopeId,
             )
         }.bind()
 
@@ -436,7 +436,7 @@ data class ScopeAggregate(
                 occurredAt = occurredAt,
                 version = version,
                 scopeId = scopeId,
-                deletedAt = occurredAt
+                deletedAt = occurredAt,
             )
         }.bind()
 
@@ -454,70 +454,70 @@ data class ScopeAggregate(
             is ScopeCreated -> copy(
                 version = newVersion,
                 createdAt = event.occurredAt,
-                updatedAt = event.occurredAt
+                updatedAt = event.occurredAt,
             )
 
             is ScopeTitleUpdated -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                title = event.newTitle
+                title = event.newTitle,
             )
 
             is ScopeDescriptionUpdated -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                description = event.newDescription
+                description = event.newDescription,
             )
 
             is ScopeParentChanged -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                parentId = event.newParentId
+                parentId = event.newParentId,
             )
 
             is ScopeAspectAdded -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                aspects = aspects.add(event.aspectKey, event.aspectValue)
+                aspects = aspects.add(event.aspectKey, event.aspectValue),
             )
 
             is ScopeAspectRemoved -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                aspects = aspects.remove(event.aspectKey, event.aspectValue)
+                aspects = aspects.remove(event.aspectKey, event.aspectValue),
             )
 
             is ScopeAspectCleared -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
-                aspects = aspects.remove(event.aspectKey)
+                aspects = aspects.remove(event.aspectKey),
             )
 
             is ScopeArchived -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
                 isArchived = true,
-                archivedAt = event.occurredAt
+                archivedAt = event.occurredAt,
             )
 
             is ScopeRestored -> copy(
                 version = newVersion,
                 updatedAt = event.occurredAt,
                 isArchived = false,
-                archivedAt = null
+                archivedAt = null,
             )
 
             is ScopeDeleted -> copy(
                 version = newVersion,
-                updatedAt = event.occurredAt
+                updatedAt = event.occurredAt,
             )
 
             else -> raise(
                 AggregateConcurrencyError.InvalidEventSequence(
                     aggregateId = id,
                     expectedEventVersion = version.value + 1,
-                    actualEventVersion = event.version
-                )
+                    actualEventVersion = event.version,
+                ),
             )
         }
     }
@@ -533,6 +533,6 @@ data class ScopeAggregate(
         parentId = parentId,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        aspects = aspects
+        aspects = aspects,
     )
 }

@@ -29,10 +29,8 @@ interface LoggingContextScope {
  * This can be used when no specific implementation is provided.
  */
 object DefaultLoggingContextScope : LoggingContextScope {
-    override suspend fun <T> withContext(context: LoggingContext, block: suspend () -> T): T {
-        return withContext(coroutineContext + LoggingCoroutineContext(context)) {
-            block()
-        }
+    override suspend fun <T> withContext(context: LoggingContext, block: suspend () -> T): T = withContext(coroutineContext + LoggingCoroutineContext(context)) {
+        block()
     }
 
     override suspend fun <T> withAdditionalMetadata(metadata: Map<String, Any>, block: suspend () -> T): T {
@@ -41,8 +39,5 @@ object DefaultLoggingContextScope : LoggingContextScope {
         return withContext(newContext, block)
     }
 
-    override suspend fun getCurrentContext(): LoggingContext? {
-        return coroutineContext[LoggingCoroutineContext]?.loggingContext
-    }
+    override suspend fun getCurrentContext(): LoggingContext? = coroutineContext[LoggingCoroutineContext]?.loggingContext
 }
-

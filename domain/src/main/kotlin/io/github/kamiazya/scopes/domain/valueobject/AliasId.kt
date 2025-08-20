@@ -28,7 +28,7 @@ value class AliasId private constructor(val value: String) {
             if (trimmed.isBlank()) {
                 return ScopeInputError.IdError.Blank(
                     occurredAt = Clock.System.now(),
-                    attemptedValue = value
+                    attemptedValue = value,
                 ).left()
             }
 
@@ -38,7 +38,7 @@ value class AliasId private constructor(val value: String) {
                 ScopeInputError.IdError.InvalidFormat(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    expectedFormat = "ULID"
+                    expectedFormat = "ULID",
                 ).left()
             }
         }
@@ -47,9 +47,7 @@ value class AliasId private constructor(val value: String) {
          * Generates a new unique AliasId using ULID.
          * ULIDs are time-ordered and globally unique.
          */
-        fun generate(): AliasId {
-            return AliasId(ULID.random())
-        }
+        fun generate(): AliasId = AliasId(ULID.random())
     }
 
     /**
@@ -57,8 +55,7 @@ value class AliasId private constructor(val value: String) {
      *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> =
-        AggregateId.create("ScopeAlias", value)
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.create("ScopeAlias", value)
 
     override fun toString(): String = value
 }

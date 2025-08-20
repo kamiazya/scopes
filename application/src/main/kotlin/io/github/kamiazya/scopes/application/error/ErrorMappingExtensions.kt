@@ -20,14 +20,14 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
     is DomainPersistenceError.StorageUnavailable ->
         AppPersistenceError.StorageUnavailable(
             operation = this.operation,
-            cause = this.cause?.toString()
+            cause = this.cause?.toString(),
         )
 
     is DomainPersistenceError.DataCorruption ->
         AppPersistenceError.DataCorruption(
             entityType = this.entityType,
             entityId = this.entityId,
-            reason = this.reason
+            reason = this.reason,
         )
 
     is DomainPersistenceError.ConcurrencyConflict ->
@@ -35,7 +35,7 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
             entityType = this.entityType,
             entityId = this.entityId,
             expectedVersion = this.expectedVersion.toString(),
-            actualVersion = this.actualVersion.toString()
+            actualVersion = this.actualVersion.toString(),
         )
 }
 
@@ -49,12 +49,12 @@ fun ContextError.NamingError.toApplicationError(): ApplicationError = when (this
 
     is ContextError.NamingError.AlreadyExists ->
         AppContextError.KeyAlreadyExists(
-            attemptedKey = this.attemptedName
+            attemptedKey = this.attemptedName,
         )
 
     is ContextError.NamingError.InvalidFormat ->
         AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedName
+            attemptedKey = this.attemptedName,
         )
 }
 
@@ -66,19 +66,19 @@ fun ContextError.FilterError.toApplicationError(): ApplicationError = when (this
         AppContextError.FilterInvalidSyntax(
             position = this.position,
             reason = this.reason,
-            expression = this.expression
+            expression = this.expression,
         )
 
     is ContextError.FilterError.UnknownAspect ->
         AppContextError.FilterUnknownAspect(
             unknownAspectKey = this.unknownAspectKey,
-            expression = this.expression
+            expression = this.expression,
         )
 
     is ContextError.FilterError.LogicalInconsistency ->
         AppContextError.FilterLogicalInconsistency(
             reason = this.reason,
-            expression = this.expression
+            expression = this.expression,
         )
 }
 
@@ -92,7 +92,7 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeInputError.IdError.InvalidFormat ->
         AppScopeInputError.IdInvalidFormat(
             attemptedValue = this.attemptedValue,
-            expectedFormat = this.expectedFormat
+            expectedFormat = this.expectedFormat,
         )
 
     is DomainScopeInputError.TitleError.Empty ->
@@ -101,25 +101,25 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeInputError.TitleError.TooShort ->
         AppScopeInputError.TitleTooShort(
             attemptedValue = this.attemptedValue,
-            minimumLength = this.minimumLength
+            minimumLength = this.minimumLength,
         )
 
     is DomainScopeInputError.TitleError.TooLong ->
         AppScopeInputError.TitleTooLong(
             attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength
+            maximumLength = this.maximumLength,
         )
 
     is DomainScopeInputError.TitleError.ContainsProhibitedCharacters ->
         AppScopeInputError.TitleContainsProhibitedCharacters(
             attemptedValue = this.attemptedValue,
-            prohibitedCharacters = this.prohibitedCharacters
+            prohibitedCharacters = this.prohibitedCharacters,
         )
 
     is DomainScopeInputError.DescriptionError.TooLong ->
         AppScopeInputError.DescriptionTooLong(
             attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength
+            maximumLength = this.maximumLength,
         )
 
     is DomainScopeInputError.AliasError.Empty ->
@@ -128,19 +128,19 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeInputError.AliasError.TooShort ->
         AppScopeInputError.AliasTooShort(
             attemptedValue = this.attemptedValue,
-            minimumLength = this.minimumLength
+            minimumLength = this.minimumLength,
         )
 
     is DomainScopeInputError.AliasError.TooLong ->
         AppScopeInputError.AliasTooLong(
             attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength
+            maximumLength = this.maximumLength,
         )
 
     is DomainScopeInputError.AliasError.InvalidFormat ->
         AppScopeInputError.AliasInvalidFormat(
             attemptedValue = this.attemptedValue,
-            expectedPattern = this.expectedPattern
+            expectedPattern = this.expectedPattern,
         )
 }
 
@@ -158,6 +158,6 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     // This should be replaced with context-specific errors in actual handlers
     else -> AppPersistenceError.StorageUnavailable(
         operation = "unknown",
-        cause = "Unmapped domain error: ${this::class.simpleName}"
+        cause = "Unmapped domain error: ${this::class.simpleName}",
     )
 }

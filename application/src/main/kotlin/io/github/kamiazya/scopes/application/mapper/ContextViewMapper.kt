@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.application.mapper
 
-import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.dto.ContextViewListResult
+import io.github.kamiazya.scopes.application.dto.ContextViewResult
 import io.github.kamiazya.scopes.application.dto.ScopeResult
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.entity.Scope
@@ -15,10 +15,7 @@ object ContextViewMapper {
     /**
      * Map ContextView entity to ContextViewResult DTO.
      */
-    fun toResult(
-        contextView: ContextView,
-        isActive: Boolean = false
-    ): ContextViewResult = ContextViewResult(
+    fun toResult(contextView: ContextView, isActive: Boolean = false): ContextViewResult = ContextViewResult(
         id = contextView.id.toString(),
         key = contextView.key.value,
         name = contextView.name.value,
@@ -26,16 +23,13 @@ object ContextViewMapper {
         description = contextView.description?.value,
         isActive = isActive,
         createdAt = contextView.createdAt,
-        updatedAt = contextView.updatedAt
+        updatedAt = contextView.updatedAt,
     )
 
     /**
      * Map list of ContextView entities to ContextViewListResult DTO.
      */
-    fun toListResult(
-        contextViews: List<ContextView>,
-        activeContext: ContextView? = null
-    ): ContextViewListResult {
+    fun toListResult(contextViews: List<ContextView>, activeContext: ContextView? = null): ContextViewListResult {
         val results = contextViews.map { context ->
             toResult(context, isActive = context.id == activeContext?.id)
         }
@@ -44,7 +38,7 @@ object ContextViewMapper {
 
         return ContextViewListResult(
             contexts = results,
-            activeContext = activeResult
+            activeContext = activeResult,
         )
     }
 
@@ -59,6 +53,6 @@ object ContextViewMapper {
         aspects = scope.getAspects().mapKeys { it.key.value }
             .mapValues { it.value.toList().map { aspectValue -> aspectValue.value } },
         createdAt = scope.createdAt,
-        updatedAt = scope.updatedAt
+        updatedAt = scope.updatedAt,
     )
 }

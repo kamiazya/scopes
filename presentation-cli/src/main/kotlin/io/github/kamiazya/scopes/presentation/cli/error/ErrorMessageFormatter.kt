@@ -1,14 +1,14 @@
 package io.github.kamiazya.scopes.presentation.cli.error
 
 import io.github.kamiazya.scopes.application.error.ApplicationError
-import io.github.kamiazya.scopes.application.error.ScopeInputError
 import io.github.kamiazya.scopes.application.error.AspectError
 import io.github.kamiazya.scopes.application.error.ContextError
-import io.github.kamiazya.scopes.application.error.ScopeHierarchyError
-import io.github.kamiazya.scopes.application.error.ScopeUniquenessError
-import io.github.kamiazya.scopes.application.error.PersistenceError
 import io.github.kamiazya.scopes.application.error.ExternalSystemError
+import io.github.kamiazya.scopes.application.error.PersistenceError
 import io.github.kamiazya.scopes.application.error.ScopeAliasError
+import io.github.kamiazya.scopes.application.error.ScopeHierarchyError
+import io.github.kamiazya.scopes.application.error.ScopeInputError
+import io.github.kamiazya.scopes.application.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter as AppErrorMessageFormatter
 
 /**
@@ -106,7 +106,7 @@ object CliErrorMessageFormatter : AppErrorMessageFormatter {
                 append("Context key '${errorInfo.attemptedKey}' has invalid format. ")
                 append("Keys must start with a letter and contain only letters, numbers, underscores, and hyphens.")
             }
-            
+
             // Name-related errors
             is ContextError.NameEmpty -> {
                 append("Context name cannot be empty.")

@@ -10,7 +10,7 @@ Dependabot automatically monitors your dependencies for known vulnerabilities an
 
 **Features:**
 - Automatic vulnerability detection
-- Security update pull requests  
+- Security update pull requests
 - Weekly dependency updates
 - Configurable through `.github/dependabot.yml`
 
@@ -248,12 +248,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
       with:
         validate-wrappers: true
-    
+
     - name: Fail on validation error
       run: |
         echo "Gradle wrapper validation completed successfully"
@@ -312,7 +312,7 @@ Use the `--no-daemon` flag for all Gradle invocations in CI:
 
 Previous OWASP Dependency Check functionality is now handled by:
 - **Vulnerability Detection**: Dependabot alerts
-- **Automated Updates**: Dependabot PRs  
+- **Automated Updates**: Dependabot PRs
 - **CI Integration**: Dependency Review Action
 - **Reporting**: GitHub Security tab
 

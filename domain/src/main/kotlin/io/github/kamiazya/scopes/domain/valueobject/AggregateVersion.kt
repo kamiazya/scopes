@@ -27,16 +27,14 @@ value class AggregateVersion private constructor(val value: Int) {
      *
      * @return Either an error if overflow would occur, or the new version
      */
-    fun increment(): Either<AggregateVersionError, AggregateVersion> {
-        return if (value == MAX_VERSION) {
-            AggregateVersionError.VersionOverflow(
-                occurredAt = Clock.System.now(),
-                currentVersion = value,
-                maxVersion = MAX_VERSION
-            ).left()
-        } else {
-            AggregateVersion(value + 1).right()
-        }
+    fun increment(): Either<AggregateVersionError, AggregateVersion> = if (value == MAX_VERSION) {
+        AggregateVersionError.VersionOverflow(
+            occurredAt = Clock.System.now(),
+            currentVersion = value,
+            maxVersion = MAX_VERSION,
+        ).left()
+    } else {
+        AggregateVersion(value + 1).right()
     }
 
     /**
@@ -45,16 +43,14 @@ value class AggregateVersion private constructor(val value: Int) {
      * @param newVersion The version to transition to
      * @return Either an error if the transition is invalid, or Unit on success
      */
-    fun validateTransition(newVersion: AggregateVersion): Either<AggregateVersionError, Unit> {
-        return if (newVersion.value != value + 1) {
-            AggregateVersionError.InvalidVersionTransition(
-                occurredAt = Clock.System.now(),
-                currentVersion = value,
-                attemptedVersion = newVersion.value
-            ).left()
-        } else {
-            Unit.right()
-        }
+    fun validateTransition(newVersion: AggregateVersion): Either<AggregateVersionError, Unit> = if (newVersion.value != value + 1) {
+        AggregateVersionError.InvalidVersionTransition(
+            occurredAt = Clock.System.now(),
+            currentVersion = value,
+            attemptedVersion = newVersion.value,
+        ).left()
+    } else {
+        Unit.right()
     }
 
     /**
@@ -84,19 +80,17 @@ value class AggregateVersion private constructor(val value: Int) {
          * @param version The version number
          * @return Either an error or the AggregateVersion
          */
-        fun create(version: Int): Either<AggregateVersionError, AggregateVersion> {
-            return when {
-                version < 0 -> AggregateVersionError.NegativeVersion(
-                    occurredAt = Clock.System.now(),
-                    attemptedVersion = version
-                ).left()
-                version > MAX_VERSION -> AggregateVersionError.VersionOverflow(
-                    occurredAt = Clock.System.now(),
-                    currentVersion = version,
-                    maxVersion = MAX_VERSION
-                ).left()
-                else -> AggregateVersion(version).right()
-            }
+        fun create(version: Int): Either<AggregateVersionError, AggregateVersion> = when {
+            version < 0 -> AggregateVersionError.NegativeVersion(
+                occurredAt = Clock.System.now(),
+                attemptedVersion = version,
+            ).left()
+            version > MAX_VERSION -> AggregateVersionError.VersionOverflow(
+                occurredAt = Clock.System.now(),
+                currentVersion = version,
+                maxVersion = MAX_VERSION,
+            ).left()
+            else -> AggregateVersion(version).right()
         }
     }
 }

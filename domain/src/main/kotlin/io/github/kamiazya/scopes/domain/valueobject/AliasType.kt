@@ -14,6 +14,5 @@ enum class AliasType {
      * A custom alias - additional identifiers created by users.
      * Multiple custom aliases can exist per scope.
      */
-    CUSTOM
+    CUSTOM,
 }
-

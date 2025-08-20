@@ -31,7 +31,7 @@ value class AliasName private constructor(val value: String) {
             if (trimmed.isBlank()) {
                 return ScopeInputError.AliasError.Empty(
                     occurredAt = Clock.System.now(),
-                    attemptedValue = value
+                    attemptedValue = value,
                 ).left()
             }
 
@@ -39,7 +39,7 @@ value class AliasName private constructor(val value: String) {
                 return ScopeInputError.AliasError.TooShort(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    minimumLength = MIN_LENGTH
+                    minimumLength = MIN_LENGTH,
                 ).left()
             }
 
@@ -47,7 +47,7 @@ value class AliasName private constructor(val value: String) {
                 return ScopeInputError.AliasError.TooLong(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    maximumLength = MAX_LENGTH
+                    maximumLength = MAX_LENGTH,
                 ).left()
             }
 
@@ -55,7 +55,7 @@ value class AliasName private constructor(val value: String) {
                 return ScopeInputError.AliasError.InvalidFormat(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    expectedPattern = "alphanumeric, hyphens, underscores only; no consecutive special chars"
+                    expectedPattern = "alphanumeric, hyphens, underscores only; no consecutive special chars",
                 ).left()
             }
 
@@ -63,7 +63,7 @@ value class AliasName private constructor(val value: String) {
                 return ScopeInputError.AliasError.InvalidFormat(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    expectedPattern = "no consecutive hyphens or underscores"
+                    expectedPattern = "no consecutive hyphens or underscores",
                 ).left()
             }
 
@@ -73,4 +73,3 @@ value class AliasName private constructor(val value: String) {
 
     override fun toString(): String = value
 }
-

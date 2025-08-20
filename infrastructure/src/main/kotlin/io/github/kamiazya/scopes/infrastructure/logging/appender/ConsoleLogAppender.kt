@@ -9,10 +9,7 @@ import io.github.kamiazya.scopes.application.logging.LogLevel
  * Appends formatted log entries to the console (stdout/stderr).
  * Error level logs are written to stderr, others to stdout.
  */
-class ConsoleLogAppender(
-    private val formatter: LogFormatter,
-    private var minLevel: LogLevel = LogLevel.DEBUG
-) : LogAppender {
+class ConsoleLogAppender(private val formatter: LogFormatter, private var minLevel: LogLevel = LogLevel.DEBUG) : LogAppender {
 
     override fun append(entry: LogEntry) {
         val formattedMessage = formatter.format(entry)
@@ -23,9 +20,7 @@ class ConsoleLogAppender(
         }
     }
 
-    override fun isEnabledFor(level: LogLevel): Boolean {
-        return level.ordinal >= minLevel.ordinal
-    }
+    override fun isEnabledFor(level: LogLevel): Boolean = level.ordinal >= minLevel.ordinal
 
     override fun setLevel(level: LogLevel) {
         minLevel = level

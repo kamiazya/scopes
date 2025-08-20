@@ -7,5 +7,3 @@ fun main(args: Array<String>) {
     // Start the CLI application
     ScopesCommand().main(args)
 }
-
-

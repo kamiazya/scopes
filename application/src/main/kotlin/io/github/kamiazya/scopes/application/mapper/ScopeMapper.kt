@@ -13,15 +13,13 @@ object ScopeMapper {
     /**
      * Map Scope entity to CreateScopeResult DTO.
      */
-    fun toCreateScopeResult(scope: Scope, alias: ScopeAlias? = null): CreateScopeResult =
-        CreateScopeResult(
-            id = scope.id.toString(),
-            title = scope.title.value,
-            description = scope.description?.value,
-            parentId = scope.parentId?.toString(),
-            createdAt = scope.createdAt,
-            canonicalAlias = alias?.aliasName?.value,
-            aspects = scope.getAspects().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } }
-        )
-
+    fun toCreateScopeResult(scope: Scope, alias: ScopeAlias? = null): CreateScopeResult = CreateScopeResult(
+        id = scope.id.toString(),
+        title = scope.title.value,
+        description = scope.description?.value,
+        parentId = scope.parentId?.toString(),
+        createdAt = scope.createdAt,
+        canonicalAlias = alias?.aliasName?.value,
+        aspects = scope.getAspects().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+    )
 }

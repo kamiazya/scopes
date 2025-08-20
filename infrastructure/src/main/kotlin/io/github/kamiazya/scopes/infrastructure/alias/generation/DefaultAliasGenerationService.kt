@@ -22,7 +22,7 @@ import io.github.kamiazya.scopes.domain.valueobject.AliasName
  */
 class DefaultAliasGenerationService(
     private val strategy: AliasGenerationStrategy,
-    private val wordProvider: WordProvider
+    private val wordProvider: WordProvider,
 ) : AliasGenerationService {
 
     /**
@@ -34,21 +34,19 @@ class DefaultAliasGenerationService(
      * @param aliasId The alias ID to generate a name for
      * @return Either an error or the generated alias name
      */
-    override suspend fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName> {
-        return try {
-            // Use the alias ID's hash as seed for deterministic generation
-            val seed = aliasId.value.hashCode().toLong()
-            val aliasString = strategy.generate(seed, wordProvider)
+    override suspend fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName> = try {
+        // Use the alias ID's hash as seed for deterministic generation
+        val seed = aliasId.value.hashCode().toLong()
+        val aliasString = strategy.generate(seed, wordProvider)
 
-            AliasName.create(aliasString)
-        } catch (e: Exception) {
-            // If an exception occurs during generation, wrap it as an invalid format error
-            ScopeInputError.AliasError.InvalidFormat(
-                occurredAt = currentTimestamp(),
-                attemptedValue = e.message ?: "generation failed",
-                expectedPattern = "[a-z][a-z0-9-_]{1,63}"
-            ).left()
-        }
+        AliasName.create(aliasString)
+    } catch (e: Exception) {
+        // If an exception occurs during generation, wrap it as an invalid format error
+        ScopeInputError.AliasError.InvalidFormat(
+            occurredAt = currentTimestamp(),
+            attemptedValue = e.message ?: "generation failed",
+            expectedPattern = "[a-z][a-z0-9-_]{1,63}",
+        ).left()
     }
 
     /**
@@ -59,19 +57,16 @@ class DefaultAliasGenerationService(
      *
      * @return Either an error or the generated alias name
      */
-    override suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName> {
-        return try {
-            val aliasString = strategy.generateRandom(wordProvider)
+    override suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName> = try {
+        val aliasString = strategy.generateRandom(wordProvider)
 
-            AliasName.create(aliasString)
-        } catch (e: Exception) {
-            // If an exception occurs during generation, wrap it as an invalid format error
-            ScopeInputError.AliasError.InvalidFormat(
-                occurredAt = currentTimestamp(),
-                attemptedValue = e.message ?: "generation failed",
-                expectedPattern = "[a-z][a-z0-9-_]{1,63}"
-            ).left()
-        }
+        AliasName.create(aliasString)
+    } catch (e: Exception) {
+        // If an exception occurs during generation, wrap it as an invalid format error
+        ScopeInputError.AliasError.InvalidFormat(
+            occurredAt = currentTimestamp(),
+            attemptedValue = e.message ?: "generation failed",
+            expectedPattern = "[a-z][a-z0-9-_]{1,63}",
+        ).left()
     }
 }
-

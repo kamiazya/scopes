@@ -10,11 +10,11 @@ pre-commit:
         echo "🎨 Running Spotless formatting..."
         # Get list of staged files before formatting
         STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts|md|yml|yaml|json)$' || true)
-        
+
         if [ -n "$STAGED_FILES" ]; then
           # Run Spotless
           ./gradlew spotlessApply --daemon
-          
+
           # Re-stage any files that were modified by Spotless
           for file in $STAGED_FILES; do
             if [ -f "$file" ]; then
@@ -47,11 +47,11 @@ pre-commit:
         echo "🔧 Running KtLint formatting..."
         # Get list of staged Kotlin files
         STAGED_KT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.kt$' || true)
-        
+
         if [ -n "$STAGED_KT_FILES" ]; then
           # Run ktlint
           ./gradlew ktlintFormat --daemon
-          
+
           # Re-stage any files that were modified
           for file in $STAGED_KT_FILES; do
             if [ -f "$file" ]; then

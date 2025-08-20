@@ -38,6 +38,5 @@ enum class ApplicationType {
     /**
      * Custom application type
      */
-    CUSTOM
+    CUSTOM,
 }
-

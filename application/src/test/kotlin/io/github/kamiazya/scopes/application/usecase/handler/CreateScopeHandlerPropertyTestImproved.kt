@@ -8,8 +8,8 @@ import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.port.TransactionContext
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
-import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.service.error.CrossAggregateValidationError
+import io.github.kamiazya.scopes.application.test.MockLogger
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.entity.ScopeAlias
@@ -31,7 +31,6 @@ import io.kotest.matchers.string.shouldHaveMinLength
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
-import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.*
 import io.kotest.property.checkAll
 import io.mockk.coEvery
@@ -53,264 +52,267 @@ import kotlinx.datetime.Clock
  * - Reusable test fixtures
  * - Custom matchers for domain validation
  */
-class CreateScopeHandlerPropertyTestImproved : StringSpec({
+class CreateScopeHandlerPropertyTestImproved :
+    StringSpec({
 
-    // Balanced iteration count for quality testing without memory issues
-    val iterations = 100  // Enough to find issues, but not cause memory problems
+        // Balanced iteration count for quality testing without memory issues
+        val iterations = 100 // Enough to find issues, but not cause memory problems
 
-    "valid scope creation requests should always succeed" {
-        checkAll(iterations, validCreateScopeCommandArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
+        "valid scope creation requests should always succeed" {
+            checkAll(iterations, validCreateScopeCommandArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
 
-            // Setup successful creation scenario
-            testContext.setupSuccessfulCreation(command)
+                // Setup successful creation scenario
+                testContext.setupSuccessfulCreation(command)
 
-            // Act
-            val result = runBlocking { handler(command) }
+                // Act
+                val result = runBlocking { handler(command) }
 
-            // Assert
-            result.shouldBeValidCreateScopeResult(command)
-        }
-    }
-
-    "scope creation should generate unique IDs for identical inputs" {
-        checkAll(iterations, validCreateScopeCommandArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            val createdScopes = mutableListOf<Scope>()
-            testContext.setupScopeCapture(command, createdScopes)
-
-            // Act - Create multiple scopes with same command
-            repeat(3) {
-                runBlocking { handler(command) }
-            }
-
-            // Assert - All IDs should be unique
-            val ids = createdScopes.map { it.id }
-            ids.distinct().size shouldBe ids.size
-        }
-    }
-
-    "duplicate titles at same level should fail with specific error" {
-        checkAll(iterations, validCreateScopeCommandArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            testContext.setupDuplicateTitleScenario(command)
-
-            // Act
-            val result = runBlocking { handler(command) }
-
-            // Assert
-            result.shouldFailWithDuplicateTitle()
-        }
-    }
-
-    "invalid parent ID formats should be rejected" {
-        checkAll(iterations, invalidParentIdScenarioArb()) { (title, invalidParentId) ->
-            // Arrange
-            val command = CreateScope(
-                title = title,
-                parentId = invalidParentId,
-                metadata = emptyMap()
-            )
-
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            // Act
-            val result = runBlocking { handler(command) }
-
-            // Assert
-            result.shouldFailWithInvalidParentId()
-        }
-    }
-
-    "parent not found should trigger cross-aggregate validation error" {
-        checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            testContext.setupParentNotFoundScenario(command)
-
-            // Act
-            val result = runBlocking { handler(command) }
-
-            // Assert
-            result.shouldFailWithParentNotFound()
-        }
-    }
-
-    "hierarchy constraints should be enforced" {
-        checkAll(iterations, hierarchyViolationScenarioArb()) { scenario ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            when (scenario) {
-                is HierarchyScenario.MaxDepthExceeded -> {
-                    testContext.setupTooDeepHierarchy(scenario.command, scenario.depth)
-
-                    // Act & Assert
-                    val result = runBlocking { handler(scenario.command) }
-                    result.shouldFailWithMaxDepthExceeded()
-                }
-                is HierarchyScenario.MaxChildrenExceeded -> {
-                    testContext.setupTooManyChildren(scenario.command, scenario.childCount)
-
-                    // Act & Assert
-                    val result = runBlocking { handler(scenario.command) }
-                    result.shouldFailWithMaxChildrenExceeded()
-                }
+                // Assert
+                result.shouldBeValidCreateScopeResult(command)
             }
         }
-    }
 
-    "metadata should be correctly transformed to aspects" {
-        checkAll(iterations, metadataScenarioArb()) { (title, metadata) ->
-            // Arrange
-            val command = CreateScope(title = title, metadata = metadata)
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
+        "scope creation should generate unique IDs for identical inputs" {
+            checkAll(iterations, validCreateScopeCommandArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
 
-            val capturedScope = testContext.setupMetadataCapture(command)
+                val createdScopes = mutableListOf<Scope>()
+                testContext.setupScopeCapture(command, createdScopes)
 
-            // Act
-            val result = runBlocking { handler(command) }
-
-            // Assert
-            result.shouldBeRight()
-            capturedScope.value?.shouldHaveAspectsFrom(metadata)
-        }
-    }
-
-    "alias management should handle all scenarios correctly" {
-        checkAll(iterations, aliasScenarioArb()) { scenario ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            when (scenario) {
-                is AliasScenario.Custom -> {
-                    testContext.setupCustomAlias(scenario.command, scenario.alias)
-
-                    // Act & Assert
-                    val result = runBlocking { handler(scenario.command) }
-                    result.shouldHaveCustomAlias(scenario.alias)
+                // Act - Create multiple scopes with same command
+                repeat(3) {
+                    runBlocking { handler(command) }
                 }
-                is AliasScenario.Generated -> {
-                    testContext.setupGeneratedAlias(scenario.command)
 
-                    // Act & Assert
-                    val result = runBlocking { handler(scenario.command) }
-                    result.shouldHaveGeneratedAlias()
-                }
-                is AliasScenario.None -> {
-                    testContext.setupNoAlias(scenario.command)
-
-                    // Act & Assert
-                    val result = runBlocking { handler(scenario.command) }
-                    result.shouldHaveNoAlias()
-                }
+                // Assert - All IDs should be unique
+                val ids = createdScopes.map { it.id }
+                ids.distinct().size shouldBe ids.size
             }
         }
-    }
 
-    "timestamps should maintain chronological order" {
-        checkAll(iterations, validCreateScopeCommandArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
+        "duplicate titles at same level should fail with specific error" {
+            checkAll(iterations, validCreateScopeCommandArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
 
-            val beforeCreation = Clock.System.now()
-            val capturedScope = testContext.setupTimestampCapture(command)
+                testContext.setupDuplicateTitleScenario(command)
 
-            // Act
-            Thread.sleep(5) // Small delay to ensure timestamp difference
-            val result = runBlocking { handler(command) }
-            val afterCreation = Clock.System.now()
+                // Act
+                val result = runBlocking { handler(command) }
 
-            // Assert
-            result.shouldBeRight()
-            capturedScope.value?.shouldHaveValidTimestamps(beforeCreation, afterCreation)
+                // Assert
+                result.shouldFailWithDuplicateTitle()
+            }
         }
-    }
 
-    "repository errors should be properly propagated" {
-        checkAll(iterations, repositoryErrorScenarioArb()) { (command, error) ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            testContext.setupRepositoryError(command, error)
-
-            // Act
-            val result = runBlocking { handler(command) }
-
-            // Assert
-            result.shouldBeLeft()
-            result.leftOrNull() shouldBe error
-        }
-    }
-
-    "transaction rollback should occur on any failure" {
-        checkAll(iterations, validCreateScopeCommandArb()) { command ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            // Track transaction state
-            var transactionRolledBack = false
-            testContext.onTransactionRollback { transactionRolledBack = true }
-
-            // Setup failure scenario
-            testContext.setupRepositoryError(command,
-                PersistenceError.StorageUnavailable(currentTimestamp(), "save", null))
-
-            // Act
-            runBlocking { handler(command) }
-
-            // Assert
-            // Note: In our test implementation, rollback is implicit on error
-            // In a real implementation, we would verify the transaction was rolled back
-        }
-    }
-
-    "concurrent scope creation should maintain consistency" {
-        checkAll(iterations, validTitleArb()) { title ->
-            // Arrange
-            val testContext = createTestContext()
-            val handler = testContext.createHandler()
-
-            val commands = List(5) {
-                CreateScope(
-                    title = "$title-$it",
-                    metadata = emptyMap()
+        "invalid parent ID formats should be rejected" {
+            checkAll(iterations, invalidParentIdScenarioArb()) { (title, invalidParentId) ->
+                // Arrange
+                val command = CreateScope(
+                    title = title,
+                    parentId = invalidParentId,
+                    metadata = emptyMap(),
                 )
+
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                // Act
+                val result = runBlocking { handler(command) }
+
+                // Assert
+                result.shouldFailWithInvalidParentId()
             }
+        }
 
-            commands.forEach { testContext.setupSuccessfulCreation(it) }
+        "parent not found should trigger cross-aggregate validation error" {
+            checkAll(iterations, validCreateScopeCommandWithParentArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
 
-            // Act - Simulate concurrent creation
-            val results = runBlocking {
-                commands.map { command ->
-                    handler(command)
+                testContext.setupParentNotFoundScenario(command)
+
+                // Act
+                val result = runBlocking { handler(command) }
+
+                // Assert
+                result.shouldFailWithParentNotFound()
+            }
+        }
+
+        "hierarchy constraints should be enforced" {
+            checkAll(iterations, hierarchyViolationScenarioArb()) { scenario ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                when (scenario) {
+                    is HierarchyScenario.MaxDepthExceeded -> {
+                        testContext.setupTooDeepHierarchy(scenario.command, scenario.depth)
+
+                        // Act & Assert
+                        val result = runBlocking { handler(scenario.command) }
+                        result.shouldFailWithMaxDepthExceeded()
+                    }
+                    is HierarchyScenario.MaxChildrenExceeded -> {
+                        testContext.setupTooManyChildren(scenario.command, scenario.childCount)
+
+                        // Act & Assert
+                        val result = runBlocking { handler(scenario.command) }
+                        result.shouldFailWithMaxChildrenExceeded()
+                    }
                 }
             }
-
-            // Assert - All should succeed with unique IDs
-            results.forEach { it.shouldBeRight() }
-            val ids = results.mapNotNull { it.getOrNull()?.id }
-            ids.distinct().size shouldBe ids.size
         }
-    }
-})
+
+        "metadata should be correctly transformed to aspects" {
+            checkAll(iterations, metadataScenarioArb()) { (title, metadata) ->
+                // Arrange
+                val command = CreateScope(title = title, metadata = metadata)
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                val capturedScope = testContext.setupMetadataCapture(command)
+
+                // Act
+                val result = runBlocking { handler(command) }
+
+                // Assert
+                result.shouldBeRight()
+                capturedScope.value?.shouldHaveAspectsFrom(metadata)
+            }
+        }
+
+        "alias management should handle all scenarios correctly" {
+            checkAll(iterations, aliasScenarioArb()) { scenario ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                when (scenario) {
+                    is AliasScenario.Custom -> {
+                        testContext.setupCustomAlias(scenario.command, scenario.alias)
+
+                        // Act & Assert
+                        val result = runBlocking { handler(scenario.command) }
+                        result.shouldHaveCustomAlias(scenario.alias)
+                    }
+                    is AliasScenario.Generated -> {
+                        testContext.setupGeneratedAlias(scenario.command)
+
+                        // Act & Assert
+                        val result = runBlocking { handler(scenario.command) }
+                        result.shouldHaveGeneratedAlias()
+                    }
+                    is AliasScenario.None -> {
+                        testContext.setupNoAlias(scenario.command)
+
+                        // Act & Assert
+                        val result = runBlocking { handler(scenario.command) }
+                        result.shouldHaveNoAlias()
+                    }
+                }
+            }
+        }
+
+        "timestamps should maintain chronological order" {
+            checkAll(iterations, validCreateScopeCommandArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                val beforeCreation = Clock.System.now()
+                val capturedScope = testContext.setupTimestampCapture(command)
+
+                // Act
+                Thread.sleep(5) // Small delay to ensure timestamp difference
+                val result = runBlocking { handler(command) }
+                val afterCreation = Clock.System.now()
+
+                // Assert
+                result.shouldBeRight()
+                capturedScope.value?.shouldHaveValidTimestamps(beforeCreation, afterCreation)
+            }
+        }
+
+        "repository errors should be properly propagated" {
+            checkAll(iterations, repositoryErrorScenarioArb()) { (command, error) ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                testContext.setupRepositoryError(command, error)
+
+                // Act
+                val result = runBlocking { handler(command) }
+
+                // Assert
+                result.shouldBeLeft()
+                result.leftOrNull() shouldBe error
+            }
+        }
+
+        "transaction rollback should occur on any failure" {
+            checkAll(iterations, validCreateScopeCommandArb()) { command ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                // Track transaction state
+                var transactionRolledBack = false
+                testContext.onTransactionRollback { transactionRolledBack = true }
+
+                // Setup failure scenario
+                testContext.setupRepositoryError(
+                    command,
+                    PersistenceError.StorageUnavailable(currentTimestamp(), "save", null),
+                )
+
+                // Act
+                runBlocking { handler(command) }
+
+                // Assert
+                // Note: In our test implementation, rollback is implicit on error
+                // In a real implementation, we would verify the transaction was rolled back
+            }
+        }
+
+        "concurrent scope creation should maintain consistency" {
+            checkAll(iterations, validTitleArb()) { title ->
+                // Arrange
+                val testContext = createTestContext()
+                val handler = testContext.createHandler()
+
+                val commands = List(5) {
+                    CreateScope(
+                        title = "$title-$it",
+                        metadata = emptyMap(),
+                    )
+                }
+
+                commands.forEach { testContext.setupSuccessfulCreation(it) }
+
+                // Act - Simulate concurrent creation
+                val results = runBlocking {
+                    commands.map { command ->
+                        handler(command)
+                    }
+                }
+
+                // Assert - All should succeed with unique IDs
+                results.forEach { it.shouldBeRight() }
+                val ids = results.mapNotNull { it.getOrNull()?.id }
+                ids.distinct().size shouldBe ids.size
+            }
+        }
+    })
 
 // ============================================================================
 // Test Context and Fixtures
@@ -332,7 +334,7 @@ private class TestContext {
         hierarchyService,
         validationService,
         aliasService,
-        MockLogger()
+        MockLogger(),
     )
 
     fun setupSuccessfulCreation(command: CreateScope) {
@@ -380,7 +382,7 @@ private class TestContext {
                 sourceAggregate = "scope",
                 targetAggregate = command.parentId!!,
                 referenceType = "parentId",
-                violation = "Parent not found"
+                violation = "Parent not found",
             ).left()
     }
 
@@ -392,7 +394,7 @@ private class TestContext {
                 currentTimestamp(),
                 ScopeId.create(command.parentId!!).getOrNull()!!,
                 depth,
-                10
+                10,
             ).left()
     }
 
@@ -407,11 +409,11 @@ private class TestContext {
                 currentTimestamp(),
                 ScopeId.create(command.parentId!!).getOrNull()!!,
                 childCount,
-                100
+                100,
             ).left()
     }
 
-    fun setupScopeCapture(command: CreateScope, captureList: MutableList<Scope>): Unit {
+    fun setupScopeCapture(command: CreateScope, captureList: MutableList<Scope>) {
         coEvery { scopeRepository.existsByParentIdAndTitle(any(), any()) } returns false.right()
         coEvery { scopeRepository.save(any()) } answers {
             val scope = firstArg<Scope>()
@@ -519,9 +521,7 @@ private fun createSafeMockScopeAlias(aliasName: String): ScopeAlias {
 // Custom Matchers
 // ============================================================================
 
-private fun Either<ScopesError, CreateScopeResult>.shouldBeValidCreateScopeResult(
-    command: CreateScope
-) {
+private fun Either<ScopesError, CreateScopeResult>.shouldBeValidCreateScopeResult(command: CreateScope) {
     shouldBeRight()
     getOrNull()?.let { result ->
         result.title shouldBe command.title.trim()
@@ -618,15 +618,16 @@ private fun validTitleArb(): Arb<String> = Arb.string(1..100)
     .filter { title ->
         val trimmed = title.trim()
         trimmed.isNotEmpty() &&
-        !trimmed.contains('\n') &&
-        !trimmed.contains('\r') &&
-        !trimmed.contains('\\') &&  // Exclude backslash to avoid issues
-        trimmed.all { it.isLetterOrDigit() || it in " -_.,!?()[]{}@#$%&+=~" }  // Allow only safe characters
+            !trimmed.contains('\n') &&
+            !trimmed.contains('\r') &&
+            !trimmed.contains('\\') &&
+            // Exclude backslash to avoid issues
+            trimmed.all { it.isLetterOrDigit() || it in " -_.,!?()[]{}@#$%&+=~" } // Allow only safe characters
     }
 
 private fun validDescriptionArb(): Arb<String?> = Arb.choice(
     Arb.constant(null),
-    Arb.string(0..100).map { it.take(500) }  // More efficient, no filter
+    Arb.string(0..100).map { it.take(500) }, // More efficient, no filter
 )
 
 private fun validScopeIdArb(): Arb<String> = Arb.constant("").map {
@@ -635,7 +636,7 @@ private fun validScopeIdArb(): Arb<String> = Arb.constant("").map {
 
 private fun invalidScopeIdArb(): Arb<String> = Arb.choice(
     Arb.of("", " ", "invalid-id", "123", "not-a-ulid"),
-    Arb.string(1..10).filter { !it.matches(Regex("[0-9A-HJKMNP-TV-Z]{26}")) }
+    Arb.string(1..10).filter { !it.matches(Regex("[0-9A-HJKMNP-TV-Z]{26}")) },
 )
 
 private fun validAliasNameArb(): Arb<String> = Arb.string(2..50)
@@ -669,13 +670,13 @@ private fun validAliasNameArb(): Arb<String> = Arb.string(2..50)
 private fun validAspectKeyArb(): Arb<String> = Arb.stringPattern("[a-z][a-z0-9_]{0,49}")
 
 private fun validAspectValueArb(): Arb<String> = Arb.string(1..50)
-    .map { it.trim().ifEmpty { "value" } }  // Always return a non-empty value
+    .map { it.trim().ifEmpty { "value" } } // Always return a non-empty value
 
 private fun validMetadataArb(): Arb<Map<String, String>> = Arb.map(
     keyArb = validAspectKeyArb(),
     valueArb = validAspectValueArb(),
     minSize = 0,
-    maxSize = 2  // Reduced from 5 to avoid memory issues
+    maxSize = 2, // Reduced from 5 to avoid memory issues
 )
 
 private fun validCreateScopeCommandArb(): Arb<CreateScope> = Arb.bind(
@@ -684,7 +685,7 @@ private fun validCreateScopeCommandArb(): Arb<CreateScope> = Arb.bind(
     Arb.choice(Arb.constant(null), validScopeIdArb()),
     validMetadataArb(),
     Arb.boolean(),
-    Arb.choice(Arb.constant(null), validAliasNameArb())
+    Arb.choice(Arb.constant(null), validAliasNameArb()),
 ) { title, description, parentId, metadata, generateAlias, customAlias ->
     CreateScope(
         title = title,
@@ -692,16 +693,15 @@ private fun validCreateScopeCommandArb(): Arb<CreateScope> = Arb.bind(
         parentId = parentId,
         metadata = metadata,
         generateAlias = generateAlias && customAlias == null,
-        customAlias = customAlias
+        customAlias = customAlias,
     )
 }
 
-private fun validCreateScopeCommandWithParentArb(): Arb<CreateScope> =
-    validCreateScopeCommandArb().filter { it.parentId != null }
+private fun validCreateScopeCommandWithParentArb(): Arb<CreateScope> = validCreateScopeCommandArb().filter { it.parentId != null }
 
 private fun invalidParentIdScenarioArb(): Arb<Pair<String, String>> = Arb.bind(
     validTitleArb(),
-    invalidScopeIdArb()
+    invalidScopeIdArb(),
 ) { title, invalidId -> title to invalidId }
 
 private fun hierarchyViolationScenarioArb(): Arb<HierarchyScenario> = Arb.choice(
@@ -710,7 +710,7 @@ private fun hierarchyViolationScenarioArb(): Arb<HierarchyScenario> = Arb.choice
     },
     validCreateScopeCommandWithParentArb().map { command ->
         HierarchyScenario.MaxChildrenExceeded(command, (101..200).random())
-    }
+    },
 )
 
 private fun aliasScenarioArb(): Arb<AliasScenario> = Arb.choice(
@@ -722,20 +722,20 @@ private fun aliasScenarioArb(): Arb<AliasScenario> = Arb.choice(
     },
     validCreateScopeCommandArb().map { command ->
         AliasScenario.None(command.copy(generateAlias = false, customAlias = null))
-    }
+    },
 )
 
 private fun metadataScenarioArb(): Arb<Pair<String, Map<String, String>>> = Arb.bind(
     validTitleArb(),
-    validMetadataArb()
+    validMetadataArb(),
 ) { title, metadata -> title to metadata }
 
 private fun repositoryErrorScenarioArb(): Arb<Pair<CreateScope, PersistenceError>> = Arb.bind(
     validCreateScopeCommandArb(),
     Arb.choice(
         Arb.constant(PersistenceError.StorageUnavailable(currentTimestamp(), "save", null)),
-        Arb.constant(PersistenceError.DataCorruption(currentTimestamp(), "Scope", "123", "Invalid state"))
-    )
+        Arb.constant(PersistenceError.DataCorruption(currentTimestamp(), "Scope", "123", "Invalid state")),
+    ),
 ) { command, error -> command to error }
 
 // ============================================================================
@@ -743,12 +743,10 @@ private fun repositoryErrorScenarioArb(): Arb<Pair<CreateScope, PersistenceError
 // ============================================================================
 
 private class ImprovedTestTransactionManager : TransactionManager {
-    override suspend fun <E, T> inTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
-    ): Either<E, T> = ImprovedTestTransactionContext().block()
+    override suspend fun <E, T> inTransaction(block: suspend TransactionContext.() -> Either<E, T>): Either<E, T> = ImprovedTestTransactionContext().block()
 
     override suspend fun <E, T> inReadOnlyTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
+        block: suspend TransactionContext.() -> Either<E, T>,
     ): Either<E, T> = ImprovedTestTransactionContext().block()
 }
 
@@ -763,4 +761,3 @@ private class ImprovedTestTransactionContext : TransactionContext {
 
     override fun getTransactionId(): String = "test-tx-${System.nanoTime()}"
 }
-

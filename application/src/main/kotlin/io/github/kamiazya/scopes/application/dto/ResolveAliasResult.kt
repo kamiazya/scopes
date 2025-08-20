@@ -5,7 +5,4 @@ package io.github.kamiazya.scopes.application.dto
  *
  * Returns the scope ID that the alias points to.
  */
-data class ResolveAliasResult(
-    val scopeId: String
-) : DTO
-
+data class ResolveAliasResult(val scopeId: String) : DTO

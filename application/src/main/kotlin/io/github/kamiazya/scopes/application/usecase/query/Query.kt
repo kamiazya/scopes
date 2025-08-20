@@ -11,31 +11,21 @@ interface Query : DTO
 /**
  * Query to resolve an alias to a scope ID.
  */
-data class ResolveAliasQuery(
-    val aliasName: String
-) : Query
+data class ResolveAliasQuery(val aliasName: String) : Query
 
 /**
  * Query to list all aliases for a specific scope.
  */
-data class ListAliasesForScopeQuery(
-    val scopeId: String
-) : Query
+data class ListAliasesForScopeQuery(val scopeId: String) : Query
 
 /**
  * Query to find aliases that start with a given prefix.
  * Used for tab completion and partial matching.
  */
-data class FindAliasesByPrefixQuery(
-    val prefix: String,
-    val limit: Int = 50
-) : Query
+data class FindAliasesByPrefixQuery(val prefix: String, val limit: Int = 50) : Query
 
 /**
  * Query to get a scope by its alias.
  * Accepts either canonical or custom alias names.
  */
-data class GetScopeByAliasQuery(
-    val aliasName: String
-) : Query
-
+data class GetScopeByAliasQuery(val aliasName: String) : Query

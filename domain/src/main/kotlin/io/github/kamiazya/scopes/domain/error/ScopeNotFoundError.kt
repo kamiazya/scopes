@@ -6,7 +6,4 @@ import kotlinx.datetime.Instant
 /**
  * Error for when a scope is not found.
  */
-data class ScopeNotFoundError(
-    override val occurredAt: Instant,
-    val scopeId: ScopeId
-) : UserIntentionError()
+data class ScopeNotFoundError(override val occurredAt: Instant, val scopeId: ScopeId) : UserIntentionError()

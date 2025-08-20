@@ -27,4 +27,3 @@ interface LogAppender {
      */
     fun setLevel(level: LogLevel)
 }
-

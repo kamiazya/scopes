@@ -6,6 +6,4 @@ package io.github.kamiazya.scopes.application.error
  * containing only structured data without presentation-specific messages.
  * The presentation layer is responsible for generating user-facing messages.
  */
-sealed class ApplicationError(
-    open val recoverable: Boolean = true
-)
+sealed class ApplicationError(open val recoverable: Boolean = true)

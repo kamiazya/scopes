@@ -12,9 +12,7 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
  * Type-safe identifier for Scope entities using ULID for lexicographically sortable distributed system compatibility.
  */
 @JvmInline
-value class ScopeId private constructor(
-    val value: String,
-) {
+value class ScopeId private constructor(val value: String) {
     companion object {
         /**
          * Generate a new random ScopeId with ULID format.
@@ -26,32 +24,28 @@ value class ScopeId private constructor(
          * Returns Either with specific error types instead of throwing exceptions.
          */
         fun create(value: String): Either<ScopeInputError.IdError, ScopeId> = either {
-            ensure(value.isNotBlank()) { 
+            ensure(value.isNotBlank()) {
                 ScopeInputError.IdError.Blank(
                     currentTimestamp(),
-                    value
+                    value,
                 )
             }
-            ensure(ULID.isValid(value)) { 
+            ensure(ULID.isValid(value)) {
                 ScopeInputError.IdError.InvalidFormat(
                     currentTimestamp(),
-                    value
+                    value,
                 )
             }
             ScopeId(value)
         }
-
     }
 
     /**
      * Convert this ScopeId to its corresponding AggregateId.
-     * 
+     *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> = 
-        AggregateId.create("Scope", value)
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.create("Scope", value)
 
     override fun toString(): String = value
 }
-
-

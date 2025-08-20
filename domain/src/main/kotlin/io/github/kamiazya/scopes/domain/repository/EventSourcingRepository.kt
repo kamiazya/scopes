@@ -40,7 +40,7 @@ interface EventSourcingRepository<T> {
     suspend fun saveEvents(
         aggregateId: AggregateId,
         events: List<DomainEvent>,
-        expectedVersion: Int
+        expectedVersion: Int,
     ): Either<ScopesError, Unit>
 
     /**
@@ -52,9 +52,7 @@ interface EventSourcingRepository<T> {
      * @param aggregateId The ID of the aggregate to retrieve events for
      * @return Either an error or the list of events (empty if aggregate doesn't exist)
      */
-    suspend fun getEvents(
-        aggregateId: AggregateId
-    ): Either<ScopesError, List<DomainEvent>>
+    suspend fun getEvents(aggregateId: AggregateId): Either<ScopesError, List<DomainEvent>>
 
     /**
      * Retrieves events for an aggregate starting from a specific version.
@@ -68,10 +66,7 @@ interface EventSourcingRepository<T> {
      * @param fromVersion The version to start from (inclusive)
      * @return Either an error or the list of events
      */
-    suspend fun getEventsFromVersion(
-        aggregateId: AggregateId,
-        fromVersion: Int
-    ): Either<ScopesError, List<DomainEvent>>
+    suspend fun getEventsFromVersion(aggregateId: AggregateId, fromVersion: Int): Either<ScopesError, List<DomainEvent>>
 
     /**
      * Retrieves events for an aggregate within a version range.
@@ -86,7 +81,7 @@ interface EventSourcingRepository<T> {
     suspend fun getEventsBetweenVersions(
         aggregateId: AggregateId,
         fromVersion: Int,
-        toVersion: Int
+        toVersion: Int,
     ): Either<ScopesError, List<DomainEvent>>
 
     /**
@@ -98,9 +93,7 @@ interface EventSourcingRepository<T> {
      * @param aggregateId The ID of the aggregate
      * @return Either an error or the current version (0 if not found)
      */
-    suspend fun getCurrentVersion(
-        aggregateId: AggregateId
-    ): Either<ScopesError, Int>
+    suspend fun getCurrentVersion(aggregateId: AggregateId): Either<ScopesError, Int>
 
     /**
      * Checks if an aggregate exists.
@@ -110,9 +103,7 @@ interface EventSourcingRepository<T> {
      * @param aggregateId The ID of the aggregate to check
      * @return Either an error or true if exists, false otherwise
      */
-    suspend fun exists(
-        aggregateId: AggregateId
-    ): Either<ScopesError, Boolean>
+    suspend fun exists(aggregateId: AggregateId): Either<ScopesError, Boolean>
 
     /**
      * Gets all events of a specific type across all aggregates.
@@ -130,7 +121,7 @@ interface EventSourcingRepository<T> {
     suspend fun getEventsByType(
         eventType: String,
         limit: Int = 100,
-        offset: Int = 0
+        offset: Int = 0,
     ): Either<ScopesError, List<DomainEvent>>
 
     /**
@@ -151,7 +142,7 @@ interface EventSourcingRepository<T> {
         from: kotlinx.datetime.Instant,
         to: kotlinx.datetime.Instant,
         limit: Int = 100,
-        offset: Int = 0
+        offset: Int = 0,
     ): Either<ScopesError, List<DomainEvent>>
 
     /**
@@ -165,11 +156,7 @@ interface EventSourcingRepository<T> {
      * @param version The version this snapshot represents
      * @return Either an error or Unit on successful save
      */
-    suspend fun saveSnapshot(
-        aggregateId: AggregateId,
-        snapshot: ByteArray,
-        version: Int
-    ): Either<ScopesError, Unit>
+    suspend fun saveSnapshot(aggregateId: AggregateId, snapshot: ByteArray, version: Int): Either<ScopesError, Unit>
 
     /**
      * Retrieves the latest snapshot for an aggregate.
@@ -180,7 +167,5 @@ interface EventSourcingRepository<T> {
      * @param aggregateId The ID of the aggregate
      * @return Either an error or a pair of (snapshot data, version), or null if no snapshot exists
      */
-    suspend fun getLatestSnapshot(
-        aggregateId: AggregateId
-    ): Either<ScopesError, Pair<ByteArray, Int>?>
+    suspend fun getLatestSnapshot(aggregateId: AggregateId): Either<ScopesError, Pair<ByteArray, Int>?>
 }

@@ -5,8 +5,8 @@ import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.dto.CreateScopeResult
-import io.github.kamiazya.scopes.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.application.logging.Logger
+import io.github.kamiazya.scopes.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -41,14 +41,14 @@ class CreateScopeHandler(
     private val hierarchyService: ScopeHierarchyService,
     private val crossAggregateValidationService: CrossAggregateValidationService,
     private val aliasManagementService: ScopeAliasManagementService,
-    private val logger: Logger
+    private val logger: Logger,
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
     override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = either {
         val contextMetadata = mapOf(
             "title" to input.title,
             "parentId" to (input.parentId ?: "none"),
-            "generateAlias" to input.generateAlias
+            "generateAlias" to input.generateAlias,
         )
 
         logger.info("Creating new scope", contextMetadata)
@@ -62,7 +62,7 @@ class CreateScopeHandler(
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
                         ScopeHierarchyError.InvalidParentId(
                             currentTimestamp(),
-                            parentIdString
+                            parentIdString,
                         )
                     }.bind()
                 }
@@ -74,66 +74,78 @@ class CreateScopeHandler(
                     // Validate parent exists
                     crossAggregateValidationService.validateHierarchyConsistency(
                         parentId,
-                        emptyList()
+                        emptyList(),
                     ).mapLeft { validationError ->
                         logger.error("Parent scope not found", mapOf("parentId" to parentId.value))
                         ScopeHierarchyError.ParentNotFound(
                             currentTimestamp(),
                             parentId,
-                            parentId
+                            parentId,
                         )
                     }.bind()
 
                     // Calculate and validate hierarchy depth
                     val currentDepth = hierarchyService.calculateHierarchyDepth(
                         parentId,
-                        { id -> scopeRepository.findById(id).getOrNull() }
+                        { id -> scopeRepository.findById(id).getOrNull() },
                     ).bind()
 
-                    logger.debug("Current hierarchy depth", mapOf(
-                        "parentId" to parentId.value,
-                        "depth" to currentDepth
-                    ))
+                    logger.debug(
+                        "Current hierarchy depth",
+                        mapOf(
+                            "parentId" to parentId.value,
+                            "depth" to currentDepth,
+                        ),
+                    )
 
                     hierarchyService.validateHierarchyDepth(
                         parentId,
-                        currentDepth
+                        currentDepth,
                     ).bind()
 
                     // Validate children limit
                     val existingChildren = scopeRepository.findByParentId(parentId).bind()
-                    logger.debug("Checking children limit", mapOf(
-                        "parentId" to parentId.value,
-                        "existingChildren" to existingChildren.size
-                    ))
+                    logger.debug(
+                        "Checking children limit",
+                        mapOf(
+                            "parentId" to parentId.value,
+                            "existingChildren" to existingChildren.size,
+                        ),
+                    )
 
                     hierarchyService.validateChildrenLimit(
                         parentId,
-                        existingChildren.size
+                        existingChildren.size,
                     ).bind()
                 }
 
                 // Check title uniqueness at the same level
-                logger.debug("Checking title uniqueness", mapOf(
-                    "title" to input.title,
-                    "parentId" to (parentId?.value ?: "null")
-                ))
+                logger.debug(
+                    "Checking title uniqueness",
+                    mapOf(
+                        "title" to input.title,
+                        "parentId" to (parentId?.value ?: "null"),
+                    ),
+                )
 
                 val titleExists = scopeRepository.existsByParentIdAndTitle(
                     parentId,
-                    input.title
+                    input.title,
                 ).bind()
 
                 ensure(!titleExists) {
-                    logger.warn("Duplicate title found", mapOf(
-                        "title" to input.title,
-                        "parentId" to (parentId?.value ?: "null")
-                    ))
+                    logger.warn(
+                        "Duplicate title found",
+                        mapOf(
+                            "title" to input.title,
+                            "parentId" to (parentId?.value ?: "null"),
+                        ),
+                    )
                     ScopeUniquenessError.DuplicateTitle(
                         currentTimestamp(),
                         input.title,
                         parentId,
-                        ScopeId.generate() // Placeholder for existing scope ID
+                        ScopeId.generate(), // Placeholder for existing scope ID
                     )
                 }
 
@@ -150,17 +162,20 @@ class CreateScopeHandler(
                 }.toMap()
 
                 // Create domain entity
-                logger.debug("Creating scope entity", mapOf(
-                    "title" to input.title,
-                    "hasDescription" to (input.description != null),
-                    "aspectCount" to aspects.size
-                ))
+                logger.debug(
+                    "Creating scope entity",
+                    mapOf(
+                        "title" to input.title,
+                        "hasDescription" to (input.description != null),
+                        "aspectCount" to aspects.size,
+                    ),
+                )
 
                 val scope = Scope.create(
                     title = input.title,
                     description = input.description,
                     parentId = parentId,
-                    aspectsData = aspects
+                    aspectsData = aspects,
                 ).bind()
 
                 // Save the scope
@@ -171,18 +186,24 @@ class CreateScopeHandler(
                 val alias = when {
                     // If custom alias is provided, use it
                     input.customAlias != null -> {
-                        logger.debug("Assigning custom alias", mapOf(
-                            "scopeId" to savedScope.id.value,
-                            "alias" to input.customAlias
-                        ))
+                        logger.debug(
+                            "Assigning custom alias",
+                            mapOf(
+                                "scopeId" to savedScope.id.value,
+                                "alias" to input.customAlias,
+                            ),
+                        )
                         val aliasName = AliasName.create(input.customAlias).bind()
                         aliasManagementService.assignCanonicalAlias(savedScope.id, aliasName)
                             .onLeft { error ->
-                                logger.warn("Failed to assign custom alias", mapOf(
-                                    "scopeId" to savedScope.id.value,
-                                    "alias" to input.customAlias,
-                                    "error" to (error::class.simpleName ?: "Unknown")
-                                ))
+                                logger.warn(
+                                    "Failed to assign custom alias",
+                                    mapOf(
+                                        "scopeId" to savedScope.id.value,
+                                        "alias" to input.customAlias,
+                                        "error" to (error::class.simpleName ?: "Unknown"),
+                                    ),
+                                )
                             }
                             .getOrNull()
                     }
@@ -191,10 +212,13 @@ class CreateScopeHandler(
                         logger.debug("Generating canonical alias", mapOf("scopeId" to savedScope.id.value))
                         aliasManagementService.generateCanonicalAlias(savedScope.id)
                             .onLeft { error ->
-                                logger.warn("Failed to generate alias", mapOf(
-                                    "scopeId" to savedScope.id.value,
-                                    "error" to (error::class.simpleName ?: "Unknown")
-                                ))
+                                logger.warn(
+                                    "Failed to generate alias",
+                                    mapOf(
+                                        "scopeId" to savedScope.id.value,
+                                        "error" to (error::class.simpleName ?: "Unknown"),
+                                    ),
+                                )
                             }
                             .getOrNull()
                     }
@@ -203,21 +227,26 @@ class CreateScopeHandler(
 
                 val result = ScopeMapper.toCreateScopeResult(savedScope, alias)
 
-                logger.info("Scope created successfully", mapOf(
-                    "scopeId" to savedScope.id.value,
-                    "title" to savedScope.title,
-                    "hasAlias" to (alias != null),
-                    "aliasName" to (alias?.aliasName?.value ?: "none")
-                ))
+                logger.info(
+                    "Scope created successfully",
+                    mapOf(
+                        "scopeId" to savedScope.id.value,
+                        "title" to savedScope.title,
+                        "hasAlias" to (alias != null),
+                        "aliasName" to (alias?.aliasName?.value ?: "none"),
+                    ),
+                )
 
                 result
             }
         }.bind()
     }.onLeft { error ->
-        logger.error("Failed to create scope", mapOf(
-            "error" to (error::class.simpleName ?: "Unknown"),
-            "message" to error.toString()
-        ))
+        logger.error(
+            "Failed to create scope",
+            mapOf(
+                "error" to (error::class.simpleName ?: "Unknown"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }
-

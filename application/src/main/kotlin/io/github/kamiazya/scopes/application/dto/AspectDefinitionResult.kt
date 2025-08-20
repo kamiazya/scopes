@@ -17,7 +17,7 @@ sealed class AspectDefinitionResult : DTO {
         override val key: String,
         override val description: String? = null,
         override val isDefault: kotlin.Boolean = false,
-        override val allowMultiple: kotlin.Boolean = false
+        override val allowMultiple: kotlin.Boolean = false,
     ) : AspectDefinitionResult()
 
     /**
@@ -27,7 +27,7 @@ sealed class AspectDefinitionResult : DTO {
         override val key: String,
         override val description: String? = null,
         override val isDefault: kotlin.Boolean = false,
-        override val allowMultiple: kotlin.Boolean = false
+        override val allowMultiple: kotlin.Boolean = false,
     ) : AspectDefinitionResult()
 
     /**
@@ -37,7 +37,7 @@ sealed class AspectDefinitionResult : DTO {
         override val key: String,
         override val description: String? = null,
         override val isDefault: kotlin.Boolean = false,
-        override val allowMultiple: kotlin.Boolean = false
+        override val allowMultiple: kotlin.Boolean = false,
     ) : AspectDefinitionResult()
 
     /**
@@ -48,7 +48,6 @@ sealed class AspectDefinitionResult : DTO {
         val allowedValues: List<String>,
         override val description: String? = null,
         override val isDefault: kotlin.Boolean = false,
-        override val allowMultiple: kotlin.Boolean = false
+        override val allowMultiple: kotlin.Boolean = false,
     ) : AspectDefinitionResult()
 }
-

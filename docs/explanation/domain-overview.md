@@ -232,7 +232,7 @@ Designed from the ground up for human-AI collaboration:
 
 The system enforces strict title uniqueness rules at all levels of the scope hierarchy. This design ensures clear identification and prevents confusion throughout the entire project organization.
 
-**Design Philosophy**: 
+**Design Philosophy**:
 - **Consistent Uniqueness**: All scope titles must be unique within their respective context
 - **Clear Identification**: No ambiguity in scope naming regardless of hierarchy level
 - **Simple Rules**: One unified rule applies to all scopes
@@ -246,7 +246,7 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 #### All Scopes (Root and Child)
 - **Rule**: Duplicate titles are **FORBIDDEN** at all levels
 - **Rationale**: Consistent uniqueness prevents confusion and ensures clear identification. Even at the root level, having multiple scopes with identical names can lead to ambiguity when referencing or managing projects.
-- **Use Cases**: 
+- **Use Cases**:
   - All project names must be unique for clear identification
   - All task names within any context must be distinct
   - Forces descriptive, meaningful naming conventions
@@ -289,7 +289,7 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 ✅ Required - Specific task naming within projects:
 ├── Scope: "E-commerce Website"
 │   ├── Scope: "Database Schema Design"
-│   ├── Scope: "User Authentication Backend" 
+│   ├── Scope: "User Authentication Backend"
 │   ├── Scope: "Frontend User Interface"
 │   └── Scope: "Payment Integration Testing"
 └── Scope: "Blog Platform"
@@ -346,4 +346,3 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 - **Offline Capability**: 100% feature availability without network
 - **Response Time**: Sub-100ms for common operations
 - **Data Integrity**: Zero data loss across device synchronization
-

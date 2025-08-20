@@ -3,11 +3,11 @@ package io.github.kamiazya.scopes.domain.entity
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -29,7 +29,7 @@ data class ContextView(
     val filter: ContextViewFilter,
     val description: ContextViewDescription? = null,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 ) {
 
     companion object {
@@ -40,7 +40,7 @@ data class ContextView(
             key: ContextViewKey,
             name: ContextViewName,
             filter: ContextViewFilter,
-            description: String? = null
+            description: String? = null,
         ): Either<String, ContextView> {
             // Create optional ContextViewDescription
             val contextDescription = if (description.isNullOrBlank()) {
@@ -60,7 +60,7 @@ data class ContextView(
                 filter = filter,
                 description = contextDescription,
                 createdAt = now,
-                updatedAt = now
+                updatedAt = now,
             ).right()
         }
     }
@@ -71,7 +71,7 @@ data class ContextView(
      */
     fun updateFilter(newFilter: ContextViewFilter): ContextView = copy(
         filter = newFilter,
-        updatedAt = Clock.System.now()
+        updatedAt = Clock.System.now(),
     )
 
     /**
@@ -91,7 +91,7 @@ data class ContextView(
 
         return copy(
             description = contextDescription,
-            updatedAt = Clock.System.now()
+            updatedAt = Clock.System.now(),
         ).right()
     }
 
@@ -101,13 +101,11 @@ data class ContextView(
      */
     fun updateName(newName: ContextViewName): ContextView = copy(
         name = newName,
-        updatedAt = Clock.System.now()
+        updatedAt = Clock.System.now(),
     )
 
     /**
      * Check if this context view matches the given key.
      */
-    fun matchesKey(searchKey: String): Boolean =
-        key.value == searchKey
+    fun matchesKey(searchKey: String): Boolean = key.value == searchKey
 }
-

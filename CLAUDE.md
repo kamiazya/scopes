@@ -94,4 +94,3 @@ We adopt the **Diátaxis framework** for organizing documentation:
 - Support handoff between different AI assistants
 
 Remember: This is a greenfield project inheriting the best ideas from Project Manager while introducing the revolutionary unified Scope concept for true AI-developer symbiosis.
-

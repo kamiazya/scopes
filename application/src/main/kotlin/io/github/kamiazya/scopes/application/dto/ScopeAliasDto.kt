@@ -13,6 +13,5 @@ data class ScopeAliasResult(
     val aliasName: String,
     val aliasType: String,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 ) : DTO
-

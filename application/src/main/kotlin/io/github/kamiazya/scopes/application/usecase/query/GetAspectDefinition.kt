@@ -5,6 +5,5 @@ package io.github.kamiazya.scopes.application.usecase.query
  * Returns the definition if found (either user-defined or default), null otherwise.
  */
 data class GetAspectDefinitionQuery(
-    val key: String
+    val key: String,
 ) : Query
-

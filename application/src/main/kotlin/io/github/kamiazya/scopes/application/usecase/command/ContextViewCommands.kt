@@ -14,7 +14,7 @@ data class CreateContextView(
     val key: String,
     val name: String,
     val filterExpression: String,
-    val description: String? = null
+    val description: String? = null,
 ) : Command
 
 /**
@@ -24,29 +24,23 @@ data class UpdateContextView(
     val id: String,
     val name: String? = null,
     val filterExpression: String? = null,
-    val description: String? = null
+    val description: String? = null,
 ) : Command
 
 /**
  * Delete a context view.
  */
-data class DeleteContextView(
-    val id: String
-) : Command
+data class DeleteContextView(val id: String) : Command
 
 /**
  * Switch to a different context view.
  */
-data class SwitchContextView(
-    val key: String
-) : Command
+data class SwitchContextView(val key: String) : Command
 
 /**
  * List context views with optional filtering.
  */
-data class ListContextViewsQuery(
-    val includeInactive: Boolean = true
-) : Query
+data class ListContextViewsQuery(val includeInactive: Boolean = true) : Query
 
 /**
  * Apply current context filter to get filtered scopes.
@@ -54,6 +48,5 @@ data class ListContextViewsQuery(
 data class GetFilteredScopesQuery(
     val contextKey: String? = null, // If null, use currently active context
     val limit: Int = 100,
-    val offset: Int = 0
+    val offset: Int = 0,
 ) : Query
-

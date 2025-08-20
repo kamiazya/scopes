@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.application.service
 
 import arrow.core.getOrElse
 import io.github.kamiazya.scopes.domain.entity.AspectDefinition
+import io.github.kamiazya.scopes.domain.valueobject.AspectCondition
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectRule
-import io.github.kamiazya.scopes.domain.valueobject.AspectCondition
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
 
 /**
@@ -197,15 +197,13 @@ class OrderedAspectBuilder(private val key: String) {
             key = aspectKey,
             allowedValues = aspectValues,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         ).getOrElse {
             error("Failed to create ordered aspect definition for key: $key")
         }
     }
 
-    fun buildWithRules(): AspectDefinitionWithRules {
-        return AspectDefinitionWithRules(build(), rules)
-    }
+    fun buildWithRules(): AspectDefinitionWithRules = AspectDefinitionWithRules(build(), rules)
 }
 
 /**
@@ -233,13 +231,11 @@ class NumericAspectBuilder(private val key: String) {
         return AspectDefinition.createNumeric(
             key = aspectKey,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
     }
 
-    fun buildWithRules(): AspectDefinitionWithRules {
-        return AspectDefinitionWithRules(build(), rules)
-    }
+    fun buildWithRules(): AspectDefinitionWithRules = AspectDefinitionWithRules(build(), rules)
 }
 
 /**
@@ -267,13 +263,11 @@ class TextAspectBuilder(private val key: String) {
         return AspectDefinition.createText(
             key = aspectKey,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
     }
 
-    fun buildWithRules(): AspectDefinitionWithRules {
-        return AspectDefinitionWithRules(build(), rules)
-    }
+    fun buildWithRules(): AspectDefinitionWithRules = AspectDefinitionWithRules(build(), rules)
 }
 
 /**
@@ -301,13 +295,11 @@ class BooleanAspectBuilder(private val key: String) {
         return AspectDefinition.createBoolean(
             key = aspectKey,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
     }
 
-    fun buildWithRules(): AspectDefinitionWithRules {
-        return AspectDefinitionWithRules(build(), rules)
-    }
+    fun buildWithRules(): AspectDefinitionWithRules = AspectDefinitionWithRules(build(), rules)
 }
 
 /**
@@ -363,31 +355,25 @@ class ConditionBuilder {
     /**
      * Check if another aspect equals a specific value.
      */
-    fun aspectEquals(key: String, value: String): AspectCondition =
-        AspectCondition.AspectEquals(key, value)
+    fun aspectEquals(key: String, value: String): AspectCondition = AspectCondition.AspectEquals(key, value)
 
     /**
      * Check if another aspect exists.
      */
-    fun aspectExists(key: String): AspectCondition =
-        AspectCondition.AspectExists(key)
+    fun aspectExists(key: String): AspectCondition = AspectCondition.AspectExists(key)
 
     /**
      * Logical AND of conditions.
      */
-    fun and(vararg conditions: AspectCondition): AspectCondition =
-        AspectCondition.And(conditions.toList())
+    fun and(vararg conditions: AspectCondition): AspectCondition = AspectCondition.And(conditions.toList())
 
     /**
      * Logical OR of conditions.
      */
-    fun or(vararg conditions: AspectCondition): AspectCondition =
-        AspectCondition.Or(conditions.toList())
+    fun or(vararg conditions: AspectCondition): AspectCondition = AspectCondition.Or(conditions.toList())
 
     /**
      * Logical NOT of condition.
      */
-    fun not(condition: AspectCondition): AspectCondition =
-        AspectCondition.Not(condition)
+    fun not(condition: AspectCondition): AspectCondition = AspectCondition.Not(condition)
 }
-

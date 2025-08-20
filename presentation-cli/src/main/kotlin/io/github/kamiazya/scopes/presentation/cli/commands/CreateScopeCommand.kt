@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
 import io.github.kamiazya.scopes.application.logging.LoggingContext
 import io.github.kamiazya.scopes.application.logging.LoggingContextScope
-import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.application.usecase.command.CreateScope
+import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -18,7 +18,7 @@ import kotlinx.coroutines.runBlocking
 class CreateScopeCommand(
     private val handler: CreateScopeHandler,
     private val errorMessageFormatter: ErrorMessageFormatter,
-    private val loggingContextScope: LoggingContextScope
+    private val loggingContextScope: LoggingContextScope,
 ) : CliktCommand(name = "create") {
 
     private val name by option("--name", help = "Scope name").required()
@@ -41,7 +41,7 @@ class CreateScopeCommand(
         // Create logging context for this command execution
         val loggingContext = LoggingContext(
             loggerName = "CreateScopeCommand",
-            operationType = "CreateScope"
+            operationType = "CreateScope",
         )
 
         // Execute handler with logging context
@@ -53,7 +53,7 @@ class CreateScopeCommand(
             ifLeft = { error ->
                 // For now, just show the error message directly
                 // In a real implementation, we would convert ScopesError to ApplicationError
-                echo("❌ Error creating scope: ${error}", err = true)
+                echo("❌ Error creating scope: $error", err = true)
                 throw com.github.ajalt.clikt.core.ProgramResult(1)
             },
             ifRight = { result: CreateScopeResult ->
@@ -69,8 +69,7 @@ class CreateScopeCommand(
                     echo("   Parent: ${result.parentId}")
                 }
                 echo("   Created at: ${result.createdAt}")
-            }
+            },
         )
     }
 }
-

@@ -14,7 +14,7 @@ enum class ComparisonOperator {
     LESS_THAN,
     LESS_THAN_OR_EQUAL,
     CONTAINS,
-    NOT_CONTAINS
+    NOT_CONTAINS,
 }
 
 /**
@@ -22,65 +22,53 @@ enum class ComparisonOperator {
  */
 enum class LogicalOperator {
     AND,
-    OR
+    OR,
 }
 
 /**
  * Value object representing a single aspect criterion for filtering.
  */
-data class AspectCriterion(
-    val key: AspectKey,
-    val operator: ComparisonOperator,
-    val value: AspectValue
-) {
+data class AspectCriterion(val key: AspectKey, val operator: ComparisonOperator, val value: AspectValue) {
     companion object {
         /**
          * Create an equality criterion.
          */
-        fun equals(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.EQUALS, value)
+        fun equals(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.EQUALS, value)
 
         /**
          * Create a not-equals criterion.
          */
-        fun notEquals(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.NOT_EQUALS, value)
+        fun notEquals(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.NOT_EQUALS, value)
 
         /**
          * Create a greater-than criterion.
          */
-        fun greaterThan(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.GREATER_THAN, value)
+        fun greaterThan(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.GREATER_THAN, value)
 
         /**
          * Create a greater-than-or-equal criterion.
          */
-        fun greaterThanOrEqual(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.GREATER_THAN_OR_EQUAL, value)
+        fun greaterThanOrEqual(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.GREATER_THAN_OR_EQUAL, value)
 
         /**
          * Create a less-than criterion.
          */
-        fun lessThan(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.LESS_THAN, value)
+        fun lessThan(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.LESS_THAN, value)
 
         /**
          * Create a less-than-or-equal criterion.
          */
-        fun lessThanOrEqual(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.LESS_THAN_OR_EQUAL, value)
+        fun lessThanOrEqual(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.LESS_THAN_OR_EQUAL, value)
 
         /**
          * Create a contains criterion.
          */
-        fun contains(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.CONTAINS, value)
+        fun contains(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.CONTAINS, value)
 
         /**
          * Create a not-contains criterion.
          */
-        fun notContains(key: AspectKey, value: AspectValue): AspectCriterion =
-            AspectCriterion(key, ComparisonOperator.NOT_CONTAINS, value)
+        fun notContains(key: AspectKey, value: AspectValue): AspectCriterion = AspectCriterion(key, ComparisonOperator.NOT_CONTAINS, value)
     }
 
     /**
@@ -98,7 +86,8 @@ data class AspectCriterion(
             ComparisonOperator.GREATER_THAN,
             ComparisonOperator.GREATER_THAN_OR_EQUAL,
             ComparisonOperator.LESS_THAN,
-            ComparisonOperator.LESS_THAN_OR_EQUAL -> {
+            ComparisonOperator.LESS_THAN_OR_EQUAL,
+            -> {
                 definition?.compareValues(actualValue, value)?.let { comparison ->
                     when (operator) {
                         ComparisonOperator.GREATER_THAN -> comparison > 0
@@ -121,22 +110,23 @@ data class AspectCriterion(
         if (actualValues.isNullOrEmpty()) return false
 
         return when (operator) {
-            ComparisonOperator.EQUALS -> 
+            ComparisonOperator.EQUALS ->
                 // Any value equals the criterion value
                 actualValues.any { it == value }
-            ComparisonOperator.NOT_EQUALS -> 
+            ComparisonOperator.NOT_EQUALS ->
                 // All values don't equal the criterion value
                 actualValues.all { it != value }
-            ComparisonOperator.CONTAINS -> 
+            ComparisonOperator.CONTAINS ->
                 // Any value contains the criterion value
                 actualValues.any { it.value.contains(value.value, ignoreCase = true) }
-            ComparisonOperator.NOT_CONTAINS -> 
+            ComparisonOperator.NOT_CONTAINS ->
                 // All values don't contain the criterion value
                 actualValues.all { !it.value.contains(value.value, ignoreCase = true) }
             ComparisonOperator.GREATER_THAN,
             ComparisonOperator.GREATER_THAN_OR_EQUAL,
             ComparisonOperator.LESS_THAN,
-            ComparisonOperator.LESS_THAN_OR_EQUAL -> {
+            ComparisonOperator.LESS_THAN_OR_EQUAL,
+            -> {
                 // Any value satisfies the comparison
                 actualValues.any { actualValue ->
                     definition?.compareValues(actualValue, value)?.let { comparison ->
@@ -166,11 +156,7 @@ sealed class AspectCriteria {
     /**
      * Combination of multiple criteria with logical operator.
      */
-    data class Compound(
-        val left: AspectCriteria,
-        val operator: LogicalOperator,
-        val right: AspectCriteria
-    ) : AspectCriteria()
+    data class Compound(val left: AspectCriteria, val operator: LogicalOperator, val right: AspectCriteria) : AspectCriteria()
 
     companion object {
         /**
@@ -181,27 +167,22 @@ sealed class AspectCriteria {
         /**
          * Combine two criteria with AND operator.
          */
-        fun and(left: AspectCriteria, right: AspectCriteria): AspectCriteria =
-            Compound(left, LogicalOperator.AND, right)
+        fun and(left: AspectCriteria, right: AspectCriteria): AspectCriteria = Compound(left, LogicalOperator.AND, right)
 
         /**
          * Combine two criteria with OR operator.
          */
-        fun or(left: AspectCriteria, right: AspectCriteria): AspectCriteria =
-            Compound(left, LogicalOperator.OR, right)
+        fun or(left: AspectCriteria, right: AspectCriteria): AspectCriteria = Compound(left, LogicalOperator.OR, right)
     }
 
     /**
      * Evaluate these criteria against a map of aspects using definitions.
      * Supports both single values (for backward compatibility) and multiple values.
      */
-    fun evaluate(
-        aspects: Map<AspectKey, AspectValue>,
-        definitions: Map<AspectKey, AspectDefinition>
-    ): Boolean = when (this) {
+    fun evaluate(aspects: Map<AspectKey, AspectValue>, definitions: Map<AspectKey, AspectDefinition>): Boolean = when (this) {
         is Single -> criterion.evaluate(
             aspects[criterion.key],
-            definitions[criterion.key]
+            definitions[criterion.key],
         )
         is Compound -> {
             val leftResult = left.evaluate(aspects, definitions)
@@ -219,11 +200,11 @@ sealed class AspectCriteria {
      */
     fun evaluateWithMultipleValues(
         aspects: Map<AspectKey, NonEmptyList<AspectValue>>,
-        definitions: Map<AspectKey, AspectDefinition>
+        definitions: Map<AspectKey, AspectDefinition>,
     ): Boolean = when (this) {
         is Single -> criterion.evaluateMultiple(
             aspects[criterion.key]?.toList(),
-            definitions[criterion.key]
+            definitions[criterion.key],
         )
         is Compound -> {
             val leftResult = left.evaluateWithMultipleValues(aspects, definitions)
@@ -239,9 +220,5 @@ sealed class AspectCriteria {
      * Evaluate these criteria against an Aspects value object.
      * Convenience method that delegates to evaluateWithMultipleValues.
      */
-    fun evaluateWithAspects(
-        aspects: Aspects,
-        definitions: Map<AspectKey, AspectDefinition>
-    ): Boolean = evaluateWithMultipleValues(aspects.toMap(), definitions)
+    fun evaluateWithAspects(aspects: Aspects, definitions: Map<AspectKey, AspectDefinition>): Boolean = evaluateWithMultipleValues(aspects.toMap(), definitions)
 }
-

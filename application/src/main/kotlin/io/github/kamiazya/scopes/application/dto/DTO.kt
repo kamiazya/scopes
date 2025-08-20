@@ -28,4 +28,3 @@ package io.github.kamiazya.scopes.application.dto
  * from leaking to the presentation layer.
  */
 interface DTO
-

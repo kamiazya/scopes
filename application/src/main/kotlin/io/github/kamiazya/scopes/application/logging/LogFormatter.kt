@@ -13,4 +13,3 @@ interface LogFormatter {
      */
     fun format(entry: LogEntry): String
 }
-

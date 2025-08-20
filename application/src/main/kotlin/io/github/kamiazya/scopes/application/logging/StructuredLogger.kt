@@ -11,22 +11,20 @@ class StructuredLogger(
     private val name: String,
     private val appenders: List<LogAppender>,
     private val defaultContext: Map<String, Any> = emptyMap(),
-    private val contextScope: LoggingContextScope = DefaultLoggingContextScope
+    private val contextScope: LoggingContextScope = DefaultLoggingContextScope,
 ) : Logger {
 
     /**
      * Gets the current logging context from coroutine context if available.
      */
-    internal suspend fun getCurrentLoggingContext(): LoggingContext? {
-        return contextScope.getCurrentContext()
-    }
+    internal suspend fun getCurrentLoggingContext(): LoggingContext? = contextScope.getCurrentContext()
 
     internal fun log(
         level: LogLevel,
         message: String,
         context: Map<String, Any>,
         throwable: Throwable? = null,
-        coroutineContext: LoggingContext? = null
+        coroutineContext: LoggingContext? = null,
     ) {
         // Check if any appender is enabled for this level
         if (appenders.none { it.isEnabledFor(level) }) {
@@ -40,7 +38,7 @@ class StructuredLogger(
             message = message,
             context = (defaultContext + context).toLogValueMap(),
             throwable = throwable,
-            coroutineContext = coroutineContext
+            coroutineContext = coroutineContext,
         )
 
         appenders.forEach { appender ->
@@ -66,25 +64,17 @@ class StructuredLogger(
         log(LogLevel.ERROR, message, context, throwable)
     }
 
-    override fun isEnabledFor(level: LogLevel): Boolean {
-        return appenders.any { it.isEnabledFor(level) }
-    }
+    override fun isEnabledFor(level: LogLevel): Boolean = appenders.any { it.isEnabledFor(level) }
 
-    override fun withContext(context: Map<String, Any>): Logger {
-        return StructuredLogger(name, appenders, defaultContext + context, contextScope)
-    }
+    override fun withContext(context: Map<String, Any>): Logger = StructuredLogger(name, appenders, defaultContext + context, contextScope)
 
-    override fun withName(name: String): Logger {
-        return StructuredLogger(name, appenders, defaultContext, contextScope)
-    }
+    override fun withName(name: String): Logger = StructuredLogger(name, appenders, defaultContext, contextScope)
 }
 
 /**
  * Coroutine context element for propagating logging context.
  */
-class LoggingCoroutineContext(
-    val loggingContext: LoggingContext
-) : CoroutineContext.Element {
+class LoggingCoroutineContext(val loggingContext: LoggingContext) : CoroutineContext.Element {
     companion object Key : CoroutineContext.Key<LoggingCoroutineContext>
     override val key: CoroutineContext.Key<*> = Key
 }
@@ -119,7 +109,11 @@ suspend fun Logger.warnWithContext(message: String, context: Map<String, Any> = 
     }
 }
 
-suspend fun Logger.errorWithContext(message: String, context: Map<String, Any> = emptyMap(), throwable: Throwable? = null) {
+suspend fun Logger.errorWithContext(
+    message: String,
+    context: Map<String, Any> = emptyMap(),
+    throwable: Throwable? = null,
+) {
     if (this is StructuredLogger) {
         val loggingContext = this.getCurrentLoggingContext()
         this.log(LogLevel.ERROR, message, context, throwable, loggingContext)

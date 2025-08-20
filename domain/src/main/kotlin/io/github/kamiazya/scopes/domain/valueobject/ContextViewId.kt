@@ -11,13 +11,11 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
 /**
  * Value object representing a unique identifier for a context view.
  * Uses ULID for lexicographically sortable distributed system compatibility.
- * 
+ *
  * Follows functional error handling pattern with Either instead of exceptions.
  */
 @JvmInline
-value class ContextViewId private constructor(
-    val value: String,
-) {
+value class ContextViewId private constructor(val value: String) {
     companion object {
         /**
          * Generate a new unique ContextViewId with ULID format.
@@ -27,22 +25,22 @@ value class ContextViewId private constructor(
         /**
          * Create a ContextViewId from an existing string value with validation.
          * Returns Either with specific error types instead of throwing exceptions.
-         * 
+         *
          * @param value The string value to validate and wrap
          * @return Either an error or a valid ContextViewId
          */
         fun create(value: String): Either<ScopeInputError.IdError, ContextViewId> = either {
-            ensure(value.isNotBlank()) { 
+            ensure(value.isNotBlank()) {
                 ScopeInputError.IdError.Blank(
                     currentTimestamp(),
-                    value
+                    value,
                 )
             }
-            ensure(ULID.isValid(value)) { 
+            ensure(ULID.isValid(value)) {
                 ScopeInputError.IdError.InvalidFormat(
                     currentTimestamp(),
                     value,
-                    "ULID"
+                    "ULID",
                 )
             }
             ContextViewId(value)
@@ -54,22 +52,20 @@ value class ContextViewId private constructor(
          */
         @Deprecated(
             message = "Use create() for safer error handling",
-            replaceWith = ReplaceWith("create(value).getOrNull() ?: throw IllegalArgumentException()")
+            replaceWith = ReplaceWith("create(value).getOrNull() ?: throw IllegalArgumentException()"),
         )
-        fun from(value: String): ContextViewId = 
-            create(value).fold(
-                ifLeft = { throw IllegalArgumentException("Invalid ContextViewId: $value") },
-                ifRight = { it }
-            )
+        fun from(value: String): ContextViewId = create(value).fold(
+            ifLeft = { throw IllegalArgumentException("Invalid ContextViewId: $value") },
+            ifRight = { it },
+        )
     }
 
     /**
      * Convert this ContextViewId to its corresponding AggregateId.
-     * 
+     *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> = 
-        AggregateId.create("ContextView", value)
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.create("ContextView", value)
 
     override fun toString(): String = value
 }

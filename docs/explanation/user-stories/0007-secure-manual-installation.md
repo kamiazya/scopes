@@ -24,7 +24,7 @@ A developer wants to install Scopes but requires strong security guarantees due 
 
 Current pain points with manual installation approaches:
 - Multi-step verification processes are error-prone
-- Users often skip verification steps due to complexity  
+- Users often skip verification steps due to complexity
 - Inconsistent security practices across platforms
 - Manual hash verification is tedious and mistakes are common
 
@@ -229,7 +229,7 @@ iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 |
 - Scripts can be downloaded and inspected before running
 - All operations are transparent and logged
 
-### Verification Integrity  
+### Verification Integrity
 - Hash verification prevents binary tampering
 - SLSA provenance prevents supply chain attacks
 - Multiple verification layers provide defense in depth

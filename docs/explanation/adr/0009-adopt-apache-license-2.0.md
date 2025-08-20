@@ -45,4 +45,3 @@ The project's official license will be changed from the MIT License to the Apach
 ## Tags
 
 `license`, `legal`, `governance`, `community`
-

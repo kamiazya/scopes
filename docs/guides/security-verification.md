@@ -7,7 +7,7 @@ This guide explains how to verify the authenticity and integrity of Scopes relea
 All Scopes releases include SLSA Level 3 provenance attestations that provide:
 
 - **Build integrity**: Proof that binaries were built from the expected source code
-- **Source authenticity**: Verification of the source repository and commit  
+- **Source authenticity**: Verification of the source repository and commit
 - **Build environment**: Details about the build environment and process
 - **Non-repudiation**: Cryptographic signatures that cannot be forged
 
@@ -36,7 +36,7 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
      --provenance-path multiple.intoto.jsonl \
      --source-uri github.com/kamiazya/scopes
-   
+
    # For macOS ARM64 (Apple Silicon)
    slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
      --provenance-path multiple.intoto.jsonl \
@@ -119,19 +119,19 @@ If you prefer manual verification:
    ```bash
    # Linux x64
    sha256sum scopes-v1.0.0-linux-x64
-   
+
    # Linux ARM64
    sha256sum scopes-v1.0.0-linux-arm64
-   
+
    # macOS x64
    shasum -a 256 scopes-v1.0.0-darwin-x64
-   
+
    # macOS ARM64 (Apple Silicon)
    shasum -a 256 scopes-v1.0.0-darwin-arm64
-   
+
    # Windows x64
    certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
-   
+
    # Windows ARM64
    certutil -hashfile scopes-v1.0.0-win32-arm64.exe SHA256
    ```
@@ -252,7 +252,7 @@ For complete SBOM usage instructions, see the [SBOM Verification Guide](sbom-ver
 ## Questions?
 
 If you have questions about security verification:
-- Check our [Security Policy](../../SECURITY.md) 
+- Check our [Security Policy](../../SECURITY.md)
 - Open an issue in the repository
 - Contact the maintainers directly
 

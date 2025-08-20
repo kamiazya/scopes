@@ -22,7 +22,7 @@ For Windows users, please use PowerShell (available on Windows 10/11 by default)
 All installation scripts include **integrated cryptographic verification**:
 
 - ✅ **SHA256 Hash Verification** - Every binary verified against published hashes
-- ✅ **SLSA Level 3 Provenance** - Supply chain integrity verified cryptographically  
+- ✅ **SLSA Level 3 Provenance** - Supply chain integrity verified cryptographically
 - ✅ **HTTPS-Only Downloads** - All network communication over encrypted channels
 - ✅ **Automatic Verification** - No manual steps required
 
@@ -32,7 +32,7 @@ All installation scripts include **integrated cryptographic verification**:
 - **`install.sh`** - Unix installation with integrated verification (Linux/macOS/WSL)
 - **`install.ps1`** - PowerShell installation for Windows (and cross-platform PowerShell)
 
-### Verification Scripts  
+### Verification Scripts
 - **`verify-release.sh`** - Standalone verification for downloaded releases (Unix)
 - **`Verify-Release.ps1`** - Standalone verification for PowerShell
 

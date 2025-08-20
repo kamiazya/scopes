@@ -25,4 +25,3 @@ fun interface UseCase<I, E, T> {
      */
     suspend operator fun invoke(input: I): Either<E, T>
 }
-

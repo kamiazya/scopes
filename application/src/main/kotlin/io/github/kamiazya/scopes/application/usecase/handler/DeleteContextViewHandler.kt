@@ -26,7 +26,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 class DeleteContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextService: ActiveContextService,
-    private val logger: Logger
+    private val logger: Logger,
 ) : UseCase<DeleteContextView, ApplicationError, EmptyResult> {
 
     override suspend operator fun invoke(input: DeleteContextView): Either<ApplicationError, EmptyResult> = either {
@@ -35,10 +35,13 @@ class DeleteContextViewHandler(
         // Parse the context ID
         logger.debug("Parsing context ID", mapOf("id" to input.id))
         val contextId = ContextViewId.create(input.id).mapLeft { error ->
-            logger.warn("Invalid context ID format", mapOf(
-                "id" to input.id,
-                "error" to (error::class.simpleName ?: "Unknown")
-            ))
+            logger.warn(
+                "Invalid context ID format",
+                mapOf(
+                    "id" to input.id,
+                    "error" to (error::class.simpleName ?: "Unknown"),
+                ),
+            )
             error.toApplicationError()
         }.bind()
 
@@ -47,32 +50,40 @@ class DeleteContextViewHandler(
         val activeContext = activeContextService.getCurrentContext()
 
         ensure(activeContext?.id != contextId) {
-            logger.error("Cannot delete active context", mapOf(
-                "id" to contextId.value,
-                "activeContextId" to (activeContext?.id?.value ?: "null")
-            ))
+            logger.error(
+                "Cannot delete active context",
+                mapOf(
+                    "id" to contextId.value,
+                    "activeContextId" to (activeContext?.id?.value ?: "null"),
+                ),
+            )
             ContextError.ActiveContextDeleteAttempt(
-                contextId.value
+                contextId.value,
             )
         }
 
         // Delete the context view
         logger.debug("Deleting context from repository", mapOf("id" to contextId.value))
         contextViewRepository.delete(contextId).mapLeft { error ->
-            logger.error("Failed to delete context view", mapOf(
-                "id" to contextId.value,
-                "error" to (error::class.simpleName ?: "Unknown")
-            ))
+            logger.error(
+                "Failed to delete context view",
+                mapOf(
+                    "id" to contextId.value,
+                    "error" to (error::class.simpleName ?: "Unknown"),
+                ),
+            )
             error.toApplicationError()
         }.bind()
 
         logger.info("Context view deleted successfully", mapOf("id" to contextId.value))
         EmptyResult
     }.onLeft { error ->
-        logger.error("Failed to delete context view", mapOf(
-            "error" to (error::class.simpleName ?: "Unknown"),
-            "message" to error.toString()
-        ))
+        logger.error(
+            "Failed to delete context view",
+            mapOf(
+                "error" to (error::class.simpleName ?: "Unknown"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }
-

@@ -28,7 +28,7 @@ The GraalVM plugin internally references `ConfigurationContainer` at execution t
 
 1. ✅ Added `notCompatibleWithConfigurationCache()` to native tasks
   - Result: Warnings are logged but error persists
-  
+
 2. ✅ Wrapped configuration in `afterEvaluate` block
   - Result: No effect on the error
 

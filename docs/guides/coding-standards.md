@@ -81,7 +81,7 @@ sealed class ApplicationValidationError {
             val actualValue: String,
             val validationRule: String
         ) : InputValidationError()
-        
+
         data class MissingRequiredField(
             val fieldName: String,
             val entityType: String,
@@ -122,7 +122,7 @@ sealed class CreateScopeError {
     data class HierarchyTraversalFailure(val findError: FindScopeError) : CreateScopeError()
     data class HierarchyDepthExceeded(val maxDepth: Int, val currentDepth: Int) : CreateScopeError()
     data class MaxChildrenExceeded(val parentId: ScopeId, val maxChildren: Int) : CreateScopeError()
-    
+
     // Service-specific error mappings
     data class TitleValidationFailed(val titleError: ScopeInputError.TitleError) : CreateScopeError()
     data class HierarchyViolationFailed(val hierarchyError: ScopeHierarchyError) : CreateScopeError()
@@ -136,7 +136,7 @@ private fun validateTitleWithServiceErrors(title: String): Either<CreateScopeErr
 
 private fun validateHierarchyWithServiceErrors(parentId: ScopeId?): Either<CreateScopeError, Unit> =
     applicationScopeValidationService.validateHierarchyConstraints(parentId)
-        .mapLeft { domainError -> 
+        .mapLeft { domainError ->
             when (domainError) {
                 is ScopeBusinessRuleViolation -> CreateScopeError.ValidationFailed("hierarchy", domainError.toString())
                 is DomainInfrastructureError -> CreateScopeError.ValidationFailed("infrastructure", "Repository error: ${domainError.repositoryError}")
@@ -156,7 +156,7 @@ value class ScopeId private constructor(private val value: String) {
         fun generate(): ScopeId = ScopeId(Ulid.fast().toString())
         fun from(value: String): ScopeId = ScopeId(value)
     }
-    
+
     override fun toString(): String = value
 }
 
@@ -186,11 +186,11 @@ class ApplicationScopeValidationService(
     // Returns specific error types with rich context
     fun validateTitleFormat(title: String): Either<TitleValidationError, Unit> {
         val trimmedTitle = title.trim()
-        
+
         if (trimmedTitle.isBlank()) {
             return TitleValidationError.EmptyTitle.left()
         }
-        
+
         if (trimmedTitle.length < ScopeTitle.MIN_LENGTH) {
             return TitleValidationError.TitleTooShort(
                 minLength = ScopeTitle.MIN_LENGTH,
@@ -198,16 +198,16 @@ class ApplicationScopeValidationService(
                 title = trimmedTitle
             ).left()
         }
-        
+
         return Unit.right()
     }
-    
+
     // Repository-dependent validations return domain errors (may include infrastructure errors)
     suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<DomainError, Unit> = either {
         if (parentId == null) return@either
-        
+
         val depth = repository.findHierarchyDepth(parentId)
-            .mapLeft { repositoryError -> 
+            .mapLeft { repositoryError ->
                 DomainInfrastructureError(
                     repositoryError = RepositoryError.DatabaseError(
                         "Failed to find hierarchy depth: operation='findHierarchyDepth', parentId=${parentId}",
@@ -217,7 +217,7 @@ class ApplicationScopeValidationService(
                 )
             }
             .bind()
-        
+
         ensure(depth < MAX_HIERARCHY_DEPTH) {
             ScopeBusinessRuleViolation.ScopeMaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
@@ -266,7 +266,7 @@ fun ScopeInputError.toApplicationError(): ApplicationError = when (this) {
 
 // Usage in handlers
 repository.save(entity)
-    .mapLeft { error -> 
+    .mapLeft { error ->
         // Use extension function for common persistence errors
         error.toApplicationError()
     }.bind()
@@ -293,18 +293,18 @@ class CreateScopeHandler(
     override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> = either {
         // Step 1: Parse and validate parent exists
         val parentId = validateParentExists(input.parentId).bind()
-        
+
         // Step 2: Service-specific validations with error translation
         validateTitleWithServiceErrors(input.title).bind()
         validateHierarchyWithServiceErrors(parentId).bind()
         validateUniquenessWithServiceErrors(input.title, parentId).bind()
-        
+
         // Step 3: Create domain entity
         val scope = createScopeEntity(input.title, input.description, parentId, input.metadata).bind()
-        
+
         // Step 4: Persist entity
         val savedScope = saveScopeEntity(scope).bind()
-        
+
         // Step 5: Map to DTO
         ScopeMapper.toCreateScopeResult(savedScope)
     }
@@ -370,15 +370,15 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 metadata = emptyMap()
             )
 
-            coEvery { mockValidationService.validateTitleFormat("ab") } returns 
+            coEvery { mockValidationService.validateTitleFormat("ab") } returns
                 TitleValidationError.TitleTooShort(
                     minLength = 3,
                     actualLength = 2,
                     title = "ab"
                 ).left()
-            
+
             val result = handler.invoke(command)
-            
+
             result.isLeft() shouldBe true
             val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.ValidationFailed>()
             error.field shouldBe "title"
@@ -399,7 +399,7 @@ class UseCaseArchitectureTest : StringSpec({
             .withNameEndingWith("Handler")
             .assert { it.name.endsWith("Handler") }
     }
-    
+
     "use case errors should be sealed classes" {
         Konsist
             .scopeFromModule("application")
@@ -465,13 +465,13 @@ fun createScope(request: CreateScopeRequest): Either<DomainError, Scope> =
                 description = request.description,
                 parentId = request.parentId,
                 metadata = request.metadata
-            ).mapLeft { validationError -> 
+            ).mapLeft { validationError ->
                 // Map ScopeValidationError to DomainError
                 validationError as DomainError
             }
         }
 
-// ❌ Bad: Direct construction bypasses domain invariants  
+// ❌ Bad: Direct construction bypasses domain invariants
 fun createScopeUnsafe(request: CreateScopeRequest): Either<DomainError, Scope> =
     validateTitle(request.title)
         .flatMap { title -> validateParent(request.parentId) }
@@ -554,16 +554,16 @@ suspend fun validateHierarchyConsistency(
     val parentExists = repository.existsById(parentId)
         .mapLeft { error -> /* map error */ }
         .bind()
-    
+
     if (!parentExists) {
         raise(Error.ParentNotFound(parentId))  // ❌ Avoid raise()
     }
-    
+
     for (childId in childIds) {  // ❌ Avoid traditional for loops
         val childExists = repository.existsById(childId)
             .mapLeft { error -> /* map error */ }
             .bind()
-        
+
         if (!childExists) {  // ❌ Avoid if-else for validation
             raise(Error.ChildNotFound(childId))
         }
@@ -580,16 +580,16 @@ suspend fun validateHierarchyConsistency(
     val parentExists = repository.existsById(parentId)
         .mapLeft { /* map error */ }
         .bind()
-    
+
     ensure(parentExists) {
         Error.ParentNotFound(parentId)
     }
-    
+
     childIds.forEach { childId ->
         val childExists = repository.existsById(childId)
             .mapLeft { /* map error */ }
             .bind()
-        
+
         ensure(childExists) {
             Error.ChildNotFound(childId)
         }
@@ -604,30 +604,30 @@ class CreateScopeHandler(
     private val repository: ScopeRepository,
     private val logger: Logger
 ) : UseCase<Input, Error, Result> {
-    
+
     override suspend fun invoke(input: Input): Either<Error, Result> = either {
         // Log at the start
         logger.info("Starting operation", mapOf("input" to input))
-        
+
         // Linear validation steps with ensure()
         val validatedTitle = validateTitle(input.title).bind()
-        
+
         val parentExists = repository.existsById(input.parentId)
             .mapLeft { mapError(it) }
             .bind()
-        
+
         ensure(parentExists) {
             Error.ParentNotFound(input.parentId)
         }
-        
+
         // Create and save entity
         val entity = createEntity(validatedTitle, input.parentId)
         val saved = repository.save(entity)
             .mapLeft { mapError(it) }
             .bind()
-        
+
         logger.info("Operation completed", mapOf("id" to saved.id))
-        
+
         // Return result
         mapToResult(saved)
     }
@@ -645,15 +645,15 @@ class ValidationService(
         val exists = repository.exists(data.id)
             .mapLeft { mapError(it) }
             .bind()
-        
+
         ensure(exists) {
             Error.NotFound(data.id)
         }
-        
+
         ensure(data.value > 0) {
             Error.InvalidValue(data.value)
         }
-        
+
         // More validations in linear fashion
     }
 }

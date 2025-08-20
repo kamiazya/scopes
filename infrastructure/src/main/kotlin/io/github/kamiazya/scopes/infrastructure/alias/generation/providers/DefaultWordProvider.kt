@@ -15,28 +15,25 @@ class DefaultWordProvider : WordProvider {
         "bold", "brave", "calm", "clever", "cool", "epic", "fast", "great", "happy", "kind",
         "light", "noble", "quick", "smart", "swift", "wise", "young", "bright", "clear", "deep",
         "fresh", "good", "high", "keen", "live", "new", "pure", "real", "rich", "safe",
-        "sure", "true", "warm", "wild", "fine", "free", "full", "glad", "hot", "open"
+        "sure", "true", "warm", "wild", "fine", "free", "full", "glad", "hot", "open",
     )
 
     private val nouns = listOf(
         "tiger", "eagle", "wolf", "bear", "lion", "shark", "hawk", "fox", "deer", "owl",
         "cat", "dog", "bird", "fish", "tree", "star", "moon", "sun", "rock", "wave",
         "fire", "wind", "ice", "storm", "cloud", "river", "mountain", "forest", "ocean", "valley",
-        "flower", "garden", "bridge", "tower", "castle", "sword", "shield", "arrow", "crown", "gem"
+        "flower", "garden", "bridge", "tower", "castle", "sword", "shield", "arrow", "crown", "gem",
     )
 
     override fun getAdjectives(): List<String> = adjectives
 
     override fun getNouns(): List<String> = nouns
 
-    override fun getAdditionalWords(category: String): List<String> {
-        return when (category) {
-            "adjectives" -> adjectives
-            "nouns" -> nouns
-            else -> emptyList()
-        }
+    override fun getAdditionalWords(category: String): List<String> = when (category) {
+        "adjectives" -> adjectives
+        "nouns" -> nouns
+        else -> emptyList()
     }
 
     override fun getAvailableCategories(): List<String> = listOf("adjectives", "nouns")
 }
-

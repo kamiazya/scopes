@@ -54,33 +54,26 @@ fun Any?.toLogValue(): LogValue? {
 /**
  * Extension function to convert a Map<String, Any> to Map<String, LogValue>.
  */
-fun Map<String, Any>.toLogValueMap(): Map<String, LogValue> {
-    return this.mapNotNull { (key, value) ->
-        value.toLogValue()?.let { key to it }
-    }.toMap()
-}
+fun Map<String, Any>.toLogValueMap(): Map<String, LogValue> = this.mapNotNull { (key, value) ->
+    value.toLogValue()?.let { key to it }
+}.toMap()
 
 /**
  * Extension function to convert LogValue back to Any for compatibility.
  */
-fun LogValue.toAny(): Any? {
-    return when (this) {
-        is LogValue.StringValue -> value
-        is LogValue.NumberValue -> value
-        is LogValue.BooleanValue -> value
-        is LogValue.ListValue -> value.map { it.toAny() }
-        is LogValue.MapValue -> value.mapValues { it.value.toAny() }
-        LogValue.NullValue -> null
-    }
+fun LogValue.toAny(): Any? = when (this) {
+    is LogValue.StringValue -> value
+    is LogValue.NumberValue -> value
+    is LogValue.BooleanValue -> value
+    is LogValue.ListValue -> value.map { it.toAny() }
+    is LogValue.MapValue -> value.mapValues { it.value.toAny() }
+    LogValue.NullValue -> null
 }
 
 /**
  * Extension function to convert Map<String, LogValue> back to Map<String, Any>.
  */
-fun Map<String, LogValue>.toAnyMap(): Map<String, Any> {
-    return this.mapNotNull { (key, value) ->
-        val anyValue = value.toAny()
-        if (anyValue != null) key to anyValue else null
-    }.toMap()
-}
-
+fun Map<String, LogValue>.toAnyMap(): Map<String, Any> = this.mapNotNull { (key, value) ->
+    val anyValue = value.toAny()
+    if (anyValue != null) key to anyValue else null
+}.toMap()

@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.domain.valueobject
 
-
 /**
  * Represents the type of an aspect definition.
  */
@@ -25,4 +24,3 @@ sealed class AspectType {
      */
     data class Ordered(val allowedValues: List<AspectValue>) : AspectType()
 }
-

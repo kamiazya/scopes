@@ -46,4 +46,3 @@ Please follow the Diátaxis framework when adding documentation:
 - **Guides**: Step-by-step solutions to problems
 - **Reference**: Factual, structured information
 - **Explanation**: Context, alternatives, and reasoning
-

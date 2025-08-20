@@ -4,8 +4,6 @@ import io.github.kamiazya.scopes.application.logging.LogEntry
 import io.github.kamiazya.scopes.application.logging.LogFormatter
 import io.github.kamiazya.scopes.application.logging.LogValue
 import kotlinx.serialization.json.*
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.TimeZone
 
 /**
  * Formats log entries as JSON for structured logging.
@@ -53,23 +51,20 @@ class JsonLogFormatter : LogFormatter {
         return json.encodeToString(JsonObject.serializer(), jsonObject)
     }
 
-    private fun logValueToJsonElement(logValue: LogValue): JsonElement {
-        return when (logValue) {
-            is LogValue.StringValue -> JsonPrimitive(logValue.value)
-            is LogValue.NumberValue -> JsonPrimitive(logValue.value)
-            is LogValue.BooleanValue -> JsonPrimitive(logValue.value)
-            is LogValue.ListValue -> buildJsonArray {
-                logValue.value.forEach { item ->
-                    add(logValueToJsonElement(item))
-                }
+    private fun logValueToJsonElement(logValue: LogValue): JsonElement = when (logValue) {
+        is LogValue.StringValue -> JsonPrimitive(logValue.value)
+        is LogValue.NumberValue -> JsonPrimitive(logValue.value)
+        is LogValue.BooleanValue -> JsonPrimitive(logValue.value)
+        is LogValue.ListValue -> buildJsonArray {
+            logValue.value.forEach { item ->
+                add(logValueToJsonElement(item))
             }
-            is LogValue.MapValue -> buildJsonObject {
-                logValue.value.forEach { (k, v) ->
-                    put(k, logValueToJsonElement(v))
-                }
-            }
-            LogValue.NullValue -> JsonNull
         }
+        is LogValue.MapValue -> buildJsonObject {
+            logValue.value.forEach { (k, v) ->
+                put(k, logValueToJsonElement(v))
+            }
+        }
+        LogValue.NullValue -> JsonNull
     }
 }
-

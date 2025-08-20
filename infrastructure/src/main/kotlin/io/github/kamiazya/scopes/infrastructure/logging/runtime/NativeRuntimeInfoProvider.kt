@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.infrastructure.logging.runtime
 
-
 /**
  * Provider for native runtime information.
  * Gathers system and process information from the JVM/Native environment.
@@ -21,7 +20,7 @@ object NativeRuntimeInfoProvider {
             architecture = System.getProperty("os.arch", "Unknown"),
             availableProcessors = runtime.availableProcessors(),
             totalMemory = runtime.totalMemory(),
-            maxMemory = runtime.maxMemory()
+            maxMemory = runtime.maxMemory(),
         )
     }
 
@@ -29,14 +28,12 @@ object NativeRuntimeInfoProvider {
      * Gets the hostname from environment variable or system property,
      * with fallback to "localhost" if unable to determine.
      */
-    private fun getHostname(): String {
-        return System.getenv("HOSTNAME")
-            ?: System.getenv("COMPUTERNAME") // Windows
-            ?: try {
-                // Try to get from system property
-                System.getProperty("user.name") + "-host"
-            } catch (e: Exception) {
-                "localhost"
-            }
-    }
+    private fun getHostname(): String = System.getenv("HOSTNAME")
+        ?: System.getenv("COMPUTERNAME") // Windows
+        ?: try {
+            // Try to get from system property
+            System.getProperty("user.name") + "-host"
+        } catch (e: Exception) {
+            "localhost"
+        }
 }

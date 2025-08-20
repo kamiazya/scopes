@@ -1,8 +1,11 @@
 package io.github.kamiazya.scopes.presentation.cli
 
 import io.github.kamiazya.scopes.application.error.ErrorMessageFormatter
-import io.github.kamiazya.scopes.application.logging.Logger
+import io.github.kamiazya.scopes.application.logging.ApplicationType
 import io.github.kamiazya.scopes.application.logging.LogLevel
+import io.github.kamiazya.scopes.application.logging.Logger
+import io.github.kamiazya.scopes.application.logging.LoggingContextScope
+import io.github.kamiazya.scopes.application.logging.logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.application.usecase.handler.CreateScopeHandler
@@ -15,12 +18,9 @@ import io.github.kamiazya.scopes.domain.service.WordProvider
 import io.github.kamiazya.scopes.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.infrastructure.alias.generation.strategies.HaikunatorStrategy
-import io.github.kamiazya.scopes.application.logging.logger
-import io.github.kamiazya.scopes.application.logging.ApplicationType
-import io.github.kamiazya.scopes.infrastructure.logging.runtime.NativeRuntimeInfoProvider
 import io.github.kamiazya.scopes.infrastructure.logging.CoroutineLoggingContextScope
-import io.github.kamiazya.scopes.application.logging.LoggingContextScope
 import io.github.kamiazya.scopes.infrastructure.logging.LoggerComponentInitializer
+import io.github.kamiazya.scopes.infrastructure.logging.runtime.NativeRuntimeInfoProvider
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.infrastructure.repository.InMemoryScopeRepository
 import io.github.kamiazya.scopes.infrastructure.transaction.NoopTransactionManager
@@ -58,7 +58,7 @@ object CompositionRoot {
                     infrastructureModule,
                     domainModule,
                     applicationModule,
-                    presentationModule
+                    presentationModule,
                 )
             }
         }
@@ -153,7 +153,7 @@ object CompositionRoot {
                 hierarchyService = get(),
                 crossAggregateValidationService = get(),
                 aliasManagementService = get(),
-                logger = get(named("app"))
+                logger = get(named("app")),
             )
         }
     }
@@ -170,8 +170,5 @@ object CompositionRoot {
     /**
      * Gets the application version from system properties or defaults to "dev".
      */
-    private fun getApplicationVersion(): String {
-        return System.getProperty("app.version") ?: "dev"
-    }
+    private fun getApplicationVersion(): String = System.getProperty("app.version") ?: "dev"
 }
-

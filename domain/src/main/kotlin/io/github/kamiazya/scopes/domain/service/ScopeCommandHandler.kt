@@ -39,7 +39,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 class ScopeCommandHandler(
     private val eventRepository: EventSourcingRepository<ScopeAggregate>,
     private val scopeRepository: ScopeRepository? = null,
-    private val eventPublisher: DomainEventPublisher? = null
+    private val eventPublisher: DomainEventPublisher? = null,
 ) {
 
     /**
@@ -55,7 +55,7 @@ class ScopeCommandHandler(
         title: String,
         description: String? = null,
         parentId: ScopeId? = null,
-        aspects: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
+        aspects: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
     ): Either<ScopesError, ScopeId> = either {
         // Validate parent exists if specified
         if (parentId != null && scopeRepository != null) {
@@ -64,7 +64,7 @@ class ScopeCommandHandler(
                 ScopeHierarchyError.ParentNotFound(
                     occurredAt = kotlinx.datetime.Clock.System.now(),
                     scopeId = ScopeId.generate(), // Temporary ID for error
-                    parentId = parentId
+                    parentId = parentId,
                 )
             }
         }
@@ -74,7 +74,7 @@ class ScopeCommandHandler(
             title = title,
             description = description,
             parentId = parentId,
-            aspectsData = aspects
+            aspectsData = aspects,
         ).bind()
 
         // Save events
@@ -82,7 +82,7 @@ class ScopeCommandHandler(
         eventRepository.saveEvents(
             aggregateId = aggregate.id,
             events = events,
-            expectedVersion = 0
+            expectedVersion = 0,
         ).bind()
 
         // Publish events
@@ -105,7 +105,7 @@ class ScopeCommandHandler(
     suspend fun updateTitle(
         scopeId: ScopeId,
         newTitle: String,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
 
@@ -121,7 +121,7 @@ class ScopeCommandHandler(
             eventRepository.saveEvents(
                 aggregateId = updatedAggregate.id,
                 events = events,
-                expectedVersion = expectedVersion.value
+                expectedVersion = expectedVersion.value,
             ).bind()
 
             // Publish events
@@ -143,7 +143,7 @@ class ScopeCommandHandler(
     suspend fun updateDescription(
         scopeId: ScopeId,
         newDescription: String?,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
@@ -155,7 +155,7 @@ class ScopeCommandHandler(
             eventRepository.saveEvents(
                 aggregateId = updatedAggregate.id,
                 events = events,
-                expectedVersion = expectedVersion.value
+                expectedVersion = expectedVersion.value,
             ).bind()
 
             eventPublisher?.publishAll(events)
@@ -174,7 +174,7 @@ class ScopeCommandHandler(
     suspend fun changeParent(
         scopeId: ScopeId,
         newParentId: ScopeId?,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         // Validate new parent exists if specified
         if (newParentId != null && scopeRepository != null) {
@@ -183,7 +183,7 @@ class ScopeCommandHandler(
                 ScopeHierarchyError.ParentNotFound(
                     occurredAt = kotlinx.datetime.Clock.System.now(),
                     scopeId = scopeId,
-                    parentId = newParentId
+                    parentId = newParentId,
                 )
             }
 
@@ -200,7 +200,7 @@ class ScopeCommandHandler(
             eventRepository.saveEvents(
                 aggregateId = updatedAggregate.id,
                 events = events,
-                expectedVersion = expectedVersion.value
+                expectedVersion = expectedVersion.value,
             ).bind()
 
             eventPublisher?.publishAll(events)
@@ -221,7 +221,7 @@ class ScopeCommandHandler(
         scopeId: ScopeId,
         aspectKey: AspectKey,
         aspectValue: AspectValue,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
@@ -233,7 +233,7 @@ class ScopeCommandHandler(
             eventRepository.saveEvents(
                 aggregateId = updatedAggregate.id,
                 events = events,
-                expectedVersion = expectedVersion.value
+                expectedVersion = expectedVersion.value,
             ).bind()
 
             eventPublisher?.publishAll(events)
@@ -254,7 +254,7 @@ class ScopeCommandHandler(
         scopeId: ScopeId,
         aspectKey: AspectKey,
         aspectValue: AspectValue,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
@@ -266,7 +266,7 @@ class ScopeCommandHandler(
             eventRepository.saveEvents(
                 aggregateId = updatedAggregate.id,
                 events = events,
-                expectedVersion = expectedVersion.value
+                expectedVersion = expectedVersion.value,
             ).bind()
 
             eventPublisher?.publishAll(events)
@@ -285,7 +285,7 @@ class ScopeCommandHandler(
     suspend fun archiveScope(
         scopeId: ScopeId,
         reason: String? = null,
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion,
     ): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
@@ -296,7 +296,7 @@ class ScopeCommandHandler(
         eventRepository.saveEvents(
             aggregateId = updatedAggregate.id,
             events = events,
-            expectedVersion = expectedVersion.value
+            expectedVersion = expectedVersion.value,
         ).bind()
 
         eventPublisher?.publishAll(events)
@@ -312,10 +312,7 @@ class ScopeCommandHandler(
      * @param expectedVersion Expected version for optimistic locking
      * @return Either an error or Unit on success
      */
-    suspend fun restoreScope(
-        scopeId: ScopeId,
-        expectedVersion: AggregateVersion
-    ): Either<ScopesError, Unit> = either {
+    suspend fun restoreScope(scopeId: ScopeId, expectedVersion: AggregateVersion): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
 
@@ -325,7 +322,7 @@ class ScopeCommandHandler(
         eventRepository.saveEvents(
             aggregateId = updatedAggregate.id,
             events = events,
-            expectedVersion = expectedVersion.value
+            expectedVersion = expectedVersion.value,
         ).bind()
 
         eventPublisher?.publishAll(events)
@@ -339,10 +336,7 @@ class ScopeCommandHandler(
      * @param expectedVersion Expected version for optimistic locking
      * @return Either an error or Unit on success
      */
-    suspend fun deleteScope(
-        scopeId: ScopeId,
-        expectedVersion: AggregateVersion
-    ): Either<ScopesError, Unit> = either {
+    suspend fun deleteScope(scopeId: ScopeId, expectedVersion: AggregateVersion): Either<ScopesError, Unit> = either {
         val aggregate = loadAggregate(scopeId).bind()
         aggregate.validateVersion(expectedVersion).bind()
 
@@ -352,7 +346,7 @@ class ScopeCommandHandler(
         eventRepository.saveEvents(
             aggregateId = updatedAggregate.id,
             events = events,
-            expectedVersion = expectedVersion.value
+            expectedVersion = expectedVersion.value,
         ).bind()
 
         eventPublisher?.publishAll(events)
@@ -374,11 +368,10 @@ class ScopeCommandHandler(
         ensureNotNull(events.isNotEmpty()) {
             ScopeNotFoundError(
                 occurredAt = kotlinx.datetime.Clock.System.now(),
-                scopeId = scopeId
+                scopeId = scopeId,
             )
         }
 
         ScopeAggregate.fromEvents(events).bind()
     }
 }
-

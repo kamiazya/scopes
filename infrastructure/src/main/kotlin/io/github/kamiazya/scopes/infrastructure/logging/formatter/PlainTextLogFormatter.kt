@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.infrastructure.logging.formatter
 import io.github.kamiazya.scopes.application.logging.LogEntry
 import io.github.kamiazya.scopes.application.logging.LogFormatter
 import io.github.kamiazya.scopes.application.logging.LogValue
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Formats log entries as human-readable plain text.
@@ -32,22 +32,20 @@ class PlainTextLogFormatter : LogFormatter {
         }
     }
 
-    private fun buildContextString(context: Map<String, LogValue>): String {
-        return if (context.isNotEmpty()) {
-            " | " + context.entries.joinToString(", ") { "${it.key}=${formatLogValue(it.value)}" }
-        } else {
-            ""
-        }
+    private fun buildContextString(context: Map<String, LogValue>): String = if (context.isNotEmpty()) {
+        " | " + context.entries.joinToString(", ") { "${it.key}=${formatLogValue(it.value)}" }
+    } else {
+        ""
     }
 
-    private fun formatLogValue(logValue: LogValue): String {
-        return when (logValue) {
-            is LogValue.StringValue -> if (logValue.value.contains(' ')) "\"${logValue.value}\"" else logValue.value
-            is LogValue.NumberValue -> logValue.value.toString()
-            is LogValue.BooleanValue -> logValue.value.toString()
-            is LogValue.ListValue -> "[${logValue.value.joinToString(", ") { formatLogValue(it) }}]"
-            is LogValue.MapValue -> "{${logValue.value.entries.joinToString(", ") { "${it.key}=${formatLogValue(it.value)}" }}}"
-            LogValue.NullValue -> "null"
-        }
+    private fun formatLogValue(logValue: LogValue): String = when (logValue) {
+        is LogValue.StringValue -> if (logValue.value.contains(' ')) "\"${logValue.value}\"" else logValue.value
+        is LogValue.NumberValue -> logValue.value.toString()
+        is LogValue.BooleanValue -> logValue.value.toString()
+        is LogValue.ListValue -> "[${logValue.value.joinToString(", ") { formatLogValue(it) }}]"
+        is LogValue.MapValue -> "{${logValue.value.entries.joinToString(", ") {
+            "${it.key}=${formatLogValue(it.value)}"
+        }}}"
+        LogValue.NullValue -> "null"
     }
 }

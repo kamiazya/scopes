@@ -32,7 +32,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
         val action: String,
         val userId: String,
         val requiredPermissions: List<String>,
-        val actualPermissions: List<String>
+        val actualPermissions: List<String>,
     ) : PermissionDeniedError()
 
     /**
@@ -42,7 +42,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
         val operation: String,
         val requiredRole: String,
         val userRoles: List<String>,
-        val additionalContext: Map<String, String>? = null
+        val additionalContext: Map<String, String>? = null,
     ) : PermissionDeniedError()
 
     /**
@@ -52,7 +52,7 @@ sealed class PermissionDeniedError : AuthorizationServiceError() {
         val roleId: String,
         val userId: String,
         val availableRoles: List<String>,
-        val context: String
+        val context: String,
     ) : PermissionDeniedError()
 }
 
@@ -68,7 +68,7 @@ sealed class AuthenticationError : AuthorizationServiceError() {
     data class UserNotAuthenticated(
         val requestedResource: String,
         val authenticationMethod: String?,
-        val redirectUrl: String? = null
+        val redirectUrl: String? = null,
     ) : AuthenticationError()
 
     /**
@@ -78,7 +78,7 @@ sealed class AuthenticationError : AuthorizationServiceError() {
         val tokenType: String,
         val reason: String,
         val expiresAt: Instant? = null,
-        val refreshable: Boolean = false
+        val refreshable: Boolean = false,
     ) : AuthenticationError()
 }
 
@@ -95,7 +95,7 @@ sealed class AuthorizationContextError : AuthorizationServiceError() {
         val resourceId: String,
         val resourceType: String,
         val operation: String,
-        val searchContext: Map<String, String>? = null
+        val searchContext: Map<String, String>? = null,
     ) : AuthorizationContextError()
 
     /**
@@ -105,7 +105,7 @@ sealed class AuthorizationContextError : AuthorizationServiceError() {
         val contextType: String,
         val missingFields: List<String>,
         val invalidFields: Map<String, String>,
-        val requiredContext: String
+        val requiredContext: String,
     ) : AuthorizationContextError()
 }
 
@@ -123,7 +123,7 @@ sealed class PolicyEvaluationError : AuthorizationServiceError() {
         val policyName: String,
         val evaluationResult: String,
         val violatedRules: List<String>,
-        val context: Map<String, Any>
+        val context: Map<String, Any>,
     ) : PolicyEvaluationError()
 
     /**
@@ -133,6 +133,6 @@ sealed class PolicyEvaluationError : AuthorizationServiceError() {
         val policyId: String,
         val reason: String,
         val cause: Throwable,
-        val fallbackBehavior: String? = null
+        val fallbackBehavior: String? = null,
     ) : PolicyEvaluationError()
 }

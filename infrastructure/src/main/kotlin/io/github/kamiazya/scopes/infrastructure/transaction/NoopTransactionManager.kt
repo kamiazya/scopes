@@ -16,15 +16,13 @@ import io.github.kamiazya.scopes.application.port.TransactionManager
  */
 class NoopTransactionManager : TransactionManager {
 
-    override suspend fun <E, T> inTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
-    ): Either<E, T> {
+    override suspend fun <E, T> inTransaction(block: suspend TransactionContext.() -> Either<E, T>): Either<E, T> {
         val context = NoopTransactionContext()
         return context.block()
     }
 
     override suspend fun <E, T> inReadOnlyTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
+        block: suspend TransactionContext.() -> Either<E, T>,
     ): Either<E, T> {
         // For noop implementation, read-only is the same as regular transaction
         val context = NoopTransactionContext(readOnly = true)
@@ -36,9 +34,7 @@ class NoopTransactionManager : TransactionManager {
  * No-operation implementation of TransactionContext.
  * Tracks rollback state but doesn't perform actual transaction management.
  */
-private class NoopTransactionContext(
-    private val readOnly: Boolean = false
-) : TransactionContext {
+private class NoopTransactionContext(private val readOnly: Boolean = false) : TransactionContext {
 
     private var markedForRollback = false
     private val transactionId = ULID.random()
@@ -51,4 +47,3 @@ private class NoopTransactionContext(
 
     override fun getTransactionId(): String = transactionId
 }
-

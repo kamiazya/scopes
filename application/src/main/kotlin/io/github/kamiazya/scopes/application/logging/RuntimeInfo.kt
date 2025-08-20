@@ -14,7 +14,5 @@ interface RuntimeInfo {
     /**
      * Converts the runtime information to a map with LogValue for type-safe serialization.
      */
-    fun toLogValueMap(): Map<String, LogValue> {
-        return toMap().toLogValueMap()
-    }
+    fun toLogValueMap(): Map<String, LogValue> = toMap().toLogValueMap()
 }

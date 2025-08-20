@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.domain.repository
 import arrow.core.Either
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.PersistenceError
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 
 /**
  * Repository interface for ContextView entity operations.

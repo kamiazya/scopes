@@ -38,41 +38,45 @@ graalvmNative {
             mainClass.set("io.github.kamiazya.scopes.presentation.cli.MainKt")
             useFatJar.set(true)
 
-            val commonArgs = listOf(
-                "-O2",
-                "--no-fallback",
-                "--gc=serial",
-                "--report-unsupported-elements-at-runtime",
-                "-H:+UnlockExperimentalVMOptions",
-                "-H:+ReportExceptionStackTraces",
-                "-H:+InstallExitHandlers",
-                "--initialize-at-build-time=kotlin",
-                "--initialize-at-build-time=kotlinx.coroutines",
-                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-            )
+            val commonArgs =
+                listOf(
+                    "-O2",
+                    "--no-fallback",
+                    "--gc=serial",
+                    "--report-unsupported-elements-at-runtime",
+                    "-H:+UnlockExperimentalVMOptions",
+                    "-H:+ReportExceptionStackTraces",
+                    "-H:+InstallExitHandlers",
+                    "--initialize-at-build-time=kotlin",
+                    "--initialize-at-build-time=kotlinx.coroutines",
+                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
+                )
 
             val os = System.getProperty("os.name").lowercase()
-            val isWindows = os.contains("windows") ||
-                System.getenv("RUNNER_OS") == "Windows" ||
-                (System.getenv("OS")?.lowercase()?.contains("windows") == true)
-            val isLinux = os.contains("linux") ||
-                System.getenv("RUNNER_OS") == "Linux" ||
-                (System.getenv("OS")?.lowercase()?.contains("linux") == true)
+            val isWindows =
+                os.contains("windows") ||
+                    System.getenv("RUNNER_OS") == "Windows" ||
+                    (System.getenv("OS")?.lowercase()?.contains("windows") == true)
+            val isLinux =
+                os.contains("linux") ||
+                    System.getenv("RUNNER_OS") == "Linux" ||
+                    (System.getenv("OS")?.lowercase()?.contains("linux") == true)
 
             // Only add minimal, non-duplicated platform specifics.
-            val platformSpecificArgs = if (isWindows) {
-                listOf(
-                    "-H:+AllowIncompleteClasspath",
-                    "-H:DeadlockWatchdogInterval=0"
-                )
-            } else if (isLinux) {
-                listOf(
-                    // On Linux, allow mostly-static linking (libc dynamically).
-                    "-H:+StaticExecutableWithDynamicLibC"
-                )
-            } else {
-                emptyList()
-            }
+            val platformSpecificArgs =
+                if (isWindows) {
+                    listOf(
+                        "-H:+AllowIncompleteClasspath",
+                        "-H:DeadlockWatchdogInterval=0",
+                    )
+                } else if (isLinux) {
+                    listOf(
+                        // On Linux, allow mostly-static linking (libc dynamically).
+                        "-H:+StaticExecutableWithDynamicLibC",
+                    )
+                } else {
+                    emptyList()
+                }
 
             buildArgs.addAll(commonArgs + platformSpecificArgs)
         }
@@ -116,4 +120,3 @@ tasks.cyclonedxBom {
     setOutputName("bom")
     setOutputFormat("json")
 }
-

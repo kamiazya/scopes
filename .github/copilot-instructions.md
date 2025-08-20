@@ -164,7 +164,7 @@ If `nativeCompile` fails:
 ### Module Structure
 ```
 ├── domain/              # Core business logic and entities
-├── application/         # Use cases and application services  
+├── application/         # Use cases and application services
 ├── infrastructure/      # External adapters and implementations
 ├── presentation-cli/    # CLI interface using Clikt
 ├── docs/               # Documentation following Diátaxis framework
@@ -215,7 +215,7 @@ git commit --no-verify
 ### Before Committing
 ```bash
 # Essential pre-commit checklist:
-./gradlew ktlintFormat --no-daemon       # Auto-fix formatting  
+./gradlew ktlintFormat --no-daemon       # Auto-fix formatting
 ./gradlew ktlintCheck detekt --no-daemon # Verify quality
 ./gradlew test --no-daemon               # Run tests (when dependencies available)
 ```
@@ -267,7 +267,7 @@ Native compilation for releases:
 4. Check Java version: `java -version` (must be 21)
 
 ### If Tests Fail
-1. Run tests in isolation: `./gradlew :module:test` 
+1. Run tests in isolation: `./gradlew :module:test`
 2. Check for code style issues: `./gradlew ktlintCheck`
 3. Verify no compilation errors: `./gradlew compileKotlin`
 

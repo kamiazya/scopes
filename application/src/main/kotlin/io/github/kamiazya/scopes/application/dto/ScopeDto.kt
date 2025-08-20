@@ -19,6 +19,5 @@ data class ScopeDTO(
     val customAliases: List<String> = emptyList(),
     val createdAt: Instant,
     val updatedAt: Instant,
-    val aspects: Map<String, List<String>> = emptyMap()
+    val aspects: Map<String, List<String>> = emptyMap(),
 ) : DTO
-

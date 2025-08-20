@@ -46,7 +46,7 @@ value class EventId private constructor(val value: String) {
         private const val SCHEMA = "evt"
         private const val NAMESPACE = "scopes"
         private val URI_PATTERN = Regex("^evt://scopes/[A-Z][A-Za-z]+/[0-9A-Z]{26}$")
-        
+
         /**
          * Create an EventId for a specific event type.
          * Generates a new ULID for uniqueness and time-ordering.
@@ -56,16 +56,16 @@ value class EventId private constructor(val value: String) {
          */
         fun create(eventType: String): Either<EventIdError, EventId> {
             val now = Clock.System.now()
-            
+
             return when {
                 eventType.isBlank() -> EventIdError.EmptyValue(
                     occurredAt = now,
-                    field = "eventType"
+                    field = "eventType",
                 ).left()
                 !eventType.matches(Regex("^[A-Z][A-Za-z]+$")) -> EventIdError.InvalidEventType(
                     occurredAt = now,
                     attemptedType = eventType,
-                    reason = "Event type must be in PascalCase (e.g., ScopeCreated)"
+                    reason = "Event type must be in PascalCase (e.g., ScopeCreated)",
                 ).left()
                 else -> {
                     try {
@@ -75,13 +75,13 @@ value class EventId private constructor(val value: String) {
                     } catch (e: Exception) {
                         EventIdError.UlidError(
                             occurredAt = now,
-                            reason = "Failed to generate ULID: ${e.message}"
+                            reason = "Failed to generate ULID: ${e.message}",
                         ).left()
                     }
                 }
             }
         }
-        
+
         /**
          * Create an EventId from a domain event class.
          * The class simple name will be used as the event type.
@@ -93,18 +93,16 @@ value class EventId private constructor(val value: String) {
             val eventType = klass.simpleName ?: return EventIdError.InvalidEventType(
                 occurredAt = Clock.System.now(),
                 attemptedType = "<anonymous>",
-                reason = "Cannot create EventId from anonymous class"
+                reason = "Cannot create EventId from anonymous class",
             ).left()
             return create(eventType)
         }
-        
+
         /**
          * Create an EventId from a domain event class (Java-friendly version).
          */
-        fun <T : Any> create(clazz: Class<T>): Either<EventIdError, EventId> {
-            return create(clazz.kotlin)
-        }
-        
+        fun <T : Any> create(clazz: Class<T>): Either<EventIdError, EventId> = create(clazz.kotlin)
+
         /**
          * Parse an EventId from a URI string.
          *
@@ -113,21 +111,21 @@ value class EventId private constructor(val value: String) {
          */
         fun parse(uri: String): Either<EventIdError, EventId> {
             val now = Clock.System.now()
-            
+
             return when {
                 uri.isBlank() -> EventIdError.EmptyValue(
                     occurredAt = now,
-                    field = "uri"
+                    field = "uri",
                 ).left()
                 !uri.startsWith("$SCHEMA://$NAMESPACE/") -> EventIdError.InvalidUriFormat(
                     occurredAt = now,
                     attemptedUri = uri,
-                    reason = "URI must start with $SCHEMA://$NAMESPACE/"
+                    reason = "URI must start with $SCHEMA://$NAMESPACE/",
                 ).left()
                 !URI_PATTERN.matches(uri) -> EventIdError.InvalidUriFormat(
                     occurredAt = now,
                     attemptedUri = uri,
-                    reason = "Invalid URI format. Expected: evt://scopes/{EventType}/{ULID}"
+                    reason = "Invalid URI format. Expected: evt://scopes/{EventType}/{ULID}",
                 ).left()
                 else -> {
                     val parts = uri.split("/")
@@ -135,7 +133,7 @@ value class EventId private constructor(val value: String) {
                         EventIdError.InvalidUriFormat(
                             occurredAt = now,
                             attemptedUri = uri,
-                            reason = "Invalid URI structure. Expected 5 parts, got ${parts.size}"
+                            reason = "Invalid URI structure. Expected 5 parts, got ${parts.size}",
                         ).left()
                     } else {
                         EventId(uri).right()

@@ -3,17 +3,17 @@ package io.github.kamiazya.scopes.domain.service
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.entity.ScopeAlias
-import io.github.kamiazya.scopes.domain.event.ScopeCreated
-import io.github.kamiazya.scopes.domain.event.ScopeEvent
-import io.github.kamiazya.scopes.domain.event.ScopeChanges
-import io.github.kamiazya.scopes.domain.event.ScopeDeleted
 import io.github.kamiazya.scopes.domain.event.AliasAssigned
 import io.github.kamiazya.scopes.domain.event.AliasRemoved
 import io.github.kamiazya.scopes.domain.event.CanonicalAliasReplaced
-import io.github.kamiazya.scopes.domain.event.ContextViewCreated
-import io.github.kamiazya.scopes.domain.event.ContextViewEvent
 import io.github.kamiazya.scopes.domain.event.ContextViewChanges
+import io.github.kamiazya.scopes.domain.event.ContextViewCreated
 import io.github.kamiazya.scopes.domain.event.ContextViewDeleted
+import io.github.kamiazya.scopes.domain.event.ContextViewEvent
+import io.github.kamiazya.scopes.domain.event.ScopeChanges
+import io.github.kamiazya.scopes.domain.event.ScopeCreated
+import io.github.kamiazya.scopes.domain.event.ScopeDeleted
+import io.github.kamiazya.scopes.domain.event.ScopeEvent
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 
@@ -52,11 +52,7 @@ interface DomainEventService {
      * @param version The version number after the update
      * @return List of specific events for each type of change
      */
-    suspend fun recordScopeUpdated(
-        scopeId: ScopeId,
-        changes: ScopeChanges,
-        version: Int
-    ): List<ScopeEvent>
+    suspend fun recordScopeUpdated(scopeId: ScopeId, changes: ScopeChanges, version: Int): List<ScopeEvent>
 
     /**
      * Records that a Scope has been deleted.
@@ -99,7 +95,7 @@ interface DomainEventService {
         scopeId: ScopeId,
         oldAlias: ScopeAlias,
         newAlias: ScopeAlias,
-        version: Int
+        version: Int,
     ): CanonicalAliasReplaced
 
     // ContextView-related events
@@ -123,7 +119,7 @@ interface DomainEventService {
     suspend fun recordContextViewUpdated(
         contextViewId: ContextViewId,
         changes: ContextViewChanges,
-        version: Int
+        version: Int,
     ): List<ContextViewEvent>
 
     /**
@@ -133,8 +129,5 @@ interface DomainEventService {
      * @param version The final version number
      * @return The created ContextViewDeleted event
      */
-    suspend fun recordContextViewDeleted(
-        contextViewId: ContextViewId,
-        version: Int
-    ): ContextViewDeleted
+    suspend fun recordContextViewDeleted(contextViewId: ContextViewId, version: Int): ContextViewDeleted
 }

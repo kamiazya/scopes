@@ -84,13 +84,13 @@ sealed class ScopeInputError : UserIntentionError() {
 
         data class Blank(
             override val occurredAt: Instant,
-            val attemptedValue: String
+            val attemptedValue: String,
         ) : IdError()
 
         data class InvalidFormat(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val expectedFormat: String = "ULID"
+            val expectedFormat: String = "ULID",
         ) : IdError()
     }
 
@@ -101,25 +101,25 @@ sealed class ScopeInputError : UserIntentionError() {
 
         data class Empty(
             override val occurredAt: Instant,
-            val attemptedValue: String
+            val attemptedValue: String,
         ) : TitleError()
 
         data class TooShort(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val minimumLength: Int
+            val minimumLength: Int,
         ) : TitleError()
 
         data class TooLong(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val maximumLength: Int
+            val maximumLength: Int,
         ) : TitleError()
 
         data class ContainsProhibitedCharacters(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val prohibitedCharacters: List<Char>
+            val prohibitedCharacters: List<Char>,
         ) : TitleError()
     }
 
@@ -131,7 +131,7 @@ sealed class ScopeInputError : UserIntentionError() {
         data class TooLong(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val maximumLength: Int
+            val maximumLength: Int,
         ) : DescriptionError()
     }
 
@@ -142,25 +142,25 @@ sealed class ScopeInputError : UserIntentionError() {
 
         data class Empty(
             override val occurredAt: Instant,
-            val attemptedValue: String
+            val attemptedValue: String,
         ) : AliasError()
 
         data class TooShort(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val minimumLength: Int
+            val minimumLength: Int,
         ) : AliasError()
 
         data class TooLong(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val maximumLength: Int
+            val maximumLength: Int,
         ) : AliasError()
 
         data class InvalidFormat(
             override val occurredAt: Instant,
             val attemptedValue: String,
-            val expectedPattern: String
+            val expectedPattern: String,
         ) : AliasError()
     }
 }
@@ -176,18 +176,18 @@ sealed class AspectError : UserIntentionError() {
     sealed class KeyError : AspectError() {
 
         data class Empty(
-            override val occurredAt: Instant
+            override val occurredAt: Instant,
         ) : KeyError()
 
         data class InvalidFormat(
             override val occurredAt: Instant,
             val attemptedKey: String,
-            val expectedPattern: String
+            val expectedPattern: String,
         ) : KeyError()
 
         data class Reserved(
             override val occurredAt: Instant,
-            val attemptedKey: String
+            val attemptedKey: String,
         ) : KeyError()
     }
 
@@ -198,14 +198,14 @@ sealed class AspectError : UserIntentionError() {
 
         data class Empty(
             override val occurredAt: Instant,
-            val aspectKey: String
+            val aspectKey: String,
         ) : ValueError()
 
         data class NotInAllowedValues(
             override val occurredAt: Instant,
             val aspectKey: String,
             val attemptedValue: String,
-            val allowedValues: List<String>
+            val allowedValues: List<String>,
         ) : ValueError()
     }
 }
@@ -221,18 +221,18 @@ sealed class ContextError : UserIntentionError() {
     sealed class NamingError : ContextError() {
 
         data class Empty(
-            override val occurredAt: Instant
+            override val occurredAt: Instant,
         ) : NamingError()
 
         data class AlreadyExists(
             override val occurredAt: Instant,
             val attemptedName: String,
-            val existingContextId: ContextViewId
+            val existingContextId: ContextViewId,
         ) : NamingError()
 
         data class InvalidFormat(
             override val occurredAt: Instant,
-            val attemptedName: String
+            val attemptedName: String,
         ) : NamingError()
     }
 
@@ -245,19 +245,19 @@ sealed class ContextError : UserIntentionError() {
             override val occurredAt: Instant,
             val expression: String,
             val position: Int,
-            val reason: String
+            val reason: String,
         ) : FilterError()
 
         data class UnknownAspect(
             override val occurredAt: Instant,
             val expression: String,
-            val unknownAspectKey: String
+            val unknownAspectKey: String,
         ) : FilterError()
 
         data class LogicalInconsistency(
             override val occurredAt: Instant,
             val expression: String,
-            val reason: String
+            val reason: String,
         ) : FilterError()
     }
 }
@@ -272,37 +272,37 @@ sealed class ScopeHierarchyError : ConceptualModelError() {
     data class CircularReference(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
-        val cyclePath: List<ScopeId>
+        val cyclePath: List<ScopeId>,
     ) : ScopeHierarchyError()
 
     data class MaxDepthExceeded(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
         val attemptedDepth: Int,
-        val maximumDepth: Int
+        val maximumDepth: Int,
     ) : ScopeHierarchyError()
 
     data class MaxChildrenExceeded(
         override val occurredAt: Instant,
         val parentScopeId: ScopeId,
         val currentChildrenCount: Int,
-        val maximumChildren: Int
+        val maximumChildren: Int,
     ) : ScopeHierarchyError()
 
     data class SelfParenting(
         override val occurredAt: Instant,
-        val scopeId: ScopeId
+        val scopeId: ScopeId,
     ) : ScopeHierarchyError()
 
     data class ParentNotFound(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
-        val parentId: ScopeId
+        val parentId: ScopeId,
     ) : ScopeHierarchyError()
 
     data class InvalidParentId(
         override val occurredAt: Instant,
-        val invalidId: String
+        val invalidId: String,
     ) : ScopeHierarchyError()
 }
 
@@ -322,7 +322,7 @@ sealed class ScopeUniquenessError : ConceptualModelError() {
         override val occurredAt: Instant,
         val title: String,
         val parentScopeId: ScopeId?,
-        val existingScopeId: ScopeId
+        val existingScopeId: ScopeId,
     ) : ScopeUniquenessError()
 }
 
@@ -334,24 +334,24 @@ sealed class AggregateIdError : ConceptualModelError() {
     data class InvalidType(
         override val occurredAt: Instant,
         val attemptedType: String,
-        val validTypes: Set<String>
+        val validTypes: Set<String>,
     ) : AggregateIdError()
 
     data class InvalidIdFormat(
         override val occurredAt: Instant,
         val attemptedId: String,
-        val expectedFormat: String
+        val expectedFormat: String,
     ) : AggregateIdError()
 
     data class InvalidUriFormat(
         override val occurredAt: Instant,
         val attemptedUri: String,
-        val reason: String
+        val reason: String,
     ) : AggregateIdError()
 
     data class EmptyValue(
         override val occurredAt: Instant,
-        val field: String // "type" or "id" or "uri"
+        val field: String, // "type" or "id" or "uri"
     ) : AggregateIdError()
 }
 
@@ -364,24 +364,24 @@ sealed class ScopeAliasError : ConceptualModelError() {
         override val occurredAt: Instant,
         val aliasName: String,
         val existingScopeId: ScopeId,
-        val attemptedScopeId: ScopeId
+        val attemptedScopeId: ScopeId,
     ) : ScopeAliasError()
 
     data class CanonicalAliasAlreadyExists(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
-        val existingCanonicalAlias: String
+        val existingCanonicalAlias: String,
     ) : ScopeAliasError()
 
     data class AliasNotFound(
         override val occurredAt: Instant,
-        val aliasName: String
+        val aliasName: String,
     ) : ScopeAliasError()
 
     data class CannotRemoveCanonicalAlias(
         override val occurredAt: Instant,
         val scopeId: ScopeId,
-        val canonicalAlias: String
+        val canonicalAlias: String,
     ) : ScopeAliasError()
 }
 
@@ -393,13 +393,13 @@ sealed class ContextStateError : ConceptualModelError() {
     data class NotFound(
         override val occurredAt: Instant,
         val contextId: ContextViewId?,
-        val contextName: String?
+        val contextName: String?,
     ) : ContextStateError()
 
     data class FilterProducesNoResults(
         override val occurredAt: Instant,
         val contextName: String,
-        val filterExpression: String
+        val filterExpression: String,
     ) : ContextStateError()
 }
 
@@ -413,14 +413,14 @@ sealed class PersistenceError : InfrastructuralError() {
     data class StorageUnavailable(
         override val occurredAt: Instant,
         val operation: String,
-        val cause: Throwable?
+        val cause: Throwable?,
     ) : PersistenceError()
 
     data class DataCorruption(
         override val occurredAt: Instant,
         val entityType: String,
         val entityId: String?,
-        val reason: String
+        val reason: String,
     ) : PersistenceError()
 
     data class ConcurrencyConflict(
@@ -428,7 +428,7 @@ sealed class PersistenceError : InfrastructuralError() {
         val entityType: String,
         val entityId: String,
         val expectedVersion: String,
-        val actualVersion: String
+        val actualVersion: String,
     ) : PersistenceError()
 }
 
@@ -440,12 +440,12 @@ sealed class ExternalSystemError : InfrastructuralError() {
     data class ServiceUnavailable(
         override val occurredAt: Instant,
         val serviceName: String,
-        val operation: String
+        val operation: String,
     ) : ExternalSystemError()
 
     data class AuthenticationFailed(
         override val occurredAt: Instant,
-        val serviceName: String
+        val serviceName: String,
     ) : ExternalSystemError()
 }
 
@@ -472,7 +472,7 @@ enum class ErrorRecoverability {
      * Requires system administrator or technical intervention.
      * Difficult for users to resolve directly.
      */
-    TECHNICAL_INTERVENTION_REQUIRED
+    TECHNICAL_INTERVENTION_REQUIRED,
 }
 
 // ===== HELPER FUNCTIONS =====

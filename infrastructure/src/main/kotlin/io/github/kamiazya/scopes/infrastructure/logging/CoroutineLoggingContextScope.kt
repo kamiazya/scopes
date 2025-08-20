@@ -12,10 +12,8 @@ import kotlin.coroutines.coroutineContext
  */
 class CoroutineLoggingContextScope : LoggingContextScope {
 
-    override suspend fun <T> withContext(context: LoggingContext, block: suspend () -> T): T {
-        return withContext(LoggingCoroutineContext(context)) {
-            block()
-        }
+    override suspend fun <T> withContext(context: LoggingContext, block: suspend () -> T): T = withContext(LoggingCoroutineContext(context)) {
+        block()
     }
 
     override suspend fun <T> withAdditionalMetadata(metadata: Map<String, Any>, block: suspend () -> T): T {
@@ -29,8 +27,5 @@ class CoroutineLoggingContextScope : LoggingContextScope {
         }
     }
 
-    override suspend fun getCurrentContext(): LoggingContext? {
-        return coroutineContext[LoggingCoroutineContext]?.loggingContext
-    }
+    override suspend fun getCurrentContext(): LoggingContext? = coroutineContext[LoggingCoroutineContext]?.loggingContext
 }
-

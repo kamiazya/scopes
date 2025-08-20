@@ -15,7 +15,7 @@ sealed class SaveAspectDefinition : Command {
     data class Text(
         override val key: String,
         override val description: String? = null,
-        override val allowMultiple: Boolean = false
+        override val allowMultiple: Boolean = false,
     ) : SaveAspectDefinition()
 
     /**
@@ -24,7 +24,7 @@ sealed class SaveAspectDefinition : Command {
     data class Numeric(
         override val key: String,
         override val description: String? = null,
-        override val allowMultiple: Boolean = false
+        override val allowMultiple: Boolean = false,
     ) : SaveAspectDefinition()
 
     /**
@@ -33,7 +33,7 @@ sealed class SaveAspectDefinition : Command {
     data class BooleanType(
         override val key: String,
         override val description: String? = null,
-        override val allowMultiple: Boolean = false
+        override val allowMultiple: Boolean = false,
     ) : SaveAspectDefinition()
 
     /**
@@ -43,7 +43,6 @@ sealed class SaveAspectDefinition : Command {
         override val key: String,
         val allowedValues: List<String>,
         override val description: String? = null,
-        override val allowMultiple: Boolean = false
+        override val allowMultiple: Boolean = false,
     ) : SaveAspectDefinition()
 }
-

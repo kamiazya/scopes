@@ -11,7 +11,9 @@ import org.koin.core.component.inject
  * Entry point for all CLI operations.
  * Uses Koin dependency injection for Clean Architecture compliance.
  */
-class ScopesCommand : CliktCommand(name = "scopes"), KoinComponent {
+class ScopesCommand :
+    CliktCommand(name = "scopes"),
+    KoinComponent {
     private val createScopeCommand: CreateScopeCommand by inject()
 
     init {
@@ -24,5 +26,3 @@ class ScopesCommand : CliktCommand(name = "scopes"), KoinComponent {
         // Main command logic - show help if no subcommand
     }
 }
-
-

@@ -8,19 +8,17 @@ import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.ContextError
 import io.github.kamiazya.scopes.application.error.ScopeInputError
 import io.github.kamiazya.scopes.application.error.toApplicationError
-import io.github.kamiazya.scopes.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.application.logging.Logger
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
 import io.github.kamiazya.scopes.application.usecase.command.CreateContextView
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 
 /**
  * Handler for creating a new context view.
@@ -34,32 +32,38 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
 class CreateContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val transactionManager: TransactionManager,
-    private val logger: Logger
+    private val logger: Logger,
 ) : UseCase<CreateContextView, ApplicationError, ContextViewResult> {
 
     override suspend operator fun invoke(input: CreateContextView): Either<ApplicationError, ContextViewResult> = either {
-        logger.info("Creating new context view", mapOf(
-            "key" to input.key,
-            "name" to input.name,
-            "filterExpression" to input.filterExpression
-        ))
+        logger.info(
+            "Creating new context view",
+            mapOf(
+                "key" to input.key,
+                "name" to input.name,
+                "filterExpression" to input.filterExpression,
+            ),
+        )
 
         transactionManager.inTransaction {
             either {
                 // Validate and create context key
                 logger.debug("Validating context key", mapOf("key" to input.key))
                 val contextKey = ContextViewKey.create(input.key).mapLeft { errorMsg ->
-                    logger.warn("Invalid context key format", mapOf(
-                        "key" to input.key,
-                        "error" to errorMsg
-                    ))
+                    logger.warn(
+                        "Invalid context key format",
+                        mapOf(
+                            "key" to input.key,
+                            "error" to errorMsg,
+                        ),
+                    )
                     when {
                         errorMsg.contains("empty", ignoreCase = true) -> ContextError.KeyEmpty
                         errorMsg.contains("already exists", ignoreCase = true) -> ContextError.KeyAlreadyExists(
-                            attemptedKey = input.key
+                            attemptedKey = input.key,
                         )
                         else -> ContextError.KeyInvalidFormat(
-                            attemptedKey = input.key
+                            attemptedKey = input.key,
                         )
                     }
                 }.bind()
@@ -67,16 +71,20 @@ class CreateContextViewHandler(
                 // Validate and create context name
                 logger.debug("Validating context name", mapOf("name" to input.name))
                 val contextName = ContextViewName.create(input.name).mapLeft { errorMsg ->
-                    logger.warn("Invalid context name format", mapOf(
-                        "name" to input.name,
-                        "error" to errorMsg
-                    ))
+                    logger.warn(
+                        "Invalid context name format",
+                        mapOf(
+                            "name" to input.name,
+                            "error" to errorMsg,
+                        ),
+                    )
                     when {
                         errorMsg.contains("empty", ignoreCase = true) -> ContextError.NameEmpty
-                        errorMsg.contains("exceed", ignoreCase = true) || errorMsg.contains("too long", ignoreCase = true) -> 
+                        errorMsg.contains("exceed", ignoreCase = true) ||
+                            errorMsg.contains("too long", ignoreCase = true) ->
                             ContextError.NameTooLong(
                                 attemptedName = input.name,
-                                maximumLength = 100
+                                maximumLength = 100,
                             )
                         else -> ContextError.NameInvalidFormat(attemptedName = input.name)
                     }
@@ -85,33 +93,42 @@ class CreateContextViewHandler(
                 // Validate and create filter
                 logger.debug("Validating filter expression", mapOf("filter" to input.filterExpression))
                 val contextFilter = ContextViewFilter.create(input.filterExpression).mapLeft { errorMsg ->
-                    logger.warn("Invalid filter expression", mapOf(
-                        "filter" to input.filterExpression,
-                        "error" to errorMsg
-                    ))
+                    logger.warn(
+                        "Invalid filter expression",
+                        mapOf(
+                            "filter" to input.filterExpression,
+                            "error" to errorMsg,
+                        ),
+                    )
                     ContextError.FilterInvalidSyntax(
                         position = 0,
                         reason = errorMsg,
-                        expression = input.filterExpression
+                        expression = input.filterExpression,
                     )
                 }.bind()
 
                 // Check if a context with the same key already exists
                 logger.debug("Checking for duplicate context key", mapOf("key" to contextKey.value))
                 val existingContext = contextViewRepository.findByKey(contextKey).mapLeft { error ->
-                    logger.error("Failed to check existing context", mapOf(
-                        "key" to contextKey.value,
-                        "error" to (error::class.simpleName ?: "Unknown")
-                    ))
+                    logger.error(
+                        "Failed to check existing context",
+                        mapOf(
+                            "key" to contextKey.value,
+                            "error" to (error::class.simpleName ?: "Unknown"),
+                        ),
+                    )
                     error.toApplicationError()
                 }.bind()
 
                 ensure(existingContext == null) {
-                    logger.warn("Context with same key already exists", mapOf(
-                        "key" to input.key
-                    ))
+                    logger.warn(
+                        "Context with same key already exists",
+                        mapOf(
+                            "key" to input.key,
+                        ),
+                    )
                     ContextError.KeyAlreadyExists(
-                        attemptedKey = input.key
+                        attemptedKey = input.key,
                     )
                 }
 
@@ -119,13 +136,16 @@ class CreateContextViewHandler(
                 val description = input.description?.let { desc ->
                     logger.debug("Validating description", mapOf("length" to desc.length))
                     ContextViewDescription.create(desc).mapLeft { errorMsg ->
-                        logger.warn("Description validation failed", mapOf(
-                            "length" to desc.length,
-                            "error" to errorMsg
-                        ))
+                        logger.warn(
+                            "Description validation failed",
+                            mapOf(
+                                "length" to desc.length,
+                                "error" to errorMsg,
+                            ),
+                        )
                         ScopeInputError.DescriptionTooLong(
                             attemptedValue = desc,
-                            maximumLength = 500
+                            maximumLength = 500,
                         )
                     }.bind()
                 }
@@ -139,27 +159,36 @@ class CreateContextViewHandler(
                     filter = contextFilter,
                     description = description,
                     createdAt = now,
-                    updatedAt = now
+                    updatedAt = now,
                 )
 
-                logger.debug("Saving context view", mapOf(
-                    "id" to contextView.id.value,
-                    "name" to contextView.name.value
-                ))
+                logger.debug(
+                    "Saving context view",
+                    mapOf(
+                        "id" to contextView.id.value,
+                        "name" to contextView.name.value,
+                    ),
+                )
 
                 // Save to repository
                 val saved = contextViewRepository.save(contextView).mapLeft { error ->
-                    logger.error("Failed to save context view", mapOf(
-                        "id" to contextView.id.value,
-                        "error" to (error::class.simpleName ?: "Unknown")
-                    ))
+                    logger.error(
+                        "Failed to save context view",
+                        mapOf(
+                            "id" to contextView.id.value,
+                            "error" to (error::class.simpleName ?: "Unknown"),
+                        ),
+                    )
                     error.toApplicationError()
                 }.bind()
 
-                logger.info("Context view created successfully", mapOf(
-                    "id" to saved.id.value,
-                    "name" to saved.name.value
-                ))
+                logger.info(
+                    "Context view created successfully",
+                    mapOf(
+                        "id" to saved.id.value,
+                        "name" to saved.name.value,
+                    ),
+                )
 
                 // Map to DTO
                 ContextViewResult(
@@ -170,14 +199,17 @@ class CreateContextViewHandler(
                     description = saved.description?.value,
                     isActive = false, // Newly created context is not active by default
                     createdAt = saved.createdAt,
-                    updatedAt = saved.updatedAt
+                    updatedAt = saved.updatedAt,
                 )
             }
         }.bind()
     }.onLeft { error ->
-        logger.error("Failed to create context view", mapOf(
-            "error" to (error::class.simpleName ?: "Unknown"),
-            "message" to error.toString()
-        ))
+        logger.error(
+            "Failed to create context view",
+            mapOf(
+                "error" to (error::class.simpleName ?: "Unknown"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }

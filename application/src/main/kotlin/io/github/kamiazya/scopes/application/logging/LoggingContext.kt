@@ -11,48 +11,38 @@ data class LoggingContext(
     val sessionId: String = generateSessionId(),
     val loggerName: String? = null,
     val operationType: String? = null,
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
 ) {
     /**
      * Creates a new LoggingContext with additional metadata.
      */
-    fun withMetadata(additionalMetadata: Map<String, Any>): LoggingContext {
-        return copy(metadata = metadata + additionalMetadata)
-    }
+    fun withMetadata(additionalMetadata: Map<String, Any>): LoggingContext = copy(metadata = metadata + additionalMetadata)
 
     /**
      * Creates a new LoggingContext with additional metadata.
      * Alias for withMetadata for consistency with the interface.
      */
-    fun withAdditionalMetadata(additionalMetadata: Map<String, Any>): LoggingContext {
-        return withMetadata(additionalMetadata)
-    }
+    fun withAdditionalMetadata(additionalMetadata: Map<String, Any>): LoggingContext = withMetadata(additionalMetadata)
 
     /**
      * Creates a new LoggingContext with a specific logger name.
      */
-    fun withLoggerName(name: String): LoggingContext {
-        return copy(loggerName = name)
-    }
+    fun withLoggerName(name: String): LoggingContext = copy(loggerName = name)
 
     /**
      * Converts this context to a map suitable for logging.
      */
-    fun toMap(): Map<String, Any> {
-        return buildMap {
-            put("sessionId", sessionId)
-            loggerName?.let { put("logger", it) }
-            operationType?.let { put("operationType", it) }
-            putAll(metadata)
-        }
+    fun toMap(): Map<String, Any> = buildMap {
+        put("sessionId", sessionId)
+        loggerName?.let { put("logger", it) }
+        operationType?.let { put("operationType", it) }
+        putAll(metadata)
     }
 
     /**
      * Converts this context to a map with LogValue for type-safe serialization.
      */
-    fun toLogValueMap(): Map<String, LogValue> {
-        return toMap().toLogValueMap()
-    }
+    fun toLogValueMap(): Map<String, LogValue> = toMap().toLogValueMap()
 
     companion object {
         /**
@@ -65,4 +55,3 @@ data class LoggingContext(
         }
     }
 }
-

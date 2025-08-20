@@ -23,14 +23,17 @@ import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
  */
 class FilterExpressionParser {
 
-    private data class Token(
-        val type: TokenType,
-        val value: String,
-        val position: Int
-    )
+    private data class Token(val type: TokenType, val value: String, val position: Int)
 
     private enum class TokenType {
-        KEY, OPERATOR, VALUE, AND, OR, LEFT_PAREN, RIGHT_PAREN, EOF
+        KEY,
+        OPERATOR,
+        VALUE,
+        AND,
+        OR,
+        LEFT_PAREN,
+        RIGHT_PAREN,
+        EOF,
     }
 
     /**
@@ -119,9 +122,9 @@ class FilterExpressionParser {
                     val tokenType = when {
                         lastToken?.type == TokenType.OPERATOR -> TokenType.VALUE
                         lastToken?.type == null ||
-                        lastToken.type == TokenType.AND ||
-                        lastToken.type == TokenType.OR ||
-                        lastToken.type == TokenType.LEFT_PAREN -> TokenType.KEY
+                            lastToken.type == TokenType.AND ||
+                            lastToken.type == TokenType.OR ||
+                            lastToken.type == TokenType.LEFT_PAREN -> TokenType.KEY
                         else -> TokenType.VALUE
                     }
 
@@ -190,11 +193,11 @@ class FilterExpressionParser {
 
                 val key = AspectKey.create(token.value).fold(
                     ifLeft = { throw ParseException("Invalid aspect key: ${token.value}") },
-                    ifRight = { it }
+                    ifRight = { it },
                 )
                 val value = AspectValue.create(valueToken.value).fold(
                     ifLeft = { throw ParseException("Invalid aspect value: ${valueToken.value}") },
-                    ifRight = { it }
+                    ifRight = { it },
                 )
                 val operator = parseOperator(operatorToken.value)
 
@@ -218,4 +221,3 @@ class FilterExpressionParser {
 
     private class ParseException(message: String) : Exception(message)
 }
-

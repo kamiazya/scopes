@@ -12,7 +12,7 @@ import kotlinx.datetime.Instant
  *
  * Each alias is an alternative identifier for a scope, allowing users to reference
  * scopes using memorable names instead of ULIDs.
- * 
+ *
  * The alias has its own unique ID (ULID) for tracking purposes, allowing the alias
  * name to be changed while maintaining identity and audit trail.
  *
@@ -24,12 +24,12 @@ import kotlinx.datetime.Instant
  * - Canonical aliases cannot be removed, only replaced
  */
 data class ScopeAlias(
-    val id: AliasId,  // Unique identifier for this alias
+    val id: AliasId, // Unique identifier for this alias
     val scopeId: ScopeId,
     val aliasName: AliasName,
     val aliasType: AliasType,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 ) {
 
     companion object {
@@ -40,31 +40,27 @@ data class ScopeAlias(
         fun createCanonical(
             scopeId: ScopeId,
             aliasName: AliasName,
-            timestamp: Instant = Clock.System.now()
+            timestamp: Instant = Clock.System.now(),
         ): ScopeAlias = ScopeAlias(
             id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CANONICAL,
             createdAt = timestamp,
-            updatedAt = timestamp
+            updatedAt = timestamp,
         )
 
         /**
          * Creates a new custom alias for a scope.
          * Generates a new unique ID for the alias.
          */
-        fun createCustom(
-            scopeId: ScopeId,
-            aliasName: AliasName,
-            timestamp: Instant = Clock.System.now()
-        ): ScopeAlias = ScopeAlias(
+        fun createCustom(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = ScopeAlias(
             id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CUSTOM,
             createdAt = timestamp,
-            updatedAt = timestamp
+            updatedAt = timestamp,
         )
 
         /**
@@ -75,14 +71,14 @@ data class ScopeAlias(
             id: AliasId,
             scopeId: ScopeId,
             aliasName: AliasName,
-            timestamp: Instant = Clock.System.now()
+            timestamp: Instant = Clock.System.now(),
         ): ScopeAlias = ScopeAlias(
             id = id,
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CANONICAL,
             createdAt = timestamp,
-            updatedAt = timestamp
+            updatedAt = timestamp,
         )
     }
 
@@ -99,13 +95,11 @@ data class ScopeAlias(
     /**
      * Creates a copy of this alias with updated timestamp.
      */
-    fun withUpdatedTimestamp(timestamp: Instant = Clock.System.now()): ScopeAlias =
-        copy(updatedAt = timestamp)
+    fun withUpdatedTimestamp(timestamp: Instant = Clock.System.now()): ScopeAlias = copy(updatedAt = timestamp)
 
     /**
      * Changes the alias name while preserving the ID and other properties.
      * This allows tracking the same alias entity even when renamed.
      */
-    fun withNewName(newName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias =
-        copy(aliasName = newName, updatedAt = timestamp)
+    fun withNewName(newName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = copy(aliasName = newName, updatedAt = timestamp)
 }

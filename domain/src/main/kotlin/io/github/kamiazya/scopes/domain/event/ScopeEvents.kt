@@ -5,12 +5,12 @@ import arrow.core.NonEmptyList
 import io.github.kamiazya.scopes.domain.entity.Scope
 import io.github.kamiazya.scopes.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.domain.valueobject.AggregateId
-import io.github.kamiazya.scopes.domain.valueobject.EventId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.domain.valueobject.EventId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Instant
 
 /**
@@ -30,23 +30,21 @@ data class ScopeCreated(
     val title: ScopeTitle,
     val description: ScopeDescription?,
     val parentId: ScopeId?,
-    val aspects: Map<AspectKey, NonEmptyList<AspectValue>>
+    val aspects: Map<AspectKey, NonEmptyList<AspectValue>>,
 ) : ScopeEvent() {
     companion object {
-        fun from(scope: Scope, eventId: EventId): Either<AggregateIdError, ScopeCreated> {
-            return scope.id.toAggregateId().map { aggregateId ->
-                ScopeCreated(
-                    aggregateId = aggregateId,
-                    eventId = eventId,
-                    occurredAt = scope.createdAt,
-                    version = 1,
-                    scopeId = scope.id,
-                    title = scope.title,
-                    description = scope.description,
-                    parentId = scope.parentId,
-                    aspects = scope.getAspects()
-                )
-            }
+        fun from(scope: Scope, eventId: EventId): Either<AggregateIdError, ScopeCreated> = scope.id.toAggregateId().map { aggregateId ->
+            ScopeCreated(
+                aggregateId = aggregateId,
+                eventId = eventId,
+                occurredAt = scope.createdAt,
+                version = 1,
+                scopeId = scope.id,
+                title = scope.title,
+                description = scope.description,
+                parentId = scope.parentId,
+                aspects = scope.getAspects(),
+            )
         }
     }
 }
@@ -61,7 +59,7 @@ data class ScopeTitleUpdated(
     override val version: Int,
     val scopeId: ScopeId,
     val oldTitle: ScopeTitle,
-    val newTitle: ScopeTitle
+    val newTitle: ScopeTitle,
 ) : ScopeEvent()
 
 /**
@@ -74,7 +72,7 @@ data class ScopeDescriptionUpdated(
     override val version: Int,
     val scopeId: ScopeId,
     val oldDescription: ScopeDescription?,
-    val newDescription: ScopeDescription?
+    val newDescription: ScopeDescription?,
 ) : ScopeEvent()
 
 /**
@@ -87,7 +85,7 @@ data class ScopeParentChanged(
     override val version: Int,
     val scopeId: ScopeId,
     val oldParentId: ScopeId?,
-    val newParentId: ScopeId?
+    val newParentId: ScopeId?,
 ) : ScopeEvent()
 
 /**
@@ -100,7 +98,7 @@ data class ScopeAspectAdded(
     override val version: Int,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
-    val aspectValue: AspectValue
+    val aspectValue: AspectValue,
 ) : ScopeEvent()
 
 /**
@@ -113,7 +111,7 @@ data class ScopeAspectRemoved(
     override val version: Int,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
-    val aspectValue: AspectValue
+    val aspectValue: AspectValue,
 ) : ScopeEvent()
 
 /**
@@ -126,7 +124,7 @@ data class ScopeAspectCleared(
     override val version: Int,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
-    val removedValues: NonEmptyList<AspectValue>
+    val removedValues: NonEmptyList<AspectValue>,
 ) : ScopeEvent()
 
 /**
@@ -138,7 +136,7 @@ data class ScopeArchived(
     override val occurredAt: Instant,
     override val version: Int,
     val scopeId: ScopeId,
-    val reason: String?
+    val reason: String?,
 ) : ScopeEvent()
 
 /**
@@ -149,7 +147,7 @@ data class ScopeRestored(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val version: Int,
-    val scopeId: ScopeId
+    val scopeId: ScopeId,
 ) : ScopeEvent()
 
 /**
@@ -161,7 +159,7 @@ data class ScopeDeleted(
     override val occurredAt: Instant,
     override val version: Int,
     val scopeId: ScopeId,
-    val deletedAt: Instant
+    val deletedAt: Instant,
 ) : ScopeEvent()
 
 /**
@@ -171,12 +169,12 @@ data class ScopeChanges(
     val titleChange: TitleChange? = null,
     val descriptionChange: DescriptionChange? = null,
     val parentChange: ParentChange? = null,
-    val aspectChanges: List<AspectChange> = emptyList()
+    val aspectChanges: List<AspectChange> = emptyList(),
 ) {
     data class TitleChange(val oldTitle: ScopeTitle, val newTitle: ScopeTitle)
     data class DescriptionChange(val oldDescription: ScopeDescription?, val newDescription: ScopeDescription?)
     data class ParentChange(val oldParentId: ScopeId?, val newParentId: ScopeId?)
-    
+
     sealed class AspectChange {
         data class Added(val key: AspectKey, val value: AspectValue) : AspectChange()
         data class Removed(val key: AspectKey, val value: AspectValue) : AspectChange()

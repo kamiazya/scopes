@@ -400,5 +400,3 @@ jobs:
         sarif_file: binaries
         category: vulnerability-scan
       continue-on-error: true
-
-

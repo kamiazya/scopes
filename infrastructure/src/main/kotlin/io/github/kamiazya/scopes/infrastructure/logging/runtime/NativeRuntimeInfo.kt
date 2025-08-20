@@ -14,20 +14,18 @@ data class NativeRuntimeInfo(
     val architecture: String,
     val availableProcessors: Int,
     val totalMemory: Long,
-    val maxMemory: Long
+    val maxMemory: Long,
 ) : RuntimeInfo {
 
-    override fun toMap(): Map<String, Any> {
-        return mapOf(
-            "runtime.type" to "native",
-            "process.id" to processId,
-            "host.name" to hostname,
-            "os.name" to osName,
-            "os.version" to osVersion,
-            "os.arch" to architecture,
-            "cpu.count" to availableProcessors,
-            "memory.total" to totalMemory,
-            "memory.max" to maxMemory
-        )
-    }
+    override fun toMap(): Map<String, Any> = mapOf(
+        "runtime.type" to "native",
+        "process.id" to processId,
+        "host.name" to hostname,
+        "os.name" to osName,
+        "os.version" to osVersion,
+        "os.arch" to architecture,
+        "cpu.count" to availableProcessors,
+        "memory.total" to totalMemory,
+        "memory.max" to maxMemory,
+    )
 }

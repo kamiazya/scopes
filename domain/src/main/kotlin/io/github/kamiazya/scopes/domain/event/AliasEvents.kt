@@ -4,11 +4,11 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.domain.valueobject.AggregateId
-import io.github.kamiazya.scopes.domain.valueobject.EventId
 import io.github.kamiazya.scopes.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.domain.valueobject.AliasName
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.domain.valueobject.AliasType
+import io.github.kamiazya.scopes.domain.valueobject.EventId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
 /**
@@ -27,22 +27,20 @@ data class AliasAssigned(
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
-    val aliasType: AliasType
+    val aliasType: AliasType,
 ) : AliasEvent() {
     companion object {
-        fun from(alias: ScopeAlias, eventId: EventId): Either<AggregateIdError, AliasAssigned> {
-            return alias.id.toAggregateId().map { aggregateId ->
-                AliasAssigned(
-                    aggregateId = aggregateId,
-                    eventId = eventId,
-                    occurredAt = alias.createdAt,
-                    version = 1,
-                    aliasId = alias.id,
-                    aliasName = alias.aliasName,
-                    scopeId = alias.scopeId,
-                    aliasType = alias.aliasType
-                )
-            }
+        fun from(alias: ScopeAlias, eventId: EventId): Either<AggregateIdError, AliasAssigned> = alias.id.toAggregateId().map { aggregateId ->
+            AliasAssigned(
+                aggregateId = aggregateId,
+                eventId = eventId,
+                occurredAt = alias.createdAt,
+                version = 1,
+                aliasId = alias.id,
+                aliasName = alias.aliasName,
+                scopeId = alias.scopeId,
+                aliasType = alias.aliasType,
+            )
         }
     }
 }
@@ -59,7 +57,7 @@ data class AliasRemoved(
     val aliasName: AliasName,
     val scopeId: ScopeId,
     val aliasType: AliasType,
-    val removedAt: Instant
+    val removedAt: Instant,
 ) : AliasEvent()
 
 /**
@@ -74,7 +72,7 @@ data class AliasNameChanged(
     val aliasId: AliasId,
     val scopeId: ScopeId,
     val oldAliasName: AliasName,
-    val newAliasName: AliasName
+    val newAliasName: AliasName,
 ) : AliasEvent()
 
 /**
@@ -90,5 +88,5 @@ data class CanonicalAliasReplaced(
     val oldAliasId: AliasId,
     val oldAliasName: AliasName,
     val newAliasId: AliasId,
-    val newAliasName: AliasName
+    val newAliasName: AliasName,
 ) : AliasEvent()

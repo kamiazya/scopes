@@ -124,4 +124,3 @@ interface ScopeAliasRepository {
      */
     suspend fun listAll(offset: Int = 0, limit: Int = 100): Either<PersistenceError, List<ScopeAlias>>
 }
-

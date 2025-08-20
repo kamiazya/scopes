@@ -63,12 +63,10 @@ object AspectDefinitionDefaults {
     /**
      * Get a specific default definition by key name.
      */
-    fun getByKey(keyName: String): AspectDefinition? =
-        all().find { it.key.value == keyName }
+    fun getByKey(keyName: String): AspectDefinition? = all().find { it.key.value == keyName }
 
     /**
      * Get all available default aspect keys.
      */
     fun availableKeys(): List<String> = all().map { it.key.value }
 }
-

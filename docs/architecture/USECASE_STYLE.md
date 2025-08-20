@@ -91,11 +91,11 @@ Mappers are responsible for converting between domain entities and application D
 
 ```kotlin
 object ScopeMapper {
-    
+
     /**
      * Map Scope entity to CreateScopeResult DTO.
      */
-    fun toCreateScopeResult(scope: Scope): CreateScopeResult = 
+    fun toCreateScopeResult(scope: Scope): CreateScopeResult =
         CreateScopeResult(
             id = scope.id.toString(),
             title = scope.title.value,
@@ -122,10 +122,10 @@ Mappers integrate seamlessly with the UseCase pattern at the final step of handl
 **Before (Inline Mapping - Avoid)**:
 ```kotlin
 class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateScopeResult> {
-    
+
     override suspend operator fun invoke(input: CreateScope): Either<CreateScopeError, CreateScopeResult> {
         // ... domain logic ...
-        
+
         // ❌ Inline mapping clutters handler logic
         return CreateScopeResult(
             id = savedScope.id.toString(),
@@ -142,10 +142,10 @@ class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeError, CreateSco
 **After (Dedicated Mapper - Preferred)**:
 ```kotlin
 class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
-    
+
     override suspend operator fun invoke(input: CreateScope): UseCaseResult<CreateScopeResult> {
         // ... domain logic ...
-        
+
         // ✅ Clean separation using dedicated mapper
         return ScopeMapper.toCreateScopeResult(savedScope).right()
     }
@@ -197,7 +197,7 @@ application/
 - [ ] Defensive copies created for mutable collections
 - [ ] Handler uses dedicated mapper instead of inline mapping
 
-### ✅ Dependency Management  
+### ✅ Dependency Management
 - [ ] Handler depends only on domain interfaces
 - [ ] No infrastructure dependencies in application layer
 - [ ] Repository injected via constructor
@@ -253,12 +253,12 @@ application/
 class CreateScopeCommand(
     private val createScopeHandler: CreateScopeHandler,
 ) : CliktCommand(name = "create-scope") {
-    
+
     private val name by option("--name").required()
-    
+
     override fun run() = runBlocking {
         val command = CreateScope(title = name)
-        
+
         createScopeHandler(command).fold(
             ifLeft = { error -> /* Handle error */ },
             ifRight = { result -> /* Display success */ }
@@ -292,7 +292,7 @@ val scope = Scope(
 val dto = ScopeMapper.toCreateScopeResult(scope)
 // Result: CreateScopeResult(
 //   id = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-//   title = "Project Alpha", 
+//   title = "Project Alpha",
 //   description = "Strategic project",
 //   parentId = "parent-123",
 //   createdAt = 2024-01-15T10:30:00Z,
@@ -409,7 +409,7 @@ This E2E slice showcases the complete vertical flow through all architecture lay
 
 The demo showcases ULID (Universally Unique Lexicographically Sortable Identifier) usage:
 - **Format**: 26 characters (e.g., `01K292J7NFNTDC1T8XQKEV0CG5`)
-- **Sortable**: Chronologically ordered by creation time  
+- **Sortable**: Chronologically ordered by creation time
 - **Distributed**: No central coordination required
 - **URL-Safe**: Can be used in REST APIs and file paths
 

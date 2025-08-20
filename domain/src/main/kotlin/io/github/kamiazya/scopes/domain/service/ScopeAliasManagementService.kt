@@ -22,7 +22,7 @@ import kotlinx.datetime.Clock
  */
 class ScopeAliasManagementService(
     private val aliasRepository: ScopeAliasRepository,
-    private val aliasGenerationService: AliasGenerationService
+    private val aliasGenerationService: AliasGenerationService,
 ) {
 
     /**
@@ -37,10 +37,7 @@ class ScopeAliasManagementService(
      * @param aliasName The alias name to assign
      * @return Either an error or the created alias
      */
-    suspend fun assignCanonicalAlias(
-        scopeId: ScopeId,
-        aliasName: AliasName
-    ): Either<ScopeAliasError, ScopeAlias> = either {
+    suspend fun assignCanonicalAlias(scopeId: ScopeId, aliasName: AliasName): Either<ScopeAliasError, ScopeAlias> = either {
         // Check if alias name is already taken by another scope
         val existingAlias = aliasRepository.findByAliasName(aliasName)
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
@@ -51,7 +48,7 @@ class ScopeAliasManagementService(
                 Clock.System.now(),
                 aliasName.value,
                 existingAlias!!.scopeId,
-                scopeId
+                scopeId,
             )
         }
 
@@ -64,7 +61,7 @@ class ScopeAliasManagementService(
             // Convert existing canonical to custom
             val updatedAlias = existingCanonical.copy(
                 aliasType = AliasType.CUSTOM,
-                updatedAt = Clock.System.now()
+                updatedAt = Clock.System.now(),
             )
             aliasRepository.update(updatedAlias)
                 .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
@@ -94,10 +91,7 @@ class ScopeAliasManagementService(
      * @param maxRetries Maximum number of attempts to generate a unique alias (default: 10)
      * @return Either an error or the created alias
      */
-    suspend fun generateCanonicalAlias(
-        scopeId: ScopeId,
-        maxRetries: Int = 10
-    ): Either<ScopeAliasError, ScopeAlias> = either {
+    suspend fun generateCanonicalAlias(scopeId: ScopeId, maxRetries: Int = 10): Either<ScopeAliasError, ScopeAlias> = either {
         // Iterative approach to avoid stack overflow
         repeat(maxRetries) { attempt ->
             // Generate a new unique ID for the alias
@@ -112,29 +106,29 @@ class ScopeAliasManagementService(
                             ScopeAliasError.DuplicateAlias(
                                 occurredAt = inputError.occurredAt,
                                 aliasName = inputError.attemptedValue,
-                                existingScopeId = scopeId,  // Generation failed, use same scope ID
-                                attemptedScopeId = scopeId
+                                existingScopeId = scopeId, // Generation failed, use same scope ID
+                                attemptedScopeId = scopeId,
                             )
                         is ScopeInputError.AliasError.Empty ->
                             ScopeAliasError.DuplicateAlias(
                                 occurredAt = inputError.occurredAt,
                                 aliasName = inputError.attemptedValue,
                                 existingScopeId = scopeId,
-                                attemptedScopeId = scopeId
+                                attemptedScopeId = scopeId,
                             )
                         is ScopeInputError.AliasError.TooShort ->
                             ScopeAliasError.DuplicateAlias(
                                 occurredAt = inputError.occurredAt,
                                 aliasName = inputError.attemptedValue,
                                 existingScopeId = scopeId,
-                                attemptedScopeId = scopeId
+                                attemptedScopeId = scopeId,
                             )
                         is ScopeInputError.AliasError.TooLong ->
                             ScopeAliasError.DuplicateAlias(
                                 occurredAt = inputError.occurredAt,
                                 aliasName = inputError.attemptedValue,
                                 existingScopeId = scopeId,
-                                attemptedScopeId = scopeId
+                                attemptedScopeId = scopeId,
                             )
                     }
                 }
@@ -156,7 +150,7 @@ class ScopeAliasManagementService(
                     // Convert existing canonical to custom
                     val updatedAlias = existingCanonical.copy(
                         aliasType = AliasType.CUSTOM,
-                        updatedAt = Clock.System.now()
+                        updatedAt = Clock.System.now(),
                     )
                     aliasRepository.update(updatedAlias)
                         .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
@@ -167,7 +161,7 @@ class ScopeAliasManagementService(
                 val newAlias = ScopeAlias.createCanonicalWithId(
                     id = aliasId,
                     scopeId = scopeId,
-                    aliasName = aliasName
+                    aliasName = aliasName,
                 )
 
                 aliasRepository.save(newAlias)
@@ -188,8 +182,8 @@ class ScopeAliasManagementService(
                 occurredAt = Clock.System.now(),
                 aliasName = "Could not generate unique alias after $maxRetries attempts",
                 existingScopeId = scopeId,
-                attemptedScopeId = scopeId
-            )
+                attemptedScopeId = scopeId,
+            ),
         )
     }
 
@@ -204,10 +198,7 @@ class ScopeAliasManagementService(
      * @param aliasName The alias name to assign
      * @return Either an error or the created alias
      */
-    suspend fun assignCustomAlias(
-        scopeId: ScopeId,
-        aliasName: AliasName
-    ): Either<ScopeAliasError, ScopeAlias> = either {
+    suspend fun assignCustomAlias(scopeId: ScopeId, aliasName: AliasName): Either<ScopeAliasError, ScopeAlias> = either {
         val existingAlias = aliasRepository.findByAliasName(aliasName)
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
             .bind()
@@ -217,7 +208,7 @@ class ScopeAliasManagementService(
                 Clock.System.now(),
                 aliasName.value,
                 existingAlias!!.scopeId,
-                scopeId
+                scopeId,
             )
         }
 
@@ -252,7 +243,7 @@ class ScopeAliasManagementService(
             ScopeAliasError.CannotRemoveCanonicalAlias(
                 Clock.System.now(),
                 alias.scopeId,
-                aliasName.value
+                aliasName.value,
             )
         }
 
@@ -287,10 +278,8 @@ class ScopeAliasManagementService(
      * @param scopeId The scope ID
      * @return Either an error or the list of aliases
      */
-    suspend fun getAliasesForScope(scopeId: ScopeId): Either<ScopeAliasError, List<ScopeAlias>> {
-        return aliasRepository.findByScopeId(scopeId)
-            .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), scopeId.value) }
-    }
+    suspend fun getAliasesForScope(scopeId: ScopeId): Either<ScopeAliasError, List<ScopeAlias>> = aliasRepository.findByScopeId(scopeId)
+        .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), scopeId.value) }
 
     /**
      * Finds aliases that start with a given prefix.
@@ -300,9 +289,6 @@ class ScopeAliasManagementService(
      * @param limit Maximum number of results
      * @return Either an error or the list of matching aliases
      */
-    suspend fun findAliasesByPrefix(prefix: String, limit: Int = 50): Either<ScopeAliasError, List<ScopeAlias>> {
-        return aliasRepository.findByAliasNamePrefix(prefix, limit)
-            .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), prefix) }
-    }
+    suspend fun findAliasesByPrefix(prefix: String, limit: Int = 50): Either<ScopeAliasError, List<ScopeAlias>> = aliasRepository.findByAliasNamePrefix(prefix, limit)
+        .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), prefix) }
 }
-

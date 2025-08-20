@@ -13,27 +13,27 @@ Scopes uses GitHub's native release notes generation combined with custom verifi
 ```mermaid
 graph LR
     %% Triggers
-    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch]) 
-    
+    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch])
+
     %% Main workflow stages
     Start --> Build[🏗️ Build<br/>Multi-Platform<br/>Artifacts]
     Build --> Security[🔐 Security<br/>Verification<br/>& SLSA]
     Security --> Release[🚀 GitHub<br/>Release<br/>Creation]
-    
+
     %% Final outputs
     Release --> Output{📦 Release Assets}
-    
+
     %% Output types
     Output --> Binaries[📱 Native Binaries<br/>Linux/macOS/Windows<br/>x64 & ARM64]
     Output --> Verification[🛡️ Security Files<br/>SLSA + Dual SBOMs + Vulnerability Scans]
     Output --> Documentation[📄 Release Notes<br/>+ Installation Guide]
-    
+
     %% Styling
     classDef triggerBox fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px  
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef outputBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef artifactBox fill:#f3e5f5,stroke:#4a148c,stroke-width:1px
-    
+
     class Start triggerBox
     class Build,Security,Release processBox
     class Output outputBox
@@ -55,7 +55,7 @@ graph TB
         Windows[🪟 Windows Latest<br/>Win32 x64]
         WindowsARM[🪟 Windows Latest<br/>Win32 ARM64]
     end
-    
+
     subgraph Steps ["📋 Build Steps (Each Platform)"]
         direction TB
         A[📥 Checkout Code] --> B[⚙️ Setup Environment<br/>GraalVM + Gradle]
@@ -67,13 +67,13 @@ graph TB
         G --> H[#️⃣ Generate SHA-256<br/>All Artifact Hashes]
         H --> I[📤 Upload Artifacts<br/>Binary + SBOMs + Scan Results]
     end
-    
+
     Matrix --> Steps
-    
+
     %% Styling
     classDef matrixBox fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
     classDef stepBox fill:#f1f8e9,stroke:#388e3c,stroke-width:1px
-    
+
     class Matrix matrixBox
     class A,B,C,D,E,F,G,H,I stepBox
 ```
@@ -87,28 +87,28 @@ graph TB
         GetBin[📥 Download Binaries<br/>All Platforms]
         GetSrcSBOM[📥 Download Source SBOMs<br/>CycloneDX Format]
     end
-    
+
     subgraph Scanning ["🔍 Security Analysis"]
         direction TB
         GrypeVuln[🛡️ Grype Vulnerability Scan<br/>JSON + SARIF Export]
         SyftSBOM[📋 Syft Binary SBOM<br/>CycloneDX Generation]
         VerifyIntegrity[🔐 Binary Integrity Check<br/>SHA-256 Verification]
     end
-    
+
     subgraph Upload ["📤 Results & Integration"]
         direction TB
         UploadArtifacts[📦 Upload Scan Results<br/>JSON + SARIF + SBOMs]
         GitHubSecurity[🛡️ Upload SARIF to<br/>GitHub Security Tab]
     end
-    
+
     Download --> Scanning
     Scanning --> Upload
-    
+
     %% Styling
     classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef scanBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef uploadBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    
+
     class Download downloadBox
     class Scanning scanBox
     class Upload uploadBox
@@ -120,7 +120,7 @@ graph TB
 graph TB
     subgraph Collect ["📦 Collect Hashes"]
         direction TB
-        DL1[📥 Download Linux Hashes] 
+        DL1[📥 Download Linux Hashes]
         DL2[📥 Download macOS Hashes]
         DL3[📥 Download Windows Hashes]
         DL1 --> Combine[🔗 Combine & Encode<br/>Base64 for SLSA]
@@ -128,20 +128,20 @@ graph TB
         DL3 --> Combine
         Combine --> Output1[📤 Output Combined<br/>Hash String]
     end
-    
+
     subgraph Provenance ["🛡️ SLSA Provenance"]
         direction TB
         Input[📥 Combined Hashes<br/>Input]
         Input --> Generator[🔐 SLSA Framework<br/>Generic Generator]
         Generator --> Attest[📤 Generate Attestation<br/>multiple.intoto.jsonl]
     end
-    
+
     Output1 --> Input
-    
-    %% Styling  
+
+    %% Styling
     classDef collectBox fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef provenanceBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    
+
     class Collect collectBox
     class Provenance provenanceBox
 ```
@@ -158,14 +158,14 @@ graph TB
         GetScanResults[📥 Download Vulnerability<br/>Scan Results (JSON + SARIF)]
         GetProvenance[📥 Download SLSA<br/>Provenance Files]
     end
-    
+
     subgraph Processing ["⚙️ Release Processing"]
         direction TB
         GenNotes[📝 Generate Enhanced<br/>Release Notes]
         PrepAssets[📦 Prepare Assets<br/>Organize Files]
         GenNotes --> PrepAssets
     end
-    
+
     subgraph Release ["🚀 GitHub Release"]
         direction TB
         CreateRelease[✨ Create Release<br/>Tag + Description]
@@ -174,15 +174,15 @@ graph TB
         CreateRelease --> AttachAssets
         AttachAssets --> Publish
     end
-    
+
     Downloads --> Processing
     Processing --> Release
-    
+
     %% Styling
     classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef processBox fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef releaseBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    
+
     class Downloads downloadBox
     class Processing processBox
     class Release releaseBox

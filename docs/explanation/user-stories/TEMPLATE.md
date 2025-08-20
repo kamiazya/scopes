@@ -75,4 +75,3 @@ title: [Title of the diagram]
 
 - [Links to related user stories]
 - [Cross-references to requirements that emerge from this story]
-

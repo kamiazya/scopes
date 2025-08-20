@@ -15,38 +15,33 @@ import io.github.kamiazya.scopes.domain.error.ScopeAliasError as DomainScopeAlia
  *
  * Used for tab completion and partial matching in CLI/UI interfaces.
  */
-class FindAliasesByPrefixHandler(
-    private val aliasManagementService: ScopeAliasManagementService
-) : UseCase<FindAliasesByPrefixQuery, ApplicationError, ListAliasesResult> {
+class FindAliasesByPrefixHandler(private val aliasManagementService: ScopeAliasManagementService) : UseCase<FindAliasesByPrefixQuery, ApplicationError, ListAliasesResult> {
 
-    override suspend operator fun invoke(input: FindAliasesByPrefixQuery): Either<ApplicationError, ListAliasesResult> {
-        return aliasManagementService.findAliasesByPrefix(input.prefix, input.limit)
-            .mapLeft { aliasServiceError ->
-                when (aliasServiceError) {
-                    is DomainScopeAliasError.DuplicateAlias ->
-                        ScopeAliasError.DuplicateAlias(
-                            aliasServiceError.aliasName,
-                            aliasServiceError.existingScopeId.value,
-                            aliasServiceError.attemptedScopeId.value
-                        )
-                    is DomainScopeAliasError.AliasNotFound ->
-                        ScopeAliasError.AliasNotFound(
-                            aliasServiceError.aliasName
-                        )
-                    is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
-                        ScopeAliasError.CannotRemoveCanonicalAlias(
-                            aliasServiceError.scopeId.value,
-                            aliasServiceError.canonicalAlias
-                        )
-                    is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
-                        ScopeAliasError.DuplicateAlias(
-                            aliasServiceError.existingCanonicalAlias,
-                            aliasServiceError.scopeId.value,
-                            aliasServiceError.scopeId.value
-                        )
-                }
+    override suspend operator fun invoke(input: FindAliasesByPrefixQuery): Either<ApplicationError, ListAliasesResult> = aliasManagementService.findAliasesByPrefix(input.prefix, input.limit)
+        .mapLeft { aliasServiceError ->
+            when (aliasServiceError) {
+                is DomainScopeAliasError.DuplicateAlias ->
+                    ScopeAliasError.DuplicateAlias(
+                        aliasServiceError.aliasName,
+                        aliasServiceError.existingScopeId.value,
+                        aliasServiceError.attemptedScopeId.value,
+                    )
+                is DomainScopeAliasError.AliasNotFound ->
+                    ScopeAliasError.AliasNotFound(
+                        aliasServiceError.aliasName,
+                    )
+                is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
+                    ScopeAliasError.CannotRemoveCanonicalAlias(
+                        aliasServiceError.scopeId.value,
+                        aliasServiceError.canonicalAlias,
+                    )
+                is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
+                    ScopeAliasError.DuplicateAlias(
+                        aliasServiceError.existingCanonicalAlias,
+                        aliasServiceError.scopeId.value,
+                        aliasServiceError.scopeId.value,
+                    )
             }
-            .map { aliases -> ListAliasesResult(ScopeAliasMapper.toDtoList(aliases)) }
-    }
+        }
+        .map { aliases -> ListAliasesResult(ScopeAliasMapper.toDtoList(aliases)) }
 }
-

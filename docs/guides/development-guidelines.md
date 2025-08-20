@@ -106,7 +106,7 @@ The current codebase implements a comprehensive ValidationResult pattern for err
 sealed class ValidationResult<out T> {
     data class Success<T>(val value: T) : ValidationResult<T>()
     data class Failure<T>(val errors: NonEmptyList<DomainError>) : ValidationResult<T>()
-    
+
     // Comprehensive validation with error accumulation
     fun <U, V> combine(other: ValidationResult<U>, f: (T, U) -> V): ValidationResult<V>
 }
@@ -158,14 +158,14 @@ value class ScopeId private constructor(private val value: String) {
         fun generate(): ScopeId = ScopeId(Ulid.fast().toString())
         fun from(value: String): ScopeId = ScopeId(value)
     }
-    
+
     override fun toString(): String = value
 }
 
 // ✅ Current Implementation: All domain identifiers use ScopeId
 data class MaxDepthExceeded(
-    val maxDepth: Int, 
-    val actualDepth: Int, 
+    val maxDepth: Int,
+    val actualDepth: Int,
     val scopeId: ScopeId,          // Not String
     val parentPath: List<ScopeId>  // Not List<String>
 )
@@ -189,11 +189,11 @@ class ApplicationScopeValidationService(
     // Service-specific validation methods returning detailed error context
     fun validateTitleFormat(title: String): Either<TitleValidationError, Unit> {
         val trimmedTitle = title.trim()
-        
+
         if (trimmedTitle.isBlank()) {
             return TitleValidationError.EmptyTitle.left()
         }
-        
+
         if (trimmedTitle.length < ScopeTitle.MIN_LENGTH) {
             return TitleValidationError.TitleTooShort(
                 minLength = ScopeTitle.MIN_LENGTH,
@@ -201,10 +201,10 @@ class ApplicationScopeValidationService(
                 title = trimmedTitle
             ).left()
         }
-        
+
         return Unit.right()
     }
-    
+
     /**
      * Validates hierarchy constraints with business rule-specific error context.
      * Checks both depth constraints and children limit constraints.
@@ -212,7 +212,7 @@ class ApplicationScopeValidationService(
      */
     suspend fun validateHierarchyConstraints(parentId: ScopeId?): Either<BusinessRuleServiceError, Unit> = either {
         if (parentId == null) return@either
-        
+
         // Check depth constraint
         val depth = repository.findHierarchyDepth(parentId)
             .mapLeft { repositoryError ->
@@ -226,7 +226,7 @@ class ApplicationScopeValidationService(
                 )
             }
             .bind()
-        
+
         if (depth >= MAX_HIERARCHY_DEPTH) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
                 maxDepth = MAX_HIERARCHY_DEPTH,
@@ -235,7 +235,7 @@ class ApplicationScopeValidationService(
                 parentPath = emptyList()
             ))
         }
-        
+
         // Check children limit constraint
         val childrenCount = repository.countByParentId(parentId)
             .mapLeft { repositoryError ->
@@ -249,7 +249,7 @@ class ApplicationScopeValidationService(
                 )
             }
             .bind()
-        
+
         if (childrenCount >= MAX_CHILDREN_PER_PARENT) {
             raise(ScopeBusinessRuleError.MaxChildrenExceeded(
                 maxChildren = MAX_CHILDREN_PER_PARENT,
@@ -259,7 +259,7 @@ class ApplicationScopeValidationService(
             ))
         }
     }
-    
+
     // Comprehensive validation using ValidationResult for error accumulation
     suspend fun validateScopeCreation(
         title: String,
@@ -297,7 +297,7 @@ class CreateScopeHandler {
                     parentId = input.parentId
                 )
             }.bind()
-        
+
         // Context-specific error for duplicate title
         val exists = repository.existsByTitle(input.title)
             .mapLeft { error ->
@@ -335,12 +335,12 @@ class UpdateScopeHandler {
         val scope = repository.findById(input.id)
             .mapLeft { it.toApplicationError() }
             .bind()
-        
+
         // Context-specific error when needed
         val updated = repository.save(scope)
             .mapLeft { error ->
                 when (error) {
-                    is ConcurrencyConflict -> 
+                    is ConcurrencyConflict ->
                         ApplicationError.UpdateConflict(
                             scopeId = input.id,
                             message = "Scope was modified by another user"
@@ -433,16 +433,16 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
         it("should translate TitleValidationError.TitleTooShort to ValidationFailed") {
             val command = CreateScope(
                 title = "ab",
-                description = "Test description", 
+                description = "Test description",
                 parentId = null,
                 metadata = emptyMap()
             )
 
-            coEvery { mockValidationService.validateTitleFormat("ab") } returns 
+            coEvery { mockValidationService.validateTitleFormat("ab") } returns
                 TitleValidationError.TitleTooShort(3, 2, "ab").left()
-            
+
             val result = handler.invoke(command)
-            
+
             result.isLeft() shouldBe true
             val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.TitleValidationFailed>()
             val titleError = error.titleError.shouldBeInstanceOf<TitleValidationError.TitleTooShort>()
@@ -450,7 +450,7 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
             titleError.actualLength shouldBe 2
         }
     }
-    
+
     describe("business rule error translation") {
         it("should translate ScopeBusinessRuleError.MaxDepthExceeded to BusinessRuleViolationFailed") {
             val parentId = ScopeId.generate()
@@ -461,11 +461,11 @@ class CreateScopeHandlerServiceErrorIntegrationTest : DescribeSpec({
                 metadata = emptyMap()
             )
 
-            coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns 
+            coEvery { mockValidationService.validateHierarchyConstraints(parentId) } returns
                 ScopeBusinessRuleError.MaxDepthExceeded(10, 11, parentId, listOf(parentId)).left()
-            
+
             val result = handler.invoke(command)
-            
+
             result.isLeft() shouldBe true
             val error = result.leftOrNull().shouldBeInstanceOf<CreateScopeError.BusinessRuleViolationFailed>()
             val businessError = error.businessRuleError.shouldBeInstanceOf<ScopeBusinessRuleError.MaxDepthExceeded>()
@@ -490,7 +490,7 @@ class UseCaseArchitectureTest : StringSpec({
             .withNameEndingWith("Handler")
             .assert { it.name.endsWith("Handler") }
     }
-    
+
     "use case errors should be sealed classes for exhaustive handling" {
         Konsist
             .scopeFromModule("application")
@@ -498,7 +498,7 @@ class UseCaseArchitectureTest : StringSpec({
             .withNameEndingWith("Error")
             .assert { it.isSealed }
     }
-    
+
     "domain errors should use strongly-typed identifiers" {
         Konsist
             .scopeFromModule("domain")
@@ -532,7 +532,7 @@ class UseCaseArchitectureTest : StringSpec({
 ./gradlew ktlintFormat
 ./gradlew detekt
 
-# 4. Full build verification  
+# 4. Full build verification
 ./gradlew build
 ```
 
@@ -546,17 +546,17 @@ pre-commit:
     format-markdown:
       glob: "*.md"
       run: ./scripts/format-markdown.sh {staged_files}
-    
+
     check-editorconfig:
       run: docker run --rm -v "${PWD}:/check" mstruebing/editorconfig-checker
-    
+
     ktlint:
       glob: "*.kt"
       run: ./gradlew ktlintFormat && git add -u
-    
+
     detekt:
       run: ./gradlew detekt
-    
+
     test:
       run: ./gradlew test konsistTest
 ```

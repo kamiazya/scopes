@@ -5,7 +5,4 @@ package io.github.kamiazya.scopes.application.dto
  *
  * Contains a list of aliases matching the query criteria.
  */
-data class ListAliasesResult(
-    val aliases: List<ScopeAliasResult>
-) : DTO
-
+data class ListAliasesResult(val aliases: List<ScopeAliasResult>) : DTO

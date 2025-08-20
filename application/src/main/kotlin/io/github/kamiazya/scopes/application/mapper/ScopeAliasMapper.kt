@@ -19,12 +19,11 @@ object ScopeAliasMapper {
         aliasName = alias.aliasName.value,
         aliasType = alias.aliasType.name,
         createdAt = alias.createdAt,
-        updatedAt = alias.updatedAt
+        updatedAt = alias.updatedAt,
     )
 
     /**
      * Converts a list of ScopeAlias domain entities to DTOs.
      */
-    fun toDtoList(aliases: List<ScopeAlias>): List<ScopeAliasResult> =
-        aliases.map { toDto(it) }
+    fun toDtoList(aliases: List<ScopeAlias>): List<ScopeAliasResult> = aliases.map { toDto(it) }
 }

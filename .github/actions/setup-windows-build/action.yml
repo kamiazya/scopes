@@ -29,4 +29,3 @@ runs:
         Add-Content -Path $env:GITHUB_ENV -Value "GRADLE_USER_HOME=C:\gradle-cache"
         Write-Host "Windows build environment configured"
       shell: powershell
-

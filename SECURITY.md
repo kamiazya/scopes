@@ -45,11 +45,11 @@ Scopes includes several security measures:
 
 ### Supply Chain Security
 - **SLSA Level 3 Compliance**: All releases include cryptographic provenance
-- **Automated Dependency Scanning**: Via GitHub Dependabot and Dependency Review  
-- **Dual-Level SBOM Generation**: 
+- **Automated Dependency Scanning**: Via GitHub Dependabot and Dependency Review
+- **Dual-Level SBOM Generation**:
   - Source-level SBOM (CycloneDX) from Gradle dependencies
   - Binary-level SBOM (CycloneDX) from compiled artifacts
-- **Comprehensive Vulnerability Scanning**: 
+- **Comprehensive Vulnerability Scanning**:
   - Grype vulnerability scanning with SARIF export
   - Results automatically uploaded to GitHub Security tab
   - Coverage of both dependency and binary-level vulnerabilities
@@ -66,7 +66,7 @@ For detailed usage instructions, see our security guides:
 
 ### Binary Security
 - **Native Compilation**: GraalVM native images for reduced attack surface
-- **Multi-Layer Vulnerability Scanning**: 
+- **Multi-Layer Vulnerability Scanning**:
   - Source dependencies scanned during build
   - Compiled binaries scanned with Grype
   - SARIF results integrated with GitHub Security

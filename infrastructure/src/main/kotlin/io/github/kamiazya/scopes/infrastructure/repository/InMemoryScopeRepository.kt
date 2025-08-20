@@ -49,7 +49,7 @@ open class InMemoryScopeRepository : ScopeRepository {
 
     override suspend fun existsByParentIdAndTitle(
         parentId: ScopeId?,
-        title: String
+        title: String,
     ): Either<PersistenceError, Boolean> = either {
         mutex.withLock {
             try {

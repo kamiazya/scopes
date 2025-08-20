@@ -98,4 +98,3 @@ Key requirements driving this decision:
 ## Tags
 
 `architecture`, `local-first`, `offline`, `data-management`, `synchronization`
-

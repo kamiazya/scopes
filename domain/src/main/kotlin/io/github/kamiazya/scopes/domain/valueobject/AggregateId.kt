@@ -50,7 +50,7 @@ value class AggregateId private constructor(val value: String) {
         private val VALID_TYPES = setOf(
             "Scope",
             "ScopeAlias",
-            "ContextView"
+            "ContextView",
         )
 
         /**
@@ -65,21 +65,21 @@ value class AggregateId private constructor(val value: String) {
             return when {
                 type.isBlank() -> AggregateIdError.EmptyValue(
                     occurredAt = now,
-                    field = "type"
+                    field = "type",
                 ).left()
                 id.isBlank() -> AggregateIdError.EmptyValue(
                     occurredAt = now,
-                    field = "id"
+                    field = "id",
                 ).left()
                 type !in VALID_TYPES -> AggregateIdError.InvalidType(
                     occurredAt = now,
                     attemptedType = type,
-                    validTypes = VALID_TYPES
+                    validTypes = VALID_TYPES,
                 ).left()
                 !id.matches(Regex("^[A-Z0-9]+$")) -> AggregateIdError.InvalidIdFormat(
                     occurredAt = now,
                     attemptedId = id,
-                    expectedFormat = "ULID format (uppercase letters and numbers only)"
+                    expectedFormat = "ULID format (uppercase letters and numbers only)",
                 ).left()
                 else -> {
                     val uri = "$SCHEMA://$NAMESPACE/$type/$id"
@@ -100,7 +100,7 @@ value class AggregateId private constructor(val value: String) {
             val typeName = klass.simpleName ?: return AggregateIdError.InvalidType(
                 occurredAt = Clock.System.now(),
                 attemptedType = "<anonymous>",
-                validTypes = VALID_TYPES
+                validTypes = VALID_TYPES,
             ).left()
             return create(typeName, id)
         }
@@ -116,17 +116,17 @@ value class AggregateId private constructor(val value: String) {
             return when {
                 uri.isBlank() -> AggregateIdError.EmptyValue(
                     occurredAt = now,
-                    field = "uri"
+                    field = "uri",
                 ).left()
                 !uri.startsWith("$SCHEMA://$NAMESPACE/") -> AggregateIdError.InvalidUriFormat(
                     occurredAt = now,
                     attemptedUri = uri,
-                    reason = "URI must start with $SCHEMA://$NAMESPACE/"
+                    reason = "URI must start with $SCHEMA://$NAMESPACE/",
                 ).left()
                 !URI_PATTERN.matches(uri) -> AggregateIdError.InvalidUriFormat(
                     occurredAt = now,
                     attemptedUri = uri,
-                    reason = "Invalid URI format. Expected: gid://scopes/{Type}/{ID}"
+                    reason = "Invalid URI format. Expected: gid://scopes/{Type}/{ID}",
                 ).left()
                 else -> {
                     val parts = uri.split("/")
@@ -134,7 +134,7 @@ value class AggregateId private constructor(val value: String) {
                         AggregateIdError.InvalidUriFormat(
                             occurredAt = now,
                             attemptedUri = uri,
-                            reason = "Invalid URI structure. Expected 5 parts, got ${parts.size}"
+                            reason = "Invalid URI structure. Expected 5 parts, got ${parts.size}",
                         ).left()
                     } else {
                         val type = parts[3]
@@ -142,7 +142,7 @@ value class AggregateId private constructor(val value: String) {
                             AggregateIdError.InvalidType(
                                 occurredAt = now,
                                 attemptedType = type,
-                                validTypes = VALID_TYPES
+                                validTypes = VALID_TYPES,
                             ).left()
                         } else {
                             AggregateId(uri).right()
@@ -151,6 +151,5 @@ value class AggregateId private constructor(val value: String) {
                 }
             }
         }
-
     }
 }

@@ -17,21 +17,17 @@ data class AspectDefinition private constructor(
     val key: AspectKey,
     val type: AspectType,
     val description: String? = null,
-    val allowMultiple: Boolean = false
+    val allowMultiple: Boolean = false,
 ) {
     companion object {
         /**
          * Create a text-based aspect definition.
          */
-        fun createText(
-            key: AspectKey,
-            description: String? = null,
-            allowMultiple: Boolean = false
-        ): AspectDefinition = AspectDefinition(
+        fun createText(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
             key = key,
             type = AspectType.Text,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
 
         /**
@@ -40,12 +36,12 @@ data class AspectDefinition private constructor(
         fun createNumeric(
             key: AspectKey,
             description: String? = null,
-            allowMultiple: Boolean = false
+            allowMultiple: Boolean = false,
         ): AspectDefinition = AspectDefinition(
             key = key,
             type = AspectType.Numeric,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
 
         /**
@@ -54,12 +50,12 @@ data class AspectDefinition private constructor(
         fun createBoolean(
             key: AspectKey,
             description: String? = null,
-            allowMultiple: Boolean = false
+            allowMultiple: Boolean = false,
         ): AspectDefinition = AspectDefinition(
             key = key,
             type = AspectType.BooleanType,
             description = description,
-            allowMultiple = allowMultiple
+            allowMultiple = allowMultiple,
         )
 
         /**
@@ -69,7 +65,7 @@ data class AspectDefinition private constructor(
             key: AspectKey,
             allowedValues: List<AspectValue>,
             description: String? = null,
-            allowMultiple: Boolean = false
+            allowMultiple: Boolean = false,
         ): Either<AspectValidationError, AspectDefinition> = either {
             ensure(allowedValues.isNotEmpty()) { AspectValidationError.EmptyAspectAllowedValues }
             ensure(allowedValues.size == allowedValues.distinct().size) {
@@ -80,7 +76,7 @@ data class AspectDefinition private constructor(
                 key = key,
                 type = AspectType.Ordered(allowedValues),
                 description = description,
-                allowMultiple = allowMultiple
+                allowMultiple = allowMultiple,
             )
         }
     }
@@ -116,21 +112,27 @@ data class AspectDefinition private constructor(
             val secondNum = second.toNumericValue()
             if (firstNum != null && secondNum != null) {
                 firstNum.compareTo(secondNum)
-            } else null
+            } else {
+                null
+            }
         }
         is AspectType.BooleanType -> {
             val firstBool = first.toBooleanValue()
             val secondBool = second.toBooleanValue()
             if (firstBool != null && secondBool != null) {
                 firstBool.compareTo(secondBool) // false < true
-            } else null
+            } else {
+                null
+            }
         }
         is AspectType.Ordered -> {
             val firstOrder = getValueOrder(first)
             val secondOrder = getValueOrder(second)
             if (firstOrder != null && secondOrder != null) {
                 firstOrder.compareTo(secondOrder)
-            } else null
+            } else {
+                null
+            }
         }
     }
 }

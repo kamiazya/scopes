@@ -160,7 +160,7 @@ syft scopes-build-linux-x64
 
 **Severity Levels**:
 - **Critical**: Immediate action required
-- **High**: Should be addressed quickly  
+- **High**: Should be addressed quickly
 - **Medium**: Monitor and plan remediation
 - **Low**: Track for future updates
 
@@ -252,7 +252,7 @@ Manual security review required for:
 ## Related Documentation
 
 - [Security Verification Guide](security-verification.md) - SLSA provenance verification
-- [SBOM Verification Guide](sbom-verification.md) - Build-time SBOM verification  
+- [SBOM Verification Guide](sbom-verification.md) - Build-time SBOM verification
 - [Dependency Security Guide](dependency-security.md) - GitHub native dependency security
 
 ## Questions?

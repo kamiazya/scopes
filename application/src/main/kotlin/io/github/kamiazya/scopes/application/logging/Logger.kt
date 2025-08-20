@@ -23,4 +23,3 @@ interface Logger {
      */
     fun withName(name: String): Logger
 }
-

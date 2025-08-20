@@ -176,4 +176,3 @@ sequenceDiagram
 ## Tags
 
 `documentation`, `diagrams`, `mermaid`, `collaboration`, `standards`
-

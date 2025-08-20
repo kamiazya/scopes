@@ -23,20 +23,28 @@ import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
 class ListContextViewsHandler(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextService: ActiveContextService,
-    private val logger: Logger
+    private val logger: Logger,
 ) : UseCase<ListContextViewsQuery, ApplicationError, ContextViewListResult> {
 
-    override suspend operator fun invoke(input: ListContextViewsQuery): Either<ApplicationError, ContextViewListResult> = either {
-        logger.info("Listing context views", mapOf(
-            "includeInactive" to input.includeInactive
-        ))
+    override suspend operator fun invoke(
+        input: ListContextViewsQuery,
+    ): Either<ApplicationError, ContextViewListResult> = either {
+        logger.info(
+            "Listing context views",
+            mapOf(
+                "includeInactive" to input.includeInactive,
+            ),
+        )
 
         // Get all context views
         logger.debug("Fetching all context views from repository")
         val contextViews = contextViewRepository.findAll().mapLeft { error ->
-            logger.error("Failed to fetch context views", mapOf(
-                "error" to (error::class.simpleName ?: "Unknown")
-            ))
+            logger.error(
+                "Failed to fetch context views",
+                mapOf(
+                    "error" to (error::class.simpleName ?: "Unknown"),
+                ),
+            )
             error.toApplicationError()
         }.bind()
 
@@ -47,10 +55,13 @@ class ListContextViewsHandler(
             logger.debug("Fetching active context")
             activeContextService.getCurrentContext().also { context ->
                 if (context != null) {
-                    logger.debug("Active context found", mapOf(
-                        "id" to context.id.value,
-                        "name" to context.name.value
-                    ))
+                    logger.debug(
+                        "Active context found",
+                        mapOf(
+                            "id" to context.id.value,
+                            "name" to context.name.value,
+                        ),
+                    )
                 } else {
                     logger.debug("No active context")
                 }
@@ -70,7 +81,7 @@ class ListContextViewsHandler(
                 description = contextView.description?.value,
                 isActive = activeContext?.id == contextView.id,
                 createdAt = contextView.createdAt,
-                updatedAt = contextView.updatedAt
+                updatedAt = contextView.updatedAt,
             )
         }
 
@@ -78,20 +89,25 @@ class ListContextViewsHandler(
             contextResults.find { it.id == active.id.value }
         }
 
-        logger.info("Context views listed successfully", mapOf(
-            "total" to contextResults.size,
-            "hasActive" to (activeContextResult != null)
-        ))
+        logger.info(
+            "Context views listed successfully",
+            mapOf(
+                "total" to contextResults.size,
+                "hasActive" to (activeContextResult != null),
+            ),
+        )
 
         ContextViewListResult(
             contexts = contextResults,
-            activeContext = activeContextResult
+            activeContext = activeContextResult,
         )
     }.onLeft { error ->
-        logger.error("Failed to list context views", mapOf(
-            "error" to (error::class.simpleName ?: "Unknown"),
-            "message" to error.toString()
-        ))
+        logger.error(
+            "Failed to list context views",
+            mapOf(
+                "error" to (error::class.simpleName ?: "Unknown"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }
-

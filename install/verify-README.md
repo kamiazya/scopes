@@ -248,7 +248,7 @@ which slsa-verifier  # Should be in PATH after Go install
 
 For issues with the verification scripts:
 1. Check our [Security Verification Guide](../docs/guides/security-verification.md)
-2. Review [SBOM Verification Guide](../docs/guides/sbom-verification.md)  
+2. Review [SBOM Verification Guide](../docs/guides/sbom-verification.md)
 3. Open an issue in the main repository
 4. Contact the maintainers directly
 

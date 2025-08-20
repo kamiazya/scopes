@@ -99,7 +99,7 @@ class ApplicationInfoBuilder {
             name = name,
             version = version,
             type = type,
-            customMetadata = metadata.toMap()
+            customMetadata = metadata.toMap(),
         )
     }
 }
@@ -163,7 +163,7 @@ fun logger(block: LoggerConfiguration.() -> Unit): Logger {
         name = config.name,
         appenders = config.appenders.toList(),
         defaultContext = enrichedContext,
-        contextScope = config.contextScope ?: DefaultLoggingContextScope
+        contextScope = config.contextScope ?: DefaultLoggingContextScope,
     )
 }
 
@@ -180,18 +180,11 @@ object LoggerComponentRegistry {
 /**
  * Helper to create formatters using registered factories.
  */
-private fun ConsoleAppenderConfiguration.JsonLogFormatter(): LogFormatter {
-    return LoggerComponentRegistry.jsonFormatterFactory?.invoke()
-        ?: throw IllegalStateException("JSON formatter factory not registered. Infrastructure module must register it.")
-}
+private fun ConsoleAppenderConfiguration.JsonLogFormatter(): LogFormatter = LoggerComponentRegistry.jsonFormatterFactory?.invoke()
+    ?: throw IllegalStateException("JSON formatter factory not registered. Infrastructure module must register it.")
 
-private fun ConsoleAppenderConfiguration.PlainTextLogFormatter(): LogFormatter {
-    return LoggerComponentRegistry.plainTextFormatterFactory?.invoke()
-        ?: throw IllegalStateException("Plain text formatter factory not registered. Infrastructure module must register it.")
-}
+private fun ConsoleAppenderConfiguration.PlainTextLogFormatter(): LogFormatter = LoggerComponentRegistry.plainTextFormatterFactory?.invoke()
+    ?: throw IllegalStateException("Plain text formatter factory not registered. Infrastructure module must register it.")
 
-private fun ConsoleAppenderConfiguration.ConsoleLogAppender(formatter: LogFormatter): LogAppender {
-    return LoggerComponentRegistry.consoleAppenderFactory?.invoke(formatter)
-        ?: throw IllegalStateException("Console appender factory not registered. Infrastructure module must register it.")
-}
-
+private fun ConsoleAppenderConfiguration.ConsoleLogAppender(formatter: LogFormatter): LogAppender = LoggerComponentRegistry.consoleAppenderFactory?.invoke(formatter)
+    ?: throw IllegalStateException("Console appender factory not registered. Infrastructure module must register it.")

@@ -17,9 +17,7 @@ interface TransactionManager {
      * @param block The code block to execute within the transaction
      * @return Either an error if the transaction fails, or the result of the block
      */
-    suspend fun <E, T> inTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
-    ): Either<E, T>
+    suspend fun <E, T> inTransaction(block: suspend TransactionContext.() -> Either<E, T>): Either<E, T>
 
     /**
      * Execute a block of code within a transaction, but always roll back.
@@ -28,9 +26,7 @@ interface TransactionManager {
      * @param block The code block to execute within the transaction
      * @return Either an error if the transaction fails, or the result of the block
      */
-    suspend fun <E, T> inReadOnlyTransaction(
-        block: suspend TransactionContext.() -> Either<E, T>
-    ): Either<E, T>
+    suspend fun <E, T> inReadOnlyTransaction(block: suspend TransactionContext.() -> Either<E, T>): Either<E, T>
 }
 
 /**
@@ -59,4 +55,3 @@ interface TransactionContext {
      */
     fun getTransactionId(): String
 }
-

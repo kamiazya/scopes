@@ -34,7 +34,7 @@ value class ScopeDescription private constructor(val value: String) {
                             ScopeInputError.DescriptionError.TooLong(
                                 currentTimestamp(),
                                 description,
-                                MAX_LENGTH
+                                MAX_LENGTH,
                             )
                         }
                         ScopeDescription(trimmedDescription)
@@ -42,10 +42,7 @@ value class ScopeDescription private constructor(val value: String) {
                 }
             }
         }
-
-
     }
 
     override fun toString(): String = value
 }
-

@@ -26,6 +26,5 @@ data class RemoveAliasResult(
     /**
      * Whether this was a canonical alias (should always be false for removals)
      */
-    val wasCanonical: Boolean = false
+    val wasCanonical: Boolean = false,
 ) : DTO
-

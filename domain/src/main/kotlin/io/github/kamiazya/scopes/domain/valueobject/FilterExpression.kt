@@ -16,9 +16,7 @@ import io.github.kamiazya.scopes.domain.error.currentTimestamp
  * - "tag:bug OR tag:feature" - Either bug or feature tagged
  */
 @JvmInline
-value class FilterExpression private constructor(
-    val value: String
-) {
+value class FilterExpression private constructor(val value: String) {
     companion object {
         /**
          * Create a FilterExpression with validation.
@@ -32,7 +30,7 @@ value class FilterExpression private constructor(
                     occurredAt = currentTimestamp(),
                     position = 0,
                     reason = "Filter expression cannot be blank",
-                    expression = value
+                    expression = value,
                 )
             }
 
@@ -42,7 +40,7 @@ value class FilterExpression private constructor(
                     occurredAt = currentTimestamp(),
                     position = value.indexOfFirst { it == '\n' || it == '\r' },
                     reason = "Filter expression cannot contain newline characters",
-                    expression = value
+                    expression = value,
                 )
             }
 

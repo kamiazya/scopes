@@ -14,32 +14,28 @@ data class ApplicationInfo(
     val type: ApplicationType,
     val startTime: Instant = Clock.System.now(),
     val instanceId: String = generateInstanceId(),
-    val customMetadata: Map<String, Any> = emptyMap()
+    val customMetadata: Map<String, Any> = emptyMap(),
 ) {
     /**
      * Converts the application information to a map of key-value pairs.
      */
-    fun toMap(): Map<String, Any> {
-        return buildMap {
-            put("app.name", name)
-            put("app.version", version)
-            put("app.type", type.name)
-            put("app.start_time", startTime.toString())
-            put("app.instance_id", instanceId)
+    fun toMap(): Map<String, Any> = buildMap {
+        put("app.name", name)
+        put("app.version", version)
+        put("app.type", type.name)
+        put("app.start_time", startTime.toString())
+        put("app.instance_id", instanceId)
 
-            // Add custom metadata with "app.custom." prefix
-            customMetadata.forEach { (key, value) ->
-                put("app.custom.$key", value)
-            }
+        // Add custom metadata with "app.custom." prefix
+        customMetadata.forEach { (key, value) ->
+            put("app.custom.$key", value)
         }
     }
 
     /**
      * Converts the application information to a map with LogValue for type-safe serialization.
      */
-    fun toLogValueMap(): Map<String, LogValue> {
-        return toMap().toLogValueMap()
-    }
+    fun toLogValueMap(): Map<String, LogValue> = toMap().toLogValueMap()
 
     companion object {
         /**
@@ -52,4 +48,3 @@ data class ApplicationInfo(
         }
     }
 }
-

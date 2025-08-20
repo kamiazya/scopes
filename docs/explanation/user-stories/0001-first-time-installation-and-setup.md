@@ -139,7 +139,7 @@ journey
 
 #### Package Managers (Future)
 - **npm**: `npm install -g scopes` (primary method for Node.js ecosystem)
-- **Homebrew**: `brew install scopes` (macOS users)  
+- **Homebrew**: `brew install scopes` (macOS users)
 - **Cargo**: `cargo install scopes` (if implemented in Rust)
 - **Package managers**: apt, yum, pacman for Linux distributions
 
@@ -165,4 +165,3 @@ For users who prefer or require manual installation with cryptographic verificat
 
 - **US-007**: [Secure Manual Installation and Verification](0007-secure-manual-installation.md) - Extends this story with secure manual installation option for users who cannot use package managers or require stronger security guarantees
 - This story enables all other user stories by providing the foundation for users to start using Scopes
-

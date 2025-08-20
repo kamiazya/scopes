@@ -6,9 +6,9 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.application.error.*
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.repository.ContextViewRepository
-import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import io.github.kamiazya.scopes.domain.error.PersistenceError as DomainPersistenceError
 
 /**
  * Service for managing the currently active context view.
@@ -22,9 +22,7 @@ import kotlinx.coroutines.sync.withLock
  * - All contexts are global now (no scope differentiation)
  * - Falls back to "all" filter if no context is available
  */
-class ActiveContextService(
-    private val contextViewRepository: ContextViewRepository
-) {
+class ActiveContextService(private val contextViewRepository: ContextViewRepository) {
     private val mutex = Mutex()
     private var activeContext: ContextView? = null
 
@@ -45,10 +43,12 @@ class ActiveContextService(
             try {
                 activeContext = context
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(
-                    operation = "setActiveContext",
-                    cause = e.message
-                ))
+                raise(
+                    PersistenceError.StorageUnavailable(
+                        operation = "setActiveContext",
+                        cause = e.message,
+                    ),
+                )
             }
         }
     }
@@ -62,28 +62,27 @@ class ActiveContextService(
             try {
                 activeContext = null
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(
-                    operation = "clearActiveContext",
-                    cause = e.message
-                ))
+                raise(
+                    PersistenceError.StorageUnavailable(
+                        operation = "clearActiveContext",
+                        cause = e.message,
+                    ),
+                )
             }
         }
     }
-
 
     /**
      * Switch to a context by key.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun switchToContextByKey(
-        key: String
-    ): Either<ApplicationError, ContextView> = either {
+    suspend fun switchToContextByKey(key: String): Either<ApplicationError, ContextView> = either {
         mutex.withLock {
             try {
                 val contextKey = io.github.kamiazya.scopes.domain.valueobject.ContextViewKey.create(key)
                     .mapLeft { errorMsg ->
                         ContextError.KeyInvalidFormat(
-                            attemptedKey = key
+                            attemptedKey = key,
                         )
                     }
                     .bind()
@@ -94,7 +93,7 @@ class ActiveContextService(
                             is DomainPersistenceError -> error.toApplicationError()
                             else -> PersistenceError.StorageUnavailable(
                                 operation = "findByKey",
-                                cause = error.toString()
+                                cause = error.toString(),
                             )
                         }
                     }
@@ -102,17 +101,19 @@ class ActiveContextService(
 
                 ensure(context != null) {
                     ContextError.StateNotFound(
-                        contextId = key
+                        contextId = key,
                     )
                 }
 
                 activeContext = context
                 context
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(
-                    operation = "switchToContextByKey",
-                    cause = e.message
-                ))
+                raise(
+                    PersistenceError.StorageUnavailable(
+                        operation = "switchToContextByKey",
+                        cause = e.message,
+                    ),
+                )
             }
         }
     }
@@ -129,18 +130,15 @@ class ActiveContextService(
      */
     suspend fun getStatus(): ActiveContextStatus = mutex.withLock {
         ActiveContextStatus(
-            activeContext = activeContext
+            activeContext = activeContext,
         )
     }
 
     /**
      * Data class containing information about currently active context.
      */
-    data class ActiveContextStatus(
-        val activeContext: ContextView?
-    ) {
+    data class ActiveContextStatus(val activeContext: ContextView?) {
         val hasActiveContext: Boolean
             get() = activeContext != null
     }
 }
-

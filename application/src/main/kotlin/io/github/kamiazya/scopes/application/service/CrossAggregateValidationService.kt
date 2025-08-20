@@ -20,9 +20,7 @@ import io.github.kamiazya.scopes.domain.valueobject.ScopeId
  * Based on DDD principles, this service maintains aggregate boundaries while
  * providing validation coordination across them.
  */
-class CrossAggregateValidationService(
-    private val scopeRepository: ScopeRepository
-) {
+class CrossAggregateValidationService(private val scopeRepository: ScopeRepository) {
 
     /**
      * Validates hierarchy consistency across multiple aggregates.
@@ -31,7 +29,7 @@ class CrossAggregateValidationService(
      */
     suspend fun validateHierarchyConsistency(
         parentId: ScopeId,
-        childIds: List<ScopeId>
+        childIds: List<ScopeId>,
     ): Either<CrossAggregateValidationError, Unit> = either {
         // Validate parent exists
         val parentExists = scopeRepository.existsById(parentId)
@@ -40,7 +38,7 @@ class CrossAggregateValidationService(
                     sourceAggregate = "children",
                     targetAggregate = parentId.value,
                     referenceType = "parentId",
-                    violation = "Failed to verify parent scope"
+                    violation = "Failed to verify parent scope",
                 )
             }
             .bind()
@@ -50,7 +48,7 @@ class CrossAggregateValidationService(
                 sourceAggregate = "children",
                 targetAggregate = parentId.value,
                 referenceType = "parentId",
-                violation = "Parent scope does not exist"
+                violation = "Parent scope does not exist",
             )
         }
 
@@ -62,7 +60,7 @@ class CrossAggregateValidationService(
                         sourceAggregate = "parentId",
                         targetAggregate = childId.value,
                         referenceType = "childId",
-                        violation = "Failed to verify child scope"
+                        violation = "Failed to verify child scope",
                     )
                 }
                 .bind()
@@ -72,7 +70,7 @@ class CrossAggregateValidationService(
                     sourceAggregate = "parentId",
                     targetAggregate = childId.value,
                     referenceType = "childId",
-                    violation = "Child scope does not exist"
+                    violation = "Child scope does not exist",
                 )
             }
         }
@@ -85,7 +83,7 @@ class CrossAggregateValidationService(
      */
     suspend fun validateCrossAggregateUniqueness(
         title: String,
-        contextIds: List<ScopeId>
+        contextIds: List<ScopeId>,
     ): Either<CrossAggregateValidationError, Unit> = either {
         // Check uniqueness across all contexts
         // Repository will handle title normalization internally
@@ -95,7 +93,7 @@ class CrossAggregateValidationService(
                     CrossAggregateValidationError.InvariantViolation(
                         invariantName = "crossAggregateUniqueness",
                         aggregateIds = contextIds.map { it.value },
-                        violationDescription = "Cross-aggregate uniqueness check failed"
+                        violationDescription = "Cross-aggregate uniqueness check failed",
                     )
                 }
                 .bind()
@@ -104,7 +102,7 @@ class CrossAggregateValidationService(
                 CrossAggregateValidationError.InvariantViolation(
                     invariantName = "crossAggregateUniqueness",
                     aggregateIds = contextIds.map { it.value },
-                    violationDescription = "Title '$title' conflicts across aggregates"
+                    violationDescription = "Title '$title' conflicts across aggregates",
                 )
             }
         }
@@ -118,7 +116,7 @@ class CrossAggregateValidationService(
     suspend fun validateAggregateConsistency(
         operation: String,
         aggregateIds: Set<String>,
-        consistencyRule: String
+        consistencyRule: String,
     ): Either<CrossAggregateValidationError, Unit> = either {
         // Validate all aggregates exist and are in valid state
         aggregateIds.forEach { aggregateIdString ->
@@ -128,7 +126,7 @@ class CrossAggregateValidationService(
                         operation = operation,
                         affectedAggregates = aggregateIds,
                         consistencyRule = consistencyRule,
-                        violationDetails = "Invalid aggregate ID format: $aggregateIdString"
+                        violationDetails = "Invalid aggregate ID format: $aggregateIdString",
                     )
                 }
                 .bind()
@@ -139,7 +137,7 @@ class CrossAggregateValidationService(
                         operation = operation,
                         affectedAggregates = aggregateIds,
                         consistencyRule = consistencyRule,
-                        violationDetails = "Failed to verify aggregate consistency"
+                        violationDetails = "Failed to verify aggregate consistency",
                     )
                 }
                 .bind()
@@ -149,7 +147,7 @@ class CrossAggregateValidationService(
                     operation = operation,
                     affectedAggregates = aggregateIds,
                     consistencyRule = consistencyRule,
-                    violationDetails = "Aggregate $aggregateIdString does not exist or is in invalid state"
+                    violationDetails = "Aggregate $aggregateIdString does not exist or is in invalid state",
                 )
             }
         }
@@ -162,7 +160,7 @@ class CrossAggregateValidationService(
     suspend fun validateDistributedBusinessRule(
         ruleName: String,
         aggregateStates: Map<String, Any>,
-        operation: String
+        operation: String,
     ): Either<CrossAggregateValidationError, Unit> = either {
         // Implementation would depend on specific distributed business rules
         // This is a placeholder for future saga pattern integration
@@ -174,13 +172,14 @@ class CrossAggregateValidationService(
                 // or check compensation transaction states
             }
             else -> {
-                raise(CrossAggregateValidationError.InvariantViolation(
-                    invariantName = ruleName,
-                    aggregateIds = aggregateStates.keys.toList(),
-                    violationDescription = "Unknown distributed business rule: $ruleName"
-                ))
+                raise(
+                    CrossAggregateValidationError.InvariantViolation(
+                        invariantName = ruleName,
+                        aggregateIds = aggregateStates.keys.toList(),
+                        violationDescription = "Unknown distributed business rule: $ruleName",
+                    ),
+                )
             }
         }
     }
 }
-

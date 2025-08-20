@@ -124,11 +124,13 @@ abstract class AggregateRoot<T : AggregateRoot<T>> {
      */
     fun validateVersion(expectedVersion: AggregateVersion): Either<AggregateConcurrencyError, Unit> = either {
         if (version != expectedVersion) {
-            raise(AggregateConcurrencyError.VersionMismatch(
-                aggregateId = id,
-                expectedVersion = expectedVersion.value,
-                actualVersion = version.value
-            ))
+            raise(
+                AggregateConcurrencyError.VersionMismatch(
+                    aggregateId = id,
+                    expectedVersion = expectedVersion.value,
+                    actualVersion = version.value,
+                ),
+            )
         }
     }
 
@@ -140,7 +142,7 @@ abstract class AggregateRoot<T : AggregateRoot<T>> {
      * @return Either an error or the created domain event
      */
     protected inline fun <reified E : DomainEvent> newEvent(
-        createEvent: (aggregateId: AggregateId, eventId: EventId, occurredAt: Instant, version: Int) -> E
+        createEvent: (aggregateId: AggregateId, eventId: EventId, occurredAt: Instant, version: Int) -> E,
     ): Either<ScopesError, E> = either {
         val nextVersion = when (val result = version.increment()) {
             is Either.Left -> throw IllegalStateException("Version overflow: ${result.value}")
@@ -153,7 +155,7 @@ abstract class AggregateRoot<T : AggregateRoot<T>> {
             id,
             eventId,
             kotlinx.datetime.Clock.System.now(),
-            nextVersion.value
+            nextVersion.value,
         )
     }
 }

@@ -12,9 +12,7 @@ import io.github.kamiazya.scopes.domain.valueobject.AspectKey
  * Application service for managing aspect definitions.
  * Handles default definitions and user customizations in a local-first environment.
  */
-class AspectDefinitionService(
-    private val repository: AspectDefinitionRepository
-) {
+class AspectDefinitionService(private val repository: AspectDefinitionRepository) {
     /**
      * Get all available aspect definitions, including defaults and user customizations.
      */
@@ -45,15 +43,13 @@ class AspectDefinitionService(
     /**
      * Save or update a user-defined aspect definition.
      */
-    suspend fun saveDefinition(definition: AspectDefinition): Either<PersistenceError, AspectDefinition> =
-        repository.save(definition)
+    suspend fun saveDefinition(definition: AspectDefinition): Either<PersistenceError, AspectDefinition> = repository.save(definition)
 
     /**
      * Delete a user-defined aspect definition.
      * Note: This only removes user customizations, default definitions cannot be deleted.
      */
-    suspend fun deleteDefinition(key: AspectKey): Either<PersistenceError, Boolean> =
-        repository.deleteByKey(key)
+    suspend fun deleteDefinition(key: AspectKey): Either<PersistenceError, Boolean> = repository.deleteByKey(key)
 
     /**
      * Reset an aspect definition to its default value.

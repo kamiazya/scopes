@@ -32,7 +32,7 @@ sealed class AuditTrailError : AuditServiceError() {
         val detectedAt: Instant,
         val corruptionType: String,
         val affectedEntries: List<String>,
-        val integrityHash: String
+        val integrityHash: String,
     ) : AuditTrailError()
 
     /**
@@ -41,7 +41,7 @@ sealed class AuditTrailError : AuditServiceError() {
     data class AuditEntryNotFound(
         val auditEntryId: String,
         val requestedBy: String,
-        val searchCriteria: Map<String, String>
+        val searchCriteria: Map<String, String>,
     ) : AuditTrailError()
 
     /**
@@ -52,7 +52,7 @@ sealed class AuditTrailError : AuditServiceError() {
         val attemptedOperation: String,
         val attemptedBy: String,
         val detectedAt: Instant,
-        val originalCreatedAt: Instant
+        val originalCreatedAt: Instant,
     ) : AuditTrailError()
 }
 
@@ -69,7 +69,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val eventId: String,
         val eventType: String,
         val serializationError: String,
-        val timestamp: Instant
+        val timestamp: Instant,
     ) : EventLoggingError()
 
     /**
@@ -79,7 +79,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val eventId: String,
         val storageLocation: String,
         val cause: Throwable,
-        val retryAttempts: Int
+        val retryAttempts: Int,
     ) : EventLoggingError()
 
     /**
@@ -89,7 +89,7 @@ sealed class EventLoggingError : AuditServiceError() {
         val eventId: String,
         val expectedSequence: Int,
         val actualSequence: Int,
-        val aggregateId: String
+        val aggregateId: String,
     ) : EventLoggingError()
 }
 
@@ -107,7 +107,7 @@ sealed class ComplianceError : AuditServiceError() {
         val violationType: String,
         val affectedRecords: Int,
         val policyDetails: String,
-        val detectedAt: Instant
+        val detectedAt: Instant,
     ) : ComplianceError()
 
     /**
@@ -117,7 +117,7 @@ sealed class ComplianceError : AuditServiceError() {
         val dataId: String,
         val expectedClassification: String,
         val actualClassification: String,
-        val complianceRegulation: String
+        val complianceRegulation: String,
     ) : ComplianceError()
 
     /**
@@ -127,7 +127,7 @@ sealed class ComplianceError : AuditServiceError() {
         val requirementId: String,
         val description: String,
         val missingAudits: List<String>,
-        val complianceFramework: String
+        val complianceFramework: String,
     ) : ComplianceError()
 }
 
@@ -144,15 +144,11 @@ sealed class AuditSystemError : AuditServiceError() {
         val subsystem: String,
         val cause: Throwable,
         val estimatedRecoveryAt: Instant,
-        val impactLevel: String
+        val impactLevel: String,
     ) : AuditSystemError()
 
     /**
      * Configuration error in audit system setup.
      */
-    data class ConfigurationError(
-        val configurationKey: String,
-        val errorDetails: String,
-        val service: String
-    ) : AuditSystemError()
+    data class ConfigurationError(val configurationKey: String, val errorDetails: String, val service: String) : AuditSystemError()
 }

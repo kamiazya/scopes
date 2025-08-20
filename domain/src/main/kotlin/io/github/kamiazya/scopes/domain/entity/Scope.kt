@@ -4,12 +4,12 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.domain.error.ScopesError
-import io.github.kamiazya.scopes.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
-import io.github.kamiazya.scopes.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.domain.valueobject.Aspects
+import io.github.kamiazya.scopes.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -37,7 +37,7 @@ data class Scope(
             title: String,
             description: String? = null,
             parentId: ScopeId? = null,
-            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
+            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
         ): Either<ScopesError, Scope> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
@@ -50,7 +50,7 @@ data class Scope(
                 parentId = parentId,
                 createdAt = now,
                 updatedAt = now,
-                aspects = Aspects.from(aspectsData)
+                aspects = Aspects.from(aspectsData),
             )
         }
 
@@ -64,7 +64,7 @@ data class Scope(
             title: ScopeTitle,
             description: ScopeDescription? = null,
             parentId: ScopeId? = null,
-            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap()
+            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
         ): Scope {
             val now = Clock.System.now()
             return Scope(
@@ -74,7 +74,7 @@ data class Scope(
                 parentId = parentId,
                 createdAt = now,
                 updatedAt = now,
-                aspects = Aspects.from(aspectsData)
+                aspects = Aspects.from(aspectsData),
             )
         }
     }
@@ -101,8 +101,7 @@ data class Scope(
      * Move scope to a new parent with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun moveToParent(newParentId: ScopeId?): Scope =
-        copy(parentId = newParentId, updatedAt = Clock.System.now())
+    fun moveToParent(newParentId: ScopeId?): Scope = copy(parentId = newParentId, updatedAt = Clock.System.now())
 
     // ===== ASPECT MANAGEMENT METHODS =====
 
@@ -110,31 +109,28 @@ data class Scope(
      * Set an aspect with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope =
-        copy(
-            aspects = aspects.set(key, values),
-            updatedAt = Clock.System.now()
-        )
+    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope = copy(
+        aspects = aspects.set(key, values),
+        updatedAt = Clock.System.now(),
+    )
 
     /**
      * Set a single aspect value (convenience method).
      * Pure function that returns a new instance.
      */
-    fun setAspect(key: AspectKey, value: AspectValue): Scope =
-        copy(
-            aspects = aspects.set(key, value),
-            updatedAt = Clock.System.now()
-        )
+    fun setAspect(key: AspectKey, value: AspectValue): Scope = copy(
+        aspects = aspects.set(key, value),
+        updatedAt = Clock.System.now(),
+    )
 
     /**
      * Remove an aspect with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun removeAspect(key: AspectKey): Scope =
-        copy(
-            aspects = aspects.remove(key),
-            updatedAt = Clock.System.now()
-        )
+    fun removeAspect(key: AspectKey): Scope = copy(
+        aspects = aspects.remove(key),
+        updatedAt = Clock.System.now(),
+    )
 
     /**
      * Get all aspects as a map of AspectKey to NonEmptyList<AspectValue>.
@@ -160,28 +156,25 @@ data class Scope(
      * Set multiple aspects with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun setAspects(newAspects: Map<AspectKey, NonEmptyList<AspectValue>>): Scope =
-        copy(
-            aspects = aspects.merge(Aspects.from(newAspects)),
-            updatedAt = Clock.System.now()
-        )
+    fun setAspects(newAspects: Map<AspectKey, NonEmptyList<AspectValue>>): Scope = copy(
+        aspects = aspects.merge(Aspects.from(newAspects)),
+        updatedAt = Clock.System.now(),
+    )
 
     /**
      * Remove multiple aspects with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun removeAspects(keys: List<AspectKey>): Scope =
-        copy(
-            aspects = aspects.remove(keys.toSet()),
-            updatedAt = Clock.System.now()
-        )
+    fun removeAspects(keys: List<AspectKey>): Scope = copy(
+        aspects = aspects.remove(keys.toSet()),
+        updatedAt = Clock.System.now(),
+    )
 
     /**
      * Clear all aspects with new timestamp.
      * Pure function that returns a new instance.
      */
-    fun clearAspects(): Scope =
-        copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
+    fun clearAspects(): Scope = copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
 
     // ===== BUSINESS RULES =====
 
@@ -189,14 +182,12 @@ data class Scope(
      * Business rule: Check if this scope can be a parent of another scope.
      * Prevents circular references and self-parenting.
      */
-    fun canBeParentOf(childScope: Scope): Boolean =
-        id != childScope.id && childScope.parentId != id
+    fun canBeParentOf(childScope: Scope): Boolean = id != childScope.id && childScope.parentId != id
 
     /**
      * Check if this scope is a child of the specified parent.
      */
-    fun isChildOf(potentialParent: Scope): Boolean =
-        parentId == potentialParent.id
+    fun isChildOf(potentialParent: Scope): Boolean = parentId == potentialParent.id
 
     /**
      * Check if this scope is a root scope (no parent).

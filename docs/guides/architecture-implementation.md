@@ -481,7 +481,7 @@ ScopeDescription.create(request.description)
             val exists = scopeRepository.existsById(parentId)
                 .mapLeft { ApplicationError.fromRepositoryError(it) }
                 .bind()
-            
+
             if (!exists) {
                 raise(ApplicationError.ParentScopeNotFound(parentId))
             }
@@ -1300,7 +1300,7 @@ suspend fun processAllScopes(): Either<ApplicationError, List<String>> = either 
     val scopesFlow = scopeRepository.findAll()
         .mapLeft { ApplicationError.fromRepositoryError(it) }
         .bind()
-    
+
     scopesFlow.map { it.title }.toList()
 }
 
@@ -1329,7 +1329,7 @@ ScopeTitle.create(request.title)
 ScopeDescription.create(request.description)
     .mapLeft { ApplicationError.fromDomainError(it) }
     .bind()
-    
+
     request.copy(
         title = validatedTitle,
         description = validatedDescription
@@ -1349,7 +1349,7 @@ ScopeTitle.create(request.title)
 ScopeDescription.create(request.description)
     .mapLeft { ApplicationError.fromDomainError(it) }
     .bind()
-    
+
     ensure(exists) {
         DomainError.ScopeError.ScopeNotFound
     }

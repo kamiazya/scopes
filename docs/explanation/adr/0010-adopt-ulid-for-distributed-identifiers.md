@@ -106,4 +106,3 @@ This decision is made before the initial release, eliminating concerns about bac
 ## Tags
 
 `architecture`, `domain-design`, `performance`, `distributed-systems`, `local-first`, `identifiers`
-

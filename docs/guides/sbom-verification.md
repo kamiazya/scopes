@@ -159,7 +159,7 @@ jobs:
     - name: Download latest SBOM
       run: |
         wget https://github.com/kamiazya/scopes/releases/latest/download/sbom-linux-x64.json
-    
+
     - name: Scan for vulnerabilities
       run: |
         grype sbom:sbom-linux-x64.json --fail-on critical
@@ -230,7 +230,7 @@ jobs:
 
 ## Resources
 
-- [CycloneDX Official Documentation](https://cyclonedx.org/)  
+- [CycloneDX Official Documentation](https://cyclonedx.org/)
 - [OWASP Dependency-Track](https://dependencytrack.org/)
 - [Grype Vulnerability Scanner](https://github.com/anchore/grype)
 - [Syft SBOM Generator](https://github.com/anchore/syft)
@@ -240,7 +240,7 @@ jobs:
 
 If you have questions about SBOM verification:
 - Check our [Security Policy](../../SECURITY.md)
-- Open an issue in the repository  
+- Open an issue in the repository
 - Contact the maintainers directly
 
 Remember: **SBOM files are living documents** - dependencies and vulnerabilities change over time, so regular verification is essential for maintaining security.

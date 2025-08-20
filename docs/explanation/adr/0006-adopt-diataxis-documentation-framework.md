@@ -123,4 +123,3 @@ This decision applies to all documentation in the `/docs` directory. It does not
 - [Diátaxis Technical Documentation Framework](https://diataxis.fr/)
 - [Write the Docs - Diátaxis](https://www.writethedocs.org/videos/eu/2017/the-four-kinds-of-documentation-and-why-you-need-to-understand-what-they-are-daniele-procida/)
 - [Django's documentation](https://docs.djangoproject.com/) - Example of Diátaxis in practice
-

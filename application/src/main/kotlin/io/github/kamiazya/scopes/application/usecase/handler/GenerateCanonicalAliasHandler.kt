@@ -5,7 +5,6 @@ import arrow.core.flatMap
 import io.github.kamiazya.scopes.application.dto.ScopeAliasResult
 import io.github.kamiazya.scopes.application.error.ApplicationError
 import io.github.kamiazya.scopes.application.error.ScopeAliasError
-import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
 import io.github.kamiazya.scopes.application.mapper.ScopeAliasMapper
 import io.github.kamiazya.scopes.application.port.TransactionManager
 import io.github.kamiazya.scopes.application.usecase.UseCase
@@ -13,6 +12,7 @@ import io.github.kamiazya.scopes.application.usecase.command.GenerateCanonicalAl
 import io.github.kamiazya.scopes.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.application.error.ScopeInputError as AppScopeInputError
 import io.github.kamiazya.scopes.domain.error.ScopeAliasError as DomainScopeAliasError
 
 /**
@@ -23,49 +23,49 @@ import io.github.kamiazya.scopes.domain.error.ScopeAliasError as DomainScopeAlia
  */
 class GenerateCanonicalAliasHandler(
     private val aliasManagementService: ScopeAliasManagementService,
-    private val transactionManager: TransactionManager
+    private val transactionManager: TransactionManager,
 ) : UseCase<GenerateCanonicalAlias, ApplicationError, ScopeAliasResult> {
 
-    override suspend operator fun invoke(input: GenerateCanonicalAlias): Either<ApplicationError, ScopeAliasResult> {
-        return transactionManager.inTransaction {
-            ScopeId.create(input.scopeId)
-                .mapLeft { idError ->
-                    when(idError) {
-                        is ScopeInputError.IdError.Blank -> AppScopeInputError.IdBlank(idError.attemptedValue)
-                        is ScopeInputError.IdError.InvalidFormat -> AppScopeInputError.IdInvalidFormat(idError.attemptedValue, "ULID")
-                    }
+    override suspend operator fun invoke(input: GenerateCanonicalAlias): Either<ApplicationError, ScopeAliasResult> = transactionManager.inTransaction {
+        ScopeId.create(input.scopeId)
+            .mapLeft { idError ->
+                when (idError) {
+                    is ScopeInputError.IdError.Blank -> AppScopeInputError.IdBlank(idError.attemptedValue)
+                    is ScopeInputError.IdError.InvalidFormat -> AppScopeInputError.IdInvalidFormat(
+                        idError.attemptedValue,
+                        "ULID",
+                    )
                 }
-                .flatMap { scopeId ->
-                    aliasManagementService.generateCanonicalAlias(scopeId)
-                        .mapLeft { aliasServiceError ->
-                            when (aliasServiceError) {
-                                is DomainScopeAliasError.DuplicateAlias ->
-                                    ScopeAliasError.DuplicateAlias(
-                                        aliasServiceError.aliasName,
-                                        aliasServiceError.existingScopeId.value,
-                                        aliasServiceError.attemptedScopeId.value
-                                    )
-                                is DomainScopeAliasError.AliasNotFound ->
-                                    ScopeAliasError.AliasGenerationFailed(
-                                        scopeId.value,
-                                        1  // Retry count, we could enhance this later
-                                    )
-                                is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
-                                    ScopeAliasError.CannotRemoveCanonicalAlias(
-                                        aliasServiceError.scopeId.value,
-                                        aliasServiceError.canonicalAlias
-                                    )
-                                is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
-                                    ScopeAliasError.DuplicateAlias(
-                                        aliasServiceError.existingCanonicalAlias,
-                                        aliasServiceError.scopeId.value,
-                                        aliasServiceError.scopeId.value
-                                    )
-                            }
+            }
+            .flatMap { scopeId ->
+                aliasManagementService.generateCanonicalAlias(scopeId)
+                    .mapLeft { aliasServiceError ->
+                        when (aliasServiceError) {
+                            is DomainScopeAliasError.DuplicateAlias ->
+                                ScopeAliasError.DuplicateAlias(
+                                    aliasServiceError.aliasName,
+                                    aliasServiceError.existingScopeId.value,
+                                    aliasServiceError.attemptedScopeId.value,
+                                )
+                            is DomainScopeAliasError.AliasNotFound ->
+                                ScopeAliasError.AliasGenerationFailed(
+                                    scopeId.value,
+                                    1, // Retry count, we could enhance this later
+                                )
+                            is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
+                                ScopeAliasError.CannotRemoveCanonicalAlias(
+                                    aliasServiceError.scopeId.value,
+                                    aliasServiceError.canonicalAlias,
+                                )
+                            is DomainScopeAliasError.CanonicalAliasAlreadyExists ->
+                                ScopeAliasError.DuplicateAlias(
+                                    aliasServiceError.existingCanonicalAlias,
+                                    aliasServiceError.scopeId.value,
+                                    aliasServiceError.scopeId.value,
+                                )
                         }
-                        .map { alias -> ScopeAliasMapper.toDto(alias) }
-                }
-        }
+                    }
+                    .map { alias -> ScopeAliasMapper.toDto(alias) }
+            }
     }
 }
-

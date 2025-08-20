@@ -51,4 +51,3 @@
 
 [Add relevant tags for discoverability and categorization]
 `architecture`, `domain-design`, `event-driven`, `testing`, `security`, `performance`, `integration`
-

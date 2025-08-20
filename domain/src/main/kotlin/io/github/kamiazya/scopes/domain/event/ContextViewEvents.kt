@@ -4,12 +4,12 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.domain.entity.ContextView
 import io.github.kamiazya.scopes.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.domain.valueobject.AggregateId
-import io.github.kamiazya.scopes.domain.valueobject.EventId
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
+import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.domain.valueobject.ContextViewName
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewFilter
-import io.github.kamiazya.scopes.domain.valueobject.ContextViewDescription
+import io.github.kamiazya.scopes.domain.valueobject.EventId
 import kotlinx.datetime.Instant
 
 /**
@@ -29,23 +29,21 @@ data class ContextViewCreated(
     val key: ContextViewKey,
     val name: ContextViewName,
     val filter: ContextViewFilter,
-    val description: ContextViewDescription?
+    val description: ContextViewDescription?,
 ) : ContextViewEvent() {
     companion object {
-        fun from(contextView: ContextView, eventId: EventId): Either<AggregateIdError, ContextViewCreated> {
-            return contextView.id.toAggregateId().map { aggregateId ->
-                ContextViewCreated(
-                    aggregateId = aggregateId,
-                    eventId = eventId,
-                    occurredAt = contextView.createdAt,
-                    version = 1,
-                    contextViewId = contextView.id,
-                    key = contextView.key,
-                    name = contextView.name,
-                    filter = contextView.filter,
-                    description = contextView.description
-                )
-            }
+        fun from(contextView: ContextView, eventId: EventId): Either<AggregateIdError, ContextViewCreated> = contextView.id.toAggregateId().map { aggregateId ->
+            ContextViewCreated(
+                aggregateId = aggregateId,
+                eventId = eventId,
+                occurredAt = contextView.createdAt,
+                version = 1,
+                contextViewId = contextView.id,
+                key = contextView.key,
+                name = contextView.name,
+                filter = contextView.filter,
+                description = contextView.description,
+            )
         }
     }
 }
@@ -59,7 +57,7 @@ data class ContextViewUpdated(
     override val occurredAt: Instant,
     override val version: Int,
     val contextViewId: ContextViewId,
-    val changes: ContextViewChanges
+    val changes: ContextViewChanges,
 ) : ContextViewEvent()
 
 /**
@@ -72,7 +70,7 @@ data class ContextViewNameChanged(
     override val version: Int,
     val contextViewId: ContextViewId,
     val oldName: ContextViewName,
-    val newName: ContextViewName
+    val newName: ContextViewName,
 ) : ContextViewEvent()
 
 /**
@@ -85,7 +83,7 @@ data class ContextViewFilterUpdated(
     override val version: Int,
     val contextViewId: ContextViewId,
     val oldFilter: ContextViewFilter,
-    val newFilter: ContextViewFilter
+    val newFilter: ContextViewFilter,
 ) : ContextViewEvent()
 
 /**
@@ -98,7 +96,7 @@ data class ContextViewDescriptionUpdated(
     override val version: Int,
     val contextViewId: ContextViewId,
     val oldDescription: ContextViewDescription?,
-    val newDescription: ContextViewDescription?
+    val newDescription: ContextViewDescription?,
 ) : ContextViewEvent()
 
 /**
@@ -110,7 +108,7 @@ data class ContextViewDeleted(
     override val occurredAt: Instant,
     override val version: Int,
     val contextViewId: ContextViewId,
-    val deletedAt: Instant
+    val deletedAt: Instant,
 ) : ContextViewEvent()
 
 /**
@@ -120,10 +118,13 @@ data class ContextViewChanges(
     val keyChange: KeyChange? = null,
     val nameChange: NameChange? = null,
     val filterChange: FilterChange? = null,
-    val descriptionChange: DescriptionChange? = null
+    val descriptionChange: DescriptionChange? = null,
 ) {
     data class KeyChange(val oldKey: ContextViewKey, val newKey: ContextViewKey)
     data class NameChange(val oldName: ContextViewName, val newName: ContextViewName)
     data class FilterChange(val oldFilter: ContextViewFilter, val newFilter: ContextViewFilter)
-    data class DescriptionChange(val oldDescription: ContextViewDescription?, val newDescription: ContextViewDescription?)
+    data class DescriptionChange(
+        val oldDescription: ContextViewDescription?,
+        val newDescription: ContextViewDescription?,
+    )
 }

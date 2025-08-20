@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.application.service.error
 
-import kotlin.time.Duration
 import kotlinx.datetime.Instant
+import kotlin.time.Duration
 
 /**
  * Application layer validation errors for input validation and business rule violations.
@@ -32,17 +32,13 @@ sealed class InputValidationError : ApplicationValidationError() {
         val fieldName: String,
         val expectedFormat: String,
         val actualValue: String,
-        val validationRule: String
+        val validationRule: String,
     ) : InputValidationError()
 
     /**
      * A required field is missing from the input.
      */
-    data class MissingRequiredField(
-        val fieldName: String,
-        val entityType: String,
-        val context: String? = null
-    ) : InputValidationError()
+    data class MissingRequiredField(val fieldName: String, val entityType: String, val context: String? = null) : InputValidationError()
 
     /**
      * A field value is outside the allowed range.
@@ -51,7 +47,7 @@ sealed class InputValidationError : ApplicationValidationError() {
         val fieldName: String,
         val minValue: T?,
         val maxValue: T?,
-        val actualValue: T
+        val actualValue: T,
     ) : InputValidationError()
 }
 
@@ -68,7 +64,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
         val operation: String,
         val affectedAggregates: Set<String>,
         val consistencyRule: String,
-        val violationDetails: String
+        val violationDetails: String,
     ) : CrossAggregateValidationError()
 
     /**
@@ -78,7 +74,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
         val sourceAggregate: String,
         val targetAggregate: String,
         val referenceType: String,
-        val violation: String
+        val violation: String,
     ) : CrossAggregateValidationError()
 
     /**
@@ -87,7 +83,7 @@ sealed class CrossAggregateValidationError : ApplicationValidationError() {
     data class InvariantViolation(
         val invariantName: String,
         val aggregateIds: List<String>,
-        val violationDescription: String
+        val violationDescription: String,
     ) : CrossAggregateValidationError()
 }
 
@@ -104,7 +100,7 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
         val operation: String,
         val precondition: String,
         val currentState: String,
-        val requiredState: String
+        val requiredState: String,
     ) : BusinessRuleValidationError()
 
     /**
@@ -114,7 +110,7 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
         val operation: String,
         val postcondition: String,
         val expectedOutcome: String,
-        val actualOutcome: String
+        val actualOutcome: String,
     ) : BusinessRuleValidationError()
 }
 
@@ -125,11 +121,11 @@ sealed class BusinessRuleValidationError : ApplicationValidationError() {
 sealed class AsyncValidationError : ApplicationValidationError() {
 
     data class ValidationTimeout<T>(
-    val operation: String,
-    val timeout: Duration,
-    val validationPhase: String,
-    val partialResults: Map<String, T>? = null
-) : AsyncValidationError()
+        val operation: String,
+        val timeout: Duration,
+        val validationPhase: String,
+        val partialResults: Map<String, T>? = null,
+    ) : AsyncValidationError()
 
     /**
      * Concurrent validation conflict detected.
@@ -138,6 +134,6 @@ sealed class AsyncValidationError : ApplicationValidationError() {
         val resource: String,
         val conflictingOperations: List<String>,
         val timestamp: Instant,
-        val resolution: String? = null
+        val resolution: String? = null,
     ) : AsyncValidationError()
 }
