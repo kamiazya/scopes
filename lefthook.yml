@@ -8,9 +8,22 @@ pre-commit:
       glob: "**/*.{kt,kts,md,yml,yaml,json}"
       run: |
         echo "🎨 Running Spotless formatting..."
-        ./gradlew spotlessApply --daemon
+        # Get list of staged files before formatting
+        STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts|md|yml|yaml|json)$' || true)
+        
+        if [ -n "$STAGED_FILES" ]; then
+          # Run Spotless
+          ./gradlew spotlessApply --daemon
+          
+          # Re-stage any files that were modified by Spotless
+          for file in $STAGED_FILES; do
+            if [ -f "$file" ]; then
+              git add "$file"
+              echo "📝 Re-staged: $file"
+            fi
+          done
+        fi
         echo "✅ Spotless formatting completed"
-      stage_fixed: true
       skip:
         - merge
         - rebase
@@ -30,8 +43,24 @@ pre-commit:
 
     ktlint:
       glob: "**/*.kt"
-      run: ./gradlew ktlintFormat --daemon
-      stage_fixed: true
+      run: |
+        echo "🔧 Running KtLint formatting..."
+        # Get list of staged Kotlin files
+        STAGED_KT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.kt$' || true)
+        
+        if [ -n "$STAGED_KT_FILES" ]; then
+          # Run ktlint
+          ./gradlew ktlintFormat --daemon
+          
+          # Re-stage any files that were modified
+          for file in $STAGED_KT_FILES; do
+            if [ -f "$file" ]; then
+              git add "$file"
+              echo "📝 Re-staged: $file"
+            fi
+          done
+        fi
+        echo "✅ KtLint formatting completed"
       skip:
         - merge
         - rebase
