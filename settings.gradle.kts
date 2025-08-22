@@ -12,18 +12,28 @@ plugins {
 rootProject.name = "scopes"
 
 include(
+    // Parent projects
+    ":platform",
+    ":interfaces",
+    ":contexts",
+    ":apps",
+    ":boot",
+    ":quality",
     // Platform layer
     ":platform:commons",
     ":platform:observability",
     ":platform:application-commons",
+    // Interface layer
+    ":interfaces:shared",
+    ":interfaces:cli",
     // Bounded Context - Unified Scope Management
+    ":contexts:scope-management",
     ":contexts:scope-management:domain",
     ":contexts:scope-management:application",
     ":contexts:scope-management:infrastructure",
     // Apps layer - Application logic
-    ":apps:cli",
-    ":apps:api",
-    ":apps:daemon",
+    ":apps:scopes",
+    ":apps:scopesd",
     // Boot layer - Entry points
     ":boot:cli-launcher",
     ":boot:daemon-launcher",

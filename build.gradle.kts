@@ -23,13 +23,21 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "io.gitlab.arturbosch.detekt")
+    // Don't automatically apply Kotlin plugin to avoid circular dependencies
+    // Each project should apply it explicitly
 
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    // Configure Kotlin compilation when plugin is applied
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            compilerOptions {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            }
         }
+    }
+
+    // Fix circular dependency issue with Kotlin and Java compilation
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
     }
 
     // Prevent dynamic versions to improve build reproducibility
@@ -40,14 +48,16 @@ subprojects {
     }
 }
 
-// Configure detekt for all subprojects
+// Configure detekt for projects that have the plugin applied
 subprojects {
-    configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
-        config.setFrom("$rootDir/detekt.yml")
-        buildUponDefaultConfig = true
-        allRules = false
-        parallel = true
-        baseline = file("detekt-baseline.xml")
+    pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
+        configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+            config.setFrom("$rootDir/detekt.yml")
+            buildUponDefaultConfig = true
+            allRules = false
+            parallel = true
+            baseline = file("detekt-baseline.xml")
+        }
     }
 }
 

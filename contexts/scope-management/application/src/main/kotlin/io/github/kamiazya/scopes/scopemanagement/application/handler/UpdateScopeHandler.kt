@@ -16,6 +16,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
@@ -111,7 +112,7 @@ class UpdateScopeHandler(private val scopeRepository: ScopeRepository, private v
                         }
                     }.toMap()
 
-                    updatedScope = updatedScope.updateAspects(aspects)
+                    updatedScope = updatedScope.updateAspects(Aspects.from(aspects))
                     logger.debug(
                         "Aspects updated",
                         mapOf(

@@ -19,6 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeReposito
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
@@ -170,7 +171,7 @@ class CreateScopeHandler(
                     title = input.title,
                     description = input.description,
                     parentId = parentId,
-                    aspectsData = aspects,
+                    aspects = Aspects.from(aspects),
                 ).bind()
 
                 // Save the scope

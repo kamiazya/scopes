@@ -309,9 +309,8 @@ class LayerArchitectureTest :
                     "contexts/$context/infrastructure",
                 )
             } + listOf(
-                "apps/cli",
-                "apps/api",
-                "apps/daemon",
+                "apps/scopes",
+                "apps/scopesd",
                 "boot/cli-launcher",
                 "boot/daemon-launcher",
             )

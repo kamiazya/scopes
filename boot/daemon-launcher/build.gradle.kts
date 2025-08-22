@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
     // Apps layer
-    implementation(project(":apps:daemon"))
+    implementation(project(":apps:scopesd"))
 
     // Infrastructure implementations - Unified Scope Management
     implementation(project(":contexts:scope-management:infrastructure"))

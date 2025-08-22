@@ -8,7 +8,7 @@ plugins {
 
 dependencies {
     // Apps layer
-    implementation(project(":apps:cli"))
+    implementation(project(":apps:scopes"))
 
     // Core libraries
     implementation(libs.kotlin.stdlib)
@@ -37,7 +37,7 @@ graalvmNative {
         named("main") {
             imageName.set("scopes-boot")
             mainClass.set("io.github.kamiazya.scopes.boot.cli.MainKt")
-            useFatJar.set(true)
+            useFatJar.set(false)
 
             val commonArgs =
                 listOf(

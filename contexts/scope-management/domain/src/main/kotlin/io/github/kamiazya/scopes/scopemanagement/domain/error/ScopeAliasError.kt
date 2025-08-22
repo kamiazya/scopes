@@ -1,0 +1,31 @@
+package io.github.kamiazya.scopes.scopemanagement.domain.error
+
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Instant
+
+/**
+ * Errors related to Scope Alias operations.
+ */
+sealed class ScopeAliasError : ScopesError() {
+
+    /**
+     * Duplicate alias error.
+     */
+    data class DuplicateAlias(override val occurredAt: Instant, val aliasName: String, val existingScopeId: ScopeId, val attemptedScopeId: ScopeId) :
+        ScopeAliasError()
+
+    /**
+     * Alias not found error.
+     */
+    data class AliasNotFound(override val occurredAt: Instant, val aliasName: String) : ScopeAliasError()
+
+    /**
+     * Cannot remove canonical alias error.
+     */
+    data class CannotRemoveCanonicalAlias(override val occurredAt: Instant, val scopeId: ScopeId, val aliasName: String) : ScopeAliasError()
+
+    /**
+     * Alias generation failed error.
+     */
+    data class AliasGenerationFailed(override val occurredAt: Instant, val scopeId: ScopeId, val retryCount: Int) : ScopeAliasError()
+}

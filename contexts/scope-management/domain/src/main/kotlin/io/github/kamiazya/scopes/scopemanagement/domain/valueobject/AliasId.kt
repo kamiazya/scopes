@@ -50,4 +50,11 @@ value class AliasId private constructor(val value: String) {
     }
 
     override fun toString(): String = value
+
+    /**
+     * Converts this AliasId to an AggregateId.
+     * Used when treating the alias as an aggregate root.
+     */
+    fun toAggregateId(): Either<io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError, AggregateId> =
+        AggregateId.create(type = "ScopeAlias", id = value)
 }

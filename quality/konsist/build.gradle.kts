@@ -14,9 +14,8 @@ dependencies {
     testImplementation(project(":contexts:scope-management:infrastructure"))
 
     // Apps layer
-    testImplementation(project(":apps:cli"))
-    testImplementation(project(":apps:api"))
-    testImplementation(project(":apps:daemon"))
+    testImplementation(project(":apps:scopes"))
+    testImplementation(project(":apps:scopesd"))
 
     // Boot layer
     testImplementation(project(":boot:cli-launcher"))

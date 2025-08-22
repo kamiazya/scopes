@@ -20,7 +20,7 @@ object ScopeMapper {
         parentId = scope.parentId?.toString(),
         createdAt = scope.createdAt,
         canonicalAlias = canonicalAlias,
-        aspects = scope.getAspects().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
     )
 
     /**
@@ -33,7 +33,7 @@ object ScopeMapper {
         parentId = scope.parentId?.toString(),
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        aspects = scope.getAspects().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
     )
 
     /**
@@ -48,6 +48,6 @@ object ScopeMapper {
         customAliases = customAliases,
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        aspects = scope.getAspects().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
     )
 }

@@ -6,6 +6,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
@@ -26,33 +27,29 @@ data class Scope(
     val parentId: ScopeId? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
-    private val aspects: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
+    val aspects: Aspects = Aspects.empty(),
 ) {
     companion object {
         /**
          * Create a new scope with generated timestamps.
          * This is the safe factory method that validates input.
          */
-        fun create(
-            title: String,
-            description: String? = null,
-            parentId: ScopeId? = null,
-            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
-        ): Either<ScopesError, Scope> = either {
-            val validatedTitle = ScopeTitle.create(title).bind()
-            val validatedDescription = ScopeDescription.create(description).bind()
+        fun create(title: String, description: String? = null, parentId: ScopeId? = null, aspects: Aspects = Aspects.empty()): Either<ScopesError, Scope> =
+            either {
+                val validatedTitle = ScopeTitle.create(title).bind()
+                val validatedDescription = ScopeDescription.create(description).bind()
 
-            val now = Clock.System.now()
-            Scope(
-                id = ScopeId.generate(),
-                title = validatedTitle,
-                description = validatedDescription,
-                parentId = parentId,
-                createdAt = now,
-                updatedAt = now,
-                aspects = aspectsData,
-            )
-        }
+                val now = Clock.System.now()
+                Scope(
+                    id = ScopeId.generate(),
+                    title = validatedTitle,
+                    description = validatedDescription,
+                    parentId = parentId,
+                    createdAt = now,
+                    updatedAt = now,
+                    aspects = aspects,
+                )
+            }
 
         /**
          * Create a new scope with explicit ID and generated timestamps.
@@ -64,7 +61,7 @@ data class Scope(
             title: ScopeTitle,
             description: ScopeDescription? = null,
             parentId: ScopeId? = null,
-            aspectsData: Map<AspectKey, NonEmptyList<AspectValue>> = emptyMap(),
+            aspects: Aspects = Aspects.empty(),
         ): Scope {
             val now = Clock.System.now()
             return Scope(
@@ -74,7 +71,7 @@ data class Scope(
                 parentId = parentId,
                 createdAt = now,
                 updatedAt = now,
-                aspects = aspectsData,
+                aspects = aspects,
             )
         }
     }
@@ -122,32 +119,44 @@ data class Scope(
     fun isRoot(): Boolean = parentId == null
 
     /**
-     * Get aspects for this scope.
-     * Returns a read-only view of the aspects.
-     */
-    fun getAspects(): Map<AspectKey, NonEmptyList<AspectValue>> = aspects
-
-    /**
      * Update aspects for this scope.
      * Pure function that returns a new instance with updated timestamp.
      */
-    fun updateAspects(newAspects: Map<AspectKey, NonEmptyList<AspectValue>>): Scope = copy(aspects = newAspects, updatedAt = Clock.System.now())
+    fun updateAspects(newAspects: Aspects): Scope = copy(aspects = newAspects, updatedAt = Clock.System.now())
 
     /**
      * Add or update a single aspect.
      * Pure function that returns a new instance.
      */
-    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope {
-        val updatedAspects = aspects + (key to values)
-        return copy(aspects = updatedAspects, updatedAt = Clock.System.now())
-    }
+    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope = copy(aspects = aspects.set(key, values), updatedAt = Clock.System.now())
+
+    /**
+     * Add or update a single aspect with a single value.
+     * Convenience method.
+     */
+    fun setAspect(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.set(key, value), updatedAt = Clock.System.now())
+
+    /**
+     * Add a value to an existing aspect key.
+     * If the key doesn't exist, creates a new aspect with the single value.
+     */
+    fun addAspectValue(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.add(key, value), updatedAt = Clock.System.now())
 
     /**
      * Remove an aspect by key.
      * Pure function that returns a new instance.
      */
-    fun removeAspect(key: AspectKey): Scope {
-        val updatedAspects = aspects - key
-        return copy(aspects = updatedAspects, updatedAt = Clock.System.now())
-    }
+    fun removeAspect(key: AspectKey): Scope = copy(aspects = aspects.remove(key), updatedAt = Clock.System.now())
+
+    /**
+     * Remove a specific value from an aspect key.
+     * If this was the last value, the key is removed entirely.
+     */
+    fun removeAspectValue(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.remove(key, value), updatedAt = Clock.System.now())
+
+    /**
+     * Clear all aspects.
+     * Pure function that returns a new instance.
+     */
+    fun clearAspects(): Scope = copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
 }

@@ -1,9 +1,13 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
+import arrow.core.NonEmptyList
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -115,4 +119,53 @@ data class ScopeDeleted(
     override val occurredAt: Instant,
     override val version: Int,
     val scopeId: ScopeId,
+) : ScopeEvent()
+
+/**
+ * Event fired when an aspect is added to a scope.
+ */
+data class ScopeAspectAdded(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val version: Int,
+    val scopeId: ScopeId,
+    val aspectKey: AspectKey,
+    val aspectValues: NonEmptyList<AspectValue>,
+) : ScopeEvent()
+
+/**
+ * Event fired when an aspect is removed from a scope.
+ */
+data class ScopeAspectRemoved(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val version: Int,
+    val scopeId: ScopeId,
+    val aspectKey: AspectKey,
+) : ScopeEvent()
+
+/**
+ * Event fired when all aspects are cleared from a scope.
+ */
+data class ScopeAspectsCleared(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val version: Int,
+    val scopeId: ScopeId,
+) : ScopeEvent()
+
+/**
+ * Event fired when aspects are updated on a scope.
+ */
+data class ScopeAspectsUpdated(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val version: Int,
+    val scopeId: ScopeId,
+    val oldAspects: Aspects,
+    val newAspects: Aspects,
 ) : ScopeEvent()
