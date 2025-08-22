@@ -12,11 +12,23 @@ plugins {
 rootProject.name = "scopes"
 
 include(
-    ":domain",
-    ":application",
-    ":infrastructure",
-    ":presentation-cli",
-    ":konsist-test",
+    // Platform layer
+    ":platform:commons",
+    ":platform:observability",
+    ":platform:application-commons",
+    // Bounded Context - Unified Scope Management
+    ":contexts:scope-management:domain",
+    ":contexts:scope-management:application",
+    ":contexts:scope-management:infrastructure",
+    // Apps layer - Application logic
+    ":apps:cli",
+    ":apps:api",
+    ":apps:daemon",
+    // Boot layer - Entry points
+    ":boot:cli-launcher",
+    ":boot:daemon-launcher",
+    // Quality
+    ":quality:konsist",
 )
 
 // Configure Gradle Build Scan

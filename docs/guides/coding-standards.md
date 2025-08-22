@@ -431,8 +431,8 @@ scopes/
 │   └── service/             # ApplicationScopeValidationService.kt
 ├── infrastructure/
 │   └── repository/          # Repository implementations
-└── presentation-cli/
-    ├── command/             # CLI commands
+└── boot/cli-launcher/
+    ├── Main.kt              # CLI entry point
     └── mapper/              # ScopeMapper.kt
 ```
 

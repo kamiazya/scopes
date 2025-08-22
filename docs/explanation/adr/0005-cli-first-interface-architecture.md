@@ -179,4 +179,3 @@ The specific command structure, naming conventions, and parameters will be deter
 - [Command Line Interface Guidelines](https://clig.dev/)
 - [GNU Coding Standards - Command Line Interfaces](https://www.gnu.org/prep/standards/html_node/Command_002dLine-Interfaces.html)
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
-

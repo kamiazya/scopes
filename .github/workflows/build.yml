@@ -120,8 +120,8 @@ jobs:
           $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
         }
 
-        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS"
-        & .\gradlew.bat --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
+        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :boot:cli-launcher:nativeCompile $VERSION_ARG $ARCH_FLAGS"
+        & .\gradlew.bat --no-daemon --no-configuration-cache --scan :boot:cli-launcher:nativeCompile $VERSION_ARG $ARCH_FLAGS
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
@@ -149,7 +149,8 @@ jobs:
           ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477}"
         fi
 
-        ./gradlew --no-daemon --no-configuration-cache --scan nativeCompile $VERSION_ARG $ARCH_FLAGS
+        # Build the boot CLI launcher with native compilation
+        ./gradlew --no-daemon --no-configuration-cache --scan :boot:cli-launcher:nativeCompile $VERSION_ARG $ARCH_FLAGS
 
     - name: Prepare binary for security check
       shell: bash
@@ -163,9 +164,9 @@ jobs:
         BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="${BINARY_NAME}.exe"
-          cp /c/build-workspace/scopes/presentation-cli/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp /c/build-workspace/scopes/boot/cli-launcher/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
-          cp presentation-cli/build/native/nativeCompile/scopes "$BINARY_NAME"
+          cp boot/cli-launcher/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary

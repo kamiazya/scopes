@@ -376,7 +376,7 @@ Execute the sample CLI command to create a scope:
 
 This E2E slice showcases the complete vertical flow through all architecture layers:
 
-1. **CLI Layer** (`presentation-cli`):
+1. **CLI Layer** (`boot:cli-launcher`):
    - `CreateScopeCommand` captures user input
    - Validates required parameters
    - Maps CLI arguments to domain command

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.spotless)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
 }
@@ -112,5 +113,59 @@ tasks.cyclonedxBom {
 tasks.register("konsistTest") {
     description = "Run Konsist architecture tests"
     group = "verification"
-    dependsOn(":konsist-test:test")
+    dependsOn(":quality:konsist:test")
+}
+
+// Spotless configuration
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**/*.kt")
+        ktlint("1.5.0")
+            .editorConfigOverride(
+                mapOf(
+                    "indent_size" to 4,
+                    "continuation_indent_size" to 4,
+                    "max_line_length" to 160,
+                    "insert_final_newline" to true,
+                    "ktlint_standard_no-wildcard-imports" to "disabled",
+                    "ktlint_standard_package-name" to "disabled",
+                    "ktlint_standard_value-parameter-comment" to "disabled",
+                ),
+            )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint("1.5.0")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    json {
+        target("**/*.json")
+        targetExclude("**/build/**/*.json", "**/node_modules/**/*.json")
+        jackson()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    yaml {
+        target("**/*.{yml,yaml}")
+        targetExclude("**/build/**/*.{yml,yaml}")
+        jackson()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    format("markdown") {
+        target("**/*.md")
+        targetExclude("**/build/**/*.md")
+        endWithNewline()
+        // Trailing whitespace has semantic meaning in Markdown, so follow .editorconfig
+    }
+    format("shell") {
+        target("**/*.sh")
+        targetExclude("**/build/**/*.sh")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }

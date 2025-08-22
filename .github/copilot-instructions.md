@@ -60,7 +60,7 @@ chmod +x gradlew scripts/*.sh
 # Timeout: Set 60+ minutes. This builds a standalone executable.
 
 # The native binary will be created at:
-# presentation-cli/build/native/nativeCompile/scopes
+# boot/cli-launcher/build/native/nativeCompile/scopes
 ```
 
 ### Testing Commands
@@ -72,8 +72,8 @@ chmod +x gradlew scripts/*.sh
 # Run tests for specific module
 ./gradlew :domain:test
 ./gradlew :application:test
-./gradlew :infrastructure:test
-./gradlew :presentation-cli:test
+./gradlew :contexts:scope-management:infrastructure:test
+./gradlew :boot:cli-launcher:test
 ```
 
 ### Code Quality & Formatting
@@ -100,7 +100,7 @@ chmod +x gradlew scripts/*.sh
 ./gradlew run --args="--help"
 
 # Or run the native binary (after nativeCompile):
-./presentation-cli/build/native/nativeCompile/scopes --help
+./boot/cli-launcher/build/native/nativeCompile/scopes --help
 ```
 
 ## Validation & Testing Scenarios
@@ -165,8 +165,9 @@ If `nativeCompile` fails:
 ```
 ├── domain/              # Core business logic and entities
 ├── application/         # Use cases and application services  
-├── infrastructure/      # External adapters and implementations
-├── presentation-cli/    # CLI interface using Clikt
+├── contexts/           # Bounded contexts (DDD)
+├── apps/               # Application layer
+├── boot/               # Entry points (CLI, daemon)
 ├── docs/               # Documentation following Diátaxis framework
 ├── scripts/            # Utility scripts for development
 └── .github/            # CI/CD workflows and automation

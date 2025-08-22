@@ -1,0 +1,59 @@
+package io.github.kamiazya.scopes.scopemanagement.domain.repository
+
+import arrow.core.Either
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+
+/**
+ * Repository interface for Scope entity operations.
+ * Follows Clean Architecture principles with basic CRUD operations.
+ * Complex business logic is handled by domain services.
+ *
+ * Note: Aspect-based queries are handled by the aspect-management context.
+ */
+interface ScopeRepository {
+    /**
+     * Save a scope (create or update).
+     */
+    suspend fun save(scope: Scope): Either<PersistenceError, Scope>
+
+    /**
+     * Find a scope by ID.
+     */
+    suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?>
+
+    /**
+     * Find all scopes.
+     */
+    suspend fun findAll(): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Find scopes by parent ID.
+     */
+    suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Check if a scope exists.
+     */
+    suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean>
+
+    /**
+     * Check if a scope exists with the given title and parent.
+     * Used for efficient title uniqueness validation.
+     * When parentId is null, checks for root-level title uniqueness.
+     * Title uniqueness is enforced at ALL levels including root level.
+     */
+    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean>
+
+    /**
+     * Delete a scope by ID.
+     */
+    suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>
+
+    /**
+     * Update an existing scope.
+     * This is used by the command handler to update the read model after events are applied.
+     */
+    suspend fun update(scope: Scope): Either<PersistenceError, Scope>
+}
