@@ -4,6 +4,24 @@
 
 **Scopes** enables seamless symbiotic collaboration between developers and AI assistants through a unified, recursive task management system that eliminates context loss and maximizes productivity.
 
+## Architecture Overview
+
+The project follows **Clean Architecture** and **Domain-Driven Design (DDD)** principles with a functional programming approach using Kotlin and Arrow. The architecture has been refactored to consolidate all scope-related functionality into a single **scope-management** bounded context, following the principle of high cohesion.
+
+### Bounded Context: scope-management
+
+The unified `scope-management` context encompasses all aspects of scope lifecycle and management:
+
+- **Domain Layer**: Core business logic, entities, value objects, and domain events
+- **Application Layer**: Use cases, command handlers, and application services
+- **Infrastructure Layer**: Repository implementations, external service integrations
+
+This consolidation ensures:
+- **High Cohesion**: All scope-related logic in one place
+- **Clear Boundaries**: Single responsibility for scope management
+- **Simplified Integration**: One context to understand and maintain
+- **Consistent Domain Model**: Unified language and concepts
+
 ## Core Innovation: Unified Scope Entity
 
 Unlike traditional project management tools that use separate concepts (projects, epics, tasks), Scopes uses a single recursive entity called **Scope**.

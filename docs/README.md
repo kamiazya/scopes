@@ -16,6 +16,8 @@ Task-oriented recipes for specific goals
 
 Practical guides for accomplishing specific tasks and solving problems.
 
+- [Use Case Style Guide](./guides/use-case-style-guide.md) - Guidelines for implementing use cases
+
 ### 📋 [Reference](./reference/)
 
 Information-oriented technical descriptions
@@ -28,8 +30,11 @@ Understanding-oriented conceptual discussions
 
 In-depth explanations of concepts, architecture decisions, and design rationale.
 
-*Documentation will be added as the project develops.*
+- [Domain Overview](./explanation/domain-overview.md) - Core concepts and domain model
+- [Clean Architecture](./explanation/clean-architecture.md) - Architectural layers and principles  
+- [Domain-Driven Design](./explanation/domain-driven-design.md) - DDD implementation with functional programming
 - [Architecture Decision Records](./explanation/adr/) - Documented architectural decisions
+- [Automated Release Process](./explanation/automated-release-process.md) - CI/CD and release automation
 
 ## Quick Start
 

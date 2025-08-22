@@ -155,6 +155,7 @@ graph TD
   ADR_008[ADR-0008: Clean Architecture Adoption<br/>🏗️ Architectural Structure]
   ADR_0010[ADR-0010: Adopt ULID for Distributed Identifiers<br/>🔢 Distributed Systems]
   ADR_0011[ADR-0011: Functional DDD Adoption<br/>⚡ Functional Programming]
+  ADR_0012[ADR-0012: Unified Bounded Context<br/>🔄 Context Consolidation]
 
   %% Dependencies
   ADR_003 --> ADR_004
@@ -171,6 +172,9 @@ graph TD
   ADR_003 --> ADR_0010
   ADR_007 --> ADR_0011
   ADR_008 --> ADR_0011
+  ADR_007 --> ADR_0012
+  ADR_008 --> ADR_0012
+  ADR_0011 --> ADR_0012
 
 
   %% Influences (dotted lines)
@@ -200,6 +204,7 @@ graph TD
   class ADR_009 governance
   class ADR_0010 distributed
   class ADR_0011 functional
+  class ADR_0012 architecture
 ```
 
 ### ADR Index
@@ -217,6 +222,7 @@ graph TD
 | [0009](./0009-adopt-apache-license-2.0.md) | Accepted | Adopt Apache License 2.0 | Change project license to Apache 2.0 for better legal protection |
 | [0010](./0010-adopt-ulid-for-distributed-identifiers.md) | Accepted | Adopt ULID for Distributed Identifiers | Replace hex IDs with ULID for multi-device synchronization support |
 | [0011](./0011-functional-ddd-adoption.md) | Accepted | Functional Domain-Driven Design Adoption | Adopt functional programming paradigms within DDD for improved code quality |
+| [0012](./0012-unified-bounded-context.md) | Accepted | Unified Bounded Context for Scope Management | Consolidate all scope-related functionality into single bounded context |
 
 #### Legend
 
@@ -231,6 +237,7 @@ graph TD
 - ⚖️ Governance and legal decisions
 - 🔢 Distributed systems and data consistency
 - ⚡ Functional programming and domain modeling
+- 🔄 Context boundaries and consolidation
 
 ## Tools and Resources
 
