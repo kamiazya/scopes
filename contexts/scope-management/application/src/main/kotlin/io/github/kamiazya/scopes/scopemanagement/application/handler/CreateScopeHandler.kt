@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
@@ -30,6 +31,7 @@ import kotlinx.datetime.Clock
  * - Uses TransactionManager for atomic operations
  * - Delegates hierarchy validation to domain service
  * - Uses CrossAggregateValidationService for cross-aggregate invariants
+ * - Retrieves hierarchy policy from external context via port
  * - Maintains clear separation of concerns
  */
 class CreateScopeHandler(
@@ -37,6 +39,7 @@ class CreateScopeHandler(
     private val transactionManager: TransactionManager,
     private val hierarchyService: ScopeHierarchyService,
     private val crossAggregateValidationService: CrossAggregateValidationService,
+    private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val logger: Logger,
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
@@ -51,6 +54,17 @@ class CreateScopeHandler(
 
         transactionManager.inTransaction {
             either {
+                // Get hierarchy policy from external context
+                logger.debug("Fetching hierarchy policy")
+                val hierarchyPolicy = hierarchyPolicyProvider.getPolicy().bind()
+                logger.debug(
+                    "Hierarchy policy loaded",
+                    mapOf(
+                        "maxDepth" to hierarchyPolicy.maxDepth.toString(),
+                        "maxChildrenPerScope" to hierarchyPolicy.maxChildrenPerScope.toString(),
+                    ),
+                )
+
                 // Parse parent ID if provided
                 val parentId = input.parentId?.let { parentIdString ->
                     logger.debug("Parsing parent ID", mapOf("parentId" to parentIdString))
@@ -97,6 +111,7 @@ class CreateScopeHandler(
                     hierarchyService.validateHierarchyDepth(
                         parentId,
                         currentDepth,
+                        hierarchyPolicy.maxDepth,
                     ).bind()
 
                     // Validate children limit
@@ -112,6 +127,7 @@ class CreateScopeHandler(
                     hierarchyService.validateChildrenLimit(
                         parentId,
                         existingChildren.size,
+                        hierarchyPolicy.maxChildrenPerScope,
                     ).bind()
                 }
 

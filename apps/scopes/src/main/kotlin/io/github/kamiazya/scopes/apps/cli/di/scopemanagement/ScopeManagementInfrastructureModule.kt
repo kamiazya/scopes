@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.apps.cli.services.DefaultUserPreferencesService
+import io.github.kamiazya.scopes.interfaces.shared.services.UserPreferencesService
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
@@ -24,6 +26,7 @@ import org.koin.dsl.module
  * - Transaction managers
  * - External integrations
  * - Alias generation services
+ * - Default services following Zero-Configuration principle
  */
 val scopeManagementInfrastructureModule = module {
     // Repositories
@@ -42,5 +45,11 @@ val scopeManagementInfrastructureModule = module {
     single<AliasGenerationStrategy> { HaikunatorStrategy() }
     single<AliasGenerationService> {
         DefaultAliasGenerationService(get(), get())
+    }
+
+    // External Services
+    // Default implementation following Zero-Configuration principle
+    single<UserPreferencesService> {
+        DefaultUserPreferencesService()
     }
 }

@@ -112,11 +112,12 @@ class ScopeHierarchyService {
      *
      * @param parentId The ID of the parent scope
      * @param currentChildCount The current number of children
-     * @param maxChildren Maximum allowed children (configurable)
+     * @param maxChildren Maximum allowed children (null means unlimited)
      * @return Either an error or Unit if valid
      */
-    fun validateChildrenLimit(parentId: ScopeId, currentChildCount: Int, maxChildren: Int = MAX_CHILDREN_PER_SCOPE): Either<ScopeHierarchyError, Unit> =
-        either {
+    fun validateChildrenLimit(parentId: ScopeId, currentChildCount: Int, maxChildren: Int?): Either<ScopeHierarchyError, Unit> = either {
+        // If maxChildren is null (unlimited), always valid
+        if (maxChildren != null) {
             ensure(currentChildCount < maxChildren) {
                 ScopeHierarchyError.MaxChildrenExceeded(
                     occurredAt = currentTimestamp(),
@@ -126,27 +127,27 @@ class ScopeHierarchyService {
                 )
             }
         }
+    }
 
     /**
      * Validates hierarchy depth doesn't exceed maximum.
      *
+     * @param scopeId The ID of the scope being validated
      * @param currentDepth The current depth of the hierarchy
-     * @param maxDepth Maximum allowed depth (configurable)
+     * @param maxDepth Maximum allowed depth (null means unlimited)
      * @return Either an error or Unit if valid
      */
-    fun validateHierarchyDepth(scopeId: ScopeId, currentDepth: Int, maxDepth: Int = MAX_HIERARCHY_DEPTH): Either<ScopeHierarchyError, Unit> = either {
-        ensure(currentDepth < maxDepth) {
-            ScopeHierarchyError.MaxDepthExceeded(
-                occurredAt = currentTimestamp(),
-                scopeId = scopeId,
-                attemptedDepth = currentDepth,
-                maximumDepth = maxDepth,
-            )
+    fun validateHierarchyDepth(scopeId: ScopeId, currentDepth: Int, maxDepth: Int?): Either<ScopeHierarchyError, Unit> = either {
+        // If maxDepth is null (unlimited), always valid
+        if (maxDepth != null) {
+            ensure(currentDepth < maxDepth) {
+                ScopeHierarchyError.MaxDepthExceeded(
+                    occurredAt = currentTimestamp(),
+                    scopeId = scopeId,
+                    attemptedDepth = currentDepth,
+                    maximumDepth = maxDepth,
+                )
+            }
         }
-    }
-
-    companion object {
-        const val MAX_HIERARCHY_DEPTH = 10
-        const val MAX_CHILDREN_PER_SCOPE = 100
     }
 }

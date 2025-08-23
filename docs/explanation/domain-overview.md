@@ -249,6 +249,12 @@ Designed from the ground up for human-AI collaboration:
 - **XDG Directories**: Platform-appropriate file locations
 - **ULID Identifiers**: Distributed, sortable, collision-resistant IDs
 
+### Zero-Configuration Start
+- **Immediate Usability**: Users can start using Scopes without any setup
+- **Sensible Defaults**: All features have reasonable default values
+- **No Initial Configuration**: The system never fails due to missing preferences
+- **Progressive Configuration**: Users can customize settings as needed, but it's never required
+
 ## System Boundaries
 
 ### Core Domain (In Scope)

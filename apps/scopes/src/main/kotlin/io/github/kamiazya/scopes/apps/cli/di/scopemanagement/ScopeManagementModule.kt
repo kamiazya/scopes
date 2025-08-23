@@ -43,6 +43,7 @@ val scopeManagementModule = module {
             transactionManager = get(),
             hierarchyService = get(),
             crossAggregateValidationService = get(),
+            hierarchyPolicyProvider = get(),
             logger = get(),
         )
     }
