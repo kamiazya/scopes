@@ -9,10 +9,10 @@ import kotlinx.datetime.Instant
  * bounded context, ensuring type-safe error handling and rich error information.
  *
  * Error categories include:
- * - Domain validation errors (ValidationError)
- * - External service integration errors (ExternalServiceIntegrationError)
- * - Aggregate-specific errors (ScopeError, ScopeHierarchyError, etc.)
- * - Value object validation errors (ScopeInputError, AspectValidationError, etc.)
+ * - Value object validation errors (ScopeInputError, AspectValidationError)
+ * - External integration errors (UserPreferencesIntegrationError)
+ * - Policy errors (HierarchyPolicyError)
+ * - Aggregate-specific errors (ScopeError, ScopeHierarchyError, ScopeUniquenessError)
  * - Infrastructure errors (PersistenceError)
  */
 sealed class ScopesError {

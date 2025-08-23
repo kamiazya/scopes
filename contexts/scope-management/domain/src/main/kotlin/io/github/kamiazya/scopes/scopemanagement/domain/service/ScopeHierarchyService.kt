@@ -133,18 +133,19 @@ class ScopeHierarchyService {
      * Validates hierarchy depth doesn't exceed maximum.
      *
      * @param scopeId The ID of the scope being validated
-     * @param currentDepth The current depth of the hierarchy
+     * @param currentDepth The current depth of the hierarchy (parent's depth)
      * @param maxDepth Maximum allowed depth (null means unlimited)
      * @return Either an error or Unit if valid
      */
     fun validateHierarchyDepth(scopeId: ScopeId, currentDepth: Int, maxDepth: Int?): Either<ScopeHierarchyError, Unit> = either {
         // If maxDepth is null (unlimited), always valid
         if (maxDepth != null) {
-            ensure(currentDepth < maxDepth) {
+            val attemptedDepth = currentDepth + 1
+            ensure(attemptedDepth <= maxDepth) {
                 ScopeHierarchyError.MaxDepthExceeded(
                     occurredAt = currentTimestamp(),
                     scopeId = scopeId,
-                    attemptedDepth = currentDepth,
+                    attemptedDepth = attemptedDepth,
                     maximumDepth = maxDepth,
                 )
             }

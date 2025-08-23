@@ -10,7 +10,6 @@ dependencies {
     implementation(project(":platform:observability"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
-    implementation(libs.kotlinx.datetime)
 
     // DI
     implementation(platform(libs.koin.bom))
