@@ -90,3 +90,8 @@ class GetCommand :
         }
     }
 }
+
+/**
+ * Main entry point for the Scopes CLI application.
+ */
+fun main(args: Array<String>) = SimpleScopesCommand().main(args)

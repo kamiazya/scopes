@@ -214,27 +214,12 @@ class CleanArchitectureTest :
             }
         }
 
-        // ========== Boot Layer ==========
+        // ========== Apps Layer - Entry Points ==========
 
-        "boot layer should be thin and only contain entry points" {
-            Konsist
-                .scopeFromDirectory("boot")
-                .files
-                .filter { it.path.contains("src/main") }
-                .assertTrue { file ->
-                    // Boot should only import apps and minimal infrastructure for wiring
-                    file.imports.none { import ->
-                        contexts.any { context ->
-                            import.name.contains(".$context.domain.")
-                        }
-                    }
-                }
-        }
-
-        "boot layer should have main functions" {
-            listOf("cli-launcher", "daemon-launcher").forEach { module ->
+        "apps layer should have main functions" {
+            listOf("scopes", "scopesd").forEach { module ->
                 Konsist
-                    .scopeFromDirectory("boot/$module")
+                    .scopeFromDirectory("apps/$module")
                     .functions()
                     .filter { it.name == "main" }
                     .assertTrue { main ->

@@ -9,13 +9,12 @@ import io.kotest.core.spec.style.StringSpec
  * Architecture tests for layer separation according to the original design.
  *
  * Layer hierarchy (from top to bottom):
- * - Boot: Thin entry points for distribution (CLI, daemon)
- * - Apps: Application coordination and orchestration
+ * - Apps: Application coordination and orchestration (including entry points)
  * - Contexts: Bounded contexts with domain/application/infrastructure
  * - Platform: Technical utilities and shared kernels
  *
  * Dependency rules:
- * - Boot → Apps → Contexts (application) → Contexts (domain)
+ * - Apps → Contexts (application) → Contexts (domain)
  * - Infrastructure → Application → Domain (within each context)
  * - Platform can be used by all layers (technical utilities only)
  */
@@ -25,51 +24,6 @@ class LayerArchitectureTest :
         val contexts = listOf(
             "scope-management",
         )
-
-        // ========== Boot Layer Tests ==========
-
-        "boot layer should only depend on apps and minimal infrastructure" {
-            Konsist
-                .scopeFromDirectory("boot")
-                .files
-                .filter { it.path.contains("src/main") }
-                .assertFalse { file ->
-                    // Boot should not directly access domain logic
-                    file.imports.any { import ->
-                        contexts.any { context ->
-                            import.name.contains(".$context.domain.")
-                        }
-                    }
-                }
-        }
-
-        "boot layer should have proper entry points" {
-            listOf("cli-launcher", "daemon-launcher").forEach { module ->
-                val scope = Konsist.scopeFromDirectory("boot/$module")
-
-                // Should have a main function (top-level functions in Kotlin are public by default)
-                val hasMain = scope.functions()
-                    .any { it.name == "main" }
-
-                assert(hasMain) {
-                    "Boot module $module should have a public main function"
-                }
-            }
-        }
-
-        "boot layer should be minimal in size" {
-            listOf("cli-launcher", "daemon-launcher").forEach { module ->
-                val files = Konsist
-                    .scopeFromDirectory("boot/$module")
-                    .files
-                    .filter { it.path.contains("src/main") }
-
-                // Boot layer should be thin - warn if too many files
-                assert(files.size <= 10) {
-                    "Boot module $module has ${files.size} files - consider if it's too complex for an entry point"
-                }
-            }
-        }
 
         // ========== Apps Layer Tests ==========
 
@@ -311,8 +265,6 @@ class LayerArchitectureTest :
             } + listOf(
                 "apps/scopes",
                 "apps/scopesd",
-                "boot/cli-launcher",
-                "boot/daemon-launcher",
             )
 
             modules.forEach { module ->

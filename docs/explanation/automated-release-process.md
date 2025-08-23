@@ -286,7 +286,7 @@ Bot accounts (dependabot, github-actions) are automatically excluded.
 - `.github/workflows/release.yml` - Release automation workflow
 - `.github/workflows/build.yml` - Enhanced build workflow with SBOM and vulnerability scanning
 - `build.gradle.kts` - CycloneDX plugin configuration for source-level SBOM
-- `boot/cli-launcher/build.gradle.kts` - Application-specific SBOM configuration
+- `apps/scopes/build.gradle.kts` - Application-specific SBOM configuration
 - `../guides/security-verification.md` - Security verification guide
 - `../guides/sbom-verification.md` - SBOM verification guide
 - `../guides/dependency-security.md` - Dependency security guide

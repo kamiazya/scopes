@@ -17,10 +17,6 @@ dependencies {
     testImplementation(project(":apps:scopes"))
     testImplementation(project(":apps:scopesd"))
 
-    // Boot layer
-    testImplementation(project(":boot:cli-launcher"))
-    testImplementation(project(":boot:daemon-launcher"))
-
     // Test libraries
     testImplementation(libs.konsist)
     testImplementation(libs.kotest.runner.junit5)

@@ -17,7 +17,6 @@ include(
     ":interfaces",
     ":contexts",
     ":apps",
-    ":boot",
     ":quality",
     // Platform layer
     ":platform:commons",
@@ -31,12 +30,9 @@ include(
     ":contexts:scope-management:domain",
     ":contexts:scope-management:application",
     ":contexts:scope-management:infrastructure",
-    // Apps layer - Application logic
+    // Apps layer - Application logic & Entry points
     ":apps:scopes",
     ":apps:scopesd",
-    // Boot layer - Entry points
-    ":boot:cli-launcher",
-    ":boot:daemon-launcher",
     // Quality
     ":quality:konsist",
 )

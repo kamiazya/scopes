@@ -98,9 +98,8 @@ graph TB
 ### 4. Presentation Layer (User Interfaces)
 - **Location**: `apps/`
 - **Contents**:
-  - **CLI**: Command-line interface (`apps/cli/`)
-  - **REST API**: HTTP endpoints (`apps/api/`)
-  - **Daemon**: Background service (`apps/daemon/`)
+  - **CLI Application**: Main command-line interface (`apps/scopes/`)
+  - **Daemon Service**: Background processing (`apps/scopesd/`)
 - **Dependencies**: Application layer
 - **Testing**: End-to-end tests
 

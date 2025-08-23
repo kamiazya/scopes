@@ -33,13 +33,9 @@ The project follows **Clean Architecture** and **Domain-Driven Design (DDD)** pr
 
 ```
 scopes/
-├── apps/                      # Application layer
-│   ├── api/                   # REST API server
-│   ├── cli/                   # Command-line interface
-│   └── daemon/                # Background service
-├── boot/                      # Application bootstrapping
-│   ├── cli-launcher/          # CLI startup
-│   └── daemon-launcher/       # Daemon startup
+├── apps/                      # Application layer (entry points)
+│   ├── scopes/                # Main CLI application
+│   └── scopesd/               # Background daemon service
 ├── contexts/                  # Bounded contexts (DDD)
 │   └── scope-management/      # Unified scope management context
 │       ├── domain/            # Core business logic
@@ -88,13 +84,10 @@ The architecture has been refactored to consolidate all scope-related functional
 
 ```bash
 # CLI
-./gradlew :boot:cli-launcher:run
-
-# API Server
-./gradlew :apps:api:run
+./gradlew :apps:scopes:run
 
 # Daemon
-./gradlew :boot:daemon-launcher:run
+./gradlew :apps:scopesd:run
 ```
 
 ## 📚 Documentation

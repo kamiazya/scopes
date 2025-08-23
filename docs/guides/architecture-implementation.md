@@ -32,8 +32,8 @@ flowchart TD
                 INF_REP[repository/<br/>InMemoryScopeRepository.kt]
             end
 
-            subgraph CLI["💻 boot/cli-launcher/"]
-                CLI_MAIN[Main.kt]
+            subgraph CLI["💻 apps/scopes/"]
+                CLI_MAIN[SimpleScopesCommand.kt]
                 CLI_CMD[commands/<br/>CreateCommand.kt<br/>ListCommand.kt]
             end
 
