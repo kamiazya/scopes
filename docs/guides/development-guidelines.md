@@ -227,9 +227,10 @@ class ApplicationScopeValidationService(
             }
             .bind()
         
-        if (depth >= MAX_HIERARCHY_DEPTH) {
+        val policy = hierarchyPolicyProvider.getPolicy().getOrElse { HierarchyPolicy.default() }
+        if (policy.maxDepth != null && depth >= policy.maxDepth) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
-                maxDepth = MAX_HIERARCHY_DEPTH,
+                maxDepth = policy.maxDepth,
                 actualDepth = depth + 1,
                 scopeId = parentId,
                 parentPath = emptyList()

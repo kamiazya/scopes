@@ -83,7 +83,7 @@ graph TB
 
 **Benefits:**
 - **Conceptual Simplicity**: Learn one concept, use everywhere
-- **Deep Hierarchy**: Supports up to 10 levels by default (configurable)
+- **Deep Hierarchy**: Unlimited levels by default (configurable if needed)
 - **Consistent Operations**: Same features available at every level
 - **Natural Recursion**: Mirrors how developers actually think about work
 
@@ -95,7 +95,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 
 **Properties:**
 - **Identity**: Unique ULID identifier
-- **Hierarchy**: Parent-child relationships (up to 10 levels by default, configurable)
+- **Hierarchy**: Parent-child relationships (unlimited depth by default)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
 
@@ -370,8 +370,8 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 ### Other Business Rules
 
 #### Hierarchy Constraints
-- **Maximum Depth**: 10 levels to prevent excessive nesting
-- **Maximum Children**: 100 children per parent to maintain performance
+- **Maximum Depth**: Unlimited by default (can be configured if needed)
+- **Maximum Children**: Unlimited by default (can be configured if needed)
 
 #### Title Validation
 - **Length**: 1-200 characters
