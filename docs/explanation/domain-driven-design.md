@@ -72,7 +72,7 @@ graph TB
 - **Key Aggregates**: ScopeAggregate
 - **Key Services**: ScopeHierarchyService, AliasGenerationService
 - **Ubiquitous Language**:
-  - Scope (スコープ): Unified recursive work unit
+  - Scope: Unified recursive work unit
   - Scope ID: Unique identifier (ULID)
   - Scope Title: Identifying name
   - Parent ID: Hierarchical relationship
