@@ -33,32 +33,53 @@ The project follows **Clean Architecture** and **Domain-Driven Design (DDD)** pr
 
 ```
 scopes/
-├── apps/                      # Application layer (entry points)
+├── apps/                      # Entry points
 │   ├── scopes/                # Main CLI application
 │   └── scopesd/               # Background daemon service
 ├── contexts/                  # Bounded contexts (DDD)
-│   └── scope-management/      # Unified scope management context
-│       ├── domain/            # Core business logic
-│       ├── application/       # Use cases and orchestration
-│       └── infrastructure/    # External integrations
-├── docs/                      # Documentation (Diátaxis framework)
-│   ├── explanation/           # Conceptual documentation
-│   │   └── adr/              # Architecture Decision Records
-│   ├── guides/               # How-to guides
-│   └── reference/            # API and technical reference
-└── libs/                     # Shared libraries
-    ├── common/               # Common utilities
-    └── test-utils/           # Testing utilities
+│   └── scope-management/      # Core scope management context
+│       ├── domain/            # Business logic and rules
+│       ├── application/       # Use cases and handlers
+│       └── infrastructure/    # Technical implementations
+├── interfaces/                # Adapters and facades
+│   ├── cli/                   # CLI commands and formatters
+│   └── shared/                # Shared facades and DI
+├── platform/                  # Shared infrastructure
+│   ├── commons/               # Core types (ULID, Instant)
+│   ├── application-commons/   # Base application types
+│   └── observability/         # Logging and monitoring
+├── quality/                   # Architecture tests
+│   └── konsist/               # Konsist architecture validation
+└── docs/                      # Documentation (Diátaxis)
+    ├── explanation/           # Conceptual documentation
+    │   └── adr/              # Architecture Decision Records
+    ├── guides/               # How-to guides
+    ├── reference/            # API reference
+    └── tutorials/            # Learning guides
 ```
 
-### Bounded Context
+### Architecture Highlights
 
-The architecture has been refactored to consolidate all scope-related functionality into a single **scope-management** context, following the principle of high cohesion. This unified context manages:
+#### Clean Architecture Layers
+- **Apps**: Entry points (CLI, daemon)
+- **Interfaces**: Adapters between external world and application
+- **Contexts**: Bounded contexts with domain/application/infrastructure layers
+- **Platform**: Shared infrastructure and common components
+- **Quality**: Architecture compliance and validation
 
-- **Scope Aggregate**: Core entity representing projects, tasks, and all work units
-- **Aspect System**: Flexible key-value metadata for multi-dimensional classification
-- **Hierarchy Management**: Parent-child relationships with configurable depth
-- **Cross-cutting Concerns**: Comments, attachments, relations, and other features
+#### Bounded Context Structure
+The **scope-management** context is organized following DDD principles:
+
+- **Domain Layer**: Pure business logic with aggregates, entities, value objects, and domain events
+- **Application Layer**: Use cases, command/query handlers, and application services
+- **Infrastructure Layer**: Repository implementations, external service adapters
+
+#### Key Design Patterns
+- **Event Sourcing**: Aggregate state changes captured as domain events
+- **CQRS**: Separate command and query models
+- **Repository Pattern**: Abstract persistence behind interfaces
+- **Hexagonal Architecture**: Ports and adapters for external dependencies
+- **Dependency Injection**: Koin for wiring components
 
 ## 🚀 Getting Started
 

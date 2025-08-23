@@ -4,24 +4,39 @@
 
 Scopes implements **Domain-Driven Design (DDD)** with a functional programming approach using Kotlin and Arrow.
 
-## Domain Model
+## Bounded Contexts
 
-The domain model encapsulates all scope-related business logic.
+The system is organized into bounded contexts, each representing a distinct business capability:
 
 ```mermaid
-graph LR
-    subgraph "Core Domain"
-        AGG[Scope Aggregate]
-        ENT[Entities]
-        VO[Value Objects]
-        EVT[Domain Events]
-        SVC[Domain Services]
+graph TB
+    subgraph "Scope Management Context"
+        subgraph "Domain"
+            AGG[Scope Aggregate]
+            ENT[Entities]
+            VO[Value Objects]
+            EVT[Domain Events]
+            SVC[Domain Services]
+        end
+        
+        subgraph "Application"
+            CMD[Commands]
+            QRY[Queries]
+            HANDLER[Handlers]
+            APPSVC[App Services]
+        end
+        
+        subgraph "Infrastructure"
+            REPO[Repositories]
+            ALIAS[Alias Generation]
+            TRANS[Transactions]
+        end
     end
     
-    subgraph "External Systems"
-        GIT[Git Integration]
-        MCP[MCP Protocol]
-        SYNC[Sync Services]
+    subgraph "Future Contexts"
+        CMT[Comment Management]
+        ATT[Attachment Management]
+        SYNC[Synchronization]
     end
     
     AGG --> ENT
@@ -30,22 +45,56 @@ graph LR
     ENT --> VO
     SVC --> AGG
     
-    AGG -.-> GIT
-    AGG -.-> MCP
-    AGG -.-> SYNC
+    HANDLER --> AGG
+    HANDLER --> SVC
+    APPSVC --> HANDLER
     
-    classDef internal fill:#e8f5e9
-    classDef external fill:#fce4ec
+    REPO --> AGG
+    ALIAS --> SVC
     
-    class AGG,ENT,VO,EVT,SVC internal
-    class GIT,MCP,SYNC external
+    classDef domain fill:#e8f5e9
+    classDef application fill:#fff3e0
+    classDef infrastructure fill:#fce4ec
+    classDef future fill:#f5f5f5,stroke-dasharray: 5 5
+    
+    class AGG,ENT,VO,EVT,SVC domain
+    class CMD,QRY,HANDLER,APPSVC application
+    class REPO,ALIAS,TRANS infrastructure
+    class CMT,ATT,SYNC future
 ```
+
+### Current Bounded Contexts
+
+#### Scope Management Context
+- **Responsibility**: Core scope operations, hierarchy, aspects, aliases
+- **Location**: `contexts/scope-management/`
+- **Status**: Implemented
+- **Key Aggregates**: ScopeAggregate
+- **Key Services**: ScopeHierarchyService, AliasGenerationService
+
+### Future Bounded Contexts (Planned)
+
+#### Comment Management Context
+- **Responsibility**: AI and human collaboration through comments
+- **Status**: Not yet implemented
+- **Integration**: Will integrate with MCP protocol
+
+#### Attachment Management Context
+- **Responsibility**: File and resource linking
+- **Status**: Not yet implemented
+- **Integration**: Will handle external file references
+
+#### Synchronization Context
+- **Responsibility**: External tool integration (Git, Jira, etc.)
+- **Status**: Not yet implemented
+- **Integration**: Will provide sync adapters
 
 ### Domain Boundaries
 
-- **Core Domain**: All scope management, hierarchy, aspects, and metadata
-- **External Systems**: Git, MCP, synchronization, and third-party integrations
-- **Anti-Corruption Layer**: DTOs and adapters protect domain from external changes
+- **Core Domain**: Scope management with recursive hierarchy
+- **Supporting Domains**: Aspect system, alias management, context views
+- **Generic Domains**: Authentication, notifications (future)
+- **Anti-Corruption Layer**: DTOs and facades protect domain from external changes
 
 ## Strategic Design
 
@@ -81,45 +130,78 @@ The core domain is **recursive scope management** - the innovative concept that 
 
 #### ScopeAggregate
 
-The main aggregate root that ensures consistency:
+The main aggregate root implementing event sourcing pattern:
 
 ```kotlin
 data class ScopeAggregate(
-    val id: AggregateId,
-    val scope: Scope,
-    val version: AggregateVersion,
-    val events: List<DomainEvent> = emptyList()
-) : AggregateRoot {
+    override val id: AggregateId,
+    override val version: AggregateVersion,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val scope: Scope?,
+    val isDeleted: Boolean = false,
+    val isArchived: Boolean = false,
+) : AggregateRoot<ScopeAggregate>() {
     
-    // Command handlers ensure invariants
-    fun execute(command: Command): Either<ScopesError, ScopeAggregate> = 
-        when (command) {
-            is CreateScope -> handleCreate(command)
-            is UpdateScope -> handleUpdate(command)
-            is DeleteScope -> handleDelete(command)
-        }
+    companion object {
+        // Factory method for creating new aggregates
+        fun create(
+            title: ScopeTitle,
+            description: ScopeDescription? = null,
+            parentId: ScopeId? = null,
+            aspects: Aspects = Aspects.empty(),
+            clock: Clock = Clock.System
+        ): Either<ScopesError, Pair<ScopeAggregate, DomainEvent>>
+    }
     
-    // Business rules enforced here
-    private fun handleUpdate(cmd: UpdateScope): Either<ScopesError, ScopeAggregate> = 
-        either {
-            // Validate business rules
-            ensureNotDeleted().bind()
-            ensureVersionMatch(cmd.expectedVersion).bind()
-            
-            // Apply changes
-            val updated = scope.update(cmd.updates).bind()
-            
-            // Record event
-            val event = ScopeUpdated(scope.id, updated, Clock.System.now())
-            
-            copy(
-                scope = updated,
-                version = version.increment(),
-                events = events + event
-            )
-        }
+    // Command methods that produce events
+    fun updateTitle(
+        newTitle: ScopeTitle,
+        clock: Clock = Clock.System
+    ): Either<ScopesError, Pair<ScopeAggregate, DomainEvent>> = either {
+        ensureNotDeleted().bind()
+        ensureNotArchived().bind()
+        val currentScope = ensureScopeExists().bind()
+        
+        val event = ScopeTitleUpdated(
+            eventId = EventId.generate(),
+            aggregateId = id,
+            scopeId = currentScope.id,
+            oldTitle = currentScope.title,
+            newTitle = newTitle,
+            occurredAt = clock.now()
+        )
+        
+        val updated = copy(
+            scope = currentScope.copy(title = newTitle),
+            version = version.increment(),
+            updatedAt = clock.now()
+        )
+        
+        updated to event
+    }
+    
+    // Apply events to reconstruct state (Event Sourcing)
+    fun applyEvent(event: DomainEvent): ScopeAggregate = when (event) {
+        is ScopeCreated -> copy(
+            scope = event.scope,
+            version = version.increment(),
+            createdAt = event.occurredAt,
+            updatedAt = event.occurredAt
+        )
+        is ScopeTitleUpdated -> copy(
+            scope = scope?.copy(title = event.newTitle),
+            version = version.increment(),
+            updatedAt = event.occurredAt
+        )
+        is ScopeDeleted -> copy(
+            isDeleted = true,
+            version = version.increment(),
+            updatedAt = event.occurredAt
+        )
+        // ... other events
+    }
 }
-```
 
 ### Entities
 

@@ -8,120 +8,228 @@ Scopes follows **Clean Architecture** principles to ensure maintainability, test
 
 ```mermaid
 graph TB
-    subgraph "External Layer"
+    subgraph "Apps Layer"
         CLI[CLI Application]
-        API[REST API]
         DAEMON[Daemon Service]
     end
     
-    subgraph "Application Layer"
-        UC[Use Cases]
-        CMD[Command Handlers]
-        DTO[DTOs]
+    subgraph "Interfaces Layer"
+        CLIADAPTER[CLI Adapters]
+        FACADE[Facades]
+        MAPPER[Mappers]
     end
     
-    subgraph "Domain Layer"
-        AGG[Aggregates]
-        ENT[Entities]
-        VO[Value Objects]
-        EVT[Domain Events]
-        REPO[Repository Interfaces]
+    subgraph "Bounded Contexts"
+        subgraph "Scope Management Context"
+            subgraph "Application"
+                UC[Use Cases]
+                CMD[Command Handlers]
+                DTO[DTOs]
+                APPSERVICE[Application Services]
+            end
+            
+            subgraph "Domain"
+                AGG[Aggregates]
+                ENT[Entities]
+                VO[Value Objects]
+                EVT[Domain Events]
+                REPO[Repository Interfaces]
+            end
+            
+            subgraph "Infrastructure"
+                IMPL[Repository Implementations]
+                TRANS[Transaction Management]
+            end
+        end
     end
     
-    subgraph "Infrastructure Layer"
-        DB[Database]
-        FS[File System]
-        EXT[External Services]
-        IMPL[Repository Implementations]
+    subgraph "Platform Layer"
+        COMMONS[Commons]
+        APPCOMMONS[Application Commons]
+        OBS[Observability]
     end
     
-    CLI --> UC
-    API --> UC
-    DAEMON --> UC
+    CLI --> CLIADAPTER
+    DAEMON --> FACADE
+    
+    CLIADAPTER --> FACADE
+    FACADE --> UC
     
     UC --> CMD
     CMD --> AGG
     CMD --> REPO
+    CMD --> APPSERVICE
     
     AGG --> ENT
     AGG --> VO
     AGG --> EVT
     
     IMPL --> REPO
-    IMPL --> DB
-    IMPL --> FS
-    IMPL --> EXT
+    IMPL --> TRANS
     
-    classDef external fill:#e1f5fe
+    UC --> APPCOMMONS
+    CMD --> APPCOMMONS
+    AGG --> COMMONS
+    VO --> COMMONS
+    
+    classDef apps fill:#e1f5fe
+    classDef interfaces fill:#e3f2fd
     classDef application fill:#fff3e0
     classDef domain fill:#e8f5e9
     classDef infrastructure fill:#fce4ec
+    classDef platform fill:#f3e5f5
     
-    class CLI,API,DAEMON external
-    class UC,CMD,DTO application
+    class CLI,DAEMON apps
+    class CLIADAPTER,FACADE,MAPPER interfaces
+    class UC,CMD,DTO,APPSERVICE application
     class AGG,ENT,VO,EVT,REPO domain
-    class DB,FS,EXT,IMPL infrastructure
+    class IMPL,TRANS infrastructure
+    class COMMONS,APPCOMMONS,OBS platform
 ```
 
 ## Layer Responsibilities
 
-### 1. Domain Layer (Core Business Logic)
-- **Location**: `domain/`
+### 1. Bounded Contexts Layer
+Each bounded context represents a distinct business capability and contains three sub-layers:
+
+#### Scope Management Context (`contexts/scope-management/`)
+The core bounded context handling all scope-related operations.
+
+##### Domain Layer (Core Business Logic)
+- **Location**: `contexts/scope-management/domain/`
 - **Contents**:
-  - **Aggregates**: `ScopeAggregate` - Main aggregate root
+  - **Aggregates**: `ScopeAggregate` - Main aggregate root with event sourcing
   - **Entities**: `Scope`, `AspectDefinition`, `ContextView`
   - **Value Objects**: `ScopeId`, `ScopeTitle`, `ScopeDescription`, `AspectKey`, `AspectValue`
-  - **Domain Events**: State change notifications
+  - **Domain Events**: `ScopeCreated`, `ScopeUpdated`, `ScopeDeleted`, etc.
   - **Repository Interfaces**: Abstract persistence contracts
-- **Dependencies**: None (pure business logic)
+  - **Domain Services**: `ScopeHierarchyService`, `AliasGenerationService`
+- **Dependencies**: Platform commons only
 - **Testing**: Property-based tests for invariants
 
-### 2. Application Layer (Use Cases)
-- **Location**: `application/`
+##### Application Layer (Use Cases)
+- **Location**: `contexts/scope-management/application/`
 - **Contents**:
   - **Commands**: `CreateScope`, `UpdateScope`, `DeleteScope`
-  - **Command Handlers**: Orchestrate domain operations
+  - **Queries**: `GetScopeById`, `GetFilteredScopes`, `GetChildren`
+  - **Command Handlers**: `CreateScopeHandler`, `UpdateScopeHandler`, `DeleteScopeHandler`
+  - **Query Handlers**: `GetScopeByIdHandler`, `GetChildrenHandler`
   - **DTOs**: `ScopeDto`, `CreateScopeResult`, `FilteredScopesResult`
-  - **Application Services**: Cross-aggregate operations
-- **Dependencies**: Domain layer only
+  - **Application Services**: `CrossAggregateValidationService`, `ActiveContextService`
+  - **Port Interfaces**: `TransactionManager`
+- **Dependencies**: Domain layer and platform application commons
 - **Testing**: Integration tests for workflows
 
-### 3. Infrastructure Layer (External Integrations)
-- **Location**: `infrastructure/`
+##### Infrastructure Layer (Technical Implementations)
+- **Location**: `contexts/scope-management/infrastructure/`
 - **Contents**:
-  - **Repository Implementations**: SQLite, file system
-  - **External Service Adapters**: Git, MCP, sync services
-  - **Configuration**: Database setup, connection pools
+  - **Repository Implementations**: `InMemoryScopeRepository`, `InMemoryContextViewRepository`
+  - **Alias Generation**: `DefaultAliasGenerationService`, `HaikunatorStrategy`
+  - **Transaction Management**: `NoopTransactionManager`
+  - **Word Providers**: `DefaultWordProvider`
 - **Dependencies**: Domain and Application layers
 - **Testing**: Integration tests with test doubles
 
-### 4. Presentation Layer (User Interfaces)
+### 2. Interfaces Layer (Adapters)
+- **Location**: `interfaces/`
+- **Contents**:
+  - **CLI Module** (`interfaces/cli/`):
+    - Commands: `CreateCommand`, `GetCommand`, `ListCommand`, `UpdateCommand`, `DeleteCommand`
+    - Adapters: `ScopeCommandAdapter`
+    - Formatters: `ScopeOutputFormatter`
+    - Mappers: `ErrorMessageMapper`
+  - **Shared Module** (`interfaces/shared/`):
+    - Facades: `ScopeManagementFacade`
+    - DI Configuration: `InterfaceSharedModule`
+- **Dependencies**: Application layer from bounded contexts
+- **Testing**: Adapter tests
+
+### 3. Apps Layer (Entry Points)
 - **Location**: `apps/`
 - **Contents**:
-  - **CLI Application**: Main command-line interface (`apps/scopes/`)
-  - **Daemon Service**: Background processing (`apps/scopesd/`)
-- **Dependencies**: Application layer
+  - **CLI Application** (`apps/scopes/`):
+    - Main entry point: `SimpleScopesCommand`
+    - DI Configuration: `KoinCompositionRoot`, `CliAppModule`
+  - **Daemon Service** (`apps/scopesd/`):
+    - Background service: `DaemonApplication`
+- **Dependencies**: Interfaces layer
 - **Testing**: End-to-end tests
+
+### 4. Platform Layer (Shared Infrastructure)
+- **Location**: `platform/`
+- **Contents**:
+  - **Commons** (`platform/commons/`):
+    - Core types: `ULID`, `Instant`
+    - Validation: `ValidationResult`
+  - **Application Commons** (`platform/application-commons/`):
+    - Base types: `Command`, `Query`, `DTO`, `UseCase`
+    - Ports: `TransactionManager`
+  - **Observability** (`platform/observability/`):
+    - Logging: `Logger`, `ConsoleLogger`, `LogAppender`
+    - Monitoring: `ApplicationInfo`, `RuntimeInfo`
+    - Formatters: `JsonLogFormatter`, `PlainTextLogFormatter`
+- **Dependencies**: None (foundation layer)
+- **Testing**: Unit tests
+
+### 5. Quality Layer (Architecture Tests)
+- **Location**: `quality/`
+- **Contents**:
+  - **Konsist Tests** (`quality/konsist/`):
+    - Architecture validation: `CleanArchitectureTest`, `BoundedContextArchitectureTest`
+    - DDD patterns: `DddUseCasePatternTest`
+    - Code organization: `ImportOrganizationTest`, `LayerArchitectureTest`
+- **Dependencies**: All layers (for testing)
+- **Testing**: Architecture compliance tests
 
 ## Dependency Rules
 
-1. **Dependency Direction**: Dependencies point inward (outer layers depend on inner layers)
-2. **Domain Independence**: Domain layer has no external dependencies
-3. **Interface Segregation**: Use interfaces to invert dependencies
-4. **Framework Independence**: Business logic doesn't depend on frameworks
+1. **Dependency Direction**: 
+   - Apps → Interfaces → Bounded Contexts (Application → Domain)
+   - All layers can depend on Platform layer
+   - Dependencies point inward within each bounded context
+
+2. **Bounded Context Independence**: 
+   - Each bounded context is isolated
+   - Communication between contexts through application services
+   - No direct cross-context domain dependencies
+
+3. **Domain Independence**: 
+   - Domain layer depends only on platform commons
+   - No framework dependencies in domain
+   - Pure business logic and rules
+
+4. **Interface Segregation**: 
+   - Use interfaces to invert dependencies
+   - Repository interfaces in domain, implementations in infrastructure
+   - Port interfaces in application for external services
+
+5. **Framework Independence**: 
+   - Business logic doesn't depend on frameworks
+   - Frameworks confined to infrastructure and apps layers
+   - DI configuration separated in dedicated modules
 
 ```kotlin
 // ❌ Wrong: Domain depends on Infrastructure
 class Scope(private val database: SQLiteDatabase) { ... }
 
+// ❌ Wrong: Cross-context domain dependency
+import io.github.kamiazya.scopes.anotherdomain.entity.AnotherEntity
+
 // ✅ Correct: Domain defines interface, Infrastructure implements
+// In domain layer:
 interface ScopeRepository {
-    fun save(scope: Scope): Either<ScopesError, Unit>
+    suspend fun save(aggregate: ScopeAggregate): Either<ScopesError, Unit>
+    suspend fun findById(id: ScopeId): Either<ScopesError, ScopeAggregate?>
 }
 
-class SQLiteScopeRepository : ScopeRepository {
-    override fun save(scope: Scope): Either<ScopesError, Unit> { ... }
+// In infrastructure layer:
+class InMemoryScopeRepository : ScopeRepository {
+    override suspend fun save(aggregate: ScopeAggregate): Either<ScopesError, Unit> { ... }
 }
+
+// ✅ Correct: Using platform commons
+import io.github.kamiazya.scopes.platform.commons.id.ULID
+import io.github.kamiazya.scopes.platform.commons.validation.ValidationResult
 ```
 
 ## Functional Programming with Arrow
@@ -156,26 +264,69 @@ data class Scope(
 ## Testing Strategy
 
 ### 1. Unit Tests (Domain Layer)
-- Property-based testing for value objects
+- Property-based testing for value objects with Kotest
 - Invariant testing for aggregates
 - Pure function testing
+- Domain event verification
 
 ### 2. Integration Tests (Application Layer)
 - Use case workflow testing
-- Command handler testing
+- Command and query handler testing
 - Mock repository implementations
+- Cross-aggregate validation testing
 
-### 3. Architecture Tests (Konsist)
+### 3. Adapter Tests (Interfaces Layer)
+- CLI command parsing and formatting
+- Error message mapping
+- Facade integration testing
+
+### 4. End-to-End Tests (Apps Layer)
+- Full application flow testing
+- DI container validation
+- Command-line interface testing
+
+### 5. Architecture Tests (Quality/Konsist)
 - Enforce Clean Architecture rules
-- Validate layer dependencies
-- Check naming conventions
+- Validate bounded context isolation
+- Check layer dependencies
+- Verify naming conventions
+- DDD pattern compliance
 
 ```kotlin
+// Example architecture tests from quality/konsist
 @Test
-fun `domain layer should not depend on infrastructure`() {
-    Konsist.scopeFromModule("domain")
+fun `bounded contexts should be isolated`() {
+    Konsist.scopeFromModule("contexts/scope-management/domain")
         .classes()
-        .assertNot { it.resideInPackage("..infrastructure..") }
+        .assertNot { 
+            it.hasImport { import ->
+                import.contains("contexts") && 
+                !import.contains("scope-management")
+            }
+        }
+}
+
+@Test
+fun `domain layer should only depend on platform commons`() {
+    Konsist.scopeFromModule("contexts/scope-management/domain")
+        .files
+        .imports
+        .filter { !it.isExternal }
+        .assert { import ->
+            import.name.startsWith("io.github.kamiazya.scopes.scopemanagement.domain") ||
+            import.name.startsWith("io.github.kamiazya.scopes.platform.commons")
+        }
+}
+
+@Test
+fun `apps layer should not directly access domain layer`() {
+    Konsist.scopeFromModule("apps")
+        .classes()
+        .assertNot { 
+            it.hasImport { import ->
+                import.contains(".domain.")
+            }
+        }
 }
 ```
 
