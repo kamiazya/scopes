@@ -34,9 +34,9 @@ graph TB
     end
     
     subgraph "Future Contexts"
-        CMT[Comment Management]
-        ATT[Attachment Management]
-        SYNC[Synchronization]
+        UP[User Preferences]
+        WM[Workspace Management]
+        AC[AI Collaboration]
     end
     
     AGG --> ENT
@@ -60,7 +60,7 @@ graph TB
     class AGG,ENT,VO,EVT,SVC domain
     class CMD,QRY,HANDLER,APPSVC application
     class REPO,ALIAS,TRANS infrastructure
-    class CMT,ATT,SYNC future
+    class UP,WM,AC future
 ```
 
 ### Current Bounded Contexts
@@ -71,29 +71,78 @@ graph TB
 - **Status**: Implemented
 - **Key Aggregates**: ScopeAggregate
 - **Key Services**: ScopeHierarchyService, AliasGenerationService
+- **Ubiquitous Language**:
+  - Scope (スコープ): Unified recursive work unit
+  - Scope ID: Unique identifier (ULID)
+  - Scope Title: Identifying name
+  - Parent ID: Hierarchical relationship
+  - Aspects: Key-value metadata
+  - Context View: Filtered view of scopes
 
 ### Future Bounded Contexts (Planned)
 
-#### Comment Management Context
-- **Responsibility**: AI and human collaboration through comments
+#### User Preferences Context
+- **Responsibility**: User-specific settings and preferences management
 - **Status**: Not yet implemented
-- **Integration**: Will integrate with MCP protocol
+- **Relationship**: Customer-Supplier to other contexts
+- **Ubiquitous Language**:
+  - Preferences: User settings
+  - Theme: UI color scheme
+  - Editor Config: Editor settings
+  - Default Values: Initial values for new items
 
-#### Attachment Management Context
-- **Responsibility**: File and resource linking
+#### Workspace Management Context
+- **Responsibility**: File system integration and focus management
 - **Status**: Not yet implemented
-- **Integration**: Will handle external file references
+- **Relationship**: Partnership with Scope Management
+- **Ubiquitous Language**:
+  - Workspace: Work directory associated with scope
+  - Focus: Current working scope attention
+  - Context Switch: Moving between workspaces
 
-#### Synchronization Context
-- **Responsibility**: External tool integration (Git, Jira, etc.)
+#### AI Collaboration Context
+- **Responsibility**: AI assistant integration and asynchronous collaboration
 - **Status**: Not yet implemented
-- **Integration**: Will provide sync adapters
+- **Integration**: MCP protocol, comment-based interaction
+- **Ubiquitous Language**:
+  - AI Comment: Request to AI
+  - Conversation Thread: Series of AI interactions
+  - Handoff: Work transfer between AI assistants
+  - Co-authorship: AI collaboration records
+
+### Context Mapping
+
+```mermaid
+graph LR
+    SM[Scope Management<br/>Context]
+    UP[User Preferences<br/>Context]
+    WM[Workspace Management<br/>Context]
+    AC[AI Collaboration<br/>Context]
+    
+    %% Relationships
+    UP -->|Customer-Supplier| SM
+    UP -->|Customer-Supplier| WM
+    UP -->|Customer-Supplier| AC
+    
+    SM <-->|Partnership| WM
+    WM -->|Open Host Service| AC
+    
+    %% Context types
+    SM:::core
+    UP:::supporting
+    WM:::generic
+    AC:::generic
+    
+    classDef core fill:#ff9999,stroke:#333,stroke-width:3px
+    classDef supporting fill:#99ccff,stroke:#333,stroke-width:2px
+    classDef generic fill:#99ff99,stroke:#333,stroke-width:1px
+```
 
 ### Domain Boundaries
 
 - **Core Domain**: Scope management with recursive hierarchy
-- **Supporting Domains**: Aspect system, alias management, context views
-- **Generic Domains**: Authentication, notifications (future)
+- **Supporting Domains**: User preferences, aspect system, alias management
+- **Generic Domains**: Workspace management, AI collaboration
 - **Anti-Corruption Layer**: DTOs and facades protect domain from external changes
 
 ## Strategic Design
@@ -415,6 +464,59 @@ test("updating scope should produce ScopeUpdated event") {
 4. **Testability**: Business logic isolated from infrastructure
 5. **Team Communication**: Ubiquitous language reduces misunderstandings
 
+## Layer Responsibilities
+
+### Application Layer (within Bounded Context)
+Handles business logic within a single bounded context:
+
+```kotlin
+// contexts/scope-management/application/usecase/CreateScopeUseCase.kt
+class CreateScopeUseCase(
+    private val scopeRepository: ScopeRepository,
+    private val eventPublisher: DomainEventPublisher
+) {
+    fun execute(command: CreateScopeCommand): Either<ScopesError, Scope> = either {
+        // Single context business logic
+        val scope = Scope.create(command.title, command.parentId).bind()
+        scopeRepository.save(scope)
+        eventPublisher.publish(ScopeCreatedEvent(scope))
+        scope
+    }
+}
+```
+
+**Responsibilities**:
+- Single context business logic
+- Domain service coordination within context
+- Transaction management
+- Domain event publishing
+
+### Interface Layer (Cross-Context Integration)
+Coordinates multiple bounded contexts and adapts to external interfaces:
+
+```kotlin
+// interfaces/cli/adapters/ScopeCommandAdapter.kt
+class ScopeCommandAdapter(
+    private val scopeManagement: ScopeManagementFacade,
+    private val workspaceManagement: WorkspaceManagementFacade?,
+    private val aiCollaboration: AiCollaborationFacade?
+) {
+    fun createScope(title: String, parentId: String?): Either<ScopesError, ScopeDto> = either {
+        // Coordinate multiple contexts
+        val scope = scopeManagement.createScope(title, parentId).bind()
+        workspaceManagement?.initializeWorkspace(scope.id)
+        aiCollaboration?.notifyCreation(scope)
+        scope
+    }
+}
+```
+
+**Responsibilities**:
+- Cross-context coordination
+- Protocol adaptation (CLI/API/MCP/SDK)
+- Cross-cutting concerns (auth, logging)
+- DTO conversion for external exposure
+
 ## Implementation Guidelines
 
 1. Start with Event Storming to discover domain events
@@ -424,3 +526,5 @@ test("updating scope should produce ScopeUpdated event") {
 5. Use domain events for decoupling
 6. Implement repositories as interfaces in domain
 7. Test business invariants with property-based tests
+8. Use Application layer for single-context orchestration
+9. Use Interface layer for cross-context integration
