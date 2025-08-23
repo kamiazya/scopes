@@ -369,9 +369,18 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 
 ### Other Business Rules
 
-#### Hierarchy Constraints
-- **Maximum Depth**: Unlimited by default (can be configured if needed)
-- **Maximum Children**: Unlimited by default (can be configured if needed)
+#### Hierarchy Constraints (Policy-Driven)
+
+The system uses a flexible, policy-driven approach to hierarchy constraints:
+
+- **Default Policy**: Unlimited depth and unlimited children per scope
+- **Customizable**: Users can configure limits through preferences if desired
+- **No Hard Caps**: The system itself imposes no fixed limits
+- **Performance Considerations**: While unlimited by default, users may choose to set limits based on their specific performance requirements
+- **Recommended Guardrails** (optional):
+  - Depth: 10-15 levels for optimal navigation experience
+  - Children per scope: 50-100 for better UI performance
+  - These are suggestions only - the system handles unlimited hierarchies
 
 #### Title Validation
 - **Length**: 1-200 characters
