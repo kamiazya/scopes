@@ -47,7 +47,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.github.kamiazya.scopes.apps.cli.SimpleScopesCommandKt")
+    mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
 }
 
 tasks.test {
@@ -58,7 +58,7 @@ graalvmNative {
     binaries {
         named("main") {
             imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.apps.cli.SimpleScopesCommandKt")
+            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
             useFatJar.set(true)
 
             val commonArgs =
