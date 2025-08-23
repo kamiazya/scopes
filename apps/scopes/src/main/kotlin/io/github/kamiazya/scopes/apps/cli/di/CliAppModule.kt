@@ -2,7 +2,14 @@ package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
-import io.github.kamiazya.scopes.interfaces.cli.di.interfaceCliModule
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.GetCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.ListCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
+import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.shared.di.interfaceSharedModule
 import io.github.kamiazya.scopes.platform.observability.di.observabilityModule
 import org.koin.dsl.module
@@ -28,6 +35,24 @@ val cliAppModule = module {
 
         // Interface layers
         interfaceSharedModule,
-        interfaceCliModule,
     )
+
+    // CLI Commands
+    factory { ScopesCommand() }
+    factory { CreateCommand() }
+    factory { GetCommand() }
+    factory { UpdateCommand() }
+    factory { DeleteCommand() }
+    factory { ListCommand() }
+
+    // CLI Adapters
+    single {
+        ScopeCommandAdapter(
+            scopeManagementFacade = get(),
+            // Future: Add other context facades here
+        )
+    }
+
+    // CLI Formatters
+    single { ScopeOutputFormatter() }
 }
