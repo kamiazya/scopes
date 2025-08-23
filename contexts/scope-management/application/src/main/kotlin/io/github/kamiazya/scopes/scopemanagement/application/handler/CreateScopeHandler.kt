@@ -52,19 +52,19 @@ class CreateScopeHandler(
 
         logger.info("Creating new scope", contextMetadata)
 
+        // Get hierarchy policy from external context before transaction
+        logger.debug("Fetching hierarchy policy")
+        val hierarchyPolicy = hierarchyPolicyProvider.getPolicy().bind()
+        logger.debug(
+            "Hierarchy policy loaded",
+            mapOf(
+                "maxDepth" to hierarchyPolicy.maxDepth.toString(),
+                "maxChildrenPerScope" to hierarchyPolicy.maxChildrenPerScope.toString(),
+            ),
+        )
+
         transactionManager.inTransaction {
             either {
-                // Get hierarchy policy from external context
-                logger.debug("Fetching hierarchy policy")
-                val hierarchyPolicy = hierarchyPolicyProvider.getPolicy().bind()
-                logger.debug(
-                    "Hierarchy policy loaded",
-                    mapOf(
-                        "maxDepth" to hierarchyPolicy.maxDepth.toString(),
-                        "maxChildrenPerScope" to hierarchyPolicy.maxChildrenPerScope.toString(),
-                    ),
-                )
-
                 // Parse parent ID if provided
                 val parentId = input.parentId?.let { parentIdString ->
                     logger.debug("Parsing parent ID", mapOf("parentId" to parentIdString))
