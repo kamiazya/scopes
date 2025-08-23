@@ -4,8 +4,8 @@ plugins {
 
 dependencies {
     // Platform layer
-    implementation(project(":platform:commons"))
-    implementation(project(":platform:application-commons"))
+    implementation(project(":platform-commons"))
+    implementation(project(":platform-application-commons"))
 
     // Core libraries
     implementation(libs.kotlin.stdlib)

@@ -3,10 +3,10 @@ plugins {
     alias(libs.plugins.detekt)
 }
 dependencies {
-    implementation(project(":platform:commons"))
-    implementation(project(":platform:application-commons"))
-    implementation(project(":contexts:scope-management:domain"))
-    implementation(project(":contexts:scope-management:application"))
+    implementation(project(":platform-commons"))
+    implementation(project(":platform-application-commons"))
+    implementation(project(":scope-management-domain"))
+    implementation(project(":scope-management-application"))
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)

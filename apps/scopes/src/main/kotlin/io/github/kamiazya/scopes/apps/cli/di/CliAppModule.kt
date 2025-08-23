@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
+import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
@@ -32,6 +33,7 @@ val cliAppModule = module {
         // Bounded Contexts
         scopeManagementModule,
         scopeManagementInfrastructureModule,
+        userPreferencesModule,
 
         // Interface layers
         interfaceSharedModule,

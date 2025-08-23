@@ -18,6 +18,7 @@ class CleanArchitectureTest :
 
         val contexts = listOf(
             "scope-management",
+            "user-preferences",
         )
 
         // ========== Layer Dependency Rules ==========
@@ -70,11 +71,17 @@ class CleanArchitectureTest :
                 }
         }
 
-        "apps layer should not directly depend on infrastructure" {
+        "apps layer should not directly depend on infrastructure except for DI" {
             Konsist
                 .scopeFromDirectory("apps")
                 .files
                 .filter { it.path.contains("src/main") }
+                .filter { file ->
+                    // Exclude DI module files from this check
+                    file.packagee?.name?.contains(".di") != true &&
+                        !file.name.endsWith("Module.kt") &&
+                        !file.name.endsWith("Component.kt")
+                }
                 .assertFalse { file ->
                     file.imports.any { import ->
                         contexts.any { context ->
@@ -117,15 +124,16 @@ class CleanArchitectureTest :
             }
         }
 
-        "value objects should be in valueobject package" {
+        "value objects should be in valueobject or value package" {
             contexts.forEach { context ->
                 Konsist
                     .scopeFromDirectory("contexts/$context/domain")
                     .classes()
-                    .filter { it.resideInPackage("..valueobject..") }
+                    .filter { it.resideInPackage("..valueobject..") || it.resideInPackage("..value..") }
                     .filter { !it.name.endsWith("Test") }
                     .assertTrue { valueObject ->
-                        valueObject.packagee?.name?.endsWith(".valueobject") == true
+                        valueObject.packagee?.name?.endsWith(".valueobject") == true ||
+                            valueObject.packagee?.name?.endsWith(".value") == true
                     }
             }
         }
@@ -200,6 +208,36 @@ class CleanArchitectureTest :
 
         // ========== Infrastructure Implementation ==========
 
+        "DI modules should NOT be in infrastructure layer" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/infrastructure")
+                    .files
+                    .filter { it.path.contains("src/main") }
+                    .assertFalse { file ->
+                        // Check for common DI patterns
+                        file.imports.any { import ->
+                            import.name.contains("org.koin.dsl.module") ||
+                                import.name.contains("dagger.Module") ||
+                                import.name.contains("javax.inject.Module") ||
+                                import.name.contains("com.google.inject.Module")
+                        } ||
+                            // Check for file names that suggest DI modules
+                            file.name.endsWith("Module.kt") ||
+                            file.name.endsWith("Component.kt") ||
+                            file.name.endsWith("DI.kt") ||
+                            file.name.endsWith("Injection.kt") ||
+                            // Check for common DI module patterns in class names
+                            file.classes().any { clazz ->
+                                clazz.name.endsWith("Module") ||
+                                    clazz.name.endsWith("Component") ||
+                                    clazz.name.contains("DI") ||
+                                    clazz.name.contains("Injection")
+                            }
+                    }
+            }
+        }
+
         "repository implementations should be in infrastructure layer" {
             contexts.forEach { context ->
                 Konsist
@@ -215,6 +253,30 @@ class CleanArchitectureTest :
         }
 
         // ========== Apps Layer - Entry Points ==========
+
+        "DI modules should be in apps layer" {
+            Konsist
+                .scopeFromDirectory("apps")
+                .files
+                .filter { it.path.contains("src/main") }
+                .filter { file ->
+                    // Look for DI module patterns
+                    file.imports.any { import ->
+                        import.name.contains("org.koin.dsl.module") ||
+                            import.name.contains("dagger.Module") ||
+                            import.name.contains("javax.inject.Module") ||
+                            import.name.contains("com.google.inject.Module")
+                    } ||
+                        file.name.endsWith("Module.kt") ||
+                        file.name.endsWith("Component.kt") ||
+                        file.name.endsWith("DI.kt")
+                }
+                .assertTrue { file ->
+                    // Ensure DI modules are in proper di packages
+                    file.packagee?.name?.contains(".di") == true ||
+                        file.packagee?.name?.contains(".injection") == true
+                }
+        }
 
         "apps layer should have main functions" {
             listOf("scopes", "scopesd").forEach { module ->
@@ -254,7 +316,7 @@ class CleanArchitectureTest :
                 Konsist
                     .scopeFromDirectory("contexts/$context/domain")
                     .classes()
-                    .filter { it.resideInPackage("..valueobject..") }
+                    .filter { it.resideInPackage("..valueobject..") || it.resideInPackage("..value..") }
                     .filter { !it.name.endsWith("Test") }
                     .filter { !it.hasEnumModifier && !it.hasSealedModifier } // Exclude enums and sealed classes
                     .assertTrue { valueObject ->

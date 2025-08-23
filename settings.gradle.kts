@@ -12,29 +12,26 @@ plugins {
 rootProject.name = "scopes"
 
 include(
-    // Parent projects
-    ":platform",
-    ":interfaces",
-    ":contexts",
-    ":apps",
-    ":quality",
     // Platform layer
-    ":platform:commons",
-    ":platform:observability",
-    ":platform:application-commons",
+    ":platform-commons",
+    ":platform-observability",
+    ":platform-application-commons",
     // Interface layer
-    ":interfaces:shared",
-    ":interfaces:cli",
+    ":interfaces-shared",
+    ":interfaces-cli",
     // Bounded Context - Unified Scope Management
-    ":contexts:scope-management",
-    ":contexts:scope-management:domain",
-    ":contexts:scope-management:application",
-    ":contexts:scope-management:infrastructure",
+    ":scope-management-domain",
+    ":scope-management-application",
+    ":scope-management-infrastructure",
+    // Bounded Context - User Preferences
+    ":user-preferences-domain",
+    ":user-preferences-application",
+    ":user-preferences-infrastructure",
     // Apps layer - Application logic & Entry points
-    ":apps:scopes",
-    ":apps:scopesd",
+    ":apps-scopes",
+    ":apps-scopesd",
     // Quality
-    ":quality:konsist",
+    ":quality-konsist",
 )
 
 // Configure Gradle Build Scan
@@ -80,3 +77,30 @@ develocity {
         }
     }
 }
+
+// Set project directories for all modules
+// Platform layer
+project(":platform-commons").projectDir = file("platform/commons")
+project(":platform-observability").projectDir = file("platform/observability")
+project(":platform-application-commons").projectDir = file("platform/application-commons")
+
+// Interface layer
+project(":interfaces-shared").projectDir = file("interfaces/shared")
+project(":interfaces-cli").projectDir = file("interfaces/cli")
+
+// Bounded Context - Scope Management
+project(":scope-management-domain").projectDir = file("contexts/scope-management/domain")
+project(":scope-management-application").projectDir = file("contexts/scope-management/application")
+project(":scope-management-infrastructure").projectDir = file("contexts/scope-management/infrastructure")
+
+// Bounded Context - User Preferences
+project(":user-preferences-domain").projectDir = file("contexts/user-preferences/domain")
+project(":user-preferences-application").projectDir = file("contexts/user-preferences/application")
+project(":user-preferences-infrastructure").projectDir = file("contexts/user-preferences/infrastructure")
+
+// Apps layer
+project(":apps-scopes").projectDir = file("apps/scopes")
+project(":apps-scopesd").projectDir = file("apps/scopesd")
+
+// Quality
+project(":quality-konsist").projectDir = file("quality/konsist")

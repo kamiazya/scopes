@@ -9,18 +9,23 @@ plugins {
 
 dependencies {
     // Platform layer
-    implementation(project(":platform:commons"))
-    implementation(project(":platform:observability"))
-    implementation(project(":platform:application-commons"))
+    implementation(project(":platform-commons"))
+    implementation(project(":platform-observability"))
+    implementation(project(":platform-application-commons"))
 
     // Interface layer
-    implementation(project(":interfaces:shared"))
-    implementation(project(":interfaces:cli"))
+    implementation(project(":interfaces-shared"))
+    implementation(project(":interfaces-cli"))
 
     // Bounded Contexts - scope-management
-    implementation(project(":contexts:scope-management:domain"))
-    implementation(project(":contexts:scope-management:application"))
-    implementation(project(":contexts:scope-management:infrastructure"))
+    implementation(project(":scope-management-domain"))
+    implementation(project(":scope-management-application"))
+    implementation(project(":scope-management-infrastructure"))
+
+    // Bounded Contexts - user-preferences
+    implementation(project(":user-preferences-domain"))
+    implementation(project(":user-preferences-application"))
+    implementation(project(":user-preferences-infrastructure"))
 
     // TODO: Enable when implemented
     // implementation(project(":contexts:aspect-management:application"))

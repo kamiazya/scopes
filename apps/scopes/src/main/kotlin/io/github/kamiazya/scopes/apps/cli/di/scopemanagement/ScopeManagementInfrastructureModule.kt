@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
-import io.github.kamiazya.scopes.apps.cli.services.DefaultUserPreferencesService
-import io.github.kamiazya.scopes.interfaces.shared.services.UserPreferencesService
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
@@ -47,9 +45,6 @@ val scopeManagementInfrastructureModule = module {
         DefaultAliasGenerationService(get(), get())
     }
 
-    // External Services
-    // Default implementation following Zero-Configuration principle
-    single<UserPreferencesService> {
-        DefaultUserPreferencesService()
-    }
+    // External Services are now provided by their own modules
+    // UserPreferencesService is provided by UserPreferencesModule
 }

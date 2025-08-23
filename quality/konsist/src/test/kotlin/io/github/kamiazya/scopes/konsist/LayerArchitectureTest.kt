@@ -23,15 +23,22 @@ class LayerArchitectureTest :
 
         val contexts = listOf(
             "scope-management",
+            "user-preferences",
         )
 
         // ========== Apps Layer Tests ==========
 
-        "apps layer should not depend on infrastructure implementations" {
+        "apps layer should not depend on infrastructure implementations except for DI" {
             Konsist
                 .scopeFromDirectory("apps")
                 .files
                 .filter { it.path.contains("src/main") }
+                .filter { file ->
+                    // Exclude DI module files from this check
+                    file.packagee?.name?.contains(".di") != true &&
+                        !file.name.endsWith("Module.kt") &&
+                        !file.name.endsWith("Component.kt")
+                }
                 .assertFalse { file ->
                     file.imports.any { import ->
                         contexts.any { context ->

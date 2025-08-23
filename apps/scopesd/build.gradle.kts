@@ -4,13 +4,13 @@ plugins {
 
 dependencies {
     // Platform layer
-    implementation(project(":platform:commons"))
-    implementation(project(":platform:observability"))
-    implementation(project(":platform:application-commons"))
+    implementation(project(":platform-commons"))
+    implementation(project(":platform-observability"))
+    implementation(project(":platform-application-commons"))
 
     // Bounded Context - Unified Scope Management (Full stack for daemon)
-    implementation(project(":contexts:scope-management:application"))
-    implementation(project(":contexts:scope-management:infrastructure"))
+    implementation(project(":scope-management-application"))
+    implementation(project(":scope-management-infrastructure"))
 
     // Core libraries
     implementation(libs.kotlin.stdlib)
