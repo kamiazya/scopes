@@ -62,6 +62,25 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, ScopeId?> = either {
+        mutex.withLock {
+            try {
+                // Create a temporary ScopeTitle to get normalized value for comparison
+                val inputTitle = ScopeTitle.create(title).getOrNull()
+                if (inputTitle == null) {
+                    // If the title is invalid, no scope can have it
+                    null
+                } else {
+                    scopes.values.firstOrNull { scope ->
+                        scope.parentId == parentId && scope.title.equalsIgnoreCase(inputTitle)
+                    }?.id
+                }
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findIdByParentIdAndTitle", e))
+            }
+        }
+    }
+
     override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = either {
         mutex.withLock {
             try {

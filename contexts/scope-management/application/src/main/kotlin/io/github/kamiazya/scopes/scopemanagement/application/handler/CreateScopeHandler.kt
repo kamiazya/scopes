@@ -140,24 +140,25 @@ class CreateScopeHandler(
                     ),
                 )
 
-                val titleExists = scopeRepository.existsByParentIdAndTitle(
+                val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
                     parentId,
                     input.title,
                 ).bind()
 
-                ensure(!titleExists) {
+                ensure(existingScopeId == null) {
                     logger.warn(
                         "Duplicate title found",
                         mapOf(
                             "title" to input.title,
                             "parentId" to (parentId?.value ?: "null"),
+                            "existingScopeId" to existingScopeId!!.value,
                         ),
                     )
                     ScopeUniquenessError.DuplicateTitle(
                         occurredAt = Clock.System.now(),
                         title = input.title,
                         parentScopeId = parentId,
-                        existingScopeId = ScopeId.generate(), // Placeholder for existing scope ID
+                        existingScopeId = existingScopeId!!,
                     )
                 }
 
