@@ -11,7 +11,11 @@ dependencies {
     implementation(project(":platform:application-commons"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.arrow.core)
+
+    // CLI framework
+    implementation(libs.clikt)
 
     // DI
     implementation(platform(libs.koin.bom))

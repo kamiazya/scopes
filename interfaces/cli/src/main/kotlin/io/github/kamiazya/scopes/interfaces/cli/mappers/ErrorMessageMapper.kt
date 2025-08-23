@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.apps.cli
+package io.github.kamiazya.scopes.interfaces.cli.mappers
 
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateVersionError

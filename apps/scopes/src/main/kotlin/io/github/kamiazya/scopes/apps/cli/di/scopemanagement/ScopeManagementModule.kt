@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.di
+package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler

@@ -1,8 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import io.github.kamiazya.scopes.apps.cli.di.cliAppModule
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
-import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -40,14 +38,7 @@ object KoinCompositionRoot {
         }
     }
 
-    // Convenience accessors for CLI components
-    val scopeCommandAdapter: ScopeCommandAdapter
-        get() = koinApp.koin.get()
-
-    val scopeOutputFormatter: ScopeOutputFormatter
-        get() = koinApp.koin.get()
-
-    // Direct access to Koin instance for testing
-    val koin
+    // Direct access to Koin instance
+    val koin: org.koin.core.Koin
         get() = koinApp.koin
 }

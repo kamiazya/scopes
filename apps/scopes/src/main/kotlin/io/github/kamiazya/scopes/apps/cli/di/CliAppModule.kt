@@ -1,10 +1,10 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
+import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
+import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.interfaces.cli.di.interfaceCliModule
 import io.github.kamiazya.scopes.interfaces.shared.di.interfaceSharedModule
 import io.github.kamiazya.scopes.platform.observability.di.observabilityModule
-import io.github.kamiazya.scopes.scopemanagement.application.di.scopeManagementModule
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.di.scopeManagementInfrastructureModule
 import org.koin.dsl.module
 
 /**

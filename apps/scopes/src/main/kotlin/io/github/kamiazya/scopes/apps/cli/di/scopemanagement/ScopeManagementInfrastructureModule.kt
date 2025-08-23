@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.infrastructure.di
+package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
