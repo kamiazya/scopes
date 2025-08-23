@@ -165,4 +165,3 @@ For users who prefer or require manual installation with cryptographic verificat
 
 - **US-007**: [Secure Manual Installation and Verification](0007-secure-manual-installation.md) - Extends this story with secure manual installation option for users who cannot use package managers or require stronger security guarantees
 - This story enables all other user stories by providing the foundation for users to start using Scopes
-

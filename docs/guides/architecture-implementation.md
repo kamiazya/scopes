@@ -32,8 +32,8 @@ flowchart TD
                 INF_REP[repository/<br/>InMemoryScopeRepository.kt]
             end
 
-            subgraph CLI["💻 presentation-cli/"]
-                CLI_MAIN[Main.kt<br/>ScopesCommand.kt]
+            subgraph CLI["💻 apps/scopes/"]
+                CLI_MAIN[SimpleScopesCommand.kt]
                 CLI_CMD[commands/<br/>CreateCommand.kt<br/>ListCommand.kt]
             end
 
@@ -721,8 +721,8 @@ object DependencyConfiguration {
 ### Step 1: Create CLI Commands
 
 ```kotlin
-// presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/commands/CreateCommand.kt
-package io.github.kamiazya.scopes.presentation.cli.commands
+// apps/cli/src/main/kotlin/io/github/kamiazya/scopes/apps/cli/commands/CreateCommand.kt
+package io.github.kamiazya.scopes.apps.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
@@ -816,8 +816,8 @@ class CreateCommand(
 ### Step 2: Create Application Entry Point
 
 ```kotlin
-// presentation-cli/src/main/kotlin/com/kamiazya/scopes/presentation/cli/ScopesApplication.kt
-package io.github.kamiazya.scopes.presentation.cli
+// apps/cli/src/main/kotlin/io/github/kamiazya/scopes/apps/cli/ScopesApplication.kt
+package io.github.kamiazya.scopes.apps.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.context

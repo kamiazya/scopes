@@ -13,8 +13,8 @@ The GraalVM native build plugin (v0.11.0) is incompatible with Gradle's configur
 ## Error Message
 
 ```
-Execution failed for task ':presentation-cli:nativeCompile'.
-> Error while evaluating property 'compileOptions.excludeConfigArgs' of task ':presentation-cli:nativeCompile'.
+Execution failed for task ':boot:cli-launcher:nativeCompile'.
+> Error while evaluating property 'compileOptions.excludeConfigArgs' of task ':boot:cli-launcher:nativeCompile'.
   > Failed to calculate the value of property 'excludeConfigArgs'.
     > Cannot invoke "org.gradle.api.artifacts.ConfigurationContainer.getByName(String)" because "configurations" is null
 ```

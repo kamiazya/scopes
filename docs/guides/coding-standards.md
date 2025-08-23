@@ -431,9 +431,9 @@ scopes/
 │   └── service/             # ApplicationScopeValidationService.kt
 ├── infrastructure/
 │   └── repository/          # Repository implementations
-└── presentation-cli/
-    ├── command/             # CLI commands
-    └── mapper/              # ScopeMapper.kt
+└── apps/scopes/
+    ├── SimpleScopesCommand.kt  # CLI entry point
+    └── mapper/                 # ScopeMapper.kt
 ```
 
 ## Kotlin Style Guidelines

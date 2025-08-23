@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.spotless)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
 }
@@ -22,13 +23,21 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "io.gitlab.arturbosch.detekt")
+    // Don't automatically apply Kotlin plugin to avoid circular dependencies
+    // Each project should apply it explicitly
 
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    // Configure Kotlin compilation when plugin is applied
+    pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            compilerOptions {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            }
         }
+    }
+
+    // Fix circular dependency issue with Kotlin and Java compilation
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
     }
 
     // Prevent dynamic versions to improve build reproducibility
@@ -39,14 +48,16 @@ subprojects {
     }
 }
 
-// Configure detekt for all subprojects
+// Configure detekt for projects that have the plugin applied
 subprojects {
-    configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
-        config.setFrom("$rootDir/detekt.yml")
-        buildUponDefaultConfig = true
-        allRules = false
-        parallel = true
-        baseline = file("detekt-baseline.xml")
+    pluginManager.withPlugin("io.gitlab.arturbosch.detekt") {
+        configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
+            config.setFrom("$rootDir/detekt.yml")
+            buildUponDefaultConfig = true
+            allRules = false
+            parallel = true
+            baseline = file("detekt-baseline.xml")
+        }
     }
 }
 
@@ -112,5 +123,59 @@ tasks.cyclonedxBom {
 tasks.register("konsistTest") {
     description = "Run Konsist architecture tests"
     group = "verification"
-    dependsOn(":konsist-test:test")
+    dependsOn(":quality:konsist:test")
+}
+
+// Spotless configuration
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**/*.kt")
+        ktlint("1.5.0")
+            .editorConfigOverride(
+                mapOf(
+                    "indent_size" to 4,
+                    "continuation_indent_size" to 4,
+                    "max_line_length" to 160,
+                    "insert_final_newline" to true,
+                    "ktlint_standard_no-wildcard-imports" to "disabled",
+                    "ktlint_standard_package-name" to "disabled",
+                    "ktlint_standard_value-parameter-comment" to "disabled",
+                ),
+            )
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint("1.5.0")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    json {
+        target("**/*.json")
+        targetExclude("**/build/**/*.json", "**/node_modules/**/*.json")
+        jackson()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    yaml {
+        target("**/*.{yml,yaml}")
+        targetExclude("**/build/**/*.{yml,yaml}")
+        jackson()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    format("markdown") {
+        target("**/*.md")
+        targetExclude("**/build/**/*.md")
+        endWithNewline()
+        // Trailing whitespace has semantic meaning in Markdown, so follow .editorconfig
+    }
+    format("shell") {
+        target("**/*.sh")
+        targetExclude("**/build/**/*.sh")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }

@@ -150,4 +150,3 @@ Help users transition from:
 - **Future**: Workspace management (builds on hierarchy)
 - **Future**: AI integration (uses hierarchical context)
 - **Future**: Focus management (operates on any scope level)
-

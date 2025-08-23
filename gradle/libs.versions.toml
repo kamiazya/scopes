@@ -16,6 +16,7 @@ graalvm-buildtools = "0.11.0"
 ktlint-gradle = "13.0.0"
 detekt = "1.23.8"
 gradle-develocity = "3.19.2"
+spotless = "7.2.1"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
@@ -43,6 +44,7 @@ graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 gradle-develocity = { id = "com.gradle.develocity", version.ref = "gradle-develocity" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 [bundles]
 kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-assertions-arrow", "kotest-property"]

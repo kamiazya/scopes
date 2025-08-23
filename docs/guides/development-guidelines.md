@@ -20,10 +20,10 @@ Scopes follows **Clean Architecture** principles with **Domain-Driven Design (DD
 
 ```mermaid
 flowchart TD
-        CLI[presentation-cli]
-        APP[application]
-        DOM[domain]
-        INF[infrastructure]
+        CLI[apps:scopes]
+        APP[apps:cli]
+        DOM[contexts/*/domain]
+        INF[contexts/*/infrastructure]
 
         CLI --> APP
         APP --> DOM
@@ -42,26 +42,26 @@ flowchart TD
 
 ### Layer Responsibilities (Current Implementation)
 
-#### Domain Layer (`:domain`)
+#### Domain Layer (`:contexts/*/domain`)
 - **Entities with Value Objects**: Scope entity with ScopeTitle, ScopeDescription validation
 - **Strongly-Typed Identifiers**: ScopeId using ULID generation
 - **Repository Interfaces**: Detailed error types (FindScopeError, SaveScopeError, ExistsScopeError)
 - **Domain Error Hierarchies**: Service-specific error types with rich context
 - **Pure Domain Services**: Title normalization, validation utilities
 
-#### Application Layer (`:application`)
+#### Application Layer (`:contexts/*/application`)
 - **Use Case Handlers**: CreateScopeHandler with transaction boundaries
 - **Application Services**: ApplicationScopeValidationService for repository-dependent validation
 - **Error Translation**: Service errors mapped to use case-specific errors
 - **Comprehensive Validation**: ValidationResult for error accumulation
 - **DTO Mapping**: Domain entities mapped to application DTOs before reaching presentation layer
 
-#### Infrastructure Layer (`:infrastructure`)
+#### Infrastructure Layer (`:contexts/*/infrastructure`)
 - **Repository Implementations**: Detailed error mapping from infrastructure concerns
 - **External Service Integrations**: Database connections, file systems
 - **Technical Error Handling**: Connection errors, data integrity violations
 
-#### Presentation Layer (`:presentation-cli`)
+#### Apps Layer (`:apps:scopes`)
 - **CLI Commands**: User interface for scope operations
 - **Application DTO Consumption**: Consumes pre-mapped DTOs from application layer only
 - **Error Presentation**: User-friendly error messages from use case errors

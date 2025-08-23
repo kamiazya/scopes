@@ -4,6 +4,51 @@
 
 **Scopes** enables seamless symbiotic collaboration between developers and AI assistants through a unified, recursive task management system that eliminates context loss and maximizes productivity.
 
+## Architecture Overview
+
+The project follows **Clean Architecture** and **Domain-Driven Design (DDD)** principles with a functional programming approach using Kotlin and Arrow. The architecture has been refactored to consolidate all scope-related functionality into a single **scope-management** bounded context, following the principle of high cohesion.
+
+### Current Architecture: Single Bounded Context
+
+The unified `scope-management` context encompasses all aspects of scope lifecycle and management:
+
+- **Domain Layer**: Core business logic, entities, value objects, and domain events
+- **Application Layer**: Use cases, command handlers, and application services
+- **Infrastructure Layer**: Repository implementations, external service integrations
+
+This consolidation ensures:
+- **High Cohesion**: All scope-related logic in one place
+- **Clear Boundaries**: Single responsibility for scope management
+- **Simplified Integration**: One context to understand and maintain
+- **Consistent Domain Model**: Unified language and concepts
+
+### Future Architecture: Multiple Bounded Contexts
+
+As the system grows, the architecture is designed to support multiple bounded contexts:
+
+```
+scopes/
+├── contexts/                    # Bounded Contexts
+│   ├── scope-management/        # Current implementation
+│   ├── user-preferences/        # Future: User settings
+│   ├── workspace-management/    # Future: Workspace & focus
+│   └── ai-collaboration/        # Future: AI integration
+│
+├── interfaces/                  # Cross-context integration
+│   ├── cli/                     # CLI interface
+│   ├── mcp/                     # Future: MCP server
+│   └── sdk/                     # Future: SDKs
+│
+└── apps/                        # Application entry points
+    ├── scopes/                  # CLI application
+    └── scopesd/                 # Daemon service
+```
+
+**Layer Responsibilities**:
+- **Bounded Context Layer**: Business logic encapsulation per domain
+- **Interface Layer**: Multi-context coordination and protocol adaptation
+- **Application Layer**: Dependency injection and application bootstrap
+
 ## Core Innovation: Unified Scope Entity
 
 Unlike traditional project management tools that use separate concepts (projects, epics, tasks), Scopes uses a single recursive entity called **Scope**.
@@ -330,6 +375,39 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 - **Case-insensitivity**: Duplicate checks compare titles in lowercase
 - **Unicode normalization**: No additional normalization is applied
 
+## Future Context Relationships
+
+When the system expands to multiple bounded contexts, they will interact as follows:
+
+```mermaid
+graph LR
+    SM[Scope Management<br/>Context]
+    UP[User Preferences<br/>Context]
+    WM[Workspace Management<br/>Context]
+    AC[AI Collaboration<br/>Context]
+    
+    %% Relationships
+    UP -->|Customer-Supplier| SM
+    UP -->|Customer-Supplier| WM
+    UP -->|Customer-Supplier| AC
+    
+    SM <-->|Partnership| WM
+    WM -->|Open Host Service| AC
+    
+    classDef core fill:#ff9999
+    classDef supporting fill:#99ccff
+    classDef generic fill:#99ff99
+    
+    class SM core
+    class UP supporting
+    class WM,AC generic
+```
+
+**Relationship Types**:
+- **Customer-Supplier**: User Preferences provides settings to other contexts
+- **Partnership**: Scope and Workspace management work closely together
+- **Open Host Service**: Workspace exposes standard API for AI integration
+
 ## Success Metrics
 
 ### Developer Productivity
@@ -346,4 +424,3 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 - **Offline Capability**: 100% feature availability without network
 - **Response Time**: Sub-100ms for common operations
 - **Data Integrity**: Zero data loss across device synchronization
-

@@ -107,4 +107,3 @@ These standards are adopted by this ADR and should be followed unless superseded
 - [Open Source Best Practices](https://opensource.guide/best-practices/)
 - [12 Factor App](https://12factor.net/) - Standard for cloud-native applications
 - [CNCF Projects](https://www.cncf.io/projects/) - Examples of standard-driven projects
-

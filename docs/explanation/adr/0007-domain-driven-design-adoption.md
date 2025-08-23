@@ -146,4 +146,3 @@ As the system grows, consider introducing:
 - [Domain-Driven Design by Eric Evans](https://domainlanguage.com/ddd/)
 - [Implementing Domain-Driven Design by Vaughn Vernon](https://vaughnvernon.co/?page_id=168)
 - [Clean Architecture by Robert Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-

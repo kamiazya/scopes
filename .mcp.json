@@ -1,32 +1,20 @@
 {
-  "mcpServers": {
-    "deepwiki": {
-      "type": "http",
-      "url": "https://mcp.deepwiki.com/mcp"
+  "mcpServers" : {
+    "deepwiki" : {
+      "type" : "http",
+      "url" : "https://mcp.deepwiki.com/mcp"
     },
-    "context7": {
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp"
+    "context7" : {
+      "type" : "http",
+      "url" : "https://mcp.context7.com/mcp"
     },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking@2025.7.1"
-      ]
+    "sequential-thinking" : {
+      "command" : "npx",
+      "args" : [ "-y", "@modelcontextprotocol/server-sequential-thinking@2025.7.1" ]
     },
-    "serena": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "."
-      ]
+    "serena" : {
+      "command" : "uvx",
+      "args" : [ "--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "ide-assistant", "--project", "." ]
     }
   }
 }

@@ -6,20 +6,20 @@ pre-commit:
   commands:
     editorconfig:
       glob: "*"
-      exclude: '.claude/.*|tmp/.*|LICENSE'
+      exclude: '.claude/.*|tmp/.*|LICENSE|gradle/verification-metadata.xml'
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
           mstruebing/editorconfig-checker:latest \
-          ec --exclude LICENSE \
+          ec --exclude LICENSE --exclude gradle/verification-metadata.xml \
           {staged_files} || true
       skip:
         - merge
         - rebase
 
-    ktlint:
-      glob: "**/*.kt"
-      run: ./gradlew ktlintFormat --daemon
+    spotless:
+      glob: "**/*.{kt,kts,json,yml,yaml,md,sh}"
+      run: ./gradlew spotlessApply --daemon
       stage_fixed: true
       skip:
         - merge
@@ -43,20 +43,18 @@ pre-commit:
 post-tool-use-edit:
   parallel: true
   commands:
-    ktlint-format:
-      glob: "**/*.kt"
+    spotless-format:
+      glob: "**/*.{kt,kts,json,yml,yaml,md,sh}"
       run: |
-        echo "🔧 Auto-formatting Kotlin file: {files}"
-        ./gradlew ktlintFormat --daemon --quiet
-        echo "✅ KtLint formatting completed"
-      
+        echo "🔧 Auto-formatting file: {files}"
+        ./gradlew spotlessApply --daemon --quiet
+        echo "✅ Spotless formatting completed"
     detekt-check:
       glob: "**/*.kt"
       run: |
         echo "🔍 Running Detekt analysis with auto-correction"
         ./gradlew detekt -Pdetekt.autoCorrect=true --daemon --quiet || true
         echo "✅ Detekt analysis completed"
-      
     # Optional: Run tests for the affected module only
     module-test:
       glob: "**/*.kt"

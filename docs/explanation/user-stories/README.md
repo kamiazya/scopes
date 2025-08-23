@@ -157,4 +157,3 @@ When creating or updating user stories:
 7. **Link to requirements** - Ensure traceability to technical specifications
 
 For detailed guidelines, see the main [CONTRIBUTING.md](../../../CONTRIBUTING.md) document.
-
