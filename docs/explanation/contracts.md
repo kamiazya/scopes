@@ -313,7 +313,7 @@ class UserPreferencesPortAdapter : UserPreferencesPort {
     override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
         return try {
             // Attempt to get preferences
-            handler.getPreferences()
+            handler.getPreference(query)
         } catch (e: Exception) {
             when (e) {
                 // Map domain/input validation errors to Left
