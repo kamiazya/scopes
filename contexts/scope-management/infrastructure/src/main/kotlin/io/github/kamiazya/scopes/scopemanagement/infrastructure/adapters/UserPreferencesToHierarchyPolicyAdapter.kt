@@ -33,7 +33,7 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: U
                 logger.warn(
                     "Failed to fetch user preferences, using defaults",
                     mapOf(
-                        "error" to contractError.message,
+                        "error" to contractError.toString(),
                         "errorType" to (contractError::class.simpleName ?: "Unknown"),
                     ),
                 )

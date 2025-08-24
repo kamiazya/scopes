@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":contracts-scope-management"))
+    implementation(project(":contracts-user-preferences"))
     implementation(project(":scope-management-domain"))
     implementation(project(":scope-management-application"))
     implementation(project(":platform-commons"))

@@ -27,11 +27,9 @@ object ErrorMapper {
         // Input validation errors
         is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedValue,
-            message = "Scope ID cannot be blank",
         )
         is ScopeInputError.IdError.InvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedValue,
-            message = "Invalid scope ID format: expected ${error.expectedFormat}",
         )
         is ScopeInputError.TitleError.Empty -> ScopeContractError.InputError.InvalidTitle(
             title = error.attemptedValue,
@@ -78,7 +76,6 @@ object ErrorMapper {
         )
         is ScopeError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = error.parentId.value,
-            message = "Parent scope not found: ${error.parentId.value}",
         )
         is ScopeError.AlreadyDeleted -> ScopeContractError.BusinessError.AlreadyDeleted(
             scopeId = error.scopeId.value,
@@ -126,13 +123,11 @@ object ErrorMapper {
         )
         is ScopeHierarchyError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = error.parentId.value,
-            message = "Parent scope not found: ${error.parentId.value}",
         )
 
         // Persistence errors
         is PersistenceError.StorageUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "storage",
-            message = "Storage unavailable during ${error.operation}",
         )
         is PersistenceError.ConcurrencyConflict -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = error.entityId,
@@ -143,13 +138,11 @@ object ErrorMapper {
         // User preferences integration errors
         is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "user-preferences",
-            message = "User preferences service is unavailable",
         )
 
         // Default mapping for any unmapped errors
         else -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "scope-management",
-            message = "An internal error occurred: ${error::class.simpleName}",
         )
     }
 }

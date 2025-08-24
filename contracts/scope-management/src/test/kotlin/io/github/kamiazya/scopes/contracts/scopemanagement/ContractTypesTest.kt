@@ -131,28 +131,31 @@ class ContractTypesTest :
             }
 
             describe("Errors") {
-                it("InputError types should have proper messages") {
+                it("InputError types should have proper structure") {
                     val idError = ScopeContractError.InputError.InvalidId("bad-id")
-                    idError.message shouldBe "Invalid scope ID format: bad-id"
+                    idError.id shouldBe "bad-id"
 
                     val titleError = ScopeContractError.InputError.InvalidTitle("", "Title cannot be empty")
-                    titleError.message shouldBe "Invalid scope title: Title cannot be empty"
+                    titleError.title shouldBe ""
+                    titleError.reason shouldBe "Title cannot be empty"
                 }
 
-                it("BusinessError types should have proper messages") {
+                it("BusinessError types should have proper structure") {
                     val notFoundError = ScopeContractError.BusinessError.NotFound("01HX3BQXYZ123456789ABCDEF")
-                    notFoundError.message shouldBe "Scope not found: 01HX3BQXYZ123456789ABCDEF"
+                    notFoundError.scopeId shouldBe "01HX3BQXYZ123456789ABCDEF"
 
                     val duplicateError = ScopeContractError.BusinessError.DuplicateTitle("Duplicate", null)
-                    duplicateError.message shouldBe "Duplicate scope title 'Duplicate' under parent: root"
+                    duplicateError.title shouldBe "Duplicate"
+                    duplicateError.parentId shouldBe null
                 }
 
-                it("SystemError types should have proper messages") {
+                it("SystemError types should have proper structure") {
                     val unavailableError = ScopeContractError.SystemError.ServiceUnavailable("database")
-                    unavailableError.message shouldBe "Service unavailable: database"
+                    unavailableError.service shouldBe "database"
 
                     val timeoutError = ScopeContractError.SystemError.Timeout("createScope", 5.seconds)
-                    timeoutError.message shouldBe "Operation 'createScope' timed out after 5s"
+                    timeoutError.operation shouldBe "createScope"
+                    timeoutError.timeout shouldBe 5.seconds
                 }
             }
         }

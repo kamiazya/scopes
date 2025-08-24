@@ -61,7 +61,7 @@ class ErrorMapper {
         is UserPreferencesError.PreferencesAlreadyInitialized -> {
             // This is an internal error that shouldn't be exposed to external consumers
             UserPreferencesContractError.SystemError.PreferencesWriteError(
-                cause = domainError.message,
+                cause = "Preferences already initialized",
                 configPath = null,
             )
         }

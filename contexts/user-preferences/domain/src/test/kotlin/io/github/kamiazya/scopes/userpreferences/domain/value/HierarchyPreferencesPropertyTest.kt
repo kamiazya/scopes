@@ -66,7 +66,7 @@ class HierarchyPreferencesPropertyTest :
                 result.fold(
                     { error ->
                         error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                        error.message shouldBe "Invalid hierarchy preferences: Maximum depth must be positive if specified"
+                        error.reason shouldBe "Maximum depth must be positive if specified"
                     },
                     { throw AssertionError("Expected Left but got Right: $it") },
                 )
@@ -81,7 +81,7 @@ class HierarchyPreferencesPropertyTest :
                 result.fold(
                     { error ->
                         error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                        error.message shouldBe "Invalid hierarchy preferences: Maximum children per scope must be positive if specified"
+                        error.reason shouldBe "Maximum children per scope must be positive if specified"
                     },
                     { throw AssertionError("Expected Left but got Right: $it") },
                 )
@@ -97,7 +97,7 @@ class HierarchyPreferencesPropertyTest :
                     { error ->
                         error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
                         // Should fail on maxDepth first (as per implementation order)
-                        error.message shouldBe "Invalid hierarchy preferences: Maximum depth must be positive if specified"
+                        error.reason shouldBe "Maximum depth must be positive if specified"
                     },
                     { throw AssertionError("Expected Left but got Right: $it") },
                 )

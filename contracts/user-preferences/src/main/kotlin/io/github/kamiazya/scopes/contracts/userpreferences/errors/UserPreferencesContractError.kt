@@ -9,7 +9,6 @@ package io.github.kamiazya.scopes.contracts.userpreferences.errors
  * If preferences are not found, default values should be used instead of throwing errors.
  */
 public sealed interface UserPreferencesContractError {
-    public val message: String
 
     /**
      * Errors related to invalid input data.
@@ -18,7 +17,7 @@ public sealed interface UserPreferencesContractError {
         /**
          * Invalid preference key.
          */
-        public data class InvalidPreferenceKey(public val key: String, public override val message: String = "Invalid preference key: $key") : InputError
+        public data class InvalidPreferenceKey(public val key: String) : InputError
     }
 
     /**
@@ -30,20 +29,12 @@ public sealed interface UserPreferencesContractError {
          * Note: details and configPath are kept for internal logging/telemetry only.
          * They are NOT included in the public message for security reasons.
          */
-        public data class PreferencesCorrupted(
-            public val details: String,
-            public val configPath: String? = null,
-            public override val message: String = "Preferences data is corrupted (see logs for details)",
-        ) : DataError
+        public data class PreferencesCorrupted(public val details: String, public val configPath: String? = null) : DataError
 
         /**
          * The preferences format requires migration to a newer version.
          */
-        public data class PreferencesMigrationRequired(
-            public val fromVersion: String,
-            public val toVersion: String,
-            public override val message: String = "Preferences migration required from version $fromVersion to $toVersion",
-        ) : DataError
+        public data class PreferencesMigrationRequired(public val fromVersion: String, public val toVersion: String) : DataError
     }
 
     /**
@@ -55,29 +46,18 @@ public sealed interface UserPreferencesContractError {
          * Note: cause and configPath are kept for internal logging/telemetry only.
          * They are NOT included in the public message for security reasons.
          */
-        public data class PreferencesReadError(
-            public val cause: String,
-            public val configPath: String? = null,
-            public override val message: String = "Failed to read preferences (see logs for details)",
-        ) : SystemError
+        public data class PreferencesReadError(public val cause: String, public val configPath: String? = null) : SystemError
 
         /**
          * Error writing preferences to storage.
          * Note: cause and configPath are kept for internal logging/telemetry only.
          * They are NOT included in the public message for security reasons.
          */
-        public data class PreferencesWriteError(
-            public val cause: String,
-            public val configPath: String? = null,
-            public override val message: String = "Failed to write preferences (see logs for details)",
-        ) : SystemError
+        public data class PreferencesWriteError(public val cause: String, public val configPath: String? = null) : SystemError
 
         /**
          * Service is temporarily unavailable.
          */
-        public data class ServiceUnavailable(
-            public val service: String,
-            public override val message: String = "User preferences service unavailable: $service",
-        ) : SystemError
+        public data class ServiceUnavailable(public val service: String) : SystemError
     }
 }
