@@ -108,8 +108,8 @@ jobs:
 
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -125,17 +125,17 @@ jobs:
 
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
+          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
 
       - name: Prepare binary for upload
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "win32" ]; then
             BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-            cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+            cp /c/build-workspace/scopes/apps-scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
           else
             BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
-            cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
+            cp apps-scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
           fi
           echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
         id: binary
@@ -146,8 +146,8 @@ jobs:
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -156,7 +156,7 @@ jobs:
         if: matrix.platform != 'win32'
         run: |
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom
+          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom
 
 
       - name: Generate hash for SLSA provenance
