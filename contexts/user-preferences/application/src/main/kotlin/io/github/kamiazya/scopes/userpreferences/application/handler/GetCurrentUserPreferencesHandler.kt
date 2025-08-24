@@ -24,6 +24,22 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
 
     private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = UserPreferencesAggregate.create()
         .flatMap { (aggregate, _) ->
-            repository.save(aggregate).map { aggregate }
+            repository.save(aggregate).fold(
+                { error ->
+                    // If PreferencesAlreadyInitialized, reload from repository
+                    if (error is UserPreferencesError.PreferencesAlreadyInitialized) {
+                        repository.findForCurrentUser().flatMap { reloadedAggregate ->
+                            if (reloadedAggregate != null) {
+                                Either.Right(reloadedAggregate)
+                            } else {
+                                Either.Left(UserPreferencesError.PreferencesNotInitialized())
+                            }
+                        }
+                    } else {
+                        Either.Left(error)
+                    }
+                },
+                { Either.Right(aggregate) },
+            )
         }
 }
