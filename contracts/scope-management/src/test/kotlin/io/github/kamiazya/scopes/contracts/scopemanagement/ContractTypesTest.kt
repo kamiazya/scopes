@@ -124,21 +124,38 @@ class ContractTypesTest :
 
             describe("Errors") {
                 it("InputError types should have proper structure") {
-                    val idError = ScopeContractError.InputError.InvalidId("bad-id")
+                    val idError = ScopeContractError.InputError.InvalidId("bad-id", "ULID format")
                     idError.id shouldBe "bad-id"
+                    idError.expectedFormat shouldBe "ULID format"
 
-                    val titleError = ScopeContractError.InputError.InvalidTitle("", "Title cannot be empty")
+                    val titleError = ScopeContractError.InputError.InvalidTitle(
+                        "",
+                        ScopeContractError.TitleValidationFailure.Empty,
+                    )
                     titleError.title shouldBe ""
-                    titleError.reason shouldBe "Title cannot be empty"
+                    titleError.validationFailure shouldBe ScopeContractError.TitleValidationFailure.Empty
                 }
 
                 it("BusinessError types should have proper structure") {
                     val notFoundError = ScopeContractError.BusinessError.NotFound("01HX3BQXYZ123456789ABCDEF")
                     notFoundError.scopeId shouldBe "01HX3BQXYZ123456789ABCDEF"
 
-                    val duplicateError = ScopeContractError.BusinessError.DuplicateTitle("Duplicate", null)
+                    val duplicateError = ScopeContractError.BusinessError.DuplicateTitle("Duplicate", null, "01HX3BQXYZ123456789ABCDEG")
                     duplicateError.title shouldBe "Duplicate"
                     duplicateError.parentId shouldBe null
+                    duplicateError.existingScopeId shouldBe "01HX3BQXYZ123456789ABCDEG"
+
+                    val hierarchyError = ScopeContractError.BusinessError.HierarchyViolation(
+                        ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
+                            scopeId = "01HX3BQXYZ123456789ABCDEF",
+                            attemptedDepth = 10,
+                            maximumDepth = 5,
+                        ),
+                    )
+                    val violation = hierarchyError.violation as ScopeContractError.HierarchyViolationType.MaxDepthExceeded
+                    violation.scopeId shouldBe "01HX3BQXYZ123456789ABCDEF"
+                    violation.attemptedDepth shouldBe 10
+                    violation.maximumDepth shouldBe 5
                 }
 
                 it("SystemError types should have proper structure") {
