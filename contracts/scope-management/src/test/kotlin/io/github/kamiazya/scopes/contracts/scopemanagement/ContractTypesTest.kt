@@ -5,14 +5,12 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.datetime.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -69,12 +67,6 @@ class ContractTypesTest :
                     )
 
                     query.parentId shouldBe "01HX3BQXYZ123456789ABCDEF"
-                }
-
-                it("GetRootScopesQuery should be instantiable") {
-                    val query = GetRootScopesQuery()
-
-                    query shouldNotBe null
                 }
             }
 

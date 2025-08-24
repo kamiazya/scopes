@@ -221,7 +221,7 @@ interface ScopeManagementPort {
     // Queries
     suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
     suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
-    suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>>
+    suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>>
 }
 ```
 

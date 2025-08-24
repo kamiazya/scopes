@@ -111,7 +111,7 @@ Provides stable interfaces between bounded contexts:
 - **Contents**:
   - **Port Interface**: `ScopeManagementPort` - Main interface for scope operations
   - **Commands**: `CreateScopeCommand`, `UpdateScopeCommand`, `DeleteScopeCommand`
-  - **Queries**: `GetScopeQuery`, `GetChildrenQuery`, `GetRootScopesQuery`
+  - **Queries**: `GetScopeQuery`, `GetChildrenQuery`
   - **Results**: `CreateScopeResult`, `UpdateScopeResult`, `ScopeResult`
   - **Errors**: `ScopeContractError` hierarchy - Input, Business, and System errors
 - **Dependencies**: None (pure interfaces)

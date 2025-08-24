@@ -7,7 +7,6 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -116,10 +115,7 @@ class ScopeCommandAdapter(
     /**
      * Lists root scopes
      */
-    suspend fun listRootScopes(): Either<ScopeContractError, List<ScopeResult>> {
-        val query = GetRootScopesQuery()
-        return scopeManagementPort.getRootScopes(query)
-    }
+    suspend fun listRootScopes(): Either<ScopeContractError, List<ScopeResult>> = scopeManagementPort.getRootScopes()
 
     /**
      * Initializes a new project (root scope with workspace)
