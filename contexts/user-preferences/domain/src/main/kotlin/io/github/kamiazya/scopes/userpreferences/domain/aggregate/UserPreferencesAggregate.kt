@@ -139,23 +139,23 @@ data class UserPreferencesAggregate(
     override fun applyEvent(event: UserPreferencesDomainEvent): UserPreferencesAggregate = when (event) {
         is UserPreferencesCreated -> copy(
             preferences = event.preferences,
-            version = version.increment(),
+            version = event.aggregateVersion,
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
         )
         is PreferenceSet -> copy(
             preferences = preferences?.setPreference(event.key, event.newValue, event.occurredAt),
-            version = version.increment(),
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
         )
         is PreferenceRemoved -> copy(
             preferences = preferences?.removePreference(event.key, event.occurredAt)?.getOrNull(),
-            version = version.increment(),
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
         )
         is PreferencesReset -> copy(
             preferences = event.newPreferences,
-            version = version.increment(),
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
         )
     }
