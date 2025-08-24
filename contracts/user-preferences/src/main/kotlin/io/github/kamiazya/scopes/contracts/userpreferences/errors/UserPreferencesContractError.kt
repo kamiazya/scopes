@@ -27,11 +27,13 @@ public sealed interface UserPreferencesContractError {
     public sealed interface DataError : UserPreferencesContractError {
         /**
          * The preferences data is corrupted or invalid.
+         * Note: details and configPath are kept for internal logging/telemetry only.
+         * They are NOT included in the public message for security reasons.
          */
         public data class PreferencesCorrupted(
             public val details: String,
             public val configPath: String? = null,
-            public override val message: String = "Preferences data is corrupted${configPath?.let { " at $it" } ?: ""}: $details",
+            public override val message: String = "Preferences data is corrupted (see logs for details)",
         ) : DataError
 
         /**
@@ -50,20 +52,24 @@ public sealed interface UserPreferencesContractError {
     public sealed interface SystemError : UserPreferencesContractError {
         /**
          * Error reading preferences from storage.
+         * Note: cause and configPath are kept for internal logging/telemetry only.
+         * They are NOT included in the public message for security reasons.
          */
         public data class PreferencesReadError(
             public val cause: String,
             public val configPath: String? = null,
-            public override val message: String = "Failed to read preferences${configPath?.let { " from $it" } ?: ""}: $cause",
+            public override val message: String = "Failed to read preferences (see logs for details)",
         ) : SystemError
 
         /**
          * Error writing preferences to storage.
+         * Note: cause and configPath are kept for internal logging/telemetry only.
+         * They are NOT included in the public message for security reasons.
          */
         public data class PreferencesWriteError(
             public val cause: String,
             public val configPath: String? = null,
-            public override val message: String = "Failed to write preferences${configPath?.let { " to $it" } ?: ""}: $cause",
+            public override val message: String = "Failed to write preferences (see logs for details)",
         ) : SystemError
 
         /**

@@ -308,15 +308,28 @@ interface ScopeManagementPort {
 
 ### 3. Implement Fail-Safe Patterns
 ```kotlin
-// For non-critical dependencies, provide defaults
+// For non-critical dependencies, provide defaults for system failures only
 class UserPreferencesPortAdapter : UserPreferencesPort {
     override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
         return try {
             // Attempt to get preferences
             handler.getPreferences()
         } catch (e: Exception) {
-            // Return defaults on any failure
-            Either.Right(PreferenceResult.HierarchyPreferences())
+            when (e) {
+                // Map domain/input validation errors to Left
+                is InvalidPreferenceKeyError -> 
+                    Either.Left(UserPreferencesContractError.InputError.InvalidPreferenceKey(e.key))
+                is PreferencesCorruptedError ->
+                    Either.Left(UserPreferencesContractError.DataError.PreferencesCorrupted(
+                        details = e.message,
+                        configPath = e.path
+                    ))
+                // For system-level failures, return defaults
+                is IOException, is TimeoutException, is DatabaseException ->
+                    Either.Right(PreferenceResult.HierarchyPreferences())
+                // Propagate unexpected errors
+                else -> throw e
+            }
         }
     }
 }

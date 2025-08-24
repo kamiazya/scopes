@@ -65,7 +65,7 @@ graph TB
     
     ADAPTERS --> SMP
     ADAPTERS --> UPP
-    UC --> ADAPTERS
+    ADAPTERS --> UC
     
     UC --> CMD
     CMD --> AGG
