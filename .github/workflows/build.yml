@@ -243,7 +243,7 @@ jobs:
       if: matrix.platform == 'win32'
       run: |
         Set-Location "C:\build-workspace\scopes"
-        $bomFiles = Get-ChildItem -Path "build\reports\bom.*" -ErrorAction SilentlyContinue
+        $bomFiles = Get-ChildItem -Path "apps\scopes\build\reports\bom.*" -ErrorAction SilentlyContinue
         if ($bomFiles) {
           foreach ($file in $bomFiles) {
             $extension = $file.Extension
@@ -252,14 +252,14 @@ jobs:
             Write-Output "Renamed $($file.Name) to $newName"
           }
         } else {
-          Write-Output "No BOM files found in build\reports\"
+          Write-Output "No BOM files found in apps\scopes\build\reports\"
         }
       shell: powershell
 
     - name: Rename source-level SBOM (Unix)
       if: matrix.platform != 'win32'
       run: |
-        for bomfile in build/reports/bom.*; do
+        for bomfile in apps/scopes/build/reports/bom.*; do
           if [ -f "$bomfile" ]; then
             extension="${bomfile##*.}"
             newname="bom-${{ matrix.platform }}-${{ matrix.arch }}.${extension}"

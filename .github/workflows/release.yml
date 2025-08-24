@@ -190,11 +190,11 @@ jobs:
 
           # Generate hashes for SBOM files
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            SBOM_JSON_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.xml"
+            SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+            SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
           else
-            SBOM_JSON_PATH="boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="boot/cli-launcher/build/reports/bom.xml"
+            SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+            SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
           fi
 
           if [ -f "$SBOM_JSON_PATH" ]; then
@@ -239,11 +239,11 @@ jobs:
         run: |
           # Copy SBOM files with platform-specific names
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            SBOM_JSON_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.xml"
+            SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+            SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
           else
-            SBOM_JSON_PATH="boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="boot/cli-launcher/build/reports/bom.xml"
+            SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+            SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
           fi
 
           if [ -f "$SBOM_JSON_PATH" ]; then
