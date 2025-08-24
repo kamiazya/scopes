@@ -42,7 +42,6 @@ class CreateScopeHandler(
     private val crossAggregateValidationService: CrossAggregateValidationService,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val logger: Logger,
-    private val clock: Clock = Clock.System,
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
     override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = either {

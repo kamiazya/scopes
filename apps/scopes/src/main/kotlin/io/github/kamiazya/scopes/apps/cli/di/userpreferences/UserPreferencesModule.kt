@@ -4,7 +4,6 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.application.handler.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 import io.github.kamiazya.scopes.userpreferences.infrastructure.repository.FileBasedUserPreferencesRepository
-import kotlinx.datetime.Clock
 import org.koin.dsl.module
 import kotlin.io.path.Path
 
@@ -17,15 +16,11 @@ import kotlin.io.path.Path
  * - Service adapter (UserPreferencesServiceImpl)
  */
 val userPreferencesModule = module {
-    // Clock provider
-    single<Clock> { Clock.System }
-
     // Repository
     single<UserPreferencesRepository> {
         FileBasedUserPreferencesRepository(
             configPathStr = getConfigPath(),
             logger = get<Logger>(),
-            clock = get<Clock>(),
         )
     }
 
@@ -33,7 +28,6 @@ val userPreferencesModule = module {
     factory {
         GetCurrentUserPreferencesHandler(
             repository = get(),
-            clock = get<Clock>(),
         )
     }
 

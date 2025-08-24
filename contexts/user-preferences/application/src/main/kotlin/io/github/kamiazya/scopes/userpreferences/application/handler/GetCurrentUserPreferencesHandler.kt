@@ -9,9 +9,7 @@ import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUse
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
-import kotlinx.datetime.Clock
-
-class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRepository, private val clock: Clock = Clock.System) :
+class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRepository) :
     UseCase<GetCurrentUserPreferences, UserPreferencesError, UserPreferencesInternalDto> {
 
     override suspend fun invoke(query: GetCurrentUserPreferences): Either<UserPreferencesError, UserPreferencesInternalDto> = either {
@@ -24,7 +22,7 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
         UserPreferencesInternalDto.from(preferences)
     }
 
-    private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = UserPreferencesAggregate.create(clock = clock)
+    private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = UserPreferencesAggregate.create()
         .flatMap { (aggregate, _) ->
             repository.save(aggregate).map { aggregate }
         }

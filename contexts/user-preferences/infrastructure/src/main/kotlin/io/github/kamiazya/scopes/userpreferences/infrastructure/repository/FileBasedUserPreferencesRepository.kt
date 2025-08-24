@@ -22,8 +22,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger, private val clock: Clock = Clock.System) :
-    UserPreferencesRepository {
+class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger) : UserPreferencesRepository {
 
     private val configPath = Path(configPathStr)
     private val configFile = Path(configPathStr, UserPreferencesConfig.CONFIG_FILE_NAME)
@@ -97,7 +96,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                     maxChildrenPerScope = config.hierarchyPreferences.maxChildrenPerScope,
                 ).bind()
 
-                val now = clock.now()
+                val now = Clock.System.now()
                 val preferences = UserPreferences(
                     hierarchyPreferences = hierarchyPreferences,
                     createdAt = now,

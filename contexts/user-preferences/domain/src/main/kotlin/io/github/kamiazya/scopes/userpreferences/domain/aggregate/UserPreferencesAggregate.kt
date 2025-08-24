@@ -27,9 +27,8 @@ data class UserPreferencesAggregate(
     companion object {
         fun create(
             aggregateId: AggregateId = AggregateId.Simple.generate(),
-            clock: Clock = Clock.System,
         ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> {
-            val now = clock.now()
+            val now = Clock.System.now()
             val preferences = UserPreferences.createDefault(now)
 
             val initialVersion = AggregateVersion.initial()

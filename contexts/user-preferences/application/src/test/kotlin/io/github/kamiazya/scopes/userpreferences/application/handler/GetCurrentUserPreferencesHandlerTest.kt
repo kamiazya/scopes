@@ -16,9 +16,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 class GetCurrentUserPreferencesHandlerTest :
@@ -30,9 +28,8 @@ class GetCurrentUserPreferencesHandlerTest :
 
         describe("GetCurrentUserPreferencesHandler") {
             val mockRepository = mockk<UserPreferencesRepository>()
-            val mockClock = mockk<Clock>()
             val fixedInstant = Instant.fromEpochSeconds(1640995200) // 2022-01-01 00:00:00
-            val handler = GetCurrentUserPreferencesHandler(mockRepository, mockClock)
+            val handler = GetCurrentUserPreferencesHandler(mockRepository)
 
             describe("when preferences exist in repository") {
                 it("should return existing preferences successfully") {
@@ -109,7 +106,6 @@ class GetCurrentUserPreferencesHandlerTest :
                 it("should create and save default preferences successfully") {
                     // Given
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    every { mockClock.now() } returns fixedInstant
 
                     val newAggregate = UserPreferencesAggregate(
                         id = AggregateId.Simple.generate(),
@@ -145,7 +141,6 @@ class GetCurrentUserPreferencesHandlerTest :
                     // Given
                     val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", "Database error")
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    every { mockClock.now() } returns fixedInstant
                     coEvery { mockRepository.save(any()) } returns saveError.left()
 
                     // When
