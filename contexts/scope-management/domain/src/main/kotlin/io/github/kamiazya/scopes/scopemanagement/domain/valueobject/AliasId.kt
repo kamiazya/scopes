@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import kotlinx.datetime.Clock
 
@@ -55,18 +57,14 @@ value class AliasId private constructor(val value: String) {
      * Converts this AliasId to an AggregateId.
      * Used when treating the alias as an aggregate root.
      */
-    fun toAggregateId(): Either<
-        io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError,
-        io.github.kamiazya.scopes.platform.domain.value.AggregateId,
-        > =
-        io.github.kamiazya.scopes.platform.domain.value.AggregateId.Uri.create(
-            aggregateType = "ScopeAlias",
-            id = value,
-        ).mapLeft {
-            io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError.InvalidFormat(
-                occurredAt = Clock.System.now(),
-                value = value,
-                message = "Failed to create AggregateId from AliasId",
-            )
-        }
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.Uri.create(
+        aggregateType = "ScopeAlias",
+        id = value,
+    ).mapLeft {
+        AggregateIdError.InvalidFormat(
+            occurredAt = Clock.System.now(),
+            value = value,
+            message = "Failed to create AggregateId from AliasId",
+        )
+    }
 }
