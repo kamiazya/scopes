@@ -33,8 +33,13 @@ graph TB
         end
     end
     
+    subgraph "User Preferences Context"
+        UP_DOM[Domain]
+        UP_APP[Application]
+        UP_INFRA[Infrastructure]
+    end
+    
     subgraph "Future Contexts"
-        UP[User Preferences]
         WM[Workspace Management]
         AC[AI Collaboration]
     end
@@ -57,10 +62,10 @@ graph TB
     classDef infrastructure fill:#fce4ec
     classDef future fill:#f5f5f5,stroke-dasharray: 5 5
     
-    class AGG,ENT,VO,EVT,SVC domain
-    class CMD,QRY,HANDLER,APPSVC application
-    class REPO,ALIAS,TRANS infrastructure
-    class UP,WM,AC future
+    class AGG,ENT,VO,EVT,SVC,UP_DOM domain
+    class CMD,QRY,HANDLER,APPSVC,UP_APP application
+    class REPO,ALIAS,TRANS,UP_INFRA infrastructure
+    class WM,AC future
 ```
 
 ### Current Bounded Contexts
@@ -71,6 +76,10 @@ graph TB
 - **Status**: Implemented
 - **Key Aggregates**: ScopeAggregate
 - **Key Services**: ScopeHierarchyService, AliasGenerationService
+- **Key Concepts**:
+  - **HierarchyPolicy**: Business rules for scope hierarchy (maxDepth, maxChildrenPerScope)
+  - **Policy Enforcement**: All hierarchy constraints are validated here
+  - **Default Policy**: System defaults when no preferences are set
 - **Ubiquitous Language**:
   - Scope: Unified recursive work unit
   - Scope ID: Unique identifier (ULID)
@@ -78,18 +87,25 @@ graph TB
   - Parent ID: Hierarchical relationship
   - Aspects: Key-value metadata
   - Context View: Filtered view of scopes
-
-### Future Bounded Contexts (Planned)
+  - Hierarchy Policy: Rules governing scope hierarchies
 
 #### User Preferences Context
 - **Responsibility**: User-specific settings and preferences management
-- **Status**: Not yet implemented
+- **Location**: `contexts/user-preferences/`
+- **Status**: Implemented
 - **Relationship**: Customer-Supplier to other contexts
+- **Key Concepts**:
+  - **HierarchyPreferences**: User's preferred hierarchy settings (optional)
+  - **Preference Storage**: Persists user choices without enforcing business rules
+  - **Null Semantics**: null = no preference set (use system defaults)
 - **Ubiquitous Language**:
   - Preferences: User settings
-  - Theme: UI color scheme
-  - Editor Config: Editor settings
-  - Default Values: Initial values for new items
+  - Hierarchy Preferences: User's desired hierarchy limits
+  - Theme: UI color scheme (future)
+  - Editor Config: Editor settings (future)
+  - Default Values: Initial values for new items (future)
+
+### Future Bounded Contexts (Planned)
 
 #### Workspace Management Context
 - **Responsibility**: File system integration and focus management
@@ -144,6 +160,29 @@ graph LR
 - **Supporting Domains**: User preferences, aspect system, alias management
 - **Generic Domains**: Workspace management, AI collaboration
 - **Anti-Corruption Layer**: DTOs and facades protect domain from external changes
+
+### Context Integration Patterns
+
+#### Anti-Corruption Layer (ACL)
+The system uses ACLs to translate between bounded contexts while maintaining their independence:
+
+```kotlin
+// Example: UserPreferencesToHierarchyPolicyAdapter
+class UserPreferencesToHierarchyPolicyAdapter : HierarchyPolicyProvider {
+    override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> {
+        // Translate from User Preferences context to Scope Management context
+        // - User Preferences: null = no preference (use defaults)
+        // - Scope Management: null = unlimited (policy decision)
+    }
+}
+```
+
+**Key Principles**:
+- Each context maintains its own domain model
+- Adapters handle translation between contexts
+- Contexts remain loosely coupled
+- Business rules stay within their respective contexts
+
 
 ## Strategic Design
 

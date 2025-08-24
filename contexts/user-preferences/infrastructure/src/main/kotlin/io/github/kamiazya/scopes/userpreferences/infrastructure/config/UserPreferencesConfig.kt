@@ -4,11 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 @Serializable
-data class UserPreferencesConfig(
-    val version: Int = CURRENT_VERSION,
-    val hierarchySettings: HierarchySettingsConfig = HierarchySettingsConfig(),
-    val customPreferences: Map<String, String> = emptyMap(),
-) {
+data class UserPreferencesConfig(val version: Int = CURRENT_VERSION, val hierarchyPreferences: HierarchyPreferencesConfig = HierarchyPreferencesConfig()) {
     companion object {
         const val CURRENT_VERSION = 1
         const val CONFIG_FILE_NAME = "preferences.json"
@@ -22,4 +18,4 @@ data class UserPreferencesConfig(
 }
 
 @Serializable
-data class HierarchySettingsConfig(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null)
+data class HierarchyPreferencesConfig(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null)

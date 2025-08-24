@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.platform.observability.di
+package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger

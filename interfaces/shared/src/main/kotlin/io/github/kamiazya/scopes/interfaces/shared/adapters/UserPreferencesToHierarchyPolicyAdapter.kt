@@ -36,15 +36,16 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesService
                 },
                 // On success, translate to domain model
                 ifRight = { dto ->
+                    // Use user preferences if set, otherwise use system defaults
                     HierarchyPolicy.create(
-                        maxDepth = dto.hierarchySettings.maxDepth,
-                        maxChildrenPerScope = dto.hierarchySettings.maxChildrenPerScope,
+                        maxDepth = dto.hierarchyPreferences.maxDepth,
+                        maxChildrenPerScope = dto.hierarchyPreferences.maxChildrenPerScope,
                     ).getOrElse { error ->
                         logger.error(
-                            "Invalid hierarchy settings from user preferences, using defaults",
+                            "Invalid hierarchy preferences from user preferences, using defaults",
                             mapOf(
-                                "maxDepth" to (dto.hierarchySettings.maxDepth?.toString() ?: "unlimited"),
-                                "maxChildrenPerScope" to (dto.hierarchySettings.maxChildrenPerScope?.toString() ?: "unlimited"),
+                                "maxDepth" to (dto.hierarchyPreferences.maxDepth?.toString() ?: "not set"),
+                                "maxChildrenPerScope" to (dto.hierarchyPreferences.maxChildrenPerScope?.toString() ?: "not set"),
                                 "error" to error.toString(),
                             ),
                         )

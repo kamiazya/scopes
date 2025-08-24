@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.userpreferences.infrastructure.adapter
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.interfaces.shared.dto.HierarchySettingsDto
+import io.github.kamiazya.scopes.interfaces.shared.dto.HierarchyPreferencesDto
 import io.github.kamiazya.scopes.interfaces.shared.dto.UserPreferencesDto
 import io.github.kamiazya.scopes.interfaces.shared.error.UserPreferencesServiceError
 import io.github.kamiazya.scopes.interfaces.shared.services.UserPreferencesService
@@ -74,9 +74,9 @@ class UserPreferencesServiceImpl(private val repository: UserPreferencesReposito
         }
 
         val dto = UserPreferencesDto(
-            hierarchySettings = HierarchySettingsDto(
-                maxDepth = preferences.hierarchySettings.maxDepth,
-                maxChildrenPerScope = preferences.hierarchySettings.maxChildrenPerScope,
+            hierarchyPreferences = HierarchyPreferencesDto(
+                maxDepth = preferences.hierarchyPreferences.maxDepth,
+                maxChildrenPerScope = preferences.hierarchyPreferences.maxChildrenPerScope,
             ),
         )
 

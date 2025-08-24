@@ -205,4 +205,26 @@ class BoundedContextArchitectureTest :
                     }
             }
         }
+
+        // Test that DI modules are only in apps layer
+        "DI module definitions should only exist in apps layer" {
+            val nonAppsDirectories = listOf(
+                "contexts",
+                "interfaces",
+                "platform",
+            )
+
+            nonAppsDirectories.forEach { dir ->
+                Konsist
+                    .scopeFromDirectory(dir)
+                    .files
+                    .filter { it.path.contains("src/main") }
+                    .assertFalse { file ->
+                        // Check for DI module package (di package indicates DI configuration)
+                        file.packagee?.name?.contains(".di") == true ||
+                            // Check for actual Koin module definitions (not just usage)
+                            (file.text.contains("= module {") || file.text.contains("= module{"))
+                    }
+            }
+        }
     })

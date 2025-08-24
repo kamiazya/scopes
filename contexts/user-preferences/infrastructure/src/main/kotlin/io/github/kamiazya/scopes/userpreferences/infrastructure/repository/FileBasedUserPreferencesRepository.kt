@@ -10,10 +10,8 @@ import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreference
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
-import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchySettings
-import io.github.kamiazya.scopes.userpreferences.domain.value.PreferenceKey
-import io.github.kamiazya.scopes.userpreferences.domain.value.PreferenceValue
-import io.github.kamiazya.scopes.userpreferences.infrastructure.config.HierarchySettingsConfig
+import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
+import io.github.kamiazya.scopes.userpreferences.infrastructure.config.HierarchyPreferencesConfig
 import io.github.kamiazya.scopes.userpreferences.infrastructure.config.UserPreferencesConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,13 +42,10 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
 
                 val config = UserPreferencesConfig(
                     version = UserPreferencesConfig.CURRENT_VERSION,
-                    hierarchySettings = HierarchySettingsConfig(
-                        maxDepth = preferences.hierarchySettings.maxDepth,
-                        maxChildrenPerScope = preferences.hierarchySettings.maxChildrenPerScope,
+                    hierarchyPreferences = HierarchyPreferencesConfig(
+                        maxDepth = preferences.hierarchyPreferences.maxDepth,
+                        maxChildrenPerScope = preferences.hierarchyPreferences.maxChildrenPerScope,
                     ),
-                    customPreferences = preferences.customPreferences
-                        .mapKeys { it.key.value }
-                        .mapValues { it.value.asString() },
                 )
 
                 val json = UserPreferencesConfig.json.encodeToString(
@@ -97,27 +92,14 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                     json,
                 )
 
-                val hierarchySettings = HierarchySettings.create(
-                    maxDepth = config.hierarchySettings.maxDepth,
-                    maxChildrenPerScope = config.hierarchySettings.maxChildrenPerScope,
+                val hierarchyPreferences = HierarchyPreferences.create(
+                    maxDepth = config.hierarchyPreferences.maxDepth,
+                    maxChildrenPerScope = config.hierarchyPreferences.maxChildrenPerScope,
                 ).bind()
-
-                val customPreferences = config.customPreferences
-                    .mapNotNull { (key, value) ->
-                        PreferenceKey.create(key).fold(
-                            {
-                                logger.warn("Skipping invalid preference key: $key")
-                                null
-                            },
-                            { validKey -> validKey to PreferenceValue.fromString(value) },
-                        )
-                    }
-                    .toMap()
 
                 val now = clock.now()
                 val preferences = UserPreferences(
-                    hierarchySettings = hierarchySettings,
-                    customPreferences = customPreferences,
+                    hierarchyPreferences = hierarchyPreferences,
                     createdAt = now,
                     updatedAt = now,
                 )

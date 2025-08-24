@@ -11,8 +11,6 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.ListCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.shared.di.interfaceSharedModule
-import io.github.kamiazya.scopes.platform.observability.di.observabilityModule
 import org.koin.dsl.module
 
 /**

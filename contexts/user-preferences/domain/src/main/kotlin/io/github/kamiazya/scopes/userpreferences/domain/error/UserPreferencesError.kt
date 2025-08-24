@@ -8,6 +8,8 @@ sealed class UserPreferencesError(open val message: String) {
 
     data class InvalidHierarchySettings(val reason: String) : UserPreferencesError("Invalid hierarchy settings: $reason")
 
+    data class InvalidHierarchyPreferences(val reason: String) : UserPreferencesError("Invalid hierarchy preferences: $reason")
+
     data class PreferencesNotInitialized(override val message: String = "User preferences have not been initialized") : UserPreferencesError(message)
 
     data class PreferencesAlreadyInitialized(override val message: String = "User preferences have already been initialized") : UserPreferencesError(message)

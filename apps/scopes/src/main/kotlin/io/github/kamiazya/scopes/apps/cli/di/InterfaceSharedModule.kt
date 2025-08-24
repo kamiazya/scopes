@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.interfaces.shared.di
+package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.interfaces.shared.adapters.UserPreferencesToHierarchyPolicyAdapter
 import io.github.kamiazya.scopes.interfaces.shared.facade.ScopeManagementFacade
