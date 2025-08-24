@@ -51,60 +51,54 @@ class ScopeManagementPortAdapter(
     private val transactionManager: TransactionManager,
 ) : ScopeManagementPort {
 
-    override suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = transactionManager.inTransaction {
-        createScopeHandler(
-            CreateScope(
-                title = command.title,
-                description = command.description,
-                parentId = command.parentId,
-                generateAlias = command.generateAlias,
-                customAlias = command.customAlias,
-            ),
-        ).mapLeft { error ->
-            ErrorMapper.mapToContractError(error)
-        }.map { result ->
-            CreateScopeResult(
-                id = result.id,
-                title = result.title,
-                description = result.description,
-                parentId = result.parentId,
-                canonicalAlias = result.canonicalAlias ?: "@${result.id}",
-                createdAt = result.createdAt,
-                updatedAt = result.createdAt,
-            )
-        }
+    override suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = createScopeHandler(
+        CreateScope(
+            title = command.title,
+            description = command.description,
+            parentId = command.parentId,
+            generateAlias = command.generateAlias,
+            customAlias = command.customAlias,
+        ),
+    ).mapLeft { error ->
+        ErrorMapper.mapToContractError(error)
+    }.map { result ->
+        CreateScopeResult(
+            id = result.id,
+            title = result.title,
+            description = result.description,
+            parentId = result.parentId,
+            canonicalAlias = result.canonicalAlias ?: "@${result.id}",
+            createdAt = result.createdAt,
+            updatedAt = result.createdAt,
+        )
     }
 
-    override suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult> = transactionManager.inTransaction {
-        updateScopeHandler(
-            UpdateScope(
-                id = command.id,
-                title = command.title,
-                description = command.description,
-            ),
-        ).mapLeft { error ->
-            ErrorMapper.mapToContractError(error)
-        }.map { scopeDto ->
-            UpdateScopeResult(
-                id = scopeDto.id,
-                title = scopeDto.title,
-                description = scopeDto.description,
-                parentId = scopeDto.parentId,
-                canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
-                createdAt = scopeDto.createdAt,
-                updatedAt = scopeDto.updatedAt,
-            )
-        }
+    override suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult> = updateScopeHandler(
+        UpdateScope(
+            id = command.id,
+            title = command.title,
+            description = command.description,
+        ),
+    ).mapLeft { error ->
+        ErrorMapper.mapToContractError(error)
+    }.map { scopeDto ->
+        UpdateScopeResult(
+            id = scopeDto.id,
+            title = scopeDto.title,
+            description = scopeDto.description,
+            parentId = scopeDto.parentId,
+            canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+            createdAt = scopeDto.createdAt,
+            updatedAt = scopeDto.updatedAt,
+        )
     }
 
-    override suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
-        deleteScopeHandler(
-            DeleteScope(
-                id = command.id,
-            ),
-        ).mapLeft { error ->
-            ErrorMapper.mapToContractError(error)
-        }
+    override suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = deleteScopeHandler(
+        DeleteScope(
+            id = command.id,
+        ),
+    ).mapLeft { error ->
+        ErrorMapper.mapToContractError(error)
     }
 
     override suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?> = either {
