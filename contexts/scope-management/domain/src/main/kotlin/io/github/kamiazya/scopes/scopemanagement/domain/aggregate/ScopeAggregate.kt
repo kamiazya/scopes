@@ -53,37 +53,38 @@ data class ScopeAggregate(
          * Creates a new scope aggregate for a create command.
          * Generates a ScopeCreated event after validation.
          */
-        fun create(title: String, description: String? = null, parentId: ScopeId? = null): Either<ScopesError, ScopeAggregate> = either {
-            val validatedTitle = ScopeTitle.create(title).bind()
-            val validatedDescription = ScopeDescription.create(description).bind()
-            val scopeId = ScopeId.generate()
-            val aggregateId = scopeId.toAggregateId().bind()
-            val eventId = EventId.generate()
-            val now = Clock.System.now()
+        fun create(title: String, description: String? = null, parentId: ScopeId? = null, scopeId: ScopeId? = null): Either<ScopesError, ScopeAggregate> =
+            either {
+                val validatedTitle = ScopeTitle.create(title).bind()
+                val validatedDescription = ScopeDescription.create(description).bind()
+                val scopeId = scopeId ?: ScopeId.generate()
+                val aggregateId = scopeId.toAggregateId().bind()
+                val eventId = EventId.generate()
+                val now = Clock.System.now()
 
-            val event = ScopeCreated(
-                aggregateId = aggregateId,
-                eventId = eventId,
-                occurredAt = now,
-                aggregateVersion = AggregateVersion.initial().increment(),
-                scopeId = scopeId,
-                title = validatedTitle,
-                description = validatedDescription,
-                parentId = parentId,
-            )
+                val event = ScopeCreated(
+                    aggregateId = aggregateId,
+                    eventId = eventId,
+                    occurredAt = now,
+                    aggregateVersion = AggregateVersion.initial().increment(),
+                    scopeId = scopeId,
+                    title = validatedTitle,
+                    description = validatedDescription,
+                    parentId = parentId,
+                )
 
-            val initialAggregate = ScopeAggregate(
-                id = aggregateId,
-                version = AggregateVersion.initial(),
-                createdAt = now,
-                updatedAt = now,
-                scope = null,
-                isDeleted = false,
-                isArchived = false,
-            )
+                val initialAggregate = ScopeAggregate(
+                    id = aggregateId,
+                    version = AggregateVersion.initial(),
+                    createdAt = now,
+                    updatedAt = now,
+                    scope = null,
+                    isDeleted = false,
+                    isArchived = false,
+                )
 
-            initialAggregate.applyEvent(event)
-        }
+                initialAggregate.applyEvent(event)
+            }
 
         /**
          * Creates an empty aggregate for event replay.

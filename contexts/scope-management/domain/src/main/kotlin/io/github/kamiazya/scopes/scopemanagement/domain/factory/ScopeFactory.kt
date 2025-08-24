@@ -47,6 +47,9 @@ class ScopeFactory(private val hierarchyService: ScopeHierarchyService, private 
         // First, validate the title format
         val validatedTitle = ScopeTitle.create(title).bind()
 
+        // Generate the scope ID early so we can use it in error messages
+        val newScopeId = ScopeId.generate()
+
         // If parent is specified, validate hierarchy constraints
         if (parentId != null) {
             // Validate parent exists
@@ -54,7 +57,7 @@ class ScopeFactory(private val hierarchyService: ScopeHierarchyService, private 
             ensure(parentExists) {
                 ScopeHierarchyError.ParentNotFound(
                     occurredAt = Clock.System.now(),
-                    scopeId = parentId,
+                    scopeId = newScopeId,
                     parentId = parentId,
                 )
             }
@@ -97,11 +100,12 @@ class ScopeFactory(private val hierarchyService: ScopeHierarchyService, private 
             )
         }
 
-        // Create the aggregate using the factory method
+        // Create the aggregate using the factory method with the pre-generated ID
         ScopeAggregate.create(
             title = title,
             description = description,
             parentId = parentId,
+            scopeId = newScopeId,
         ).bind()
     }
 }
