@@ -190,6 +190,22 @@ object ErrorMapper {
             service = "user-preferences",
         )
 
+        // Hierarchy policy errors
+        is HierarchyPolicyError.InvalidMaxDepth -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
+                scopeId = "", // Policy errors don't have a specific scope
+                attemptedDepth = error.attemptedValue,
+                maximumDepth = error.minimumAllowed,
+            ),
+        )
+        is HierarchyPolicyError.InvalidMaxChildrenPerScope -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
+                parentId = "", // Policy errors don't have a specific parent
+                currentChildrenCount = error.attemptedValue,
+                maximumChildren = error.minimumAllowed,
+            ),
+        )
+
         // Default mapping for any unmapped errors
         else -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "scope-management",
