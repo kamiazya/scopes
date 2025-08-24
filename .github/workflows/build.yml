@@ -165,9 +165,9 @@ jobs:
         BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
         if [ "${{ matrix.platform }}" = "win32" ]; then
           BINARY_NAME="${BINARY_NAME}.exe"
-          cp /c/build-workspace/scopes/apps-scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
         else
-          cp apps-scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
+          cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
         fi
         echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
