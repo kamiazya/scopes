@@ -4,10 +4,14 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.event.DomainEvent
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
@@ -15,9 +19,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUp
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateVersion
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
@@ -45,7 +46,7 @@ data class ScopeAggregate(
     val scope: Scope?,
     val isDeleted: Boolean = false,
     val isArchived: Boolean = false,
-) : AggregateRoot<ScopeAggregate>() {
+) : AggregateRoot<ScopeAggregate, DomainEvent>() {
 
     companion object {
         /**
@@ -56,7 +57,7 @@ data class ScopeAggregate(
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
             val scopeId = ScopeId.generate()
-            val aggregateId = AggregateId.create("Scope", scopeId.value).bind()
+            val aggregateId = scopeId.toAggregateId().bind()
             val eventId = EventId.generate()
             val now = Clock.System.now()
 
@@ -64,7 +65,7 @@ data class ScopeAggregate(
                 aggregateId = aggregateId,
                 eventId = eventId,
                 occurredAt = now,
-                version = 1,
+                aggregateVersion = AggregateVersion.initial().increment(),
                 scopeId = scopeId,
                 title = validatedTitle,
                 description = validatedDescription,
@@ -73,7 +74,7 @@ data class ScopeAggregate(
 
             val initialAggregate = ScopeAggregate(
                 id = aggregateId,
-                version = AggregateVersion.INITIAL,
+                version = AggregateVersion.initial(),
                 createdAt = now,
                 updatedAt = now,
                 scope = null,
@@ -90,7 +91,7 @@ data class ScopeAggregate(
          */
         fun empty(aggregateId: AggregateId): ScopeAggregate = ScopeAggregate(
             id = aggregateId,
-            version = AggregateVersion.INITIAL,
+            version = AggregateVersion.initial(),
             createdAt = Instant.DISTANT_PAST,
             updatedAt = Instant.DISTANT_PAST,
             scope = null,
@@ -120,13 +121,13 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldTitle = scope!!.title,
             newTitle = newTitle,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -149,13 +150,13 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldDescription = scope!!.description,
             newDescription = newDescription,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -178,13 +179,13 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldParentId = scope!!.parentId,
             newParentId = newParentId,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -203,11 +204,11 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -229,12 +230,12 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             reason = null,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -255,11 +256,11 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = Clock.System.now(),
-            version = version.increment().getOrNull()!!.value,
+            aggregateVersion = version.increment(),
             scopeId = scope!!.id,
         )
 
-        this@ScopeAggregate.copy(version = version.increment().getOrNull()!!).applyEvent(event)
+        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
     }
 
     /**
@@ -268,7 +269,7 @@ data class ScopeAggregate(
      */
     override fun applyEvent(event: DomainEvent): ScopeAggregate = when (event) {
         is ScopeCreated -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
             scope = Scope(
@@ -282,7 +283,7 @@ data class ScopeAggregate(
         )
 
         is ScopeTitleUpdated -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 title = event.newTitle,
@@ -291,7 +292,7 @@ data class ScopeAggregate(
         )
 
         is ScopeDescriptionUpdated -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 description = event.newDescription,
@@ -300,7 +301,7 @@ data class ScopeAggregate(
         )
 
         is ScopeParentChanged -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 parentId = event.newParentId,
@@ -309,19 +310,19 @@ data class ScopeAggregate(
         )
 
         is ScopeDeleted -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             isDeleted = true,
         )
 
         is ScopeArchived -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             isArchived = true,
         )
 
         is ScopeRestored -> copy(
-            version = AggregateVersion.create(event.version).getOrNull()!!,
+            version = event.aggregateVersion,
             updatedAt = event.occurredAt,
             isArchived = false,
         )
@@ -330,12 +331,13 @@ data class ScopeAggregate(
     }
 
     fun validateVersion(expectedVersion: Long): Either<ScopesError, Unit> = either {
-        if (version.value != expectedVersion.toInt()) {
+        val versionValue = version.value
+        if (versionValue.toLong() != expectedVersion) {
             raise(
                 ScopeError.VersionMismatch(
                     scopeId = scope?.id ?: ScopeId.create(id.value.substringAfterLast("/")).bind(),
                     expectedVersion = expectedVersion,
-                    actualVersion = version.value.toLong(),
+                    actualVersion = versionValue.toLong(),
                 ),
             )
         }

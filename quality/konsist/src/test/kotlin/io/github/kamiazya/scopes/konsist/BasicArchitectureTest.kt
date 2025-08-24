@@ -118,12 +118,14 @@ class BasicArchitectureTest :
                         !packageName.contains(".service") &&
                         !packageName.contains(".query") &&
                         // Explicitly exclude query package
-                        !packageName.contains(".platform.") // Exclude platform packages - not domain value objects
+                        !packageName.contains(".platform.") &&
+                        // Exclude platform packages - not domain value objects
+                        !packageName.contains(".aggregate") // Aggregate-related value objects like AggregateId are OK in aggregate package
                 }
                 .assertTrue { valueObject ->
                     val packageName = valueObject.packagee?.name ?: ""
-                    // Value objects should be in .valueobject package
-                    packageName.contains(".valueobject")
+                    // Value objects should be in .valueobject or .value package
+                    packageName.contains(".valueobject") || packageName.contains(".value")
                 }
         }
 

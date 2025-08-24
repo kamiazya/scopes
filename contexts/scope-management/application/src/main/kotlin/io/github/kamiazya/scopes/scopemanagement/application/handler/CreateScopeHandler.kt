@@ -22,6 +22,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 
 /**
@@ -41,6 +42,7 @@ class CreateScopeHandler(
     private val crossAggregateValidationService: CrossAggregateValidationService,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val logger: Logger,
+    private val clock: Clock = Clock.System,
 ) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
 
     override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = either {
@@ -131,18 +133,24 @@ class CreateScopeHandler(
                     ).bind()
                 }
 
+                // Validate title format first
+                val validatedTitle = ScopeTitle.create(input.title).mapLeft { titleError ->
+                    logger.warn("Invalid title format: ${input.title}")
+                    titleError
+                }.bind()
+
                 // Check title uniqueness at the same level
                 logger.debug(
                     "Checking title uniqueness",
                     mapOf(
-                        "title" to input.title,
+                        "title" to validatedTitle.value,
                         "parentId" to (parentId?.value ?: "null"),
                     ),
                 )
 
                 val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
                     parentId,
-                    input.title,
+                    validatedTitle.value,
                 ).bind()
 
                 ensure(existingScopeId == null) {
@@ -178,14 +186,14 @@ class CreateScopeHandler(
                 logger.debug(
                     "Creating scope entity",
                     mapOf(
-                        "title" to input.title,
+                        "title" to validatedTitle.value,
                         "hasDescription" to (input.description != null).toString(),
                         "aspectCount" to aspects.size.toString(),
                     ),
                 )
 
                 val scope = Scope.create(
-                    title = input.title,
+                    title = validatedTitle.value,
                     description = input.description,
                     parentId = parentId,
                     aspects = Aspects.from(aspects),

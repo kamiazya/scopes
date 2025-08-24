@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation(project(":platform-commons"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":platform-domain-commons"))
     implementation(project(":platform-observability"))
     implementation(project(":scope-management-domain"))
     implementation(libs.arrow.core)

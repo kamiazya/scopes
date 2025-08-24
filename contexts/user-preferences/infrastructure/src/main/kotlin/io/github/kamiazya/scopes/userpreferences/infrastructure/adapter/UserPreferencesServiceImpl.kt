@@ -56,9 +56,21 @@ class UserPreferencesServiceImpl(private val repository: UserPreferencesReposito
                 }
                 .bind()
 
-            newAggregate.preferences!!
+            newAggregate.preferences
+                ?: raise(
+                    UserPreferencesServiceError.PreferencesCorrupted(
+                        details = "Newly created aggregate has no preferences",
+                        configPath = null,
+                    ),
+                )
         } else {
-            aggregate.preferences!!
+            aggregate.preferences
+                ?: raise(
+                    UserPreferencesServiceError.PreferencesCorrupted(
+                        details = "Aggregate exists but has no preferences",
+                        configPath = null,
+                    ),
+                )
         }
 
         val dto = UserPreferencesDto(

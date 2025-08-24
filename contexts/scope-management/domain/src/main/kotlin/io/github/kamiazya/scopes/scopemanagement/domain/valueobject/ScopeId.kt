@@ -46,7 +46,17 @@ value class ScopeId private constructor(val value: String) {
      *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.create("Scope", value)
+    fun toAggregateId(): Either<AggregateIdError, io.github.kamiazya.scopes.platform.domain.value.AggregateId> =
+        io.github.kamiazya.scopes.platform.domain.value.AggregateId.Uri.create(
+            aggregateType = "Scope",
+            id = value,
+        ).mapLeft {
+            AggregateIdError.InvalidFormat(
+                occurredAt = currentTimestamp(),
+                value = value,
+                message = "Failed to create AggregateId from ScopeId",
+            )
+        }
 
     override fun toString(): String = value
 }

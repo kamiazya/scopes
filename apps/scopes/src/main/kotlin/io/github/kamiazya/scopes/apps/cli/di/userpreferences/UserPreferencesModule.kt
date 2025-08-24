@@ -8,8 +8,7 @@ import io.github.kamiazya.scopes.userpreferences.infrastructure.adapter.UserPref
 import io.github.kamiazya.scopes.userpreferences.infrastructure.repository.FileBasedUserPreferencesRepository
 import kotlinx.datetime.Clock
 import org.koin.dsl.module
-import java.nio.file.Path
-import java.nio.file.Paths
+import kotlin.io.path.Path
 
 /**
  * DI module for User Preferences bounded context
@@ -20,12 +19,15 @@ import java.nio.file.Paths
  * - Service adapter (UserPreferencesServiceImpl)
  */
 val userPreferencesModule = module {
+    // Clock provider
+    single<Clock> { Clock.System }
+
     // Repository
     single<UserPreferencesRepository> {
         FileBasedUserPreferencesRepository(
-            configPath = getConfigPath(),
+            configPathStr = getConfigPath(),
             logger = get<Logger>(),
-            clock = Clock.System,
+            clock = get<Clock>(),
         )
     }
 
@@ -33,7 +35,7 @@ val userPreferencesModule = module {
     factory {
         GetCurrentUserPreferencesHandler(
             repository = get(),
-            clock = Clock.System,
+            clock = get<Clock>(),
         )
     }
 
@@ -42,13 +44,25 @@ val userPreferencesModule = module {
         UserPreferencesServiceImpl(
             repository = get(),
             logger = get<Logger>(),
-            clock = Clock.System,
+            clock = get<Clock>(),
         )
     }
 }
 
-private fun getConfigPath(): Path {
-    val xdgConfigHome = System.getenv("XDG_CONFIG_HOME")
-        ?: "${System.getProperty("user.home")}/.config"
-    return Paths.get(xdgConfigHome, "scopes")
+private fun getConfigPath(): String {
+    val os = System.getProperty("os.name").lowercase()
+    return when {
+        os.contains("win") -> {
+            // Windows: Use APPDATA or fallback to user.home/.config
+            val appData = System.getenv("APPDATA")
+                ?: "${System.getProperty("user.home")}/.config"
+            Path(appData, "scopes").toString()
+        }
+        else -> {
+            // Unix-like (Linux, macOS): Use XDG_CONFIG_HOME or fallback
+            val configHome = System.getenv("XDG_CONFIG_HOME")
+                ?: "${System.getProperty("user.home")}/.config"
+            Path(configHome, "scopes").toString()
+        }
+    }
 }

@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.userpreferences.domain.repository
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.userpreferences.domain.aggregate.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 

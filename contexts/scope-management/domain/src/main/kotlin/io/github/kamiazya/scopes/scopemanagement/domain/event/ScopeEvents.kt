@@ -2,13 +2,15 @@ package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
@@ -17,7 +19,7 @@ import kotlinx.datetime.Instant
 /**
  * Events related to Scope aggregate.
  */
-sealed class ScopeEvent : DomainEvent()
+sealed class ScopeEvent : DomainEvent
 
 /**
  * Event fired when a new Scope is created.
@@ -26,7 +28,7 @@ data class ScopeCreated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val title: ScopeTitle,
     val description: ScopeDescription?,
@@ -38,7 +40,7 @@ data class ScopeCreated(
                 aggregateId = aggregateId,
                 eventId = eventId,
                 occurredAt = scope.createdAt,
-                version = 1,
+                aggregateVersion = AggregateVersion.initial().increment(),
                 scopeId = scope.id,
                 title = scope.title,
                 description = scope.description,
@@ -55,7 +57,7 @@ data class ScopeTitleUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldTitle: ScopeTitle,
     val newTitle: ScopeTitle,
@@ -68,7 +70,7 @@ data class ScopeDescriptionUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldDescription: ScopeDescription?,
     val newDescription: ScopeDescription?,
@@ -81,7 +83,7 @@ data class ScopeParentChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldParentId: ScopeId?,
     val newParentId: ScopeId?,
@@ -94,7 +96,7 @@ data class ScopeArchived(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val reason: String?,
 ) : ScopeEvent()
@@ -106,7 +108,7 @@ data class ScopeRestored(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
 ) : ScopeEvent()
 
@@ -117,7 +119,7 @@ data class ScopeDeleted(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
 ) : ScopeEvent()
 
@@ -128,7 +130,7 @@ data class ScopeAspectAdded(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
     val aspectValues: NonEmptyList<AspectValue>,
@@ -141,7 +143,7 @@ data class ScopeAspectRemoved(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
 ) : ScopeEvent()
@@ -153,7 +155,7 @@ data class ScopeAspectsCleared(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
 ) : ScopeEvent()
 
@@ -164,7 +166,7 @@ data class ScopeAspectsUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldAspects: Aspects,
     val newAspects: Aspects,

@@ -81,6 +81,7 @@ object ErrorMessageMapper {
             is AggregateIdError.InvalidIdFormat -> "Invalid aggregate ID format '${error.attemptedId}', expected: ${error.expectedFormat}"
             is AggregateIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
             is AggregateIdError.EmptyValue -> "Empty value for field: ${error.field}"
+            is AggregateIdError.InvalidFormat -> "Invalid format for ${error.value}: ${error.message}"
         }
         is AggregateVersionError -> when (error) {
             is AggregateVersionError.NegativeVersion -> "Negative version not allowed: ${error.attemptedVersion}"

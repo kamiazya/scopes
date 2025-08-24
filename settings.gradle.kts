@@ -16,6 +16,7 @@ include(
     ":platform-commons",
     ":platform-observability",
     ":platform-application-commons",
+    ":platform-domain-commons",
     // Interface layer
     ":interfaces-shared",
     ":interfaces-cli",
@@ -83,6 +84,7 @@ develocity {
 project(":platform-commons").projectDir = file("platform/commons")
 project(":platform-observability").projectDir = file("platform/observability")
 project(":platform-application-commons").projectDir = file("platform/application-commons")
+project(":platform-domain-commons").projectDir = file("platform/domain-commons")
 
 // Interface layer
 project(":interfaces-shared").projectDir = file("interfaces/shared")

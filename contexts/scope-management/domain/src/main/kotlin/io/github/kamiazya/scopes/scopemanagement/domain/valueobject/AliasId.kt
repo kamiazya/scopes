@@ -55,6 +55,18 @@ value class AliasId private constructor(val value: String) {
      * Converts this AliasId to an AggregateId.
      * Used when treating the alias as an aggregate root.
      */
-    fun toAggregateId(): Either<io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError, AggregateId> =
-        AggregateId.create(type = "ScopeAlias", id = value)
+    fun toAggregateId(): Either<
+        io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError,
+        io.github.kamiazya.scopes.platform.domain.value.AggregateId,
+        > =
+        io.github.kamiazya.scopes.platform.domain.value.AggregateId.Uri.create(
+            aggregateType = "ScopeAlias",
+            id = value,
+        ).mapLeft {
+            io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError.InvalidFormat(
+                occurredAt = Clock.System.now(),
+                value = value,
+                message = "Failed to create AggregateId from AliasId",
+            )
+        }
 }

@@ -4,6 +4,10 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
+import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.event.PreferenceRemoved
@@ -22,19 +26,21 @@ data class UserPreferencesAggregate(
     val preferences: UserPreferences?,
     val createdAt: Instant,
     val updatedAt: Instant,
-) : AggregateRoot<UserPreferencesAggregate>() {
+) : AggregateRoot<UserPreferencesAggregate, UserPreferencesDomainEvent>() {
 
     companion object {
         fun create(
-            aggregateId: AggregateId = AggregateId.generate(),
+            aggregateId: AggregateId = AggregateId.Simple.generate(),
             clock: Clock = Clock.System,
-        ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, DomainEvent>> {
+        ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> {
             val now = clock.now()
             val preferences = UserPreferences.createDefault(now)
 
+            val initialVersion = AggregateVersion.initial()
             val event = UserPreferencesCreated(
                 eventId = EventId.generate(),
                 aggregateId = aggregateId,
+                aggregateVersion = initialVersion.increment(),
                 occurredAt = now,
                 preferences = preferences,
             )
@@ -55,13 +61,14 @@ data class UserPreferencesAggregate(
         key: PreferenceKey,
         value: PreferenceValue,
         clock: Clock = Clock.System,
-    ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, DomainEvent>> = either {
+    ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> = either {
         val currentPreferences = ensureInitialized().bind()
         val oldValue = currentPreferences.getPreference(key)
 
         val event = PreferenceSet(
             eventId = EventId.generate(),
             aggregateId = id,
+            aggregateVersion = version.increment(),
             occurredAt = clock.now(),
             key = key,
             oldValue = oldValue,
@@ -77,7 +84,10 @@ data class UserPreferencesAggregate(
         updated to event
     }
 
-    fun removePreference(key: PreferenceKey, clock: Clock = Clock.System): Either<UserPreferencesError, Pair<UserPreferencesAggregate, DomainEvent>> = either {
+    fun removePreference(
+        key: PreferenceKey,
+        clock: Clock = Clock.System,
+    ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> = either {
         val currentPreferences = ensureInitialized().bind()
         val oldValue = currentPreferences.getPreference(key)
             ?: raise(UserPreferencesError.PreferenceNotFound(key.value))
@@ -85,6 +95,7 @@ data class UserPreferencesAggregate(
         val event = PreferenceRemoved(
             eventId = EventId.generate(),
             aggregateId = id,
+            aggregateVersion = version.increment(),
             occurredAt = clock.now(),
             key = key,
             oldValue = oldValue,
@@ -100,13 +111,14 @@ data class UserPreferencesAggregate(
         updated to event
     }
 
-    fun resetToDefaults(clock: Clock = Clock.System): Either<UserPreferencesError, Pair<UserPreferencesAggregate, DomainEvent>> = either {
+    fun resetToDefaults(clock: Clock = Clock.System): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> = either {
         val currentPreferences = ensureInitialized().bind()
         val newPreferences = UserPreferences.createDefault(clock.now())
 
         val event = PreferencesReset(
             eventId = EventId.generate(),
             aggregateId = id,
+            aggregateVersion = version.increment(),
             occurredAt = clock.now(),
             oldPreferences = currentPreferences,
             newPreferences = newPreferences,

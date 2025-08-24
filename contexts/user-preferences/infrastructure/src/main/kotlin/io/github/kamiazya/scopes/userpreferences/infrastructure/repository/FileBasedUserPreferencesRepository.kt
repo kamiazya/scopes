@@ -3,9 +3,9 @@ package io.github.kamiazya.scopes.userpreferences.infrastructure.repository
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.right
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.userpreferences.domain.aggregate.AggregateId
-import io.github.kamiazya.scopes.userpreferences.domain.aggregate.AggregateVersion
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
@@ -18,19 +18,19 @@ import io.github.kamiazya.scopes.userpreferences.infrastructure.config.UserPrefe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardOpenOption
+import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
-class FileBasedUserPreferencesRepository(private val configPath: Path, private val logger: Logger, private val clock: Clock = Clock.System) :
+class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger, private val clock: Clock = Clock.System) :
     UserPreferencesRepository {
 
-    private val configFile = configPath.resolve(UserPreferencesConfig.CONFIG_FILE_NAME)
+    private val configPath = Path(configPathStr)
+    private val configFile = Path(configPathStr, UserPreferencesConfig.CONFIG_FILE_NAME)
     private var cachedAggregate: UserPreferencesAggregate? = null
-    private val currentUserAggregateId = AggregateId.generate()
+    private val currentUserAggregateId = AggregateId.Simple.generate()
 
     init {
         configPath.createDirectories()
@@ -58,10 +58,10 @@ class FileBasedUserPreferencesRepository(private val configPath: Path, private v
                     config,
                 )
 
-                Files.write(configFile, json.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+                configFile.writeText(json)
                 cachedAggregate = aggregate
 
-                logger.info("Saved user preferences to ${configFile.toAbsolutePath()}")
+                logger.info("Saved user preferences to $configFile")
             } catch (e: Exception) {
                 logger.error("Failed to save user preferences: ${e.message}")
                 raise(
@@ -86,7 +86,7 @@ class FileBasedUserPreferencesRepository(private val configPath: Path, private v
 
         withContext(Dispatchers.IO) {
             if (!configFile.exists()) {
-                logger.debug("No preferences file found at ${configFile.toAbsolutePath()}")
+                logger.debug("No preferences file found at $configFile")
                 return@withContext null
             }
 
@@ -131,7 +131,7 @@ class FileBasedUserPreferencesRepository(private val configPath: Path, private v
                 )
 
                 cachedAggregate = aggregate
-                logger.info("Loaded user preferences from ${configFile.toAbsolutePath()}")
+                logger.info("Loaded user preferences from $configFile")
 
                 aggregate
             } catch (e: Exception) {

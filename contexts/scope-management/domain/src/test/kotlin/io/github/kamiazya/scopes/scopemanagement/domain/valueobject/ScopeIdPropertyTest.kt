@@ -73,7 +73,7 @@ class ScopeIdPropertyTest :
                 aggregateId.fold(
                     { throw AssertionError("Expected Right but got Left") },
                     { aggId ->
-                        aggId.aggregateType shouldBe "Scope"
+                        // AggregateId.Uri has value property containing the full URI
                         aggId.value shouldBe "gid://scopes/Scope/$ulid"
                     },
                 )

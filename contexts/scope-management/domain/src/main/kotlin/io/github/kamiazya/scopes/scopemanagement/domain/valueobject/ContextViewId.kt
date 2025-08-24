@@ -52,6 +52,18 @@ value class ContextViewId private constructor(val value: String) {
      * Converts this ContextViewId to an AggregateId.
      * Used when treating the context view as an aggregate root.
      */
-    fun toAggregateId(): Either<io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError, AggregateId> =
-        AggregateId.create(type = "ContextView", id = value)
+    fun toAggregateId(): Either<
+        io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError,
+        io.github.kamiazya.scopes.platform.domain.value.AggregateId,
+        > =
+        io.github.kamiazya.scopes.platform.domain.value.AggregateId.Uri.create(
+            aggregateType = "ContextView",
+            id = value,
+        ).mapLeft {
+            io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError.InvalidFormat(
+                occurredAt = Clock.System.now(),
+                value = value,
+                message = "Failed to create AggregateId from ContextViewId",
+            )
+        }
 }

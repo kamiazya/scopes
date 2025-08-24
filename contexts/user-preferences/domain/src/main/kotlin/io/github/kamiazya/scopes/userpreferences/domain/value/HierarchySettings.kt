@@ -5,7 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 
-data class HierarchySettings(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null) {
+data class HierarchySettings private constructor(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null) {
     companion object {
         const val MIN_DEPTH = 1
         const val MIN_CHILDREN = 1

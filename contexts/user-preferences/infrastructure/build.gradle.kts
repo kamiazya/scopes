@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":user-preferences-application"))
     implementation(project(":interfaces-shared"))
     implementation(project(":platform-commons"))
+    implementation(project(":platform-domain-commons"))
     implementation(project(":platform-observability"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.stdlib)

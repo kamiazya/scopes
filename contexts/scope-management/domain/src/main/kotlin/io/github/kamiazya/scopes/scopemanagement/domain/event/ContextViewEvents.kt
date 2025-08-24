@@ -1,21 +1,23 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.EventId
 import kotlinx.datetime.Instant
 
 /**
  * Events related to ContextView aggregate.
  */
-sealed class ContextViewEvent : DomainEvent()
+sealed class ContextViewEvent : DomainEvent
 
 /**
  * Event fired when a new ContextView is created.
@@ -24,7 +26,7 @@ data class ContextViewCreated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val key: ContextViewKey,
     val name: ContextViewName,
@@ -37,7 +39,7 @@ data class ContextViewCreated(
                 aggregateId = aggregateId,
                 eventId = eventId,
                 occurredAt = contextView.createdAt,
-                version = 1,
+                aggregateVersion = AggregateVersion.initial().increment(),
                 contextViewId = contextView.id,
                 key = contextView.key,
                 name = contextView.name,
@@ -55,7 +57,7 @@ data class ContextViewUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val changes: ContextViewChanges,
 ) : ContextViewEvent()
@@ -67,7 +69,7 @@ data class ContextViewNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val oldName: ContextViewName,
     val newName: ContextViewName,
@@ -80,7 +82,7 @@ data class ContextViewFilterUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val oldFilter: ContextViewFilter,
     val newFilter: ContextViewFilter,
@@ -93,7 +95,7 @@ data class ContextViewDescriptionUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val oldDescription: ContextViewDescription?,
     val newDescription: ContextViewDescription?,
@@ -106,7 +108,7 @@ data class ContextViewDeleted(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val contextViewId: ContextViewId,
     val deletedAt: Instant,
 ) : ContextViewEvent()
