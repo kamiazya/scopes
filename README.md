@@ -37,15 +37,20 @@ scopes/
 │   ├── scopes/                # Main CLI application
 │   └── scopesd/               # Background daemon service
 ├── contexts/                  # Bounded contexts (DDD)
-│   └── scope-management/      # Core scope management context
-│       ├── domain/            # Business logic and rules
-│       ├── application/       # Use cases and handlers
-│       └── infrastructure/    # Technical implementations
+│   ├── scope-management/      # Core scope management context
+│   │   ├── domain/            # Business logic and rules
+│   │   ├── application/       # Use cases and handlers
+│   │   └── infrastructure/    # Technical implementations
+│   └── user-preferences/      # User preferences context
+│       ├── domain/            # Preference domain model
+│       ├── application/       # Preference use cases
+│       └── infrastructure/    # Preference storage
 ├── interfaces/                # Adapters and facades
 │   ├── cli/                   # CLI commands and formatters
 │   └── shared/                # Shared facades and DI
 ├── platform/                  # Shared infrastructure
 │   ├── commons/               # Core types (ULID, Instant)
+│   ├── domain-commons/        # Shared DDD components
 │   ├── application-commons/   # Base application types
 │   └── observability/         # Logging and monitoring
 ├── quality/                   # Architecture tests
@@ -68,7 +73,7 @@ scopes/
 - **Quality**: Architecture compliance and validation
 
 #### Bounded Context Structure
-The **scope-management** context is organized following DDD principles:
+Each bounded context (e.g., **scope-management**, **user-preferences**) is organized following DDD principles:
 
 - **Domain Layer**: Pure business logic with aggregates, entities, value objects, and domain events
 - **Application Layer**: Use cases, command/query handlers, and application services
@@ -105,10 +110,10 @@ The **scope-management** context is organized following DDD principles:
 
 ```bash
 # CLI
-./gradlew :apps:scopes:run
+./gradlew :apps-scopes:run
 
 # Daemon
-./gradlew :apps:scopesd:run
+./gradlew :apps-scopesd:run
 ```
 
 ## 📚 Documentation

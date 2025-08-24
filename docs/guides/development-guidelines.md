@@ -20,8 +20,8 @@ Scopes follows **Clean Architecture** principles with **Domain-Driven Design (DD
 
 ```mermaid
 flowchart TD
-        CLI[apps:scopes]
-        APP[apps:cli]
+        CLI[apps-scopes]
+        APP[interfaces/cli]
         DOM[contexts/*/domain]
         INF[contexts/*/infrastructure]
 
@@ -61,7 +61,7 @@ flowchart TD
 - **External Service Integrations**: Database connections, file systems
 - **Technical Error Handling**: Connection errors, data integrity violations
 
-#### Apps Layer (`:apps:scopes`)
+#### Apps Layer (`:apps-scopes`)
 - **CLI Commands**: User interface for scope operations
 - **Application DTO Consumption**: Consumes pre-mapped DTOs from application layer only
 - **Error Presentation**: User-friendly error messages from use case errors
