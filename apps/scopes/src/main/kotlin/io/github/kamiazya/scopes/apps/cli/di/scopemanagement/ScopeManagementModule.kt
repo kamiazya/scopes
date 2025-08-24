@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScop
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import org.koin.dsl.module
 
@@ -28,6 +29,14 @@ val scopeManagementModule = module {
         )
     }
 
+    // Domain Factory
+    single {
+        ScopeFactory(
+            hierarchyService = get(),
+            scopeRepository = get(),
+        )
+    }
+
     // Application Services
     single { CrossAggregateValidationService(scopeRepository = get()) }
     single {
@@ -39,10 +48,9 @@ val scopeManagementModule = module {
     // Use Case Handlers
     single {
         CreateScopeHandler(
+            scopeFactory = get(),
             scopeRepository = get(),
             transactionManager = get(),
-            hierarchyService = get(),
-            crossAggregateValidationService = get(),
             hierarchyPolicyProvider = get(),
             logger = get(),
         )
