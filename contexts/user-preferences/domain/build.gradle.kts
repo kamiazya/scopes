@@ -14,3 +14,7 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
