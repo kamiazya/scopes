@@ -18,6 +18,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
@@ -145,7 +146,7 @@ class UserPreferencesServiceImplTest :
                 it("should create and save default preferences successfully") {
                     // Given
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    coEvery { mockClock.now() } returns fixedInstant
+                    every { mockClock.now() } returns fixedInstant
                     coEvery { mockRepository.save(any()) } returns Unit.right()
 
                     // When
@@ -170,7 +171,7 @@ class UserPreferencesServiceImplTest :
                 it("should handle aggregate creation failure") {
                     // Given - Aggregate creation uses static method, so we test save failure instead
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    coEvery { mockClock.now() } returns fixedInstant
+                    every { mockClock.now() } returns fixedInstant
 
                     val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", "Disk full")
                     coEvery { mockRepository.save(any()) } returns saveError.left()
@@ -196,7 +197,7 @@ class UserPreferencesServiceImplTest :
                 it("should handle newly created aggregate with no preferences") {
                     // Given - This is a defensive scenario that shouldn't happen in practice
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    coEvery { mockClock.now() } returns fixedInstant
+                    every { mockClock.now() } returns fixedInstant
                     coEvery { mockRepository.save(any()) } returns Unit.right()
 
                     // We need to mock the aggregate creation to return one without preferences
@@ -343,7 +344,7 @@ class UserPreferencesServiceImplTest :
                 it("should log specific error messages for save failures") {
                     // Given
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    coEvery { mockClock.now() } returns fixedInstant
+                    every { mockClock.now() } returns fixedInstant
 
                     val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", "Save failed")
                     coEvery { mockRepository.save(any()) } returns saveError.left()
