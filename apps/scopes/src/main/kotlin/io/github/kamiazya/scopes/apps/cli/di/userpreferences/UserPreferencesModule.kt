@@ -1,10 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.di.userpreferences
 
-import io.github.kamiazya.scopes.interfaces.shared.services.UserPreferencesService
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.application.handler.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
-import io.github.kamiazya.scopes.userpreferences.infrastructure.adapter.UserPreferencesServiceImpl
 import io.github.kamiazya.scopes.userpreferences.infrastructure.repository.FileBasedUserPreferencesRepository
 import kotlinx.datetime.Clock
 import org.koin.dsl.module
@@ -39,14 +37,7 @@ val userPreferencesModule = module {
         )
     }
 
-    // Service Adapter
-    single<UserPreferencesService> {
-        UserPreferencesServiceImpl(
-            repository = get(),
-            logger = get<Logger>(),
-            clock = get<Clock>(),
-        )
-    }
+    // Service Adapter is no longer needed since we use contracts directly
 }
 
 private fun getConfigPath(): String {

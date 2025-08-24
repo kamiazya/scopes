@@ -6,9 +6,10 @@ plugins {
 dependencies {
     implementation(project(":user-preferences-domain"))
     implementation(project(":user-preferences-application"))
-    implementation(project(":interfaces-shared"))
+    implementation(project(":contracts-user-preferences"))
     implementation(project(":platform-commons"))
     implementation(project(":platform-domain-commons"))
+    implementation(project(":platform-application-commons"))
     implementation(project(":platform-observability"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.stdlib)

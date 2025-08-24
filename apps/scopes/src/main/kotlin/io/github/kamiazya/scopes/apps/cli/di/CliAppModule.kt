@@ -33,8 +33,8 @@ val cliAppModule = module {
         scopeManagementInfrastructureModule,
         userPreferencesModule,
 
-        // Interface layers
-        interfaceSharedModule,
+        // Contracts layer
+        contractsModule,
     )
 
     // CLI Commands
@@ -48,8 +48,8 @@ val cliAppModule = module {
     // CLI Adapters
     single {
         ScopeCommandAdapter(
-            scopeManagementFacade = get(),
-            // Future: Add other context facades here
+            scopeManagementPort = get(),
+            // Future: Add other context ports here
         )
     }
 

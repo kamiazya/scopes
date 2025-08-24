@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":interfaces-shared"))
+    implementation(project(":contracts-scope-management"))
     implementation(project(":scope-management-domain"))
     implementation(project(":scope-management-application"))
     implementation(project(":platform-commons"))

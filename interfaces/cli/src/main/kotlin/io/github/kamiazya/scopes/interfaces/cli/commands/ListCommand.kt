@@ -7,7 +7,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -35,20 +35,20 @@ class ListCommand :
                 root -> {
                     scopeCommandAdapter.listRootScopes().fold(
                         { error ->
-                            echo("Error: ${ErrorMessageMapper.getMessage(error)}", err = true)
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            echo(scopeOutputFormatter.formatScopeList(scopes))
+                            echo(scopeOutputFormatter.formatContractScopeList(scopes))
                         },
                     )
                 }
                 parentId != null -> {
                     scopeCommandAdapter.listChildren(parentId!!).fold(
                         { error ->
-                            echo("Error: ${ErrorMessageMapper.getMessage(error)}", err = true)
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            echo(scopeOutputFormatter.formatScopeList(scopes))
+                            echo(scopeOutputFormatter.formatContractScopeList(scopes))
                         },
                     )
                 }
@@ -56,10 +56,10 @@ class ListCommand :
                     // Default: list root scopes
                     scopeCommandAdapter.listRootScopes().fold(
                         { error ->
-                            echo("Error: ${ErrorMessageMapper.getMessage(error)}", err = true)
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            echo(scopeOutputFormatter.formatScopeList(scopes))
+                            echo(scopeOutputFormatter.formatContractScopeList(scopes))
                         },
                     )
                 }

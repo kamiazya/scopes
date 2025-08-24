@@ -1,7 +1,9 @@
 package io.github.kamiazya.scopes.interfaces.cli.formatters
 
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult as ContractCreateScopeResult
 
 /**
  * Formatter for CLI output of scope-related data
@@ -97,6 +99,79 @@ class ScopeOutputFormatter {
      * Formats a deletion result
      */
     fun formatDeleteResult(id: String): String = "Scope '$id' deleted successfully."
+
+    // Contract result formatters
+
+    /**
+     * Formats a contract create result
+     */
+    fun formatContractCreateResult(result: ContractCreateScopeResult): String = buildString {
+        appendLine("Scope created successfully!")
+        appendLine("ID: ${result.id}")
+        appendLine("Title: ${result.title}")
+        result.description?.let { appendLine("Description: $it") }
+        result.parentId?.let { appendLine("Parent ID: $it") }
+        result.canonicalAlias?.let { appendLine("Alias: $it") }
+    }.trim()
+
+    /**
+     * Formats a contract scope result
+     */
+    fun formatContractScope(scope: ScopeResult): String = buildString {
+        appendLine("Scope Details:")
+        appendLine("ID: ${scope.id}")
+        appendLine("Title: ${scope.title}")
+        scope.description?.let { appendLine("Description: $it") }
+        scope.parentId?.let { appendLine("Parent ID: $it") }
+        appendLine("Alias: ${scope.canonicalAlias}")
+        appendLine("Created: ${scope.createdAt}")
+        appendLine("Updated: ${scope.updatedAt}")
+    }.trim()
+
+    /**
+     * Formats a contract update result
+     */
+    fun formatContractUpdateResult(scope: ScopeResult): String = buildString {
+        appendLine("Scope updated successfully!")
+        appendLine("ID: ${scope.id}")
+        appendLine("Title: ${scope.title}")
+        scope.description?.let { appendLine("Description: $it") }
+        appendLine("Updated: ${scope.updatedAt}")
+    }.trim()
+
+    /**
+     * Formats a list of contract scope results
+     */
+    fun formatContractScopeList(scopes: List<ScopeResult>): String {
+        if (scopes.isEmpty()) {
+            return "No scopes found."
+        }
+
+        return buildString {
+            appendLine("Found ${scopes.size} scope(s):")
+            appendLine()
+
+            scopes.forEachIndexed { index, scope ->
+                if (index > 0) appendLine()
+                appendLine(formatContractScopeListItem(scope))
+            }
+        }.trim()
+    }
+
+    /**
+     * Formats a single contract scope for list display
+     */
+    private fun formatContractScopeListItem(scope: ScopeResult): String = buildString {
+        append("• ${scope.title}")
+        scope.description?.let {
+            append(" - $it")
+        }
+        appendLine()
+        append("  ID: ${scope.id}")
+        scope.parentId?.let {
+            append(" | Parent: $it")
+        }
+    }
 
     /**
      * Formats scope tree structure (for future hierarchical display)

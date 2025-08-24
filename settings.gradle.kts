@@ -18,8 +18,10 @@ include(
     ":platform-application-commons",
     ":platform-domain-commons",
     // Interface layer
-    ":interfaces-shared",
     ":interfaces-cli",
+    // Contracts layer
+    ":contracts-scope-management",
+    ":contracts-user-preferences",
     // Bounded Context - Unified Scope Management
     ":scope-management-domain",
     ":scope-management-application",
@@ -87,8 +89,11 @@ project(":platform-application-commons").projectDir = file("platform/application
 project(":platform-domain-commons").projectDir = file("platform/domain-commons")
 
 // Interface layer
-project(":interfaces-shared").projectDir = file("interfaces/shared")
 project(":interfaces-cli").projectDir = file("interfaces/cli")
+
+// Contracts layer
+project(":contracts-scope-management").projectDir = file("contracts/scope-management")
+project(":contracts-user-preferences").projectDir = file("contracts/user-preferences")
 
 // Bounded Context - Scope Management
 project(":scope-management-domain").projectDir = file("contexts/scope-management/domain")

@@ -163,25 +163,60 @@ graph LR
 
 ### Context Integration Patterns
 
+#### Contracts Layer
+The system uses a dedicated Contracts layer to define stable interfaces between bounded contexts:
+
+```kotlin
+// Contract Port Interface
+interface UserPreferencesPort {
+    suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
+}
+
+// Port Implementation in User Preferences Context
+class UserPreferencesPortAdapter(
+    private val handler: GetCurrentUserPreferencesHandler
+) : UserPreferencesPort {
+    override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
+        // Implementation delegates to application handler
+    }
+}
+```
+
 #### Anti-Corruption Layer (ACL)
 The system uses ACLs to translate between bounded contexts while maintaining their independence:
 
 ```kotlin
 // Example: UserPreferencesToHierarchyPolicyAdapter
-class UserPreferencesToHierarchyPolicyAdapter : HierarchyPolicyProvider {
+class UserPreferencesToHierarchyPolicyAdapter(
+    private val userPreferencesPort: UserPreferencesPort  // Uses contract port
+) : HierarchyPolicyProvider {
     override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> {
         // Translate from User Preferences context to Scope Management context
         // - User Preferences: null = no preference (use defaults)
         // - Scope Management: null = unlimited (policy decision)
+        val result = userPreferencesPort.getPreference(
+            GetPreferenceQuery(PreferenceType.HIERARCHY)
+        ).bind()
+        
+        // Map contract types to domain types
+        when (result) {
+            is PreferenceResult.HierarchyPreferences -> 
+                HierarchyPolicy(
+                    maxDepth = result.maxDepth,
+                    maxChildrenPerScope = result.maxChildrenPerScope
+                )
+        }
     }
 }
 ```
 
 **Key Principles**:
+- Contracts layer defines stable interfaces between contexts
 - Each context maintains its own domain model
 - Adapters handle translation between contexts
-- Contexts remain loosely coupled
+- Contexts remain loosely coupled through contract ports
 - Business rules stay within their respective contexts
+- Error mapping ensures proper error handling across boundaries
 
 
 ## Strategic Design
@@ -530,31 +565,79 @@ class CreateScopeUseCase(
 - Transaction management
 - Domain event publishing
 
+### Infrastructure Layer (within Bounded Context)
+Implements technical concerns and contract ports:
+
+```kotlin
+// contexts/scope-management/infrastructure/adapters/ScopeManagementPortAdapter.kt
+class ScopeManagementPortAdapter(
+    private val createScopeHandler: CreateScopeHandler,
+    private val transactionManager: TransactionManager
+) : ScopeManagementPort {
+    override suspend fun createScope(
+        command: CreateScopeCommand
+    ): Either<ScopeContractError, CreateScopeResult> = 
+        transactionManager.inTransaction {
+            createScopeHandler(
+                CreateScope(
+                    title = command.title,
+                    description = command.description,
+                    parentId = command.parentId
+                )
+            ).mapLeft { error ->
+                ErrorMapper.mapToContractError(error)
+            }.map { result ->
+                CreateScopeResult(
+                    id = result.id,
+                    title = result.title,
+                    // ... map to contract result
+                )
+            }
+        }
+}
+```
+
+**Responsibilities**:
+- Implement contract port interfaces
+- Map between domain and contract types
+- Handle error translation
+- Manage technical concerns (persistence, messaging)
+
 ### Interface Layer (Cross-Context Integration)
-Coordinates multiple bounded contexts and adapts to external interfaces:
+Coordinates multiple bounded contexts through contract ports:
 
 ```kotlin
 // interfaces/cli/adapters/ScopeCommandAdapter.kt
 class ScopeCommandAdapter(
-    private val scopeManagement: ScopeManagementFacade,
-    private val workspaceManagement: WorkspaceManagementFacade?,
-    private val aiCollaboration: AiCollaborationFacade?
+    private val scopeManagementPort: ScopeManagementPort,
+    private val userPreferencesPort: UserPreferencesPort?,
+    private val workspaceManagementPort: WorkspaceManagementPort?
 ) {
-    fun createScope(title: String, parentId: String?): Either<ScopesError, ScopeDto> = either {
-        // Coordinate multiple contexts
-        val scope = scopeManagement.createScope(title, parentId).bind()
-        workspaceManagement?.initializeWorkspace(scope.id)
-        aiCollaboration?.notifyCreation(scope)
+    suspend fun createScope(title: String, parentId: String?): Either<ScopeContractError, CreateScopeResult> = either {
+        // Coordinate multiple contexts through contract ports
+        val scope = scopeManagementPort.createScope(
+            CreateScopeCommand(
+                title = title,
+                description = null,
+                parentId = parentId
+            )
+        ).bind()
+        
+        // Optional coordination with other contexts
+        workspaceManagementPort?.initializeWorkspace(
+            InitializeWorkspaceCommand(scopeId = scope.id)
+        )
+        
         scope
     }
 }
 ```
 
 **Responsibilities**:
-- Cross-context coordination
+- Cross-context coordination through contract ports
 - Protocol adaptation (CLI/API/MCP/SDK)
 - Cross-cutting concerns (auth, logging)
-- DTO conversion for external exposure
+- Error handling and user presentation
 
 ## Implementation Guidelines
 
@@ -564,6 +647,14 @@ class ScopeCommandAdapter(
 4. Keep aggregates small and focused
 5. Use domain events for decoupling
 6. Implement repositories as interfaces in domain
-7. Test business invariants with property-based tests
-8. Use Application layer for single-context orchestration
-9. Use Interface layer for cross-context integration
+7. Define contract ports for cross-context integration
+8. Implement port adapters in infrastructure layer
+9. Test business invariants with property-based tests
+10. Use Application layer for single-context orchestration
+11. Use Interface layer for cross-context coordination
+12. Map errors appropriately at context boundaries
+
+## Related Documentation
+
+- [Contracts Layer](./contracts.md) - Detailed explanation of the contracts layer
+- [Clean Architecture](./clean-architecture.md) - Overall architecture implementation

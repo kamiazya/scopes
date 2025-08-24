@@ -69,6 +69,7 @@ scopes/
 - **Apps**: Entry points (CLI, daemon)
 - **Interfaces**: Adapters between external world and application
 - **Contexts**: Bounded contexts with domain/application/infrastructure layers
+- **Contracts**: Cross-context collaboration interfaces enabling BC coordination
 - **Platform**: Shared infrastructure and common components
 - **Quality**: Architecture compliance and validation
 
@@ -78,6 +79,8 @@ Each bounded context (e.g., **scope-management**, **user-preferences**) is organ
 - **Domain Layer**: Pure business logic with aggregates, entities, value objects, and domain events
 - **Application Layer**: Use cases, command/query handlers, and application services
 - **Infrastructure Layer**: Repository implementations, external service adapters
+
+The **Contracts** layer defines interfaces for bounded context collaboration, maintaining loose coupling while enabling necessary cross-context interactions. See [Contracts Documentation](docs/explanation/contracts.md) for details.
 
 #### Key Design Patterns
 - **Event Sourcing**: Aggregate state changes captured as domain events

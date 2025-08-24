@@ -13,8 +13,11 @@ dependencies {
     implementation(project(":platform-observability"))
     implementation(project(":platform-application-commons"))
 
+    // Contracts layer
+    implementation(project(":contracts-scope-management"))
+    implementation(project(":contracts-user-preferences"))
+
     // Interface layer
-    implementation(project(":interfaces-shared"))
     implementation(project(":interfaces-cli"))
 
     // Bounded Contexts - scope-management
