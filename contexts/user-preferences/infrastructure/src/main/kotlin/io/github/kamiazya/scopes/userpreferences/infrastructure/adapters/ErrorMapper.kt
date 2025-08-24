@@ -53,15 +53,16 @@ class ErrorMapper {
         is UserPreferencesError.PreferencesNotInitialized -> {
             // This should never happen in practice due to Zero-Configuration Start principle
             // The handler should create default preferences instead
-            UserPreferencesContractError.SystemError.ServiceUnavailable(
-                service = "User preferences initialization",
+            UserPreferencesContractError.DataError.PreferencesCorrupted(
+                details = "Preferences not initialized (system should use defaults)",
+                configPath = null,
             )
         }
 
         is UserPreferencesError.PreferencesAlreadyInitialized -> {
             // This is an internal error that shouldn't be exposed to external consumers
-            UserPreferencesContractError.SystemError.PreferencesWriteError(
-                cause = "Preferences already initialized",
+            UserPreferencesContractError.DataError.PreferencesCorrupted(
+                details = "Preferences already initialized",
                 configPath = null,
             )
         }

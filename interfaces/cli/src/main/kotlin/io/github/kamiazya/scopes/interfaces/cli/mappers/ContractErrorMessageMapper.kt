@@ -32,9 +32,5 @@ object ContractErrorMessageMapper {
         is UserPreferencesContractError.DataError.PreferencesCorrupted -> "Preferences data is corrupted (see logs for details)"
         is UserPreferencesContractError.DataError.PreferencesMigrationRequired ->
             "Preferences migration required from version ${error.fromVersion} to ${error.toVersion}"
-
-        is UserPreferencesContractError.SystemError.PreferencesReadError -> "Failed to read preferences (see logs for details)"
-        is UserPreferencesContractError.SystemError.PreferencesWriteError -> "Failed to write preferences (see logs for details)"
-        is UserPreferencesContractError.SystemError.ServiceUnavailable -> "User preferences service unavailable: ${error.service}"
     }
 }

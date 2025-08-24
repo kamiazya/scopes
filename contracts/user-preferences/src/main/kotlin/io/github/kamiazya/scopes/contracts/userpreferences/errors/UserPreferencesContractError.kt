@@ -36,28 +36,4 @@ public sealed interface UserPreferencesContractError {
          */
         public data class PreferencesMigrationRequired(public val fromVersion: String, public val toVersion: String) : DataError
     }
-
-    /**
-     * Errors related to system/infrastructure issues.
-     */
-    public sealed interface SystemError : UserPreferencesContractError {
-        /**
-         * Error reading preferences from storage.
-         * Note: cause and configPath are kept for internal logging/telemetry only.
-         * They are NOT included in the public message for security reasons.
-         */
-        public data class PreferencesReadError(public val cause: String, public val configPath: String? = null) : SystemError
-
-        /**
-         * Error writing preferences to storage.
-         * Note: cause and configPath are kept for internal logging/telemetry only.
-         * They are NOT included in the public message for security reasons.
-         */
-        public data class PreferencesWriteError(public val cause: String, public val configPath: String? = null) : SystemError
-
-        /**
-         * Service is temporarily unavailable.
-         */
-        public data class ServiceUnavailable(public val service: String) : SystemError
-    }
 }
