@@ -6,4 +6,4 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.queries
  * This is a minimal contract for retrieving root scopes.
  * No parameters are needed as this query retrieves all root scopes.
  */
-class GetRootScopesQuery
+public class GetRootScopesQuery

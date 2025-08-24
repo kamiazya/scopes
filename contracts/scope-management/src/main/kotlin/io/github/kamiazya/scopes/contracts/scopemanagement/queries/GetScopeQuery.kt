@@ -6,4 +6,4 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.queries
  * This is a minimal contract for scope retrieval that contains only
  * the essential fields needed by external consumers.
  */
-data class GetScopeQuery(val id: String)
+public data class GetScopeQuery(public val id: String)

@@ -10,7 +10,6 @@ dependencies {
 
     // Bounded Context - Unified Scope Management (Full stack for daemon)
     implementation(project(":scope-management-application"))
-    implementation(project(":scope-management-infrastructure"))
 
     // Core libraries
     implementation(libs.kotlin.stdlib)

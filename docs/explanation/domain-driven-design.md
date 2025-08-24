@@ -201,10 +201,10 @@ class UserPreferencesToHierarchyPolicyAdapter(
         // Map contract types to domain types
         when (result) {
             is PreferenceResult.HierarchyPreferences -> 
-                HierarchyPolicy(
+                HierarchyPolicy.create(
                     maxDepth = result.maxDepth,
                     maxChildrenPerScope = result.maxChildrenPerScope
-                )
+                ).bind()
         }
     }
 }

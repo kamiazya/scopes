@@ -103,6 +103,7 @@ class ContractTypesTest :
                         description = "Updated Description",
                         parentId = null,
                         canonicalAlias = "updated-scope",
+                        createdAt = now,
                         updatedAt = now,
                     )
 

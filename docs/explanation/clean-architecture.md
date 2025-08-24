@@ -63,9 +63,9 @@ graph TB
     FACADE --> SMP
     FACADE --> UPP
     
-    SMP --> ADAPTERS
-    UPP --> ADAPTERS
-    ADAPTERS --> UC
+    ADAPTERS --> SMP
+    ADAPTERS --> UPP
+    UC --> ADAPTERS
     
     UC --> CMD
     CMD --> AGG

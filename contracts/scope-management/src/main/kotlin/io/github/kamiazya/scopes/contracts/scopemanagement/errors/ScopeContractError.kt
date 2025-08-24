@@ -6,97 +6,114 @@ import kotlin.time.Duration
  * Sealed interface representing all possible errors in the Scope Management contract layer.
  * These errors provide a stable API contract between bounded contexts.
  */
-sealed interface ScopeContractError {
-    val message: String
+public sealed interface ScopeContractError {
+    public val message: String
 
     /**
      * Errors related to invalid input data.
      */
-    sealed interface InputError : ScopeContractError {
+    public sealed interface InputError : ScopeContractError {
         /**
          * Invalid scope ID format.
          */
-        data class InvalidId(val id: String, override val message: String = "Invalid scope ID format: $id") : InputError
+        public data class InvalidId(public val id: String, public override val message: String = "Invalid scope ID format: $id") : InputError
 
         /**
          * Invalid scope title.
          */
-        data class InvalidTitle(val title: String, val reason: String, override val message: String = "Invalid scope title: $reason") : InputError
+        public data class InvalidTitle(
+            public val title: String,
+            public val reason: String,
+            public override val message: String = "Invalid scope title: $reason",
+        ) : InputError
 
         /**
          * Invalid scope description.
          */
-        data class InvalidDescription(val description: String, val reason: String, override val message: String = "Invalid scope description: $reason") :
-            InputError
+        public data class InvalidDescription(
+            public val description: String,
+            public val reason: String,
+            public override val message: String = "Invalid scope description: $reason",
+        ) : InputError
 
         /**
          * Invalid parent scope ID.
          */
-        data class InvalidParentId(val parentId: String, override val message: String = "Invalid parent scope ID: $parentId") : InputError
+        public data class InvalidParentId(public val parentId: String, public override val message: String = "Invalid parent scope ID: $parentId") : InputError
     }
 
     /**
      * Errors related to business rule violations.
      */
-    sealed interface BusinessError : ScopeContractError {
+    public sealed interface BusinessError : ScopeContractError {
         /**
          * Scope not found.
          */
-        data class NotFound(val scopeId: String, override val message: String = "Scope not found: $scopeId") : BusinessError
+        public data class NotFound(public val scopeId: String, public override val message: String = "Scope not found: $scopeId") : BusinessError
 
         /**
          * Duplicate scope title within the same parent.
          */
-        data class DuplicateTitle(
-            val title: String,
-            val parentId: String?,
-            override val message: String = "Duplicate scope title '$title' under parent: ${parentId ?: "root"}",
+        public data class DuplicateTitle(
+            public val title: String,
+            public val parentId: String?,
+            public override val message: String = "Duplicate scope title '$title' under parent: ${parentId ?: "root"}",
         ) : BusinessError
 
         /**
          * Hierarchy constraint violation.
          */
-        data class HierarchyViolation(val reason: String, override val message: String = "Hierarchy violation: $reason") : BusinessError
+        public data class HierarchyViolation(public val reason: String, public override val message: String = "Hierarchy violation: $reason") : BusinessError
 
         /**
          * Scope is already deleted.
          */
-        data class AlreadyDeleted(val scopeId: String, override val message: String = "Scope is already deleted: $scopeId") : BusinessError
+        public data class AlreadyDeleted(public val scopeId: String, public override val message: String = "Scope is already deleted: $scopeId") : BusinessError
 
         /**
          * Scope is archived and cannot be modified.
          */
-        data class ArchivedScope(val scopeId: String, override val message: String = "Cannot modify archived scope: $scopeId") : BusinessError
+        public data class ArchivedScope(public val scopeId: String, public override val message: String = "Cannot modify archived scope: $scopeId") :
+            BusinessError
+
+        /**
+         * Scope is not archived.
+         */
+        public data class NotArchived(public val scopeId: String, public override val message: String = "Scope is not archived: $scopeId") : BusinessError
 
         /**
          * Cannot delete scope with children.
          */
-        data class HasChildren(val scopeId: String, override val message: String = "Cannot delete scope with children: $scopeId") : BusinessError
+        public data class HasChildren(public val scopeId: String, public override val message: String = "Cannot delete scope with children: $scopeId") :
+            BusinessError
     }
 
     /**
      * Errors related to system/infrastructure issues.
      */
-    sealed interface SystemError : ScopeContractError {
+    public sealed interface SystemError : ScopeContractError {
         /**
          * Service is temporarily unavailable.
          */
-        data class ServiceUnavailable(val service: String, override val message: String = "Service unavailable: $service") : SystemError
+        public data class ServiceUnavailable(public val service: String, public override val message: String = "Service unavailable: $service") : SystemError
 
         /**
          * Operation timeout.
          */
-        data class Timeout(val operation: String, val timeout: Duration, override val message: String = "Operation '$operation' timed out after $timeout") :
-            SystemError
+        public data class Timeout(
+            public val operation: String,
+            public val timeout: Duration,
+            public override val message: String = "Operation '$operation' timed out after $timeout",
+        ) : SystemError
 
         /**
          * Concurrent modification detected.
          */
-        data class ConcurrentModification(
-            val scopeId: String,
-            val expectedVersion: Long,
-            val actualVersion: Long,
-            override val message: String = "Concurrent modification of scope $scopeId: expected version $expectedVersion but was $actualVersion",
+        public data class ConcurrentModification(
+            public val scopeId: String,
+            public val expectedVersion: Long,
+            public val actualVersion: Long,
+            public override val message: String = "Concurrent modification of scope $scopeId: expected version $expectedVersion but was $actualVersion",
         ) : SystemError
     }
 }

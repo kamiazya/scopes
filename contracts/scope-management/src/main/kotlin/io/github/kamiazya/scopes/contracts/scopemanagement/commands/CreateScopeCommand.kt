@@ -6,10 +6,10 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.commands
  * This is a minimal contract for scope creation that contains only
  * the essential fields needed by external consumers.
  */
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null,
-    val generateAlias: Boolean = true,
-    val customAlias: String? = null,
+public data class CreateScopeCommand(
+    public val title: String,
+    public val description: String? = null,
+    public val parentId: String? = null,
+    public val generateAlias: Boolean = true,
+    public val customAlias: String? = null,
 )

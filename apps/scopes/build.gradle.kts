@@ -21,6 +21,8 @@ dependencies {
     implementation(project(":interfaces-cli"))
 
     // Bounded Contexts - scope-management
+    // TODO: Remove infrastructure dependency - currently needed for DI configuration
+    // This is a known architectural exception that needs to be addressed
     implementation(project(":scope-management-domain"))
     implementation(project(":scope-management-application"))
     implementation(project(":scope-management-infrastructure"))

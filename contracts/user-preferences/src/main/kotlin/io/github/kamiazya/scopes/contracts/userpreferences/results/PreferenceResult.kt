@@ -6,7 +6,7 @@ package io.github.kamiazya.scopes.contracts.userpreferences.results
  * This is a sealed interface to support different preference types.
  * Currently only hierarchy preferences are implemented.
  */
-sealed interface PreferenceResult {
+public sealed interface PreferenceResult {
     /**
      * Hierarchy preferences result.
      *
@@ -17,5 +17,5 @@ sealed interface PreferenceResult {
      * @property maxDepth Maximum allowed depth in the scope hierarchy
      * @property maxChildrenPerScope Maximum number of children per scope
      */
-    data class HierarchyPreferences(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null) : PreferenceResult
+    public data class HierarchyPreferences(public val maxDepth: Int? = null, public val maxChildrenPerScope: Int? = null) : PreferenceResult
 }

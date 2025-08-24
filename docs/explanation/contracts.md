@@ -102,10 +102,10 @@ class UserPreferencesToHierarchyPolicyAdapter(
         
         when (result) {
             is PreferenceResult.HierarchyPreferences -> 
-                HierarchyPolicy(
+                HierarchyPolicy.create(
                     maxDepth = result.maxDepth,
                     maxChildrenPerScope = result.maxChildrenPerScope
-                )
+                ).bind()
         }
     }
 }
@@ -234,9 +234,15 @@ interface UserPreferencesPort {
     /**
      * Retrieves user preferences.
      * 
-     * Never fails - returns default values if preferences don't exist
-     * or if the service is unavailable. This ensures other contexts
-     * can always proceed with sensible defaults.
+     * Returns Either<UserPreferencesContractError, PreferenceResult> where:
+     * - Left(UserPreferencesContractError) may occur for:
+     *   - Invalid query parameters (e.g., invalid preference key)
+     *   - Data corruption or format errors
+     *   - Temporary system errors (e.g., file system issues)
+     * - Right(PreferenceResult) with defaults when preferences don't exist
+     * 
+     * This ensures other contexts can always proceed with sensible defaults
+     * when preferences are not set or unavailable.
      */
     suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
 }

@@ -92,6 +92,7 @@ class ScopeManagementPortAdapter(
                 description = scopeDto.description,
                 parentId = scopeDto.parentId,
                 canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                createdAt = scopeDto.createdAt,
                 updatedAt = scopeDto.updatedAt,
             )
         }

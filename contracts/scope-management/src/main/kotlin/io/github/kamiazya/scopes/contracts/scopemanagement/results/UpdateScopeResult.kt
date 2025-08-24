@@ -6,11 +6,12 @@ import kotlinx.datetime.Instant
  * Result of updating an existing scope.
  * Contains the updated scope information.
  */
-data class UpdateScopeResult(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val canonicalAlias: String,
-    val updatedAt: Instant,
+public data class UpdateScopeResult(
+    public val id: String,
+    public val title: String,
+    public val description: String?,
+    public val parentId: String?,
+    public val canonicalAlias: String,
+    public val createdAt: Instant,
+    public val updatedAt: Instant,
 )

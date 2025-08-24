@@ -25,7 +25,6 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: U
         // Try to get user preferences from external service
         val hierarchyPolicy = userPreferencesPort.getPreference(
             GetPreferenceQuery(
-                userId = "current", // This should be resolved from context in real implementation
                 key = GetPreferenceQuery.PreferenceKey.HIERARCHY,
             ),
         ).fold(

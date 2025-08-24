@@ -92,9 +92,8 @@ object ErrorMapper {
             title = error.title,
             parentId = error.parentId?.value,
         )
-        is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotFound(
+        is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotArchived(
             scopeId = error.scopeId.value,
-            message = "Scope is not archived: ${error.scopeId.value}",
         )
         is ScopeError.VersionMismatch -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = error.scopeId.value,

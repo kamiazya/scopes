@@ -18,16 +18,8 @@ import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUse
 class UserPreferencesPortAdapter(private val getCurrentUserPreferencesHandler: GetCurrentUserPreferencesHandler, private val errorMapper: ErrorMapper) :
     UserPreferencesPort {
 
-    override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
-        // Validate user ID format
-        if (query.userId.isBlank()) {
-            return Either.Left(UserPreferencesContractError.InputError.InvalidUserId(query.userId))
-        }
-
-        // Currently only supporting current user queries
-        // TODO: In future, support querying other users' preferences if needed
-
-        return getCurrentUserPreferencesHandler(GetCurrentUserPreferences)
+    override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> =
+        getCurrentUserPreferencesHandler(GetCurrentUserPreferences)
             .mapLeft { domainError ->
                 errorMapper.mapToContractError(domainError)
             }
@@ -42,5 +34,4 @@ class UserPreferencesPortAdapter(private val getCurrentUserPreferencesHandler: G
                     }
                 }
             }
-    }
 }

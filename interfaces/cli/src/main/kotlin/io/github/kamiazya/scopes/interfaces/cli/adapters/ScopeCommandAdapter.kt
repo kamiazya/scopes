@@ -77,7 +77,7 @@ class ScopeCommandAdapter(
                 description = result.description,
                 parentId = result.parentId,
                 canonicalAlias = result.canonicalAlias,
-                createdAt = result.updatedAt, // Using updatedAt as we don't have createdAt
+                createdAt = result.createdAt,
                 updatedAt = result.updatedAt,
             )
         }
@@ -99,14 +99,10 @@ class ScopeCommandAdapter(
      */
     suspend fun getScopeById(id: String): Either<ScopeContractError, ScopeResult> {
         val query = GetScopeQuery(id = id)
-        return scopeManagementPort.getScope(query).map { result ->
-            result ?: throw IllegalStateException("Scope not found: $id")
-        }.mapLeft { error ->
-            when (error) {
-                is ScopeContractError.BusinessError.NotFound -> error
-                else -> ScopeContractError.BusinessError.NotFound(id)
-            }
-        }
+        return scopeManagementPort.getScope(query).fold(
+            { error -> Either.Left(error) },
+            { result -> result?.let { Either.Right(it) } ?: Either.Left(ScopeContractError.BusinessError.NotFound(id)) },
+        )
     }
 
     /**

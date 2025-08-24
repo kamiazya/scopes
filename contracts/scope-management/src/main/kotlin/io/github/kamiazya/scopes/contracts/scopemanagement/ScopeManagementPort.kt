@@ -16,11 +16,11 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeRe
  * Public contract for scope management operations.
  * All operations return Either for explicit error handling.
  */
-interface ScopeManagementPort {
-    suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
-    suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult>
-    suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit>
-    suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
-    suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
-    suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>>
+public interface ScopeManagementPort {
+    public suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
+    public suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult>
+    public suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit>
+    public suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
+    public suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>>
 }

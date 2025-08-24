@@ -1,5 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    `java-library`
+}
+
+kotlin {
+    explicitApi()
+    jvmToolchain(21)
 }
 
 dependencies {

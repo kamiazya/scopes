@@ -17,6 +17,7 @@ object ContractErrorMessageMapper {
         is ScopeContractError.BusinessError.HierarchyViolation -> "Hierarchy violation: ${error.reason}"
         is ScopeContractError.BusinessError.AlreadyDeleted -> "Scope is already deleted: ${error.scopeId}"
         is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
+        is ScopeContractError.BusinessError.NotArchived -> "Scope is not archived: ${error.scopeId}"
         is ScopeContractError.BusinessError.HasChildren -> "Cannot delete scope with children: ${error.scopeId}"
 
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"

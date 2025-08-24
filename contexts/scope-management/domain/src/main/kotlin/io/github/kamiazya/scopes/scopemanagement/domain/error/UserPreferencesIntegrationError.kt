@@ -20,7 +20,7 @@ sealed class UserPreferencesIntegrationError : ScopesError() {
     /**
      * Error when hierarchy settings are missing from user preferences.
      */
-    data class HierarchySettingsNotFound(override val occurredAt: Instant, val userId: String? = null) : UserPreferencesIntegrationError()
+    data class HierarchySettingsNotFound(override val occurredAt: Instant) : UserPreferencesIntegrationError()
 
     /**
      * Error when hierarchy settings contain invalid values.

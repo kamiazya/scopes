@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -39,7 +40,7 @@ class CreateCommand :
                 customAlias = customAlias,
             ).fold(
                 { error ->
-                    echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 { result ->
                     echo(scopeOutputFormatter.formatContractCreateResult(result))

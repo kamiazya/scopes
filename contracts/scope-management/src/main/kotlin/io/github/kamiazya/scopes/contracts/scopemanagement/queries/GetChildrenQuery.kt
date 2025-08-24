@@ -6,4 +6,4 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.queries
  * This is a minimal contract for retrieving child scopes that contains only
  * the essential fields needed by external consumers.
  */
-data class GetChildrenQuery(val parentId: String)
+public data class GetChildrenQuery(public val parentId: String)

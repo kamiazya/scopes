@@ -6,12 +6,12 @@ package io.github.kamiazya.scopes.contracts.userpreferences.queries
  * Currently supports hierarchy preferences via PreferenceKey.
  * Future preferences can be added by extending PreferenceKey.
  */
-data class GetPreferenceQuery(val userId: String, val key: PreferenceKey) {
+public data class GetPreferenceQuery(public val key: PreferenceKey) {
     /**
      * Enumeration of available preference keys.
      * Currently only hierarchy preferences are supported.
      */
-    enum class PreferenceKey {
+    public enum class PreferenceKey {
         HIERARCHY,
     }
 }
