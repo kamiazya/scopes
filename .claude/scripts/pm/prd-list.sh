@@ -36,8 +36,7 @@ for file in .claude/prds/*.md; do
     desc=$(grep "^description:" "$file" | head -1 | sed 's/^description: *//')
     [ -z "$name" ] && name=$(basename "$file" .md)
     [ -z "$desc" ] && desc="No description"
-    # echo "   📋 $name - $desc"
-    echo "   📋 $file - $desc"
+    echo "   📋 $name - $desc"
     ((backlog_count++))
   fi
   ((total_count++))
