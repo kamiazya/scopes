@@ -20,6 +20,12 @@ jobs:
   dependency-check:
     name: Dependency Vulnerability Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for dependency graph submission
+      actions: read
+      id-token: write # Required for OIDC authentication
+      issues: write # Required for GitHub Script to comment on PRs
+      pull-requests: write # Required for GitHub Script to comment on PRs
 
     steps:
     - name: Checkout code

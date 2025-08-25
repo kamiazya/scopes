@@ -19,6 +19,7 @@ permissions:
   actions: read
   id-token: write
   attestations: write
+  packages: write
 
 env:
   QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
@@ -27,6 +28,9 @@ jobs:
   build-release:
     name: Build Release Artifacts
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      actions: read
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
 
@@ -323,6 +327,9 @@ jobs:
     name: Collect Hashes for SLSA
     runs-on: ubuntu-latest
     needs: build-release
+    permissions:
+      contents: read
+      actions: read
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
@@ -382,23 +389,30 @@ jobs:
           echo "Base64 encoded for SLSA:"
           echo "$HASHES_B64"
 
+  # SLSA Provenance generation uses workflow-level permissions
+  # This job intentionally does not specify job-level permissions to inherit
+  # the broader workflow-level permissions required by SLSA generator.
+  # Other jobs in this workflow use minimal job-level permissions for security.
   provenance:
     name: Generate SLSA Provenance
     needs: [build-release, collect-hashes]
-    permissions:
-      actions: read
-      id-token: write
-      contents: write
+    # NOTE: No permissions block here - inherits workflow-level permissions
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
+      upload-tag-name: "${{ github.ref_name }}"
+      provenance-name: "multiple.intoto.jsonl"
+      private-repository: false
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [build-release, provenance]
     if: always() && needs.build-release.result == 'success'
+    permissions:
+      contents: write # Required for creating releases and uploading assets
+      actions: read
 
     steps:
       - name: Checkout code
@@ -449,7 +463,7 @@ jobs:
           # Generate release notes with verification instructions
           cat > release_notes.md << 'EOF'
           ## 🔐 Verification Instructions
-          > **Security Notice**: This release is signed and includes SLSA provenance for supply chain security.
+          > **Security Notice**: This release includes SHA-256 checksums for all artifacts.
 
           ### Quick Verification
           ```bash
@@ -462,7 +476,7 @@ jobs:
 
           ## 📦 Artifacts
           - Binary downloads include SHA-256 checksums
-          - SLSA Level 3 provenance attached
+          - SHA-256 checksums for verification
           - SBOM files available in CycloneDX format
 
           ## 📚 Documentation
@@ -544,17 +558,16 @@ jobs:
 
           ## Security & Verification
 
-          This release includes SLSA Level 3 provenance and Software Bill of Materials (SBOM) for comprehensive supply chain security.
+          This release includes Software Bill of Materials (SBOM) for supply chain security.
 
-          ### SLSA Provenance Verification
+          ### Checksum Verification
           ```bash
-          # Install slsa-verifier
-          go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
+          # Download the binary and checksum file
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_version }}/scopes-${{ steps.version.outputs.tag_version }}-linux-x64
+          wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_version }}/binary-hash-linux-x64.txt
 
-          # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
-            --provenance-path multiple.intoto.jsonl \
-            --source-uri github.com/${{ github.repository }}
+          # Verify the checksum
+          sha256sum -c binary-hash-linux-x64.txt
           ```
 
           ### SBOM (Software Bill of Materials)
