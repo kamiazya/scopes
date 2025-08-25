@@ -44,3 +44,4 @@ tmp/
 
 # Serena AI assistant files
 .serena/
+.claude/epics/
