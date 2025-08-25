@@ -25,6 +25,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionMan
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 
 /**
@@ -49,7 +51,10 @@ class ScopeManagementPortAdapter(
     private val getChildrenHandler: GetChildrenHandler,
     private val getRootScopesHandler: GetRootScopesHandler,
     private val transactionManager: TransactionManager,
+    private val logger: Logger = ConsoleLogger("ScopeManagementPortAdapter"),
 ) : ScopeManagementPort {
+
+    private val errorMapper = ErrorMapper(logger.withName("ErrorMapper"))
 
     override suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = createScopeHandler(
         CreateScope(
@@ -60,7 +65,7 @@ class ScopeManagementPortAdapter(
             customAlias = command.customAlias,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapToContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { result ->
         CreateScopeResult(
             id = result.id,
@@ -80,7 +85,7 @@ class ScopeManagementPortAdapter(
             description = command.description,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapToContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { scopeDto ->
         UpdateScopeResult(
             id = scopeDto.id,
@@ -98,7 +103,7 @@ class ScopeManagementPortAdapter(
             id = command.id,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapToContractError(error)
+        errorMapper.mapToContractError(error)
     }
 
     override suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?> = either {
@@ -112,7 +117,7 @@ class ScopeManagementPortAdapter(
                 if (error is ScopeError.NotFound) {
                     null
                 } else {
-                    raise(ErrorMapper.mapToContractError(error))
+                    raise(errorMapper.mapToContractError(error))
                 }
             },
             { scopeDto ->
@@ -136,7 +141,7 @@ class ScopeManagementPortAdapter(
             parentId = query.parentId,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapToContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { scopeDtos ->
         scopeDtos.map { scopeDto ->
             ScopeResult(
@@ -156,7 +161,7 @@ class ScopeManagementPortAdapter(
     override suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>> = getRootScopesHandler(
         GetRootScopes(),
     ).mapLeft { error ->
-        ErrorMapper.mapToContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { scopeDtos ->
         scopeDtos.map { scopeDto ->
             ScopeResult(

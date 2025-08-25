@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.userpreferences.application.handler
 
 import arrow.core.Either
-import arrow.core.flatMap
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.usecase.UseCase
 import io.github.kamiazya.scopes.userpreferences.application.dto.UserPreferencesInternalDto
@@ -22,24 +21,27 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
         UserPreferencesInternalDto.from(preferences)
     }
 
-    private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = UserPreferencesAggregate.create()
-        .flatMap { (aggregate, _) ->
-            repository.save(aggregate).fold(
-                { error ->
-                    // If PreferencesAlreadyInitialized, reload from repository
-                    if (error is UserPreferencesError.PreferencesAlreadyInitialized) {
-                        repository.findForCurrentUser().flatMap { reloadedAggregate ->
-                            if (reloadedAggregate != null) {
-                                Either.Right(reloadedAggregate)
-                            } else {
-                                Either.Left(UserPreferencesError.PreferencesNotInitialized())
-                            }
-                        }
+    private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = either {
+        // Create the aggregate with default preferences
+        val (aggregate, _) = UserPreferencesAggregate.create().bind()
+        
+        // Try to save the new aggregate
+        repository.save(aggregate).fold(
+            { error ->
+                // If PreferencesAlreadyInitialized, reload from repository
+                if (error is UserPreferencesError.PreferencesAlreadyInitialized) {
+                    // Another process/thread created preferences, reload them
+                    val reloadedAggregate = repository.findForCurrentUser().bind()
+                    if (reloadedAggregate != null) {
+                        reloadedAggregate
                     } else {
-                        Either.Left(error)
+                        raise(UserPreferencesError.PreferencesNotInitialized())
                     }
-                },
-                { Either.Right(aggregate) },
-            )
-        }
+                } else {
+                    raise(error)
+                }
+            },
+            { aggregate }
+        )
+    }
 }

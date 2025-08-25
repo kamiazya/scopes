@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.userpreferences.infrastructure.adapters
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesPort
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
 import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
@@ -15,8 +17,12 @@ import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUse
  * since all operations are read-only. It follows the Zero-Configuration Start
  * principle by always returning default values when preferences don't exist.
  */
-class UserPreferencesPortAdapter(private val getCurrentUserPreferencesHandler: GetCurrentUserPreferencesHandler, private val errorMapper: ErrorMapper) :
-    UserPreferencesPort {
+class UserPreferencesPortAdapter(
+    private val getCurrentUserPreferencesHandler: GetCurrentUserPreferencesHandler,
+    private val logger: Logger = ConsoleLogger("UserPreferencesPortAdapter"),
+) : UserPreferencesPort {
+
+    private val errorMapper = ErrorMapper(logger.withName("ErrorMapper"))
 
     override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> =
         getCurrentUserPreferencesHandler(GetCurrentUserPreferences)

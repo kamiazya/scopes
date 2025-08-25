@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.userpreferences.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 
 /**
@@ -13,7 +14,7 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
  * the system follows the Zero-Configuration Start principle and always
  * returns default values when preferences don't exist.
  */
-class ErrorMapper {
+class ErrorMapper(private val logger: Logger) {
 
     /**
      * Maps a domain error to a contract error.
@@ -63,6 +64,22 @@ class ErrorMapper {
             // This is an internal error that shouldn't be exposed to external consumers
             UserPreferencesContractError.DataError.PreferencesCorrupted(
                 details = "Preferences already initialized",
+                configPath = null,
+            )
+        }
+
+        // Default mapping for any unmapped errors
+        else -> {
+            logger.error(
+                "Unmapped UserPreferencesError encountered, mapping to PreferencesCorrupted",
+                mapOf(
+                    "errorClass" to domainError::class.simpleName.orEmpty(),
+                    "errorMessage" to (domainError.message ?: "No message provided"),
+                    "errorType" to domainError::class.qualifiedName.orEmpty(),
+                ),
+            )
+            UserPreferencesContractError.DataError.PreferencesCorrupted(
+                details = "Unexpected error occurred",
                 configPath = null,
             )
         }

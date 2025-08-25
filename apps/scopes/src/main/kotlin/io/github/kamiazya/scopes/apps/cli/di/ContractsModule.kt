@@ -7,7 +7,6 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeMa
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.UserPreferencesToHierarchyPolicyAdapter
 import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.UserPreferencesPortAdapter
 import org.koin.dsl.module
-import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.ErrorMapper as UserPreferencesErrorMapper
 
 /**
  * Koin module for Contracts layer components
@@ -18,8 +17,7 @@ import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.ErrorMa
  * - Anti-Corruption Layer adapters for cross-context integration
  */
 val contractsModule = module {
-    // Error Mappers
-    single<UserPreferencesErrorMapper> { UserPreferencesErrorMapper() }
+    // Error Mappers - Removed as they are now created inside adapters
 
     // Contract Port Implementations
     single<ScopeManagementPort> {
@@ -31,13 +29,14 @@ val contractsModule = module {
             getChildrenHandler = get(),
             getRootScopesHandler = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
     single<UserPreferencesPort> {
         UserPreferencesPortAdapter(
             getCurrentUserPreferencesHandler = get(),
-            errorMapper = get(),
+            logger = get(),
         )
     }
 

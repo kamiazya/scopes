@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
 
 /**
@@ -15,8 +16,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Preserve error context and messages
  * - Maintain error hierarchy mapping
  * - Hide internal implementation details
+ * - Log unmapped errors for visibility and debugging
  */
-object ErrorMapper {
+class ErrorMapper(private val logger: Logger) {
     /**
      * Maps a ScopesError to a ScopeContractError.
      *
@@ -207,8 +209,18 @@ object ErrorMapper {
         )
 
         // Default mapping for any unmapped errors
-        else -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = "scope-management",
-        )
+        else -> {
+            logger.error(
+                "Unmapped ScopesError encountered, mapping to ServiceUnavailable",
+                mapOf(
+                    "errorClass" to error::class.simpleName.orEmpty(),
+                    "errorMessage" to (error.message ?: "No message provided"),
+                    "errorType" to error::class.qualifiedName.orEmpty(),
+                ),
+            )
+            ScopeContractError.SystemError.ServiceUnavailable(
+                service = "scope-management",
+            )
+        }
     }
 }

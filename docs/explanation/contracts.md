@@ -96,9 +96,13 @@ class UserPreferencesToHierarchyPolicyAdapter(
 ) : HierarchyPolicyProvider {
     
     override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
+        // Map contract error to domain error before binding
         val result = userPreferencesPort.getPreference(
             GetPreferenceQuery(PreferenceType.HIERARCHY)
-        ).bind()
+        ).mapLeft { contractError ->
+            // Map contract error to domain integration error
+            ErrorMapper.mapUserPreferencesToDomainError(contractError)
+        }.bind()
         
         when (result) {
             is PreferenceResult.HierarchyPreferences -> 
@@ -107,6 +111,55 @@ class UserPreferencesToHierarchyPolicyAdapter(
                     maxChildrenPerScope = result.maxChildrenPerScope
                 ).bind()
         }
+    }
+}
+
+// Error mapping helper
+object ErrorMapper {
+    fun mapUserPreferencesToDomainError(
+        contractError: UserPreferencesContractError
+    ): UserPreferencesIntegrationError = when (contractError) {
+        is UserPreferencesContractError.SystemError.ServiceUnavailable ->
+            UserPreferencesIntegrationError.PreferencesServiceUnavailable(
+                occurredAt = Clock.System.now()
+            )
+        is UserPreferencesContractError.DataError.PreferencesCorrupted ->
+            UserPreferencesIntegrationError.MalformedPreferencesResponse(
+                occurredAt = Clock.System.now(),
+                expectedFormat = "Valid preferences",
+                actualContent = contractError.details
+            )
+        else ->
+            UserPreferencesIntegrationError.PreferencesServiceUnavailable(
+                occurredAt = Clock.System.now()
+            )
+    }
+}
+```
+
+Alternative implementation using fold:
+
+```kotlin
+override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
+    // Alternative: Use fold to handle error mapping
+    val result = userPreferencesPort.getPreference(
+        GetPreferenceQuery(PreferenceType.HIERARCHY)
+    ).fold(
+        { contractError ->
+            // Map and raise domain error
+            raise(ErrorMapper.mapUserPreferencesToDomainError(contractError))
+        },
+        { preferenceResult ->
+            preferenceResult
+        }
+    )
+    
+    when (result) {
+        is PreferenceResult.HierarchyPreferences -> 
+            HierarchyPolicy.create(
+                maxDepth = result.maxDepth,
+                maxChildrenPerScope = result.maxChildrenPerScope
+            ).bind()
     }
 }
 ```
@@ -232,17 +285,20 @@ Interface for user preferences with fail-safe defaults:
 ```kotlin
 interface UserPreferencesPort {
     /**
-     * Retrieves user preferences.
+     * Retrieves user preferences with fail-safe defaults.
      * 
      * Returns Either<UserPreferencesContractError, PreferenceResult> where:
-     * - Left(UserPreferencesContractError) may occur for:
-     *   - Invalid query parameters (e.g., invalid preference key)
-     *   - Data corruption or format errors
-     *   - Temporary system errors (e.g., file system issues)
-     * - Right(PreferenceResult) with defaults when preferences don't exist
+     * - Left(UserPreferencesContractError) only for unrecoverable errors:
+     *   - Invalid query parameters (e.g., unknown preference key)
+     *   - Data corruption that prevents reading preferences
+     * - Right(PreferenceResult) is returned in all other cases:
+     *   - When preferences exist: returns actual preference values
+     *   - When preferences don't exist: returns sensible defaults
+     *   - When system is temporarily unavailable: returns fail-safe defaults
      * 
-     * This ensures other contexts can always proceed with sensible defaults
-     * when preferences are not set or unavailable.
+     * This fail-safe approach ensures other contexts can always proceed with
+     * sensible defaults, maintaining system stability even when the preferences
+     * service is unavailable or preferences haven't been configured yet.
      */
     suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
 }
