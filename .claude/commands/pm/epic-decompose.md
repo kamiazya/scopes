@@ -201,7 +201,7 @@ Estimated total effort: {sum of hours}
 
 Also update the epic's frontmatter progress if needed (still 0% until tasks actually start).
 
-### 9. Quality Validation
+### 10. Quality Validation
 
 Before finalizing tasks, verify:
 - [ ] All tasks have clear acceptance criteria
@@ -210,7 +210,7 @@ Before finalizing tasks, verify:
 - [ ] Parallel tasks don't conflict with each other
 - [ ] Combined tasks cover all epic requirements
 
-### 10. Post-Decomposition
+### 11. Post-Decomposition
 
 After successfully creating tasks:
 1. Confirm: "✅ Created {count} tasks for epic: $ARGUMENTS"
