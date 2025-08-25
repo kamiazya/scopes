@@ -24,7 +24,7 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
     private suspend fun createDefaultPreferences(): Either<UserPreferencesError, UserPreferencesAggregate> = either {
         // Create the aggregate with default preferences
         val (aggregate, _) = UserPreferencesAggregate.create().bind()
-        
+
         // Try to save the new aggregate
         repository.save(aggregate).fold(
             { error ->
@@ -41,7 +41,7 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
                     raise(error)
                 }
             },
-            { aggregate }
+            { aggregate },
         )
     }
 }

@@ -2,11 +2,11 @@ package io.github.kamiazya.scopes.userpreferences.infrastructure.adapters
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesPort
-import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
-import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
 import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.application.handler.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
 

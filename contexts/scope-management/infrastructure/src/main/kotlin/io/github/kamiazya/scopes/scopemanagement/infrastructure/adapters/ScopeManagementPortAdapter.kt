@@ -12,6 +12,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteScope
 import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
@@ -25,8 +27,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionMan
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
-import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
-import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 
 /**

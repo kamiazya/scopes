@@ -214,7 +214,7 @@ class ErrorMapper(private val logger: Logger) {
                 "Unmapped ScopesError encountered, mapping to ServiceUnavailable",
                 mapOf(
                     "errorClass" to error::class.simpleName.orEmpty(),
-                    "errorMessage" to (error.message ?: "No message provided"),
+                    "errorMessage" to error.toString(),
                     "errorType" to error::class.qualifiedName.orEmpty(),
                 ),
             )
