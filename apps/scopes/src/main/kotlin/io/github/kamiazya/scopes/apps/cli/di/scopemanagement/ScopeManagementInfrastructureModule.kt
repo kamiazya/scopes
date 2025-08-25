@@ -24,6 +24,7 @@ import org.koin.dsl.module
  * - Transaction managers
  * - External integrations
  * - Alias generation services
+ * - Default services following Zero-Configuration principle
  */
 val scopeManagementInfrastructureModule = module {
     // Repositories
@@ -43,4 +44,7 @@ val scopeManagementInfrastructureModule = module {
     single<AliasGenerationService> {
         DefaultAliasGenerationService(get(), get())
     }
+
+    // External Services are now provided by their own modules
+    // UserPreferencesService is provided by UserPreferencesModule
 }

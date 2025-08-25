@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.service
 
-import io.github.kamiazya.scopes.scopemanagement.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 
 /**
  * Interface for publishing domain events to other parts of the system.

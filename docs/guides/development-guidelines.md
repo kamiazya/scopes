@@ -20,8 +20,8 @@ Scopes follows **Clean Architecture** principles with **Domain-Driven Design (DD
 
 ```mermaid
 flowchart TD
-        CLI[apps:scopes]
-        APP[apps:cli]
+        CLI[apps-scopes]
+        APP[interfaces/cli]
         DOM[contexts/*/domain]
         INF[contexts/*/infrastructure]
 
@@ -61,7 +61,7 @@ flowchart TD
 - **External Service Integrations**: Database connections, file systems
 - **Technical Error Handling**: Connection errors, data integrity violations
 
-#### Apps Layer (`:apps:scopes`)
+#### Apps Layer (`:apps-scopes`)
 - **CLI Commands**: User interface for scope operations
 - **Application DTO Consumption**: Consumes pre-mapped DTOs from application layer only
 - **Error Presentation**: User-friendly error messages from use case errors
@@ -227,9 +227,10 @@ class ApplicationScopeValidationService(
             }
             .bind()
         
-        if (depth >= MAX_HIERARCHY_DEPTH) {
+        val policy = hierarchyPolicyProvider.getPolicy().getOrElse { HierarchyPolicy.default() }
+        if (policy.maxDepth != null && depth >= policy.maxDepth) {
             raise(ScopeBusinessRuleError.MaxDepthExceeded(
-                maxDepth = MAX_HIERARCHY_DEPTH,
+                maxDepth = policy.maxDepth,
                 actualDepth = depth + 1,
                 scopeId = parentId,
                 parentPath = emptyList()

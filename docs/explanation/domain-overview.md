@@ -83,7 +83,7 @@ graph TB
 
 **Benefits:**
 - **Conceptual Simplicity**: Learn one concept, use everywhere
-- **Deep Hierarchy**: Supports up to 10 levels by default (configurable)
+- **Deep Hierarchy**: Unlimited levels by default (configurable if needed)
 - **Consistent Operations**: Same features available at every level
 - **Natural Recursion**: Mirrors how developers actually think about work
 
@@ -95,7 +95,7 @@ A **Scope** represents any unit of work, from high-level projects to individual 
 
 **Properties:**
 - **Identity**: Unique ULID identifier
-- **Hierarchy**: Parent-child relationships (up to 10 levels by default, configurable)
+- **Hierarchy**: Parent-child relationships (unlimited depth by default)
 - **Metadata**: Title, description, timestamps
 - **Cross-cutting Features**: Comments, attachments, tasks, labels, relations
 
@@ -249,6 +249,12 @@ Designed from the ground up for human-AI collaboration:
 - **XDG Directories**: Platform-appropriate file locations
 - **ULID Identifiers**: Distributed, sortable, collision-resistant IDs
 
+### Zero-Configuration Start
+- **Immediate Usability**: Users can start using Scopes without any setup
+- **Sensible Defaults**: All features have reasonable default values
+- **No Initial Configuration**: The system never fails due to missing preferences
+- **Progressive Configuration**: Users can customize settings as needed, but it's never required
+
 ## System Boundaries
 
 ### Core Domain (In Scope)
@@ -363,9 +369,18 @@ The system enforces strict title uniqueness rules at all levels of the scope hie
 
 ### Other Business Rules
 
-#### Hierarchy Constraints
-- **Maximum Depth**: 10 levels to prevent excessive nesting
-- **Maximum Children**: 100 children per parent to maintain performance
+#### Hierarchy Constraints (Policy-Driven)
+
+The system uses a flexible, policy-driven approach to hierarchy constraints:
+
+- **Default Policy**: Unlimited depth and unlimited children per scope
+- **Customizable**: Users can configure limits through preferences if desired
+- **No Hard Caps**: The system itself imposes no fixed limits
+- **Performance Considerations**: While unlimited by default, users may choose to set limits based on their specific performance requirements
+- **Recommended Guardrails** (optional):
+  - Depth: 10-15 levels for optimal navigation experience
+  - Children per scope: 50-100 for better UI performance
+  - These are suggestions only - the system handles unlimited hierarchies
 
 #### Title Validation
 - **Length**: 1-200 characters

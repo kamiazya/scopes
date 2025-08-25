@@ -19,6 +19,12 @@ graph TB
         MAPPER[Mappers]
     end
     
+    subgraph "Contracts Layer"
+        SMP[ScopeManagementPort]
+        UPP[UserPreferencesPort]
+        CONTRACTS[Contract Types]
+    end
+    
     subgraph "Bounded Contexts"
         subgraph "Scope Management Context"
             subgraph "Application"
@@ -39,6 +45,7 @@ graph TB
             subgraph "Infrastructure"
                 IMPL[Repository Implementations]
                 TRANS[Transaction Management]
+                ADAPTERS[Port Adapters]
             end
         end
     end
@@ -53,7 +60,12 @@ graph TB
     DAEMON --> FACADE
     
     CLIADAPTER --> FACADE
-    FACADE --> UC
+    FACADE --> SMP
+    FACADE --> UPP
+    
+    ADAPTERS --> SMP
+    ADAPTERS --> UPP
+    ADAPTERS --> UC
     
     UC --> CMD
     CMD --> AGG
@@ -74,6 +86,7 @@ graph TB
     
     classDef apps fill:#e1f5fe
     classDef interfaces fill:#e3f2fd
+    classDef contracts fill:#ffe3ba
     classDef application fill:#fff3e0
     classDef domain fill:#e8f5e9
     classDef infrastructure fill:#fce4ec
@@ -81,15 +94,40 @@ graph TB
     
     class CLI,DAEMON apps
     class CLIADAPTER,FACADE,MAPPER interfaces
+    class SMP,UPP,CONTRACTS contracts
     class UC,CMD,DTO,APPSERVICE application
     class AGG,ENT,VO,EVT,REPO domain
-    class IMPL,TRANS infrastructure
+    class IMPL,TRANS,ADAPTERS infrastructure
     class COMMONS,APPCOMMONS,OBS platform
 ```
 
 ## Layer Responsibilities
 
-### 1. Bounded Contexts Layer
+### 1. Contracts Layer
+Provides stable interfaces between bounded contexts:
+
+#### Scope Management Port (`contracts/scope-management/`)
+- **Location**: `contracts/scope-management/`
+- **Contents**:
+  - **Port Interface**: `ScopeManagementPort` - Main interface for scope operations
+  - **Commands**: `CreateScopeCommand`, `UpdateScopeCommand`, `DeleteScopeCommand`
+  - **Queries**: `GetScopeQuery`, `GetChildrenQuery`
+  - **Results**: `CreateScopeResult`, `UpdateScopeResult`, `ScopeResult`
+  - **Errors**: `ScopeContractError` hierarchy - Input, Business, and System errors
+- **Dependencies**: None (pure interfaces)
+- **Testing**: Contract compliance tests
+
+#### User Preferences Port (`contracts/user-preferences/`)
+- **Location**: `contracts/user-preferences/`
+- **Contents**:
+  - **Port Interface**: `UserPreferencesPort` - Interface for preference operations
+  - **Queries**: `GetPreferenceQuery`
+  - **Results**: `PreferenceResult` with specific preference types
+  - **Errors**: `UserPreferencesContractError` hierarchy
+- **Dependencies**: None (pure interfaces)
+- **Testing**: Contract compliance tests
+
+### 2. Bounded Contexts Layer
 Each bounded context represents a distinct business capability and contains three sub-layers:
 
 #### Scope Management Context (`contexts/scope-management/`)
@@ -127,24 +165,26 @@ The core bounded context handling all scope-related operations.
   - **Alias Generation**: `DefaultAliasGenerationService`, `HaikunatorStrategy`
   - **Transaction Management**: `NoopTransactionManager`
   - **Word Providers**: `DefaultWordProvider`
-- **Dependencies**: Domain and Application layers
+  - **Port Adapters**: `ScopeManagementPortAdapter`, `UserPreferencesToHierarchyPolicyAdapter`
+  - **Error Mapping**: `ErrorMapper` - Maps domain errors to contract errors
+- **Dependencies**: Domain and Application layers, Contract ports
 - **Testing**: Integration tests with test doubles
 
-### 2. Interfaces Layer (Adapters)
+### 3. Interfaces Layer (Adapters)
 - **Location**: `interfaces/`
 - **Contents**:
   - **CLI Module** (`interfaces/cli/`):
     - Commands: `CreateCommand`, `GetCommand`, `ListCommand`, `UpdateCommand`, `DeleteCommand`
-    - Adapters: `ScopeCommandAdapter`
+    - Adapters: `ScopeCommandAdapter` - Uses contract ports for cross-context coordination
     - Formatters: `ScopeOutputFormatter`
     - Mappers: `ErrorMessageMapper`
   - **Shared Module** (`interfaces/shared/`):
-    - Facades: `ScopeManagementFacade`
+    - Facades: `ScopeManagementFacade` - Coordinates multiple port calls
     - DI Configuration: `InterfaceSharedModule`
-- **Dependencies**: Application layer from bounded contexts
+- **Dependencies**: Contract layer ports
 - **Testing**: Adapter tests
 
-### 3. Apps Layer (Entry Points)
+### 4. Apps Layer (Entry Points)
 - **Location**: `apps/`
 - **Contents**:
   - **CLI Application** (`apps/scopes/`):
@@ -155,7 +195,7 @@ The core bounded context handling all scope-related operations.
 - **Dependencies**: Interfaces layer
 - **Testing**: End-to-end tests
 
-### 4. Platform Layer (Shared Infrastructure)
+### 5. Platform Layer (Shared Infrastructure)
 - **Location**: `platform/`
 - **Contents**:
   - **Commons** (`platform/commons/`):
@@ -171,7 +211,7 @@ The core bounded context handling all scope-related operations.
 - **Dependencies**: None (foundation layer)
 - **Testing**: Unit tests
 
-### 5. Quality Layer (Architecture Tests)
+### 6. Quality Layer (Architecture Tests)
 - **Location**: `quality/`
 - **Contents**:
   - **Konsist Tests** (`quality/konsist/`):
@@ -184,14 +224,16 @@ The core bounded context handling all scope-related operations.
 ## Dependency Rules
 
 1. **Dependency Direction**: 
-   - Apps → Interfaces → Bounded Contexts (Application → Domain)
+   - Apps → Interfaces → Contracts → Bounded Contexts (Application → Domain)
    - All layers can depend on Platform layer
    - Dependencies point inward within each bounded context
+   - Contract layer has no dependencies (pure interfaces)
 
 2. **Bounded Context Independence**: 
    - Each bounded context is isolated
-   - Communication between contexts through application services
+   - Communication between contexts through contract ports only
    - No direct cross-context domain dependencies
+   - Port adapters in infrastructure layer implement contracts
 
 3. **Domain Independence**: 
    - Domain layer depends only on platform commons
@@ -337,13 +379,21 @@ fun `apps layer should not directly access domain layer`() {
 3. **Flexibility**: Easy to swap implementations
 4. **Business Focus**: Domain logic is framework-agnostic
 5. **Evolutionary Design**: Can change external layers without affecting core
+6. **Contract Stability**: Stable integration points between contexts
+7. **Error Resilience**: Explicit error handling at boundaries
 
 ## Implementation Guidelines
 
 1. Start with domain modeling (entities, value objects)
 2. Define use cases based on user stories
-3. Implement infrastructure as needed
-4. Keep frameworks at the edges
-5. Use dependency injection for wiring
-6. Write tests at appropriate levels
-7. Run `./gradlew konsistTest` to verify compliance
+3. Design contract interfaces for cross-context integration
+4. Implement infrastructure adapters for contracts
+5. Keep frameworks at the edges
+6. Use dependency injection for wiring
+7. Write tests at appropriate levels
+8. Run `./gradlew konsistTest` to verify compliance
+
+## Related Documentation
+
+- [Contracts Layer](./contracts.md) - Detailed explanation of the contracts layer
+- [Domain-Driven Design](./domain-driven-design.md) - DDD implementation details

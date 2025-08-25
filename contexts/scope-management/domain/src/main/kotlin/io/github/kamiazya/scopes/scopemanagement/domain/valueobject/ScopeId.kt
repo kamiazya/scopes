@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.commons.id.ULID
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
@@ -46,7 +47,16 @@ value class ScopeId private constructor(val value: String) {
      *
      * @return Either an error or the AggregateId in URI format
      */
-    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.create("Scope", value)
+    fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.Uri.create(
+        aggregateType = "Scope",
+        id = value,
+    ).mapLeft {
+        AggregateIdError.InvalidFormat(
+            occurredAt = currentTimestamp(),
+            value = value,
+            message = "Failed to create AggregateId from ScopeId",
+        )
+    }
 
     override fun toString(): String = value
 }

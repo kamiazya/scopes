@@ -73,7 +73,7 @@ class ScopeIdPropertyTest :
                 aggregateId.fold(
                     { throw AssertionError("Expected Right but got Left") },
                     { aggId ->
-                        aggId.aggregateType shouldBe "Scope"
+                        // AggregateId.Uri has value property containing the full URI
                         aggId.value shouldBe "gid://scopes/Scope/$ulid"
                     },
                 )
@@ -111,6 +111,6 @@ private fun validUlidArb(): Arb<String> = arbitrary {
 private fun invalidUlidArb(): Arb<String> = Arb.choice(
     Arb.string(1, 25), // Too short
     Arb.string(27, 50), // Too long
-    Arb.string(26, 26).map { it.lowercase() }, // Invalid characters
+    Arb.string(26, 26).map { it.replace(Regex("[0-9A-Za-z]"), "!") }, // Invalid characters
     Arb.string(26, 26).map { "!" + it.substring(1) }, // Invalid prefix
 )

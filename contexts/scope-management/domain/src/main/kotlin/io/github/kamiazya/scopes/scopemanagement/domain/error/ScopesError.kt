@@ -4,7 +4,16 @@ import kotlinx.datetime.Instant
 
 /**
  * Base type for all errors in the Scopes domain.
- * This is a simplified version focused on scope management context.
+ *
+ * This sealed hierarchy provides a comprehensive error model for the Scope Management
+ * bounded context, ensuring type-safe error handling and rich error information.
+ *
+ * Error categories include:
+ * - Value object validation errors (ScopeInputError, AspectValidationError)
+ * - External integration errors (UserPreferencesIntegrationError)
+ * - Policy errors (HierarchyPolicyError)
+ * - Aggregate-specific errors (ScopeError, ScopeHierarchyError, ScopeUniquenessError)
+ * - Infrastructure errors (PersistenceError)
  */
 sealed class ScopesError {
     /**

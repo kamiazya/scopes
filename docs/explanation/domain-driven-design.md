@@ -33,8 +33,13 @@ graph TB
         end
     end
     
+    subgraph "User Preferences Context"
+        UP_DOM[Domain]
+        UP_APP[Application]
+        UP_INFRA[Infrastructure]
+    end
+    
     subgraph "Future Contexts"
-        UP[User Preferences]
         WM[Workspace Management]
         AC[AI Collaboration]
     end
@@ -57,10 +62,10 @@ graph TB
     classDef infrastructure fill:#fce4ec
     classDef future fill:#f5f5f5,stroke-dasharray: 5 5
     
-    class AGG,ENT,VO,EVT,SVC domain
-    class CMD,QRY,HANDLER,APPSVC application
-    class REPO,ALIAS,TRANS infrastructure
-    class UP,WM,AC future
+    class AGG,ENT,VO,EVT,SVC,UP_DOM domain
+    class CMD,QRY,HANDLER,APPSVC,UP_APP application
+    class REPO,ALIAS,TRANS,UP_INFRA infrastructure
+    class WM,AC future
 ```
 
 ### Current Bounded Contexts
@@ -71,6 +76,10 @@ graph TB
 - **Status**: Implemented
 - **Key Aggregates**: ScopeAggregate
 - **Key Services**: ScopeHierarchyService, AliasGenerationService
+- **Key Concepts**:
+  - **HierarchyPolicy**: Business rules for scope hierarchy (maxDepth, maxChildrenPerScope)
+  - **Policy Enforcement**: All hierarchy constraints are validated here
+  - **Default Policy**: System defaults when no preferences are set
 - **Ubiquitous Language**:
   - Scope: Unified recursive work unit
   - Scope ID: Unique identifier (ULID)
@@ -78,18 +87,25 @@ graph TB
   - Parent ID: Hierarchical relationship
   - Aspects: Key-value metadata
   - Context View: Filtered view of scopes
-
-### Future Bounded Contexts (Planned)
+  - Hierarchy Policy: Rules governing scope hierarchies
 
 #### User Preferences Context
 - **Responsibility**: User-specific settings and preferences management
-- **Status**: Not yet implemented
+- **Location**: `contexts/user-preferences/`
+- **Status**: Implemented
 - **Relationship**: Customer-Supplier to other contexts
+- **Key Concepts**:
+  - **HierarchyPreferences**: User's preferred hierarchy settings (optional)
+  - **Preference Storage**: Persists user choices without enforcing business rules
+  - **Null Semantics**: null = no preference set (use system defaults)
 - **Ubiquitous Language**:
   - Preferences: User settings
-  - Theme: UI color scheme
-  - Editor Config: Editor settings
-  - Default Values: Initial values for new items
+  - Hierarchy Preferences: User's desired hierarchy limits
+  - Theme: UI color scheme (future)
+  - Editor Config: Editor settings (future)
+  - Default Values: Initial values for new items (future)
+
+### Future Bounded Contexts (Planned)
 
 #### Workspace Management Context
 - **Responsibility**: File system integration and focus management
@@ -144,6 +160,64 @@ graph LR
 - **Supporting Domains**: User preferences, aspect system, alias management
 - **Generic Domains**: Workspace management, AI collaboration
 - **Anti-Corruption Layer**: DTOs and facades protect domain from external changes
+
+### Context Integration Patterns
+
+#### Contracts Layer
+The system uses a dedicated Contracts layer to define stable interfaces between bounded contexts:
+
+```kotlin
+// Contract Port Interface
+interface UserPreferencesPort {
+    suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
+}
+
+// Port Implementation in User Preferences Context
+class UserPreferencesPortAdapter(
+    private val handler: GetCurrentUserPreferencesHandler
+) : UserPreferencesPort {
+    override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
+        // Implementation delegates to application handler
+    }
+}
+```
+
+#### Anti-Corruption Layer (ACL)
+The system uses ACLs to translate between bounded contexts while maintaining their independence:
+
+```kotlin
+// Example: UserPreferencesToHierarchyPolicyAdapter
+class UserPreferencesToHierarchyPolicyAdapter(
+    private val userPreferencesPort: UserPreferencesPort  // Uses contract port
+) : HierarchyPolicyProvider {
+    override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> {
+        // Translate from User Preferences context to Scope Management context
+        // - User Preferences: null = no preference (use defaults)
+        // - Scope Management: null = unlimited (policy decision)
+        val result = userPreferencesPort.getPreference(
+            GetPreferenceQuery(PreferenceType.HIERARCHY)
+        ).bind()
+        
+        // Map contract types to domain types
+        when (result) {
+            is PreferenceResult.HierarchyPreferences -> 
+                HierarchyPolicy.create(
+                    maxDepth = result.maxDepth,
+                    maxChildrenPerScope = result.maxChildrenPerScope
+                ).bind()
+        }
+    }
+}
+```
+
+**Key Principles**:
+- Contracts layer defines stable interfaces between contexts
+- Each context maintains its own domain model
+- Adapters handle translation between contexts
+- Contexts remain loosely coupled through contract ports
+- Business rules stay within their respective contexts
+- Error mapping ensures proper error handling across boundaries
+
 
 ## Strategic Design
 
@@ -491,31 +565,79 @@ class CreateScopeUseCase(
 - Transaction management
 - Domain event publishing
 
+### Infrastructure Layer (within Bounded Context)
+Implements technical concerns and contract ports:
+
+```kotlin
+// contexts/scope-management/infrastructure/adapters/ScopeManagementPortAdapter.kt
+class ScopeManagementPortAdapter(
+    private val createScopeHandler: CreateScopeHandler,
+    private val transactionManager: TransactionManager
+) : ScopeManagementPort {
+    override suspend fun createScope(
+        command: CreateScopeCommand
+    ): Either<ScopeContractError, CreateScopeResult> = 
+        transactionManager.inTransaction {
+            createScopeHandler(
+                CreateScope(
+                    title = command.title,
+                    description = command.description,
+                    parentId = command.parentId
+                )
+            ).mapLeft { error ->
+                ErrorMapper.mapToContractError(error)
+            }.map { result ->
+                CreateScopeResult(
+                    id = result.id,
+                    title = result.title,
+                    // ... map to contract result
+                )
+            }
+        }
+}
+```
+
+**Responsibilities**:
+- Implement contract port interfaces
+- Map between domain and contract types
+- Handle error translation
+- Manage technical concerns (persistence, messaging)
+
 ### Interface Layer (Cross-Context Integration)
-Coordinates multiple bounded contexts and adapts to external interfaces:
+Coordinates multiple bounded contexts through contract ports:
 
 ```kotlin
 // interfaces/cli/adapters/ScopeCommandAdapter.kt
 class ScopeCommandAdapter(
-    private val scopeManagement: ScopeManagementFacade,
-    private val workspaceManagement: WorkspaceManagementFacade?,
-    private val aiCollaboration: AiCollaborationFacade?
+    private val scopeManagementPort: ScopeManagementPort,
+    private val userPreferencesPort: UserPreferencesPort?,
+    private val workspaceManagementPort: WorkspaceManagementPort?
 ) {
-    fun createScope(title: String, parentId: String?): Either<ScopesError, ScopeDto> = either {
-        // Coordinate multiple contexts
-        val scope = scopeManagement.createScope(title, parentId).bind()
-        workspaceManagement?.initializeWorkspace(scope.id)
-        aiCollaboration?.notifyCreation(scope)
+    suspend fun createScope(title: String, parentId: String?): Either<ScopeContractError, CreateScopeResult> = either {
+        // Coordinate multiple contexts through contract ports
+        val scope = scopeManagementPort.createScope(
+            CreateScopeCommand(
+                title = title,
+                description = null,
+                parentId = parentId
+            )
+        ).bind()
+        
+        // Optional coordination with other contexts
+        workspaceManagementPort?.initializeWorkspace(
+            InitializeWorkspaceCommand(scopeId = scope.id)
+        )
+        
         scope
     }
 }
 ```
 
 **Responsibilities**:
-- Cross-context coordination
+- Cross-context coordination through contract ports
 - Protocol adaptation (CLI/API/MCP/SDK)
 - Cross-cutting concerns (auth, logging)
-- DTO conversion for external exposure
+- Error handling and user presentation
 
 ## Implementation Guidelines
 
@@ -525,6 +647,14 @@ class ScopeCommandAdapter(
 4. Keep aggregates small and focused
 5. Use domain events for decoupling
 6. Implement repositories as interfaces in domain
-7. Test business invariants with property-based tests
-8. Use Application layer for single-context orchestration
-9. Use Interface layer for cross-context integration
+7. Define contract ports for cross-context integration
+8. Implement port adapters in infrastructure layer
+9. Test business invariants with property-based tests
+10. Use Application layer for single-context orchestration
+11. Use Interface layer for cross-context coordination
+12. Map errors appropriately at context boundaries
+
+## Related Documentation
+
+- [Contracts Layer](./contracts.md) - Detailed explanation of the contracts layer
+- [Clean Architecture](./clean-architecture.md) - Overall architecture implementation

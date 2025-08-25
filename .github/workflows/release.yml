@@ -108,8 +108,9 @@ jobs:
 
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
+          # Run clean build first for reproducible builds
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -125,7 +126,8 @@ jobs:
 
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps:scopes:nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
+          # Run clean build first for reproducible builds
+          ./gradlew --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
 
       - name: Prepare binary for upload
         shell: bash
@@ -146,8 +148,8 @@ jobs:
           Set-Location "C:\build-workspace\scopes"
           $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom $VERSION_ARG
+          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG"
+          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG
         shell: powershell
         env:
           GRADLE_USER_HOME: C:\gradle-cache
@@ -156,7 +158,8 @@ jobs:
         if: matrix.platform != 'win32'
         run: |
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps:scopes:cycloneDxBom
+          # Pass version property to ensure SBOM metadata matches the binaries
+          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom -Pversion="${{ steps.version.outputs.version }}"
 
 
       - name: Generate hash for SLSA provenance
@@ -188,13 +191,35 @@ jobs:
           echo "Generated hash file content:"
           cat binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
-          # Generate hashes for SBOM files
+          # Generate hashes for SBOM files with fallback detection
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            SBOM_JSON_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.xml"
+            # Check for SBOM files in the default location first
+            if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
+            # Fall back to cyclonedx subdirectory if not found
+            elif [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json" ]; then
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
+            else
+              echo "Warning: SBOM files not found in expected locations"
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
+            fi
           else
-            SBOM_JSON_PATH="boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="boot/cli-launcher/build/reports/bom.xml"
+            # Check for SBOM files in the default location first
+            if [ -f "apps/scopes/build/reports/bom.json" ]; then
+              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
+            # Fall back to cyclonedx subdirectory if not found
+            elif [ -f "apps/scopes/build/reports/cyclonedx/bom.json" ]; then
+              SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
+            else
+              echo "Warning: SBOM files not found in expected locations"
+              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
+            fi
           fi
 
           if [ -f "$SBOM_JSON_PATH" ]; then
@@ -237,13 +262,35 @@ jobs:
       - name: Prepare SBOM files for upload
         shell: bash
         run: |
-          # Copy SBOM files with platform-specific names
+          # Copy SBOM files with platform-specific names using same fallback detection logic
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            SBOM_JSON_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="/c/build-workspace/scopes/boot/cli-launcher/build/reports/bom.xml"
+            # Check for SBOM files in the default location first
+            if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
+            # Fall back to cyclonedx subdirectory if not found
+            elif [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json" ]; then
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
+            else
+              echo "Warning: SBOM files not found in expected locations"
+              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
+            fi
           else
-            SBOM_JSON_PATH="boot/cli-launcher/build/reports/bom.json"
-            SBOM_XML_PATH="boot/cli-launcher/build/reports/bom.xml"
+            # Check for SBOM files in the default location first
+            if [ -f "apps/scopes/build/reports/bom.json" ]; then
+              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
+            # Fall back to cyclonedx subdirectory if not found
+            elif [ -f "apps/scopes/build/reports/cyclonedx/bom.json" ]; then
+              SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
+            else
+              echo "Warning: SBOM files not found in expected locations"
+              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
+              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
+            fi
           fi
 
           if [ -f "$SBOM_JSON_PATH" ]; then

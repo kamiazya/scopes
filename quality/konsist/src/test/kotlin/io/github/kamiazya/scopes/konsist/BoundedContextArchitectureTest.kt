@@ -20,6 +20,7 @@ class BoundedContextArchitectureTest :
 
         val contexts = listOf(
             "scope-management",
+            "user-preferences",
         )
 
         // Test that domain layers don't depend on application or infrastructure
@@ -107,12 +108,48 @@ class BoundedContextArchitectureTest :
                 Konsist
                     .scopeFromDirectory("contexts/$context/domain")
                     .classes()
-                    .filter { it.resideInPackage("..valueobject..") }
+                    .filter { it.resideInPackage("..valueobject..") || it.resideInPackage("..value..") }
                     .filter { !it.hasEnumModifier && !it.hasSealedModifier } // Exclude enums and sealed classes
                     .filter { !it.name.endsWith("Test") } // Exclude test classes
                     .filter { !it.hasAbstractModifier } // Exclude abstract classes
                     .assertTrue { clazz ->
                         clazz.hasDataModifier || clazz.hasValueModifier
+                    }
+            }
+        }
+
+        // Test that value objects are in the correct package
+        "value objects should be in valueobject or value package" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/domain")
+                    .classes()
+                    // Value classes (with @JvmInline value class) are always value objects
+                    .filter { it.hasValueModifier }
+                    .filter { !it.name.endsWith("Test") }
+                    .assertTrue { valueObject ->
+                        valueObject.resideInPackage("..valueobject..") ||
+                            valueObject.resideInPackage("..value..")
+                    }
+            }
+        }
+
+        // Test that data classes in domain are properly categorized
+        "data classes should be in appropriate domain packages" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/domain")
+                    .classes()
+                    .filter { it.hasDataModifier }
+                    .filter { !it.name.endsWith("Test") }
+                    .assertTrue { dataClass ->
+                        // Data classes should be in one of these packages
+                        dataClass.resideInPackage("..entity..") ||
+                            dataClass.resideInPackage("..aggregate..") ||
+                            dataClass.resideInPackage("..event..") ||
+                            dataClass.resideInPackage("..error..") ||
+                            dataClass.resideInPackage("..valueobject..") ||
+                            dataClass.resideInPackage("..value..")
                     }
             }
         }
@@ -125,6 +162,7 @@ class BoundedContextArchitectureTest :
                     .classes()
                     .filter { it.resideInPackage("..entity..") }
                     .filter { !it.name.endsWith("Test") }
+                    .filter { it.name != "UserPreferences" } // UserPreferences is a singleton-like entity without id
                     .assertTrue { clazz ->
                         clazz.hasDataModifier &&
                             clazz.properties().any { prop ->
@@ -158,10 +196,34 @@ class BoundedContextArchitectureTest :
                     .filter { it.name.endsWith("Error") }
                     .filter { !it.name.equals("ScopesError") }
                     .filter { !it.name.endsWith("ManagementError") } // Base error classes for each context
+                    .filter { it.name != "UserPreferencesError" } // Base error class for user-preferences
+                    .filter { !it.hasSealedModifier } // Exclude sealed base classes
                     .assertTrue { clazz ->
                         clazz.parents().any { parent ->
                             parent.name.endsWith("Error")
                         }
+                    }
+            }
+        }
+
+        // Test that DI modules are only in apps layer
+        "DI module definitions should only exist in apps layer" {
+            val nonAppsDirectories = listOf(
+                "contexts",
+                "interfaces",
+                "platform",
+            )
+
+            nonAppsDirectories.forEach { dir ->
+                Konsist
+                    .scopeFromDirectory(dir)
+                    .files
+                    .filter { it.path.contains("src/main") }
+                    .assertFalse { file ->
+                        // Check for DI module package (di package indicates DI configuration)
+                        file.packagee?.name?.contains(".di") == true ||
+                            // Check for actual Koin module definitions (not just usage)
+                            (file.text.contains("= module {") || file.text.contains("= module{"))
                     }
             }
         }

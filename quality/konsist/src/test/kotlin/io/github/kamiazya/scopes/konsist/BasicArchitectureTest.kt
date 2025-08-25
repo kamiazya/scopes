@@ -118,12 +118,18 @@ class BasicArchitectureTest :
                         !packageName.contains(".service") &&
                         !packageName.contains(".query") &&
                         // Explicitly exclude query package
-                        !packageName.contains(".platform.") // Exclude platform packages - not domain value objects
+                        !packageName.contains(".queries") &&
+                        // Exclude contracts query package
+                        !packageName.contains(".platform.") &&
+                        // Exclude platform packages - not domain value objects
+                        !packageName.contains(".aggregate") &&
+                        // Aggregate-related value objects like AggregateId are OK in aggregate package
+                        !packageName.contains(".contracts.") // Exclude contracts layer - different rules apply
                 }
                 .assertTrue { valueObject ->
                     val packageName = valueObject.packagee?.name ?: ""
-                    // Value objects should be in .valueobject package
-                    packageName.contains(".valueobject")
+                    // Value objects should be in .valueobject or .value package
+                    packageName.contains(".valueobject") || packageName.contains(".value")
                 }
         }
 
@@ -197,6 +203,12 @@ class BasicArchitectureTest :
                 .filter { it.name.endsWith("Dto") || it.name.endsWith("Result") }
                 .filter { !it.name.endsWith("Test") }
                 .filter { !it.name.contains("ValidationResult") } // Domain concept, not a DTO
+                .filter { clazz ->
+                    val packageName = clazz.packagee?.name ?: ""
+                    // Only apply this rule to non-contracts packages
+                    // Contracts layer has different conventions (results package)
+                    !packageName.contains(".contracts.")
+                }
                 .assertTrue { dto ->
                     val packageName = dto.packagee?.name ?: ""
                     packageName.contains(".dto")

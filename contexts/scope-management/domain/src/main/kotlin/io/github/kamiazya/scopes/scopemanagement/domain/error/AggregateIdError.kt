@@ -14,4 +14,6 @@ sealed class AggregateIdError : ScopesError() {
     data class InvalidUriFormat(override val occurredAt: Instant, val attemptedUri: String, val reason: String) : AggregateIdError()
 
     data class EmptyValue(override val occurredAt: Instant, val field: String) : AggregateIdError()
+
+    data class InvalidFormat(override val occurredAt: Instant, val value: String, val message: String) : AggregateIdError()
 }

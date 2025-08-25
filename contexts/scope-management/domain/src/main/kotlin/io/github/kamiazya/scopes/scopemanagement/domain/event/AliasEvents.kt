@@ -1,20 +1,22 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
 /**
  * Events related to ScopeAlias aggregate.
  */
-sealed class AliasEvent : DomainEvent()
+sealed class AliasEvent : DomainEvent
 
 /**
  * Event fired when an alias is assigned to a scope.
@@ -23,7 +25,7 @@ data class AliasAssigned(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
@@ -35,7 +37,7 @@ data class AliasAssigned(
                 aggregateId = aggregateId,
                 eventId = eventId,
                 occurredAt = alias.createdAt,
-                version = 1,
+                aggregateVersion = AggregateVersion.initial().increment(),
                 aliasId = alias.id,
                 aliasName = alias.aliasName,
                 scopeId = alias.scopeId,
@@ -52,7 +54,7 @@ data class AliasRemoved(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
@@ -68,7 +70,7 @@ data class AliasNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val scopeId: ScopeId,
     val oldAliasName: AliasName,
@@ -83,7 +85,7 @@ data class CanonicalAliasReplaced(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
     override val occurredAt: Instant,
-    override val version: Int,
+    override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldAliasId: AliasId,
     val oldAliasName: AliasName,

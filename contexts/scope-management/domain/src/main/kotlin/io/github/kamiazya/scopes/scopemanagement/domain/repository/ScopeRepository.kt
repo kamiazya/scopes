@@ -47,6 +47,14 @@ interface ScopeRepository {
     suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean>
 
     /**
+     * Find the ID of a scope with the given title and parent.
+     * Used for retrieving the conflicting scope ID during uniqueness validation.
+     * When parentId is null, searches for root-level scopes.
+     * Returns null if no scope exists with the given title and parent.
+     */
+    suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, ScopeId?>
+
+    /**
      * Delete a scope by ID.
      */
     suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>

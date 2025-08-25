@@ -1,12 +1,13 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -39,10 +40,10 @@ class CreateCommand :
                 customAlias = customAlias,
             ).fold(
                 { error ->
-                    echo("Error: ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 { result ->
-                    echo(scopeOutputFormatter.formatCreateResult(result))
+                    echo(scopeOutputFormatter.formatContractCreateResult(result))
                 },
             )
         }

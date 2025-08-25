@@ -1,9 +1,9 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.repository
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.event.DomainEvent
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AggregateId
 import kotlinx.datetime.Instant
 
 /**

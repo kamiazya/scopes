@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
+import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
@@ -10,8 +11,6 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.ListCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.shared.di.interfaceSharedModule
-import io.github.kamiazya.scopes.platform.observability.di.observabilityModule
 import org.koin.dsl.module
 
 /**
@@ -32,9 +31,10 @@ val cliAppModule = module {
         // Bounded Contexts
         scopeManagementModule,
         scopeManagementInfrastructureModule,
+        userPreferencesModule,
 
-        // Interface layers
-        interfaceSharedModule,
+        // Contracts layer
+        contractsModule,
     )
 
     // CLI Commands
@@ -48,8 +48,8 @@ val cliAppModule = module {
     // CLI Adapters
     single {
         ScopeCommandAdapter(
-            scopeManagementFacade = get(),
-            // Future: Add other context facades here
+            scopeManagementPort = get(),
+            // Future: Add other context ports here
         )
     }
 

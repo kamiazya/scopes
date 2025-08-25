@@ -4,18 +4,18 @@ plugins {
 
 dependencies {
     // Platform layer
-    testImplementation(project(":platform:commons"))
-    testImplementation(project(":platform:observability"))
-    testImplementation(project(":platform:application-commons"))
+    testImplementation(project(":platform-commons"))
+    testImplementation(project(":platform-observability"))
+    testImplementation(project(":platform-application-commons"))
 
     // Bounded Context - Unified Scope Management
-    testImplementation(project(":contexts:scope-management:domain"))
-    testImplementation(project(":contexts:scope-management:application"))
-    testImplementation(project(":contexts:scope-management:infrastructure"))
+    testImplementation(project(":scope-management-domain"))
+    testImplementation(project(":scope-management-application"))
+    testImplementation(project(":scope-management-infrastructure"))
 
     // Apps layer
-    testImplementation(project(":apps:scopes"))
-    testImplementation(project(":apps:scopesd"))
+    testImplementation(project(":apps-scopes"))
+    testImplementation(project(":apps-scopesd"))
 
     // Test libraries
     testImplementation(libs.konsist)

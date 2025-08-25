@@ -123,7 +123,7 @@ tasks.cyclonedxBom {
 tasks.register("konsistTest") {
     description = "Run Konsist architecture tests"
     group = "verification"
-    dependsOn(":quality:konsist:test")
+    dependsOn(":quality-konsist:test")
 }
 
 // Spotless configuration

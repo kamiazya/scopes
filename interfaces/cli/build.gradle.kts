@@ -4,11 +4,12 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":interfaces:shared"))
-    implementation(project(":contexts:scope-management:domain"))
-    implementation(project(":contexts:scope-management:application"))
-    implementation(project(":platform:commons"))
-    implementation(project(":platform:application-commons"))
+    implementation(project(":contracts-scope-management"))
+    implementation(project(":contracts-user-preferences"))
+    implementation(project(":scope-management-domain"))
+    implementation(project(":scope-management-application"))
+    implementation(project(":platform-commons"))
+    implementation(project(":platform-application-commons"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
