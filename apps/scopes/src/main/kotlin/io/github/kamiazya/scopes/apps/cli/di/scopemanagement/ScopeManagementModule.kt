@@ -50,6 +50,8 @@ val scopeManagementModule = module {
         CreateScopeHandler(
             scopeFactory = get(),
             scopeRepository = get(),
+            scopeAliasRepository = get(),
+            aliasGenerationService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
             logger = get(),
