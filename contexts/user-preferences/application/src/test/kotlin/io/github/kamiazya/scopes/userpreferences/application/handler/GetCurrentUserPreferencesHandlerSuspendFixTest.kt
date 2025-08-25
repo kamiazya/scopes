@@ -5,8 +5,10 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
-import io.github.kamiazya.scopes.userpreferences.domain.entity.HierarchySettings
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
+import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 import io.kotest.core.spec.style.DescribeSpec
@@ -28,13 +30,17 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest : DescribeSpec({
                 val repository = mockk<UserPreferencesRepository>()
                 val handler = GetCurrentUserPreferencesHandler(repository)
                 
+                val now = Clock.System.now()
                 val existingAggregate = UserPreferencesAggregate(
-                    id = UserPreferencesAggregate.ID,
+                    id = AggregateId.Simple.generate(),
                     preferences = UserPreferences(
-                        hierarchySettings = HierarchySettings.unlimited(),
-                        updatedAt = Clock.System.now(),
+                        hierarchyPreferences = HierarchyPreferences.DEFAULT,
+                        createdAt = now,
+                        updatedAt = now,
                     ),
-                    version = 1,
+                    version = AggregateVersion.initial(),
+                    createdAt = now,
+                    updatedAt = now,
                 )
                 
                 // First call returns null (no preferences exist)
