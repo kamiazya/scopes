@@ -82,7 +82,8 @@ class CreateScopeHandler(
                 logger.info("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
 
                 // Handle alias generation (future integration)
-                val canonicalAlias = if (input.generateAlias || input.customAlias != null) {
+                val aliasRequested = input.generateAlias || input.customAlias != null
+                if (aliasRequested) {
                     logger.debug(
                         "Alias generation requested but not yet implemented",
                         mapOf(
@@ -91,10 +92,8 @@ class CreateScopeHandler(
                             "customAlias" to (input.customAlias ?: "none"),
                         ),
                     )
-                    null
-                } else {
-                    null
                 }
+                val canonicalAlias: String? = null
 
                 val result = ScopeMapper.toCreateScopeResult(savedScope, canonicalAlias)
 
@@ -103,7 +102,7 @@ class CreateScopeHandler(
                     mapOf(
                         "scopeId" to savedScope.id.value,
                         "title" to savedScope.title.value,
-                        "hasAlias" to (canonicalAlias != null).toString(),
+                        "hasAlias" to false.toString(),
                     ),
                 )
 
