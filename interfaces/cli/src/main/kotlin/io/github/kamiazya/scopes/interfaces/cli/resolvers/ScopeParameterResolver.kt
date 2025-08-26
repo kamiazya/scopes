@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.resolvers
 
 import arrow.core.Either
-import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
@@ -53,9 +52,6 @@ class ScopeParameterResolver(private val scopeManagementPort: ScopeManagementPor
     private suspend fun resolveAlias(alias: String): Either<ScopeContractError, String> {
         val query = ContractGetScopeByAliasQuery(aliasName = alias)
         return scopeManagementPort.getScopeByAlias(query).map { scopeResult ->
-            if (scopeResult == null) {
-                return ScopeContractError.BusinessError.AliasNotFound(alias).left()
-            }
             scopeResult.id
         }
     }

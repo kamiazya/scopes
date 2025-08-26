@@ -109,7 +109,7 @@ class GetScopeByAliasHandlerTest :
             }
 
             describe("when alias does not exist") {
-                it("should return null") {
+                it("should return AliasNotFound error") {
                     // Given
                     val aliasName = "non-existent"
                     val query = GetScopeByAliasQuery(aliasName)
@@ -121,15 +121,17 @@ class GetScopeByAliasHandlerTest :
                     val result = handler(query)
 
                     // Then
-                    result.shouldBeRight()
-                    result.getOrNull() shouldBe null
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                        attemptedValue shouldBe aliasName
+                    }
                     coVerify(exactly = 1) { aliasRepository.findByAliasName(aliasNameVO) }
                     coVerify(exactly = 0) { scopeRepository.findById(any()) }
                 }
             }
 
             describe("when alias exists but scope does not exist") {
-                it("should return null") {
+                it("should return AliasNotFound error") {
                     // Given
                     val aliasName = "project-name"
                     val query = GetScopeByAliasQuery(aliasName)
@@ -145,8 +147,10 @@ class GetScopeByAliasHandlerTest :
                     val result = handler(query)
 
                     // Then
-                    result.shouldBeRight()
-                    result.getOrNull() shouldBe null
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                        attemptedValue shouldBe aliasName
+                    }
                     coVerify(exactly = 1) { aliasRepository.findByAliasName(aliasNameVO) }
                     coVerify(exactly = 1) { scopeRepository.findById(scopeId) }
                 }

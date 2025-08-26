@@ -182,7 +182,7 @@ class ScopeManagementPortAdapter(
         }
     }
 
-    override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult?> = either {
+    override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult> = either {
         getScopeByAliasHandler(
             AppGetScopeByAliasQuery(
                 aliasName = query.aliasName,
@@ -192,19 +192,17 @@ class ScopeManagementPortAdapter(
                 raise(errorMapper.mapToContractError(error))
             },
             { scopeDto ->
-                scopeDto?.let {
-                    ScopeResult(
-                        id = it.id,
-                        title = it.title,
-                        description = it.description,
-                        parentId = it.parentId,
-                        canonicalAlias = it.canonicalAlias ?: "@${it.id}",
-                        createdAt = it.createdAt,
-                        updatedAt = it.updatedAt,
-                        isArchived = false, // TODO: Implement archive status when available in domain
-                        aspects = it.aspects,
-                    )
-                }
+                ScopeResult(
+                    id = scopeDto.id,
+                    title = scopeDto.title,
+                    description = scopeDto.description,
+                    parentId = scopeDto.parentId,
+                    canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                    createdAt = scopeDto.createdAt,
+                    updatedAt = scopeDto.updatedAt,
+                    isArchived = false, // TODO: Implement archive status when available in domain
+                    aspects = scopeDto.aspects,
+                )
             },
         )
     }

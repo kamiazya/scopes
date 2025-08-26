@@ -218,17 +218,17 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
  */
 fun ScopeAliasError.toApplicationError(): ApplicationError = when (this) {
     is ScopeAliasError.DuplicateAlias ->
-        AppScopeInputError.InvalidAlias(
+        AppScopeInputError.AliasDuplicate(
             attemptedValue = this.aliasName,
         )
 
     is ScopeAliasError.AliasNotFound ->
-        AppScopeInputError.InvalidAlias(
+        AppScopeInputError.AliasNotFound(
             attemptedValue = this.aliasName,
         )
 
     is ScopeAliasError.CannotRemoveCanonicalAlias ->
-        AppScopeInputError.InvalidAlias(
+        AppScopeInputError.CannotRemoveCanonicalAlias(
             attemptedValue = this.aliasName,
         )
 

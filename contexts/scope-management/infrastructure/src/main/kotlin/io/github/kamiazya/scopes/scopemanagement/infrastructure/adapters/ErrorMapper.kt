@@ -300,6 +300,13 @@ class ErrorMapper(private val logger: Logger) {
                 prohibitedCharacters = emptyList(),
             ),
         )
+        is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = error.attemptedValue,
+        )
+        is AppScopeInputError.CannotRemoveCanonicalAlias ->
+            ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+                alias = error.attemptedValue,
+            )
         is AppScopeInputError.InvalidAlias -> ScopeContractError.BusinessError.AliasNotFound(
             alias = error.attemptedValue,
         )

@@ -163,6 +163,18 @@ public sealed interface ScopeContractError {
          * @property alias The alias that was not found
          */
         public data class AliasNotFound(public val alias: String) : BusinessError
+
+        /**
+         * Alias already exists.
+         * @property alias The alias that already exists
+         */
+        public data class DuplicateAlias(public val alias: String) : BusinessError
+
+        /**
+         * Cannot remove canonical alias.
+         * @property alias The canonical alias that cannot be removed
+         */
+        public data class CannotRemoveCanonicalAlias(public val alias: String) : BusinessError
     }
 
     /**

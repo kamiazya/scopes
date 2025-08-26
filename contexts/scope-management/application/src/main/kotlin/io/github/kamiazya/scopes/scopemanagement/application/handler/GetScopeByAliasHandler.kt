@@ -25,9 +25,9 @@ class GetScopeByAliasHandler(
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : UseCase<GetScopeByAliasQuery, ScopesError, ScopeDto?> {
+) : UseCase<GetScopeByAliasQuery, ScopesError, ScopeDto> {
 
-    override suspend operator fun invoke(query: GetScopeByAliasQuery): Either<ScopesError, ScopeDto?> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetScopeByAliasQuery): Either<ScopesError, ScopeDto> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Getting scope by alias",
@@ -44,7 +44,16 @@ class GetScopeByAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.AliasNotFound(query.aliasName)
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                            ScopeInputError.AliasEmpty(query.aliasName)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
+                            ScopeInputError.AliasTooShort(query.aliasName, error.minimumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
+                            ScopeInputError.AliasTooLong(query.aliasName, error.maximumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
+                            ScopeInputError.AliasInvalidFormat(query.aliasName, error.expectedPattern)
+                    }
                 }
                 .bind()
 
@@ -58,7 +67,7 @@ class GetScopeByAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.AliasNotFound(query.aliasName)
+                    error.toApplicationError()
                 }
                 .bind()
 
@@ -67,7 +76,7 @@ class GetScopeByAliasHandler(
                     "Alias not found",
                     mapOf("aliasName" to query.aliasName),
                 )
-                return@either null
+                raise(ScopeInputError.AliasNotFound(query.aliasName))
             }
 
             // Get scope by ID
@@ -80,7 +89,7 @@ class GetScopeByAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.IdInvalidFormat(alias.scopeId.value)
+                    error.toApplicationError()
                 }
                 .bind()
 
@@ -92,7 +101,8 @@ class GetScopeByAliasHandler(
                         "scopeId" to alias.scopeId.value,
                     ),
                 )
-                return@either null
+                // This is an inconsistency - alias exists but scope doesn't
+                raise(ScopeInputError.AliasNotFound(query.aliasName))
             }
 
             // Get all aliases for the scope to include in response

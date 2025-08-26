@@ -63,5 +63,5 @@ public interface ScopeManagementPort {
      * @param query The query containing the alias name
      * @return Either an error or the scope result (null if not found)
      */
-    public suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult?>
+    public suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult>
 }

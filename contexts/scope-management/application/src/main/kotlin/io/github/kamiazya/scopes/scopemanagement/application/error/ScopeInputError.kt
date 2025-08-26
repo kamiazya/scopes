@@ -23,5 +23,9 @@ sealed class ScopeInputError(recoverable: Boolean = true) : ApplicationError(rec
 
     data class AliasNotFound(val attemptedValue: String) : ScopeInputError()
 
+    data class AliasDuplicate(val attemptedValue: String) : ScopeInputError()
+
+    data class CannotRemoveCanonicalAlias(val attemptedValue: String) : ScopeInputError()
+
     data class InvalidParentId(val attemptedValue: String) : ScopeInputError()
 }

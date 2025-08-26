@@ -39,7 +39,16 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.InvalidAlias(command.aliasName)
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                            ScopeInputError.AliasEmpty(command.aliasName)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
+                            ScopeInputError.AliasTooShort(command.aliasName, error.minimumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
+                            ScopeInputError.AliasTooLong(command.aliasName, error.maximumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.aliasName, error.expectedPattern)
+                    }
                 }
                 .bind()
 

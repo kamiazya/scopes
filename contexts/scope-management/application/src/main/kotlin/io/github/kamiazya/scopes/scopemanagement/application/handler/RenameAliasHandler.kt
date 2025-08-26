@@ -41,7 +41,16 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.InvalidAlias(command.currentAlias)
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                            ScopeInputError.AliasEmpty(command.currentAlias)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
+                            ScopeInputError.AliasTooShort(command.currentAlias, error.minimumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
+                            ScopeInputError.AliasTooLong(command.currentAlias, error.maximumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.currentAlias, error.expectedPattern)
+                    }
                 }
                 .bind()
 
@@ -55,7 +64,16 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                             "error" to error.toString(),
                         ),
                     )
-                    ScopeInputError.InvalidAlias(command.newAliasName)
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                            ScopeInputError.AliasEmpty(command.newAliasName)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
+                            ScopeInputError.AliasTooShort(command.newAliasName, error.minimumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
+                            ScopeInputError.AliasTooLong(command.newAliasName, error.maximumLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.newAliasName, error.expectedPattern)
+                    }
                 }
                 .bind()
 
