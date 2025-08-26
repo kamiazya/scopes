@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.handler
 
 import arrow.core.Either
-import arrow.core.left
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.AddAlias
@@ -76,7 +75,7 @@ class AddAliasHandler(
                     "Existing alias not found",
                     mapOf("existingAlias" to command.existingAlias),
                 )
-                return@either ScopeInputError.AliasNotFound(command.existingAlias).left().bind()
+                raise(ScopeInputError.AliasNotFound(command.existingAlias))
             }
 
             val scopeId = existingAliasEntity.scopeId

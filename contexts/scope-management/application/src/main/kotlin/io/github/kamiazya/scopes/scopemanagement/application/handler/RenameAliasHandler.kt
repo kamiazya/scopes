@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.handler
 
 import arrow.core.Either
-import arrow.core.left
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
@@ -96,7 +95,7 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                     "Current alias not found",
                     mapOf("currentAlias" to command.currentAlias),
                 )
-                return@either ScopeInputError.AliasNotFound(command.currentAlias).left().bind()
+                raise(ScopeInputError.AliasNotFound(command.currentAlias))
             }
 
             // Check if new alias name already exists
@@ -121,7 +120,7 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                         "existingScopeId" to existingAlias.scopeId.value,
                     ),
                 )
-                return@either ScopeInputError.InvalidAlias(command.newAliasName).left().bind()
+                raise(ScopeInputError.InvalidAlias(command.newAliasName))
             }
 
             // Create renamed alias preserving all properties except the name

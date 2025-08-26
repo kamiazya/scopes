@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.handler
 
 import arrow.core.Either
-import arrow.core.left
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.SetCanonicalAlias
@@ -77,7 +76,7 @@ class SetCanonicalAliasHandler(
                     "Current alias not found",
                     mapOf("currentAlias" to command.currentAlias),
                 )
-                return@either ScopeInputError.AliasNotFound(command.currentAlias).left().bind()
+                raise(ScopeInputError.AliasNotFound(command.currentAlias))
             }
 
             val scopeId = currentAliasEntity.scopeId
@@ -124,7 +123,7 @@ class SetCanonicalAliasHandler(
                     "New canonical alias not found",
                     mapOf("newCanonicalAlias" to command.newCanonicalAlias),
                 )
-                return@either ScopeInputError.AliasNotFound(command.newCanonicalAlias).left().bind()
+                raise(ScopeInputError.AliasNotFound(command.newCanonicalAlias))
             }
 
             // Verify the new canonical alias belongs to the same scope
@@ -138,7 +137,7 @@ class SetCanonicalAliasHandler(
                         "newCanonicalAliasScope" to newCanonicalAliasEntity.scopeId.value,
                     ),
                 )
-                return@either ScopeInputError.InvalidAlias(command.newCanonicalAlias).left().bind()
+                raise(ScopeInputError.InvalidAlias(command.newCanonicalAlias))
             }
 
             // If already canonical, return success (idempotent)
