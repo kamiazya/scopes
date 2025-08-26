@@ -38,6 +38,12 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
             expectedVersion = this.expectedVersion.toString(),
             actualVersion = this.actualVersion.toString(),
         )
+
+    is DomainPersistenceError.NotFound ->
+        AppPersistenceError.NotFound(
+            entityType = this.entityType,
+            entityId = this.entityId,
+        )
 }
 
 /**

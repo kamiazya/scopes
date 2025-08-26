@@ -18,4 +18,6 @@ sealed class PersistenceError : ScopesError() {
         val expectedVersion: String,
         val actualVersion: String,
     ) : PersistenceError()
+
+    data class NotFound(override val occurredAt: Instant, val entityType: String, val entityId: String?) : PersistenceError()
 }
