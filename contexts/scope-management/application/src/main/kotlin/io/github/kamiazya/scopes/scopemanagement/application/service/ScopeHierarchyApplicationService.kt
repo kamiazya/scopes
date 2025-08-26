@@ -87,9 +87,11 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         val currentChildCount = when (val result = repository.countChildrenOf(parentId)) {
             is Either.Right -> result.value
             is Either.Left -> raise(
-                ScopeHierarchyError.ScopeInHierarchyNotFound(
+                ScopeHierarchyError.PersistenceFailure(
                     currentTimestamp(),
+                    "countChildrenOf",
                     parentId,
+                    result.value,
                 ),
             )
         }
@@ -117,9 +119,20 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
             val scopeResult = repository.findById(currentId)
             val scope = when (scopeResult) {
                 is Either.Right -> scopeResult.value
-                is Either.Left -> null
+                is Either.Left -> {
+                    // For actual persistence failures, wrap the error
+                    raise(
+                        ScopeHierarchyError.PersistenceFailure(
+                            currentTimestamp(),
+                            "findById",
+                            currentId,
+                            scopeResult.value,
+                        ),
+                    )
+                }
             }
 
+            // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
                 ScopeHierarchyError.ScopeInHierarchyNotFound(
                     currentTimestamp(),
@@ -157,9 +170,20 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
             val scopeResult = repository.findById(id)
             val scope = when (scopeResult) {
                 is Either.Right -> scopeResult.value
-                is Either.Left -> null
+                is Either.Left -> {
+                    // For actual persistence failures, wrap the error
+                    raise(
+                        ScopeHierarchyError.PersistenceFailure(
+                            currentTimestamp(),
+                            "findById",
+                            id,
+                            scopeResult.value,
+                        ),
+                    )
+                }
             }
 
+            // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
                 ScopeHierarchyError.ScopeInHierarchyNotFound(
                     currentTimestamp(),
@@ -182,9 +206,11 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         when (val result = repository.findDescendantsOf(scopeId)) {
             is Either.Right -> result.value
             is Either.Left -> raise(
-                ScopeHierarchyError.ScopeInHierarchyNotFound(
+                ScopeHierarchyError.PersistenceFailure(
                     currentTimestamp(),
+                    "findDescendantsOf",
                     scopeId,
+                    result.value,
                 ),
             )
         }

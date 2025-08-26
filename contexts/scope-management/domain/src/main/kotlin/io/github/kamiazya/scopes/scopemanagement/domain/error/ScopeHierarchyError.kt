@@ -28,4 +28,11 @@ sealed class ScopeHierarchyError : ScopesError() {
     data class ScopeInHierarchyNotFound(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 
     data class HasChildren(val scopeId: ScopeId, override val occurredAt: Instant = Clock.System.now()) : ScopeHierarchyError()
+
+    /**
+     * Wraps persistence-layer errors that occur during hierarchy operations.
+     * This preserves the original error context for better debugging.
+     */
+    data class PersistenceFailure(override val occurredAt: Instant, val operation: String, val scopeId: ScopeId? = null, val cause: PersistenceError) :
+        ScopeHierarchyError()
 }

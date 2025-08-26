@@ -68,6 +68,8 @@ object ErrorMessageMapper {
             is ScopeHierarchyError.ParentNotFound -> "Parent ${error.parentId.value} not found for scope ${error.scopeId.value}"
             is ScopeHierarchyError.ScopeInHierarchyNotFound -> "Scope ${error.scopeId.value} not found in hierarchy"
             is ScopeHierarchyError.SelfParenting -> "Scope ${error.scopeId.value} cannot be its own parent"
+            is ScopeHierarchyError.PersistenceFailure ->
+                "Hierarchy operation '${error.operation}' failed${error.scopeId?.let { " for scope ${it.value}" } ?: ""}: ${getMessage(error.cause)}"
         }
         is PersistenceError -> when (error) {
             is PersistenceError.StorageUnavailable -> "Storage unavailable for operation '${error.operation}'"
