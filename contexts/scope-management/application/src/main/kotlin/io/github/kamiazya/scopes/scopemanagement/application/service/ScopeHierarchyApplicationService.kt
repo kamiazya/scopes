@@ -18,7 +18,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  * This service coordinates between the repository layer and the pure domain service,
  * handling all I/O operations and delegating business logic to the domain service.
  */
-class ScopeHierarchyApplicationService(private val repository: ScopeRepository, private val domainService: ScopeHierarchyService = ScopeHierarchyService()) {
+class ScopeHierarchyApplicationService(private val repository: ScopeRepository, private val domainService: ScopeHierarchyService) {
 
     /**
      * Calculates the hierarchy depth for a scope by building its hierarchy path.

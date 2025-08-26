@@ -31,8 +31,8 @@ import kotlinx.datetime.Clock
  */
 class ScopeFactory(
     private val scopeRepository: ScopeRepository,
-    private val hierarchyApplicationService: ScopeHierarchyApplicationService = ScopeHierarchyApplicationService(scopeRepository),
-    private val hierarchyService: ScopeHierarchyService = ScopeHierarchyService(),
+    private val hierarchyApplicationService: ScopeHierarchyApplicationService,
+    private val hierarchyService: ScopeHierarchyService,
 ) {
     /**
      * Creates a new Scope aggregate with full validation.
