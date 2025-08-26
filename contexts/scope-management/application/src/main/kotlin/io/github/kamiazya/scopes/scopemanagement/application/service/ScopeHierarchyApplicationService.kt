@@ -20,6 +20,14 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  */
 class ScopeHierarchyApplicationService(private val repository: ScopeRepository, private val domainService: ScopeHierarchyService) {
 
+    companion object {
+        /**
+         * Maximum iterations when traversing hierarchy paths to prevent infinite loops.
+         * This protects against data corruption or circular references that bypass normal validation.
+         */
+        private const val MAX_HIERARCHY_PATH_ITERATIONS = 1000
+    }
+
     /**
      * Calculates the hierarchy depth for a scope by building its hierarchy path.
      *
@@ -109,9 +117,8 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
     private suspend fun buildHierarchyPath(scopeId: ScopeId): Either<ScopeHierarchyError, List<ScopeId>> = either {
         val path = mutableListOf<ScopeId>()
         var currentId: ScopeId? = scopeId
-        val maxIterations = 1000 // Infinite loop protection
 
-        for (iteration in 0 until maxIterations) {
+        for (iteration in 0 until MAX_HIERARCHY_PATH_ITERATIONS) {
             if (currentId == null) break
 
             path.add(currentId)
