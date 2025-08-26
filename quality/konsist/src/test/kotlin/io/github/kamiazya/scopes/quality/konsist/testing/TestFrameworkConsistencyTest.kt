@@ -41,25 +41,11 @@ class TestFrameworkConsistencyTest :
                     .classes()
                     .withNameEndingWith("Test")
                     .assertFalse { clazz ->
-                        // Check if class doesn't extend DescribeSpec but has test-like structure
-                        val extendsDescribeSpec = clazz.hasParent { parent ->
+                        // Every test class must extend DescribeSpec
+                        // Return true (fail assertion) if class does NOT extend DescribeSpec
+                        !clazz.hasParent { parent ->
                             parent.name == "DescribeSpec"
                         }
-
-                        val hasJUnitAnnotations = clazz.functions().any { function ->
-                            function.annotations.any { annotation ->
-                                annotation.name == "Test" ||
-                                    annotation.name == "BeforeEach" ||
-                                    annotation.name == "AfterEach" ||
-                                    annotation.name == "BeforeAll" ||
-                                    annotation.name == "AfterAll" ||
-                                    annotation.name == "Nested" ||
-                                    annotation.name == "DisplayName"
-                            }
-                        }
-
-                        // Flag classes that use JUnit annotations instead of Kotest
-                        hasJUnitAnnotations && !extendsDescribeSpec
                     }
             }
 
