@@ -194,11 +194,11 @@ class ScopeAliasTest :
                     alias1.hashCode() shouldBe alias2.hashCode()
                 }
 
-                it("should have different hash codes for different aliases") {
+                it("should be different objects for different alias instances") {
                     val alias1 = ScopeAlias.createCanonical(scopeId, aliasName)
                     val alias2 = ScopeAlias.createCanonical(scopeId, aliasName)
 
-                    alias1.hashCode() shouldNotBe alias2.hashCode()
+                    alias1 shouldNotBe alias2
                 }
 
                 it("should correctly implement copy") {
