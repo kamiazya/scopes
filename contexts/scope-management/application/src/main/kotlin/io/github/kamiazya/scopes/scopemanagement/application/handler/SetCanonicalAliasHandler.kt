@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
 /**
@@ -31,51 +30,32 @@ class SetCanonicalAliasHandler(
             logger.debug(
                 "Setting canonical alias",
                 mapOf(
-                    "aliasName" to command.aliasName,
-                    "scopeId" to command.scopeId,
+                    "currentAlias" to command.currentAlias,
+                    "newCanonicalAlias" to command.newCanonicalAlias,
                 ),
             )
 
-            // Validate scopeId
-            val scopeId = ScopeId.create(command.scopeId)
+            // Validate currentAlias
+            val currentAliasName = AliasName.create(command.currentAlias)
                 .mapLeft { error ->
                     logger.error(
-                        "Invalid scope ID",
+                        "Invalid current alias name",
                         mapOf(
-                            "scopeId" to command.scopeId,
+                            "currentAlias" to command.currentAlias,
                             "error" to error.toString(),
                         ),
                     )
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.Blank ->
-                            ScopeInputError.IdBlank(command.scopeId)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidFormat ->
-                            ScopeInputError.IdInvalidFormat(command.scopeId, "ULID")
-                    }
+                    ScopeInputError.InvalidAlias(command.currentAlias)
                 }
                 .bind()
 
-            // Validate aliasName
-            val aliasName = AliasName.create(command.aliasName)
+            // Find the current alias to identify the scope
+            val currentAliasEntity = aliasRepository.findByAliasName(currentAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Invalid alias name",
+                        "Failed to find current alias",
                         mapOf(
-                            "aliasName" to command.aliasName,
-                            "error" to error.toString(),
-                        ),
-                    )
-                    ScopeInputError.InvalidAlias(command.aliasName)
-                }
-                .bind()
-
-            // Find the alias and verify it belongs to the scope
-            val alias = aliasRepository.findByAliasName(aliasName)
-                .mapLeft { error ->
-                    logger.error(
-                        "Failed to find alias",
-                        mapOf(
-                            "aliasName" to command.aliasName,
+                            "currentAlias" to command.currentAlias,
                             "error" to error.toString(),
                         ),
                     )
@@ -83,47 +63,87 @@ class SetCanonicalAliasHandler(
                 }
                 .bind()
 
-            if (alias == null) {
+            if (currentAliasEntity == null) {
                 logger.error(
-                    "Alias not found",
-                    mapOf("aliasName" to command.aliasName),
+                    "Current alias not found",
+                    mapOf("currentAlias" to command.currentAlias),
                 )
-                return@either ScopeInputError.AliasNotFound(command.aliasName).left().bind()
+                return@either ScopeInputError.AliasNotFound(command.currentAlias).left().bind()
             }
 
-            // Verify the alias belongs to the specified scope
-            if (alias.scopeId != scopeId) {
+            val scopeId = currentAliasEntity.scopeId
+
+            // Validate newCanonicalAlias
+            val newCanonicalAliasName = AliasName.create(command.newCanonicalAlias)
+                .mapLeft { error ->
+                    logger.error(
+                        "Invalid new canonical alias name",
+                        mapOf(
+                            "newCanonicalAlias" to command.newCanonicalAlias,
+                            "error" to error.toString(),
+                        ),
+                    )
+                    ScopeInputError.InvalidAlias(command.newCanonicalAlias)
+                }
+                .bind()
+
+            // Find the new canonical alias and verify it belongs to the same scope
+            val newCanonicalAliasEntity = aliasRepository.findByAliasName(newCanonicalAliasName)
+                .mapLeft { error ->
+                    logger.error(
+                        "Failed to find new canonical alias",
+                        mapOf(
+                            "newCanonicalAlias" to command.newCanonicalAlias,
+                            "error" to error.toString(),
+                        ),
+                    )
+                    error.toApplicationError()
+                }
+                .bind()
+
+            if (newCanonicalAliasEntity == null) {
                 logger.error(
-                    "Alias belongs to different scope",
+                    "New canonical alias not found",
+                    mapOf("newCanonicalAlias" to command.newCanonicalAlias),
+                )
+                return@either ScopeInputError.AliasNotFound(command.newCanonicalAlias).left().bind()
+            }
+
+            // Verify the new canonical alias belongs to the same scope
+            if (newCanonicalAliasEntity.scopeId != scopeId) {
+                logger.error(
+                    "New canonical alias belongs to different scope",
                     mapOf(
-                        "aliasName" to command.aliasName,
-                        "aliasScopeId" to alias.scopeId.value,
-                        "requestedScopeId" to command.scopeId,
+                        "currentAlias" to command.currentAlias,
+                        "newCanonicalAlias" to command.newCanonicalAlias,
+                        "currentAliasScope" to scopeId.value,
+                        "newCanonicalAliasScope" to newCanonicalAliasEntity.scopeId.value,
                     ),
                 )
-                return@either ScopeInputError.InvalidAlias(command.aliasName).left().bind()
+                return@either ScopeInputError.InvalidAlias(command.newCanonicalAlias).left().bind()
             }
 
             // If already canonical, return success (idempotent)
-            if (alias.isCanonical()) {
+            if (newCanonicalAliasEntity.isCanonical()) {
                 logger.info(
                     "Alias is already canonical",
                     mapOf(
-                        "aliasName" to command.aliasName,
-                        "scopeId" to command.scopeId,
+                        "newCanonicalAlias" to command.newCanonicalAlias,
+                        "scopeId" to scopeId.value,
                     ),
                 )
                 return@either Unit
             }
 
             // Set as canonical (service handles the demotion logic)
-            scopeAliasService.assignCanonicalAlias(scopeId, aliasName)
+            scopeAliasService.assignCanonicalAlias(scopeId, newCanonicalAliasName)
                 .mapLeft { error ->
                     logger.error(
                         "Failed to set canonical alias",
                         mapOf(
-                            "aliasName" to command.aliasName,
-                            "scopeId" to command.scopeId,
+                            "currentAlias" to command.currentAlias,
+                            "newCanonicalAlias" to command.newCanonicalAlias,
+                            "scopeId" to scopeId.value,
                             "error" to error.toString(),
                         ),
                     )
@@ -134,8 +154,9 @@ class SetCanonicalAliasHandler(
             logger.info(
                 "Successfully set canonical alias",
                 mapOf(
-                    "aliasName" to command.aliasName,
-                    "scopeId" to command.scopeId,
+                    "currentAlias" to command.currentAlias,
+                    "newCanonicalAlias" to command.newCanonicalAlias,
+                    "scopeId" to scopeId.value,
                 ),
             )
         }

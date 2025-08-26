@@ -54,21 +54,26 @@ class SetCanonicalAliasHandlerTest :
             describe("when setting a valid alias as canonical") {
                 it("should successfully set the alias as canonical") {
                     // Given
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-main"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
                     val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
-                    val aliasName = "my-project"
-                    val command = SetCanonicalAlias(scopeId, aliasName)
-
                     val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
-                    val aliasNameVO = AliasName.create(aliasName).getOrNull()!!
-                    val existingAlias = ScopeAlias.createCustom(scopeIdVO, aliasNameVO)
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns existingAlias.right()
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO, currentAliasNameVO)
+                    val newCanonicalAliasEntity = ScopeAlias.createCustom(scopeIdVO, newCanonicalAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns newCanonicalAliasEntity.right()
                     coEvery {
                         scopeAliasService.assignCanonicalAlias(
                             scopeIdVO,
-                            aliasNameVO,
+                            newCanonicalAliasNameVO,
                         )
-                    } returns existingAlias.copy(aliasType = AliasType.CANONICAL).right()
+                    } returns newCanonicalAliasEntity.copy(aliasType = AliasType.CANONICAL).right()
 
                     // When
                     val result = handler(command)
@@ -78,7 +83,7 @@ class SetCanonicalAliasHandlerTest :
                     coVerify(exactly = 1) {
                         scopeAliasService.assignCanonicalAlias(
                             scopeIdVO,
-                            aliasNameVO,
+                            newCanonicalAliasNameVO,
                         )
                     }
                 }
@@ -87,15 +92,20 @@ class SetCanonicalAliasHandlerTest :
             describe("when alias is already canonical") {
                 it("should return success without calling service (idempotent)") {
                     // Given
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-main"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
                     val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
-                    val aliasName = "my-project"
-                    val command = SetCanonicalAlias(scopeId, aliasName)
-
                     val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
-                    val aliasNameVO = AliasName.create(aliasName).getOrNull()!!
-                    val canonicalAlias = ScopeAlias.createCanonical(scopeIdVO, aliasNameVO)
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns canonicalAlias.right()
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO, currentAliasNameVO)
+                    val canonicalAlias = ScopeAlias.createCanonical(scopeIdVO, newCanonicalAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns canonicalAlias.right()
 
                     // When
                     val result = handler(command)
@@ -108,43 +118,10 @@ class SetCanonicalAliasHandlerTest :
                 }
             }
 
-            describe("when scopeId is invalid") {
-                it("should return IdInvalidFormat error for invalid format") {
+            describe("when currentAlias is invalid") {
+                it("should return InvalidAlias error for invalid alias name") {
                     // Given
-                    val command = SetCanonicalAlias("invalid-id", "my-project")
-
-                    // When
-                    val result = handler(command)
-
-                    // Then
-                    result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.IdInvalidFormat>().apply {
-                        attemptedValue shouldBe "invalid-id"
-                        expectedFormat shouldBe "ULID"
-                    }
-                    coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
-                }
-
-                it("should return IdBlank error for blank id") {
-                    // Given
-                    val command = SetCanonicalAlias("", "my-project")
-
-                    // When
-                    val result = handler(command)
-
-                    // Then
-                    result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.IdBlank>().apply {
-                        attemptedValue shouldBe ""
-                    }
-                    coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
-                }
-            }
-
-            describe("when alias name is invalid") {
-                it("should return InvalidAlias error for invalid format") {
-                    // Given
-                    val command = SetCanonicalAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "invalid alias!")
+                    val command = SetCanonicalAlias("invalid alias!", "project-main")
 
                     // When
                     val result = handler(command)
@@ -156,15 +133,13 @@ class SetCanonicalAliasHandlerTest :
                     }
                     coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
                 }
-            }
 
-            describe("when alias does not exist") {
-                it("should return AliasNotFound error") {
+                it("should return AliasNotFound error when current alias doesn't exist") {
                     // Given
-                    val command = SetCanonicalAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "non-existent")
-                    val aliasNameVO = AliasName.create("non-existent").getOrNull()!!
+                    val command = SetCanonicalAlias("non-existent", "project-main")
+                    val currentAliasNameVO = AliasName.create("non-existent").getOrNull()!!
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns null.right()
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns null.right()
 
                     // When
                     val result = handler(command)
@@ -177,19 +152,18 @@ class SetCanonicalAliasHandlerTest :
                 }
             }
 
-            describe("when alias belongs to different scope") {
+            describe("when newCanonicalAlias is invalid") {
                 it("should return InvalidAlias error") {
                     // Given
-                    val requestedScopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
-                    val actualScopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Z"
-                    val aliasName = "my-project"
-                    val command = SetCanonicalAlias(requestedScopeId, aliasName)
+                    val currentAlias = "project-alpha"
+                    val command = SetCanonicalAlias(currentAlias, "invalid alias!") // Contains special char
 
-                    val actualScopeIdVO = ScopeId.create(actualScopeId).getOrNull()!!
-                    val aliasNameVO = AliasName.create(aliasName).getOrNull()!!
-                    val alias = ScopeAlias.createCustom(actualScopeIdVO, aliasNameVO)
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO, currentAliasNameVO)
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns alias.right()
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
 
                     // When
                     val result = handler(command)
@@ -197,26 +171,115 @@ class SetCanonicalAliasHandlerTest :
                     // Then
                     result.shouldBeLeft()
                     result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
-                        attemptedValue shouldBe aliasName
+                        attemptedValue shouldBe "invalid alias!"
                     }
-                    coVerify(exactly = 0) {
-                        scopeAliasService.assignCanonicalAlias(any(), any())
+                }
+            }
+
+            describe("when new canonical alias does not exist") {
+                it("should return AliasNotFound error") {
+                    // Given
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "non-existent"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO, currentAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns null.right()
+
+                    // When
+                    val result = handler(command)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                        attemptedValue shouldBe newCanonicalAlias
                     }
+                }
+            }
+
+            describe("when aliases belong to different scopes") {
+                it("should return InvalidAlias error") {
+                    // Given
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-main"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
+                    val scopeId1 = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeId2 = "01HZQB5QKM0WDG7ZBHSPKT3N2Z" // Different scope
+                    val scopeIdVO1 = ScopeId.create(scopeId1).getOrNull()!!
+                    val scopeIdVO2 = ScopeId.create(scopeId2).getOrNull()!!
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
+
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO1, currentAliasNameVO)
+                    val newCanonicalAliasEntity = ScopeAlias.createCustom(scopeIdVO2, newCanonicalAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns newCanonicalAliasEntity.right()
+
+                    // When
+                    val result = handler(command)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                        attemptedValue shouldBe newCanonicalAlias
+                    }
+                    coVerify(exactly = 0) { scopeAliasService.assignCanonicalAlias(any(), any()) }
+                }
+            }
+
+            describe("when canonical reassignment occurs") {
+                it("should successfully reassign canonical alias") {
+                    // Given
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-beta"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
+
+                    val currentAliasEntity = ScopeAlias.createCanonical(scopeIdVO, currentAliasNameVO)
+                    val newCanonicalAliasEntity = ScopeAlias.createCustom(scopeIdVO, newCanonicalAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns newCanonicalAliasEntity.right()
+                    coEvery { scopeAliasService.assignCanonicalAlias(scopeIdVO, newCanonicalAliasNameVO) } returns
+                        newCanonicalAliasEntity.copy(aliasType = AliasType.CANONICAL).right()
+
+                    // When
+                    val result = handler(command)
+
+                    // Then
+                    result.shouldBeRight()
+                    coVerify { scopeAliasService.assignCanonicalAlias(scopeIdVO, newCanonicalAliasNameVO) }
                 }
             }
 
             describe("when repository returns an error") {
                 it("should map repository error to application error") {
                     // Given
-                    val command = SetCanonicalAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "my-project")
-                    val aliasNameVO = AliasName.create("my-project").getOrNull()!!
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-main"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
+
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+
                     val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.NotFound(
                         Clock.System.now(),
                         "ScopeAlias",
-                        "my-project",
+                        currentAlias,
                     )
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns error.left()
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns error.left()
 
                     // When
                     val result = handler(command)
@@ -225,7 +288,7 @@ class SetCanonicalAliasHandlerTest :
                     result.shouldBeLeft()
                     result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.NotFound>().apply {
                         entityType shouldBe "ScopeAlias"
-                        entityId shouldBe "my-project"
+                        entityId shouldBe currentAlias
                     }
                 }
             }
@@ -233,25 +296,30 @@ class SetCanonicalAliasHandlerTest :
             describe("when service returns an error") {
                 it("should map service error to application error") {
                     // Given
-                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
-                    val aliasName = "my-project"
-                    val command = SetCanonicalAlias(scopeId, aliasName)
+                    val currentAlias = "project-alpha"
+                    val newCanonicalAlias = "project-main"
+                    val command = SetCanonicalAlias(currentAlias, newCanonicalAlias)
 
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
                     val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
-                    val aliasNameVO = AliasName.create(aliasName).getOrNull()!!
-                    val existingAlias = ScopeAlias.createCustom(scopeIdVO, aliasNameVO)
+                    val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
+                    val newCanonicalAliasNameVO = AliasName.create(newCanonicalAlias).getOrNull()!!
+
+                    val currentAliasEntity = ScopeAlias.createCustom(scopeIdVO, currentAliasNameVO)
+                    val newCanonicalAliasEntity = ScopeAlias.createCustom(scopeIdVO, newCanonicalAliasNameVO)
                     val error = ScopeAliasError.DuplicateAlias(
                         Clock.System.now(),
-                        aliasName,
+                        newCanonicalAlias,
                         scopeIdVO,
                         scopeIdVO,
                     )
 
-                    coEvery { aliasRepository.findByAliasName(aliasNameVO) } returns existingAlias.right()
+                    coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns currentAliasEntity.right()
+                    coEvery { aliasRepository.findByAliasName(newCanonicalAliasNameVO) } returns newCanonicalAliasEntity.right()
                     coEvery {
                         scopeAliasService.assignCanonicalAlias(
                             scopeIdVO,
-                            aliasNameVO,
+                            newCanonicalAliasNameVO,
                         )
                     } returns error.left()
 

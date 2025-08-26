@@ -256,3 +256,9 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
         cause = "Unmapped domain error: ${this::class.simpleName}",
     )
 }
+
+/**
+ * Convenience extension for generic error mapping.
+ * Delegates to toGenericApplicationError() for consistency.
+ */
+fun ScopesError.toApplicationError(): ApplicationError = this.toGenericApplicationError()

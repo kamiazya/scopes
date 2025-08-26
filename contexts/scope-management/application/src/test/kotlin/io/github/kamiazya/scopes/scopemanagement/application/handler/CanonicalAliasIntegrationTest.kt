@@ -85,8 +85,8 @@ class CanonicalAliasIntegrationTest :
                     initialAliases.find { it.aliasName == alias1 }?.isCanonical shouldBe false
                     initialAliases.find { it.aliasName == alias2 }?.isCanonical shouldBe false
 
-                    // Set alias1 as canonical
-                    val setCommand1 = SetCanonicalAlias(scopeId, alias1)
+                    // Set alias1 as canonical using generated-alias as current
+                    val setCommand1 = SetCanonicalAlias("generated-alias", alias1)
                     val setResult1 = setCanonicalHandler(setCommand1)
                     setResult1.shouldBeRight()
 
@@ -98,8 +98,8 @@ class CanonicalAliasIntegrationTest :
                     aliasesAfterFirst.find { it.aliasName == alias1 }?.isCanonical shouldBe true
                     aliasesAfterFirst.find { it.aliasName == alias2 }?.isCanonical shouldBe false
 
-                    // Set alias2 as canonical
-                    val setCommand2 = SetCanonicalAlias(scopeId, alias2)
+                    // Set alias2 as canonical using alias1 as current
+                    val setCommand2 = SetCanonicalAlias(alias1, alias2)
                     val setResult2 = setCanonicalHandler(setCommand2)
                     setResult2.shouldBeRight()
 
@@ -127,8 +127,8 @@ class CanonicalAliasIntegrationTest :
                     val addCommand = AddAlias(scopeId, aliasName)
                     addAliasHandler(addCommand).shouldBeRight()
 
-                    // Set as canonical first time
-                    val setCommand = SetCanonicalAlias(scopeId, aliasName)
+                    // Set as canonical first time using the same alias
+                    val setCommand = SetCanonicalAlias(aliasName, aliasName)
                     setCanonicalHandler(setCommand).shouldBeRight()
 
                     // Set as canonical second time (idempotent)
@@ -145,13 +145,13 @@ class CanonicalAliasIntegrationTest :
             }
 
             describe("error scenarios") {
-                it("should fail to set non-existent alias as canonical") {
+                it("should fail when current alias doesn't exist") {
                     // Given
-                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
                     val nonExistentAlias = "non-existent"
+                    val targetAlias = "target"
 
                     // When
-                    val command = SetCanonicalAlias(scopeId, nonExistentAlias)
+                    val command = SetCanonicalAlias(nonExistentAlias, targetAlias)
                     val result = setCanonicalHandler(command)
 
                     // Then
@@ -161,24 +161,46 @@ class CanonicalAliasIntegrationTest :
                     }
                 }
 
-                it("should fail to set alias from different scope as canonical") {
+                it("should fail when new canonical alias doesn't exist") {
+                    // Given
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val existingAlias = "existing"
+                    val nonExistentAlias = "non-existent"
+
+                    // Add existing alias
+                    addAliasHandler(AddAlias(scopeId, existingAlias)).shouldBeRight()
+
+                    // When
+                    val command = SetCanonicalAlias(existingAlias, nonExistentAlias)
+                    val result = setCanonicalHandler(command)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                        attemptedValue shouldBe nonExistentAlias
+                    }
+                }
+
+                it("should fail when aliases belong to different scopes") {
                     // Given
                     val scopeId1 = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
                     val scopeId2 = "01HZQB5QKM0WDG7ZBHSPKT3N2Z"
-                    val aliasName = "my-project"
+                    val alias1 = "project-1"
+                    val alias2 = "project-2"
 
                     // Add alias to scope1
-                    val addCommand = AddAlias(scopeId1, aliasName)
-                    addAliasHandler(addCommand).shouldBeRight()
+                    addAliasHandler(AddAlias(scopeId1, alias1)).shouldBeRight()
+                    // Add alias to scope2
+                    addAliasHandler(AddAlias(scopeId2, alias2)).shouldBeRight()
 
-                    // Try to set it as canonical for scope2
-                    val setCommand = SetCanonicalAlias(scopeId2, aliasName)
+                    // Try to promote alias2 using alias1 (different scopes)
+                    val setCommand = SetCanonicalAlias(alias1, alias2)
                     val result = setCanonicalHandler(setCommand)
 
                     // Then
                     result.shouldBeLeft()
                     result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
-                        attemptedValue shouldBe aliasName
+                        attemptedValue shouldBe alias2
                     }
                 }
             }
@@ -194,8 +216,8 @@ class CanonicalAliasIntegrationTest :
                         addAliasHandler(AddAlias(scopeId, alias)).shouldBeRight()
                     }
 
-                    // Set "zebra" (last alphabetically) as canonical
-                    setCanonicalHandler(SetCanonicalAlias(scopeId, "zebra")).shouldBeRight()
+                    // Set "zebra" (last alphabetically) as canonical using "alpha" as current
+                    setCanonicalHandler(SetCanonicalAlias("alpha", "zebra")).shouldBeRight()
 
                     // When listing
                     val result = listAliasesHandler(ListAliases(scopeId))
