@@ -28,22 +28,26 @@ class ListAliasesHandler(private val aliasRepository: ScopeAliasRepository, priv
                 mapOf("scopeId" to query.scopeId),
             )
 
-            // Validate scopeId
+            // Validate scopeId - fast-path check for blank/empty
+            if (query.scopeId.isBlank()) {
+                logger.error(
+                    "Scope ID is blank",
+                    mapOf("scopeId" to query.scopeId),
+                )
+                raise(ScopeInputError.IdBlank(query.scopeId))
+            }
+
             val scopeId = ScopeId.create(query.scopeId)
                 .mapLeft { error ->
                     logger.error(
-                        "Invalid scope ID",
+                        "Invalid scope ID format",
                         mapOf(
                             "scopeId" to query.scopeId,
                             "error" to error.toString(),
                         ),
                     )
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.Blank ->
-                            ScopeInputError.IdBlank(query.scopeId)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidFormat ->
-                            ScopeInputError.IdInvalidFormat(query.scopeId, "ULID")
-                    }
+                    // After blank check, remaining errors should be format-related
+                    ScopeInputError.IdInvalidFormat(query.scopeId, "ULID")
                 }
                 .bind()
 
