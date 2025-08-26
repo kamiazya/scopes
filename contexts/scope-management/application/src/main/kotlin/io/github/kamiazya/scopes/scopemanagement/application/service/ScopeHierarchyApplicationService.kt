@@ -4,7 +4,11 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import io.github.kamiazya.scopes.platform.observability.Loggable
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
+import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyOperation
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -20,12 +24,42 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  */
 class ScopeHierarchyApplicationService(private val repository: ScopeRepository, private val domainService: ScopeHierarchyService) {
 
-    companion object {
+    companion object : Loggable {
         /**
          * Maximum iterations when traversing hierarchy paths to prevent infinite loops.
          * This protects against data corruption or circular references that bypass normal validation.
          */
         private const val MAX_HIERARCHY_PATH_ITERATIONS = 1000
+
+        /**
+         * Maps persistence errors to domain-specific hierarchy errors.
+         * Logs technical details while returning business-meaningful errors.
+         */
+        private fun mapPersistenceError(error: PersistenceError, operation: HierarchyOperation, scopeId: ScopeId? = null): ScopeHierarchyError {
+            // Log technical details for debugging
+            logger.debug(
+                "Hierarchy operation failed",
+                mapOf(
+                    "operation" to operation.name,
+                    "scopeId" to (scopeId?.value ?: "null"),
+                    "error" to error.toString(),
+                ),
+            )
+
+            // Map to business-meaningful error
+            val reason = when (error) {
+                is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
+                is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
+                is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
+            }
+
+            return ScopeHierarchyError.HierarchyUnavailable(
+                occurredAt = currentTimestamp(),
+                scopeId = scopeId,
+                operation = operation,
+                reason = reason,
+            )
+        }
     }
 
     /**
@@ -94,12 +128,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         // Get current children count from repository
         val currentChildCount = repository.countChildrenOf(parentId)
             .mapLeft { error ->
-                ScopeHierarchyError.PersistenceFailure(
-                    currentTimestamp(),
-                    "countChildrenOf",
-                    parentId,
-                    error,
-                )
+                mapPersistenceError(error, HierarchyOperation.COUNT_CHILDREN, parentId)
             }
             .bind()
 
@@ -124,12 +153,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             val scope = repository.findById(currentId)
                 .mapLeft { error ->
-                    ScopeHierarchyError.PersistenceFailure(
-                        currentTimestamp(),
-                        "findById",
-                        currentId,
-                        error,
-                    )
+                    mapPersistenceError(error, HierarchyOperation.RETRIEVE_SCOPE, currentId)
                 }
                 .bind()
 
@@ -170,12 +194,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         for (id in hierarchyPath.drop(1)) {
             val scope = repository.findById(id)
                 .mapLeft { error ->
-                    ScopeHierarchyError.PersistenceFailure(
-                        currentTimestamp(),
-                        "findById",
-                        id,
-                        error,
-                    )
+                    mapPersistenceError(error, HierarchyOperation.TRAVERSE_ANCESTORS, id)
                 }
                 .bind()
 
@@ -201,12 +220,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
     suspend fun getDescendants(scopeId: ScopeId): Either<ScopeHierarchyError, List<Scope>> = either {
         repository.findDescendantsOf(scopeId)
             .mapLeft { error ->
-                ScopeHierarchyError.PersistenceFailure(
-                    currentTimestamp(),
-                    "findDescendantsOf",
-                    scopeId,
-                    error,
-                )
+                mapPersistenceError(error, HierarchyOperation.FIND_DESCENDANTS, scopeId)
             }
             .bind()
     }

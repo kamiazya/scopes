@@ -3,17 +3,21 @@ package io.github.kamiazya.scopes.scopemanagement.application.factory
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.observability.Loggable
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
+import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyOperation
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import kotlinx.datetime.Clock
 
 /**
  * Factory for creating Scope aggregates with complex validation logic.
@@ -34,6 +38,39 @@ class ScopeFactory(
     private val hierarchyApplicationService: ScopeHierarchyApplicationService,
     private val hierarchyService: ScopeHierarchyService,
 ) {
+
+    companion object : Loggable {
+        /**
+         * Maps persistence errors to domain-specific hierarchy errors.
+         * Logs technical details while returning business-meaningful errors.
+         */
+        private fun mapPersistenceError(error: PersistenceError, operation: HierarchyOperation, scopeId: ScopeId? = null): ScopeHierarchyError {
+            // Log technical details for debugging
+            logger.debug(
+                "Factory operation failed",
+                mapOf(
+                    "operation" to operation.name,
+                    "scopeId" to (scopeId?.value ?: "null"),
+                    "error" to error.toString(),
+                ),
+            )
+
+            // Map to business-meaningful error
+            val reason = when (error) {
+                is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
+                is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
+                is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
+            }
+
+            return ScopeHierarchyError.HierarchyUnavailable(
+                occurredAt = currentTimestamp(),
+                scopeId = scopeId,
+                operation = operation,
+                reason = reason,
+            )
+        }
+    }
+
     /**
      * Creates a new Scope aggregate with full validation.
      *
@@ -60,17 +97,12 @@ class ScopeFactory(
             // Validate parent exists
             val parentExists = scopeRepository.existsById(parentId)
                 .mapLeft { error ->
-                    ScopeHierarchyError.PersistenceFailure(
-                        occurredAt = Clock.System.now(),
-                        operation = "existsById",
-                        scopeId = parentId,
-                        cause = error,
-                    )
+                    mapPersistenceError(error, HierarchyOperation.VERIFY_EXISTENCE, parentId)
                 }
                 .bind()
             ensure(parentExists) {
                 ScopeHierarchyError.ParentNotFound(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     scopeId = newScopeId,
                     parentId = parentId,
                 )
@@ -89,12 +121,7 @@ class ScopeFactory(
             // Get existing children count
             val existingChildren = scopeRepository.findByParentId(parentId)
                 .mapLeft { error ->
-                    ScopeHierarchyError.PersistenceFailure(
-                        occurredAt = Clock.System.now(),
-                        operation = "findByParentId",
-                        scopeId = parentId,
-                        cause = error,
-                    )
+                    mapPersistenceError(error, HierarchyOperation.COUNT_CHILDREN, parentId)
                 }
                 .bind()
 
@@ -111,17 +138,12 @@ class ScopeFactory(
             parentId,
             validatedTitle.value,
         ).mapLeft { error ->
-            ScopeHierarchyError.PersistenceFailure(
-                occurredAt = Clock.System.now(),
-                operation = "findIdByParentIdAndTitle",
-                scopeId = parentId,
-                cause = error,
-            )
+            mapPersistenceError(error, HierarchyOperation.VERIFY_EXISTENCE, parentId)
         }.bind()
 
         ensure(existingScopeId == null) {
             ScopeUniquenessError.DuplicateTitle(
-                occurredAt = Clock.System.now(),
+                occurredAt = currentTimestamp(),
                 title = title,
                 parentScopeId = parentId,
                 existingScopeId = existingScopeId!!,
