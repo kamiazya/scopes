@@ -16,6 +16,7 @@ data class ScopeDto(
     val parentId: String?,
     val canonicalAlias: String? = null,
     val customAliases: List<String> = emptyList(),
+    val aliases: List<AliasInfoDto> = emptyList(),
     val createdAt: Instant,
     val updatedAt: Instant,
     val aspects: Map<String, List<String>> = emptyMap(),

@@ -44,7 +44,7 @@ class CanonicalAliasIntegrationTest :
                 block()
             }
 
-            val addAliasHandler = AddAliasHandler(aliasService, transactionManager, logger)
+            val addAliasHandler = AddAliasHandler(aliasService, aliasRepository, transactionManager, logger)
             val setCanonicalHandler = SetCanonicalAliasHandler(
                 aliasService,
                 aliasRepository,
@@ -64,15 +64,15 @@ class CanonicalAliasIntegrationTest :
                     val generatedAlias = ScopeAlias.createCanonical(scopeIdVO, generatedAliasName)
                     aliasRepository.save(generatedAlias)
 
-                    // Add first custom alias
+                    // Add first custom alias using generated alias
                     val alias1 = "project-v1"
-                    val addCommand1 = AddAlias(scopeId, alias1)
+                    val addCommand1 = AddAlias("generated-alias", alias1)
                     val addResult1 = addAliasHandler(addCommand1)
                     addResult1.shouldBeRight()
 
-                    // Add second custom alias
+                    // Add second custom alias using first alias
                     val alias2 = "project-v2"
-                    val addCommand2 = AddAlias(scopeId, alias2)
+                    val addCommand2 = AddAlias(alias1, alias2)
                     val addResult2 = addAliasHandler(addCommand2)
                     addResult2.shouldBeRight()
 
@@ -210,10 +210,17 @@ class CanonicalAliasIntegrationTest :
                     // Given
                     val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
 
+                    // Create initial canonical alias
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val initialAlias = ScopeAlias.createCanonical(scopeIdVO, AliasName.create("initial-alias").getOrNull()!!)
+                    aliasRepository.save(initialAlias)
+
                     // Add multiple aliases
                     val aliases = listOf("zebra", "alpha", "beta", "gamma")
+                    var previousAlias = "initial-alias"
                     aliases.forEach { alias ->
-                        addAliasHandler(AddAlias(scopeId, alias)).shouldBeRight()
+                        addAliasHandler(AddAlias(previousAlias, alias)).shouldBeRight()
+                        previousAlias = alias
                     }
 
                     // Set "zebra" (last alphabetically) as canonical using "alpha" as current

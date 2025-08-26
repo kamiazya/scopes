@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -21,6 +22,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
@@ -28,6 +30,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
+import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery as AppGetScopeByAliasQuery
 
 /**
  * Adapter implementing the ScopeManagementPort interface.
@@ -48,6 +51,7 @@ class ScopeManagementPortAdapter(
     private val updateScopeHandler: UpdateScopeHandler,
     private val deleteScopeHandler: DeleteScopeHandler,
     private val getScopeByIdHandler: GetScopeByIdHandler,
+    private val getScopeByAliasHandler: GetScopeByAliasHandler,
     private val getChildrenHandler: GetChildrenHandler,
     private val getRootScopesHandler: GetRootScopesHandler,
     private val transactionManager: TransactionManager,
@@ -176,5 +180,32 @@ class ScopeManagementPortAdapter(
                 aspects = scopeDto.aspects,
             )
         }
+    }
+
+    override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult?> = either {
+        getScopeByAliasHandler(
+            AppGetScopeByAliasQuery(
+                aliasName = query.aliasName,
+            ),
+        ).fold(
+            { error ->
+                raise(errorMapper.mapToContractError(error))
+            },
+            { scopeDto ->
+                scopeDto?.let {
+                    ScopeResult(
+                        id = it.id,
+                        title = it.title,
+                        description = it.description,
+                        parentId = it.parentId,
+                        canonicalAlias = it.canonicalAlias ?: "@${it.id}",
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                        isArchived = false, // TODO: Implement archive status when available in domain
+                        aspects = it.aspects,
+                    )
+                }
+            },
+        )
     }
 }

@@ -2,7 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError as AppScopeInputError
 
 /**
  * Maps domain and application errors to contract layer errors.
@@ -212,6 +214,102 @@ class ErrorMapper(private val logger: Logger) {
         else -> {
             logger.error(
                 "Unmapped ScopesError encountered, mapping to ServiceUnavailable",
+                mapOf(
+                    "errorClass" to error::class.simpleName.orEmpty(),
+                    "errorMessage" to error.toString(),
+                    "errorType" to error::class.qualifiedName.orEmpty(),
+                ),
+            )
+            ScopeContractError.SystemError.ServiceUnavailable(
+                service = "scope-management",
+            )
+        }
+    }
+
+    /**
+     * Maps an ApplicationError to a ScopeContractError.
+     *
+     * @param error The application error to map
+     * @return The corresponding contract error
+     */
+    fun mapToContractError(error: ApplicationError): ScopeContractError = when (error) {
+        // Map application-level input errors
+        is AppScopeInputError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = error.attemptedValue,
+        )
+        is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidId(
+            id = error.attemptedValue,
+            expectedFormat = "Non-empty ULID format",
+        )
+        is AppScopeInputError.IdInvalidFormat -> ScopeContractError.InputError.InvalidId(
+            id = error.attemptedValue,
+            expectedFormat = error.expectedFormat,
+        )
+        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        )
+        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = error.minimumLength,
+                actualLength = error.attemptedValue.length,
+            ),
+        )
+        is AppScopeInputError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = error.maximumLength,
+                actualLength = error.attemptedValue.length,
+            ),
+        )
+        is AppScopeInputError.TitleContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                prohibitedCharacters = error.prohibitedCharacters,
+            ),
+        )
+        is AppScopeInputError.DescriptionTooLong -> ScopeContractError.InputError.InvalidDescription(
+            description = error.attemptedValue,
+            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
+                maximumLength = error.maximumLength,
+                actualLength = error.attemptedValue.length,
+            ),
+        )
+        is AppScopeInputError.AliasEmpty -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        )
+        is AppScopeInputError.AliasTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = error.minimumLength,
+                actualLength = error.attemptedValue.length,
+            ),
+        )
+        is AppScopeInputError.AliasTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = error.maximumLength,
+                actualLength = error.attemptedValue.length,
+            ),
+        )
+        is AppScopeInputError.AliasInvalidFormat -> ScopeContractError.InputError.InvalidTitle(
+            title = error.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                prohibitedCharacters = emptyList(),
+            ),
+        )
+        is AppScopeInputError.InvalidAlias -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = error.attemptedValue,
+        )
+        is AppScopeInputError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
+            parentId = error.attemptedValue,
+            expectedFormat = "ULID format",
+        )
+        else -> {
+            logger.error(
+                "Unmapped ApplicationError encountered, mapping to ServiceUnavailable",
                 mapOf(
                     "errorClass" to error::class.simpleName.orEmpty(),
                     "errorMessage" to error.toString(),

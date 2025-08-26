@@ -4,6 +4,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
@@ -89,6 +90,15 @@ val scopeManagementModule = module {
     single {
         GetRootScopesHandler(
             scopeRepository = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        GetScopeByAliasHandler(
+            aliasRepository = get(),
+            scopeRepository = get(),
+            transactionManager = get(),
             logger = get(),
         )
     }

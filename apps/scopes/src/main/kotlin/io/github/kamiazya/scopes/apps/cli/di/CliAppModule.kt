@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.ListCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import org.koin.dsl.module
 
 /**
@@ -55,4 +56,11 @@ val cliAppModule = module {
 
     // CLI Formatters
     single { ScopeOutputFormatter() }
+
+    // CLI Utilities
+    single {
+        ScopeParameterResolver(
+            scopeManagementPort = get(),
+        )
+    }
 }

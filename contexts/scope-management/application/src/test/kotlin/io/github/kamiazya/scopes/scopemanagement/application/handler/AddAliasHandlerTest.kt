@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -32,6 +33,7 @@ class AddAliasHandlerTest :
 
         describe("AddAliasHandler") {
             val scopeAliasService = mockk<ScopeAliasManagementService>()
+            val aliasRepository = mockk<ScopeAliasRepository>()
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
@@ -41,64 +43,39 @@ class AddAliasHandlerTest :
                 block()
             }
 
-            val handler = AddAliasHandler(scopeAliasService, transactionManager, logger)
+            val handler = AddAliasHandler(scopeAliasService, aliasRepository, transactionManager, logger)
 
             describe("when adding a valid alias") {
                 it("should successfully add the alias") {
                     // Given
-                    val command = AddAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "my-project")
-                    val scopeId = ScopeId.create("01HZQB5QKM0WDG7ZBHSPKT3N2Y").getOrNull()!!
-                    val aliasName = AliasName.create("my-project").getOrNull()!!
-                    val alias = ScopeAlias.createCustom(scopeId, aliasName)
+                    val existingAlias = "project-main"
+                    val newAlias = "project-v2"
+                    val command = AddAlias(existingAlias, newAlias)
 
-                    coEvery { scopeAliasService.assignCustomAlias(scopeId, aliasName) } returns alias.right()
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val existingAliasNameVO = AliasName.create(existingAlias).getOrNull()!!
+                    val newAliasNameVO = AliasName.create(newAlias).getOrNull()!!
+
+                    val existingAliasEntity = ScopeAlias.createCanonical(scopeIdVO, existingAliasNameVO)
+                    val newAliasEntity = ScopeAlias.createCustom(scopeIdVO, newAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns existingAliasEntity.right()
+                    coEvery { scopeAliasService.assignCustomAlias(scopeIdVO, newAliasNameVO) } returns newAliasEntity.right()
 
                     // When
                     val result = handler(command)
 
                     // Then
                     result.shouldBeRight()
-                    coVerify(exactly = 1) { scopeAliasService.assignCustomAlias(scopeId, aliasName) }
+                    coVerify(exactly = 1) { scopeAliasService.assignCustomAlias(scopeIdVO, newAliasNameVO) }
                 }
             }
 
-            describe("when scopeId is invalid") {
-                it("should return IdInvalidFormat error for invalid format") {
-                    // Given
-                    val command = AddAlias("invalid-id", "my-project")
-
-                    // When
-                    val result = handler(command)
-
-                    // Then
-                    result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.IdInvalidFormat>().apply {
-                        attemptedValue shouldBe "invalid-id"
-                        expectedFormat shouldBe "ULID"
-                    }
-                    coVerify(exactly = 0) { scopeAliasService.assignCustomAlias(any(), any()) }
-                }
-
-                it("should return IdBlank error for blank id") {
-                    // Given
-                    val command = AddAlias("", "my-project")
-
-                    // When
-                    val result = handler(command)
-
-                    // Then
-                    result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.IdBlank>().apply {
-                        attemptedValue shouldBe ""
-                    }
-                    coVerify(exactly = 0) { scopeAliasService.assignCustomAlias(any(), any()) }
-                }
-            }
-
-            describe("when alias name is invalid") {
+            describe("when existing alias is invalid") {
                 it("should return InvalidAlias error for invalid format") {
                     // Given
-                    val command = AddAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "invalid alias!")
+                    val command = AddAlias("invalid alias!", "new-alias")
 
                     // When
                     val result = handler(command)
@@ -108,39 +85,39 @@ class AddAliasHandlerTest :
                     result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
-                    coVerify(exactly = 0) { scopeAliasService.assignCustomAlias(any(), any()) }
+                    coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
                 }
 
-                it("should return InvalidAlias error for too short alias") {
+                it("should return AliasNotFound error when existing alias doesn't exist") {
                     // Given
-                    val command = AddAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "a")
+                    val command = AddAlias("non-existent", "new-alias")
+                    val existingAliasNameVO = AliasName.create("non-existent").getOrNull()!!
+
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns null.right()
 
                     // When
                     val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
-                        attemptedValue shouldBe "a"
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                        attemptedValue shouldBe "non-existent"
                     }
-                    coVerify(exactly = 0) { scopeAliasService.assignCustomAlias(any(), any()) }
                 }
             }
 
-            describe("when service returns an error") {
-                it("should map DuplicateAlias error to InvalidAlias") {
+            describe("when new alias name is invalid") {
+                it("should return InvalidAlias error for invalid format") {
                     // Given
-                    val command = AddAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "existing-alias")
-                    val scopeId = ScopeId.create("01HZQB5QKM0WDG7ZBHSPKT3N2Y").getOrNull()!!
-                    val aliasName = AliasName.create("existing-alias").getOrNull()!!
-                    val error = ScopeAliasError.DuplicateAlias(
-                        Clock.System.now(),
-                        "existing-alias",
-                        ScopeId.create("01HZQB5QKM0WDG7ZBHSPKT3N2X").getOrNull()!!,
-                        scopeId,
-                    )
+                    val existingAlias = "project-main"
+                    val command = AddAlias(existingAlias, "invalid alias!")
 
-                    coEvery { scopeAliasService.assignCustomAlias(scopeId, aliasName) } returns error.left()
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val existingAliasNameVO = AliasName.create(existingAlias).getOrNull()!!
+                    val existingAliasEntity = ScopeAlias.createCanonical(scopeIdVO, existingAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns existingAliasEntity.right()
 
                     // When
                     val result = handler(command)
@@ -148,31 +125,93 @@ class AddAliasHandlerTest :
                     // Then
                     result.shouldBeLeft()
                     result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
-                        attemptedValue shouldBe "existing-alias"
+                        attemptedValue shouldBe "invalid alias!"
                     }
                 }
+            }
 
-                it("should map CannotRemoveCanonicalAlias error to InvalidAlias") {
+            describe("when service returns DuplicateAlias error") {
+                it("should return InvalidAlias error") {
                     // Given
-                    val command = AddAlias("01HZQB5QKM0WDG7ZBHSPKT3N2Y", "canonical-alias")
-                    val scopeId = ScopeId.create("01HZQB5QKM0WDG7ZBHSPKT3N2Y").getOrNull()!!
-                    val aliasName = AliasName.create("canonical-alias").getOrNull()!!
-                    val error = ScopeAliasError.CannotRemoveCanonicalAlias(
+                    val existingAlias = "project-main"
+                    val newAlias = "duplicate-alias"
+                    val command = AddAlias(existingAlias, newAlias)
+
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val existingAliasNameVO = AliasName.create(existingAlias).getOrNull()!!
+                    val newAliasNameVO = AliasName.create(newAlias).getOrNull()!!
+
+                    val existingAliasEntity = ScopeAlias.createCanonical(scopeIdVO, existingAliasNameVO)
+                    val error = ScopeAliasError.DuplicateAlias(
                         Clock.System.now(),
-                        scopeId,
-                        "canonical-alias",
+                        newAlias,
+                        scopeIdVO,
+                        scopeIdVO,
                     )
 
-                    coEvery { scopeAliasService.assignCustomAlias(scopeId, aliasName) } returns error.left()
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns existingAliasEntity.right()
+                    coEvery { scopeAliasService.assignCustomAlias(scopeIdVO, newAliasNameVO) } returns error.left()
 
                     // When
                     val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
-                        attemptedValue shouldBe "canonical-alias"
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>()
+                }
+            }
+
+            describe("when repository returns an error") {
+                it("should map repository error to application error") {
+                    // Given
+                    val command = AddAlias("project-main", "new-alias")
+                    val existingAliasNameVO = AliasName.create("project-main").getOrNull()!!
+                    val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.NotFound(
+                        Clock.System.now(),
+                        "ScopeAlias",
+                        "project-main",
+                    )
+
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns error.left()
+
+                    // When
+                    val result = handler(command)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.NotFound>().apply {
+                        entityType shouldBe "ScopeAlias"
+                        entityId shouldBe "project-main"
                     }
+                }
+            }
+
+            describe("when adding alias to scope with multiple existing aliases") {
+                it("should successfully add new alias") {
+                    // Given
+                    val existingAlias = "project-secondary"
+                    val newAlias = "project-v3"
+                    val command = AddAlias(existingAlias, newAlias)
+
+                    val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val existingAliasNameVO = AliasName.create(existingAlias).getOrNull()!!
+                    val newAliasNameVO = AliasName.create(newAlias).getOrNull()!!
+
+                    // Existing alias is a custom alias (not canonical)
+                    val existingAliasEntity = ScopeAlias.createCustom(scopeIdVO, existingAliasNameVO)
+                    val newAliasEntity = ScopeAlias.createCustom(scopeIdVO, newAliasNameVO)
+
+                    coEvery { aliasRepository.findByAliasName(existingAliasNameVO) } returns existingAliasEntity.right()
+                    coEvery { scopeAliasService.assignCustomAlias(scopeIdVO, newAliasNameVO) } returns newAliasEntity.right()
+
+                    // When
+                    val result = handler(command)
+
+                    // Then
+                    result.shouldBeRight()
+                    coVerify(exactly = 1) { scopeAliasService.assignCustomAlias(scopeIdVO, newAliasNameVO) }
                 }
             }
         }
