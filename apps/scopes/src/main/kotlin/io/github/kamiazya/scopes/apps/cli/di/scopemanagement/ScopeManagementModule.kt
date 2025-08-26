@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
@@ -7,7 +8,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScop
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import org.koin.dsl.module
 
@@ -29,10 +29,9 @@ val scopeManagementModule = module {
         )
     }
 
-    // Domain Factory
+    // Application Factory (moved from domain layer)
     single {
         ScopeFactory(
-            hierarchyService = get(),
             scopeRepository = get(),
         )
     }

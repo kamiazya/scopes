@@ -1,8 +1,9 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.factory
+package io.github.kamiazya.scopes.scopemanagement.application.factory
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
@@ -28,7 +29,11 @@ import kotlinx.datetime.Clock
  * - Enforce hierarchy policies (depth and children limits)
  * - Coordinate with domain services for complex validations
  */
-class ScopeFactory(private val hierarchyService: ScopeHierarchyService, private val scopeRepository: ScopeRepository) {
+class ScopeFactory(
+    private val scopeRepository: ScopeRepository,
+    private val hierarchyApplicationService: ScopeHierarchyApplicationService = ScopeHierarchyApplicationService(scopeRepository),
+    private val hierarchyService: ScopeHierarchyService = ScopeHierarchyService(),
+) {
     /**
      * Creates a new Scope aggregate with full validation.
      *
@@ -62,14 +67,12 @@ class ScopeFactory(private val hierarchyService: ScopeHierarchyService, private 
                 )
             }
 
-            // Calculate current hierarchy depth
-            val currentDepth = hierarchyService.calculateHierarchyDepth(
-                parentId,
-            ) { id -> scopeRepository.findById(id).getOrNull() }.bind()
+            // Calculate current hierarchy depth using application service
+            val currentDepth = hierarchyApplicationService.calculateHierarchyDepth(parentId).bind()
 
-            // Validate depth limit
+            // Validate depth limit using pure domain service
             hierarchyService.validateHierarchyDepth(
-                parentId,
+                newScopeId,
                 currentDepth,
                 hierarchyPolicy.maxDepth,
             ).bind()
