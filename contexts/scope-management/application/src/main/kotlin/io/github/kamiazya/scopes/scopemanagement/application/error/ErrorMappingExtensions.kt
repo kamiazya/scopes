@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
 
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError as AppContextError
 import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
@@ -207,6 +208,32 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
 }
 
 /**
+ * Maps ScopeAliasError to ApplicationError
+ */
+fun ScopeAliasError.toApplicationError(): ApplicationError = when (this) {
+    is ScopeAliasError.DuplicateAlias ->
+        AppScopeInputError.InvalidAlias(
+            attemptedValue = this.aliasName,
+        )
+
+    is ScopeAliasError.AliasNotFound ->
+        AppScopeInputError.InvalidAlias(
+            attemptedValue = this.aliasName,
+        )
+
+    is ScopeAliasError.CannotRemoveCanonicalAlias ->
+        AppScopeInputError.InvalidAlias(
+            attemptedValue = this.aliasName,
+        )
+
+    is ScopeAliasError.AliasGenerationFailed ->
+        AppPersistenceError.StorageUnavailable(
+            operation = "generate alias",
+            cause = "Failed to generate alias after ${this.retryCount} attempts",
+        )
+}
+
+/**
  * Generic fallback for any ScopesError that doesn't have a specific mapping.
  * Use this sparingly - prefer context-specific mappings in handlers.
  */
@@ -214,6 +241,7 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()
     is ContextError -> this.toApplicationError()
     is DomainScopeInputError -> this.toApplicationError()
+    is ScopeAliasError -> this.toApplicationError()
 
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
