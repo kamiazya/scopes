@@ -92,17 +92,16 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
      */
     suspend fun validateChildrenLimit(parentId: ScopeId, policy: HierarchyPolicy): Either<ScopeHierarchyError, Unit> = either {
         // Get current children count from repository
-        val currentChildCount = when (val result = repository.countChildrenOf(parentId)) {
-            is Either.Right -> result.value
-            is Either.Left -> raise(
+        val currentChildCount = repository.countChildrenOf(parentId)
+            .mapLeft { error ->
                 ScopeHierarchyError.PersistenceFailure(
                     currentTimestamp(),
                     "countChildrenOf",
                     parentId,
-                    result.value,
-                ),
-            )
-        }
+                    error,
+                )
+            }
+            .bind()
 
         // Validate using pure function
         domainService.validateChildrenLimit(parentId, currentChildCount, policy.maxChildrenPerScope).bind()
@@ -123,21 +122,16 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             path.add(currentId)
 
-            val scopeResult = repository.findById(currentId)
-            val scope = when (scopeResult) {
-                is Either.Right -> scopeResult.value
-                is Either.Left -> {
-                    // For actual persistence failures, wrap the error
-                    raise(
-                        ScopeHierarchyError.PersistenceFailure(
-                            currentTimestamp(),
-                            "findById",
-                            currentId,
-                            scopeResult.value,
-                        ),
+            val scope = repository.findById(currentId)
+                .mapLeft { error ->
+                    ScopeHierarchyError.PersistenceFailure(
+                        currentTimestamp(),
+                        "findById",
+                        currentId,
+                        error,
                     )
                 }
-            }
+                .bind()
 
             // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
@@ -174,21 +168,16 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
         // Skip the first element (the scope itself)
         for (id in hierarchyPath.drop(1)) {
-            val scopeResult = repository.findById(id)
-            val scope = when (scopeResult) {
-                is Either.Right -> scopeResult.value
-                is Either.Left -> {
-                    // For actual persistence failures, wrap the error
-                    raise(
-                        ScopeHierarchyError.PersistenceFailure(
-                            currentTimestamp(),
-                            "findById",
-                            id,
-                            scopeResult.value,
-                        ),
+            val scope = repository.findById(id)
+                .mapLeft { error ->
+                    ScopeHierarchyError.PersistenceFailure(
+                        currentTimestamp(),
+                        "findById",
+                        id,
+                        error,
                     )
                 }
-            }
+                .bind()
 
             // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
@@ -210,16 +199,15 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
      * @return Either an error or list of all descendant scopes
      */
     suspend fun getDescendants(scopeId: ScopeId): Either<ScopeHierarchyError, List<Scope>> = either {
-        when (val result = repository.findDescendantsOf(scopeId)) {
-            is Either.Right -> result.value
-            is Either.Left -> raise(
+        repository.findDescendantsOf(scopeId)
+            .mapLeft { error ->
                 ScopeHierarchyError.PersistenceFailure(
                     currentTimestamp(),
                     "findDescendantsOf",
                     scopeId,
-                    result.value,
-                ),
-            )
-        }
+                    error,
+                )
+            }
+            .bind()
     }
 }

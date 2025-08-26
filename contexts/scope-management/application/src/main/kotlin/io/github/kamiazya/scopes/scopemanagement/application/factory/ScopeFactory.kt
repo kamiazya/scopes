@@ -58,18 +58,16 @@ class ScopeFactory(
         // If parent is specified, validate hierarchy constraints
         if (parentId != null) {
             // Validate parent exists
-            val parentExistsResult = scopeRepository.existsById(parentId)
-            val parentExists = when (parentExistsResult) {
-                is Either.Right -> parentExistsResult.value
-                is Either.Left -> raise(
+            val parentExists = scopeRepository.existsById(parentId)
+                .mapLeft { error ->
                     ScopeHierarchyError.PersistenceFailure(
                         occurredAt = Clock.System.now(),
                         operation = "existsById",
                         scopeId = parentId,
-                        cause = parentExistsResult.value,
-                    ),
-                )
-            }
+                        cause = error,
+                    )
+                }
+                .bind()
             ensure(parentExists) {
                 ScopeHierarchyError.ParentNotFound(
                     occurredAt = Clock.System.now(),
@@ -89,18 +87,16 @@ class ScopeFactory(
             ).bind()
 
             // Get existing children count
-            val existingChildrenResult = scopeRepository.findByParentId(parentId)
-            val existingChildren = when (existingChildrenResult) {
-                is Either.Right -> existingChildrenResult.value
-                is Either.Left -> raise(
+            val existingChildren = scopeRepository.findByParentId(parentId)
+                .mapLeft { error ->
                     ScopeHierarchyError.PersistenceFailure(
                         occurredAt = Clock.System.now(),
                         operation = "findByParentId",
                         scopeId = parentId,
-                        cause = existingChildrenResult.value,
-                    ),
-                )
-            }
+                        cause = error,
+                    )
+                }
+                .bind()
 
             // Validate children limit
             hierarchyService.validateChildrenLimit(
@@ -111,21 +107,17 @@ class ScopeFactory(
         }
 
         // Check title uniqueness at the same level
-        val existingScopeIdResult = scopeRepository.findIdByParentIdAndTitle(
+        val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
             parentId,
             validatedTitle.value,
-        )
-        val existingScopeId = when (existingScopeIdResult) {
-            is Either.Right -> existingScopeIdResult.value
-            is Either.Left -> raise(
-                ScopeHierarchyError.PersistenceFailure(
-                    occurredAt = Clock.System.now(),
-                    operation = "findIdByParentIdAndTitle",
-                    scopeId = parentId,
-                    cause = existingScopeIdResult.value,
-                ),
+        ).mapLeft { error ->
+            ScopeHierarchyError.PersistenceFailure(
+                occurredAt = Clock.System.now(),
+                operation = "findIdByParentIdAndTitle",
+                scopeId = parentId,
+                cause = error,
             )
-        }
+        }.bind()
 
         ensure(existingScopeId == null) {
             ScopeUniquenessError.DuplicateTitle(
