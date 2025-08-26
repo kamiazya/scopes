@@ -243,7 +243,7 @@ fun ScopeAliasError.toApplicationError(): ApplicationError = when (this) {
  * Generic fallback for any ScopesError that doesn't have a specific mapping.
  * Use this sparingly - prefer context-specific mappings in handlers.
  */
-fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
+fun ScopesError.toApplicationError(): ApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()
     is ContextError -> this.toApplicationError()
     is DomainScopeInputError -> this.toApplicationError()
@@ -256,9 +256,3 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
         cause = "Unmapped domain error: ${this::class.simpleName}",
     )
 }
-
-/**
- * Convenience extension for generic error mapping.
- * Delegates to toGenericApplicationError() for consistency.
- */
-fun ScopesError.toApplicationError(): ApplicationError = this.toGenericApplicationError()
