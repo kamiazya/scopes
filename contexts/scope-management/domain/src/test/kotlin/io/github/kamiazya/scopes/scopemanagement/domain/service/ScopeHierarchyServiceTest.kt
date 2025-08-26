@@ -3,12 +3,12 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Test suite for ScopeHierarchyService pure functions.
@@ -36,7 +36,7 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should return 1 for single scope`() {
-            val path = listOf(ScopeId("scope1"))
+            val path = listOf(ScopeId.generate())
             val result = service.calculateDepth(path)
             assertEquals(1, result)
         }
@@ -44,10 +44,10 @@ class ScopeHierarchyServiceTest {
         @Test
         fun `should return correct depth for multi-level hierarchy`() {
             val path = listOf(
-                ScopeId("child"),
-                ScopeId("parent"),
-                ScopeId("grandparent"),
-                ScopeId("root"),
+                ScopeId.generate(),
+                ScopeId.generate(),
+                ScopeId.generate(),
+                ScopeId.generate(),
             )
             val result = service.calculateDepth(path)
             assertEquals(4, result)
@@ -61,9 +61,9 @@ class ScopeHierarchyServiceTest {
         @Test
         fun `should return success for valid hierarchy without cycles`() {
             val path = listOf(
-                ScopeId("scope1"),
-                ScopeId("scope2"),
-                ScopeId("scope3"),
+                ScopeId.generate(),
+                ScopeId.generate(),
+                ScopeId.generate(),
             )
             val result = service.detectCircularReference(path)
             assertTrue(result.isRight())
@@ -71,27 +71,33 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should detect circular reference when scope appears twice`() {
+            val scope1 = ScopeId.generate()
+            val scope2 = ScopeId.generate()
             val path = listOf(
-                ScopeId("scope1"),
-                ScopeId("scope2"),
-                ScopeId("scope1"), // Circular reference
+                scope1,
+                scope2,
+                scope1, // Circular reference
             )
             val result = service.detectCircularReference(path)
 
             assertTrue(result.isLeft())
             val error = (result as Either.Left).value
             assertTrue(error is ScopeHierarchyError.CircularPath)
-            assertEquals(ScopeId("scope1"), (error as ScopeHierarchyError.CircularPath).scopeId)
+            assertEquals(scope1, (error as ScopeHierarchyError.CircularPath).scopeId)
         }
 
         @Test
         fun `should detect complex circular reference`() {
+            val a = ScopeId.generate()
+            val b = ScopeId.generate()
+            val c = ScopeId.generate()
+            val d = ScopeId.generate()
             val path = listOf(
-                ScopeId("a"),
-                ScopeId("b"),
-                ScopeId("c"),
-                ScopeId("d"),
-                ScopeId("b"), // Circular reference back to b
+                a,
+                b,
+                c,
+                d,
+                b, // Circular reference back to b
             )
             val result = service.detectCircularReference(path)
 
@@ -113,7 +119,7 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should detect self-parenting`() {
-            val scopeId = ScopeId("scope1")
+            val scopeId = ScopeId.generate()
             val result = service.validateParentChildRelationship(
                 parentId = scopeId,
                 childId = scopeId,
@@ -128,12 +134,14 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should detect circular reference when child is in parent's ancestors`() {
-            val childId = ScopeId("child")
-            val parentId = ScopeId("parent")
+            val childId = ScopeId.generate()
+            val parentId = ScopeId.generate()
+            val grandparent = ScopeId.generate()
+            val root = ScopeId.generate()
             val parentAncestorPath = listOf(
-                ScopeId("grandparent"),
+                grandparent,
                 childId, // Child appears in parent's ancestors
-                ScopeId("root"),
+                root,
             )
 
             val result = service.validateParentChildRelationship(
@@ -146,17 +154,17 @@ class ScopeHierarchyServiceTest {
             val error = (result as Either.Left).value
             assertTrue(error is ScopeHierarchyError.CircularReference)
             val circularError = error as ScopeHierarchyError.CircularReference
-            assertEquals(childId, circularError.childScopeId)
-            assertEquals(parentId, circularError.parentScopeId)
+            assertEquals(childId, circularError.scopeId)
+            assertEquals(parentId, circularError.parentId)
         }
 
         @Test
         fun `should allow valid parent-child relationship`() {
-            val parentId = ScopeId("parent")
-            val childId = ScopeId("child")
+            val parentId = ScopeId.generate()
+            val childId = ScopeId.generate()
             val parentAncestorPath = listOf(
-                ScopeId("grandparent"),
-                ScopeId("root"),
+                ScopeId.generate(),
+                ScopeId.generate(),
             )
 
             val result = service.validateParentChildRelationship(
@@ -172,7 +180,7 @@ class ScopeHierarchyServiceTest {
         fun `should allow relationship when parent has no ancestors`() {
             val result = service.validateParentChildRelationship(
                 parentId = ScopeId.generate(),
-                childId = ScopeId("child"),
+                childId = ScopeId.generate(),
                 parentAncestorPath = emptyList(),
             )
 
@@ -196,7 +204,7 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should reject when limit is reached`() {
-            val parentId = ScopeId("parent")
+            val parentId = ScopeId.generate()
             val result = service.validateChildrenLimit(
                 parentId = parentId,
                 currentChildCount = 10,
@@ -259,7 +267,7 @@ class ScopeHierarchyServiceTest {
 
         @Test
         fun `should reject when depth exceeds limit`() {
-            val scopeId = ScopeId("scope")
+            val scopeId = ScopeId.generate()
             val result = service.validateHierarchyDepth(
                 scopeId = scopeId,
                 currentDepth = 5,

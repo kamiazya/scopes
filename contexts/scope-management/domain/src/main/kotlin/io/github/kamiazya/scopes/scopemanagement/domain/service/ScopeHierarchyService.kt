@@ -69,8 +69,8 @@ class ScopeHierarchyService {
         ensure(!parentAncestorPath.contains(childId)) {
             ScopeHierarchyError.CircularReference(
                 currentTimestamp(),
-                childId,
-                parentId,
+                scopeId = childId,
+                parentId = parentId,
             )
         }
     }
