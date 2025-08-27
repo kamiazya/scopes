@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByA
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.ListAliasesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
@@ -28,7 +29,7 @@ val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
     single {
-        io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService(
+        io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasManagementService(
             aliasRepository = get(),
             aliasGenerationService = get(),
         )
@@ -136,6 +137,15 @@ val scopeManagementModule = module {
 
     single {
         ListAliasesHandler(
+            aliasRepository = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        SetCanonicalAliasHandler(
+            scopeAliasService = get(),
             aliasRepository = get(),
             transactionManager = get(),
             logger = get(),

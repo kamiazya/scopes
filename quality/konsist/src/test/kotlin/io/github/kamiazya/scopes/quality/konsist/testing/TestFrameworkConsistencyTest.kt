@@ -12,8 +12,7 @@ import io.kotest.core.spec.style.DescribeSpec
 class TestFrameworkConsistencyTest :
     DescribeSpec({
 
-        // Temporarily skip these tests while we migrate remaining files
-        xdescribe("Test Framework Consistency Rules (Currently Disabled)") {
+        describe("Test Framework Consistency Rules") {
 
             it("test classes should not use JUnit annotations") {
                 // All test classes should use Kotest instead of JUnit for consistency
@@ -35,16 +34,16 @@ class TestFrameworkConsistencyTest :
                     }
             }
 
-            it("test classes should use Kotest DescribeSpec") {
-                // All test classes should extend Kotest DescribeSpec for consistency
+            it("test classes should use Kotest specs") {
+                // All test classes should extend Kotest specs (DescribeSpec or StringSpec) for consistency
                 Konsist.scopeFromProject()
                     .classes()
                     .withNameEndingWith("Test")
                     .assertFalse { clazz ->
-                        // Every test class must extend DescribeSpec
-                        // Return true (fail assertion) if class does NOT extend DescribeSpec
+                        // Every test class must extend a Kotest spec
+                        // Return true (fail assertion) if class does NOT extend DescribeSpec or StringSpec
                         !clazz.hasParent { parent ->
-                            parent.name == "DescribeSpec"
+                            parent.name == "DescribeSpec" || parent.name == "StringSpec"
                         }
                     }
             }
@@ -71,13 +70,15 @@ class TestFrameworkConsistencyTest :
             }
 
             it("Kotest-based test files should not use JUnit/Hamcrest assertions") {
-                // Kotest DescribeSpec files must not import or call JUnit/Hamcrest assertions
+                // Kotest spec files must not import or call JUnit/Hamcrest assertions
                 Konsist.scopeFromProject()
                     .files
                     .filter { file ->
                         file.path.contains("/test/") &&
                             file.classes().any { clazz ->
-                                clazz.hasParent { parent -> parent.name == "DescribeSpec" }
+                                clazz.hasParent { parent ->
+                                    parent.name == "DescribeSpec" || parent.name == "StringSpec"
+                                }
                             }
                     }
                     .assertFalse { file ->
@@ -99,16 +100,26 @@ class TestFrameworkConsistencyTest :
             }
 
             it("Kotest-based test files should use Kotest assertions") {
-                // Ensure DescribeSpec test files actually use Kotest matchers/assertions
+                // Ensure Kotest spec test files actually use Kotest matchers/assertions
+                // Exception: Konsist architecture tests can use Konsist's own assertions
                 Konsist.scopeFromProject()
                     .files
                     .filter { file ->
                         file.path.contains("/test/") &&
                             file.classes().any { clazz ->
-                                clazz.hasParent { parent -> parent.name == "DescribeSpec" }
+                                clazz.hasParent { parent ->
+                                    parent.name == "DescribeSpec" || parent.name == "StringSpec"
+                                }
                             }
                     }
                     .assertFalse { file ->
+                        // Skip Konsist architecture test files as they use Konsist's assertions
+                        if (file.path.contains("/konsist/") &&
+                            file.imports.any { it.name.startsWith("com.lemonappdev.konsist") }
+                        ) {
+                            return@assertFalse false
+                        }
+
                         // Check if file has actual test content (not just structure)
                         val hasTestContent = file.text.contains("it(\"") ||
                             file.text.contains("it {") ||

@@ -6,11 +6,11 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
+import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.DomainEventPublisher
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 

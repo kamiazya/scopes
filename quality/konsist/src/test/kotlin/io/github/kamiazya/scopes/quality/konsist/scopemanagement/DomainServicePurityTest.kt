@@ -12,8 +12,7 @@ import io.kotest.core.spec.style.DescribeSpec
 class DomainServicePurityTest :
     DescribeSpec({
 
-        // Temporarily disabled while we fix domain service architecture violations
-        xdescribe("Domain Service Purity Rules (Currently Disabled)") {
+        describe("Domain Service Purity Rules") {
 
             it("domain services should not have suspend functions") {
                 // Domain services should not have suspend functions as they indicate I/O operations.

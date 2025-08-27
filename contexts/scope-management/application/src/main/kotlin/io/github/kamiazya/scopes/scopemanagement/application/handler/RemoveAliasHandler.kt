@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 

@@ -1,9 +1,10 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.service
 
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -14,7 +15,9 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 
 class ScopeAliasManagementServiceTest :
     DescribeSpec({
@@ -121,7 +124,7 @@ class ScopeAliasManagementServiceTest :
             it("should generate unique canonical alias on first attempt") {
                 val generatedName = AliasName.create("fluffy-mountain").getOrNull()!!
 
-                coEvery { aliasGenerationService.generateCanonicalAlias(any()) } returns generatedName.right()
+                every { aliasGenerationService.generateCanonicalAlias(any()) } returns generatedName.right()
                 coEvery { aliasRepository.findByAliasName(generatedName) } returns null.right()
                 coEvery { aliasRepository.findCanonicalByScopeId(scopeId) } returns null.right()
                 coEvery { aliasRepository.save(any()) } returns Unit.right()
@@ -138,8 +141,10 @@ class ScopeAliasManagementServiceTest :
                     },
                 )
 
-                coVerify(exactly = 1) {
+                verify(exactly = 1) {
                     aliasGenerationService.generateCanonicalAlias(any())
+                }
+                coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(generatedName)
                     aliasRepository.findCanonicalByScopeId(scopeId)
                     aliasRepository.save(any())
@@ -151,7 +156,7 @@ class ScopeAliasManagementServiceTest :
                 val existingAlias = ScopeAlias.createCustom(ScopeId.generate(), collisionName)
 
                 // All attempts return the same name that already exists
-                coEvery { aliasGenerationService.generateCanonicalAlias(any()) } returns collisionName.right()
+                every { aliasGenerationService.generateCanonicalAlias(any()) } returns collisionName.right()
                 coEvery { aliasRepository.findByAliasName(collisionName) } returns existingAlias.right()
 
                 val result = service.generateCanonicalAlias(scopeId, maxRetries = 3)
@@ -165,8 +170,10 @@ class ScopeAliasManagementServiceTest :
                     { fail("Expected error but got success: $it") },
                 )
 
-                coVerify(exactly = 3) {
+                verify(exactly = 3) {
                     aliasGenerationService.generateCanonicalAlias(any())
+                }
+                coVerify(exactly = 3) {
                     aliasRepository.findByAliasName(collisionName)
                 }
             }

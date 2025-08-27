@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
@@ -15,9 +16,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Domain service for managing scope aliases.
+ * Application service for managing scope aliases.
  *
- * Encapsulates business rules and complex operations related to scope aliases,
+ * Coordinates domain logic and persistence operations for scope aliases,
  * including validation, conflict resolution, and alias lifecycle management.
  */
 class ScopeAliasManagementService(private val aliasRepository: ScopeAliasRepository, private val aliasGenerationService: AliasGenerationService) {
