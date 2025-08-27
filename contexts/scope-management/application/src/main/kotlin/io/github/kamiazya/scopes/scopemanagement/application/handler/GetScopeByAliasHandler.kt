@@ -5,6 +5,7 @@ import arrow.core.getOrElse
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
@@ -76,7 +77,7 @@ class GetScopeByAliasHandler(
                     "Alias not found",
                     mapOf("aliasName" to query.aliasName),
                 )
-                raise(ScopeInputError.AliasNotFound(query.aliasName))
+                raise(ScopeAliasError.AliasNotFound(query.aliasName))
             }
 
             // Get scope by ID
@@ -102,7 +103,7 @@ class GetScopeByAliasHandler(
                     ),
                 )
                 // This is an inconsistency - alias exists but scope doesn't
-                raise(ScopeInputError.AliasNotFound(query.aliasName))
+                raise(ScopeAliasError.AliasNotFound(query.aliasName))
             }
 
             // Get all aliases for the scope to include in response
@@ -128,7 +129,10 @@ class GetScopeByAliasHandler(
                 ),
             )
 
-            ScopeMapper.toDto(scope, aliases)
+            val canonicalAlias = aliases.find { it.isCanonical() }?.aliasName?.value
+            val customAliases = aliases.filter { !it.isCanonical() }.map { it.aliasName.value }
+
+            ScopeMapper.toDto(scope, canonicalAlias, customAliases)
         }
     }
 }

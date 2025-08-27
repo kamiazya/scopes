@@ -78,7 +78,7 @@ object ScopeMapper {
             description = scope.description?.value,
             parentId = scope.parentId?.toString(),
             canonicalAlias = sortedAliases.find { it.isCanonical }?.aliasName,
-            aliases = sortedAliases,
+            customAliases = sortedAliases.filterNot { it.isCanonical }.map { it.aliasName },
             createdAt = scope.createdAt,
             updatedAt = scope.updatedAt,
             aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },

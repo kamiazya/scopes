@@ -1,12 +1,13 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
 
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError as AppContextError
 import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError as AppScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError as AppScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
 
 /**
@@ -214,28 +215,31 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
 }
 
 /**
- * Maps ScopeAliasError to ApplicationError
+ * Maps ScopeAliasError to ApplicationError.ScopeAliasError
  */
-fun ScopeAliasError.toApplicationError(): ApplicationError = when (this) {
-    is ScopeAliasError.DuplicateAlias ->
-        AppScopeInputError.AliasDuplicate(
-            attemptedValue = this.aliasName,
+fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
+    is DomainScopeAliasError.DuplicateAlias ->
+        AppScopeAliasError.AliasDuplicate(
+            aliasName = this.aliasName,
+            existingScopeId = this.existingScopeId.toString(),
+            attemptedScopeId = this.attemptedScopeId.toString(),
         )
 
-    is ScopeAliasError.AliasNotFound ->
-        AppScopeInputError.AliasNotFound(
-            attemptedValue = this.aliasName,
+    is DomainScopeAliasError.AliasNotFound ->
+        AppScopeAliasError.AliasNotFound(
+            aliasName = this.aliasName,
         )
 
-    is ScopeAliasError.CannotRemoveCanonicalAlias ->
-        AppScopeInputError.CannotRemoveCanonicalAlias(
-            attemptedValue = this.aliasName,
+    is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
+        AppScopeAliasError.CannotRemoveCanonicalAlias(
+            scopeId = this.scopeId.toString(),
+            aliasName = this.aliasName,
         )
 
-    is ScopeAliasError.AliasGenerationFailed ->
-        AppPersistenceError.StorageUnavailable(
-            operation = "generate alias",
-            cause = "Failed to generate alias after ${this.retryCount} attempts",
+    is DomainScopeAliasError.AliasGenerationFailed ->
+        AppScopeAliasError.AliasGenerationFailed(
+            scopeId = this.scopeId.toString(),
+            retryCount = this.retryCount,
         )
 }
 
@@ -243,11 +247,11 @@ fun ScopeAliasError.toApplicationError(): ApplicationError = when (this) {
  * Generic fallback for any ScopesError that doesn't have a specific mapping.
  * Use this sparingly - prefer context-specific mappings in handlers.
  */
-fun ScopesError.toApplicationError(): ApplicationError = when (this) {
+fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()
     is ContextError -> this.toApplicationError()
     is DomainScopeInputError -> this.toApplicationError()
-    is ScopeAliasError -> this.toApplicationError()
+    is DomainScopeAliasError -> this.toApplicationError()
 
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers

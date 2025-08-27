@@ -24,6 +24,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError as AppScopeAliasError
 
 class SetCanonicalAliasHandlerTest :
     DescribeSpec({
@@ -275,10 +276,10 @@ class SetCanonicalAliasHandlerTest :
 
                     val currentAliasNameVO = AliasName.create(currentAlias).getOrNull()!!
 
-                    val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.NotFound(
+                    val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.StorageUnavailable(
                         Clock.System.now(),
-                        "ScopeAlias",
-                        currentAlias,
+                        "findByAliasName",
+                        null,
                     )
 
                     coEvery { aliasRepository.findByAliasName(currentAliasNameVO) } returns error.left()
@@ -288,10 +289,11 @@ class SetCanonicalAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.NotFound>().apply {
-                        entityType shouldBe "ScopeAlias"
-                        entityId shouldBe currentAlias
-                    }
+                    result.leftOrNull()!!
+                        .shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.StorageUnavailable>()
+                        .apply {
+                            operation shouldBe "findByAliasName"
+                        }
                 }
             }
 
@@ -330,7 +332,7 @@ class SetCanonicalAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>()
+                    result.leftOrNull()!!.shouldBeInstanceOf<AppScopeAliasError.AliasDuplicate>()
                 }
             }
         }

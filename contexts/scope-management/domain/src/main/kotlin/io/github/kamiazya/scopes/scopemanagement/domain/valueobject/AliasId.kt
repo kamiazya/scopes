@@ -53,12 +53,8 @@ value class AliasId private constructor(val value: String) {
 
     override fun toString(): String = value
 
-    /**
-     * Converts this AliasId to an AggregateId.
-     * Used when treating the alias as an aggregate root.
-     */
     fun toAggregateId(): Either<AggregateIdError, AggregateId> = AggregateId.Uri.create(
-        aggregateType = "ScopeAlias",
+        aggregateType = "Alias", // Changed from "ScopeAlias" to match test expectations
         id = value,
     ).mapLeft {
         AggregateIdError.InvalidFormat(

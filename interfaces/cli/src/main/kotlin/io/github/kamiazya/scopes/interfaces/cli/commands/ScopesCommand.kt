@@ -22,6 +22,7 @@ class ScopesCommand :
             UpdateCommand(),
             DeleteCommand(),
             ListCommand(),
+            AliasCommand().configureSubcommands(),
         )
     }
 

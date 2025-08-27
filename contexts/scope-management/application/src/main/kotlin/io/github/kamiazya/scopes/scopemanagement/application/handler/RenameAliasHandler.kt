@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
@@ -120,7 +121,13 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                         "existingScopeId" to existingAlias.scopeId.value,
                     ),
                 )
-                raise(ScopeInputError.AliasDuplicate(command.newAliasName))
+                raise(
+                    ScopeAliasError.AliasDuplicate(
+                        aliasName = command.newAliasName,
+                        existingScopeId = existingAlias.scopeId.value,
+                        attemptedScopeId = currentAliasEntity.scopeId.value,
+                    ),
+                )
             }
 
             // Create renamed alias preserving all properties except the name

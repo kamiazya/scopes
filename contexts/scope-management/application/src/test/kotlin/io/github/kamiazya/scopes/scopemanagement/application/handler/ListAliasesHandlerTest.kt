@@ -186,10 +186,10 @@ class ListAliasesHandlerTest :
                     val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
                     val query = ListAliases(scopeId)
                     val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
-                    val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.NotFound(
+                    val error = io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError.StorageUnavailable(
                         Clock.System.now(),
-                        "ScopeAlias",
-                        scopeId,
+                        "findByScopeId",
+                        null,
                     )
 
                     coEvery { aliasRepository.findByScopeId(scopeIdVO) } returns error.left()
@@ -199,10 +199,11 @@ class ListAliasesHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.NotFound>().apply {
-                        entityType shouldBe "ScopeAlias"
-                        entityId shouldBe scopeId
-                    }
+                    result.leftOrNull()!!
+                        .shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.StorageUnavailable>()
+                        .apply {
+                            operation shouldBe "findByScopeId"
+                        }
                 }
             }
 

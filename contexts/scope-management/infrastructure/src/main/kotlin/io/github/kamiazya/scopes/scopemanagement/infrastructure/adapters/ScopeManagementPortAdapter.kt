@@ -3,8 +3,12 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RenameAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
@@ -18,9 +22,14 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.command.AddAlias
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteScope
+import io.github.kamiazya.scopes.scopemanagement.application.command.RemoveAlias
+import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
+import io.github.kamiazya.scopes.scopemanagement.application.command.SetCanonicalAlias
 import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
+import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
@@ -28,6 +37,9 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScop
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.ListAliasesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
@@ -60,6 +72,10 @@ class ScopeManagementPortAdapter(
     private val getChildrenHandler: GetChildrenHandler,
     private val getRootScopesHandler: GetRootScopesHandler,
     private val listAliasesHandler: ListAliasesHandler,
+    private val addAliasHandler: AddAliasHandler,
+    private val removeAliasHandler: RemoveAliasHandler,
+    private val setCanonicalAliasHandler: SetCanonicalAliasHandler,
+    private val renameAliasHandler: RenameAliasHandler,
     private val transactionManager: TransactionManager,
     private val logger: Logger = ConsoleLogger("ScopeManagementPortAdapter"),
 ) : ScopeManagementPort {
@@ -232,5 +248,56 @@ class ScopeManagementPortAdapter(
             },
             totalCount = aliasListDto.totalCount,
         )
+    }
+
+    override suspend fun addAlias(command: AddAliasCommand): Either<ScopeContractError, Unit> = either {
+        val existingAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
+            { error -> raise(errorMapper.mapToContractError(error)) },
+            { scope -> scope.canonicalAlias ?: "@${scope.id}" },
+        )
+
+        addAliasHandler(
+            AddAlias(
+                existingAlias = existingAlias,
+                newAlias = command.aliasName,
+            ),
+        ).fold(
+            { error -> raise(errorMapper.mapToContractError(error)) },
+            { Unit },
+        )
+    }
+
+    override suspend fun removeAlias(command: RemoveAliasCommand): Either<ScopeContractError, Unit> = removeAliasHandler(
+        RemoveAlias(
+            aliasName = command.aliasName,
+        ),
+    ).mapLeft { error ->
+        errorMapper.mapToContractError(error)
+    }
+
+    override suspend fun setCanonicalAlias(command: SetCanonicalAliasCommand): Either<ScopeContractError, Unit> = either {
+        val currentAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
+            { error -> raise(errorMapper.mapToContractError(error)) },
+            { scope -> scope.canonicalAlias ?: "@${scope.id}" },
+        )
+
+        setCanonicalAliasHandler(
+            SetCanonicalAlias(
+                currentAlias = currentAlias,
+                newCanonicalAlias = command.aliasName,
+            ),
+        ).fold(
+            { error -> raise(errorMapper.mapToContractError(error)) },
+            { Unit },
+        )
+    }
+
+    override suspend fun renameAlias(command: RenameAliasCommand): Either<ScopeContractError, Unit> = renameAliasHandler(
+        RenameAlias(
+            currentAlias = command.oldAliasName,
+            newAliasName = command.newAliasName,
+        ),
+    ).mapLeft { error ->
+        errorMapper.mapToContractError(error)
     }
 }

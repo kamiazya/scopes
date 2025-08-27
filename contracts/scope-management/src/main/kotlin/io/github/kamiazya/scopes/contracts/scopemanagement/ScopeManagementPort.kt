@@ -1,8 +1,12 @@
 package io.github.kamiazya.scopes.contracts.scopemanagement
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RenameAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
@@ -73,4 +77,32 @@ public interface ScopeManagementPort {
      * @return Either an error or the alias list result
      */
     public suspend fun listAliases(query: ListAliasesQuery): Either<ScopeContractError, AliasListResult>
+
+    /**
+     * Adds a new alias to a scope.
+     * @param command The command containing the scope ID and alias name
+     * @return Either an error or Unit on success
+     */
+    public suspend fun addAlias(command: AddAliasCommand): Either<ScopeContractError, Unit>
+
+    /**
+     * Removes an alias from a scope.
+     * @param command The command containing the scope ID and alias name
+     * @return Either an error or Unit on success
+     */
+    public suspend fun removeAlias(command: RemoveAliasCommand): Either<ScopeContractError, Unit>
+
+    /**
+     * Sets the canonical alias for a scope.
+     * @param command The command containing the scope ID and alias name
+     * @return Either an error or Unit on success
+     */
+    public suspend fun setCanonicalAlias(command: SetCanonicalAliasCommand): Either<ScopeContractError, Unit>
+
+    /**
+     * Renames an alias.
+     * @param command The command containing the old and new alias names
+     * @return Either an error or Unit on success
+     */
+    public suspend fun renameAlias(command: RenameAliasCommand): Either<ScopeContractError, Unit>
 }

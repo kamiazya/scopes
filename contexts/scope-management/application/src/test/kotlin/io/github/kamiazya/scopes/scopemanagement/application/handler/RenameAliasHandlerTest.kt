@@ -24,6 +24,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.datetime.Clock
 import kotlin.time.Duration.Companion.days
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError as AppScopeAliasError
 
 class RenameAliasHandlerTest :
     DescribeSpec({
@@ -202,8 +203,8 @@ class RenameAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>().apply {
-                        attemptedValue shouldBe newAliasName
+                    result.leftOrNull()!!.shouldBeInstanceOf<AppScopeAliasError.AliasDuplicate>().apply {
+                        aliasName shouldBe newAliasName
                     }
                     coVerify(exactly = 0) { aliasRepository.removeByAliasName(any()) }
                     coVerify(exactly = 0) { aliasRepository.save(any()) }

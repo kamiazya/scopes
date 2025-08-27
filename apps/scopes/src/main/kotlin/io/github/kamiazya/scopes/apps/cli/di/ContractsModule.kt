@@ -30,6 +30,10 @@ val contractsModule = module {
             getChildrenHandler = get(),
             getRootScopesHandler = get(),
             listAliasesHandler = get(),
+            addAliasHandler = get(),
+            removeAliasHandler = get(),
+            setCanonicalAliasHandler = get(),
+            renameAliasHandler = get(),
             transactionManager = get(),
             logger = get(),
         )

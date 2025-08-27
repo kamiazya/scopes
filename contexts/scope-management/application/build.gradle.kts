@@ -21,7 +21,6 @@ dependencies {
     testImplementation(libs.kotest.assertions.arrow)
     testImplementation(libs.kotest.property)
     testImplementation(libs.mockk)
-    testImplementation(project(":scope-management-infrastructure"))
 }
 
 tasks.test {

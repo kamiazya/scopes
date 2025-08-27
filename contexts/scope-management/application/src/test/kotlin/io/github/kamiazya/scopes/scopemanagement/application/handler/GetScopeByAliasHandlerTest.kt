@@ -82,9 +82,8 @@ class GetScopeByAliasHandlerTest :
                     dto.shouldBeInstanceOf<ScopeDto>()
                     dto.id shouldBe scopeId.value
                     dto.title shouldBe "Test Project"
-                    dto.aliases.size shouldBe 1
-                    dto.aliases[0].aliasName shouldBe aliasName
-                    dto.aliases[0].isCanonical shouldBe true
+                    dto.canonicalAlias shouldBe aliasName
+                    dto.customAliases.size shouldBe 0
 
                     coVerify(exactly = 1) { aliasRepository.findByAliasName(aliasNameVO) }
                     coVerify(exactly = 1) { scopeRepository.findById(scopeId) }
@@ -239,7 +238,8 @@ class GetScopeByAliasHandlerTest :
                     val dto = result.getOrNull()!!
                     dto.shouldBeInstanceOf<ScopeDto>()
                     dto.id shouldBe scopeId.value
-                    dto.aliases.isEmpty() shouldBe true
+                    dto.canonicalAlias shouldBe null
+                    dto.customAliases.isEmpty() shouldBe true
                 }
             }
         }

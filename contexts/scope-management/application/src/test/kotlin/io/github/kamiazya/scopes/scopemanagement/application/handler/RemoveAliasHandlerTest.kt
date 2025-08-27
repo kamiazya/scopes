@@ -22,6 +22,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError as AppScopeAliasError
 
 class RemoveAliasHandlerTest :
     DescribeSpec({
@@ -113,7 +114,7 @@ class RemoveAliasHandlerTest :
                     // Then
                     result.shouldBeLeft()
                     result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
-                        attemptedValue shouldBe "non-existent"
+                        aliasName shouldBe "non-existent"
                     }
                 }
 
@@ -135,8 +136,8 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.CannotRemoveCanonicalAlias>().apply {
-                        attemptedValue shouldBe "canonical-alias"
+                    result.leftOrNull()!!.shouldBeInstanceOf<AppScopeAliasError.CannotRemoveCanonicalAlias>().apply {
+                        aliasName shouldBe "canonical-alias"
                     }
                 }
 
@@ -158,8 +159,8 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.CannotRemoveCanonicalAlias>().apply {
-                        attemptedValue shouldBe "generated-alias"
+                    result.leftOrNull()!!.shouldBeInstanceOf<AppScopeAliasError.CannotRemoveCanonicalAlias>().apply {
+                        aliasName shouldBe "generated-alias"
                     }
                     coVerify(exactly = 1) { scopeAliasService.removeAlias(aliasName) }
                 }
