@@ -70,8 +70,8 @@ class TestFrameworkConsistencyTest :
                     }
             }
 
-            it("test classes should use Kotest matchers") {
-                // Test classes should import and use Kotest matchers for assertions
+            it("Kotest-based test files should not use JUnit/Hamcrest assertions") {
+                // Kotest DescribeSpec files must not import or call JUnit/Hamcrest assertions
                 Konsist.scopeFromProject()
                     .files
                     .filter { file ->
@@ -81,19 +81,51 @@ class TestFrameworkConsistencyTest :
                             }
                     }
                     .assertFalse { file ->
-                        // Check if file uses JUnit-style assertions instead of Kotest matchers
-                        val hasJUnitAssertions = file.text.contains("assertEquals(") ||
-                            file.text.contains("assertTrue(") ||
-                            file.text.contains("assertFalse(") ||
-                            file.text.contains("assertNull(") ||
-                            file.text.contains("assertNotNull(")
-
-                        val hasKotestImports = file.imports.any { import ->
-                            import.name.startsWith("io.kotest.matchers")
+                        // Import-based detection
+                        val hasJUnitAssertionImports = file.imports.any { import ->
+                            val importPath = import.name
+                            importPath.startsWith("org.junit.jupiter.api.Assertions") ||
+                                importPath.startsWith("org.junit.Assert") ||
+                                importPath.startsWith("org.hamcrest")
                         }
 
-                        // Flag files that use JUnit assertions without Kotest imports
-                        hasJUnitAssertions && !hasKotestImports
+                        // Call-site detection for qualified assertions only
+                        val usesJUnitAssertionCalls =
+                            file.text.contains(Regex("""\bAssertions\.\w+\(""")) ||
+                                file.text.contains(Regex("""\bAssert\.\w+\("""))
+
+                        hasJUnitAssertionImports || usesJUnitAssertionCalls
+                    }
+            }
+
+            it("Kotest-based test files should use Kotest assertions") {
+                // Ensure DescribeSpec test files actually use Kotest matchers/assertions
+                Konsist.scopeFromProject()
+                    .files
+                    .filter { file ->
+                        file.path.contains("/test/") &&
+                            file.classes().any { clazz ->
+                                clazz.hasParent { parent -> parent.name == "DescribeSpec" }
+                            }
+                    }
+                    .assertFalse { file ->
+                        // Check if file has actual test content (not just structure)
+                        val hasTestContent = file.text.contains("it(\"") ||
+                            file.text.contains("it {") ||
+                            file.text.contains("describe(\"") ||
+                            file.text.contains("describe {")
+
+                        // If it has test content, it should import Kotest assertions
+                        if (hasTestContent) {
+                            val hasKotestAssertions = file.imports.any { import ->
+                                val importPath = import.name
+                                importPath.startsWith("io.kotest.assertions") ||
+                                    importPath.startsWith("io.kotest.matchers")
+                            }
+                            !hasKotestAssertions
+                        } else {
+                            false // No test content, so no assertion needed
+                        }
                     }
             }
         }
