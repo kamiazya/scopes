@@ -8,4 +8,5 @@ sealed class ScopeAliasError(recoverable: Boolean = true) : ApplicationError(rec
     data class AliasNotFound(val aliasName: String) : ScopeAliasError()
     data class CannotRemoveCanonicalAlias(val scopeId: String, val aliasName: String) : ScopeAliasError()
     data class AliasGenerationFailed(val scopeId: String, val retryCount: Int) : ScopeAliasError(recoverable = false)
+    data class AliasGenerationValidationFailed(val scopeId: String, val reason: String, val attemptedValue: String) : ScopeAliasError()
 }

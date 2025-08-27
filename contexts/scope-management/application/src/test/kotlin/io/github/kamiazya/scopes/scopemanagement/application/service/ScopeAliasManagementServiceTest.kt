@@ -164,8 +164,9 @@ class ScopeAliasManagementServiceTest :
                 result.isLeft() shouldBe true
                 result.fold(
                     { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
-                        error.aliasName shouldBe "Could not generate unique alias after 3 attempts"
+                        error.shouldBeInstanceOf<ScopeAliasError.AliasGenerationFailed>()
+                        error.scopeId shouldBe scopeId
+                        error.retryCount shouldBe 3
                     },
                     { fail("Expected error but got success: $it") },
                 )

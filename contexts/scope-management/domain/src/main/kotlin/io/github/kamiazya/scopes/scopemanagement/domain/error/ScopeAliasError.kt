@@ -28,4 +28,10 @@ sealed class ScopeAliasError : ScopesError() {
      * Alias generation failed error.
      */
     data class AliasGenerationFailed(override val occurredAt: Instant, val scopeId: ScopeId, val retryCount: Int) : ScopeAliasError()
+
+    /**
+     * Alias validation failed during generation.
+     */
+    data class AliasGenerationValidationFailed(override val occurredAt: Instant, val scopeId: ScopeId, val reason: String, val attemptedValue: String) :
+        ScopeAliasError()
 }

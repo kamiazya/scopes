@@ -243,6 +243,13 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
             scopeId = this.scopeId.toString(),
             retryCount = this.retryCount,
         )
+
+    is DomainScopeAliasError.AliasGenerationValidationFailed ->
+        AppScopeAliasError.AliasGenerationValidationFailed(
+            scopeId = this.scopeId.toString(),
+            reason = this.reason,
+            attemptedValue = this.attemptedValue,
+        )
 }
 
 /**
