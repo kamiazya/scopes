@@ -5,13 +5,13 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
+import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
@@ -82,7 +82,8 @@ class CreateScopeHandler(
                 logger.info("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
 
                 // Handle alias generation (future integration)
-                val canonicalAlias = if (input.generateAlias || input.customAlias != null) {
+                val aliasRequested = input.generateAlias || input.customAlias != null
+                if (aliasRequested) {
                     logger.debug(
                         "Alias generation requested but not yet implemented",
                         mapOf(
@@ -91,10 +92,8 @@ class CreateScopeHandler(
                             "customAlias" to (input.customAlias ?: "none"),
                         ),
                     )
-                    null
-                } else {
-                    null
                 }
+                val canonicalAlias: String? = null
 
                 val result = ScopeMapper.toCreateScopeResult(savedScope, canonicalAlias)
 
@@ -103,7 +102,7 @@ class CreateScopeHandler(
                     mapOf(
                         "scopeId" to savedScope.id.value,
                         "title" to savedScope.title.value,
-                        "hasAlias" to (canonicalAlias != null).toString(),
+                        "hasAlias" to false.toString(),
                     ),
                 )
 

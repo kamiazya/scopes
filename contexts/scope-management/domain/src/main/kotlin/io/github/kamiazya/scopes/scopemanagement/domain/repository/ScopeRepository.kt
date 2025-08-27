@@ -64,4 +64,16 @@ interface ScopeRepository {
      * This is used by the command handler to update the read model after events are applied.
      */
     suspend fun update(scope: Scope): Either<PersistenceError, Scope>
+
+    /**
+     * Count the number of direct children of a scope.
+     * Used for validating children limits.
+     */
+    suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int>
+
+    /**
+     * Find all descendants of a scope recursively.
+     * Used for hierarchy operations.
+     */
+    suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>>
 }

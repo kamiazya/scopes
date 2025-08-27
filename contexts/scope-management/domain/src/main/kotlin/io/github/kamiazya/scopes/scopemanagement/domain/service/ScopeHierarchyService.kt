@@ -3,8 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import arrow.core.raise.ensureNotNull
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -13,97 +11,67 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  * Domain service for handling scope hierarchy business logic.
  *
  * This service encapsulates complex hierarchy operations that don't naturally
- * belong to a single aggregate. Following DDD principles, it maintains
- * domain logic within the domain layer while coordinating between aggregates.
+ * belong to a single aggregate. Following DDD principles, it contains
+ * only pure functions without I/O operations.
+ *
+ * All I/O operations (repository access) should be handled by the
+ * application layer, which then calls these pure validation functions.
  */
 class ScopeHierarchyService {
 
     /**
-     * Validates and calculates the depth of a scope hierarchy.
-     * Detects circular references and ensures hierarchy integrity.
+     * Calculates the depth of a hierarchy path.
      *
-     * @param scopeId The ID of the scope to calculate depth for
-     * @param getScopeById Function to retrieve a scope by its ID
-     * @return Either an error or the calculated depth
+     * @param hierarchyPath List of ScopeIds representing the path from child to root
+     * @return The depth (length) of the hierarchy
      */
-    suspend fun calculateHierarchyDepth(scopeId: ScopeId, getScopeById: suspend (ScopeId) -> Scope?): Either<ScopeHierarchyError, Int> = either {
-        val visited = mutableSetOf<ScopeId>()
+    fun calculateDepth(hierarchyPath: List<ScopeId>): Int = hierarchyPath.size
 
-        suspend fun calculateDepthRecursive(currentId: ScopeId?, depth: Int): Either<ScopeHierarchyError, Int> = either {
-            when (currentId) {
-                null -> depth
-                else -> {
-                    // Check for circular reference
-                    ensure(!visited.contains(currentId)) {
-                        ScopeHierarchyError.CircularPath(
-                            currentTimestamp(),
-                            currentId,
-                            visited.toList(),
-                        )
-                    }
-                    visited.add(currentId)
+    /**
+     * Detects circular references in a hierarchy path.
+     *
+     * @param hierarchyPath List of ScopeIds to check for cycles
+     * @return Either an error if circular reference found, or Unit if valid
+     */
+    fun detectCircularReference(hierarchyPath: List<ScopeId>): Either<ScopeHierarchyError, Unit> = either {
+        val seen = mutableSetOf<ScopeId>()
 
-                    val scope = getScopeById(currentId)
-                    ensureNotNull(scope) {
-                        ScopeHierarchyError.ScopeInHierarchyNotFound(
-                            currentTimestamp(),
-                            currentId,
-                        )
-                    }
-
-                    calculateDepthRecursive(scope.parentId, depth + 1).bind()
-                }
+        for (id in hierarchyPath) {
+            ensure(!seen.contains(id)) {
+                ScopeHierarchyError.CircularPath(
+                    currentTimestamp(),
+                    id,
+                    seen.toList(),
+                )
             }
+            seen.add(id)
         }
-
-        calculateDepthRecursive(scopeId, 0).bind()
     }
 
     /**
      * Validates parent-child relationship to prevent circular references.
      *
-     * @param parentScope The potential parent scope
-     * @param childScope The potential child scope
-     * @param getScopeById Function to retrieve a scope by its ID
+     * @param parentId The ID of the parent scope
+     * @param childId The ID of the child scope
+     * @param parentAncestorPath List of ancestor IDs of the parent (from parent to root)
      * @return Either an error or Unit if valid
      */
-    suspend fun validateParentChildRelationship(
-        parentScope: Scope,
-        childScope: Scope,
-        getScopeById: suspend (ScopeId) -> Scope?,
-    ): Either<ScopeHierarchyError, Unit> = either {
+    fun validateParentChildRelationship(parentId: ScopeId, childId: ScopeId, parentAncestorPath: List<ScopeId>): Either<ScopeHierarchyError, Unit> = either {
         // Check self-parenting
-        ensure(parentScope.id != childScope.id) {
+        ensure(parentId != childId) {
             ScopeHierarchyError.SelfParenting(
                 currentTimestamp(),
-                childScope.id,
+                childId,
             )
         }
 
-        // Check if parent is already a descendant of child
-        var currentParent = parentScope.parentId
-        val visited = mutableSetOf<ScopeId>()
-
-        while (currentParent != null) {
-            ensure(!visited.contains(currentParent)) {
-                ScopeHierarchyError.CircularPath(
-                    currentTimestamp(),
-                    childScope.id,
-                    visited.toList(),
-                )
-            }
-            visited.add(currentParent)
-
-            ensure(currentParent != childScope.id) {
-                ScopeHierarchyError.CircularReference(
-                    currentTimestamp(),
-                    childScope.id,
-                    parentScope.id,
-                )
-            }
-
-            val parent = getScopeById(currentParent)
-            currentParent = parent?.parentId
+        // Check if child is in parent's ancestor path (would create cycle)
+        ensure(!parentAncestorPath.contains(childId)) {
+            ScopeHierarchyError.CircularReference(
+                currentTimestamp(),
+                scopeId = childId,
+                parentId = parentId,
+            )
         }
     }
 
