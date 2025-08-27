@@ -12,8 +12,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -22,71 +22,64 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * This supports both canonical and custom aliases.
  */
 class GetScopeByAliasHandler(
-    private val aliasRepository: ScopeAliasRepository,
+    private val scopeAliasService: ScopeAliasManagementService,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : UseCase<GetScopeByAliasQuery, ScopesError, ScopeDto> {
 
-    override suspend operator fun invoke(query: GetScopeByAliasQuery): Either<ScopesError, ScopeDto> = transactionManager.inTransaction {
+    override suspend operator fun invoke(input: GetScopeByAliasQuery): Either<ScopesError, ScopeDto> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Getting scope by alias",
-                mapOf("aliasName" to query.aliasName),
+                mapOf("aliasName" to input.aliasName),
             )
 
             // Validate alias name
-            val aliasName = AliasName.create(query.aliasName)
+            val aliasName = AliasName.create(input.aliasName)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid alias name",
                         mapOf(
-                            "aliasName" to query.aliasName,
+                            "aliasName" to input.aliasName,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(query.aliasName)
+                            ScopeInputError.AliasEmpty(input.aliasName)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(query.aliasName, error.minimumLength)
+                            ScopeInputError.AliasTooShort(input.aliasName, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(query.aliasName, error.maximumLength)
+                            ScopeInputError.AliasTooLong(input.aliasName, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(query.aliasName, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(input.aliasName, error.expectedPattern)
                     }
                 }
                 .bind()
 
-            // Find alias
-            val alias = aliasRepository.findByAliasName(aliasName)
+            // Resolve alias to scope ID through domain service
+            val scopeId = scopeAliasService.resolveAlias(aliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to find alias",
+                        "Failed to resolve alias",
                         mapOf(
-                            "aliasName" to query.aliasName,
+                            "aliasName" to input.aliasName,
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    // Map to application error - alias not found becomes input error
+                    ScopeInputError.AliasNotFound(input.aliasName)
                 }
                 .bind()
 
-            if (alias == null) {
-                logger.info(
-                    "Alias not found",
-                    mapOf("aliasName" to query.aliasName),
-                )
-                raise(ScopeAliasError.AliasNotFound(query.aliasName))
-            }
-
             // Get scope by ID
-            val scope = scopeRepository.findById(alias.scopeId)
+            val scope = scopeRepository.findById(scopeId)
                 .mapLeft { error ->
                     logger.error(
                         "Failed to find scope",
                         mapOf(
-                            "scopeId" to alias.scopeId.value,
+                            "scopeId" to scopeId.value,
                             "error" to error.toString(),
                         ),
                     )
@@ -98,16 +91,16 @@ class GetScopeByAliasHandler(
                 logger.warn(
                     "Scope not found for alias",
                     mapOf(
-                        "aliasName" to query.aliasName,
-                        "scopeId" to alias.scopeId.value,
+                        "aliasName" to input.aliasName,
+                        "scopeId" to scopeId.value,
                     ),
                 )
                 // This is an inconsistency - alias exists but scope doesn't
-                raise(ScopeAliasError.AliasNotFound(query.aliasName))
+                raise(ScopeAliasError.AliasNotFound(input.aliasName))
             }
 
-            // Get all aliases for the scope to include in response
-            val aliases = aliasRepository.findByScopeId(scope.id)
+            // Get all aliases for the scope to include in response through domain service
+            val aliases = scopeAliasService.getAliasesForScope(scope.id)
                 .mapLeft { error ->
                     logger.warn(
                         "Failed to get aliases for scope",
@@ -124,7 +117,7 @@ class GetScopeByAliasHandler(
             logger.info(
                 "Successfully retrieved scope by alias",
                 mapOf(
-                    "aliasName" to query.aliasName,
+                    "aliasName" to input.aliasName,
                     "scopeId" to scope.id.value,
                 ),
             )

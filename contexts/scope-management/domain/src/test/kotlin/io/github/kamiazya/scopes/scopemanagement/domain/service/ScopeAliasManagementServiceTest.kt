@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.service
+package io.github.kamiazya.scopes.scopemanagement.domain.service
 
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias

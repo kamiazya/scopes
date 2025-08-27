@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.service
+package io.github.kamiazya.scopes.scopemanagement.domain.service
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -16,10 +16,15 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Application service for managing scope aliases.
+ * Domain service for managing scope aliases.
  *
- * Coordinates domain logic and persistence operations for scope aliases,
- * including validation, conflict resolution, and alias lifecycle management.
+ * Contains core business logic for alias operations including:
+ * - Business rule enforcement (one canonical alias per scope)
+ * - Alias conflict resolution
+ * - Alias lifecycle management
+ *
+ * This is a domain service because it contains business logic that doesn't
+ * naturally fit into a single entity but operates across multiple entities.
  */
 class ScopeAliasManagementService(private val aliasRepository: ScopeAliasRepository, private val aliasGenerationService: AliasGenerationService) {
 

@@ -10,7 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.toApplication
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -18,46 +18,49 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * Handler for listing all aliases associated with a scope.
  * Returns aliases sorted with canonical first, then by creation date.
  */
-class ListAliasesHandler(private val aliasRepository: ScopeAliasRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    UseCase<ListAliases, ScopesError, AliasListDto> {
+class ListAliasesHandler(
+    private val scopeAliasService: ScopeAliasManagementService,
+    private val transactionManager: TransactionManager,
+    private val logger: Logger,
+) : UseCase<ListAliases, ScopesError, AliasListDto> {
 
-    override suspend operator fun invoke(query: ListAliases): Either<ScopesError, AliasListDto> = transactionManager.inTransaction {
+    override suspend operator fun invoke(input: ListAliases): Either<ScopesError, AliasListDto> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Listing aliases for scope",
-                mapOf("scopeId" to query.scopeId),
+                mapOf("scopeId" to input.scopeId),
             )
 
             // Validate scopeId - fast-path check for blank/empty
-            if (query.scopeId.isBlank()) {
+            if (input.scopeId.isBlank()) {
                 logger.error(
                     "Scope ID is blank",
-                    mapOf("scopeId" to query.scopeId),
+                    mapOf("scopeId" to input.scopeId),
                 )
-                raise(ScopeInputError.IdBlank(query.scopeId))
+                raise(ScopeInputError.IdBlank(input.scopeId))
             }
 
-            val scopeId = ScopeId.create(query.scopeId)
+            val scopeId = ScopeId.create(input.scopeId)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid scope ID format",
                         mapOf(
-                            "scopeId" to query.scopeId,
+                            "scopeId" to input.scopeId,
                             "error" to error.toString(),
                         ),
                     )
                     // After blank check, remaining errors should be format-related
-                    ScopeInputError.IdInvalidFormat(query.scopeId, "ULID")
+                    ScopeInputError.IdInvalidFormat(input.scopeId, "ULID")
                 }
                 .bind()
 
-            // Retrieve all aliases for the scope
-            val aliases = aliasRepository.findByScopeId(scopeId)
+            // Retrieve all aliases for the scope through domain service
+            val aliases = scopeAliasService.getAliasesForScope(scopeId)
                 .mapLeft { error ->
                     logger.error(
                         "Failed to retrieve aliases",
                         mapOf(
-                            "scopeId" to query.scopeId,
+                            "scopeId" to input.scopeId,
                             "error" to error.toString(),
                         ),
                     )
@@ -85,14 +88,14 @@ class ListAliasesHandler(private val aliasRepository: ScopeAliasRepository, priv
             logger.info(
                 "Successfully retrieved aliases",
                 mapOf(
-                    "scopeId" to query.scopeId,
+                    "scopeId" to input.scopeId,
                     "count" to aliases.size,
                     "hasCanonical" to aliases.any { it.isCanonical() },
                 ),
             )
 
             AliasListDto(
-                scopeId = query.scopeId,
+                scopeId = input.scopeId,
                 aliases = aliasDtos,
                 totalCount = aliasDtos.size,
             )
