@@ -178,6 +178,19 @@ class ErrorMapper(private val logger: Logger) {
             scopeId = error.scopeId.value,
             childrenCount = null, // Domain error doesn't provide count
         )
+        is ScopeHierarchyError.ScopeInHierarchyNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = error.scopeId.value,
+        )
+        is ScopeHierarchyError.HierarchyUnavailable -> {
+            val serviceDetail = when (error.reason) {
+                AvailabilityReason.TEMPORARILY_UNAVAILABLE -> "hierarchy-unavailable"
+                AvailabilityReason.CORRUPTED_HIERARCHY -> "hierarchy-corrupted"
+                AvailabilityReason.CONCURRENT_MODIFICATION -> "hierarchy-conflict"
+            }
+            ScopeContractError.SystemError.ServiceUnavailable(
+                service = serviceDetail,
+            )
+        }
 
         // Persistence errors
         is PersistenceError.StorageUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(

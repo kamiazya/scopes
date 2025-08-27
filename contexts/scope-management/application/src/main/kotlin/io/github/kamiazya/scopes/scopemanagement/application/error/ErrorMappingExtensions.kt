@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
 
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError as AppContextError
 import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
@@ -252,6 +254,25 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     is ContextError -> this.toApplicationError()
     is DomainScopeInputError -> this.toApplicationError()
     is DomainScopeAliasError -> this.toApplicationError()
+
+    // Map hierarchy errors to appropriate application errors
+    is ScopeHierarchyError.HierarchyUnavailable -> {
+        val cause = when (this.reason) {
+            AvailabilityReason.TEMPORARILY_UNAVAILABLE -> "Hierarchy service temporarily unavailable"
+            AvailabilityReason.CORRUPTED_HIERARCHY -> "Hierarchy data corruption detected"
+            AvailabilityReason.CONCURRENT_MODIFICATION -> "Concurrent modification conflict"
+        }
+        AppPersistenceError.StorageUnavailable(
+            operation = "hierarchy.${this.operation.name.lowercase()}",
+            cause = cause,
+        )
+    }
+
+    // Map other hierarchy errors to generic persistence errors
+    is ScopeHierarchyError -> AppPersistenceError.StorageUnavailable(
+        operation = "hierarchy",
+        cause = "Hierarchy error: ${this::class.simpleName}",
+    )
 
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers

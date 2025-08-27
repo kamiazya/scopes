@@ -1,252 +1,265 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.service
 
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import io.kotest.assertions.fail
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
+/**
+ * Test suite for ScopeHierarchyService pure functions.
+ * These tests verify business logic without any I/O operations or mocks.
+ */
 class ScopeHierarchyServiceTest :
     DescribeSpec({
         val service = ScopeHierarchyService()
 
-        describe("calculateHierarchyDepth") {
-            it("should calculate depth for root scope") {
-                val rootId = ScopeId.generate()
-                val rootScope = Scope.create("Root Scope", null, null).getOrNull()!!.copy(id = rootId)
+        describe("ScopeHierarchyService") {
 
-                val getScopeById: suspend (ScopeId) -> Scope? = { id ->
-                    when (id) {
-                        rootId -> rootScope
-                        else -> null
-                    }
+            describe("calculateDepth") {
+                it("should return 0 for empty hierarchy path") {
+                    val result = service.calculateDepth(emptyList())
+                    result shouldBe 0
                 }
 
-                val result = service.calculateHierarchyDepth(rootId, getScopeById)
-
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { depth -> depth shouldBe 1 },
-                )
-            }
-
-            it("should calculate depth for nested hierarchy") {
-                val rootId = ScopeId.generate()
-                val childId = ScopeId.generate()
-                val grandchildId = ScopeId.generate()
-
-                val rootScope = Scope.create("Root", null, null).getOrNull()!!.copy(id = rootId)
-                val childScope = Scope.create("Child", null, rootId).getOrNull()!!.copy(id = childId)
-                val grandchildScope = Scope.create("Grandchild", null, childId).getOrNull()!!.copy(id = grandchildId)
-
-                val getScopeById: suspend (ScopeId) -> Scope? = { id ->
-                    when (id) {
-                        rootId -> rootScope
-                        childId -> childScope
-                        grandchildId -> grandchildScope
-                        else -> null
-                    }
+                it("should return 1 for single scope") {
+                    val path = listOf(ScopeId.generate())
+                    val result = service.calculateDepth(path)
+                    result shouldBe 1
                 }
 
-                val result = service.calculateHierarchyDepth(grandchildId, getScopeById)
-
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { depth -> depth shouldBe 3 },
-                )
+                it("should return correct depth for multi-level hierarchy") {
+                    val path = listOf(
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                    )
+                    val result = service.calculateDepth(path)
+                    result shouldBe 4
+                }
             }
 
-            it("should detect circular reference") {
-                val scope1Id = ScopeId.generate()
-                val scope2Id = ScopeId.generate()
-                val scope3Id = ScopeId.generate()
-
-                // Create circular reference: 1 -> 2 -> 3 -> 1
-                val scope1 = Scope.create("Scope1", null, scope3Id).getOrNull()!!.copy(id = scope1Id)
-                val scope2 = Scope.create("Scope2", null, scope1Id).getOrNull()!!.copy(id = scope2Id)
-                val scope3 = Scope.create("Scope3", null, scope2Id).getOrNull()!!.copy(id = scope3Id)
-
-                val getScopeById: suspend (ScopeId) -> Scope? = { id ->
-                    when (id) {
-                        scope1Id -> scope1
-                        scope2Id -> scope2
-                        scope3Id -> scope3
-                        else -> null
-                    }
+            describe("detectCircularReference") {
+                it("should return success for valid hierarchy without cycles") {
+                    val path = listOf(
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                    )
+                    val result = service.detectCircularReference(path)
+                    result.isRight() shouldBe true
                 }
 
-                val result = service.calculateHierarchyDepth(scope1Id, getScopeById)
+                it("should detect circular reference when scope appears twice") {
+                    val scope1 = ScopeId.generate()
+                    val scope2 = ScopeId.generate()
+                    val path = listOf(
+                        scope1,
+                        scope2,
+                        scope1, // Circular reference
+                    )
+                    val result = service.detectCircularReference(path)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
-            }
-
-            it("should fail when scope not found") {
-                val missingId = ScopeId.generate()
-                val getScopeById: suspend (ScopeId) -> Scope? = { _ -> null }
-
-                val result = service.calculateHierarchyDepth(missingId, getScopeById)
-
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.ScopeInHierarchyNotFound>()
-                        error.scopeId shouldBe missingId
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
-            }
-        }
-
-        describe("validateParentChildRelationship") {
-            it("should allow valid parent-child relationship") {
-                val parentId = ScopeId.generate()
-                val childId = ScopeId.generate()
-
-                val parentScope = Scope.create("Parent", null, null).getOrNull()!!.copy(id = parentId)
-                val childScope = Scope.create("Child", null, null).getOrNull()!!.copy(id = childId)
-
-                val getScopeById: suspend (ScopeId) -> Scope? = { _ -> null }
-
-                val result = service.validateParentChildRelationship(parentScope, childScope, getScopeById)
-
-                result.isRight() shouldBe true
-            }
-
-            it("should prevent self-parenting") {
-                val scopeId = ScopeId.generate()
-                val scope = Scope.create("Scope", null, null).getOrNull()!!.copy(id = scopeId)
-
-                val getScopeById: suspend (ScopeId) -> Scope? = { _ -> null }
-
-                val result = service.validateParentChildRelationship(scope, scope, getScopeById)
-
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.SelfParenting>()
-                        error.scopeId shouldBe scopeId
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
-            }
-
-            it("should detect circular reference when parent is descendant of child") {
-                val grandparentId = ScopeId.generate()
-                val parentId = ScopeId.generate()
-                val childId = ScopeId.generate()
-
-                // Current hierarchy: grandparent -> parent -> child
-                // Trying to make: child -> grandparent (would create cycle)
-                val grandparentScope = Scope.create("Grandparent", null, null).getOrNull()!!.copy(id = grandparentId)
-                val parentScope = Scope.create("Parent", null, grandparentId).getOrNull()!!.copy(id = parentId, parentId = childId)
-                val childScope = Scope.create("Child", null, parentId).getOrNull()!!.copy(id = childId)
-
-                val getScopeById: suspend (ScopeId) -> Scope? = { id ->
-                    when (id) {
-                        childId -> childScope
-                        else -> null
-                    }
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
+                    (error as ScopeHierarchyError.CircularPath).scopeId shouldBe scope1
                 }
 
-                val result = service.validateParentChildRelationship(parentScope, childScope, getScopeById)
+                it("should detect complex circular reference") {
+                    val a = ScopeId.generate()
+                    val b = ScopeId.generate()
+                    val c = ScopeId.generate()
+                    val d = ScopeId.generate()
+                    val path = listOf(
+                        a,
+                        b,
+                        c,
+                        d,
+                        b, // Circular reference back to b
+                    )
+                    val result = service.detectCircularReference(path)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.CircularReference>()
-                        error.scopeId shouldBe childId
-                        error.parentId shouldBe parentId
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
-            }
-        }
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
+                }
 
-        describe("validateChildrenLimit") {
-            it("should allow adding child when under limit") {
-                val parentId = ScopeId.generate()
-
-                val result = service.validateChildrenLimit(parentId, currentChildCount = 2, maxChildren = 5)
-
-                result.isRight() shouldBe true
-            }
-
-            it("should allow unlimited children when maxChildren is null") {
-                val parentId = ScopeId.generate()
-
-                val result = service.validateChildrenLimit(parentId, currentChildCount = 1000, maxChildren = null)
-
-                result.isRight() shouldBe true
+                it("should return success for empty path") {
+                    val result = service.detectCircularReference(emptyList())
+                    result.isRight() shouldBe true
+                }
             }
 
-            it("should prevent exceeding children limit") {
-                val parentId = ScopeId.generate()
+            describe("validateParentChildRelationship") {
+                it("should detect self-parenting") {
+                    val scopeId = ScopeId.generate()
+                    val result = service.validateParentChildRelationship(
+                        parentId = scopeId,
+                        childId = scopeId,
+                        parentAncestorPath = emptyList(),
+                    )
 
-                val result = service.validateChildrenLimit(parentId, currentChildCount = 5, maxChildren = 5)
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.SelfParenting>()
+                    (error as ScopeHierarchyError.SelfParenting).scopeId shouldBe scopeId
+                }
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.MaxChildrenExceeded>()
-                        error.parentScopeId shouldBe parentId
-                        error.currentChildrenCount shouldBe 5
-                        error.maximumChildren shouldBe 5
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                it("should detect circular reference when child is in parent's ancestors") {
+                    val childId = ScopeId.generate()
+                    val parentId = ScopeId.generate()
+                    val grandparent = ScopeId.generate()
+                    val root = ScopeId.generate()
+                    val parentAncestorPath = listOf(
+                        grandparent,
+                        childId, // Child appears in parent's ancestors
+                        root,
+                    )
+
+                    val result = service.validateParentChildRelationship(
+                        parentId = parentId,
+                        childId = childId,
+                        parentAncestorPath = parentAncestorPath,
+                    )
+
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.CircularReference>()
+                    val circularError = error as ScopeHierarchyError.CircularReference
+                    circularError.scopeId shouldBe childId
+                    circularError.parentId shouldBe parentId
+                }
+
+                it("should allow valid parent-child relationship") {
+                    val parentId = ScopeId.generate()
+                    val childId = ScopeId.generate()
+                    val parentAncestorPath = listOf(
+                        ScopeId.generate(),
+                        ScopeId.generate(),
+                    )
+
+                    val result = service.validateParentChildRelationship(
+                        parentId = parentId,
+                        childId = childId,
+                        parentAncestorPath = parentAncestorPath,
+                    )
+
+                    result.isRight() shouldBe true
+                }
+
+                it("should allow relationship when parent has no ancestors") {
+                    val result = service.validateParentChildRelationship(
+                        parentId = ScopeId.generate(),
+                        childId = ScopeId.generate(),
+                        parentAncestorPath = emptyList(),
+                    )
+
+                    result.isRight() shouldBe true
+                }
             }
-        }
 
-        describe("validateHierarchyDepth") {
-            it("should allow depth within limit") {
-                val scopeId = ScopeId.generate()
+            describe("validateChildrenLimit") {
+                it("should allow when limit is not reached") {
+                    val result = service.validateChildrenLimit(
+                        parentId = ScopeId.generate(),
+                        currentChildCount = 5,
+                        maxChildren = 10,
+                    )
+                    result.isRight() shouldBe true
+                }
 
-                val result = service.validateHierarchyDepth(scopeId, currentDepth = 3, maxDepth = 10)
+                it("should reject when limit is reached") {
+                    val parentId = ScopeId.generate()
+                    val result = service.validateChildrenLimit(
+                        parentId = parentId,
+                        currentChildCount = 10,
+                        maxChildren = 10,
+                    )
 
-                result.isRight() shouldBe true
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.MaxChildrenExceeded>()
+                    val limitError = error as ScopeHierarchyError.MaxChildrenExceeded
+                    limitError.parentScopeId shouldBe parentId
+                    limitError.currentChildrenCount shouldBe 10
+                    limitError.maximumChildren shouldBe 10
+                }
+
+                it("should allow unlimited children when maxChildren is null") {
+                    val result = service.validateChildrenLimit(
+                        parentId = ScopeId.generate(),
+                        currentChildCount = 1000,
+                        maxChildren = null,
+                    )
+                    result.isRight() shouldBe true
+                }
+
+                it("should allow zero children when limit is greater than zero") {
+                    val result = service.validateChildrenLimit(
+                        parentId = ScopeId.generate(),
+                        currentChildCount = 0,
+                        maxChildren = 5,
+                    )
+                    result.isRight() shouldBe true
+                }
             }
 
-            it("should allow unlimited depth when maxDepth is null") {
-                val scopeId = ScopeId.generate()
+            describe("validateHierarchyDepth") {
+                it("should allow when depth is within limit") {
+                    val result = service.validateHierarchyDepth(
+                        scopeId = ScopeId.generate(),
+                        currentDepth = 3,
+                        maxDepth = 5,
+                    )
+                    result.isRight() shouldBe true
+                }
 
-                val result = service.validateHierarchyDepth(scopeId, currentDepth = 100, maxDepth = null)
+                it("should allow when depth equals limit") {
+                    val result = service.validateHierarchyDepth(
+                        scopeId = ScopeId.generate(),
+                        currentDepth = 4,
+                        maxDepth = 5,
+                    )
+                    result.isRight() shouldBe true
+                }
 
-                result.isRight() shouldBe true
-            }
+                it("should reject when depth exceeds limit") {
+                    val scopeId = ScopeId.generate()
+                    val result = service.validateHierarchyDepth(
+                        scopeId = scopeId,
+                        currentDepth = 5,
+                        maxDepth = 5,
+                    )
 
-            it("should prevent exceeding depth limit") {
-                val scopeId = ScopeId.generate()
+                    result.isLeft() shouldBe true
+                    val error = (result as Either.Left).value
+                    error.shouldBeInstanceOf<ScopeHierarchyError.MaxDepthExceeded>()
+                    val depthError = error as ScopeHierarchyError.MaxDepthExceeded
+                    depthError.scopeId shouldBe scopeId
+                    depthError.attemptedDepth shouldBe 6 // currentDepth + 1
+                    depthError.maximumDepth shouldBe 5
+                }
 
-                val result = service.validateHierarchyDepth(scopeId, currentDepth = 5, maxDepth = 5)
+                it("should allow unlimited depth when maxDepth is null") {
+                    val result = service.validateHierarchyDepth(
+                        scopeId = ScopeId.generate(),
+                        currentDepth = 1000,
+                        maxDepth = null,
+                    )
+                    result.isRight() shouldBe true
+                }
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeHierarchyError.MaxDepthExceeded>()
-                        error.scopeId shouldBe scopeId
-                        error.attemptedDepth shouldBe 6
-                        error.maximumDepth shouldBe 5
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
-            }
-
-            it("should allow depth exactly at limit") {
-                val scopeId = ScopeId.generate()
-
-                val result = service.validateHierarchyDepth(scopeId, currentDepth = 4, maxDepth = 5)
-
-                result.isRight() shouldBe true
+                it("should allow root level when depth is 0") {
+                    val result = service.validateHierarchyDepth(
+                        scopeId = ScopeId.generate(),
+                        currentDepth = 0,
+                        maxDepth = 5,
+                    )
+                    result.isRight() shouldBe true
+                }
             }
         }
     })
