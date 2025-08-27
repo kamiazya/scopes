@@ -1,12 +1,14 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
+import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
@@ -59,6 +61,8 @@ val scopeManagementModule = module {
         CreateScopeHandler(
             scopeFactory = get(),
             scopeRepository = get(),
+            scopeAliasRepository = get(),
+            aliasGenerationService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
             logger = get(),
@@ -106,6 +110,24 @@ val scopeManagementModule = module {
         GetScopeByAliasHandler(
             aliasRepository = get(),
             scopeRepository = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    // Alias Handlers
+    single {
+        AddAliasHandler(
+            scopeAliasService = get(),
+            aliasRepository = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        RemoveAliasHandler(
+            scopeAliasService = get(),
             transactionManager = get(),
             logger = get(),
         )

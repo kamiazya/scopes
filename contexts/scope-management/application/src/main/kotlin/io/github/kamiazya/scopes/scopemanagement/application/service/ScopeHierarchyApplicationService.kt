@@ -51,6 +51,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
                 is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
                 is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
                 is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
+                is PersistenceError.NotFound -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
             }
 
             return ScopeHierarchyError.HierarchyUnavailable(
