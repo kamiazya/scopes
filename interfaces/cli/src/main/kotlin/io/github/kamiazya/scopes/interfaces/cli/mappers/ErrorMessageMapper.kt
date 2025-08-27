@@ -77,6 +77,7 @@ object ErrorMessageMapper {
             is PersistenceError.ConcurrencyConflict ->
                 "Concurrency conflict for ${error.entityType} ${error.entityId}: " +
                     "expected version ${error.expectedVersion}, actual ${error.actualVersion}"
+            is PersistenceError.NotFound -> "${error.entityType} not found${error.entityId?.let { ": $it" } ?: ""}"
         }
         is AggregateIdError -> when (error) {
             is AggregateIdError.InvalidType -> "Invalid aggregate type '${error.attemptedType}', valid types: ${error.validTypes.joinToString()}"

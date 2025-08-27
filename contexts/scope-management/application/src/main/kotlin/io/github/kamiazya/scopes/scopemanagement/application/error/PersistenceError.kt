@@ -10,4 +10,6 @@ sealed class PersistenceError(recoverable: Boolean = false) : ApplicationError(r
 
     data class ConcurrencyConflict(val entityType: String, val entityId: String, val expectedVersion: String, val actualVersion: String) :
         PersistenceError()
+
+    data class NotFound(val entityType: String, val entityId: String?) : PersistenceError(recoverable = true)
 }

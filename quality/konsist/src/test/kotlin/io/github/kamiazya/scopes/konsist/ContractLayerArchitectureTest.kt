@@ -42,7 +42,9 @@ class ContractLayerArchitectureTest :
                         // Method names should be verbs that clearly indicate the action
                         // Examples: getPreference, createScope, updateScope
                         val name = function.name
-                        val isValidVerb = name.matches(Regex("^(get|create|update|delete|find|search|list|check|validate|execute)[A-Z].*"))
+                        val isValidVerb = name.matches(
+                            Regex("^(get|create|update|delete|find|search|list|check|validate|execute|add|remove|set|rename)[A-Z].*"),
+                        )
                         isValidVerb
                     }
                 }

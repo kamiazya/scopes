@@ -22,11 +22,11 @@ value class AliasName private constructor(val value: String) {
     companion object {
         private const val MIN_LENGTH = 2
         private const val MAX_LENGTH = 64
-        private val VALID_PATTERN = Regex("^[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?$")
+        private val VALID_PATTERN = Regex("^[a-z][a-z0-9-_]{1,63}$")
         private val CONSECUTIVE_SPECIAL_CHARS = Regex("[-_]{2,}")
 
         fun create(value: String): Either<ScopeInputError.AliasError, AliasName> {
-            val trimmed = value.trim()
+            val trimmed = value.trim().lowercase() // Normalize to lowercase
 
             if (trimmed.isBlank()) {
                 return ScopeInputError.AliasError.Empty(
@@ -55,7 +55,7 @@ value class AliasName private constructor(val value: String) {
                 return ScopeInputError.AliasError.InvalidFormat(
                     occurredAt = Clock.System.now(),
                     attemptedValue = trimmed,
-                    expectedPattern = "alphanumeric, hyphens, underscores only; no consecutive special chars",
+                    expectedPattern = "[a-z][a-z0-9-_]{1,63}",
                 ).left()
             }
 

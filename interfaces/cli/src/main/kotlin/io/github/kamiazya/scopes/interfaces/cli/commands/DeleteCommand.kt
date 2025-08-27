@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,18 +24,30 @@ class DeleteCommand :
     KoinComponent {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
+    private val parameterResolver: ScopeParameterResolver by inject()
 
-    private val id by argument(help = "ID of the scope to delete")
+    private val identifier by argument(
+        name = "SCOPE",
+        help = "Scope to delete (ULID or alias)",
+    )
     private val cascade by option("--cascade", help = "Delete all child scopes").flag()
 
     override fun run() {
         runBlocking {
-            scopeCommandAdapter.deleteScope(id).fold(
+            // Resolve the identifier to a scope ID
+            parameterResolver.resolve(identifier).fold(
                 { error ->
                     throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
-                {
-                    echo(scopeOutputFormatter.formatDeleteResult(id))
+                { resolvedId ->
+                    scopeCommandAdapter.deleteScope(resolvedId).fold(
+                        { error ->
+                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                        },
+                        {
+                            echo(scopeOutputFormatter.formatDeleteResult(resolvedId))
+                        },
+                    )
                 },
             )
         }

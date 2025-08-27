@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
@@ -15,9 +16,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Domain service for managing scope aliases.
+ * Application service for managing scope aliases.
  *
- * Encapsulates business rules and complex operations related to scope aliases,
+ * Coordinates domain logic and persistence operations for scope aliases,
  * including validation, conflict resolution, and alias lifecycle management.
  */
 class ScopeAliasManagementService(private val aliasRepository: ScopeAliasRepository, private val aliasGenerationService: AliasGenerationService) {
@@ -49,13 +50,18 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
             )
         }
 
+        // If the alias already exists for this scope and is canonical, return it (idempotent)
+        if (existingAlias != null && existingAlias.scopeId == scopeId && existingAlias.isCanonical()) {
+            return@either existingAlias
+        }
+
         // Remove existing canonical alias if any
         val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId)
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
             .bind()
 
-        if (existingCanonical != null) {
-            // Convert existing canonical to custom
+        if (existingCanonical != null && existingCanonical.aliasName != aliasName) {
+            // Convert existing canonical to custom only if it's not the same alias
             val updatedAlias = existingCanonical.copy(
                 aliasType = AliasType.CUSTOM,
                 updatedAt = Clock.System.now(),
@@ -63,6 +69,18 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
             aliasRepository.update(updatedAlias)
                 .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
                 .bind()
+        }
+
+        // If the alias already exists for this scope, update it to canonical
+        if (existingAlias != null && existingAlias.scopeId == scopeId) {
+            val updatedAlias = existingAlias.copy(
+                aliasType = AliasType.CANONICAL,
+                updatedAt = Clock.System.now(),
+            )
+            aliasRepository.update(updatedAlias)
+                .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+                .bind()
+            return@either updatedAlias
         }
 
         // Create new canonical alias
@@ -100,32 +118,32 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
                     // Convert ScopeInputError.AliasError to ScopeAliasError
                     when (inputError) {
                         is ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeAliasError.DuplicateAlias(
+                            ScopeAliasError.AliasGenerationValidationFailed(
                                 occurredAt = inputError.occurredAt,
-                                aliasName = inputError.attemptedValue,
-                                existingScopeId = scopeId, // Generation failed, use same scope ID
-                                attemptedScopeId = scopeId,
+                                scopeId = scopeId,
+                                reason = "Invalid format",
+                                attemptedValue = inputError.attemptedValue,
                             )
                         is ScopeInputError.AliasError.Empty ->
-                            ScopeAliasError.DuplicateAlias(
+                            ScopeAliasError.AliasGenerationValidationFailed(
                                 occurredAt = inputError.occurredAt,
-                                aliasName = inputError.attemptedValue,
-                                existingScopeId = scopeId,
-                                attemptedScopeId = scopeId,
+                                scopeId = scopeId,
+                                reason = "Empty alias",
+                                attemptedValue = inputError.attemptedValue,
                             )
                         is ScopeInputError.AliasError.TooShort ->
-                            ScopeAliasError.DuplicateAlias(
+                            ScopeAliasError.AliasGenerationValidationFailed(
                                 occurredAt = inputError.occurredAt,
-                                aliasName = inputError.attemptedValue,
-                                existingScopeId = scopeId,
-                                attemptedScopeId = scopeId,
+                                scopeId = scopeId,
+                                reason = "Too short (minimum ${inputError.minimumLength} characters)",
+                                attemptedValue = inputError.attemptedValue,
                             )
                         is ScopeInputError.AliasError.TooLong ->
-                            ScopeAliasError.DuplicateAlias(
+                            ScopeAliasError.AliasGenerationValidationFailed(
                                 occurredAt = inputError.occurredAt,
-                                aliasName = inputError.attemptedValue,
-                                existingScopeId = scopeId,
-                                attemptedScopeId = scopeId,
+                                scopeId = scopeId,
+                                reason = "Too long (maximum ${inputError.maximumLength} characters)",
+                                attemptedValue = inputError.attemptedValue,
                             )
                     }
                 }
@@ -175,11 +193,10 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
         // If all retries exhausted, return an error
         // This is a special case where we want to always fail after the loop
         raise(
-            ScopeAliasError.DuplicateAlias(
+            ScopeAliasError.AliasGenerationFailed(
                 occurredAt = Clock.System.now(),
-                aliasName = "Could not generate unique alias after $maxRetries attempts",
-                existingScopeId = scopeId,
-                attemptedScopeId = scopeId,
+                scopeId = scopeId,
+                retryCount = maxRetries,
             ),
         )
     }

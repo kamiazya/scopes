@@ -12,13 +12,12 @@ import io.kotest.core.spec.style.DescribeSpec
 class DomainServicePurityTest :
     DescribeSpec({
 
-        // Temporarily disabled while we fix domain service architecture violations
-        xdescribe("Domain Service Purity Rules (Currently Disabled)") {
+        describe("Domain Service Purity Rules") {
 
             it("domain services should not have suspend functions") {
                 // Domain services should not have suspend functions as they indicate I/O operations.
                 // All I/O should be handled in the application layer.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .classes()
                     .withNameEndingWith("Service")
                     .flatMap { it.functions() }
@@ -30,7 +29,7 @@ class DomainServicePurityTest :
             it("domain services should not depend on repositories") {
                 // Domain services should not depend on repositories directly.
                 // Repository access should be handled by application services.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .classes()
                     .withNameEndingWith("Service")
                     .assertFalse { clazz ->
@@ -50,7 +49,7 @@ class DomainServicePurityTest :
             it("domain services should not have I/O function parameters") {
                 // Domain services should not have function parameters that are suspend functions.
                 // This ensures domain logic remains pure and I/O-free.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .classes()
                     .withNameEndingWith("Service")
                     .flatMap { it.functions() }
@@ -64,7 +63,7 @@ class DomainServicePurityTest :
             it("domain service interfaces should not have suspend functions") {
                 // Domain service interfaces should not define suspend functions.
                 // Interface contracts should represent pure business operations.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .interfaces()
                     .withNameEndingWith("Service")
                     .flatMap { it.functions() }
@@ -76,7 +75,7 @@ class DomainServicePurityTest :
             it("domain services should only use domain types and pure libraries") {
                 // Domain services should only import domain types and pure libraries.
                 // No infrastructure or application layer dependencies allowed.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .files
                     .filter { file ->
                         file.classes().any { it.name?.endsWith("Service") ?: false } ||
@@ -103,7 +102,7 @@ class DomainServicePurityTest :
             it("domain event publishers should not have suspend functions") {
                 // Publisher interfaces in domain should not have suspend functions.
                 // Event publishing is an infrastructure concern that should be abstracted.
-                Konsist.scopeFromModule("contexts/scope-management/domain")
+                Konsist.scopeFromModule("scope-management-domain")
                     .interfaces()
                     .withNameEndingWith("Publisher")
                     .flatMap { it.functions() }

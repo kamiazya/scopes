@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.formatters
 
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
@@ -123,7 +124,35 @@ class ScopeOutputFormatter {
         appendLine("Title: ${scope.title}")
         scope.description?.let { appendLine("Description: $it") }
         scope.parentId?.let { appendLine("Parent ID: $it") }
-        appendLine("Alias: ${scope.canonicalAlias}")
+        appendLine("Canonical Alias: ${scope.canonicalAlias}")
+        appendLine("Created: ${scope.createdAt}")
+        appendLine("Updated: ${scope.updatedAt}")
+    }.trim()
+
+    /**
+     * Formats a contract scope result with all aliases
+     */
+    fun formatContractScopeWithAliases(scope: ScopeResult, aliasResult: AliasListResult): String = buildString {
+        appendLine("Scope Details:")
+        appendLine("ID: ${scope.id}")
+        appendLine("Title: ${scope.title}")
+        scope.description?.let { appendLine("Description: $it") }
+        scope.parentId?.let { appendLine("Parent ID: $it") }
+
+        // Show all aliases
+        if (aliasResult.aliases.isNotEmpty()) {
+            appendLine("Aliases (${aliasResult.totalCount}):")
+            aliasResult.aliases.forEach { alias ->
+                val typeLabel = when {
+                    alias.isCanonical -> " (canonical)"
+                    else -> " (custom)"
+                }
+                appendLine("  - ${alias.aliasName}$typeLabel")
+            }
+        } else {
+            appendLine("Aliases: None")
+        }
+
         appendLine("Created: ${scope.createdAt}")
         appendLine("Updated: ${scope.updatedAt}")
     }.trim()
@@ -168,6 +197,7 @@ class ScopeOutputFormatter {
         }
         appendLine()
         append("  ID: ${scope.id}")
+        append(" | Alias: ${scope.canonicalAlias}")
         scope.parentId?.let {
             append(" | Parent: $it")
         }

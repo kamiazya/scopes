@@ -1,0 +1,51 @@
+package io.github.kamiazya.scopes.interfaces.cli.commands.alias
+
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.required
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
+import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+/**
+ * Command to set the canonical alias for a scope.
+ */
+class SetCanonicalAliasCommand :
+    CliktCommand(
+        name = "set-canonical",
+        help = "Set the canonical alias for a scope",
+    ),
+    KoinComponent {
+    private val aliasCommandAdapter: AliasCommandAdapter by inject()
+    private val parameterResolver: ScopeParameterResolver by inject()
+
+    private val aliasName by argument("alias", help = "The alias name to set as canonical")
+    private val scope by option("-s", "--scope", help = "The scope (ID or alias) to set the canonical alias for").required()
+
+    override fun run() {
+        runBlocking {
+            // Resolve scope ID
+            val scopeId = parameterResolver.resolve(scope).fold(
+                { error ->
+                    throw CliktError("Error resolving scope: ${ContractErrorMessageMapper.getMessage(error)}")
+                },
+                { resolvedId -> resolvedId },
+            )
+
+            // Set canonical alias
+            aliasCommandAdapter.setCanonicalAlias(scopeId, aliasName).fold(
+                { error ->
+                    throw CliktError("Error setting canonical alias: ${ContractErrorMessageMapper.getMessage(error)}")
+                },
+                {
+                    echo("Canonical alias set to '$aliasName' for scope '$scope'")
+                },
+            )
+        }
+    }
+}

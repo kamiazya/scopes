@@ -1,10 +1,12 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -15,22 +17,45 @@ import org.koin.core.component.inject
 class GetCommand :
     CliktCommand(
         name = "get",
-        help = "Get a scope by ID",
+        help = "Get a scope by ID or alias",
     ),
     KoinComponent {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
+    private val parameterResolver: ScopeParameterResolver by inject()
 
-    private val id by argument(help = "ID of the scope to retrieve")
+    private val identifier by argument(
+        name = "SCOPE",
+        help = "Scope identifier (ULID or alias)",
+    )
 
     override fun run() {
         runBlocking {
-            scopeCommandAdapter.getScopeById(id).fold(
+            // Resolve the identifier to a scope ID
+            parameterResolver.resolve(identifier).fold(
                 { error ->
-                    echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
-                { scope ->
-                    echo(scopeOutputFormatter.formatContractScope(scope))
+                { resolvedId ->
+                    // Fetch the scope using the resolved ID
+                    scopeCommandAdapter.getScopeById(resolvedId).fold(
+                        { error ->
+                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                        },
+                        { scope ->
+                            // Fetch all aliases for the scope
+                            scopeCommandAdapter.listAliases(scope.id).fold(
+                                { aliasError ->
+                                    // If we can't fetch aliases, still show the scope with just canonical alias
+                                    echo(scopeOutputFormatter.formatContractScope(scope))
+                                },
+                                { aliasResult ->
+                                    // Show scope with all aliases
+                                    echo(scopeOutputFormatter.formatContractScopeWithAliases(scope, aliasResult))
+                                },
+                            )
+                        },
+                    )
                 },
             )
         }

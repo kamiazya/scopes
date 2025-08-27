@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.port
 
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 

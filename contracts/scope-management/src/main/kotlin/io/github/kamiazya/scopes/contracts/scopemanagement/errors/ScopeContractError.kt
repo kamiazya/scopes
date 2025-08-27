@@ -157,6 +157,24 @@ public sealed interface ScopeContractError {
          * @property childrenCount Optional count of children
          */
         public data class HasChildren(public val scopeId: String, public val childrenCount: Int? = null) : BusinessError
+
+        /**
+         * Alias not found.
+         * @property alias The alias that was not found
+         */
+        public data class AliasNotFound(public val alias: String) : BusinessError
+
+        /**
+         * Alias already exists.
+         * @property alias The alias that already exists
+         */
+        public data class DuplicateAlias(public val alias: String) : BusinessError
+
+        /**
+         * Cannot remove canonical alias.
+         * @property alias The canonical alias that cannot be removed
+         */
+        public data class CannotRemoveCanonicalAlias(public val alias: String) : BusinessError
     }
 
     /**

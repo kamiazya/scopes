@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,19 +24,30 @@ class CreateCommand :
     KoinComponent {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
+    private val parameterResolver: ScopeParameterResolver by inject()
 
     private val title by argument(help = "Title of the scope")
     private val description by option("-d", "--description", help = "Description of the scope")
-    private val parentId by option("-p", "--parent", help = "Parent scope ID")
+    private val parentId by option("-p", "--parent", help = "Parent scope (ULID or alias)")
     private val noAlias by option("--no-alias", help = "Don't generate an alias").flag()
     private val customAlias by option("-a", "--alias", help = "Custom alias for the scope")
 
     override fun run() {
         runBlocking {
+            // Resolve parent ID if provided
+            val resolvedParentId = parentId?.let { parent ->
+                parameterResolver.resolve(parent).fold(
+                    { error ->
+                        throw CliktError("Error resolving parent: ${ContractErrorMessageMapper.getMessage(error)}")
+                    },
+                    { resolvedId -> resolvedId },
+                )
+            }
+
             scopeCommandAdapter.createScope(
                 title = title,
                 description = description,
-                parentId = parentId,
+                parentId = resolvedParentId,
                 generateAlias = !noAlias && customAlias == null,
                 customAlias = customAlias,
             ).fold(

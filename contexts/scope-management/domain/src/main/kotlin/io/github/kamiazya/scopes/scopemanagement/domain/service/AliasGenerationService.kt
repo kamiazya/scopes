@@ -26,7 +26,7 @@ interface AliasGenerationService {
      * @param aliasId The alias ID to generate a name for
      * @return Either a domain error or the generated alias name
      */
-    suspend fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName>
+    fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName>
 
     /**
      * Generates a random alias.
@@ -36,5 +36,5 @@ interface AliasGenerationService {
      *
      * @return Either a domain error or the generated alias name
      */
-    suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName>
+    fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName>
 }

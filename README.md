@@ -12,6 +12,7 @@ Create a unified, recursive task management system where AI and human developers
 - **Recursive Structure**: Projects, epics, and tasks are all "Scopes"
 - **Unlimited Hierarchy**: No depth restrictions (default: unlimited; configurable via HierarchyPolicy)
 - **Consistent Operations**: Same features available at every level
+- **Human-Friendly Aliases**: Memorable identifiers like `quiet-river-x7k` instead of ULIDs
 
 ### AI-Native Architecture
 - **Comment-Based AI Integration**: Asynchronous AI collaboration through comments
@@ -19,19 +20,64 @@ Create a unified, recursive task management system where AI and human developers
 - **MCP (Model Context Protocol)**: Standard AI integration protocol
 - **Natural Language Context**: "this", "that" resolve to focused scope
 
+### Smart Alias System
+- **Auto-Generated Names**: Memorable aliases using pattern like `bold-tiger-x7k`
+- **Custom Aliases**: Add your own names like `auth-system` or `sprint-42`
+- **Multiple Aliases**: One scope can have many aliases for different contexts
+- **Case-Insensitive**: Type `AUTH` or `auth` - both work
+- **Prefix Matching**: Type `qui` to match `quiet-river-x7k`
+
 ### Local-First Design
 - **Offline-First**: All features work without internet
 - **Selective Sync**: Choose what to share with external tools
 - **Cross-Platform**: Native support for Windows, macOS, Linux
 - **Privacy by Design**: Local-only data stays local
 
+## 🚀 Quick Start
+
+```bash
+# Create a scope with auto-generated alias
+$ scopes create "Implement authentication"
+Created scope with canonical alias: quiet-river-x7k
+
+# Create with custom alias
+$ scopes create "User management" --alias users
+
+# Add additional aliases
+$ scopes alias add users user-system
+$ scopes alias add users sprint-42
+
+# Find scopes by alias
+$ scopes show users
+$ scopes show spr<TAB>  # Tab completion: sprint-42
+
+# Create child scopes
+$ scopes create "Login form" --parent users --alias login
+$ scopes create "User profile" --parent users --alias profile
+
+# View hierarchy
+$ scopes tree users
+users          User management
+├── login      Login form
+└── profile    User profile
+```
+
 ## 📚 Documentation
 
+### Getting Started
+- [Tutorial: Getting Started with Aliases](docs/tutorials/getting-started-with-aliases.md) - Hands-on introduction
+- [CLI Quick Reference](docs/reference/cli-quick-reference.md) - All commands at a glance
+- [Using Aliases Guide](docs/guides/using-aliases.md) - Best practices and workflows
+
+### Architecture & Design
 - [Domain Overview](docs/explanation/domain-overview.md) - Core concepts and domain model
 - [Clean Architecture](docs/explanation/clean-architecture.md) - Architectural layers and principles
 - [Domain-Driven Design](docs/explanation/domain-driven-design.md) - DDD implementation approach
 - [Architecture Decision Records](docs/explanation/adr/) - Key architectural decisions
 - [Use Case Style Guide](docs/guides/use-case-style-guide.md) - Implementation patterns
+
+### Reference
+- [CLI Alias Commands](docs/reference/cli-alias-commands.md) - Complete alias command reference
 
 ## 🤝 Contributing
 

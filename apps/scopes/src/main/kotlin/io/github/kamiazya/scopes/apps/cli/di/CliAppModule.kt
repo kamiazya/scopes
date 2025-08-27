@@ -3,14 +3,19 @@ package io.github.kamiazya.scopes.apps.cli.di
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.GetCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.ListCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
+import io.github.kamiazya.scopes.interfaces.cli.commands.configureSubcommands
+import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import org.koin.dsl.module
 
 /**
@@ -44,6 +49,7 @@ val cliAppModule = module {
     factory { UpdateCommand() }
     factory { DeleteCommand() }
     factory { ListCommand() }
+    factory { AliasCommand().configureSubcommands() }
 
     // CLI Adapters
     single {
@@ -52,7 +58,20 @@ val cliAppModule = module {
             // Future: Add other context ports here
         )
     }
+    single {
+        AliasCommandAdapter(
+            scopeManagementPort = get(),
+        )
+    }
 
     // CLI Formatters
     single { ScopeOutputFormatter() }
+    single { AliasOutputFormatter() }
+
+    // CLI Utilities
+    single {
+        ScopeParameterResolver(
+            scopeManagementPort = get(),
+        )
+    }
 }

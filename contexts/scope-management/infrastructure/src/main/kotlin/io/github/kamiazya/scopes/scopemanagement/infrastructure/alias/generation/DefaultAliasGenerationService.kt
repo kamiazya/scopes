@@ -31,7 +31,7 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
      * @param aliasId The alias ID to generate a name for
      * @return Either an error or the generated alias name
      */
-    override suspend fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName> = try {
+    override fun generateCanonicalAlias(aliasId: AliasId): Either<ScopeInputError.AliasError, AliasName> = try {
         // Use the alias ID's hash as seed for deterministic generation
         val seed = aliasId.value.hashCode().toLong()
         val aliasString = strategy.generate(seed, wordProvider)
@@ -54,7 +54,7 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
      *
      * @return Either an error or the generated alias name
      */
-    override suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName> = try {
+    override fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName> = try {
         val aliasString = strategy.generateRandom(wordProvider)
 
         AliasName.create(aliasString)
