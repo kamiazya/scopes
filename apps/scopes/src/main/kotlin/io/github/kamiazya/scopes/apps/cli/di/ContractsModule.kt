@@ -29,6 +29,7 @@ val contractsModule = module {
             getScopeByAliasHandler = get(),
             getChildrenHandler = get(),
             getRootScopesHandler = get(),
+            listAliasesHandler = get(),
             transactionManager = get(),
             logger = get(),
         )

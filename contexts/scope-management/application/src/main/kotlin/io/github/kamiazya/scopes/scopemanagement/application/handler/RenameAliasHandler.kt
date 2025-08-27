@@ -120,7 +120,7 @@ class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, priv
                         "existingScopeId" to existingAlias.scopeId.value,
                     ),
                 )
-                raise(ScopeInputError.InvalidAlias(command.newAliasName))
+                raise(ScopeInputError.AliasDuplicate(command.newAliasName))
             }
 
             // Create renamed alias preserving all properties except the name

@@ -37,10 +37,12 @@ class AddAliasHandlerTest :
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
+            beforeEach {
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
             }
 
             val handler = AddAliasHandler(scopeAliasService, aliasRepository, transactionManager, logger)
@@ -82,7 +84,7 @@ class AddAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
                     coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
@@ -124,7 +126,7 @@ class AddAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
                 }
@@ -158,7 +160,7 @@ class AddAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>()
                 }
             }
 

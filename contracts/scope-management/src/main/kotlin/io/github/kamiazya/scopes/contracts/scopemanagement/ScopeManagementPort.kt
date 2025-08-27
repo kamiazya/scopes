@@ -8,6 +8,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
@@ -64,4 +66,11 @@ public interface ScopeManagementPort {
      * @return Either an error or the scope result (null if not found)
      */
     public suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult>
+
+    /**
+     * Retrieves all aliases for a specific scope.
+     * @param query The query containing the scope ID
+     * @return Either an error or the alias list result
+     */
+    public suspend fun listAliases(query: ListAliasesQuery): Either<ScopeContractError, AliasListResult>
 }

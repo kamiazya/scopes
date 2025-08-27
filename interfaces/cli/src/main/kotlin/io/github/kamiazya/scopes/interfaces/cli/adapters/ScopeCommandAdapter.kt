@@ -8,6 +8,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 
@@ -116,6 +118,11 @@ class ScopeCommandAdapter(
      * Lists root scopes
      */
     suspend fun listRootScopes(): Either<ScopeContractError, List<ScopeResult>> = scopeManagementPort.getRootScopes()
+
+    /**
+     * Lists all aliases for a specific scope
+     */
+    suspend fun listAliases(scopeId: String): Either<ScopeContractError, AliasListResult> = scopeManagementPort.listAliases(ListAliasesQuery(scopeId = scopeId))
 
     /**
      * Initializes a new project (root scope with workspace)

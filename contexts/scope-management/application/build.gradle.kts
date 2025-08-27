@@ -23,3 +23,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(project(":scope-management-infrastructure"))
 }
+
+tasks.test {
+    useJUnitPlatform()
+}

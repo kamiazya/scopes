@@ -35,10 +35,12 @@ class RemoveAliasHandlerTest :
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
+            beforeEach {
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
             }
 
             val handler = RemoveAliasHandler(scopeAliasService, transactionManager, logger)
@@ -74,7 +76,7 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
                     coVerify(exactly = 0) { scopeAliasService.removeAlias(any()) }
@@ -89,7 +91,7 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasEmpty>().apply {
                         attemptedValue shouldBe ""
                     }
                     coVerify(exactly = 0) { scopeAliasService.removeAlias(any()) }
@@ -110,7 +112,7 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
                         attemptedValue shouldBe "non-existent"
                     }
                 }
@@ -133,7 +135,7 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.CannotRemoveCanonicalAlias>().apply {
                         attemptedValue shouldBe "canonical-alias"
                     }
                 }
@@ -156,7 +158,7 @@ class RemoveAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.CannotRemoveCanonicalAlias>().apply {
                         attemptedValue shouldBe "generated-alias"
                     }
                     coVerify(exactly = 1) { scopeAliasService.removeAlias(aliasName) }

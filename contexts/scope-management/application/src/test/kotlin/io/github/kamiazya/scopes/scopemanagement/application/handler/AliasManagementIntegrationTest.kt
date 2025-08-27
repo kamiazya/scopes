@@ -32,21 +32,32 @@ class AliasManagementIntegrationTest :
         }
 
         describe("Alias Management Integration") {
-            val aliasRepository: ScopeAliasRepository = InMemoryScopeAliasRepository()
+            lateinit var aliasRepository: ScopeAliasRepository
+            lateinit var aliasService: ScopeAliasManagementService
             val aliasGenerationService = mockk<AliasGenerationService>()
-            val aliasService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
-            }
+            lateinit var addAliasHandler: AddAliasHandler
+            lateinit var removeAliasHandler: RemoveAliasHandler
+            lateinit var renameAliasHandler: RenameAliasHandler
 
-            val addAliasHandler = AddAliasHandler(aliasService, aliasRepository, transactionManager, logger)
-            val removeAliasHandler = RemoveAliasHandler(aliasService, transactionManager, logger)
-            val renameAliasHandler = RenameAliasHandler(aliasRepository, transactionManager, logger)
+            beforeEach {
+                // Create fresh repository for each test
+                aliasRepository = InMemoryScopeAliasRepository()
+                aliasService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
+
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
+
+                // Initialize handlers with fresh repository
+                addAliasHandler = AddAliasHandler(aliasService, aliasRepository, transactionManager, logger)
+                removeAliasHandler = RemoveAliasHandler(aliasService, transactionManager, logger)
+                renameAliasHandler = RenameAliasHandler(aliasRepository, transactionManager, logger)
+            }
 
             describe("complete alias lifecycle") {
                 it("should add, rename, and remove aliases successfully") {
@@ -131,7 +142,7 @@ class AliasManagementIntegrationTest :
 
                     // Then - should fail with duplicate alias error
                     result2.shouldBeLeft()
-                    result2.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result2.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>().apply {
                         attemptedValue shouldBe sharedAlias
                     }
                 }
@@ -153,7 +164,7 @@ class AliasManagementIntegrationTest :
 
                     // Then - should fail
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>()
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.CannotRemoveCanonicalAlias>()
                 }
 
                 it("should preserve canonical status when renaming") {
@@ -186,7 +197,7 @@ class AliasManagementIntegrationTest :
                     val removeResult = removeAliasHandler(removeCommand)
 
                     removeResult.shouldBeLeft()
-                    removeResult.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    removeResult.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
                         attemptedValue shouldBe "non-existent-alias"
                     }
 
@@ -226,7 +237,7 @@ class AliasManagementIntegrationTest :
 
                     // Then - should fail
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>().apply {
                         attemptedValue shouldBe "alias2"
                     }
                 }

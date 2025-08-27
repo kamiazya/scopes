@@ -123,7 +123,7 @@ class ScopeOutputFormatter {
         appendLine("Title: ${scope.title}")
         scope.description?.let { appendLine("Description: $it") }
         scope.parentId?.let { appendLine("Parent ID: $it") }
-        appendLine("Alias: ${scope.canonicalAlias}")
+        appendLine("Canonical Alias: ${scope.canonicalAlias}")
         appendLine("Created: ${scope.createdAt}")
         appendLine("Updated: ${scope.updatedAt}")
     }.trim()
@@ -168,6 +168,7 @@ class ScopeOutputFormatter {
         }
         appendLine()
         append("  ID: ${scope.id}")
+        append(" | Alias: ${scope.canonicalAlias}")
         scope.parentId?.let {
             append(" | Parent: $it")
         }

@@ -12,6 +12,10 @@ Create a unified, recursive task management system where AI and human developers
 - **Recursive Structure**: Projects, epics, and tasks are all "Scopes"
 - **Unlimited Hierarchy**: No depth restrictions (default: unlimited; configurable via HierarchyPolicy)
 - **Consistent Operations**: Same features available at every level
+- **Flexible Naming**: Each scope can have multiple aliases for easy reference
+  - Auto-generated canonical aliases (e.g., `witty-penguin-42`)
+  - Custom aliases (e.g., `my-project`, `feature-x`)
+  - All CLI commands accept either scope IDs or aliases
 
 ### AI-Native Architecture
 - **Comment-Based AI Integration**: Asynchronous AI collaboration through comments

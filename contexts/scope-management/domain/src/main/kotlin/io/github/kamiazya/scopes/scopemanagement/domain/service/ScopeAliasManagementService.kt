@@ -49,13 +49,18 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
             )
         }
 
+        // If the alias already exists for this scope and is canonical, return it (idempotent)
+        if (existingAlias != null && existingAlias.scopeId == scopeId && existingAlias.isCanonical()) {
+            return@either existingAlias
+        }
+
         // Remove existing canonical alias if any
         val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId)
             .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
             .bind()
 
-        if (existingCanonical != null) {
-            // Convert existing canonical to custom
+        if (existingCanonical != null && existingCanonical.aliasName != aliasName) {
+            // Convert existing canonical to custom only if it's not the same alias
             val updatedAlias = existingCanonical.copy(
                 aliasType = AliasType.CUSTOM,
                 updatedAt = Clock.System.now(),
@@ -63,6 +68,18 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
             aliasRepository.update(updatedAlias)
                 .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
                 .bind()
+        }
+
+        // If the alias already exists for this scope, update it to canonical
+        if (existingAlias != null && existingAlias.scopeId == scopeId) {
+            val updatedAlias = existingAlias.copy(
+                aliasType = AliasType.CANONICAL,
+                updatedAt = Clock.System.now(),
+            )
+            aliasRepository.update(updatedAlias)
+                .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), aliasName.value) }
+                .bind()
+            return@either updatedAlias
         }
 
         // Create new canonical alias

@@ -39,10 +39,12 @@ class GetScopeByAliasHandlerTest :
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
+            beforeEach {
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
             }
 
             val handler = GetScopeByAliasHandler(
@@ -91,7 +93,7 @@ class GetScopeByAliasHandlerTest :
             }
 
             describe("when alias name is invalid") {
-                it("should return ScopeInputError.AliasNotFound") {
+                it("should return ScopeInputError.AliasInvalidFormat") {
                     // Given
                     val invalidAlias = "invalid alias!"
                     val query = GetScopeByAliasQuery(invalidAlias)
@@ -101,7 +103,7 @@ class GetScopeByAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe invalidAlias
                     }
                     coVerify(exactly = 0) { aliasRepository.findByAliasName(any()) }
@@ -175,9 +177,7 @@ class GetScopeByAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasNotFound>().apply {
-                        attemptedValue shouldBe aliasName
-                    }
+                    result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.StorageUnavailable>()
                 }
 
                 it("should propagate repository error when finding scope") {
@@ -202,9 +202,7 @@ class GetScopeByAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.IdInvalidFormat>().apply {
-                        attemptedValue shouldBe scopeId.value
-                    }
+                    result.leftOrNull()!!.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError.StorageUnavailable>()
                 }
             }
 

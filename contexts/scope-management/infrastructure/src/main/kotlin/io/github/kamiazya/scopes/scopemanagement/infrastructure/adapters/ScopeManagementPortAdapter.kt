@@ -10,6 +10,9 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
@@ -24,11 +27,13 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.ListAliasesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
+import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery as AppGetScopeByAliasQuery
 
@@ -54,6 +59,7 @@ class ScopeManagementPortAdapter(
     private val getScopeByAliasHandler: GetScopeByAliasHandler,
     private val getChildrenHandler: GetChildrenHandler,
     private val getRootScopesHandler: GetRootScopesHandler,
+    private val listAliasesHandler: ListAliasesHandler,
     private val transactionManager: TransactionManager,
     private val logger: Logger = ConsoleLogger("ScopeManagementPortAdapter"),
 ) : ScopeManagementPort {
@@ -204,6 +210,27 @@ class ScopeManagementPortAdapter(
                     aspects = scopeDto.aspects,
                 )
             },
+        )
+    }
+
+    override suspend fun listAliases(query: ListAliasesQuery): Either<ScopeContractError, AliasListResult> = listAliasesHandler(
+        ListAliases(
+            scopeId = query.scopeId,
+        ),
+    ).mapLeft { error ->
+        errorMapper.mapToContractError(error)
+    }.map { aliasListDto ->
+        AliasListResult(
+            scopeId = aliasListDto.scopeId,
+            aliases = aliasListDto.aliases.map { aliasDto ->
+                AliasInfo(
+                    aliasName = aliasDto.aliasName,
+                    aliasType = aliasDto.aliasType,
+                    isCanonical = aliasDto.isCanonical,
+                    createdAt = aliasDto.createdAt,
+                )
+            },
+            totalCount = aliasListDto.totalCount,
         )
     }
 }

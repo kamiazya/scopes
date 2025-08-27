@@ -37,10 +37,12 @@ class RenameAliasHandlerTest :
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
+            beforeEach {
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
             }
 
             val handler = RenameAliasHandler(aliasRepository, transactionManager, logger)
@@ -127,7 +129,7 @@ class RenameAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
                 }
@@ -168,14 +170,14 @@ class RenameAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasInvalidFormat>().apply {
                         attemptedValue shouldBe "invalid alias!"
                     }
                 }
             }
 
             describe("when new alias name already exists") {
-                it("should return InvalidAlias error") {
+                it("should return AliasDuplicate error") {
                     // Given
                     val currentAlias = "existing-alias"
                     val newAliasName = "already-taken"
@@ -200,7 +202,7 @@ class RenameAliasHandlerTest :
 
                     // Then
                     result.shouldBeLeft()
-                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.InvalidAlias>().apply {
+                    result.leftOrNull()!!.shouldBeInstanceOf<ScopeInputError.AliasDuplicate>().apply {
                         attemptedValue shouldBe newAliasName
                     }
                     coVerify(exactly = 0) { aliasRepository.removeByAliasName(any()) }

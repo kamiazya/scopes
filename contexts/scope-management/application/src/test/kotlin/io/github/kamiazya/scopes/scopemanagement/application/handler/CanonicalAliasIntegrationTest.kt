@@ -32,26 +32,37 @@ class CanonicalAliasIntegrationTest :
         }
 
         describe("Canonical Alias Transitions") {
-            val aliasRepository: ScopeAliasRepository = InMemoryScopeAliasRepository()
+            lateinit var aliasRepository: ScopeAliasRepository
+            lateinit var aliasService: ScopeAliasManagementService
             val aliasGenerationService = mockk<AliasGenerationService>()
-            val aliasService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
             val transactionManager = mockk<TransactionManager>()
             val logger = mockk<Logger>(relaxed = true)
 
-            // Default transaction behavior - just execute the block
-            coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
-                val block = firstArg<suspend () -> Either<Any, Any>>()
-                block()
-            }
+            lateinit var addAliasHandler: AddAliasHandler
+            lateinit var setCanonicalHandler: SetCanonicalAliasHandler
+            lateinit var listAliasesHandler: ListAliasesHandler
 
-            val addAliasHandler = AddAliasHandler(aliasService, aliasRepository, transactionManager, logger)
-            val setCanonicalHandler = SetCanonicalAliasHandler(
-                aliasService,
-                aliasRepository,
-                transactionManager,
-                logger,
-            )
-            val listAliasesHandler = ListAliasesHandler(aliasRepository, transactionManager, logger)
+            beforeEach {
+                // Create fresh repository for each test
+                aliasRepository = InMemoryScopeAliasRepository()
+                aliasService = ScopeAliasManagementService(aliasRepository, aliasGenerationService)
+
+                // Configure transaction manager to execute the block directly
+                coEvery { transactionManager.inTransaction<Any, Any>(any()) } coAnswers {
+                    val block = firstArg<suspend () -> Either<Any, Any>>()
+                    block.invoke()
+                }
+
+                // Initialize handlers with fresh repository
+                addAliasHandler = AddAliasHandler(aliasService, aliasRepository, transactionManager, logger)
+                setCanonicalHandler = SetCanonicalAliasHandler(
+                    aliasService,
+                    aliasRepository,
+                    transactionManager,
+                    logger,
+                )
+                listAliasesHandler = ListAliasesHandler(aliasRepository, transactionManager, logger)
+            }
 
             describe("complete canonical alias lifecycle") {
                 it("should transition canonical status between aliases") {
@@ -123,24 +134,31 @@ class CanonicalAliasIntegrationTest :
                     val scopeId = "01HZQB5QKM0WDG7ZBHSPKT3N2Y"
                     val aliasName = "my-project"
 
-                    // Add alias
-                    val addCommand = AddAlias(scopeId, aliasName)
+                    // Create initial canonical alias for the scope
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val initialCanonical = ScopeAlias.createCanonical(scopeIdVO, AliasName.create("initial-canonical").getOrNull()!!)
+                    aliasRepository.save(initialCanonical)
+
+                    // Add alias using the initial canonical
+                    val addCommand = AddAlias("initial-canonical", aliasName)
                     addAliasHandler(addCommand).shouldBeRight()
 
-                    // Set as canonical first time using the same alias
-                    val setCommand = SetCanonicalAlias(aliasName, aliasName)
+                    // Set as canonical first time using the initial canonical
+                    val setCommand = SetCanonicalAlias("initial-canonical", aliasName)
                     setCanonicalHandler(setCommand).shouldBeRight()
 
-                    // Set as canonical second time (idempotent)
-                    val result = setCanonicalHandler(setCommand)
+                    // Set as canonical second time (idempotent) - now aliasName is canonical
+                    val setCommand2 = SetCanonicalAlias(aliasName, aliasName)
+                    val result = setCanonicalHandler(setCommand2)
                     result.shouldBeRight()
 
                     // Verify state unchanged
                     val listResult = listAliasesHandler(ListAliases(scopeId))
                     listResult.shouldBeRight()
                     val aliases = listResult.getOrElse { throw AssertionError("Expected Right but got Left") }.aliases
-                    aliases.size shouldBe 1
-                    aliases[0].isCanonical shouldBe true
+                    aliases.size shouldBe 2 // initial-canonical and my-project
+                    aliases.find { it.aliasName == aliasName }?.isCanonical shouldBe true
+                    aliases.find { it.aliasName == "initial-canonical" }?.isCanonical shouldBe false
                 }
             }
 
@@ -167,8 +185,13 @@ class CanonicalAliasIntegrationTest :
                     val existingAlias = "existing"
                     val nonExistentAlias = "non-existent"
 
-                    // Add existing alias
-                    addAliasHandler(AddAlias(scopeId, existingAlias)).shouldBeRight()
+                    // Create initial canonical alias for the scope
+                    val scopeIdVO = ScopeId.create(scopeId).getOrNull()!!
+                    val initialCanonical = ScopeAlias.createCanonical(scopeIdVO, AliasName.create("initial-canonical").getOrNull()!!)
+                    aliasRepository.save(initialCanonical)
+
+                    // Add existing alias using initial canonical
+                    addAliasHandler(AddAlias("initial-canonical", existingAlias)).shouldBeRight()
 
                     // When
                     val command = SetCanonicalAlias(existingAlias, nonExistentAlias)
@@ -188,10 +211,18 @@ class CanonicalAliasIntegrationTest :
                     val alias1 = "project-1"
                     val alias2 = "project-2"
 
+                    // Create canonical aliases for both scopes
+                    val scopeIdVO1 = ScopeId.create(scopeId1).getOrNull()!!
+                    val scopeIdVO2 = ScopeId.create(scopeId2).getOrNull()!!
+                    val canonical1 = ScopeAlias.createCanonical(scopeIdVO1, AliasName.create("canonical-1").getOrNull()!!)
+                    val canonical2 = ScopeAlias.createCanonical(scopeIdVO2, AliasName.create("canonical-2").getOrNull()!!)
+                    aliasRepository.save(canonical1)
+                    aliasRepository.save(canonical2)
+
                     // Add alias to scope1
-                    addAliasHandler(AddAlias(scopeId1, alias1)).shouldBeRight()
+                    addAliasHandler(AddAlias("canonical-1", alias1)).shouldBeRight()
                     // Add alias to scope2
-                    addAliasHandler(AddAlias(scopeId2, alias2)).shouldBeRight()
+                    addAliasHandler(AddAlias("canonical-2", alias2)).shouldBeRight()
 
                     // Try to promote alias2 using alias1 (different scopes)
                     val setCommand = SetCanonicalAlias(alias1, alias2)
