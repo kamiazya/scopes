@@ -42,7 +42,17 @@ class GetCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scope ->
-                            echo(scopeOutputFormatter.formatContractScope(scope))
+                            // Fetch all aliases for the scope
+                            scopeCommandAdapter.listAliases(scope.id).fold(
+                                { aliasError ->
+                                    // If we can't fetch aliases, still show the scope with just canonical alias
+                                    echo(scopeOutputFormatter.formatContractScope(scope))
+                                },
+                                { aliasResult ->
+                                    // Show scope with all aliases
+                                    echo(scopeOutputFormatter.formatContractScopeWithAliases(scope, aliasResult))
+                                },
+                            )
                         },
                     )
                 },
