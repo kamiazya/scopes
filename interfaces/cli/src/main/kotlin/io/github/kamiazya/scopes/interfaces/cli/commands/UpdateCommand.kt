@@ -40,13 +40,16 @@ class UpdateCommand :
                     throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 { resolvedId ->
+                    if (title == null && description == null) {
+                        throw CliktError("No changes specified. Provide --title and/or --description.")
+                    }
                     scopeCommandAdapter.updateScope(
                         id = resolvedId,
                         title = title,
                         description = description,
                     ).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                         },
                         { scope ->
                             echo(scopeOutputFormatter.formatContractUpdateResult(scope))

@@ -193,7 +193,21 @@ class ErrorMapper(private val logger: Logger) {
         }
 
         // Persistence errors
+        is PersistenceError.NotFound -> {
+            // Map based on entity type
+            when (error.entityType) {
+                "ScopeAlias" -> ScopeContractError.BusinessError.AliasNotFound(
+                    alias = error.entityId ?: "",
+                )
+                else -> ScopeContractError.BusinessError.NotFound(
+                    scopeId = error.entityId ?: "",
+                )
+            }
+        }
         is PersistenceError.StorageUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "storage",
+        )
+        is PersistenceError.DataCorruption -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "storage",
         )
         is PersistenceError.ConcurrencyConflict -> ScopeContractError.SystemError.ConcurrentModification(

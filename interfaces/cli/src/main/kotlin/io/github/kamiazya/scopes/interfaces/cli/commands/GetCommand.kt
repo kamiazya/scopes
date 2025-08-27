@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
@@ -33,13 +34,13 @@ class GetCommand :
             // Resolve the identifier to a scope ID
             parameterResolver.resolve(identifier).fold(
                 { error ->
-                    echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 { resolvedId ->
                     // Fetch the scope using the resolved ID
                     scopeCommandAdapter.getScopeById(resolvedId).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                         },
                         { scope ->
                             // Fetch all aliases for the scope

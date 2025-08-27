@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.ListAliasesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
@@ -128,6 +129,14 @@ val scopeManagementModule = module {
     single {
         RemoveAliasHandler(
             scopeAliasService = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        ListAliasesHandler(
+            aliasRepository = get(),
             transactionManager = get(),
             logger = get(),
         )
