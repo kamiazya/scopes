@@ -9,5 +9,5 @@ sealed class ScopeAliasError(recoverable: Boolean = true) : ApplicationError(rec
     data class CannotRemoveCanonicalAlias(val scopeId: String, val aliasName: String) : ScopeAliasError()
     data class AliasGenerationFailed(val scopeId: String, val retryCount: Int) : ScopeAliasError(recoverable = false)
     data class AliasGenerationValidationFailed(val scopeId: String, val reason: String, val attemptedValue: String) : ScopeAliasError()
-    data class DataInconsistency(val message: String, val aliasName: String, val scopeId: String) : ScopeAliasError(recoverable = false)
+    data class DataInconsistency(val aliasName: String, val scopeId: String) : ScopeAliasError(recoverable = false)
 }

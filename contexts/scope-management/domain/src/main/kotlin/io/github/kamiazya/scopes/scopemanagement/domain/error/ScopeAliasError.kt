@@ -39,5 +39,5 @@ sealed class ScopeAliasError : ScopesError() {
      * Data inconsistency error where alias exists but the referenced scope doesn't exist.
      * This indicates a serious data integrity issue that needs attention.
      */
-    data class DataInconsistency(override val occurredAt: Instant, val message: String, val aliasName: String, val scopeId: ScopeId) : ScopeAliasError()
+    data class DataInconsistency(override val occurredAt: Instant, val aliasName: String, val scopeId: ScopeId) : ScopeAliasError()
 }
