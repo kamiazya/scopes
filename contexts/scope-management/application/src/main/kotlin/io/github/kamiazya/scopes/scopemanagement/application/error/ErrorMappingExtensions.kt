@@ -251,10 +251,19 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
             attemptedValue = this.attemptedValue,
         )
 
-    is DomainScopeAliasError.DataInconsistency ->
-        AppScopeAliasError.DataInconsistency(
+    is DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+        AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
             aliasName = this.aliasName,
             scopeId = this.scopeId.toString(),
+        )
+
+    // Handle any future DataInconsistencyError subtypes
+    is DomainScopeAliasError.DataInconsistencyError ->
+        // This is a fallback for any new DataInconsistencyError subtypes not explicitly handled above
+        // In production, this should log a warning about unmapped error type
+        AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
+            aliasName = "unknown",
+            scopeId = "unknown",
         )
 }
 

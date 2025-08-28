@@ -103,7 +103,7 @@ class GetScopeByAliasHandler(
                 )
                 // This is an inconsistency - alias exists but scope doesn't
                 raise(
-                    ScopeAliasError.DataInconsistency(
+                    ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
                         aliasName = input.aliasName,
                         scopeId = scopeId.value,
                     ),
