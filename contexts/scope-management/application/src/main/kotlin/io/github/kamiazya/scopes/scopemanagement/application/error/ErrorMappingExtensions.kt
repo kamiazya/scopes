@@ -250,6 +250,13 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
             reason = this.reason,
             attemptedValue = this.attemptedValue,
         )
+
+    is DomainScopeAliasError.DataInconsistency ->
+        AppScopeAliasError.DataInconsistency(
+            message = this.message,
+            aliasName = this.aliasName,
+            scopeId = this.scopeId.toString(),
+        )
 }
 
 /**

@@ -34,4 +34,10 @@ sealed class ScopeAliasError : ScopesError() {
      */
     data class AliasGenerationValidationFailed(override val occurredAt: Instant, val scopeId: ScopeId, val reason: String, val attemptedValue: String) :
         ScopeAliasError()
+
+    /**
+     * Data inconsistency error where alias exists but the referenced scope doesn't exist.
+     * This indicates a serious data integrity issue that needs attention.
+     */
+    data class DataInconsistency(override val occurredAt: Instant, val message: String, val aliasName: String, val scopeId: ScopeId) : ScopeAliasError()
 }
