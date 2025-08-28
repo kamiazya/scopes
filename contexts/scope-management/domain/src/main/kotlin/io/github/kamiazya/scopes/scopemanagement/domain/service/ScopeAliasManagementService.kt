@@ -340,7 +340,7 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
         }
 
         val scopeId = existingAlias.scopeId
-        val isCanonical = existingAlias.isCanonical()
+        val oldAliasType = existingAlias.aliasType
 
         // Check if the new alias name is already taken by a different scope
         val existingNewAlias = aliasRepository.findByAliasName(newAliasName)
@@ -358,16 +358,29 @@ class ScopeAliasManagementService(private val aliasRepository: ScopeAliasReposit
             )
         }
 
-        // If the new alias already exists for the same scope, just remove the old one
+        // If the new alias already exists for the same scope, preserve the old alias's type
         // (this handles the edge case where renaming to an existing alias of the same scope)
         if (existingNewAlias != null && existingNewAlias.scopeId == scopeId) {
+            // Update the existing alias to preserve the old alias's type if needed
+            val updatedAlias = if (existingNewAlias.aliasType != oldAliasType) {
+                val aliasWithPreservedType = existingNewAlias.copy(
+                    aliasType = oldAliasType,
+                    updatedAt = Clock.System.now(),
+                )
+                aliasRepository.update(aliasWithPreservedType)
+                    .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), newAliasName.value) }
+                    .bind()
+                aliasWithPreservedType
+            } else {
+                existingNewAlias
+            }
+
             // Remove the old alias
             aliasRepository.removeByAliasName(oldAliasName)
                 .mapLeft { ScopeAliasError.AliasNotFound(Clock.System.now(), oldAliasName.value) }
                 .bind()
 
-            // Return the existing alias (which already has the new name)
-            return@either existingNewAlias
+            return@either updatedAlias
         }
 
         // Perform atomic rename by updating the existing alias
