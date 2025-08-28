@@ -64,8 +64,14 @@ class AddAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    // Map to application error - alias not found becomes input error
-                    ScopeInputError.AliasNotFound(input.existingAlias)
+                    // Map domain error to appropriate application error
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound ->
+                            ScopeInputError.AliasNotFound(input.existingAlias)
+                        else ->
+                            // For other errors (like persistence errors), use the generic error mapping
+                            error.toApplicationError()
+                    }
                 }
                 .bind()
 
