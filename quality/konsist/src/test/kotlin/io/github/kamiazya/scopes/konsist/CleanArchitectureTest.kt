@@ -193,18 +193,14 @@ class CleanArchitectureTest :
                     .filter { !it.hasAbstractModifier }
                     .filter { clazz ->
                         // Filter for services that should be domain services by examining their characteristics:
-                        // 1. Services that import from domain.service package (indicating they use domain services)
-                        // 2. Services with domain-like method names AND domain value object parameters
-                        // 3. Exclude application services that are clearly for I/O, coordination, or state management
+                        // 1. Services with domain-like method names AND domain value object parameters
+                        // 2. Exclude application services that are clearly for I/O, coordination, or state management
+                        // Note: We don't check imports from domain.service as application services are allowed to use domain services
 
                         val isApplicationService = clazz.name.contains("Application") ||
                             clazz.name.contains("Active") ||
                             clazz.name.contains("Context") ||
                             clazz.name.contains("Validation")
-
-                        val hasDomainServiceImports = clazz.containingFile.imports.any { import ->
-                            import.name.contains(".domain.service.")
-                        }
 
                         val hasDomainBusinessLogic = clazz.functions().any { function ->
                             val hasDomainMethodNames = function.name.contains("assign") ||
@@ -221,7 +217,7 @@ class CleanArchitectureTest :
                             hasDomainMethodNames && hasDomainParameters
                         }
 
-                        !isApplicationService && (hasDomainServiceImports || hasDomainBusinessLogic)
+                        !isApplicationService && hasDomainBusinessLogic
                     }
                     .assertFalse { service ->
                         // If a service with domain logic characteristics is found in application layer,
