@@ -4,173 +4,126 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
 /**
  * Handler for renaming existing aliases.
- * This operation preserves the alias type (canonical/custom) and other properties.
+ * This operation is atomic and preserves the alias type (canonical/custom).
+ * The rename is performed in a single transaction to prevent data loss.
  */
-class RenameAliasHandler(private val aliasRepository: ScopeAliasRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    UseCase<RenameAlias, ScopesError, Unit> {
+class RenameAliasHandler(
+    private val scopeAliasService: ScopeAliasManagementService,
+    private val transactionManager: TransactionManager,
+    private val logger: Logger,
+) : UseCase<RenameAlias, ScopesError, Unit> {
 
-    override suspend operator fun invoke(command: RenameAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(input: RenameAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Renaming alias",
                 mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newAliasName" to command.newAliasName,
+                    "currentAlias" to input.currentAlias,
+                    "newAliasName" to input.newAliasName,
                 ),
             )
 
             // Validate currentAlias
-            val currentAliasName = AliasName.create(command.currentAlias)
+            val currentAliasName = AliasName.create(input.currentAlias)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid current alias name",
                         mapOf(
-                            "currentAlias" to command.currentAlias,
+                            "currentAlias" to input.currentAlias,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(command.currentAlias)
+                            ScopeInputError.AliasEmpty(input.currentAlias)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.currentAlias, error.minimumLength)
+                            ScopeInputError.AliasTooShort(input.currentAlias, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.currentAlias, error.maximumLength)
+                            ScopeInputError.AliasTooLong(input.currentAlias, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.currentAlias, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(input.currentAlias, error.expectedPattern)
                     }
                 }
                 .bind()
 
             // Validate newAliasName
-            val newAliasName = AliasName.create(command.newAliasName)
+            val newAliasName = AliasName.create(input.newAliasName)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid new alias name",
                         mapOf(
-                            "newAliasName" to command.newAliasName,
+                            "newAliasName" to input.newAliasName,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(command.newAliasName)
+                            ScopeInputError.AliasEmpty(input.newAliasName)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.newAliasName, error.minimumLength)
+                            ScopeInputError.AliasTooShort(input.newAliasName, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.newAliasName, error.maximumLength)
+                            ScopeInputError.AliasTooLong(input.newAliasName, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.newAliasName, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(input.newAliasName, error.expectedPattern)
                     }
                 }
                 .bind()
 
-            // Find the current alias
-            val currentAliasEntity = aliasRepository.findByAliasName(currentAliasName)
+            // Perform atomic rename operation
+            // This method handles all validation and ensures atomicity:
+            // - Verifies the old alias exists
+            // - Checks new alias availability
+            // - Preserves alias type (canonical/custom)
+            // - Performs rename in single transaction
+            val renamedAlias = scopeAliasService.renameAlias(currentAliasName, newAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to find current alias",
+                        "Failed to rename alias",
                         mapOf(
-                            "currentAlias" to command.currentAlias,
+                            "currentAlias" to input.currentAlias,
+                            "newAlias" to input.newAliasName,
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
-                }
-                .bind()
-
-            if (currentAliasEntity == null) {
-                logger.error(
-                    "Current alias not found",
-                    mapOf("currentAlias" to command.currentAlias),
-                )
-                raise(ScopeInputError.AliasNotFound(command.currentAlias))
-            }
-
-            // Check if new alias name already exists
-            val existingAlias = aliasRepository.findByAliasName(newAliasName)
-                .mapLeft { error ->
-                    logger.error(
-                        "Failed to check existing alias",
-                        mapOf(
-                            "newAliasName" to command.newAliasName,
-                            "error" to error.toString(),
-                        ),
-                    )
-                    error.toApplicationError()
-                }
-                .bind()
-
-            if (existingAlias != null) {
-                logger.error(
-                    "New alias name already exists",
-                    mapOf(
-                        "newAliasName" to command.newAliasName,
-                        "existingScopeId" to existingAlias.scopeId.value,
-                    ),
-                )
-                raise(
-                    ScopeAliasError.AliasDuplicate(
-                        aliasName = command.newAliasName,
-                        existingScopeId = existingAlias.scopeId.value,
-                        attemptedScopeId = currentAliasEntity.scopeId.value,
-                    ),
-                )
-            }
-
-            // Create renamed alias preserving all properties except the name
-            val renamedAlias = when (currentAliasEntity.isCanonical()) {
-                true -> ScopeAlias.createCanonical(currentAliasEntity.scopeId, newAliasName)
-                false -> ScopeAlias.createCustom(currentAliasEntity.scopeId, newAliasName)
-            }.copy(createdAt = currentAliasEntity.createdAt) // Preserve original creation time
-
-            // Delete old alias and save new one
-            aliasRepository.removeByAliasName(currentAliasName)
-                .mapLeft { error ->
-                    logger.error(
-                        "Failed to delete old alias",
-                        mapOf(
-                            "currentAlias" to command.currentAlias,
-                            "error" to error.toString(),
-                        ),
-                    )
-                    error.toApplicationError()
-                }
-                .bind()
-
-            aliasRepository.save(renamedAlias)
-                .mapLeft { error ->
-                    logger.error(
-                        "Failed to save renamed alias",
-                        mapOf(
-                            "currentAlias" to command.currentAlias,
-                            "newAliasName" to command.newAliasName,
-                            "error" to error.toString(),
-                        ),
-                    )
-                    error.toApplicationError()
+                    // Map specific domain errors to application errors
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound -> {
+                            // The old alias doesn't exist
+                            ScopeInputError.AliasNotFound(input.currentAlias)
+                        }
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.DuplicateAlias -> {
+                            // The new alias already exists for another scope
+                            io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError.AliasDuplicate(
+                                aliasName = input.newAliasName,
+                                existingScopeId = error.existingScopeId.value,
+                                attemptedScopeId = error.attemptedScopeId.value,
+                            )
+                        }
+                        else -> {
+                            // For other errors (like persistence errors), use the generic error mapping
+                            error.toGenericApplicationError()
+                        }
+                    }
                 }
                 .bind()
 
             logger.info(
                 "Successfully renamed alias",
                 mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newAliasName" to command.newAliasName,
-                    "scopeId" to currentAliasEntity.scopeId.value,
-                    "aliasType" to currentAliasEntity.aliasType.name,
+                    "currentAlias" to input.currentAlias,
+                    "newAliasName" to input.newAliasName,
+                    "scopeId" to renamedAlias.scopeId.value,
+                    "aliasType" to if (renamedAlias.isCanonical()) "canonical" else "custom",
                 ),
             )
         }

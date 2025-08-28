@@ -5,11 +5,10 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.AddAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -18,87 +17,83 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  */
 class AddAliasHandler(
     private val scopeAliasService: ScopeAliasManagementService,
-    private val aliasRepository: ScopeAliasRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : UseCase<AddAlias, ScopesError, Unit> {
 
-    override suspend operator fun invoke(command: AddAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(input: AddAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Adding alias to scope",
                 mapOf(
-                    "existingAlias" to command.existingAlias,
-                    "newAlias" to command.newAlias,
+                    "existingAlias" to input.existingAlias,
+                    "newAlias" to input.newAlias,
                 ),
             )
 
             // Validate existingAlias
-            val existingAliasName = AliasName.create(command.existingAlias)
+            val existingAliasName = AliasName.create(input.existingAlias)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid existing alias name",
                         mapOf(
-                            "existingAlias" to command.existingAlias,
+                            "existingAlias" to input.existingAlias,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(command.existingAlias)
+                            ScopeInputError.AliasEmpty(input.existingAlias)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.existingAlias, error.minimumLength)
+                            ScopeInputError.AliasTooShort(input.existingAlias, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.existingAlias, error.maximumLength)
+                            ScopeInputError.AliasTooLong(input.existingAlias, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.existingAlias, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(input.existingAlias, error.expectedPattern)
                     }
                 }
                 .bind()
 
-            // Find the existing alias to identify the scope
-            val existingAliasEntity = aliasRepository.findByAliasName(existingAliasName)
+            // Find the scope ID through domain service
+            val scopeId = scopeAliasService.resolveAlias(existingAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to find existing alias",
+                        "Failed to resolve existing alias",
                         mapOf(
-                            "existingAlias" to command.existingAlias,
+                            "existingAlias" to input.existingAlias,
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    // Map domain error to appropriate application error
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound ->
+                            ScopeInputError.AliasNotFound(input.existingAlias)
+                        else ->
+                            // For other errors (like persistence errors), use the generic error mapping
+                            error.toGenericApplicationError()
+                    }
                 }
                 .bind()
 
-            if (existingAliasEntity == null) {
-                logger.error(
-                    "Existing alias not found",
-                    mapOf("existingAlias" to command.existingAlias),
-                )
-                raise(ScopeInputError.AliasNotFound(command.existingAlias))
-            }
-
-            val scopeId = existingAliasEntity.scopeId
-
             // Validate newAlias
-            val newAliasName = AliasName.create(command.newAlias)
+            val newAliasName = AliasName.create(input.newAlias)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid new alias name",
                         mapOf(
-                            "newAlias" to command.newAlias,
+                            "newAlias" to input.newAlias,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(command.newAlias)
+                            ScopeInputError.AliasEmpty(input.newAlias)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.newAlias, error.minimumLength)
+                            ScopeInputError.AliasTooShort(input.newAlias, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.newAlias, error.maximumLength)
+                            ScopeInputError.AliasTooLong(input.newAlias, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.newAlias, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(input.newAlias, error.expectedPattern)
                     }
                 }
                 .bind()
@@ -109,21 +104,21 @@ class AddAliasHandler(
                     logger.error(
                         "Failed to add alias",
                         mapOf(
-                            "existingAlias" to command.existingAlias,
-                            "newAlias" to command.newAlias,
+                            "existingAlias" to input.existingAlias,
+                            "newAlias" to input.newAlias,
                             "scopeId" to scopeId.value,
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    error.toGenericApplicationError()
                 }
                 .bind()
 
             logger.info(
                 "Successfully added alias",
                 mapOf(
-                    "existingAlias" to command.existingAlias,
-                    "newAlias" to command.newAlias,
+                    "existingAlias" to input.existingAlias,
+                    "newAlias" to input.newAlias,
                     "scopeId" to scopeId.value,
                 ),
             )

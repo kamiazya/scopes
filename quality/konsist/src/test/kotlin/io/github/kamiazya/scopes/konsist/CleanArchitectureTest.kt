@@ -168,6 +168,65 @@ class CleanArchitectureTest :
             }
         }
 
+        "domain services should be in domain layer service package" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/domain")
+                    .classes()
+                    .filter { it.name.endsWith("Service") }
+                    .filter { !it.name.endsWith("Test") }
+                    .filter { !it.hasAbstractModifier }
+                    .assertTrue { service ->
+                        service.resideInPackage("..service..") &&
+                            service.packagee?.name?.endsWith(".service") == true
+                    }
+            }
+        }
+
+        "domain services should not be in application layer" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/application")
+                    .classes()
+                    .filter { it.name.endsWith("Service") }
+                    .filter { !it.name.endsWith("Test") }
+                    .filter { !it.hasAbstractModifier }
+                    .filter { clazz ->
+                        // Filter for services that should be domain services by examining their characteristics:
+                        // 1. Services with domain-like method names AND domain value object parameters
+                        // 2. Exclude application services that are clearly for I/O, coordination, or state management
+                        // Note: We don't check imports from domain.service as application services are allowed to use domain services
+
+                        val isApplicationService = clazz.name.contains("Application") ||
+                            clazz.name.contains("Active") ||
+                            clazz.name.contains("Context") ||
+                            clazz.name.contains("Validation")
+
+                        val hasDomainBusinessLogic = clazz.functions().any { function ->
+                            val hasDomainMethodNames = function.name.contains("assign") ||
+                                function.name.contains("generate") ||
+                                function.name.contains("resolve") ||
+                                function.name.contains("remove")
+
+                            val hasDomainParameters = function.parameters.any { param ->
+                                param.type.sourceType.contains("AliasName") ||
+                                    param.type.sourceType.contains("AliasId") ||
+                                    param.type.sourceType.contains("ScopeAlias")
+                            }
+
+                            hasDomainMethodNames && hasDomainParameters
+                        }
+
+                        !isApplicationService && hasDomainBusinessLogic
+                    }
+                    .assertFalse { service ->
+                        // If a service with domain logic characteristics is found in application layer,
+                        // it should be moved to domain layer
+                        true
+                    }
+            }
+        }
+
         // ========== Domain Purity ==========
 
         "domain layer should not use framework-specific annotations" {

@@ -30,7 +30,7 @@ val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
     single {
-        io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasManagementService(
+        io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService(
             aliasRepository = get(),
             aliasGenerationService = get(),
         )
@@ -111,7 +111,7 @@ val scopeManagementModule = module {
 
     single {
         GetScopeByAliasHandler(
-            aliasRepository = get(),
+            scopeAliasService = get(),
             scopeRepository = get(),
             transactionManager = get(),
             logger = get(),
@@ -122,7 +122,6 @@ val scopeManagementModule = module {
     single {
         AddAliasHandler(
             scopeAliasService = get(),
-            aliasRepository = get(),
             transactionManager = get(),
             logger = get(),
         )
@@ -138,7 +137,7 @@ val scopeManagementModule = module {
 
     single {
         ListAliasesHandler(
-            aliasRepository = get(),
+            scopeAliasService = get(),
             transactionManager = get(),
             logger = get(),
         )
@@ -147,7 +146,6 @@ val scopeManagementModule = module {
     single {
         SetCanonicalAliasHandler(
             scopeAliasService = get(),
-            aliasRepository = get(),
             transactionManager = get(),
             logger = get(),
         )
@@ -155,7 +153,7 @@ val scopeManagementModule = module {
 
     single {
         RenameAliasHandler(
-            aliasRepository = get(),
+            scopeAliasService = get(),
             transactionManager = get(),
             logger = get(),
         )
