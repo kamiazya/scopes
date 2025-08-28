@@ -6,7 +6,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.AliasInfoDto
 import io.github.kamiazya.scopes.scopemanagement.application.dto.AliasListDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
@@ -64,7 +64,7 @@ class ListAliasesHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    error.toGenericApplicationError()
                 }
                 .bind()
 

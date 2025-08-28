@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
@@ -62,7 +62,7 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    error.toGenericApplicationError()
                 }
                 .bind()
 

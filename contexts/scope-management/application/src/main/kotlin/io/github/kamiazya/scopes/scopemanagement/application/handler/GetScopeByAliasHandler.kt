@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery
@@ -74,7 +74,7 @@ class GetScopeByAliasHandler(
                             ScopeInputError.AliasNotFound(input.aliasName)
                         else ->
                             // For other errors (like persistence errors), use the generic error mapping
-                            error.toApplicationError()
+                            error.toGenericApplicationError()
                     }
                 }
                 .bind()
@@ -89,7 +89,7 @@ class GetScopeByAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toApplicationError()
+                    error.toGenericApplicationError()
                 }
                 .bind()
 
@@ -116,7 +116,7 @@ class GetScopeByAliasHandler(
                         ),
                     )
                     // Continue with empty list on failure
-                    error.toApplicationError()
+                    error.toGenericApplicationError()
                 }
                 .getOrElse { emptyList() }
 

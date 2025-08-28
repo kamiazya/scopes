@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
@@ -111,7 +111,7 @@ class RenameAliasHandler(
                         }
                         else -> {
                             // For other errors (like persistence errors), use the generic error mapping
-                            error.toApplicationError()
+                            error.toGenericApplicationError()
                         }
                     }
                 }
