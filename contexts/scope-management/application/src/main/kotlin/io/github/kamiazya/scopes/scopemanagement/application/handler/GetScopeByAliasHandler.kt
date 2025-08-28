@@ -15,9 +15,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
-import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 
 /**
  * Handler for retrieving a scope by its alias name.
@@ -105,12 +103,11 @@ class GetScopeByAliasHandler(
                 )
                 // This is an inconsistency - alias exists but scope doesn't
                 raise(
-                    DomainScopeAliasError.DataInconsistency(
-                        occurredAt = Clock.System.now(),
+                    ScopeAliasError.DataInconsistency(
                         message = "Alias exists but referenced scope not found",
                         aliasName = input.aliasName,
-                        scopeId = scopeId,
-                    ).toGenericApplicationError(),
+                        scopeId = scopeId.value,
+                    ),
                 )
             }
 
