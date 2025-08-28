@@ -26,6 +26,7 @@ include(
     ":scope-management-domain",
     ":scope-management-application",
     ":scope-management-infrastructure",
+    ":scope-management-event-store",
     // Bounded Context - User Preferences
     ":user-preferences-domain",
     ":user-preferences-application",
@@ -99,6 +100,7 @@ project(":contracts-user-preferences").projectDir = file("contracts/user-prefere
 project(":scope-management-domain").projectDir = file("contexts/scope-management/domain")
 project(":scope-management-application").projectDir = file("contexts/scope-management/application")
 project(":scope-management-infrastructure").projectDir = file("contexts/scope-management/infrastructure")
+project(":scope-management-event-store").projectDir = file("contexts/scope-management/event-store")
 
 // Bounded Context - User Preferences
 project(":user-preferences-domain").projectDir = file("contexts/user-preferences/domain")
