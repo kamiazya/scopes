@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -20,4 +21,9 @@ sealed class ScopesError {
      * Contextual timestamp when the error occurred.
      */
     abstract val occurredAt: Instant
+
+    /**
+     * Generic error for invalid operations.
+     */
+    data class InvalidOperation(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
 }

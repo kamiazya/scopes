@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.arrow.core)
 
     api(libs.sqlite.jdbc)
+    api(libs.sqldelight.driver.sqlite)
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)

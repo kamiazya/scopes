@@ -129,7 +129,7 @@ class DeviceSyncPortAdapter(private val synchronizeHandler: SynchronizeDeviceHan
                                 DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
                                     failure = DeviceSynchronizationContractError.SynchronizationFailureType.ProtocolMismatch(
                                         localVersion = "1.0",
-                                        remoteVersion = "unknown",
+                                        remoteVersion = "<not-detected>",
                                         minimumRequiredVersion = "1.0",
                                     ),
                                 )

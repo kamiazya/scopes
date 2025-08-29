@@ -24,4 +24,9 @@ data class EventMetadata(
     val occurredAt: Instant,
     val storedAt: Instant,
     val sequenceNumber: Long,
-)
+) {
+    init {
+        require(sequenceNumber >= 0) { "Sequence number must be non-negative" }
+        require(storedAt >= occurredAt) { "Event cannot be stored before it occurred" }
+    }
+}

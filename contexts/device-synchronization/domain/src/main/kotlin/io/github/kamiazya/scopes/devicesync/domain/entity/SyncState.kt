@@ -21,6 +21,27 @@ data class SyncState(
     val syncStatus: SyncStatus,
     val pendingChanges: Int = 0,
 ) {
+    init {
+        require(pendingChanges >= 0) { "Pending changes cannot be negative" }
+        lastSuccessfulPush?.let { push ->
+            lastSyncAt?.let { sync ->
+                // Allow small clock precision differences (1 second tolerance)
+                require(push.epochSeconds <= sync.epochSeconds + 1) { "Last successful push cannot be significantly after last sync" }
+            }
+        }
+        lastSuccessfulPull?.let { pull ->
+            lastSyncAt?.let { sync ->
+                // Allow small clock precision differences (1 second tolerance)
+                require(pull.epochSeconds <= sync.epochSeconds + 1) { "Last successful pull cannot be significantly after last sync" }
+            }
+        }
+    }
+
+    companion object {
+        // Maximum allowed pending changes to prevent integer overflow
+        const val MAX_PENDING_CHANGES = 1_000_000
+    }
+
     /**
      * Check if synchronization is needed based on pending changes and status.
      */
@@ -91,7 +112,11 @@ data class SyncState(
      */
     fun incrementPendingChanges(count: Int = 1): SyncState {
         require(count > 0) { "Count must be positive" }
-        return copy(pendingChanges = pendingChanges + count)
+        val newPendingChanges = pendingChanges + count
+        require(newPendingChanges <= MAX_PENDING_CHANGES) {
+            "Pending changes would exceed maximum allowed value of $MAX_PENDING_CHANGES"
+        }
+        return copy(pendingChanges = newPendingChanges)
     }
 
     /**

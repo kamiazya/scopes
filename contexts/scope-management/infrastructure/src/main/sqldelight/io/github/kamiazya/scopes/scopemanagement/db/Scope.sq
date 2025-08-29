@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS scopes (
 CREATE INDEX IF NOT EXISTS idx_scopes_parent_id ON scopes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_scopes_created_at ON scopes(created_at);
 CREATE INDEX IF NOT EXISTS idx_scopes_updated_at ON scopes(updated_at);
+CREATE INDEX IF NOT EXISTS idx_scopes_title_parent ON scopes(title, parent_id);
 
 -- Insert scope
 insertScope:

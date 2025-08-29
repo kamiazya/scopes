@@ -16,7 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_devices_updated_at ON devices(updated_at);
 
 -- Insert or update device
 upsertDevice:
-INSERT OR REPLACE INTO devices (
+INSERT INTO devices (
     device_id,
     last_sync_at,
     last_successful_push,
@@ -25,7 +25,14 @@ INSERT OR REPLACE INTO devices (
     pending_changes,
     created_at,
     updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(device_id) DO UPDATE SET
+    last_sync_at = excluded.last_sync_at,
+    last_successful_push = excluded.last_successful_push,
+    last_successful_pull = excluded.last_successful_pull,
+    sync_status = excluded.sync_status,
+    pending_changes = excluded.pending_changes,
+    updated_at = excluded.updated_at;
 
 -- Find device by ID
 findDeviceById:

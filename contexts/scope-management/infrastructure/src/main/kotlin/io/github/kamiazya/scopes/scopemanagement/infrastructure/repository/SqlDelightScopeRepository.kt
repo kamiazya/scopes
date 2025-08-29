@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.left
-import arrow.core.nonEmptyListOf
 import arrow.core.right
 import arrow.core.toNonEmptyListOrNull
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
@@ -257,11 +256,8 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                         ifRight = { it },
                     )
                 }
-                    .toNonEmptyListOrNull() ?: return@mapValues nonEmptyListOf(
-                    AspectValue.create("unknown").fold(
-                        ifLeft = { throw IllegalStateException("Failed to create empty aspect value") },
-                        ifRight = { it },
-                    ),
+                    .toNonEmptyListOrNull() ?: throw IllegalStateException(
+                    "Aspect key exists without values in database - data integrity violation",
                 )
             }
 

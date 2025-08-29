@@ -25,6 +25,22 @@ data class SyncConflict(
     val resolvedAt: Instant? = null,
     val resolution: ResolutionAction? = null,
 ) {
+    init {
+        require(localEventId.isNotBlank()) { "Local event ID cannot be blank" }
+        require(remoteEventId.isNotBlank()) { "Remote event ID cannot be blank" }
+        require(aggregateId.isNotBlank()) { "Aggregate ID cannot be blank" }
+        require(localVersion >= 0) { "Local version must be non-negative" }
+        require(remoteVersion >= 0) { "Remote version must be non-negative" }
+        resolvedAt?.let {
+            // Allow small clock precision differences (1 second tolerance)
+            require(it.epochSeconds >= detectedAt.epochSeconds - 1) { "Resolved time cannot be significantly before detected time" }
+            requireNotNull(resolution) { "Resolution must be provided when resolvedAt is set" }
+        }
+        resolution?.let {
+            requireNotNull(resolvedAt) { "ResolvedAt must be provided when resolution is set" }
+        }
+    }
+
     /**
      * Check if this conflict has been resolved.
      */
@@ -133,6 +149,12 @@ data class SyncConflict(
                 localVersion != remoteVersion -> ConflictType.VERSION_MISMATCH
                 else -> return null // No conflict
             }
+
+            require(localEventId.isNotBlank()) { "Local event ID cannot be blank" }
+            require(remoteEventId.isNotBlank()) { "Remote event ID cannot be blank" }
+            require(aggregateId.isNotBlank()) { "Aggregate ID cannot be blank" }
+            require(localVersion >= 0) { "Local version must be non-negative" }
+            require(remoteVersion >= 0) { "Remote version must be non-negative" }
 
             return SyncConflict(
                 localEventId = localEventId,

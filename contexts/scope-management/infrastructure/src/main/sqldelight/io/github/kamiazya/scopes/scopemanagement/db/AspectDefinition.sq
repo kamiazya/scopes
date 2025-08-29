@@ -6,10 +6,17 @@ CREATE TABLE IF NOT EXISTS aspect_definitions (
     allow_multiple_values INTEGER NOT NULL DEFAULT 0
 );
 
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_aspect_definitions_aspect_type ON aspect_definitions(aspect_type);
+
 -- Insert or replace aspect definition
 upsertAspectDefinition:
-INSERT OR REPLACE INTO aspect_definitions (key, aspect_type, description, allow_multiple_values)
-VALUES (?, ?, ?, ?);
+INSERT INTO aspect_definitions (key, aspect_type, description, allow_multiple_values)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET
+    aspect_type = excluded.aspect_type,
+    description = excluded.description,
+    allow_multiple_values = excluded.allow_multiple_values;
 
 -- Find by key
 findByKey:

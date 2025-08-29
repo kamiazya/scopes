@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS scope_aspects (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_scope_aspects_scope_id ON scope_aspects(scope_id);
 CREATE INDEX IF NOT EXISTS idx_scope_aspects_aspect_key ON scope_aspects(aspect_key);
+CREATE INDEX IF NOT EXISTS idx_scope_aspects_key_value ON scope_aspects(aspect_key, aspect_value);
 
 -- Insert aspect
 insertAspect:

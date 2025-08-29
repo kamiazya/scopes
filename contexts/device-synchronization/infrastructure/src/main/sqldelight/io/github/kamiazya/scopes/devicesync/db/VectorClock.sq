@@ -11,11 +11,13 @@ CREATE INDEX IF NOT EXISTS idx_vector_clocks_device_id ON vector_clocks(device_i
 
 -- Insert or update vector clock component
 upsertClockComponent:
-INSERT OR REPLACE INTO vector_clocks (
+INSERT INTO vector_clocks (
     device_id,
     component_device,
     timestamp
-) VALUES (?, ?, ?);
+) VALUES (?, ?, ?)
+ON CONFLICT(device_id, component_device) DO UPDATE SET
+    timestamp = excluded.timestamp;
 
 -- Get vector clock for device
 getVectorClock:
