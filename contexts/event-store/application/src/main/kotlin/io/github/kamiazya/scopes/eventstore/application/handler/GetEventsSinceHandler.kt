@@ -47,6 +47,7 @@ class GetEventsSinceHandler(private val eventRepository: EventRepository) : UseC
                         occurredAt = storedEvent.metadata.occurredAt,
                         storedAt = storedEvent.metadata.storedAt,
                         sequenceNumber = storedEvent.metadata.sequenceNumber,
+                        event = storedEvent.event, // Include the domain event
                     )
                 }
             }

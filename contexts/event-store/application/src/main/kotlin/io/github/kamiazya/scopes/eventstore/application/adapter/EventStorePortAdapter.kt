@@ -108,20 +108,24 @@ class EventStorePortAdapter(
                     }
                     .flatMap { storedEvents ->
                         // Serialize each event to get eventData
-                        Either.Right(
-                            storedEvents.map { dto ->
-                                EventResult(
-                                    eventId = dto.eventId,
-                                    aggregateId = dto.aggregateId,
-                                    aggregateVersion = dto.aggregateVersion,
-                                    eventType = dto.eventType,
-                                    eventData = "", // Simplified - would need actual serialization
-                                    occurredAt = dto.occurredAt,
-                                    storedAt = dto.storedAt,
-                                    sequenceNumber = dto.sequenceNumber,
-                                )
-                            },
-                        )
+                        val results = storedEvents.mapNotNull { dto ->
+                            dto.event?.let { event ->
+                                when (val serialized = eventSerializer.serialize(event)) {
+                                    is Either.Right -> EventResult(
+                                        eventId = dto.eventId,
+                                        aggregateId = dto.aggregateId,
+                                        aggregateVersion = dto.aggregateVersion,
+                                        eventType = dto.eventType,
+                                        eventData = serialized.value,
+                                        occurredAt = dto.occurredAt,
+                                        storedAt = dto.storedAt,
+                                        sequenceNumber = dto.sequenceNumber,
+                                    )
+                                    is Either.Left -> null // Skip events that can't be serialized
+                                }
+                            }
+                        }
+                        Either.Right(results)
                     }
             }
 
@@ -149,19 +153,23 @@ class EventStorePortAdapter(
             }
         }
         .flatMap { storedEvents ->
-            Either.Right(
-                storedEvents.map { dto ->
-                    EventResult(
-                        eventId = dto.eventId,
-                        aggregateId = dto.aggregateId,
-                        aggregateVersion = dto.aggregateVersion,
-                        eventType = dto.eventType,
-                        eventData = "", // Simplified - would need actual serialization
-                        occurredAt = dto.occurredAt,
-                        storedAt = dto.storedAt,
-                        sequenceNumber = dto.sequenceNumber,
-                    )
-                },
-            )
+            val results = storedEvents.mapNotNull { dto ->
+                dto.event?.let { event ->
+                    when (val serialized = eventSerializer.serialize(event)) {
+                        is Either.Right -> EventResult(
+                            eventId = dto.eventId,
+                            aggregateId = dto.aggregateId,
+                            aggregateVersion = dto.aggregateVersion,
+                            eventType = dto.eventType,
+                            eventData = serialized.value,
+                            occurredAt = dto.occurredAt,
+                            storedAt = dto.storedAt,
+                            sequenceNumber = dto.sequenceNumber,
+                        )
+                        is Either.Left -> null // Skip events that can't be serialized
+                    }
+                }
+            }
+            Either.Right(results)
         }
 }

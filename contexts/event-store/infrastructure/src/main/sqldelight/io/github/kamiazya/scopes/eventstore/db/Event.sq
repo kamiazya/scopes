@@ -1,13 +1,13 @@
 -- Events table for Event Store
 CREATE TABLE IF NOT EXISTS events (
-    event_id TEXT PRIMARY KEY NOT NULL,
+    sequence_number INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id TEXT NOT NULL UNIQUE,
     aggregate_id TEXT NOT NULL,
     aggregate_version INTEGER NOT NULL,
     event_type TEXT NOT NULL,
     event_data TEXT NOT NULL,
     occurred_at INTEGER NOT NULL,
-    stored_at INTEGER NOT NULL,
-    sequence_number INTEGER NOT NULL UNIQUE
+    stored_at INTEGER NOT NULL
 );
 
 -- Indexes for efficient querying
@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_events_aggregate_id_version ON events(aggregate_i
 CREATE INDEX IF NOT EXISTS idx_events_stored_at ON events(stored_at);
 CREATE INDEX IF NOT EXISTS idx_events_sequence_number ON events(sequence_number);
 
--- Insert event
+-- Insert event (sequence_number is auto-generated)
 insertEvent:
 INSERT INTO events (
     event_id,
@@ -24,14 +24,12 @@ INSERT INTO events (
     event_type,
     event_data,
     occurred_at,
-    stored_at,
-    sequence_number
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    stored_at
+) VALUES (?, ?, ?, ?, ?, ?, ?);
 
--- Get last sequence number
-getLastSequenceNumber:
-SELECT MAX(sequence_number) AS last_sequence_number
-FROM events;
+-- Get event by event_id
+getEventByEventId:
+SELECT * FROM events WHERE event_id = ?;
 
 -- Find events since timestamp
 findEventsSince:

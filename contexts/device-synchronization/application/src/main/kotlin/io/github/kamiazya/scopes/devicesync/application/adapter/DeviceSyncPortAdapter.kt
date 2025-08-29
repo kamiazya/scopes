@@ -29,13 +29,41 @@ class DeviceSyncPortAdapter(private val synchronizeHandler: SynchronizeDeviceHan
 
         return syncRepository.registerDevice(deviceId)
             .mapLeft { error ->
-                // Map domain errors to structured contract errors
-                DeviceSynchronizationContractError.BusinessError.RegistrationFailed(
-                    failure = DeviceSynchronizationContractError.RegistrationFailureType.DuplicateDeviceId(
-                        deviceId = deviceId.value,
-                        registeredAt = Clock.System.now(),
-                    ),
-                )
+                // Map domain errors to structured contract errors based on actual error type
+                when (error) {
+                    is io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError.InvalidDeviceError -> {
+                        when (error.configurationIssue) {
+                            io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError.ConfigurationIssue.INVALID_DEVICE_ID,
+                            io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError.ConfigurationIssue.MISSING_DEVICE_ID,
+                            ->
+                                DeviceSynchronizationContractError.BusinessError.RegistrationFailed(
+                                    failure = DeviceSynchronizationContractError.RegistrationFailureType.DuplicateDeviceId(
+                                        deviceId = deviceId.value,
+                                        registeredAt = Clock.System.now(),
+                                    ),
+                                )
+                            else ->
+                                DeviceSynchronizationContractError.BusinessError.RegistrationFailed(
+                                    failure = DeviceSynchronizationContractError.RegistrationFailureType.InvalidDeviceName(
+                                        deviceName = command.deviceName,
+                                        reason = DeviceSynchronizationContractError.DeviceNameValidationFailure.InvalidCharacters(
+                                            prohibitedCharacters = listOf(),
+                                        ),
+                                    ),
+                                )
+                        }
+                    }
+                    is io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError.NetworkError ->
+                        DeviceSynchronizationContractError.SystemError.ServiceUnavailable(
+                            service = "SynchronizationRepository",
+                            retryAfter = null,
+                        )
+                    else ->
+                        DeviceSynchronizationContractError.SystemError.ServiceUnavailable(
+                            service = "DeviceSynchronizationService",
+                            retryAfter = null,
+                        )
+                }
             }
             .map {
                 RegisterDeviceResult(
@@ -65,17 +93,64 @@ class DeviceSyncPortAdapter(private val synchronizeHandler: SynchronizeDeviceHan
             .mapLeft { error ->
                 when (error) {
                     is io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.ValidationError ->
-                        DeviceSynchronizationContractError.BusinessError.DeviceNotFound(
-                            deviceId = command.remoteDeviceId,
-                            searchContext = "Remote device for synchronization",
-                        )
+                        when (error.validationRule) {
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.ValidationRule.INVALID_STATE ->
+                                DeviceSynchronizationContractError.BusinessError.DeviceNotFound(
+                                    deviceId = command.remoteDeviceId,
+                                    searchContext = "Remote device for synchronization",
+                                )
+                            else ->
+                                DeviceSynchronizationContractError.InputError.InvalidDeviceId(
+                                    deviceId = command.remoteDeviceId,
+                                    expectedFormat = "Valid device ID format",
+                                )
+                        }
                     is io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncOperationError ->
-                        DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
-                            failure = DeviceSynchronizationContractError.SynchronizationFailureType.NetworkFailure(
-                                localDeviceId = command.localDeviceId,
-                                remoteDeviceId = command.remoteDeviceId,
-                                lastSuccessfulSync = null,
-                            ),
+                        when (error.failureReason) {
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncFailureReason.NETWORK_ERROR,
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncFailureReason.TIMEOUT,
+                            ->
+                                DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
+                                    failure = DeviceSynchronizationContractError.SynchronizationFailureType.NetworkFailure(
+                                        localDeviceId = command.localDeviceId,
+                                        remoteDeviceId = command.remoteDeviceId,
+                                        lastSuccessfulSync = null,
+                                    ),
+                                )
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncFailureReason.AUTHENTICATION_FAILED ->
+                                DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
+                                    failure = DeviceSynchronizationContractError.SynchronizationFailureType.AuthenticationFailure(
+                                        localDeviceId = command.localDeviceId,
+                                        remoteDeviceId = command.remoteDeviceId,
+                                        reason = DeviceSynchronizationContractError.AuthFailureReason.InvalidCredentials,
+                                    ),
+                                )
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncFailureReason.VERSION_MISMATCH ->
+                                DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
+                                    failure = DeviceSynchronizationContractError.SynchronizationFailureType.ProtocolMismatch(
+                                        localVersion = "1.0",
+                                        remoteVersion = "unknown",
+                                        minimumRequiredVersion = "1.0",
+                                    ),
+                                )
+                            io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION ->
+                                DeviceSynchronizationContractError.BusinessError.SynchronizationFailed(
+                                    failure = DeviceSynchronizationContractError.SynchronizationFailureType.DataCorruption(
+                                        localDeviceId = command.localDeviceId,
+                                        remoteDeviceId = command.remoteDeviceId,
+                                        corruptedEventIds = emptyList(),
+                                    ),
+                                )
+                            else ->
+                                DeviceSynchronizationContractError.SystemError.ServiceUnavailable(
+                                    service = "DeviceSynchronizationService",
+                                    retryAfter = null,
+                                )
+                        }
+                    is io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError.RepositoryError ->
+                        DeviceSynchronizationContractError.SystemError.ServiceUnavailable(
+                            service = "SynchronizationRepository",
+                            retryAfter = null,
                         )
                     else ->
                         DeviceSynchronizationContractError.SystemError.ServiceUnavailable(

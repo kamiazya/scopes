@@ -36,11 +36,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 val storedAt = Clock.System.now()
 
                 try {
-                    // Get the next sequence number
-                    val lastSequence = queries.getLastSequenceNumber().executeAsOneOrNull()?.last_sequence_number ?: 0L
-                    val sequenceNumber = lastSequence + 1
-
-                    // Insert the event
+                    // Insert the event (sequence_number is auto-generated)
                     queries.insertEvent(
                         event_id = event.eventId.value,
                         aggregate_id = event.aggregateId.value,
@@ -49,8 +45,11 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         event_data = eventData,
                         occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
-                        sequence_number = sequenceNumber,
                     )
+
+                    // Get the inserted event with auto-generated sequence number
+                    val insertedEvent = queries.getEventByEventId(event.eventId.value).executeAsOne()
+                    val sequenceNumber = insertedEvent.sequence_number
 
                     // Return the stored event
                     val storedEvent = PersistedEventRecord(

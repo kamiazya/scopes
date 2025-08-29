@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.eventstore.application.dto
 
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import kotlinx.datetime.Instant
 
 /**
@@ -13,4 +14,5 @@ data class PersistedEventRecordDto(
     val occurredAt: Instant,
     val storedAt: Instant,
     val sequenceNumber: Long,
+    val event: DomainEvent? = null, // Optional to maintain backward compatibility
 )
