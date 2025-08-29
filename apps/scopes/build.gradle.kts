@@ -50,6 +50,9 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
 
+    // GraalVM native image
+    compileOnly(libs.graalvm.sdk)
+
     // Testing
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)

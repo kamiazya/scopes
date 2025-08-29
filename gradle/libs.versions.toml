@@ -13,6 +13,7 @@ mockk = "1.13.12"
 konsist = "0.17.3"
 
 graalvm-buildtools = "0.11.0"
+graalvm-sdk = "23.0.0"
 ktlint-gradle = "13.0.0"
 detekt = "1.23.8"
 gradle-develocity = "3.19.2"
@@ -28,6 +29,7 @@ clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 kulid = { module = "com.github.guepardoapps:kulid", version.ref = "kulid" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-core = { module = "io.insert-koin:koin-core" }
+graalvm-sdk = { module = "org.graalvm.sdk:graal-sdk", version.ref = "graalvm-sdk" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
