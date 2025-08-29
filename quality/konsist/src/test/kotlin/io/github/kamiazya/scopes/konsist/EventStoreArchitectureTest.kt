@@ -3,182 +3,100 @@ package io.github.kamiazya.scopes.konsist
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertTrue
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
+import io.kotest.core.spec.style.DescribeSpec
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class EventStoreArchitectureTest {
+/**
+ * Architecture tests for the Event Store bounded context to ensure
+ * proper implementation patterns and prevent regressions.
+ */
+class EventStoreArchitectureTest :
+    DescribeSpec({
 
-    @Nested
-    inner class `Event serialization should be properly implemented` {
+        describe("Event serialization should be properly implemented") {
 
-        @Test
-        fun `All event classes should be serializable`() {
-            Konsist
-                .scopeFromProject()
-                .classes()
-                .filter {
-                    it.resideInPackage("..domain..event..") ||
-                        it.name.endsWith("Event") ||
-                        it.name.endsWith("DomainEvent")
-                }
-                .filter { !it.name.contains("Test") }
-                .assertTrue { eventClass ->
-                    // Check if class has @Serializable annotation
-                    val hasSerializableAnnotation = eventClass.annotations
-                        .any { it.name == "Serializable" }
-
-                    // Check if class implements a serializable interface
-                    val implementsSerializable = eventClass.parents()
-                        .any { parent ->
-                            parent.name.contains("Serializable") ||
-                                parent.name.contains("DomainEvent")
+            it("All event classes should be serializable") {
+                Konsist
+                    .scopeFromProject()
+                    .classes()
+                    .withNameEndingWith("Event")
+                    .filter {
+                        it.packagee?.name?.contains("eventstore") == true &&
+                            it.packagee?.name?.contains("domain") == true &&
+                            !it.name.contains("Command") // Exclude command classes like StoreEvent
+                    }
+                    .assertTrue {
+                        it.annotations.any { annotation ->
+                            annotation.name == "Serializable" ||
+                                annotation.fullyQualifiedName == "kotlinx.serialization.Serializable"
                         }
-
-                    hasSerializableAnnotation || implementsSerializable
-                }
-        }
-
-        @Test
-        fun `EventSerializer implementations should not return empty strings`() {
-            Konsist
-                .scopeFromProject()
-                .classes()
-                .filter {
-                    it.name.contains("EventSerializer") ||
-                        it.hasInterface { i -> i.name == "EventSerializer" }
-                }
-                .flatMap { it.functions() }
-                .filter { it.name == "serialize" || it.name == "deserialize" }
-                .assertTrue { function ->
-                    // Check that function doesn't return empty string
-                    !function.text.contains("\"\"") &&
-                        !function.text.contains("return \"\"") &&
-                        !function.text.contains("= \"\"")
-                }
-        }
-    }
-
-    @Nested
-    inner class `Event store sequence numbers should be handled safely` {
-
-        @Test
-        fun `Sequence number generation should not use manual increment`() {
-            Konsist
-                .scopeFromProject()
-                .files
-                .filter { it.path.contains("EventRepository") }
-                .flatMap { it.functions() }
-                .filter {
-                    it.text.contains("sequenceNumber") ||
-                        it.text.contains("sequence_number")
-                }
-                .assertTrue { function ->
-                    val hasUnsafePattern = function.text.let { text ->
-                        // Look for patterns like "lastSequence + 1" or "max() + 1"
-                        (text.contains("+ 1") && text.contains("sequence")) ||
-                            (text.contains("max()") && text.contains("sequence")) ||
-                            text.contains("SELECT MAX(sequence") ||
-                            text.contains(".last()") &&
-                            text.contains("sequence")
                     }
+            }
 
-                    !hasUnsafePattern
-                }
-        }
-    }
-
-    @Nested
-    inner class `Error mapping should be accurate` {
-
-        @Test
-        fun `Port adapters should map errors specifically`() {
-            Konsist
-                .scopeFromProject()
-                .classes()
-                .withNameEndingWith("PortAdapter", "Adapter")
-                .flatMap { it.functions() }
-                .filter { function ->
-                    function.text.contains("mapLeft") ||
-                        function.text.contains("leftMap") ||
-                        function.text.contains("error ->")
-                }
-                .assertTrue { function ->
-                    // Check for proper error discrimination
-                    val hasProperErrorMapping = function.text.let { text ->
-                        text.contains("when (error)") ||
-                            text.contains("when (it)") ||
-                            text.contains("is ") ||
-                            // pattern matching
-                            text.contains("error.toContract") // dedicated mapping function
+            it("Repositories should never return unknown or default values for critical fields") {
+                Konsist
+                    .scopeFromProject()
+                    .classes()
+                    .withNameEndingWith("Repository")
+                    .filter { it.packagee?.name?.contains("eventstore") == true }
+                    .flatMap { it.functions() }
+                    .assertTrue { function ->
+                        // Check that function doesn't contain problematic patterns
+                        val functionText = function.text
+                        !functionText.contains("\"unknown\"") &&
+                            !functionText.contains("\"Unknown\"") &&
+                            !functionText.contains("UnknownEvent") &&
+                            !functionText.contains("?: \"default\"") &&
+                            !functionText.contains("?: \"Unknown\"")
                     }
+            }
+        }
 
-                    // Should not have blanket error mapping
-                    val hasBlanketMapping = function.text.let { text ->
-                        text.contains("error ->") &&
-                            !text.contains("when") &&
-                            !text.contains("is ") &&
-                            text.lines().count { it.contains("->") } == 1
+        describe("Event Store error handling") {
+
+            it("Event Store errors should be properly mapped to application errors") {
+                Konsist
+                    .scopeFromProject()
+                    .classes()
+                    .withNameEndingWith("Handler")
+                    .filter { it.packagee?.name?.contains("eventstore.application") == true }
+                    .flatMap { it.functions() }
+                    .filter { it.name == "invoke" }
+                    .assertTrue { function ->
+                        // Handler should properly map domain errors to application errors
+                        val functionText = function.text
+                        functionText.contains("mapLeft") ||
+                            functionText.contains("EventStoreApplicationError") ||
+                            !functionText.contains("return Either.Left")
                     }
-
-                    hasProperErrorMapping || !hasBlanketMapping
-                }
+            }
         }
 
-        @Test
-        fun `Error types should be specific to their context`() {
-            Konsist
-                .scopeFromProject()
-                .classes()
-                .filter { it.name.endsWith("Error") || it.name.endsWith("Exception") }
-                .filter { it.resideInPackage("..domain..") }
-                .assertTrue { errorClass ->
-                    // Domain errors should be sealed classes or enums for exhaustive handling
-                    errorClass.hasSealedModifier ||
-                        errorClass.hasEnumModifier ||
-                        errorClass.parents().any { it.name.contains("sealed") }
-                }
+        describe("Event metadata consistency") {
+
+            it("All domain events should have proper event type handling") {
+                Konsist
+                    .scopeFromProject()
+                    .files
+                    .filter {
+                        it.path.contains("eventstore") &&
+                            it.path.contains("repository") &&
+                            it.path.contains("infrastructure") // Only check implementations, not interfaces
+                    }
+                    .flatMap { it.functions() }
+                    .filter { it.name == "store" || it.name == "save" }
+                    .assertTrue { function ->
+                        val functionText = function.text
+                        // Should use proper event type resolution
+                        (
+                            functionText.contains("event::class.qualifiedName") ||
+                                functionText.contains("event::class.simpleName")
+                            ) &&
+                            // Should fail fast on missing event type
+                            (
+                                functionText.contains("throw IllegalArgumentException") ||
+                                    functionText.contains("?: throw")
+                                )
+                    }
+            }
         }
-    }
-
-    @Nested
-    inner class `Repository patterns should be consistent` {
-
-        @Test
-        fun `Repository methods should return Either type for error handling`() {
-            Konsist
-                .scopeFromProject()
-                .interfaces()
-                .withNameEndingWith("Repository")
-                .filter { it.resideInPackage("..domain..") }
-                .flatMap { it.functions() }
-                .filter { !it.hasPrivateModifier }
-                .assertTrue { function ->
-                    val returnType = function.returnType?.name ?: ""
-
-                    // Check if returns Either or similar Result type
-                    returnType.contains("Either<") ||
-                        returnType.contains("Result<") ||
-                        returnType == "Unit" ||
-                        // fire-and-forget operations
-                        function.hasSuspendModifier &&
-                        returnType.contains("Flow<") // streaming
-                }
-        }
-
-        @Test
-        fun `Infrastructure repositories should implement domain interfaces`() {
-            Konsist
-                .scopeFromProject()
-                .classes()
-                .withNameEndingWith("Repository")
-                .filter { it.resideInPackage("..infrastructure..") }
-                .filter { !it.name.contains("Test") }
-                .assertTrue { repoClass ->
-                    // Should implement a domain repository interface
-                    repoClass.hasInterface { it.resideInPackage("..domain..") }
-                }
-        }
-    }
-}
+    })

@@ -41,7 +41,8 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         event_id = event.eventId.value,
                         aggregate_id = event.aggregateId.value,
                         aggregate_version = event.aggregateVersion.value,
-                        event_type = event::class.qualifiedName ?: event::class.simpleName ?: "UnknownEvent",
+                        event_type = event::class.qualifiedName ?: event::class.simpleName
+                            ?: throw IllegalArgumentException("Event class must have a name"),
                         event_data = eventData,
                         occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
@@ -57,7 +58,10 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             eventId = event.eventId,
                             aggregateId = event.aggregateId,
                             aggregateVersion = event.aggregateVersion,
-                            eventType = EventType(event::class.qualifiedName ?: event::class.simpleName ?: "UnknownEvent"),
+                            eventType = EventType(
+                                event::class.qualifiedName ?: event::class.simpleName
+                                    ?: throw IllegalArgumentException("Event class must have a name"),
+                            ),
                             occurredAt = event.occurredAt,
                             storedAt = storedAt,
                             sequenceNumber = sequenceNumber,
@@ -70,7 +74,8 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     Either.Left(
                         EventStoreError.StorageError(
                             aggregateId = event.aggregateId.value,
-                            eventType = event::class.qualifiedName ?: event::class.simpleName ?: "UnknownEvent",
+                            eventType = event::class.qualifiedName ?: event::class.simpleName
+                                ?: throw IllegalArgumentException("Event class must have a name"),
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
                             cause = e,

@@ -181,16 +181,27 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
     }
 
     private fun updateVectorClockForDevice(deviceId: String, vectorClock: VectorClock) {
-        // Delete existing entries
-        vectorClockQueries.deleteVectorClock(deviceId)
-
-        // Insert new entries
+        // Use upsert (INSERT OR REPLACE) for atomic updates
+        // This ensures we don't have a window where the vector clock is deleted
         vectorClock.clocks.forEach { (componentDevice, timestamp) ->
             vectorClockQueries.upsertClockComponent(
                 device_id = deviceId,
                 component_device = componentDevice,
                 timestamp = timestamp,
             )
+        }
+
+        // Remove any components that are no longer in the vector clock
+        // Get current components from DB
+        val currentComponents = vectorClockQueries.getVectorClock(deviceId)
+            .executeAsList()
+            .map { it.component_device }
+            .toSet()
+
+        // Remove components not in the new vector clock
+        val newComponents = vectorClock.clocks.keys
+        currentComponents.subtract(newComponents).forEach { componentToRemove ->
+            vectorClockQueries.deleteClockComponent(deviceId, componentToRemove)
         }
     }
 }

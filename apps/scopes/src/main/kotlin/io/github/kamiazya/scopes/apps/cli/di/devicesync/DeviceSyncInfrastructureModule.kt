@@ -48,7 +48,7 @@ val deviceSyncInfrastructureModule = module {
     }
 
     // Application Handlers
-    single { SynchronizeDeviceHandler(get()) }
+    single { SynchronizeDeviceHandler(get(), get()) }
 
     // Port Adapter
     single<DeviceSynchronizationPort> {

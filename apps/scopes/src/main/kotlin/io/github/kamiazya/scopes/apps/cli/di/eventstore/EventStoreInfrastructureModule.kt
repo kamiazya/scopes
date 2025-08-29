@@ -60,7 +60,7 @@ val eventStoreInfrastructureModule = module {
     }
 
     // Application Handlers
-    single { StoreEventHandler(get()) }
+    single { StoreEventHandler(get(), get()) }
     single { GetEventsByAggregateHandler(get()) }
     single { GetEventsSinceHandler(get()) }
 

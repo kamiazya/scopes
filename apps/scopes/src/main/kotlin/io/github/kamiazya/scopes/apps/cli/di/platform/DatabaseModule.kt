@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.di.platform
 
-import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
+import io.github.kamiazya.scopes.platform.infrastructure.transaction.SimpleTransactionManager
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.io.path.Path
@@ -39,7 +39,7 @@ val databaseModule = module {
 
     // Transaction Manager
     single<AppTransactionManager> {
-        NoOpTransactionManager()
+        SimpleTransactionManager()
     }
 }
 

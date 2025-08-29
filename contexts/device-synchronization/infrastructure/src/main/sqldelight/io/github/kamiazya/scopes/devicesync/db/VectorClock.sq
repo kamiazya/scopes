@@ -27,3 +27,8 @@ WHERE device_id = ?;
 deleteVectorClock:
 DELETE FROM vector_clocks
 WHERE device_id = ?;
+
+-- Delete specific clock component
+deleteClockComponent:
+DELETE FROM vector_clocks
+WHERE device_id = ? AND component_device = ?;
