@@ -35,20 +35,13 @@ data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val c
      * Merges these preferences with another set, with the other set taking precedence.
      * Useful for applying updates or overlays.
      */
-    fun mergeWith(other: UserPreferences, now: Instant = Clock.System.now()): UserPreferences = UserPreferences(
-        hierarchyPreferences = other.hierarchyPreferences,
-        createdAt = this.createdAt, // Preserve original creation time
-        updatedAt = now,
-    )
+    fun mergeWith(other: UserPreferences, now: Instant = Clock.System.now()): UserPreferences =
+        copy(hierarchyPreferences = other.hierarchyPreferences, updatedAt = now)
 
     /**
      * Resets preferences to default values while preserving creation timestamp.
      */
-    fun resetToDefaults(now: Instant = Clock.System.now()): UserPreferences = UserPreferences(
-        hierarchyPreferences = HierarchyPreferences.DEFAULT,
-        createdAt = this.createdAt,
-        updatedAt = now,
-    )
+    fun resetToDefaults(now: Instant = Clock.System.now()): UserPreferences = copy(hierarchyPreferences = HierarchyPreferences.DEFAULT, updatedAt = now)
 
     /**
      * Validates that the preferences are in a consistent state.

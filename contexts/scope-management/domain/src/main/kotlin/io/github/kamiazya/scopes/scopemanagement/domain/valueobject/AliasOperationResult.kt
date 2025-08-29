@@ -17,4 +17,4 @@ sealed class AliasOperation {
 /**
  * Result of conflict resolution.
  */
-data class ConflictResolution(val toCreate: List<AliasName>, val alreadyExist: List<AliasName>, val toKeep: List<ScopeAlias>)
+data class ConflictResolution(val toCreate: List<AliasName>, val alreadyExists: List<AliasName>, val toKeep: List<ScopeAlias>)
