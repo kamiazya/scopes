@@ -296,9 +296,19 @@ class DomainRichnessTest :
                 // Only run test if there are concrete service classes
                 if (services.isNotEmpty()) {
                     services.assertTrue { service ->
-                        // Every concrete service should have at least constructor or methods
-                        // This is a very basic check - all our services pass this
-                        true // All domain services are valid by definition at this point
+                        // Every concrete service should have substantive business logic
+                        // Check for non-trivial constructor or public methods
+                        val hasNonTrivialConstructor = service.primaryConstructor?.parameters?.isNotEmpty() == true
+
+                        val hasNonTrivialMethods = service.functions()
+                            .filter { it.hasPublicModifier }
+                            .filter { !it.name.startsWith("get") } // Exclude getters
+                            .filter { !it.name.startsWith("set") } // Exclude setters
+                            .filter { !it.hasAbstractModifier } // Exclude abstract methods
+                            .filter { it.name != "equals" && it.name != "hashCode" && it.name != "toString" } // Exclude standard methods
+                            .isNotEmpty()
+
+                        hasNonTrivialConstructor || hasNonTrivialMethods
                     }
                 }
             }
