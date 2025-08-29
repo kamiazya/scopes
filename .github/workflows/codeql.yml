@@ -1,3 +1,6 @@
+# Custom CodeQL workflow for Java/Kotlin projects
+# This replaces GitHub's default CodeQL configuration which uses 'none' build mode
+# and doesn't work with Gradle/Kotlin projects that require compilation
 name: "CodeQL"
 
 on:
