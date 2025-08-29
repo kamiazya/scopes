@@ -19,6 +19,14 @@ import kotlinx.datetime.Clock
 /**
  * Domain service for managing scope aliases.
  *
+ * @deprecated This service violates domain purity by having repository dependencies.
+ * Use ScopeAliasApplicationService in the application layer instead, which properly
+ * separates I/O operations from business logic using PureScopeAliasValidationService.
+ *
+ * Migration path:
+ * - Use io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
+ * - For pure domain logic, use io.github.kamiazya.scopes.scopemanagement.domain.service.PureScopeAliasValidationService
+ *
  * Contains core business logic for alias operations including:
  * - Business rule enforcement (one canonical alias per scope)
  * - Alias conflict resolution
@@ -27,6 +35,14 @@ import kotlinx.datetime.Clock
  * This is a domain service because it contains business logic that doesn't
  * naturally fit into a single entity but operates across multiple entities.
  */
+@Deprecated(
+    message = "Use ScopeAliasApplicationService for I/O operations and PureScopeAliasValidationService for pure domain logic",
+    replaceWith = ReplaceWith(
+        "ScopeAliasApplicationService",
+        "io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService",
+    ),
+    level = DeprecationLevel.WARNING,
+)
 class ScopeAliasManagementService(private val aliasRepository: ScopeAliasRepository, private val aliasGenerationService: AliasGenerationService) {
 
     /**
