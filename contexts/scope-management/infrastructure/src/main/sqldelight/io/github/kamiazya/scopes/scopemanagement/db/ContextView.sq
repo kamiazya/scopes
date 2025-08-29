@@ -1,0 +1,66 @@
+-- Context Views table
+CREATE TABLE IF NOT EXISTS context_views (
+    id TEXT PRIMARY KEY NOT NULL,
+    key TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    filter TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_context_views_key ON context_views(key);
+CREATE INDEX IF NOT EXISTS idx_context_views_name ON context_views(name);
+
+-- Insert context view
+insertContextView:
+INSERT INTO context_views (id, key, name, description, filter, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Update context view
+updateContextView:
+UPDATE context_views
+SET key = ?, name = ?, description = ?, filter = ?, updated_at = ?
+WHERE id = ?;
+
+-- Find by ID
+findById:
+SELECT *
+FROM context_views
+WHERE id = ?;
+
+-- Find by key
+findByKey:
+SELECT *
+FROM context_views
+WHERE key = ?;
+
+-- Find by name
+findByName:
+SELECT *
+FROM context_views
+WHERE name = ?;
+
+-- Get all views
+getAllViews:
+SELECT *
+FROM context_views
+ORDER BY name;
+
+-- Check if exists by key
+existsByKey:
+SELECT COUNT(*) > 0 AS result
+FROM context_views
+WHERE key = ?;
+
+-- Check if exists by name
+existsByName:
+SELECT COUNT(*) > 0 AS result
+FROM context_views
+WHERE name = ?;
+
+-- Delete by ID
+deleteById:
+DELETE FROM context_views
+WHERE id = ?;

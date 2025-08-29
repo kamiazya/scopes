@@ -19,6 +19,8 @@ class CleanArchitectureTest :
         val contexts = listOf(
             "scope-management",
             "user-preferences",
+            "event-store",
+            "device-synchronization",
         )
 
         // ========== Layer Dependency Rules ==========

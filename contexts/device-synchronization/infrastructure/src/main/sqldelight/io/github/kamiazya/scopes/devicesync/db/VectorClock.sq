@@ -1,0 +1,29 @@
+-- Vector Clocks table for Device Synchronization
+CREATE TABLE IF NOT EXISTS vector_clocks (
+    device_id TEXT NOT NULL,
+    component_device TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    PRIMARY KEY (device_id, component_device)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_vector_clocks_device_id ON vector_clocks(device_id);
+
+-- Insert or update vector clock component
+upsertClockComponent:
+INSERT OR REPLACE INTO vector_clocks (
+    device_id,
+    component_device,
+    timestamp
+) VALUES (?, ?, ?);
+
+-- Get vector clock for device
+getVectorClock:
+SELECT component_device, timestamp
+FROM vector_clocks
+WHERE device_id = ?;
+
+-- Delete vector clock for device
+deleteVectorClock:
+DELETE FROM vector_clocks
+WHERE device_id = ?;

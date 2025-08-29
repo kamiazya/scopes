@@ -14,8 +14,21 @@ import org.koin.core.context.stopKoin
  */
 class ScopesCliApplication : AutoCloseable {
     private var koinApp: KoinApplication = startKoin {
+        // Set environment property for database configuration
+        properties(
+            mapOf(
+                "app.environment" to (System.getenv("APP_ENVIRONMENT") ?: "development"),
+            ),
+        )
         // Load modules
         modules(cliAppModule)
+    }
+
+    init {
+        // TODO: Re-enable after complete migration to SQLDelight
+        // Currently disabled as we're migrating from Exposed to SQLDelight
+        // val databaseBootstrap = koinApp.koin.get<DatabaseBootstrap>()
+        // databaseBootstrap.initialize()
     }
 
     /**

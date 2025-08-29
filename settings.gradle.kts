@@ -17,20 +17,30 @@ include(
     ":platform-observability",
     ":platform-application-commons",
     ":platform-domain-commons",
+    ":platform-infrastructure",
     // Interface layer
     ":interfaces-cli",
     // Contracts layer
     ":contracts-scope-management",
     ":contracts-user-preferences",
+    ":contracts-event-store",
+    ":contracts-device-synchronization",
     // Bounded Context - Unified Scope Management
     ":scope-management-domain",
     ":scope-management-application",
     ":scope-management-infrastructure",
-    ":scope-management-event-store",
     // Bounded Context - User Preferences
     ":user-preferences-domain",
     ":user-preferences-application",
     ":user-preferences-infrastructure",
+    // Bounded Context - Event Store
+    ":event-store-domain",
+    ":event-store-application",
+    ":event-store-infrastructure",
+    // Bounded Context - Device Synchronization
+    ":device-synchronization-domain",
+    ":device-synchronization-application",
+    ":device-synchronization-infrastructure",
     // Apps layer - Application logic & Entry points
     ":apps-scopes",
     ":apps-scopesd",
@@ -88,6 +98,7 @@ project(":platform-commons").projectDir = file("platform/commons")
 project(":platform-observability").projectDir = file("platform/observability")
 project(":platform-application-commons").projectDir = file("platform/application-commons")
 project(":platform-domain-commons").projectDir = file("platform/domain-commons")
+project(":platform-infrastructure").projectDir = file("platform/infrastructure")
 
 // Interface layer
 project(":interfaces-cli").projectDir = file("interfaces/cli")
@@ -95,17 +106,28 @@ project(":interfaces-cli").projectDir = file("interfaces/cli")
 // Contracts layer
 project(":contracts-scope-management").projectDir = file("contracts/scope-management")
 project(":contracts-user-preferences").projectDir = file("contracts/user-preferences")
+project(":contracts-event-store").projectDir = file("contracts/event-store")
+project(":contracts-device-synchronization").projectDir = file("contracts/device-synchronization")
 
 // Bounded Context - Scope Management
 project(":scope-management-domain").projectDir = file("contexts/scope-management/domain")
 project(":scope-management-application").projectDir = file("contexts/scope-management/application")
 project(":scope-management-infrastructure").projectDir = file("contexts/scope-management/infrastructure")
-project(":scope-management-event-store").projectDir = file("contexts/scope-management/event-store")
 
 // Bounded Context - User Preferences
 project(":user-preferences-domain").projectDir = file("contexts/user-preferences/domain")
 project(":user-preferences-application").projectDir = file("contexts/user-preferences/application")
 project(":user-preferences-infrastructure").projectDir = file("contexts/user-preferences/infrastructure")
+
+// Bounded Context - Event Store
+project(":event-store-domain").projectDir = file("contexts/event-store/domain")
+project(":event-store-application").projectDir = file("contexts/event-store/application")
+project(":event-store-infrastructure").projectDir = file("contexts/event-store/infrastructure")
+
+// Bounded Context - Device Synchronization
+project(":device-synchronization-domain").projectDir = file("contexts/device-synchronization/domain")
+project(":device-synchronization-application").projectDir = file("contexts/device-synchronization/application")
+project(":device-synchronization-infrastructure").projectDir = file("contexts/device-synchronization/infrastructure")
 
 // Apps layer
 project(":apps-scopes").projectDir = file("apps/scopes")

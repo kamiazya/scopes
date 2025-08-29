@@ -45,3 +45,7 @@ tmp/
 # Serena AI assistant files
 .serena/
 .claude/epics/
+
+# Local log directories
+logs/
+apps/scopes/logs/

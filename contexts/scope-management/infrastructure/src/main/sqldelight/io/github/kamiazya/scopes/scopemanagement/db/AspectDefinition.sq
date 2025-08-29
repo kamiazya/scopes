@@ -1,0 +1,35 @@
+-- Aspect Definitions table
+CREATE TABLE IF NOT EXISTS aspect_definitions (
+    key TEXT PRIMARY KEY NOT NULL,
+    aspect_type TEXT NOT NULL,
+    description TEXT,
+    allow_multiple_values INTEGER NOT NULL DEFAULT 0
+);
+
+-- Insert or replace aspect definition
+upsertAspectDefinition:
+INSERT OR REPLACE INTO aspect_definitions (key, aspect_type, description, allow_multiple_values)
+VALUES (?, ?, ?, ?);
+
+-- Find by key
+findByKey:
+SELECT *
+FROM aspect_definitions
+WHERE key = ?;
+
+-- Get all definitions
+getAllDefinitions:
+SELECT *
+FROM aspect_definitions
+ORDER BY key;
+
+-- Check if exists
+existsByKey:
+SELECT COUNT(*) > 0 AS result
+FROM aspect_definitions
+WHERE key = ?;
+
+-- Delete by key
+deleteByKey:
+DELETE FROM aspect_definitions
+WHERE key = ?;

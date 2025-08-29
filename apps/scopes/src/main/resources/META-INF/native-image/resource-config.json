@@ -1,0 +1,24 @@
+{
+  "resources" : {
+    "includes" : [ {
+      "pattern" : "org/sqlite/.*\\.dll$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.so$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.dylib$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.jnilib$"
+    }, {
+      "pattern" : "org/sqlite/native/.*"
+    }, {
+      "pattern" : ".*\\.properties$"
+    }, {
+      "pattern" : "logback\\.xml$"
+    }, {
+      "pattern" : "logback-native\\.xml$"
+    }, {
+      "pattern" : "logback-.*\\.xml$"
+    } ]
+  },
+  "bundles" : [ ]
+}
