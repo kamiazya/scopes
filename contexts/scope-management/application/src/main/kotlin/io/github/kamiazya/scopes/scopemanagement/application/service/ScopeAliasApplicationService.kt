@@ -7,24 +7,23 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.PureScopeAliasValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasOperation
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
  * Application service for managing scope aliases.
  *
- * This service orchestrates between the pure domain service and the repository,
- * handling all I/O operations while delegating business logic to the domain layer.
+ * This service orchestrates between the domain policy and the repository,
+ * handling all I/O operations while delegating business rules to the domain layer.
  */
 class ScopeAliasApplicationService(
     private val aliasRepository: ScopeAliasRepository,
     private val aliasGenerationService: AliasGenerationService,
-    private val validationService: PureScopeAliasValidationService = PureScopeAliasValidationService(),
+    private val aliasPolicy: ScopeAliasPolicy = ScopeAliasPolicy(),
 ) {
 
     /**
@@ -40,7 +39,7 @@ class ScopeAliasApplicationService(
         val existingCanonicalForScope = aliasRepository.findCanonicalByScopeId(scopeId).bind()
 
         // Use pure domain service to determine operation
-        val operation = validationService.determineCanonicalAliasOperation(
+        val operation = aliasPolicy.determineCanonicalAliasOperation(
             scopeId = scopeId,
             aliasName = aliasName,
             existingAliasWithName = existingAliasWithName,
@@ -54,12 +53,9 @@ class ScopeAliasApplicationService(
                 operation.alias
             }
             is AliasOperation.Replace -> {
-                // Convert old canonical to custom
-                val updatedOld = operation.oldAlias.copy(
-                    aliasType = AliasType.CUSTOM,
-                    updatedAt = Clock.System.now(),
-                )
-                aliasRepository.update(updatedOld).bind()
+                // Demote old canonical to custom using domain method
+                val demotedAlias = operation.oldAlias.demoteToCustom()
+                aliasRepository.update(demotedAlias).bind()
 
                 // Save new canonical
                 aliasRepository.save(operation.newAlias).bind()
@@ -87,7 +83,7 @@ class ScopeAliasApplicationService(
         val existingAliasWithName = aliasRepository.findByAliasName(aliasName).bind()
 
         // Use pure domain service to validate
-        val newAlias = validationService.validateCustomAliasCreation(
+        val newAlias = aliasPolicy.validateCustomAliasCreation(
             scopeId = scopeId,
             aliasName = aliasName,
             existingAliasWithName = existingAliasWithName,
@@ -119,7 +115,7 @@ class ScopeAliasApplicationService(
                 // Name is available, create the alias
                 val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId).bind()
 
-                val operation = validationService.determineCanonicalAliasOperation(
+                val operation = aliasPolicy.determineCanonicalAliasOperation(
                     scopeId = scopeId,
                     aliasName = generatedName,
                     existingAliasWithName = null,
@@ -132,20 +128,22 @@ class ScopeAliasApplicationService(
                         operation.alias
                     }
                     is AliasOperation.Replace -> {
-                        // Delete old canonical
-                        aliasRepository.removeByAliasName(operation.oldAlias.aliasName).bind()
+                        // Demote old canonical to custom (preserves history and referential stability)
+                        val demotedAlias = operation.oldAlias.demoteToCustom()
+                        aliasRepository.update(demotedAlias).bind()
+
                         // Save new canonical
                         aliasRepository.save(operation.newAlias).bind()
                         operation.newAlias
                     }
-                    else -> {
-                        raise(
-                            ScopeAliasError.AliasGenerationFailed(
-                                occurredAt = Clock.System.now(),
-                                scopeId = scopeId,
-                                retryCount = retryCount,
-                            ),
-                        )
+                    is AliasOperation.NoChange -> {
+                        // The generated name matched the existing canonical alias, which is a success case.
+                        // The existingCanonical is non-null here because NoChange is only returned when it exists.
+                        existingCanonical!!
+                    }
+                    is AliasOperation.Error -> {
+                        // This case handles validation errors from the domain service
+                        raise(operation.error)
                     }
                 }
             }
@@ -173,21 +171,16 @@ class ScopeAliasApplicationService(
 
         if (alias == null) {
             raise(
-                ScopeAliasError.AliasNotFound(
+                ScopeAliasError.AliasNotFoundById(
                     occurredAt = Clock.System.now(),
-                    aliasName = aliasId.value,
+                    aliasId = aliasId,
                 ),
             )
         }
 
-        // Check if this is the last alias for the scope
-        val allAliasesForScope = aliasRepository.findByScopeId(alias.scopeId).bind()
-        val isLastAlias = allAliasesForScope.size == 1
-
-        // Validate deletion
-        validationService.validateAliasDeletion(alias, isLastAlias).bind()
-
         // Delete from repository
+        // Note: Currently no business rules prevent alias deletion
+        // Future consideration: May want to prevent deletion of last alias
         aliasRepository.removeByAliasName(alias.aliasName).bind()
     }
 

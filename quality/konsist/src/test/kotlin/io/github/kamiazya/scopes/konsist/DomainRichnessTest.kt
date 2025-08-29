@@ -287,7 +287,88 @@ class DomainRichnessTest :
             }
         }
 
-        // Test 10: Application services should not duplicate domain logic
+        // Test 10: Domain entities should not expose copy directly in business methods
+        "domain entities should encapsulate state transitions without exposing copy" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/domain")
+                    .classes()
+                    .filter { it.resideInPackage("..entity..") || it.resideInPackage("..aggregate..") }
+                    .filter { !it.name.endsWith("Test") }
+                    .filter { it.hasDataModifier } // Only check data classes that have copy
+                    .assertTrue { entity ->
+                        // Check that public methods don't return copy() directly
+                        // They should use domain methods that encapsulate the copy
+                        val methodsUsingCopy = entity.functions()
+                            .filter { it.hasPublicModifier }
+                            .filter { it.name != "<init>" }
+                            .filter { function ->
+                                // Check if the method body contains "copy("
+                                function.text?.contains("return copy(") == true ||
+                                    function.text?.contains("= copy(") == true
+                            }
+
+                        // It's OK to use copy internally, but prefer domain methods
+                        // that express the business operation
+                        val hasProperDomainMethods = entity.functions()
+                            .filter { it.hasPublicModifier }
+                            .any { function ->
+                                // Look for intention-revealing method names
+                                function.name.startsWith("with") ||
+                                    function.name.startsWith("update") ||
+                                    function.name.startsWith("change") ||
+                                    function.name.startsWith("set") ||
+                                    function.name.startsWith("demote") ||
+                                    function.name.startsWith("promote") ||
+                                    function.name.startsWith("transition")
+                            }
+
+                        // If using copy, should have proper domain methods
+                        methodsUsingCopy.isEmpty() || hasProperDomainMethods
+                    }
+            }
+        }
+
+        // Test 11: When expressions over sealed classes should not use else branches
+        "when expressions over sealed classes should be exhaustive without else" {
+            contexts.forEach { context ->
+                // Check both domain and application layers
+                val scopes = listOf(
+                    Konsist.scopeFromDirectory("contexts/$context/domain"),
+                    Konsist.scopeFromDirectory("contexts/$context/application"),
+                )
+
+                scopes.forEach { scope ->
+                    scope.files
+                        .filter { it.path.contains("src/main") }
+                        .filter { !it.name.endsWith("Test.kt") }
+                        .assertFalse { file ->
+                            // Look for problematic patterns:
+                            // when (sealedVar) { ... else -> }
+                            // We specifically check for AliasOperation which is our sealed class
+                            val problematicWhenElse = file.text.contains(
+                                Regex(
+                                    """when\s*\(\s*operation\s*\)\s*\{[^}]*\belse\s*->""",
+                                    RegexOption.DOT_MATCHES_ALL,
+                                ),
+                            ) || file.text.contains(
+                                Regex(
+                                    """when\s*\(\s*result\s*\)\s*\{[^}]*\belse\s*->""",
+                                    RegexOption.DOT_MATCHES_ALL,
+                                ),
+                            )
+
+                            // Only flag if it's actually using our sealed classes
+                            val usesSealedOperations = file.text.contains("AliasOperation") ||
+                                file.text.contains("is AliasOperation")
+
+                            problematicWhenElse && usesSealedOperations
+                        }
+                }
+            }
+        }
+
+        // Test 12: Application services should not duplicate domain logic
         "application services should use domain services for business logic" {
             contexts.forEach { context ->
                 val domainServiceNames = Konsist

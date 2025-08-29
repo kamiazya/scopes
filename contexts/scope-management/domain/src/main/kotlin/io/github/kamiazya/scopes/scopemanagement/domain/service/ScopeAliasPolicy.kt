@@ -8,19 +8,23 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasOperation
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ConflictResolution
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Pure domain service for scope alias validation and business logic.
+ * Domain policy that encapsulates business rules for scope alias management.
  *
- * This service contains only business logic without any I/O operations,
- * making it easy to test and reason about. All repository operations
- * are handled by the application layer.
+ * This policy defines and enforces the business rules for:
+ * - Canonical alias assignment and replacement
+ * - Custom alias creation and validation
+ * - Alias type transitions
+ * - Conflict resolution strategies
+ * - Alias operation validation
+ *
+ * The policy ensures consistency and integrity of alias operations
+ * according to the domain's business requirements.
  */
-class PureScopeAliasValidationService {
+class ScopeAliasPolicy {
 
     /**
      * Determines the operation for canonical alias assignment.
@@ -103,24 +107,29 @@ class PureScopeAliasValidationService {
     }
 
     /**
-     * Validates generated alias creation.
+     * Validates canonical alias creation during scope creation.
+     *
+     * This is used when creating a scope's initial canonical alias, which can be either:
+     * - User-specified alias provided at scope creation time
+     * - Auto-generated alias (e.g., from Haikunator) when user doesn't specify one
      *
      * Business Rules:
-     * - Generated aliases must be unique
-     * - Only one generated alias per scope
+     * - Canonical aliases must have unique names
+     * - Only one canonical alias per scope
      *
-     * @param scopeId The scope to create alias for
-     * @param aliasName The generated alias name
+     * @param scopeId The scope to create canonical alias for
+     * @param aliasName The alias name (either user-specified or auto-generated)
      * @param existingAliasWithName Existing alias with this name (if any)
-     * @param existingGeneratedForScope Existing generated alias for this scope (if any)
+     * @param existingCanonicalForScope Existing canonical alias for this scope (if any)
      * @return Either an error or the operation to perform
      */
-    fun validateGeneratedAliasCreation(
+    fun validateInitialCanonicalAliasCreation(
         scopeId: ScopeId,
         aliasName: AliasName,
         existingAliasWithName: ScopeAlias?,
-        existingGeneratedForScope: ScopeAlias?,
+        existingCanonicalForScope: ScopeAlias?,
     ): Either<ScopesError, AliasOperation> = either {
+        // Ensure the alias name is not already taken
         ensure(existingAliasWithName == null) {
             ScopeAliasError.DuplicateAlias(
                 occurredAt = Clock.System.now(),
@@ -130,68 +139,18 @@ class PureScopeAliasValidationService {
             )
         }
 
-        val newAlias = ScopeAlias.createCustom(
+        // Create a canonical alias for this scope's initial alias
+        val newAlias = ScopeAlias.createCanonical(
             scopeId = scopeId,
             aliasName = aliasName,
             timestamp = Clock.System.now(),
         )
 
-        if (existingGeneratedForScope != null) {
-            AliasOperation.Replace(existingGeneratedForScope, newAlias)
+        // If there's an existing canonical (shouldn't happen for new scopes), replace it
+        if (existingCanonicalForScope != null) {
+            AliasOperation.Replace(existingCanonicalForScope, newAlias)
         } else {
             AliasOperation.Create(newAlias)
         }
-    }
-
-    /**
-     * Determines if an alias type transition is valid.
-     *
-     * Business Rules:
-     * - Canonical aliases cannot be downgraded to custom
-     * - Custom aliases can be upgraded to canonical
-     * - Generated aliases can transition to any type
-     *
-     * @param fromType Current alias type (null if no existing alias)
-     * @param toType Desired alias type
-     * @return true if transition is allowed
-     */
-    fun isValidAliasTypeTransition(fromType: AliasType?, toType: AliasType): Boolean = when {
-        fromType == null -> true // Can create any type from nothing
-        fromType == toType -> true // Same type is always valid
-        fromType == AliasType.CANONICAL && toType == AliasType.CUSTOM -> false // Cannot downgrade
-        fromType == AliasType.CUSTOM && toType == AliasType.CANONICAL -> true // Can upgrade
-        else -> false
-    }
-
-    /**
-     * Validates that an alias can be deleted.
-     *
-     * @param alias The alias to validate for deletion
-     * @param isLastAlias Whether this is the last alias for the scope
-     * @return Either an error or Unit if valid
-     */
-    fun validateAliasDeletion(alias: ScopeAlias, isLastAlias: Boolean): Either<ScopesError, Unit> = either {
-        // Current business rule: All aliases can be deleted
-        // Future consideration: May want to prevent deletion of last alias
-        Unit
-    }
-
-    /**
-     * Determines conflict resolution when multiple alias operations are requested.
-     *
-     * @param requestedAliases List of alias names requested
-     * @param existingAliases List of existing aliases for the scope
-     * @return Resolution strategy
-     */
-    fun resolveAliasConflicts(requestedAliases: List<AliasName>, existingAliases: List<ScopeAlias>): ConflictResolution {
-        val existingNames = existingAliases.map { it.aliasName }.toSet()
-        val newAliases = requestedAliases.filter { it !in existingNames }
-        val duplicates = requestedAliases.filter { it in existingNames }
-
-        return ConflictResolution(
-            toCreate = newAliases,
-            alreadyExist = duplicates,
-            toKeep = existingAliases.filter { it.aliasName !in requestedAliases },
-        )
     }
 }

@@ -63,16 +63,15 @@ class UpdateScopeHandler(
                     val newTitle = ScopeTitle.create(input.title).bind()
 
                     // Use specification to validate title uniqueness
-                    val validationResult = titleUniquenessSpec.isSatisfiedByForUpdate(
+                    titleUniquenessSpec.isSatisfiedByForUpdate(
                         newTitle = newTitle,
                         currentTitle = existingScope.title,
                         parentId = existingScope.parentId,
                         scopeId = scopeId,
                         titleExistsChecker = { title, parentId ->
-                            scopeRepository.existsByParentIdAndTitle(parentId, title.value).bind()
+                            scopeRepository.findIdByParentIdAndTitle(parentId, title.value).bind()
                         },
-                    )
-                    validationResult(Unit).bind()
+                    ).bind()
 
                     updatedScope = updatedScope.updateTitle(input.title).bind()
                     logger.debug(

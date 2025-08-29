@@ -93,4 +93,37 @@ data class ScopeAlias(
      * This allows tracking the same alias entity even when renamed.
      */
     fun withNewName(newName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = copy(aliasName = newName, updatedAt = timestamp)
+
+    /**
+     * Demotes a canonical alias to custom.
+     * This is used when replacing a canonical alias with a new one,
+     * preserving the old alias for history and referential stability.
+     *
+     * @param timestamp The timestamp of the demotion
+     * @return A new ScopeAlias instance with CUSTOM type
+     * @throws IllegalStateException if the alias is not canonical
+     */
+    fun demoteToCustom(timestamp: Instant = Clock.System.now()): ScopeAlias {
+        require(isCanonical()) { "Cannot demote non-canonical alias to custom" }
+        return copy(
+            aliasType = AliasType.CUSTOM,
+            updatedAt = timestamp,
+        )
+    }
+
+    /**
+     * Promotes a custom alias to canonical.
+     * This is used when making a custom alias the primary alias for a scope.
+     *
+     * @param timestamp The timestamp of the promotion
+     * @return A new ScopeAlias instance with CANONICAL type
+     * @throws IllegalStateException if the alias is not custom
+     */
+    fun promoteToCanonical(timestamp: Instant = Clock.System.now()): ScopeAlias {
+        require(isCustom()) { "Cannot promote non-custom alias to canonical" }
+        return copy(
+            aliasType = AliasType.CANONICAL,
+            updatedAt = timestamp,
+        )
+    }
 }

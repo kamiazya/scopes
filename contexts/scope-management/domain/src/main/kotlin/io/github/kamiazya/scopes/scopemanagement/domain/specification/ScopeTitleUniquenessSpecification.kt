@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.specification
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -24,52 +23,54 @@ class ScopeTitleUniquenessSpecification {
      * @param parentId The parent scope ID (null for root scopes)
      * @param currentScopeId The ID of the scope being updated (null for new scopes)
      * @param currentTitle The current title of the scope being updated (for update scenarios)
-     * @param titleExistsChecker Function to check if a title exists among siblings and return the existing scope ID
+     * @param titleExistsChecker Function that returns the existing scope ID if title exists, null if unique
      * @return Either an error if duplicate exists, or Unit if unique
      */
-    fun isSatisfiedBy(
+    suspend fun isSatisfiedBy(
         newTitle: ScopeTitle,
         parentId: ScopeId?,
         currentScopeId: ScopeId?,
         currentTitle: ScopeTitle?,
-        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> Boolean,
-    ): suspend (Unit) -> Either<ScopesError, Unit> = {
-        either {
-            // If updating and the title hasn't changed, it's valid
-            if (currentTitle != null && currentTitle == newTitle) {
-                return@either
-            }
+        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> ScopeId?,
+    ): Either<ScopesError, Unit> = either {
+        // If updating and the title hasn't changed, it's valid
+        if (currentTitle != null && currentTitle == newTitle) {
+            return@either
+        }
 
-            val titleExists = titleExistsChecker(newTitle, parentId)
+        val existingScopeId = titleExistsChecker(newTitle, parentId)
 
-            ensure(!titleExists) {
+        // If existingScopeId is not null, it means a duplicate exists
+        // If it's the same as currentScopeId (for updates), it's the same scope so it's okay
+        if (existingScopeId != null && existingScopeId != currentScopeId) {
+            raise(
                 ScopeUniquenessError.DuplicateTitle(
                     occurredAt = Clock.System.now(),
                     title = newTitle.value,
                     parentScopeId = parentId,
-                    existingScopeId = currentScopeId ?: ScopeId.generate(), // Placeholder for unknown existing scope
-                )
-            }
+                    existingScopeId = existingScopeId, // Now we have the actual conflicting scope ID
+                ),
+            )
         }
     }
 
     /**
      * Simplified version for new scope creation.
      */
-    fun isSatisfiedByForCreation(
+    suspend fun isSatisfiedByForCreation(
         title: ScopeTitle,
         parentId: ScopeId?,
-        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> Boolean,
-    ): suspend (Unit) -> Either<ScopesError, Unit> = isSatisfiedBy(title, parentId, null, null, titleExistsChecker)
+        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> ScopeId?,
+    ): Either<ScopesError, Unit> = isSatisfiedBy(title, parentId, null, null, titleExistsChecker)
 
     /**
      * Simplified version for scope update.
      */
-    fun isSatisfiedByForUpdate(
+    suspend fun isSatisfiedByForUpdate(
         newTitle: ScopeTitle,
         currentTitle: ScopeTitle,
         parentId: ScopeId?,
         scopeId: ScopeId,
-        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> Boolean,
-    ): suspend (Unit) -> Either<ScopesError, Unit> = isSatisfiedBy(newTitle, parentId, scopeId, currentTitle, titleExistsChecker)
+        titleExistsChecker: suspend (ScopeTitle, ScopeId?) -> ScopeId?,
+    ): Either<ScopesError, Unit> = isSatisfiedBy(newTitle, parentId, scopeId, currentTitle, titleExistsChecker)
 }
