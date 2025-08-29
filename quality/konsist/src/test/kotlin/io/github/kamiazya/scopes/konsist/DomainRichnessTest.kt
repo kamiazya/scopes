@@ -89,8 +89,16 @@ class DomainRichnessTest :
                     .assertFalse { file ->
                         // Should not import repository implementations
                         file.imports.any { import ->
-                            import.name.contains("Repository") &&
-                                !import.name.endsWith("Repository") // Allow repository interfaces
+                            val importName = import.name
+                            // Check if this is a repository import
+                            val isRepositoryImport = importName.endsWith("Repository") ||
+                                importName.contains(".repository.")
+
+                            // Domain repository interfaces are allowed (they are ports)
+                            val isDomainRepositoryInterface = importName.contains(".domain.repository.")
+
+                            // Flag repository imports that are not domain interfaces
+                            isRepositoryImport && !isDomainRepositoryInterface
                         }
                     }
             }
@@ -230,13 +238,20 @@ class DomainRichnessTest :
                                     it.name.startsWith("add") ||
                                     it.name.startsWith("remove") ||
                                     it.name.startsWith("change") ||
-                                    it.name.startsWith("apply") || // Event sourcing pattern
-                                    it.name.startsWith("handle") || // Command handling
-                                    it.name.startsWith("process") || // Processing commands
-                                    it.name.startsWith("archive") || // Archive operation
-                                    it.name.startsWith("restore") || // Restore operation
-                                    it.name == "delete" || // Exact match for delete
-                                    it.name == "archive" || // Exact match for archive
+                                    it.name.startsWith("apply") ||
+                                    // Event sourcing pattern
+                                    it.name.startsWith("handle") ||
+                                    // Command handling
+                                    it.name.startsWith("process") ||
+                                    // Processing commands
+                                    it.name.startsWith("archive") ||
+                                    // Archive operation
+                                    it.name.startsWith("restore") ||
+                                    // Restore operation
+                                    it.name == "delete" ||
+                                    // Exact match for delete
+                                    it.name == "archive" ||
+                                    // Exact match for archive
                                     it.name == "restore" // Exact match for restore
                             }
 
@@ -351,12 +366,13 @@ class DomainRichnessTest :
                                     """when\s*\(\s*operation\s*\)\s*\{[^}]*\belse\s*->""",
                                     RegexOption.DOT_MATCHES_ALL,
                                 ),
-                            ) || file.text.contains(
-                                Regex(
-                                    """when\s*\(\s*result\s*\)\s*\{[^}]*\belse\s*->""",
-                                    RegexOption.DOT_MATCHES_ALL,
-                                ),
-                            )
+                            ) ||
+                                file.text.contains(
+                                    Regex(
+                                        """when\s*\(\s*result\s*\)\s*\{[^}]*\belse\s*->""",
+                                        RegexOption.DOT_MATCHES_ALL,
+                                    ),
+                                )
 
                             // Only flag if it's actually using our sealed classes
                             val usesSealedOperations = file.text.contains("AliasOperation") ||
