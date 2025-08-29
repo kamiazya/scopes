@@ -6,6 +6,7 @@ This guide explains how to set up GraalVM for native image compilation.
 
 - GraalVM JDK 21 or later
 - Native Image component
+- GraalVM SDK (for build-time configuration)
 
 ## Installation Options
 
@@ -64,6 +65,38 @@ native-image --version
 # Test native compilation
 ./gradlew nativeCompile
 ```
+
+## Build Dependencies
+
+### GraalVM SDK Dependency
+
+The project requires the GraalVM SDK as a compile-only dependency for native image builds. This dependency is configured in `apps/scopes/build.gradle.kts`:
+
+```kotlin
+dependencies {
+    // GraalVM native image
+    compileOnly(libs.graalvm.sdk)
+}
+```
+
+#### Why is GraalVM SDK needed?
+
+The GraalVM SDK is required to compile GraalVM Feature classes that configure native image generation. Specifically:
+
+1. **SQLite JDBC Native Image Support**: The project includes `SqliteJdbcFeature.java` which implements `org.graalvm.nativeimage.hosted.Feature` to properly configure SQLite JDBC driver for native image compilation.
+
+2. **Build-time Configuration**: GraalVM Feature classes allow customization of the native image build process, including:
+   - Registering classes for reflection
+   - Configuring resource inclusion
+   - Setting up JNI access
+   - Optimizing initialization timing
+
+3. **GraphQL and Database Support**: Native image compilation requires explicit configuration for dynamic features used by GraphQL schemas and database drivers. The GraalVM SDK enables writing these configurations programmatically rather than through JSON configuration files.
+
+The SDK is marked as `compileOnly` because:
+- It's only needed during compilation, not at runtime
+- The GraalVM native image builder provides these classes during the native image generation process
+- It keeps the JAR size smaller for non-native deployments
 
 ## Troubleshooting
 
