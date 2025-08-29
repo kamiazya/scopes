@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -178,10 +179,25 @@ class ScopeAliasApplicationService(
             )
         }
 
-        // Delete from repository
-        // Note: Currently no business rules prevent alias deletion
-        // Future consideration: May want to prevent deletion of last alias
-        aliasRepository.removeByAliasName(alias.aliasName).bind()
+        // Check if this is a canonical alias - they cannot be deleted
+        if (alias.isCanonical()) {
+            raise(
+                ScopeAliasError.CannotRemoveCanonicalAlias(
+                    occurredAt = Clock.System.now(),
+                    scopeId = alias.scopeId,
+                    aliasName = alias.aliasName.value,
+                ),
+            )
+        }
+
+        // Delete from repository and ensure it was actually removed
+        val removed = aliasRepository.removeByAliasName(alias.aliasName).bind()
+        ensure(removed) {
+            ScopeAliasError.AliasNotFound(
+                occurredAt = Clock.System.now(),
+                aliasName = alias.aliasName.value,
+            )
+        }
     }
 
     /**
