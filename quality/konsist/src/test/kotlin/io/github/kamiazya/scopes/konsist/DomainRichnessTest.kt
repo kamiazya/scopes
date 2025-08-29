@@ -116,8 +116,8 @@ class DomainRichnessTest :
                         // Handlers should be thin - no more than 150 lines in their main method
                         // Increased threshold to account for error handling and logging
                         val invokeMethod = handler.functions().find { it.name == "invoke" || it.name == "handle" }
-                        val lineCount = invokeMethod?.countCodeLines() ?: 0
-                        lineCount <= 150
+                        // Handler must have an invoke or handle method, and it must be <= 150 lines
+                        invokeMethod != null && (invokeMethod.countCodeLines() ?: 0) <= 150
                     }
             }
         }
