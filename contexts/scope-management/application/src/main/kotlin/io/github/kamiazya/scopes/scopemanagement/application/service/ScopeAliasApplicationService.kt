@@ -62,6 +62,19 @@ class ScopeAliasApplicationService(
                 aliasRepository.save(operation.newAlias).bind()
                 operation.newAlias
             }
+            is AliasOperation.Promote -> {
+                // Promote existing custom alias to canonical
+                val promotedAlias = operation.existingAlias.promoteToCanonical()
+                aliasRepository.update(promotedAlias).bind()
+
+                // If there's an existing canonical, demote it to custom
+                if (existingCanonicalForScope != null) {
+                    val demotedAlias = existingCanonicalForScope.demoteToCustom()
+                    aliasRepository.update(demotedAlias).bind()
+                }
+
+                promotedAlias
+            }
             is AliasOperation.NoChange -> {
                 // Return existing alias
                 existingCanonicalForScope!!
@@ -136,6 +149,19 @@ class ScopeAliasApplicationService(
                         // Save new canonical
                         aliasRepository.save(operation.newAlias).bind()
                         operation.newAlias
+                    }
+                    is AliasOperation.Promote -> {
+                        // This shouldn't happen in generateCanonicalAlias since we pass null for existingAliasWithName
+                        // But handle it for completeness
+                        val promotedAlias = operation.existingAlias.promoteToCanonical()
+                        aliasRepository.update(promotedAlias).bind()
+
+                        if (existingCanonical != null) {
+                            val demotedAlias = existingCanonical.demoteToCustom()
+                            aliasRepository.update(demotedAlias).bind()
+                        }
+
+                        promotedAlias
                     }
                     is AliasOperation.NoChange -> {
                         // The generated name matched the existing canonical alias, which is a success case.

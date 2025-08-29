@@ -46,17 +46,28 @@ class ScopeAliasPolicy {
         existingAliasWithName: ScopeAlias?,
         existingCanonicalForScope: ScopeAlias?,
     ): AliasOperation = either<ScopesError, AliasOperation> {
-        // Rule: Alias name must not be taken by another scope
-        ensure(existingAliasWithName == null || existingAliasWithName.scopeId == scopeId) {
-            ScopeAliasError.DuplicateAlias(
-                occurredAt = Clock.System.now(),
-                aliasName = aliasName.value,
-                existingScopeId = existingAliasWithName!!.scopeId,
-                attemptedScopeId = scopeId,
-            )
+        // Check if there's an existing alias with this name
+        if (existingAliasWithName != null) {
+            if (existingAliasWithName.scopeId != scopeId) {
+                // Rule: Alias name must not be taken by another scope
+                raise(
+                    ScopeAliasError.DuplicateAlias(
+                        occurredAt = Clock.System.now(),
+                        aliasName = aliasName.value,
+                        existingScopeId = existingAliasWithName.scopeId,
+                        attemptedScopeId = scopeId,
+                    ),
+                )
+            } else if (existingAliasWithName.isCustom()) {
+                // If this scope already has a custom alias with this name, promote it
+                return@either AliasOperation.Promote(existingAliasWithName)
+            } else if (existingAliasWithName.isCanonical()) {
+                // Already canonical with this name
+                return@either AliasOperation.NoChange("Canonical alias already set to this name")
+            }
         }
 
-        // Check if we're updating to the same alias name
+        // Check if we're updating to the same alias name (shouldn't happen after above checks)
         if (existingCanonicalForScope?.aliasName == aliasName) {
             return@either AliasOperation.NoChange("Canonical alias already set to this name")
         }
