@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 import arrow.core.Either
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
-import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
@@ -47,8 +47,7 @@ class UpdateScopeHandler(
                 val scopeId = ScopeId.create(input.id).bind()
 
                 // Find existing scope
-                val existingScope = scopeRepository.findById(scopeId).bind()
-                ensure(existingScope != null) {
+                val existingScope = ensureNotNull(scopeRepository.findById(scopeId).bind()) {
                     logger.warn("Scope not found for update", mapOf("scopeId" to input.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
