@@ -1,5 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
+import io.github.kamiazya.scopes.apps.cli.di.devicesync.deviceSyncInfrastructureModule
+import io.github.kamiazya.scopes.apps.cli.di.eventstore.eventStoreInfrastructureModule
+import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
@@ -32,10 +35,13 @@ val cliAppModule = module {
     includes(
         // Platform
         observabilityModule,
+        databaseModule,
 
         // Bounded Contexts
         scopeManagementModule,
         scopeManagementInfrastructureModule,
+        eventStoreInfrastructureModule,
+        deviceSyncInfrastructureModule,
         userPreferencesModule,
 
         // Contracts layer

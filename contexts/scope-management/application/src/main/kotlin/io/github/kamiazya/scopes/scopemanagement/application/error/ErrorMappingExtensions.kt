@@ -85,7 +85,7 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
 
     is ContextError.ContextNotFound ->
         AppContextError.StateNotFound(
-            contextId = this.contextId ?: "unknown",
+            contextId = this.contextId ?: "<not-provided>",
         )
 
     is ContextError.InvalidFilter ->
@@ -299,7 +299,7 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
     else -> AppPersistenceError.StorageUnavailable(
-        operation = "unknown",
+        operation = "domain-operation",
         cause = "Unmapped domain error: ${this::class.simpleName}",
     )
 }

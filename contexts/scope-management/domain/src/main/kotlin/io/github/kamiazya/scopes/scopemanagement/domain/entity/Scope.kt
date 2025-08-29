@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -25,6 +26,7 @@ data class Scope(
     val title: ScopeTitle,
     val description: ScopeDescription? = null,
     val parentId: ScopeId? = null,
+    val status: ScopeStatus = ScopeStatus.default(),
     val createdAt: Instant,
     val updatedAt: Instant,
     val aspects: Aspects = Aspects.empty(),
@@ -46,6 +48,7 @@ data class Scope(
                     description = validatedDescription,
                     parentId = parentId,
                     createdAt = now,
+                    status = ScopeStatus.default(),
                     updatedAt = now,
                     aspects = aspects,
                 )
@@ -70,6 +73,7 @@ data class Scope(
                 description = description,
                 parentId = parentId,
                 createdAt = now,
+                status = ScopeStatus.default(),
                 updatedAt = now,
                 aspects = aspects,
             )
@@ -79,8 +83,12 @@ data class Scope(
     /**
      * Update the scope title with new timestamp.
      * Pure function that returns a new instance.
+     * Only allowed in Draft or Active status.
      */
     fun updateTitle(newTitle: String): Either<ScopesError, Scope> = either {
+        if (!status.canBeEdited()) {
+            raise(ScopesError.InvalidOperation("Cannot update title in $status status"))
+        }
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
     }
@@ -88,8 +96,12 @@ data class Scope(
     /**
      * Update the scope description with new timestamp.
      * Pure function that returns a new instance.
+     * Only allowed in Draft or Active status.
      */
     fun updateDescription(newDescription: String?): Either<ScopesError, Scope> = either {
+        if (!status.canBeEdited()) {
+            raise(ScopesError.InvalidOperation("Cannot update description in $status status"))
+        }
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
     }
@@ -97,16 +109,23 @@ data class Scope(
     /**
      * Move scope to a new parent with new timestamp.
      * Pure function that returns a new instance.
+     * Only allowed in Draft or Active status.
      */
-    fun moveToParent(newParentId: ScopeId?): Scope = copy(parentId = newParentId, updatedAt = Clock.System.now())
+    fun moveToParent(newParentId: ScopeId?): Either<ScopesError, Scope> = either {
+        if (!status.canBeEdited()) {
+            raise(ScopesError.InvalidOperation("Cannot move scope in $status status"))
+        }
+        copy(parentId = newParentId, updatedAt = Clock.System.now())
+    }
 
     // ===== BUSINESS RULES =====
 
     /**
      * Business rule: Check if this scope can be a parent of another scope.
      * Prevents circular references and self-parenting.
+     * Only active scopes can have children.
      */
-    fun canBeParentOf(childScope: Scope): Boolean = id != childScope.id && childScope.parentId != id
+    fun canBeParentOf(childScope: Scope): Boolean = status.canAddChildren() && id != childScope.id && childScope.parentId != id
 
     /**
      * Check if this scope is a child of the specified parent.
@@ -159,4 +178,35 @@ data class Scope(
      * Pure function that returns a new instance.
      */
     fun clearAspects(): Scope = copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
+
+    /**
+     * Transition to a new status.
+     * Enforces valid state transitions at the domain level.
+     */
+    fun transitionTo(newStatus: ScopeStatus): Either<ScopesError, Scope> = either {
+        status.transitionTo(newStatus).mapLeft {
+            ScopesError.InvalidOperation(it.reason)
+        }.bind()
+        copy(status = newStatus, updatedAt = Clock.System.now())
+    }
+
+    /**
+     * Activate the scope (transition from Draft to Active).
+     */
+    fun activate(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active)
+
+    /**
+     * Complete the scope (transition from Active to Completed).
+     */
+    fun complete(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Completed)
+
+    /**
+     * Archive the scope.
+     */
+    fun archive(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Archived)
+
+    /**
+     * Reactivate an archived scope.
+     */
+    fun reactivate(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active)
 }
