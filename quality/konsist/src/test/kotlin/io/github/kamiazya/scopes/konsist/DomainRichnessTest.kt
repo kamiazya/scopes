@@ -3,7 +3,9 @@ package io.github.kamiazya.scopes.konsist
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldNotBeEmpty
 
 /**
  * Tests to ensure domain models are rich and not anemic.
@@ -178,8 +180,8 @@ class DomainRichnessTest :
 
                 // If complex validations exist, specifications should be present
                 if (hasComplexValidations) {
-                    assert(specificationFiles.isNotEmpty()) {
-                        "Context $context has complex validations but no specifications"
+                    withClue("Context $context has complex validations but no specifications") {
+                        specificationFiles.shouldNotBeEmpty()
                     }
                 }
             }
