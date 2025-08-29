@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
-import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -10,18 +9,16 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
  * Create command for creating new scopes.
  */
 class CreateCommand :
-    CliktCommand(
+    BaseCommand(
         name = "create",
         help = "Create a new scope",
-    ),
-    KoinComponent {
+    ) {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
@@ -55,7 +52,7 @@ class CreateCommand :
                     throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 { result ->
-                    echo(scopeOutputFormatter.formatContractCreateResult(result))
+                    echo(scopeOutputFormatter.formatContractCreateResult(result, isDebugMode))
                 },
             )
         }

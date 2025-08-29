@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
-import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -10,18 +9,16 @@ import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
-import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
  * List command for retrieving multiple scopes.
  */
 class ListCommand :
-    CliktCommand(
+    BaseCommand(
         name = "list",
         help = "List scopes",
-    ),
-    KoinComponent {
+    ) {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
 
@@ -44,7 +41,7 @@ class ListCommand :
                                 // Fetch aliases for each scope and display verbosely
                                 echo(formatVerboseList(scopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes))
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, isDebugMode))
                             }
                         },
                     )
@@ -58,7 +55,7 @@ class ListCommand :
                             if (verbose) {
                                 echo(formatVerboseList(scopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes))
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, isDebugMode))
                             }
                         },
                     )
@@ -73,7 +70,7 @@ class ListCommand :
                             if (verbose) {
                                 echo(formatVerboseList(scopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes))
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, isDebugMode))
                             }
                         },
                     )
@@ -97,13 +94,19 @@ class ListCommand :
                 // Basic scope info
                 appendLine("• ${scope.title}")
                 scope.description?.let { appendLine("  Description: $it") }
-                appendLine("  ID: ${scope.id}")
+                if (isDebugMode) {
+                    appendLine("  ID: ${scope.id}")
+                }
 
                 // Fetch and display all aliases
                 scopeCommandAdapter.listAliases(scope.id).fold(
                     { error ->
                         // If we can't fetch aliases, show just the canonical one
-                        appendLine("  Aliases: ${scope.canonicalAlias}")
+                        if (isDebugMode) {
+                            appendLine("  Aliases: ${scope.canonicalAlias} (ULID: ${scope.id})")
+                        } else {
+                            appendLine("  Aliases: ${scope.canonicalAlias}")
+                        }
                     },
                     { aliasResult ->
                         if (aliasResult.aliases.isEmpty()) {
@@ -111,10 +114,15 @@ class ListCommand :
                         } else {
                             append("  Aliases: ")
                             val aliasStrings = aliasResult.aliases.map { alias ->
-                                if (alias.isCanonical) {
-                                    "${alias.aliasName} (canonical)"
+                                val typeLabel = if (alias.isCanonical) {
+                                    " (canonical)"
                                 } else {
-                                    alias.aliasName
+                                    ""
+                                }
+                                if (isDebugMode) {
+                                    "${alias.aliasName}$typeLabel (ULID: ${scope.id})"
+                                } else {
+                                    "${alias.aliasName}$typeLabel"
                                 }
                             }
                             appendLine(aliasStrings.joinToString(", "))
@@ -122,7 +130,11 @@ class ListCommand :
                     },
                 )
 
-                scope.parentId?.let { appendLine("  Parent: $it") }
+                scope.parentId?.let {
+                    if (isDebugMode) {
+                        appendLine("  Parent: $it")
+                    }
+                }
             }
         }.trim()
     }

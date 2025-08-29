@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
 
 /**
  * Main CLI command for Scopes application.
@@ -15,6 +17,9 @@ class ScopesCommand :
         name = "scopes",
         help = "Scopes - AI-Native Task Management System",
     ) {
+
+    private val debug by option("--debug", help = "Enable debug output showing ULIDs alongside aliases").flag()
+
     init {
         subcommands(
             CreateCommand(),
@@ -27,6 +32,7 @@ class ScopesCommand :
     }
 
     override fun run() {
-        // Nothing to do here - subcommands will be executed
+        // Store debug flag in context for subcommands to access
+        currentContext.obj = DebugContext(debug)
     }
 }
