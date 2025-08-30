@@ -1,25 +1,30 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
+import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
  * Get command for retrieving scopes.
  */
 class GetCommand :
-    BaseCommand(
+    CliktCommand(
         name = "get",
         help = "Get a scope by ID or alias",
-    ) {
+    ),
+    KoinComponent {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
+    private val debugContext by requireObject<DebugContext>()
 
     private val identifier by argument(
         name = "SCOPE",
@@ -44,11 +49,11 @@ class GetCommand :
                             scopeCommandAdapter.listAliases(scope.id).fold(
                                 { aliasError ->
                                     // If we can't fetch aliases, still show the scope with just canonical alias
-                                    echo(scopeOutputFormatter.formatContractScope(scope, isDebugMode))
+                                    echo(scopeOutputFormatter.formatContractScope(scope, debugContext.debug))
                                 },
                                 { aliasResult ->
                                     // Show scope with all aliases
-                                    echo(scopeOutputFormatter.formatContractScopeWithAliases(scope, aliasResult, isDebugMode))
+                                    echo(scopeOutputFormatter.formatContractScopeWithAliases(scope, aliasResult, debugContext.debug))
                                 },
                             )
                         },

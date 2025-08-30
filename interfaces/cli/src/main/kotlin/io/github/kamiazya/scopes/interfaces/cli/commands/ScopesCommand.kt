@@ -32,7 +32,7 @@ class ScopesCommand :
     }
 
     override fun run() {
-        // Store debug flag in context for subcommands to access
-        currentContext.obj = DebugContext(debug)
+        // Store debug flag in context for subcommands to access using findOrSetObject
+        currentContext.findOrSetObject { DebugContext(debug) }
     }
 }
