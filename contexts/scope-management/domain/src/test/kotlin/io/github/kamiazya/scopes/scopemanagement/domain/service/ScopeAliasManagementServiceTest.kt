@@ -8,7 +8,8 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationS
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import io.kotest.assertions.fail
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -41,15 +42,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCanonicalAlias(scopeId, aliasName)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { alias ->
-                        alias.scopeId shouldBe scopeId
-                        alias.aliasName shouldBe aliasName
-                        alias.aliasType shouldBe AliasType.CANONICAL
-                    },
-                )
+                result.shouldBeRight().let { alias ->
+                    alias.scopeId shouldBe scopeId
+                    alias.aliasName shouldBe aliasName
+                    alias.aliasType shouldBe AliasType.CANONICAL
+                }
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -66,16 +63,12 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCanonicalAlias(scopeId, aliasName)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
-                        error.aliasName shouldBe aliasName.value
-                        error.existingScopeId shouldBe otherScopeId
-                        error.attemptedScopeId shouldBe scopeId
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                result.shouldBeLeft().let { error ->
+                    error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
+                    error.aliasName shouldBe aliasName.value
+                    error.existingScopeId shouldBe otherScopeId
+                    error.attemptedScopeId shouldBe scopeId
+                }
             }
         }
 
@@ -86,15 +79,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCustomAlias(scopeId, aliasName)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { alias ->
-                        alias.scopeId shouldBe scopeId
-                        alias.aliasName shouldBe aliasName
-                        alias.aliasType shouldBe AliasType.CUSTOM
-                    },
-                )
+                result.shouldBeRight().let { alias ->
+                    alias.scopeId shouldBe scopeId
+                    alias.aliasName shouldBe aliasName
+                    alias.aliasType shouldBe AliasType.CUSTOM
+                }
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -109,14 +98,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCustomAlias(scopeId, aliasName)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
-                        error.aliasName shouldBe aliasName.value
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                result.shouldBeLeft().let { error ->
+                    error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
+                    error.aliasName shouldBe aliasName.value
+                }
             }
         }
 
@@ -131,15 +116,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.generateCanonicalAlias(scopeId)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { alias ->
-                        alias.scopeId shouldBe scopeId
-                        alias.aliasName shouldBe generatedName
-                        alias.aliasType shouldBe AliasType.CANONICAL
-                    },
-                )
+                result.shouldBeRight().let { alias ->
+                    alias.scopeId shouldBe scopeId
+                    alias.aliasName shouldBe generatedName
+                    alias.aliasType shouldBe AliasType.CANONICAL
+                }
 
                 verify(exactly = 1) {
                     aliasGenerationService.generateCanonicalAlias(any())
@@ -161,15 +142,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.generateCanonicalAlias(scopeId, maxRetries = 3)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.AliasGenerationFailed>()
-                        error.scopeId shouldBe scopeId
-                        error.retryCount shouldBe 3
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                result.shouldBeLeft().let { error ->
+                    error.shouldBeInstanceOf<ScopeAliasError.AliasGenerationFailed>()
+                    error.scopeId shouldBe scopeId
+                    error.retryCount shouldBe 3
+                }
 
                 verify(exactly = 3) {
                     aliasGenerationService.generateCanonicalAlias(any())
@@ -189,13 +166,9 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { fail("Expected success but got error: $it") },
-                    { alias ->
-                        alias shouldBe customAlias
-                    },
-                )
+                result.shouldBeRight().let { alias ->
+                    alias shouldBe customAlias
+                }
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -210,15 +183,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.CannotRemoveCanonicalAlias>()
-                        error.scopeId shouldBe scopeId
-                        error.aliasName shouldBe aliasName.value
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                result.shouldBeLeft().let { error ->
+                    error.shouldBeInstanceOf<ScopeAliasError.CannotRemoveCanonicalAlias>()
+                    error.scopeId shouldBe scopeId
+                    error.aliasName shouldBe aliasName.value
+                }
             }
 
             it("should fail when alias not found") {
@@ -226,14 +195,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<ScopeAliasError.AliasNotFound>()
-                        error.aliasName shouldBe aliasName.value
-                    },
-                    { fail("Expected error but got success: $it") },
-                )
+                result.shouldBeLeft().let { error ->
+                    error.shouldBeInstanceOf<ScopeAliasError.AliasNotFound>()
+                    error.aliasName shouldBe aliasName.value
+                }
             }
         }
     })
