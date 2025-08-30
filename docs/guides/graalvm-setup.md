@@ -19,6 +19,9 @@ sdk install java 21.0.6-graal
 # Use GraalVM as current Java version
 sdk use java 21.0.6-graal
 
+# Install Native Image component (if not included)
+gu install native-image
+
 # Verify installation
 java -version
 native-image --version
@@ -34,7 +37,7 @@ export JAVA_HOME=/path/to/graalvm
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
-4. Install Native Image component (if not included):
+3. Install Native Image component (if not included):
 
 ```bash
 gu install native-image
@@ -49,6 +52,10 @@ brew install --cask graalvm/tap/graalvm-jdk21
 
 # Set JAVA_HOME (add to your shell profile)
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-jdk-21/Contents/Home
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Install Native Image component (if not included)
+gu install native-image
 ```
 
 ## Verification
@@ -66,37 +73,61 @@ native-image --version
 ./gradlew nativeCompile
 ```
 
-## Build Dependencies
+## Native Image Configuration
 
-### GraalVM SDK Dependency
+### Build Configuration
 
-The project requires the GraalVM SDK as a compile-only dependency for native image builds. This dependency is configured in `apps/scopes/build.gradle.kts`:
+The project uses build-time arguments to configure native image generation. The configuration is defined in `apps/scopes/build.gradle.kts`:
+
+```kotlin
+graalvmNative {
+    binaries {
+        named("main") {
+            imageName.set("scopes")
+            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
+            useFatJar.set(true)
+            
+            buildArgs.addAll(listOf(
+                "-O2",  // Optimization level
+                "--no-fallback",  // Ensure native-only execution
+                "--gc=serial",  // Use Serial GC for smaller footprint
+                "--report-unsupported-elements-at-runtime",
+                "--initialize-at-build-time=kotlin",
+                "--initialize-at-build-time=kotlinx.coroutines",
+                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder"
+            ))
+        }
+    }
+}
+```
+
+### GraalVM SDK Dependency (Optional)
+
+The GraalVM SDK is included as a compile-only dependency for compatibility with CI/CD pipelines and future extensibility:
 
 ```kotlin
 dependencies {
-    // GraalVM native image
+    // GraalVM native image - for potential Feature class implementations
     compileOnly(libs.graalvm.sdk)
 }
 ```
 
-#### Why is GraalVM SDK needed?
+#### Current Status
 
-The GraalVM SDK is required to compile GraalVM Feature classes that configure native image generation. Specifically:
+- **Not actively used**: The project currently uses build arguments for all native image configuration
+- **CI/CD compatibility**: Included to prevent build failures in environments that may expect Feature class support
+- **Future-ready**: Available if custom Feature classes become necessary
 
-1. **SQLite JDBC Native Image Support**: The project includes `SqliteJdbcFeature.java` which implements `org.graalvm.nativeimage.hosted.Feature` to properly configure SQLite JDBC driver for native image compilation.
+#### When You Might Need Feature Classes
 
-2. **Build-time Configuration**: GraalVM Feature classes allow customization of the native image build process, including:
-   - Registering classes for reflection
-   - Configuring resource inclusion
-   - Setting up JNI access
-   - Optimizing initialization timing
+Feature classes (`org.graalvm.nativeimage.hosted.Feature`) would be needed for:
 
-3. **GraphQL and Database Support**: Native image compilation requires explicit configuration for dynamic features used by GraphQL schemas and database drivers. The GraalVM SDK enables writing these configurations programmatically rather than through JSON configuration files.
+1. **Complex reflection registration**: When build arguments become insufficient
+2. **Database driver configuration**: If SQLite or other drivers require custom native image setup
+3. **Dynamic proxy generation**: For frameworks that generate classes at runtime
+4. **Resource bundle management**: For internationalization support
 
-The SDK is marked as `compileOnly` because:
-- It's only needed during compilation, not at runtime
-- The GraalVM native image builder provides these classes during the native image generation process
-- It keeps the JAR size smaller for non-native deployments
+For now, the simple build argument approach in `graalvmNative` configuration is sufficient for the project's needs.
 
 ## Troubleshooting
 
