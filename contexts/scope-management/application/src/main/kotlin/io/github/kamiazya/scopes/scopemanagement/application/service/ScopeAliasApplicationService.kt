@@ -122,60 +122,60 @@ class ScopeAliasApplicationService(
             // Generate a new alias name
             val generatedName = aliasGenerationService.generateRandomAlias().bind()
 
-            // Check if it's available
+            // Always fetch existing alias and canonical to properly evaluate all cases
             val existingAliasWithName = aliasRepository.findByAliasName(generatedName).bind()
+            val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId).bind()
 
-            if (existingAliasWithName == null) {
-                // Name is available, create the alias
-                val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId).bind()
+            // Let the policy decide the appropriate operation with full information
+            val operation = aliasPolicy.determineCanonicalAliasOperation(
+                scopeId = scopeId,
+                aliasName = generatedName,
+                existingAliasWithName = existingAliasWithName,
+                existingCanonicalForScope = existingCanonical,
+            )
 
-                val operation = aliasPolicy.determineCanonicalAliasOperation(
-                    scopeId = scopeId,
-                    aliasName = generatedName,
-                    existingAliasWithName = null,
-                    existingCanonicalForScope = existingCanonical,
-                )
+            when (operation) {
+                is AliasOperation.Create -> {
+                    // Terminal case: create new alias
+                    aliasRepository.save(operation.alias).bind()
+                    return@either operation.alias
+                }
+                is AliasOperation.Replace -> {
+                    // Terminal case: replace existing canonical
+                    val demotedAlias = operation.oldAlias.demoteToCustom()
+                    aliasRepository.update(demotedAlias).bind()
+                    aliasRepository.save(operation.newAlias).bind()
+                    return@either operation.newAlias
+                }
+                is AliasOperation.Promote -> {
+                    // Terminal case: promote existing custom alias to canonical
+                    val promotedAlias = operation.existingAlias.promoteToCanonical()
+                    aliasRepository.update(promotedAlias).bind()
 
-                return@either when (operation) {
-                    is AliasOperation.Create -> {
-                        aliasRepository.save(operation.alias).bind()
-                        operation.alias
-                    }
-                    is AliasOperation.Replace -> {
-                        // Demote old canonical to custom (preserves history and referential stability)
-                        val demotedAlias = operation.oldAlias.demoteToCustom()
+                    if (existingCanonical != null) {
+                        val demotedAlias = existingCanonical.demoteToCustom()
                         aliasRepository.update(demotedAlias).bind()
-
-                        // Save new canonical
-                        aliasRepository.save(operation.newAlias).bind()
-                        operation.newAlias
                     }
-                    is AliasOperation.Promote -> {
-                        // This shouldn't happen in generateCanonicalAlias since we pass null for existingAliasWithName
-                        // But handle it for completeness
-                        val promotedAlias = operation.existingAlias.promoteToCanonical()
-                        aliasRepository.update(promotedAlias).bind()
 
-                        if (existingCanonical != null) {
-                            val demotedAlias = existingCanonical.demoteToCustom()
-                            aliasRepository.update(demotedAlias).bind()
-                        }
-
-                        promotedAlias
-                    }
-                    is AliasOperation.NoChange -> {
-                        // The generated name matched the existing canonical alias, which is a success case.
-                        // The existingCanonical is non-null here because NoChange is only returned when it exists.
-                        requireNotNull(existingCanonical) { "Expected existing canonical alias for NoChange operation" }
-                    }
-                    is AliasOperation.Failure -> {
-                        // This case handles validation errors from the domain service
-                        raise(operation.error)
+                    return@either promotedAlias
+                }
+                is AliasOperation.NoChange -> {
+                    // Terminal case: generated name matches existing canonical
+                    return@either requireNotNull(existingCanonical) {
+                        "Expected existing canonical alias for NoChange operation"
                     }
                 }
+                is AliasOperation.Failure -> {
+                    // Check if this is a cross-scope conflict (retry case)
+                    if (existingAliasWithName != null && existingAliasWithName.scopeId != scopeId) {
+                        // Cross-scope conflict: retry with a new name
+                        retryCount++
+                        continue
+                    }
+                    // Other failures are terminal
+                    raise(operation.error)
+                }
             }
-
-            retryCount++
         }
 
         raise(
@@ -217,7 +217,7 @@ class ScopeAliasApplicationService(
         }
 
         // Delete from repository and ensure it was actually removed
-        val removed = aliasRepository.removeByAliasName(alias.aliasName).bind()
+        val removed = aliasRepository.removeById(alias.id).bind()
         ensure(removed) {
             ScopeAliasError.AliasNotFound(
                 occurredAt = Clock.System.now(),

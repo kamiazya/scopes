@@ -84,6 +84,14 @@ interface ScopeAliasRepository {
     suspend fun existsByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean>
 
     /**
+     * Removes an alias by its ID.
+     *
+     * @param aliasId The alias ID to remove
+     * @return Either a persistence error or true if removed, false if not found
+     */
+    suspend fun removeById(aliasId: AliasId): Either<PersistenceError, Boolean>
+
+    /**
      * Removes an alias by its name.
      *
      * @param aliasName The alias name to remove
