@@ -11,6 +11,7 @@ dependencies {
 
     api(libs.sqlite.jdbc)
     api(libs.sqldelight.driver.sqlite)
+    implementation(libs.sqldelight.coroutines)
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
