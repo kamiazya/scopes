@@ -94,6 +94,7 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 
                 // Test that mapped errors preserve important information
                 val testError = DomainScopeAliasError.AliasNotFound(
+                    occurredAt = Clock.System.now(),
                     aliasName = "important-alias-name"
                 )
                 
@@ -104,6 +105,7 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 
                 // Test error messages for other types
                 val duplicateError = DomainScopeAliasError.DuplicateAlias(
+                    occurredAt = Clock.System.now(),
                     aliasName = "duplicate-alias",
                     existingScopeId = ScopeId.generate(),
                     attemptedScopeId = ScopeId.generate()
@@ -130,19 +132,25 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                  */
                 
                 // Test various error types to ensure they're all mapped
+                val now = Clock.System.now()
                 val errorSamples = listOf(
-                    DomainScopeAliasError.AliasNotFound("test-alias"),
+                    DomainScopeAliasError.AliasNotFound(
+                        occurredAt = now,
+                        aliasName = "test-alias"
+                    ),
                     DomainScopeAliasError.DuplicateAlias(
+                        occurredAt = now,
                         aliasName = "test",
                         existingScopeId = ScopeId.generate(),
                         attemptedScopeId = ScopeId.generate()
                     ),
                     DomainScopeAliasError.CannotRemoveCanonicalAlias(
+                        occurredAt = now,
                         scopeId = ScopeId.generate(),
                         aliasName = "canonical"
                     ),
                     DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        occurredAt = Clock.System.now(),
+                        occurredAt = now,
                         aliasName = "inconsistent",
                         scopeId = ScopeId.generate()
                     )
