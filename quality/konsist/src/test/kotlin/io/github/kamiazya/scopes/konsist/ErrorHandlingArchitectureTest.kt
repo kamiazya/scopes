@@ -23,7 +23,7 @@ class ErrorHandlingArchitectureTest :
                 .scopeFromProduction()
                 .files
                 .filter { !it.path.contains("/cli/") } // CLI layer can use CliktError
-                .assertFalse("Use error(), check(), or require() instead of throw") { file ->
+                .assertFalse { file ->
                     // Check for direct exception throwing (except CliktError in CLI)
                     file.text.contains(
                         Regex(
@@ -37,7 +37,7 @@ class ErrorHandlingArchitectureTest :
             Konsist
                 .scopeFromProduction()
                 .files
-                .assertFalse("Use error() instead of throw IllegalStateException") { file ->
+                .assertFalse { file ->
                     file.text.contains("throw IllegalStateException")
                 }
         }
@@ -46,7 +46,7 @@ class ErrorHandlingArchitectureTest :
             Konsist
                 .scopeFromProduction()
                 .files
-                .assertFalse("Use require() instead of throw IllegalArgumentException") { file ->
+                .assertFalse { file ->
                     file.text.contains("throw IllegalArgumentException")
                 }
         }
@@ -55,7 +55,7 @@ class ErrorHandlingArchitectureTest :
             Konsist
                 .scopeFromProduction()
                 .files
-                .assertFalse("Consider using check() for post-condition validation") { file ->
+                .assertFalse { file ->
                     // Look for patterns like: if (!condition) throw IllegalStateException
                     file.text.contains(
                         Regex(
@@ -112,7 +112,7 @@ class ErrorHandlingArchitectureTest :
                 .classes()
                 .filter { it.resideInPackage("..infrastructure..repository..") }
                 .filter { it.name.endsWith("Repository") }
-                .filter { !it.hasInterfaceModifier }
+                .filter { !it.hasInterfaceModifier() }
                 .assertFalse { clazz ->
                     // Check if repository has methods that convert from DB without validation
                     // This is a heuristic check - repositories should use .create() methods
