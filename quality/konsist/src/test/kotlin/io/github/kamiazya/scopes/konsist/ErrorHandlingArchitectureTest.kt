@@ -82,10 +82,7 @@ class ErrorHandlingArchitectureTest :
                         )
                     )
                     
-                    // Allow "UnknownError" as it's a proper error type name
-                    val isProperErrorType = file.text.contains("UnknownError")
-                    
-                    hasUnknownFallback && !isProperErrorType
+                    hasUnknownFallback
                 }
         }
 
