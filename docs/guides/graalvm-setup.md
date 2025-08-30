@@ -6,7 +6,7 @@ This guide explains how to set up GraalVM for native image compilation.
 
 - GraalVM JDK 21 or later
 - Native Image component
-- GraalVM SDK (for build-time configuration)
+- GraalVM SDK (optional, for build-time configuration)
 
 ## Installation Options
 
@@ -75,31 +75,16 @@ native-image --version
 
 ## Native Image Configuration
 
-### Build Configuration
+### Build Configuration Concept
 
-The project uses build-time arguments to configure native image generation. The configuration is defined in `apps/scopes/build.gradle.kts`:
+The project is configured for native image generation with the following principles:
 
-```kotlin
-graalvmNative {
-    binaries {
-        named("main") {
-            imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
-            useFatJar.set(true)
-            
-            buildArgs.addAll(listOf(
-                "-O2",  // Optimization level
-                "--no-fallback",  // Ensure native-only execution
-                "--gc=serial",  // Use Serial GC for smaller footprint
-                "--report-unsupported-elements-at-runtime",
-                "--initialize-at-build-time=kotlin",
-                "--initialize-at-build-time=kotlinx.coroutines",
-                "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder"
-            ))
-        }
-    }
-}
-```
+- **Size Optimization**: Uses `-Os` flag and other size-reduction options to minimize binary size
+- **Performance**: Configured with Serial GC for smaller memory footprint
+- **Kotlin Support**: Special initialization settings for Kotlin and Kotlinx Coroutines
+- **Development vs Production**: Runtime reports are enabled only for local development, not in CI/release builds
+
+The actual build configuration is managed in the build scripts and CI pipeline.
 
 ### GraalVM SDK Dependency (Optional)
 
@@ -138,11 +123,7 @@ For now, the simple build argument approach in `graalvmNative` configuration is 
 
 ### Memory Issues During Compilation
 
-- Increase heap size in `gradle.properties`:
-
-```properties
-org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
-```
+Native image compilation requires significant memory. If you encounter out-of-memory errors, increase the JVM heap size in your Gradle configuration.
 
 ### Optimizing Binary Size
 

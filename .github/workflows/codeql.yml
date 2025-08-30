@@ -21,7 +21,7 @@ jobs:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    
+
     permissions:
       actions: read
       contents: read
@@ -31,8 +31,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: java-kotlin
-          build-mode: autobuild
+          - language: java-kotlin
+            build-mode: autobuild
 
     steps:
       - name: Checkout repository
