@@ -128,7 +128,7 @@ class UpdateScopeHandler(
         logger.error(
             "Failed to update scope",
             mapOf(
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )

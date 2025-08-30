@@ -40,12 +40,12 @@ fun SerializableAspectCriteria.toDomain(): AspectCriteria = when (this) {
     is SerializableAspectCriteria.Single -> AspectCriteria.Single(
         AspectCriterion(
             key = AspectKey.create(key).fold(
-                ifLeft = { throw IllegalArgumentException("Invalid aspect key: $it") },
+                ifLeft = { error("Invalid aspect key: $it") },
                 ifRight = { it },
             ),
             operator = ComparisonOperator.valueOf(operator),
             value = AspectValue.create(value).fold(
-                ifLeft = { throw IllegalArgumentException("Invalid aspect value: $it") },
+                ifLeft = { error("Invalid aspect value: $it") },
                 ifRight = { it },
             ),
         ),
