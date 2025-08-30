@@ -79,7 +79,7 @@ class ScopeAliasApplicationService(
                 // Return existing alias
                 requireNotNull(existingCanonicalForScope) { "Expected existing alias for NoChange operation" }
             }
-            is AliasOperation.Error -> {
+            is AliasOperation.Failure -> {
                 raise(operation.error)
             }
         }
@@ -168,7 +168,7 @@ class ScopeAliasApplicationService(
                         // The existingCanonical is non-null here because NoChange is only returned when it exists.
                         requireNotNull(existingCanonical) { "Expected existing canonical alias for NoChange operation" }
                     }
-                    is AliasOperation.Error -> {
+                    is AliasOperation.Failure -> {
                         // This case handles validation errors from the domain service
                         raise(operation.error)
                     }

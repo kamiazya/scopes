@@ -84,7 +84,7 @@ class ScopeAliasPolicy {
             AliasOperation.Create(newAlias)
         }
     }.fold(
-        { AliasOperation.Error(it) },
+        { AliasOperation.Failure(it) },
         { it },
     )
 

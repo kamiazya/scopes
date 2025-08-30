@@ -11,7 +11,7 @@ sealed class AliasOperation {
     data class Replace(val oldAlias: ScopeAlias, val newAlias: ScopeAlias) : AliasOperation()
     data class Promote(val existingAlias: ScopeAlias) : AliasOperation()
     data class NoChange(val reason: String) : AliasOperation()
-    data class Error(val error: ScopesError) : AliasOperation()
+    data class Failure(val error: ScopesError) : AliasOperation()
 }
 
 /**
