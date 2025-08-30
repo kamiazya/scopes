@@ -2,10 +2,18 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+
+// Test-only error type for testing unmapped cases
+class TestUnmappedDataInconsistencyError(override val occurredAt: Instant) : 
+    DomainScopeAliasError.DataInconsistencyError() {
+    override fun toString() = "TestUnmappedDataInconsistencyError"
+}
 
 /**
  * Specification tests for error handling behavior.
@@ -31,7 +39,7 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 val result = domainError.toApplicationError()
                 
                 // Then: Should successfully map without throwing
-                result shouldBe ApplicationError.ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
+                result shouldBe ApplicationError.ScopeAlias.DataInconsistencyError.AliasExistsButScopeNotFound(
                     aliasName = "test-alias",
                     scopeId = domainError.scopeId.toString()
                 )
@@ -52,10 +60,9 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                  */
                 
                 // Given: A hypothetical new unmapped error type
-                val unmappedError = object : DomainScopeAliasError.DataInconsistencyError() {
-                    override val occurredAt = Clock.System.now()
-                    override fun toString() = "UnmappedTestError"
-                }
+                val unmappedError = TestUnmappedDataInconsistencyError(
+                    occurredAt = Clock.System.now()
+                )
                 
                 // When/Then: Should fail-fast with clear error message
                 val exception = shouldThrow<IllegalStateException> {
@@ -80,9 +87,9 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 // The actual implementation uses error(), which internally
                 // throws IllegalStateException with the given message
                 
-                val unmappedError = object : DomainScopeAliasError.DataInconsistencyError() {
-                    override val occurredAt = Clock.System.now()
-                }
+                val unmappedError = TestUnmappedDataInconsistencyError(
+                    occurredAt = Clock.System.now()
+                )
                 
                 val exception = shouldThrow<IllegalStateException> {
                     unmappedError.toApplicationError()

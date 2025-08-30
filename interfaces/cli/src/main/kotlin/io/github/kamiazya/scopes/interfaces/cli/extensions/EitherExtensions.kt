@@ -1,9 +1,10 @@
 package io.github.kamiazya.scopes.interfaces.cli.extensions
 
 import arrow.core.Either
+import arrow.core.fold
 import com.github.ajalt.clikt.core.CliktError
-import io.github.kamiazya.scopes.contracts.scope.error.ScopeContractError
-import io.github.kamiazya.scopes.interfaces.cli.error.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.contracts.scope.ScopeContractError
+import io.github.kamiazya.scopes.interfaces.cli.mapper.ContractErrorMessageMapper
 
 /**
  * Extension functions for Either to integrate with Clikt framework.
