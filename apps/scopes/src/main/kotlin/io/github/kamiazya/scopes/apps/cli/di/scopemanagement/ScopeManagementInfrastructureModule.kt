@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -36,7 +37,12 @@ val scopeManagementInfrastructureModule = module {
     // SQLDelight Database
     single<ScopeManagementDatabase>(named("scopeManagement")) {
         val databasePath: String = get<String>(named("databasePath"))
-        SqlDelightDatabaseProvider.createDatabase("$databasePath/scope-management.db")
+        val dbPath = if (databasePath == ":memory:") {
+            ":memory:"
+        } else {
+            "$databasePath/scope-management.db"
+        }
+        SqlDelightDatabaseProvider.createDatabase(dbPath)
     }
 
     // Repository implementations - mix of SQLDelight and legacy SQLite
@@ -58,8 +64,17 @@ val scopeManagementInfrastructureModule = module {
         SqlDelightAspectDefinitionRepository(database)
     }
 
-    // Transaction Manager
-    single<TransactionManager> { TransactionManagerAdapter(get<PlatformTransactionManager>()) }
+    // Platform TransactionManager for this bounded context
+    single<PlatformTransactionManager>(named("scopeManagement")) {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        SqlDelightTransactionManager(database)
+    }
+
+    // Transaction Manager Adapter
+    single<TransactionManager> {
+        val platformTxManager: PlatformTransactionManager = get(named("scopeManagement"))
+        TransactionManagerAdapter(platformTxManager)
+    }
 
     // Alias Generation
     single<WordProvider> { DefaultWordProvider() }
