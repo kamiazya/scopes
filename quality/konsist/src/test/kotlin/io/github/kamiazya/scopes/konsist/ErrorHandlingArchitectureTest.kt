@@ -109,10 +109,9 @@ class ErrorHandlingArchitectureTest :
         "repository implementations should validate data from external sources" {
             Konsist
                 .scopeFromDirectory("contexts")
-                .classes()
+                .classes()  // This already excludes interfaces, only gets concrete classes
                 .filter { it.resideInPackage("..infrastructure..repository..") }
                 .filter { it.name.endsWith("Repository") }
-                .filter { !it.hasInterfaceModifier() }
                 .assertFalse { clazz ->
                     // Check if repository has methods that convert from DB without validation
                     // This is a heuristic check - repositories should use .create() methods
