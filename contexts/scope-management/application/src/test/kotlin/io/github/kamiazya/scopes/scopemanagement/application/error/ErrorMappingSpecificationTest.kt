@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.instanceOf
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
@@ -160,7 +161,8 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 errorSamples.forEach { error ->
                     val result = error.toApplicationError()
                     // Verify it returns an ApplicationError (not null or exception)
-                    result::class.simpleName?.shouldContain("Error")
+                    // All application errors extend ApplicationError
+                    result shouldBe instanceOf<ApplicationError>()
                 }
             }
         }
