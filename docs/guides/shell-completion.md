@@ -27,6 +27,8 @@ scopes --generate-completion zsh > _scopes
 
 # Add to your fpath (typically in ~/.zshrc)
 fpath=(~/path/to/completion/dir $fpath)
+autoload -U compinit
+compinit
 
 # Or directly add to zsh completion directory
 sudo mv _scopes /usr/share/zsh/site-functions/
@@ -58,7 +60,7 @@ scopes list --aspect <TAB>
 ### How It Works
 
 1. When you type `scopes list --aspect <TAB>`, the shell completion script calls `scopes _complete-aspects`
-2. This hidden command queries the database for all available aspect key:value pairs
+2. This hidden command queries root scopes and their children for available aspect key:value pairs
 3. The results are presented as completion candidates
 
 ### Multiple Aspect Filters
@@ -100,14 +102,14 @@ scopes list -a priority:high -a status:active
 If no aspect suggestions appear, it might be because:
 - No scopes with aspects exist in the database
 - Database connection issues
-- The `_complete-aspects` command encounters an error (check stderr)
+- The `_complete-aspects` command encounters an error (the command is silent by design; run it directly to verify output)
 
 ## Implementation Details
 
 The aspect completion feature consists of:
 
-1. **ListCommand**: Accepts `--aspect` parameters with `CompletionCandidates.Custom`
-2. **CompletionCommand**: Hidden command that provides aspect candidates
-3. **Shell completion script**: Calls the hidden command to get suggestions
+1. **ListCommand**: Accepts `--aspect` parameters with `CompletionCandidates.Custom`.
+2. **CompletionCommand**: Hidden command that provides aspect candidates.
+3. **Shell completion script**: Calls the hidden command to get suggestions.
 
 This design allows dynamic completion based on actual database content rather than static lists.

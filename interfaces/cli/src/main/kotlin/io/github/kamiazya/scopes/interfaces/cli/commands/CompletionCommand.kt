@@ -2,6 +2,9 @@ package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -41,20 +44,27 @@ class CompletionCommand :
                         }
                     }
 
-                    // Also check children of root scopes if needed
-                    scopes.forEach { rootScope ->
-                        scopeCommandAdapter.listChildren(rootScope.id).fold(
-                            { /* ignore errors */ },
-                            { children ->
-                                children.forEach { child ->
-                                    child.aspects.forEach { (key, values) ->
-                                        values.forEach { value ->
-                                            aspectPairs.add("$key:$value")
+                    // Also check children of root scopes in parallel
+                    coroutineScope {
+                        val jobs = scopes.map { rootScope ->
+                            async {
+                                scopeCommandAdapter.listChildren(rootScope.id)
+                            }
+                        }
+                        jobs.awaitAll().forEach { result ->
+                            result.fold(
+                                { /* ignore errors */ },
+                                { children ->
+                                    children.forEach { child ->
+                                        child.aspects.forEach { (key, values) ->
+                                            values.forEach { value ->
+                                                aspectPairs.add("$key:$value")
+                                            }
                                         }
                                     }
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
                     }
 
                     // Output each aspect pair on a new line for shell completion

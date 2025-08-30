@@ -41,7 +41,7 @@ class ListCommand :
         "--aspect",
         help = "Filter by aspect (format: key:value). Can be specified multiple times.",
         completionCandidates = CompletionCandidates.Custom.fromStdout(
-            "scopes _complete-aspects 2>/dev/null || echo ''",
+            "scopes", "_complete-aspects",
         ),
     ).multiple()
 
@@ -51,7 +51,14 @@ class ListCommand :
             val aspectFilters = aspects.mapNotNull { aspectStr ->
                 val parts = aspectStr.split(":", limit = 2)
                 if (parts.size == 2) {
-                    parts[0] to parts[1]
+                    val key = parts[0].trim()
+                    val value = parts[1].trim()
+                    if (key.isEmpty() || value.isEmpty()) {
+                        echo("Warning: Invalid aspect format: $aspectStr (expected non-empty key:value)", err = true)
+                        null
+                    } else {
+                        key to value
+                    }
                 } else {
                     echo("Warning: Invalid aspect format: $aspectStr (expected key:value)", err = true)
                     null
@@ -86,10 +93,16 @@ class ListCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                filterByAspects(scopes, aspectFilters)
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                scopes
+                            }
+
+                            if (verbose) {
+                                echo(formatVerboseList(filteredScopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )
@@ -101,10 +114,16 @@ class ListCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                filterByAspects(scopes, aspectFilters)
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                scopes
+                            }
+
+                            if (verbose) {
+                                echo(formatVerboseList(filteredScopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )
