@@ -157,7 +157,7 @@ class CreateScopeHandler(
         logger.error(
             "Failed to create scope",
             mapOf(
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )

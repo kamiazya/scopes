@@ -264,13 +264,12 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
             scopeId = this.scopeId.toString(),
         )
 
-    // Handle any future DataInconsistencyError subtypes
+    // Fail fast for any unmapped DataInconsistencyError subtypes
+    // This ensures new error types are properly handled during development
     is DomainScopeAliasError.DataInconsistencyError ->
-        // This is a fallback for any new DataInconsistencyError subtypes not explicitly handled above
-        // In production, this should log a warning about unmapped error type
-        AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-            aliasName = "unknown",
-            scopeId = "unknown",
+        throw IllegalStateException(
+            "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +
+            "Please add proper error mapping for this error type."
         )
 }
 

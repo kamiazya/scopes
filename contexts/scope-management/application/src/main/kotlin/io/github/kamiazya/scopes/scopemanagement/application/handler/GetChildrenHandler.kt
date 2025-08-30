@@ -65,7 +65,7 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
         logger.error(
             "Failed to get children",
             mapOf(
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )

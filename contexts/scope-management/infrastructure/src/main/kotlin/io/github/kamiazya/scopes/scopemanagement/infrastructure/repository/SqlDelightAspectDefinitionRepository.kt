@@ -94,7 +94,10 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
                     },
                 )
             }
-            else -> AspectType.Text // Default fallback
+            else -> throw IllegalStateException(
+                "Unknown aspect type in database: '$typeString' for aspect key '$key'. " +
+                "Valid types are: TEXT, NUMERIC, BOOLEAN, or ORDERED:<json_array>"
+            )
         }
 
         return when (type) {

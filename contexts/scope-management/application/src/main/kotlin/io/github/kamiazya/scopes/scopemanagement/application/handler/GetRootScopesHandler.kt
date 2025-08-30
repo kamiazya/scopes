@@ -57,7 +57,7 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
         logger.error(
             "Failed to get root scopes",
             mapOf(
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )
