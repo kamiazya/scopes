@@ -37,7 +37,12 @@ val scopeManagementInfrastructureModule = module {
     // SQLDelight Database
     single<ScopeManagementDatabase>(named("scopeManagement")) {
         val databasePath: String = get<String>(named("databasePath"))
-        SqlDelightDatabaseProvider.createDatabase("$databasePath/scope-management.db")
+        val dbPath = if (databasePath == ":memory:") {
+            ":memory:"
+        } else {
+            "$databasePath/scope-management.db"
+        }
+        SqlDelightDatabaseProvider.createDatabase(dbPath)
     }
 
     // Repository implementations - mix of SQLDelight and legacy SQLite
