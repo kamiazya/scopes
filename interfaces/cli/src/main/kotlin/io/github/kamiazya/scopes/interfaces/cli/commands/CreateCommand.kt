@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -12,6 +13,7 @@ import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.system.measureTimeMillis
 
 /**
  * Create command for creating new scopes.
@@ -25,6 +27,7 @@ class CreateCommand :
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
+    private val debugContext by requireObject<DebugContext>()
 
     private val title by argument(help = "Title of the scope")
     private val description by option("-d", "--description", help = "Description of the scope")
@@ -34,14 +37,29 @@ class CreateCommand :
 
     override fun run() {
         runBlocking {
-            // Resolve parent ID if provided
+            // Capture debug context at the very start
+            val debug = debugContext.debug
+
+            // Resolve parent ID if provided with timing
             val resolvedParentId = parentId?.let { parent ->
-                parameterResolver.resolve(parent).fold(
-                    { error ->
-                        throw CliktError("Error resolving parent: ${ContractErrorMessageMapper.getMessage(error)}")
-                    },
-                    { resolvedId -> resolvedId },
-                )
+                var resolvedId: String? = null
+                val duration = measureTimeMillis {
+                    parameterResolver.resolve(parent).fold(
+                        { error ->
+                            throw CliktError("Error resolving parent: ${ContractErrorMessageMapper.getMessage(error, debug)}")
+                        },
+                        { id ->
+                            resolvedId = id
+                        },
+                    )
+                }
+
+                // Debug output to stderr
+                if (debug) {
+                    System.err.println("[DEBUG] Parent resolution: '$parent' -> '$resolvedId' (${duration}ms)")
+                }
+
+                resolvedId
             }
 
             scopeCommandAdapter.createScope(
@@ -52,10 +70,10 @@ class CreateCommand :
                 customAlias = customAlias,
             ).fold(
                 { error ->
-                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error, debug)}")
                 },
                 { result ->
-                    echo(scopeOutputFormatter.formatContractCreateResult(result))
+                    echo(scopeOutputFormatter.formatContractCreateResult(result, debug))
                 },
             )
         }

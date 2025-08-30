@@ -7,10 +7,17 @@ import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreference
  * Maps contract errors to user-friendly error messages for CLI output
  */
 object ContractErrorMessageMapper {
-    fun getMessage(error: ScopeContractError): String = when (error) {
+    /**
+     * Gets error message with optional debug information
+     */
+    fun getMessage(error: ScopeContractError, debug: Boolean = false): String = when (error) {
         is ScopeContractError.InputError.InvalidId -> {
             val formatHint = error.expectedFormat?.let { " (expected: $it)" } ?: ""
-            "Invalid scope ID format: ${error.id}$formatHint"
+            if (debug) {
+                "Invalid scope ID format: '${error.id}'$formatHint [provided value: ${error.id}]"
+            } else {
+                "Invalid scope ID format: ${error.id}$formatHint"
+            }
         }
         is ScopeContractError.InputError.InvalidTitle -> when (val failure = error.validationFailure) {
             is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
@@ -30,10 +37,20 @@ object ContractErrorMessageMapper {
             "Invalid parent scope ID: ${error.parentId}$formatHint"
         }
 
-        is ScopeContractError.BusinessError.NotFound -> "Scope not found: ${error.scopeId}"
+        is ScopeContractError.BusinessError.NotFound -> {
+            if (debug) {
+                "Scope not found: '${error.scopeId}' [ULID/alias searched: ${error.scopeId}]"
+            } else {
+                "Scope not found: ${error.scopeId}"
+            }
+        }
         is ScopeContractError.BusinessError.DuplicateTitle -> {
             val location = error.parentId?.let { "under parent $it" } ?: "at root level"
-            "A scope with title '${error.title}' already exists $location"
+            if (debug) {
+                "A scope with title '${error.title}' already exists $location [parent ULID: ${error.parentId ?: "root"}]"
+            } else {
+                "A scope with title '${error.title}' already exists $location"
+            }
         }
         is ScopeContractError.BusinessError.HierarchyViolation -> when (val violation = error.violation) {
             is ScopeContractError.HierarchyViolationType.CircularReference -> {
@@ -68,7 +85,10 @@ object ContractErrorMessageMapper {
         is ScopeContractError.SystemError.ConcurrentModification -> "Concurrent modification detected. Please retry the operation."
     }
 
-    fun getMessage(error: UserPreferencesContractError): String = when (error) {
+    /**
+     * Gets error message for user preferences errors with optional debug information
+     */
+    fun getMessage(error: UserPreferencesContractError, debug: Boolean = false): String = when (error) {
         is UserPreferencesContractError.InputError.InvalidPreferenceKey -> "Invalid preference key: ${error.key}"
 
         is UserPreferencesContractError.DataError.PreferencesCorrupted -> "Preferences data is corrupted (see logs for details)"
