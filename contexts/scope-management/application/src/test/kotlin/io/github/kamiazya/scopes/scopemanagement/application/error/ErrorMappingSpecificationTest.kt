@@ -39,7 +39,7 @@ class ErrorMappingSpecificationTest : DescribeSpec({
                 val result = domainError.toApplicationError()
                 
                 // Then: Should successfully map without throwing
-                result shouldBe ApplicationError.ScopeAlias.DataInconsistencyError.AliasExistsButScopeNotFound(
+                result shouldBe ApplicationError.ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
                     aliasName = "test-alias",
                     scopeId = domainError.scopeId.toString()
                 )
