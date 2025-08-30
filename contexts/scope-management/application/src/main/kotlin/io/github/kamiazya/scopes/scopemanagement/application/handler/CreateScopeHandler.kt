@@ -118,7 +118,7 @@ class CreateScopeHandler(
 
                     // Check if alias already exists
                     // Check if alias already exists and get the existing scope ID if it does
-                    val existingAlias = scopeAliasRepository.getByAliasName(aliasName).bind()
+                    val existingAlias = scopeAliasRepository.findByAliasName(aliasName).bind()
                     if (existingAlias != null) {
                         val duplicateError = ScopeAliasError.DuplicateAlias(
                             occurredAt = Clock.System.now(),
