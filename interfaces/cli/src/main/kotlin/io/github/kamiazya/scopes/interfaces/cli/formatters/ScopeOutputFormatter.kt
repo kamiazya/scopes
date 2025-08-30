@@ -94,9 +94,9 @@ class ScopeOutputFormatter {
         }
         val displayAlias = formatAlias(scope.canonicalAlias)
         if (debugMode) {
-            appendLine("Primary Alias: ★ $displayAlias (ULID: ${scope.id})")
+            appendLine("Canonical Alias: ★ $displayAlias (ULID: ${scope.id})")
         } else {
-            appendLine("Primary Alias: ★ $displayAlias")
+            appendLine("Canonical Alias: ★ $displayAlias")
         }
         appendLine("Created: ${scope.createdAt}")
         appendLine("Updated: ${scope.updatedAt}")
@@ -127,9 +127,9 @@ class ScopeOutputFormatter {
             canonicalAliases.forEach { alias ->
                 val displayAlias = formatAlias(alias.aliasName)
                 if (debugMode) {
-                    appendLine("Primary Alias: ★ $displayAlias (ULID: ${scope.id})")
+                    appendLine("Canonical Alias: ★ $displayAlias (ULID: ${scope.id})")
                 } else {
-                    appendLine("Primary Alias: ★ $displayAlias")
+                    appendLine("Canonical Alias: ★ $displayAlias")
                 }
             }
 
