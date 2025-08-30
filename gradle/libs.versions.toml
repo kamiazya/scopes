@@ -25,7 +25,7 @@ graalvm-buildtools = "0.11.0"
 graalvm-sdk = "23.0.0"
 ktlint-gradle = "13.0.0"
 detekt = "1.23.8"
-gradle-develocity = "3.19.2"
+gradle-develocity = "4.1.1"
 spotless = "7.2.1"
 
 [libraries]
