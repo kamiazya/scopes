@@ -32,10 +32,42 @@ class ListCommand :
     private val offset by option("--offset", help = "Number of items to skip").int().default(0)
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
+    private val aspect by option("-a", "--aspect", help = "Filter by aspect (format: key=value)")
 
     override fun run() {
         runBlocking {
+            // Parse aspect filter if provided
+            val (aspectKey, aspectValue) = if (aspect != null) {
+                val parts = aspect!!.split("=", limit = 2)
+                if (parts.size != 2) {
+                    echo("Error: Invalid aspect format. Use key=value", err = true)
+                    return@runBlocking
+                }
+                parts[0] to parts[1]
+            } else {
+                null to null
+            }
+
             when {
+                aspect != null -> {
+                    // Use aspect filtering
+                    scopeCommandAdapter.listScopesWithAspect(
+                        aspectKey = aspectKey!!,
+                        aspectValue = aspectValue!!,
+                        parentId = parentId,
+                    ).fold(
+                        { error ->
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                        },
+                        { scopes ->
+                            if (verbose) {
+                                echo(formatVerboseList(scopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                            }
+                        },
+                    )
+                }
                 root -> {
                     scopeCommandAdapter.listRootScopes().fold(
                         { error ->
