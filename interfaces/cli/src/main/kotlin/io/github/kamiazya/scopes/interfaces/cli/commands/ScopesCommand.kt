@@ -28,6 +28,7 @@ class ScopesCommand :
             DeleteCommand(),
             ListCommand(),
             AliasCommand().configureSubcommands(),
+            AspectCommand().configureSubcommands(),
         )
     }
 
