@@ -1,12 +1,10 @@
 package io.github.kamiazya.scopes.apps.cli.di.platform
 
-import io.github.kamiazya.scopes.platform.infrastructure.transaction.SimpleTransactionManager
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.pathString
-import io.github.kamiazya.scopes.platform.application.port.TransactionManager as AppTransactionManager
 
 /**
  * Koin module for database infrastructure.
@@ -37,10 +35,8 @@ val databaseModule = module {
         path
     }
 
-    // Transaction Manager
-    single<AppTransactionManager> {
-        SimpleTransactionManager()
-    }
+    // Note: Each bounded context will provide its own TransactionManager
+    // that is specific to its database
 }
 
 /**

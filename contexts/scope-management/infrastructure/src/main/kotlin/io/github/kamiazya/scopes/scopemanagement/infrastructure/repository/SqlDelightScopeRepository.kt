@@ -26,40 +26,38 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
         try {
-            database.transaction {
-                val existingScope = database.scopeQueries.findScopeById(scope.id.value).executeAsOneOrNull()
+            val existingScope = database.scopeQueries.findScopeById(scope.id.value).executeAsOneOrNull()
 
-                if (existingScope != null) {
-                    database.scopeQueries.updateScope(
-                        title = scope.title.value,
-                        description = scope.description?.value,
-                        parent_id = scope.parentId?.value,
-                        updated_at = scope.updatedAt.toEpochMilliseconds(),
-                        id = scope.id.value,
+            if (existingScope != null) {
+                database.scopeQueries.updateScope(
+                    title = scope.title.value,
+                    description = scope.description?.value,
+                    parent_id = scope.parentId?.value,
+                    updated_at = scope.updatedAt.toEpochMilliseconds(),
+                    id = scope.id.value,
+                )
+            } else {
+                database.scopeQueries.insertScope(
+                    id = scope.id.value,
+                    title = scope.title.value,
+                    description = scope.description?.value,
+                    parent_id = scope.parentId?.value,
+                    created_at = scope.createdAt.toEpochMilliseconds(),
+                    updated_at = scope.updatedAt.toEpochMilliseconds(),
+                )
+            }
+
+            // Delete existing aspects
+            database.scopeAspectQueries.deleteAllForScope(scope.id.value)
+
+            // Insert new aspects
+            scope.aspects.toMap().forEach { (key, values) ->
+                values.forEach { value ->
+                    database.scopeAspectQueries.insertAspect(
+                        scope_id = scope.id.value,
+                        aspect_key = key.value,
+                        aspect_value = value.value,
                     )
-                } else {
-                    database.scopeQueries.insertScope(
-                        id = scope.id.value,
-                        title = scope.title.value,
-                        description = scope.description?.value,
-                        parent_id = scope.parentId?.value,
-                        created_at = scope.createdAt.toEpochMilliseconds(),
-                        updated_at = scope.updatedAt.toEpochMilliseconds(),
-                    )
-                }
-
-                // Delete existing aspects
-                database.scopeAspectQueries.deleteAllForScope(scope.id.value)
-
-                // Insert new aspects
-                scope.aspects.toMap().forEach { (key, values) ->
-                    values.forEach { value ->
-                        database.scopeAspectQueries.insertAspect(
-                            scope_id = scope.id.value,
-                            aspect_key = key.value,
-                            aspect_value = value.value,
-                        )
-                    }
                 }
             }
 
@@ -173,13 +171,11 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit> = withContext(Dispatchers.IO) {
         try {
-            database.transaction {
-                // Delete aspects first
-                database.scopeAspectQueries.deleteAllForScope(id.value)
+            // Delete aspects first
+            database.scopeAspectQueries.deleteAllForScope(id.value)
 
-                // Delete the scope
-                database.scopeQueries.deleteScope(id.value)
-            }
+            // Delete the scope
+            database.scopeQueries.deleteScope(id.value)
 
             Unit.right()
         } catch (e: Exception) {
