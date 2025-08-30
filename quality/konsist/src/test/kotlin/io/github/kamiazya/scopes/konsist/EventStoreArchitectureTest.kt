@@ -85,7 +85,9 @@ class EventStoreArchitectureTest :
                             // Should fail fast on missing event type
                             (
                                 functionText.contains("throw IllegalArgumentException") ||
-                                    functionText.contains("?: throw")
+                                    functionText.contains("?: throw") ||
+                                    functionText.contains("?: error(") ||
+                                    functionText.contains("?: require(")
                                 )
                     }
             }

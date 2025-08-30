@@ -119,8 +119,10 @@ class ErrorHandlingArchitectureTest :
                     val hasRowConversion = clazz.text.contains("row") || clazz.text.contains("Row")
                     val hasValidation = clazz.text.contains(".create(") || 
                                        clazz.text.contains("throw") ||
+                                       clazz.text.contains("error(") ||
                                        clazz.text.contains("IllegalStateException") ||
-                                       clazz.text.contains("require")
+                                       clazz.text.contains("require") ||
+                                       clazz.text.contains("check(")
                     
                     hasRowConversion && !hasValidation
                 }
