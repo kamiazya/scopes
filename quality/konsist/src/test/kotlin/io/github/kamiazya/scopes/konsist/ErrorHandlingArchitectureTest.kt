@@ -17,6 +17,54 @@ import io.kotest.core.spec.style.StringSpec
 class ErrorHandlingArchitectureTest :
     StringSpec({
 
+        "production code should use Kotlin error functions instead of throw" {
+            // Enforce Kotlin idiomatic error handling
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filter { !it.path.contains("/cli/") } // CLI layer can use CliktError
+                .assertFalse("Use error(), check(), or require() instead of throw") { file ->
+                    // Check for direct exception throwing (except CliktError in CLI)
+                    file.text.contains(
+                        Regex(
+                            """throw\s+(?!CliktError)[A-Z]\w*Exception\s*\("""
+                        )
+                    )
+                }
+        }
+
+        "use Kotlin's error() instead of throw IllegalStateException" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .assertFalse("Use error() instead of throw IllegalStateException") { file ->
+                    file.text.contains("throw IllegalStateException")
+                }
+        }
+
+        "use require() instead of throw IllegalArgumentException" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .assertFalse("Use require() instead of throw IllegalArgumentException") { file ->
+                    file.text.contains("throw IllegalArgumentException")
+                }
+        }
+
+        "use check() for post-conditions instead of manual checking" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .assertFalse("Consider using check() for post-condition validation") { file ->
+                    // Look for patterns like: if (!condition) throw IllegalStateException
+                    file.text.contains(
+                        Regex(
+                            """if\s*\(\s*!.*?\)\s*throw\s+IllegalStateException"""
+                        )
+                    )
+                }
+        }
+
         "production code should not contain 'unknown' string literal fallbacks" {
             // Check all production code (excluding tests)
             Konsist

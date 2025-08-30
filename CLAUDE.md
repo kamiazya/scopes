@@ -118,6 +118,16 @@ Using the test-runner agent ensures:
 
 > Think carefully and implement the most concise solution that changes as little code as possible.
 
+### Error Handling Guidelines
+
+Follow the error handling patterns defined in [Error Handling Guidelines](./docs/guidelines/error-handling.md).
+
+Key points:
+- Use Kotlin's `error()`, `check()`, `require()` instead of throwing exceptions directly
+- Never use "unknown" or default fallbacks that mask data corruption
+- Use Arrow's Either for functional error handling
+- Fail-fast for data integrity issues
+
 ### Error Handling
 
 - **Fail fast** for critical configuration (missing text model)

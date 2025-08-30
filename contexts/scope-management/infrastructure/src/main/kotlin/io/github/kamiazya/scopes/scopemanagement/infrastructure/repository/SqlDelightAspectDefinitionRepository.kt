@@ -71,7 +71,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
 
     private fun rowToAspectDefinition(row: Aspect_definitions): AspectDefinition {
         val key = AspectKey.create(row.key).fold(
-            ifLeft = { throw IllegalStateException("Invalid key in database: $it") },
+            ifLeft = { error("Invalid key in database: $it") },
             ifRight = { it },
         )
         val typeString = row.aspect_type
@@ -94,7 +94,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
                     },
                 )
             }
-            else -> throw IllegalStateException(
+            else -> error(
                 "Unknown aspect type in database: '$typeString' for aspect key '$key'. " +
                 "Valid types are: TEXT, NUMERIC, BOOLEAN, or ORDERED:<json_array>"
             )
@@ -107,7 +107,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
             is AspectType.Ordered -> {
                 AspectDefinition.createOrdered(key, type.allowedValues, description, allowMultiple)
                     .fold(
-                        ifLeft = { throw IllegalStateException("Failed to create ordered AspectDefinition: $it") },
+                        ifLeft = { error("Failed to create ordered AspectDefinition: $it") },
                         ifRight = { it },
                     )
             }

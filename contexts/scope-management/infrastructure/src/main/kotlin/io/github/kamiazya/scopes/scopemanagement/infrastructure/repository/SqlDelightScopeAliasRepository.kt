@@ -203,15 +203,15 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
 
     private fun rowToScopeAlias(row: Scope_aliases): ScopeAlias = ScopeAlias(
         id = AliasId.create(row.id).fold(
-            ifLeft = { throw IllegalStateException("Invalid alias id in database: $it") },
+            ifLeft = { error("Invalid alias id in database: $it") },
             ifRight = { it },
         ),
         scopeId = ScopeId.create(row.scope_id).fold(
-            ifLeft = { throw IllegalStateException("Invalid scope id in database: $it") },
+            ifLeft = { error("Invalid scope id in database: $it") },
             ifRight = { it },
         ),
         aliasName = AliasName.create(row.alias_name).fold(
-            ifLeft = { throw IllegalStateException("Invalid alias name in database: $it") },
+            ifLeft = { error("Invalid alias name in database: $it") },
             ifRight = { it },
         ),
         aliasType = AliasType.valueOf(row.alias_type),

@@ -267,7 +267,7 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
     // Fail fast for any unmapped DataInconsistencyError subtypes
     // This ensures new error types are properly handled during development
     is DomainScopeAliasError.DataInconsistencyError ->
-        throw IllegalStateException(
+        error(
             "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +
             "Please add proper error mapping for this error type."
         )
