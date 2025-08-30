@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
@@ -15,9 +16,16 @@ sealed class ScopeAliasError : ScopesError() {
         ScopeAliasError()
 
     /**
-     * Alias not found error.
+     * Alias not found by name error.
+     * Raised when searching for an alias by its human-readable name.
      */
     data class AliasNotFound(override val occurredAt: Instant, val aliasName: String) : ScopeAliasError()
+
+    /**
+     * Alias not found by ID error.
+     * Raised when searching for an alias by its unique identifier (ULID).
+     */
+    data class AliasNotFoundById(override val occurredAt: Instant, val aliasId: AliasId) : ScopeAliasError()
 
     /**
      * Cannot remove canonical alias error.

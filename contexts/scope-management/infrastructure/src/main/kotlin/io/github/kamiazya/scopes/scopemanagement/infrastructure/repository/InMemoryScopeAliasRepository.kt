@@ -73,6 +73,18 @@ class InMemoryScopeAliasRepository : ScopeAliasRepository {
         aliasNameIndex.containsKey(aliasName.value).right()
     }
 
+    override suspend fun removeById(aliasId: AliasId): Either<PersistenceError, Boolean> = mutex.withLock {
+        val alias = aliases[aliasId]
+        if (alias != null) {
+            aliases.remove(aliasId)
+            aliasNameIndex.remove(alias.aliasName.value)
+            scopeIdIndex[alias.scopeId]?.remove(aliasId)
+            true.right()
+        } else {
+            false.right()
+        }
+    }
+
     override suspend fun removeByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean> = mutex.withLock {
         val aliasId = aliasNameIndex[aliasName.value]
         if (aliasId != null) {

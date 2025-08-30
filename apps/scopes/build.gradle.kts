@@ -64,6 +64,9 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
 
+    // GraalVM native image
+    compileOnly(libs.graalvm.sdk)
+
     // Logging
     runtimeOnly(libs.logback.classic)
 

@@ -232,6 +232,13 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
             aliasName = this.aliasName,
         )
 
+    is DomainScopeAliasError.AliasNotFoundById ->
+        AppScopeAliasError.AliasNotFound(
+            // Convert the ID to a string for the application layer
+            // This maintains backward compatibility while being semantically correct
+            aliasName = "ID:${this.aliasId.value}",
+        )
+
     is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
         AppScopeAliasError.CannotRemoveCanonicalAlias(
             scopeId = this.scopeId.toString(),

@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 import arrow.core.Either
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
-import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
@@ -11,20 +11,25 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 
 /**
  * Handler for updating an existing scope.
  */
-class UpdateScopeHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    UseCase<UpdateScope, ScopesError, ScopeDto> {
+class UpdateScopeHandler(
+    private val scopeRepository: ScopeRepository,
+    private val transactionManager: TransactionManager,
+    private val logger: Logger,
+    private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
+) : UseCase<UpdateScope, ScopesError, ScopeDto> {
 
     override suspend operator fun invoke(input: UpdateScope): Either<ScopesError, ScopeDto> = either {
         logger.info(
@@ -42,8 +47,7 @@ class UpdateScopeHandler(private val scopeRepository: ScopeRepository, private v
                 val scopeId = ScopeId.create(input.id).bind()
 
                 // Find existing scope
-                val existingScope = scopeRepository.findById(scopeId).bind()
-                ensure(existingScope != null) {
+                val existingScope = ensureNotNull(scopeRepository.findById(scopeId).bind()) {
                     logger.warn("Scope not found for update", mapOf("scopeId" to input.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
@@ -55,27 +59,18 @@ class UpdateScopeHandler(private val scopeRepository: ScopeRepository, private v
 
                 // Update title if provided
                 if (input.title != null) {
-                    // Check title uniqueness at the same level
-                    val titleExists = scopeRepository.existsByParentIdAndTitle(
-                        existingScope.parentId,
-                        input.title,
-                    ).bind()
+                    val newTitle = ScopeTitle.create(input.title).bind()
 
-                    ensure(!titleExists || existingScope.title.value == input.title) {
-                        logger.warn(
-                            "Duplicate title found during update",
-                            mapOf(
-                                "title" to input.title,
-                                "parentId" to (existingScope.parentId?.value ?: "null"),
-                            ),
-                        )
-                        ScopeUniquenessError.DuplicateTitle(
-                            occurredAt = Clock.System.now(),
-                            title = input.title,
-                            parentScopeId = existingScope.parentId,
-                            existingScopeId = scopeId,
-                        )
-                    }
+                    // Use specification to validate title uniqueness
+                    titleUniquenessSpec.isSatisfiedByForUpdate(
+                        newTitle = newTitle,
+                        currentTitle = existingScope.title,
+                        parentId = existingScope.parentId,
+                        scopeId = scopeId,
+                        titleExistsChecker = { title, parentId ->
+                            scopeRepository.findIdByParentIdAndTitle(parentId, title.value).bind()
+                        },
+                    ).bind()
 
                     updatedScope = updatedScope.updateTitle(input.title).bind()
                     logger.debug(

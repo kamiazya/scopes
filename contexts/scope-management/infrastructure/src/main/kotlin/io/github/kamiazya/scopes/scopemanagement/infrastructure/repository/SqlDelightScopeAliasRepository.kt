@@ -127,6 +127,17 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         ).left()
     }
 
+    override suspend fun removeById(aliasId: AliasId): Either<PersistenceError, Boolean> = try {
+        database.scopeAliasQueries.deleteById(aliasId.value)
+        true.right()
+    } catch (e: Exception) {
+        PersistenceError.StorageUnavailable(
+            occurredAt = Clock.System.now(),
+            operation = "removeById",
+            cause = e,
+        ).left()
+    }
+
     override suspend fun removeByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean> = try {
         database.scopeAliasQueries.deleteByAliasName(aliasName.value)
         true.right()

@@ -71,6 +71,11 @@ SELECT COUNT(*) > 0 AS result
 FROM scope_aliases
 WHERE alias_name = ?;
 
+-- Delete by ID
+deleteById:
+DELETE FROM scope_aliases
+WHERE id = ?;
+
 -- Delete by alias name
 deleteByAliasName:
 DELETE FROM scope_aliases
