@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kamiazya/scopes)
+
 # Scopes
 
 **Scopes** is a next-generation local-first task and project management tool designed for symbiotic collaboration between developers and AI assistants.
