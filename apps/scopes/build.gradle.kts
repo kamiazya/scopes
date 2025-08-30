@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":platform-commons"))
     implementation(project(":platform-observability"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":platform-infrastructure"))
 
     // Contracts layer
     implementation(project(":contracts-scope-management"))
@@ -32,6 +33,18 @@ dependencies {
     implementation(project(":user-preferences-application"))
     implementation(project(":user-preferences-infrastructure"))
 
+    // Bounded Contexts - event-store
+    implementation(project(":event-store-domain"))
+    implementation(project(":event-store-application"))
+    implementation(project(":event-store-infrastructure"))
+
+    // Bounded Contexts - device-synchronization
+    implementation(project(":device-synchronization-domain"))
+    implementation(project(":device-synchronization-application"))
+    implementation(project(":device-synchronization-infrastructure"))
+    implementation(project(":contracts-event-store"))
+    implementation(project(":contracts-device-synchronization"))
+
     // TODO: Enable when implemented
     // implementation(project(":contexts:aspect-management:application"))
     // implementation(project(":contexts:alias-management:application"))
@@ -44,6 +57,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.arrow.core)
 
     // DI
@@ -52,6 +66,9 @@ dependencies {
 
     // GraalVM native image
     compileOnly(libs.graalvm.sdk)
+
+    // Logging
+    runtimeOnly(libs.logback.classic)
 
     // Testing
     testImplementation(libs.bundles.kotest)
@@ -74,7 +91,7 @@ graalvmNative {
             mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
             useFatJar.set(true)
 
-            val commonArgs =
+            buildArgs.addAll(
                 listOf(
                     "-O2",
                     "--no-fallback",
@@ -86,35 +103,16 @@ graalvmNative {
                     "--initialize-at-build-time=kotlin",
                     "--initialize-at-build-time=kotlinx.coroutines",
                     "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-                )
-
-            val os = System.getProperty("os.name").lowercase()
-            val isWindows =
-                os.contains("windows") ||
-                    System.getenv("RUNNER_OS") == "Windows" ||
-                    (System.getenv("OS")?.lowercase()?.contains("windows") == true)
-            val isLinux =
-                os.contains("linux") ||
-                    System.getenv("RUNNER_OS") == "Linux" ||
-                    (System.getenv("OS")?.lowercase()?.contains("linux") == true)
-
-            // Only add minimal, non-duplicated platform specifics.
-            val platformSpecificArgs =
-                if (isWindows) {
-                    listOf(
-                        "-H:+AllowIncompleteClasspath",
-                        "-H:DeadlockWatchdogInterval=0",
-                    )
-                } else if (isLinux) {
-                    listOf(
-                        // On Linux, allow mostly-static linking (libc dynamically).
-                        "-H:+StaticExecutableWithDynamicLibC",
-                    )
-                } else {
-                    emptyList()
-                }
-
-            buildArgs.addAll(commonArgs + platformSpecificArgs)
+                    "--initialize-at-run-time=org.sqlite",
+                    "-Dorg.sqlite.lib.exportPath=${layout.buildDirectory.get()}/native/nativeCompile",
+                    "--exclude-config",
+                    ".*sqlite-jdbc.*\\.jar",
+                    ".*native-image.*",
+                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
+                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
+                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",
+                ),
+            )
         }
     }
 

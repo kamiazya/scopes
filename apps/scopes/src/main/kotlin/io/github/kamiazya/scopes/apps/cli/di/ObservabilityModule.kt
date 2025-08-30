@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
-import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.logging.Slf4jLogger
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -14,5 +14,5 @@ import org.koin.dsl.module
  * - Telemetry components
  */
 val observabilityModule: Module = module {
-    single<Logger> { ConsoleLogger() }
+    single<Logger> { Slf4jLogger("Scopes") }
 }

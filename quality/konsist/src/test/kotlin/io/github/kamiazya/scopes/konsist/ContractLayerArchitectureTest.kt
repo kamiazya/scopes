@@ -43,7 +43,7 @@ class ContractLayerArchitectureTest :
                         // Examples: getPreference, createScope, updateScope
                         val name = function.name
                         val isValidVerb = name.matches(
-                            Regex("^(get|create|update|delete|find|search|list|check|validate|execute|add|remove|set|rename)[A-Z].*"),
+                            Regex("^(get|create|update|delete|find|search|list|check|validate|execute|add|remove|set|rename|register)[A-Z].*"),
                         )
                         isValidVerb
                     }

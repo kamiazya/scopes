@@ -1,0 +1,93 @@
+-- Scope Aliases table
+CREATE TABLE IF NOT EXISTS scope_aliases (
+    id TEXT PRIMARY KEY NOT NULL,
+    scope_id TEXT NOT NULL,
+    alias_name TEXT NOT NULL UNIQUE,
+    alias_type TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (scope_id) REFERENCES scopes(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_scope_aliases_scope_id ON scope_aliases(scope_id);
+CREATE INDEX IF NOT EXISTS idx_scope_aliases_alias_name ON scope_aliases(alias_name);
+CREATE INDEX IF NOT EXISTS idx_scope_aliases_alias_type ON scope_aliases(alias_type);
+
+-- Insert alias
+insertAlias:
+INSERT INTO scope_aliases (id, scope_id, alias_name, alias_type, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Update alias
+updateAlias:
+UPDATE scope_aliases
+SET scope_id = ?, alias_name = ?, alias_type = ?, updated_at = ?
+WHERE id = ?;
+
+-- Find by alias name
+findByAliasName:
+SELECT *
+FROM scope_aliases
+WHERE alias_name = ?;
+
+-- Find by ID
+findById:
+SELECT *
+FROM scope_aliases
+WHERE id = ?;
+
+-- Find by scope ID
+findByScopeId:
+SELECT *
+FROM scope_aliases
+WHERE scope_id = ?
+ORDER BY created_at DESC;
+
+-- Find canonical alias for scope
+findCanonicalAlias:
+SELECT *
+FROM scope_aliases
+WHERE scope_id = ? AND alias_type = 'CANONICAL'
+LIMIT 1;
+
+-- Find aliases by type
+findByTypeForScope:
+SELECT *
+FROM scope_aliases
+WHERE scope_id = ? AND alias_type = ?
+ORDER BY created_at DESC;
+
+-- Find aliases by prefix
+findByPrefix:
+SELECT *
+FROM scope_aliases
+WHERE alias_name LIKE ?
+ORDER BY alias_name;
+
+-- Check if alias exists
+existsByAliasName:
+SELECT COUNT(*) > 0 AS result
+FROM scope_aliases
+WHERE alias_name = ?;
+
+-- Delete by alias name
+deleteByAliasName:
+DELETE FROM scope_aliases
+WHERE alias_name = ?;
+
+-- Delete all aliases for scope
+deleteAllForScope:
+DELETE FROM scope_aliases
+WHERE scope_id = ?;
+
+-- Count aliases
+countAliases:
+SELECT COUNT(*) AS count
+FROM scope_aliases;
+
+-- Get all aliases
+getAllAliases:
+SELECT *
+FROM scope_aliases
+ORDER BY created_at DESC;

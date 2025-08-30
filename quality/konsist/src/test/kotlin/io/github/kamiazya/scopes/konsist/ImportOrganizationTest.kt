@@ -128,6 +128,10 @@ class ImportOrganizationTest :
             Konsist
                 .scopeFromProduction()
                 .files
+                .filter { file ->
+                    // Exclude platform-infrastructure module which is JVM-specific
+                    !file.path.contains("platform/infrastructure")
+                }
                 .assertFalse { file ->
                     file.imports.any { import ->
                         import.name.startsWith("java.")

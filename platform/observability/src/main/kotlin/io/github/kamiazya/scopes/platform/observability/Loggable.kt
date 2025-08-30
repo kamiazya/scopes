@@ -15,5 +15,5 @@ interface Loggable {
      * Uses the implementing class name as the logger name.
      */
     val logger: Logger
-        get() = ConsoleLogger(this::class.simpleName ?: "Unknown")
+        get() = ConsoleLogger(this::class.simpleName ?: this::class.qualifiedName ?: "AnonymousClass")
 }

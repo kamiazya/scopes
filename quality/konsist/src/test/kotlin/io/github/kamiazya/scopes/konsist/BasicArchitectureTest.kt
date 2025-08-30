@@ -207,7 +207,9 @@ class BasicArchitectureTest :
                     val packageName = clazz.packagee?.name ?: ""
                     // Only apply this rule to non-contracts packages
                     // Contracts layer has different conventions (results package)
-                    !packageName.contains(".contracts.")
+                    !packageName.contains(".contracts.") &&
+                        // Domain service results are domain concepts, not DTOs
+                        !packageName.contains(".domain.service")
                 }
                 .assertTrue { dto ->
                     val packageName = dto.packagee?.name ?: ""

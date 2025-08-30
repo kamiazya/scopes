@@ -1,0 +1,31 @@
+-- Scope Aspects table
+CREATE TABLE IF NOT EXISTS scope_aspects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scope_id TEXT NOT NULL,
+    aspect_key TEXT NOT NULL,
+    aspect_value TEXT NOT NULL,
+    FOREIGN KEY (scope_id) REFERENCES scopes(id) ON DELETE CASCADE,
+    UNIQUE(scope_id, aspect_key, aspect_value)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_scope_aspects_scope_id ON scope_aspects(scope_id);
+CREATE INDEX IF NOT EXISTS idx_scope_aspects_aspect_key ON scope_aspects(aspect_key);
+CREATE INDEX IF NOT EXISTS idx_scope_aspects_key_value ON scope_aspects(aspect_key, aspect_value);
+
+-- Insert aspect
+insertAspect:
+INSERT INTO scope_aspects (scope_id, aspect_key, aspect_value)
+VALUES (?, ?, ?);
+
+-- Find aspects by scope ID
+findByScopeId:
+SELECT aspect_key, aspect_value
+FROM scope_aspects
+WHERE scope_id = ?
+ORDER BY aspect_key;
+
+-- Delete all aspects for scope
+deleteAllForScope:
+DELETE FROM scope_aspects
+WHERE scope_id = ?;

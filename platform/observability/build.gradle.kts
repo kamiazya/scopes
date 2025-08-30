@@ -9,6 +9,9 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
 
+    // Logging
+    api(libs.slf4j.api)
+
     // DI
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)

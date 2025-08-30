@@ -1,7 +1,9 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
@@ -10,33 +12,54 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeAliasRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.NoopTransactionManager
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.TransactionManagerAdapter
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager as PlatformTransactionManager
 
 /**
  * Koin module for Scope Management infrastructure
  *
  * This module provides concrete implementations for:
+ * - SQLDelight database
  * - Repositories
  * - Transaction managers
- * - External integrations
  * - Alias generation services
  * - Default services following Zero-Configuration principle
  */
 val scopeManagementInfrastructureModule = module {
-    // Repositories
-    single<ScopeRepository> { InMemoryScopeRepository() }
-    single<ScopeAliasRepository> { InMemoryScopeAliasRepository() }
-    single<io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository> {
-        io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryContextViewRepository()
+    // SQLDelight Database
+    single<ScopeManagementDatabase>(named("scopeManagement")) {
+        val databasePath: String = get<String>(named("databasePath"))
+        SqlDelightDatabaseProvider.createDatabase("$databasePath/scope-management.db")
     }
-    single<AspectDefinitionRepository> { InMemoryAspectDefinitionRepository() }
 
-    // Transaction Management
-    single<TransactionManager> { NoopTransactionManager() }
+    // Repository implementations - mix of SQLDelight and legacy SQLite
+    single<ScopeRepository> {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        SqlDelightScopeRepository(database)
+    }
+    // TODO: Migrate these to SQLDelight when needed
+    single<ScopeAliasRepository> {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        SqlDelightScopeAliasRepository(database)
+    }
+    single<ContextViewRepository> {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        SqlDelightContextViewRepository(database)
+    }
+    single<AspectDefinitionRepository> {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        SqlDelightAspectDefinitionRepository(database)
+    }
+
+    // Transaction Manager
+    single<TransactionManager> { TransactionManagerAdapter(get<PlatformTransactionManager>()) }
 
     // Alias Generation
     single<WordProvider> { DefaultWordProvider() }
