@@ -72,17 +72,13 @@ class ErrorHandlingArchitectureTest :
                 .files
                 .assertFalse { file ->
                     // Look for patterns like:
-                    // - "unknown" as a fallback value
                     // - ?: "unknown"
                     // - else -> "unknown"
+                    // - = "unknown"
+                    // - return "unknown"
                     val hasUnknownFallback = file.text.contains(
                         Regex(
-                            """(?i)(?:
-                                |\?:\s*"unknown"|
-                                |else\s*->\s*"unknown"|
-                                |=\s*"unknown"|
-                                |return\s+"unknown"
-                            )""".trimMargin()
+                            """(?i)(?:\?:\s*"unknown"|else\s*->\s*"unknown"|=\s*"unknown"|return\s+"unknown")"""
                         )
                     )
                     
@@ -104,13 +100,9 @@ class ErrorHandlingArchitectureTest :
                     // We want to ensure unmapped errors throw exceptions
                     file.text.contains(
                         Regex(
-                            """else\s*->\s*[^{]*(?:
-                                |\.copy\(|
-                                |Error\(.*?"unknown"|
-                                |return\s+\w+Error\(
-                            )""".trimMargin()
+                            """else\s*->\s*[^{]*(?:\.copy\(|Error\(.*?"unknown"|return\s+\w+Error\()"""
                         )
-                    ) && !file.text.contains("throw")
+                    ) && !file.text.contains("throw") && !file.text.contains("error(")
                 }
         }
 
