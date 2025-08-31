@@ -247,6 +247,11 @@ class SqlDelightEventRepositoryTest :
                         // Spin until clock advances
                     }
                     val timestampBetween = Clock.System.now()
+                    
+                    // Wait again to ensure the second event is stored after timestampBetween
+                    while (Clock.System.now() <= timestampBetween) {
+                        // Spin until clock advances past our boundary
+                    }
 
                     val secondEvent = TestEvent(
                         eventId = EventId.generate(),
@@ -407,6 +412,11 @@ class SqlDelightEventRepositoryTest :
                         // Spin until clock advances
                     }
                     val timestampBetween = Clock.System.now()
+                    
+                    // Wait again to ensure the recent event is stored after timestampBetween
+                    while (Clock.System.now() <= timestampBetween) {
+                        // Spin until clock advances past our boundary
+                    }
 
                     val recentEvent = TestEvent(
                         eventId = EventId.generate(),
