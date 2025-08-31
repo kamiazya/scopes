@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.service
 
-import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -62,8 +62,7 @@ class ScopeHierarchyServiceTest :
                     )
                     val result = service.detectCircularReference(path)
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
                     (error as ScopeHierarchyError.CircularPath).scopeId shouldBe scope1
                 }
@@ -82,8 +81,7 @@ class ScopeHierarchyServiceTest :
                     )
                     val result = service.detectCircularReference(path)
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
                 }
 
@@ -102,8 +100,7 @@ class ScopeHierarchyServiceTest :
                         parentAncestorPath = emptyList(),
                     )
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.SelfParenting>()
                     (error as ScopeHierarchyError.SelfParenting).scopeId shouldBe scopeId
                 }
@@ -125,8 +122,7 @@ class ScopeHierarchyServiceTest :
                         parentAncestorPath = parentAncestorPath,
                     )
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.CircularReference>()
                     val circularError = error as ScopeHierarchyError.CircularReference
                     circularError.scopeId shouldBe childId
@@ -179,8 +175,7 @@ class ScopeHierarchyServiceTest :
                         maxChildren = 10,
                     )
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.MaxChildrenExceeded>()
                     val limitError = error as ScopeHierarchyError.MaxChildrenExceeded
                     limitError.parentScopeId shouldBe parentId
@@ -234,8 +229,7 @@ class ScopeHierarchyServiceTest :
                         maxDepth = 5,
                     )
 
-                    result.isLeft() shouldBe true
-                    val error = (result as Either.Left).value
+                    val error = result.shouldBeLeft()
                     error.shouldBeInstanceOf<ScopeHierarchyError.MaxDepthExceeded>()
                     val depthError = error as ScopeHierarchyError.MaxDepthExceeded
                     depthError.scopeId shouldBe scopeId
