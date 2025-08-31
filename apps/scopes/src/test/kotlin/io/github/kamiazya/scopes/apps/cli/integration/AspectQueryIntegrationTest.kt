@@ -10,10 +10,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeReposito
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 
@@ -364,7 +364,7 @@ class AspectQueryIntegrationTest :
 
                         // Assert - all should be errors
                         results.forEach { result ->
-                            result.isLeft() shouldBe true
+                            result.shouldBeLeft()
                         }
                     }
                 }

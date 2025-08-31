@@ -3,6 +3,8 @@ package io.github.kamiazya.scopes.platform.infrastructure.transaction
 import app.cash.sqldelight.Transacter
 import arrow.core.left
 import arrow.core.right
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -23,7 +25,7 @@ class SqlDelightTransactionManagerTest :
                         "success".right()
                     }
 
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
                     result.getOrNull() shouldBe "success"
                 }
 
@@ -33,7 +35,7 @@ class SqlDelightTransactionManagerTest :
                         error.left()
                     }
 
-                    result.isLeft() shouldBe true
+                    result.shouldBeLeft()
                     result.swap().getOrNull() shouldBe error
                 }
 
@@ -57,7 +59,7 @@ class SqlDelightTransactionManagerTest :
                         }
                     }
 
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
                 }
             }
 
@@ -67,7 +69,7 @@ class SqlDelightTransactionManagerTest :
                         "read-only success".right()
                     }
 
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
                     result.getOrNull() shouldBe "read-only success"
                 }
 
@@ -77,7 +79,7 @@ class SqlDelightTransactionManagerTest :
                         error.left()
                     }
 
-                    result.isLeft() shouldBe true
+                    result.shouldBeLeft()
                     result.swap().getOrNull() shouldBe error
                 }
 
@@ -156,7 +158,7 @@ class SqlDelightTransactionManagerTest :
                     }
 
                     results.forEachIndexed { index, result ->
-                        result.isRight() shouldBe true
+                        result.shouldBeRight()
                         result.getOrNull() shouldBe "result-${index + 1}"
                     }
                 }

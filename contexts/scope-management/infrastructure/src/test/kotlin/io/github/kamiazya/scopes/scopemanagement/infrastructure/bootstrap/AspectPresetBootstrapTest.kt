@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinit
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -34,7 +35,7 @@ class AspectPresetBootstrapTest :
                         val result = bootstrap.initialize()
 
                         // Assert
-                        result.isRight() shouldBe true
+                        result.shouldBeRight()
                         savedDefinitions.size shouldBe 3
 
                         // Verify priority preset
@@ -91,7 +92,7 @@ class AspectPresetBootstrapTest :
                         val result = bootstrap.initialize()
 
                         // Assert
-                        result.isRight() shouldBe true
+                        result.shouldBeRight()
                         savedDefinitions.size shouldBe 2 // Only status and type should be saved
                         savedDefinitions.none { it.key.value == "priority" } shouldBe true
                         savedDefinitions.any { it.key.value == "status" } shouldBe true
