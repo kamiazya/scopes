@@ -37,9 +37,10 @@ class TestQualityArchitectureTest {
     fun `repository tests should properly manage database resources`() {
         Konsist
             .scopeFromProject()
-            .classes
+            .files
+            .flatMap { it.classes() }
             .withNameEndingWith("RepositoryTest")
-            .flatMap { it.functions }
+            .flatMap { it.functions() }
             .filter { function ->
                 function.name == "afterEach" || function.name == "afterTest"
             }
@@ -56,7 +57,7 @@ class TestQualityArchitectureTest {
             .scopeFromProject()
             .files
             .withNameEndingWith("Test.kt")
-            .flatMap { it.functions }
+            .flatMap { it.functions() }
             .filter { function ->
                 function.hasAnnotationOf(Test::class) ||
                 function.name.startsWith("test") ||
@@ -79,12 +80,13 @@ class TestQualityArchitectureTest {
     fun `SqlDelight repository tests should use in-memory databases`() {
         Konsist
             .scopeFromProject()
-            .classes
+            .files
+            .flatMap { it.classes() }
             .withNameEndingWith("RepositoryTest")
             .filter { testClass ->
                 testClass.text.contains("SqlDelight")
             }
-            .flatMap { it.functions }
+            .flatMap { it.functions() }
             .filter { function ->
                 function.name == "beforeEach" || function.name == "beforeTest"
             }
@@ -113,9 +115,10 @@ class TestQualityArchitectureTest {
     fun `test functions should have descriptive names`() {
         Konsist
             .scopeFromProject()
-            .classes
+            .files
+            .flatMap { it.classes() }
             .withNameEndingWith("Test")
-            .flatMap { it.functions }
+            .flatMap { it.functions() }
             .filter { function ->
                 function.hasAnnotationOf(Test::class) ||
                 function.name.startsWith("test")
@@ -134,7 +137,8 @@ class TestQualityArchitectureTest {
     fun `repository tests should test error scenarios`() {
         Konsist
             .scopeFromProject()
-            .classes
+            .files
+            .flatMap { it.classes() }
             .withNameEndingWith("RepositoryTest")
             .assertTrue { testClass ->
                 // Repository tests should include error handling tests
@@ -152,7 +156,7 @@ class TestQualityArchitectureTest {
             .scopeFromProject()
             .files
             .withNameEndingWith("Test.kt")
-            .flatMap { it.functions }
+            .flatMap { it.functions() }
             .filter { function ->
                 // Find assertion functions
                 function.text.contains("shouldBe") ||

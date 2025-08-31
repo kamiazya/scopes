@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
+import arrow.core.NonEmptyList
 import arrow.core.left
+import arrow.core.nonEmptyListOf
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
@@ -9,6 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
 import io.kotest.core.spec.style.DescribeSpec
@@ -59,7 +62,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val aspectKey = AspectKey.create("priority").getOrNull()!!
                     val aspectValue = AspectValue.create("high").getOrNull()!!
-                    val aspects = Aspects.from(mapOf(aspectKey to listOf(aspectValue)))
+                    val aspects = Aspects.from(mapOf(aspectKey to nonEmptyListOf(aspectValue)))
 
                     val scope = Scope(
                         id = ScopeId.generate(),
@@ -416,7 +419,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val aspectKey = AspectKey.create("status").getOrNull()!!
                     val aspectValue = AspectValue.create("active").getOrNull()!!
-                    val aspects = Aspects.from(mapOf(aspectKey to listOf(aspectValue)))
+                    val aspects = Aspects.from(mapOf(aspectKey to nonEmptyListOf(aspectValue)))
 
                     val scope = Scope(
                         id = ScopeId.generate(),
@@ -643,7 +646,7 @@ class SqlDelightScopeRepositoryTest :
 
                     // When/Then - Test all operations return proper errors
                     val operations = listOf(
-                        runBlocking { repository.save(Scope(ScopeId.generate(), ScopeTitle.create("Test").getOrNull()!!, null, null, Aspects.empty(), Clock.System.now(), Clock.System.now())) },
+                        runBlocking { repository.save(Scope(ScopeId.generate(), ScopeTitle.create("Test").getOrNull()!!, null, null, ScopeStatus.default(), Clock.System.now(), Clock.System.now(), Aspects.empty())) },
                         runBlocking { repository.findById(ScopeId.generate()) },
                         runBlocking { repository.findAll() },
                         runBlocking { repository.findByParentId(null) },
