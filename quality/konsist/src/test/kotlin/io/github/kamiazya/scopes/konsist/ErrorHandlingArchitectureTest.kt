@@ -159,7 +159,80 @@ class ErrorHandlingArchitectureTest :
                     // Domain classes shouldn't use string literals for error states
                     // They should use proper error types
                     clazz.text.contains(
-                        Regex("""return\s+"error"|return\s+"failed"|return\s+"invalid""""),
+                        Regex("""return\s+"error"|return\s+"failed"|return\s+"invalid"""),
+                    )
+                }
+        }
+
+        "production code should never use getOrNull()!! anti-pattern" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .assertFalse { file ->
+                    // This pattern can throw NullPointerException
+                    file.text.contains(".getOrNull()!!")
+                }
+        }
+
+        "repository fold operations should handle errors properly" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filter { it.path.contains("repository") || it.path.contains("Repository") }
+                .assertFalse { file ->
+                    // Look for fold patterns that ignore errors in the left branch
+                    // Pattern: .fold({ /* comment */ }, { ... }) or .fold({ }, { ... })
+                    file.text.contains(
+                        Regex(
+                            """\\.fold\s*\(\s*\{\s*(?:/\*.*?\*/|\s)*\}\s*,""",
+                            RegexOption.DOT_MATCHES_ALL,
+                        ),
+                    )
+                }
+        }
+
+        "use case fold operations should not ignore repository errors" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filter { file ->
+                    file.path.contains("UseCase") ||
+                        file.path.contains("usecase") ||
+                        file.path.contains("Handler")
+                }
+                .assertFalse { file ->
+                    // Look for patterns like:
+                    // repository.method().fold({ /* ignored */ }, { success })
+                    val hasFoldWithIgnoredError = file.text.contains(
+                        Regex(
+                            """repository\.\w+\(.*?\)\.fold\s*\(\s*\{\s*(?:/\*.*?\*/|\s)*\}\s*,""",
+                            RegexOption.DOT_MATCHES_ALL,
+                        ),
+                    )
+
+                    // Also check for fold with empty error handling
+                    val hasEmptyErrorHandling = file.text.contains(
+                        Regex(
+                            """\.fold\s*\(\s*\{\s*}\s*,""",
+                            RegexOption.DOT_MATCHES_ALL,
+                        ),
+                    )
+
+                    hasFoldWithIgnoredError || hasEmptyErrorHandling
+                }
+        }
+
+        "runBlocking should not be used in init blocks" {
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .assertFalse { clazz ->
+                    // Check for runBlocking in init blocks
+                    clazz.text.contains(
+                        Regex(
+                            """init\s*\{[^}]*runBlocking""",
+                            RegexOption.DOT_MATCHES_ALL,
+                        ),
                     )
                 }
         }
