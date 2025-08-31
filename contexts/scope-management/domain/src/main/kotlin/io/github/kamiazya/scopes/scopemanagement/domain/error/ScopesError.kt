@@ -26,4 +26,30 @@ sealed class ScopesError {
      * Generic error for invalid operations.
      */
     data class InvalidOperation(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
+
+    /**
+     * Error indicating that an entity already exists.
+     */
+    data class AlreadyExists(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
+
+    /**
+     * Error indicating that an entity was not found.
+     */
+    data class NotFound(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
+
+    /**
+     * Error indicating a system-level failure.
+     */
+    data class SystemError(
+        val message: String,
+        val cause: Throwable? = null,
+        val errorCode: String = "SYSTEM_ERROR",
+        val context: Map<String, Any> = emptyMap(),
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : ScopesError()
+
+    /**
+     * Error indicating a validation failure.
+     */
+    data class ValidationFailed(val message: String, val details: Any? = null, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
 }

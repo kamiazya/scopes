@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfr
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
@@ -67,6 +68,16 @@ val cliAppModule = module {
     single {
         AliasCommandAdapter(
             scopeManagementPort = get(),
+        )
+    }
+    single {
+        AspectCommandAdapter(
+            defineAspectUseCase = get(),
+            getAspectDefinitionUseCase = get(),
+            updateAspectDefinitionUseCase = get(),
+            deleteAspectDefinitionUseCase = get(),
+            listAspectDefinitionsUseCase = get(),
+            validateAspectValueUseCase = get(),
         )
     }
 

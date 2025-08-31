@@ -16,6 +16,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopes
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
@@ -33,6 +35,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
 import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
@@ -43,6 +46,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAlias
 import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
@@ -77,6 +81,7 @@ class ScopeManagementPortAdapter(
     private val removeAliasHandler: RemoveAliasHandler,
     private val setCanonicalAliasHandler: SetCanonicalAliasHandler,
     private val renameAliasHandler: RenameAliasHandler,
+    private val filterScopesWithQueryHandler: FilterScopesWithQueryHandler,
     private val transactionManager: TransactionManager,
     private val logger: Logger = ConsoleLogger("ScopeManagementPortAdapter"),
 ) : ScopeManagementPort {
@@ -99,7 +104,7 @@ class ScopeManagementPortAdapter(
             title = result.title,
             description = result.description,
             parentId = result.parentId,
-            canonicalAlias = result.canonicalAlias ?: "@${result.id}",
+            canonicalAlias = result.canonicalAlias ?: result.id,
             createdAt = result.createdAt,
             updatedAt = result.createdAt,
         )
@@ -119,7 +124,7 @@ class ScopeManagementPortAdapter(
             title = scopeDto.title,
             description = scopeDto.description,
             parentId = scopeDto.parentId,
-            canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+            canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
             createdAt = scopeDto.createdAt,
             updatedAt = scopeDto.updatedAt,
         )
@@ -153,7 +158,7 @@ class ScopeManagementPortAdapter(
                     title = scopeDto.title,
                     description = scopeDto.description,
                     parentId = scopeDto.parentId,
-                    canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
                     createdAt = scopeDto.createdAt,
                     updatedAt = scopeDto.updatedAt,
                     isArchived = false, // TODO: Implement archive status when available in domain
@@ -178,7 +183,7 @@ class ScopeManagementPortAdapter(
                 title = scopeDto.title,
                 description = scopeDto.description,
                 parentId = scopeDto.parentId,
-                canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
                 createdAt = scopeDto.createdAt,
                 updatedAt = scopeDto.updatedAt,
                 isArchived = false, // TODO: Implement archive status when available in domain
@@ -201,7 +206,7 @@ class ScopeManagementPortAdapter(
                 title = scopeDto.title,
                 description = scopeDto.description,
                 parentId = scopeDto.parentId,
-                canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
                 createdAt = scopeDto.createdAt,
                 updatedAt = scopeDto.updatedAt,
                 isArchived = false, // TODO: Implement archive status when available in domain
@@ -225,7 +230,7 @@ class ScopeManagementPortAdapter(
                     title = scopeDto.title,
                     description = scopeDto.description,
                     parentId = scopeDto.parentId,
-                    canonicalAlias = scopeDto.canonicalAlias ?: "@${scopeDto.id}",
+                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
                     createdAt = scopeDto.createdAt,
                     updatedAt = scopeDto.updatedAt,
                     isArchived = false, // TODO: Implement archive status when available in domain
@@ -259,7 +264,7 @@ class ScopeManagementPortAdapter(
     override suspend fun addAlias(command: AddAliasCommand): Either<ScopeContractError, Unit> = either {
         val existingAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
             { error -> raise(errorMapper.mapToContractError(error)) },
-            { scope -> scope.canonicalAlias ?: "@${scope.id}" },
+            { scope -> scope.canonicalAlias ?: scope.id },
         )
 
         addAliasHandler(
@@ -284,7 +289,7 @@ class ScopeManagementPortAdapter(
     override suspend fun setCanonicalAlias(command: SetCanonicalAliasCommand): Either<ScopeContractError, Unit> = either {
         val currentAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
             { error -> raise(errorMapper.mapToContractError(error)) },
-            { scope -> scope.canonicalAlias ?: "@${scope.id}" },
+            { scope -> scope.canonicalAlias ?: scope.id },
         )
 
         setCanonicalAliasHandler(
@@ -305,5 +310,42 @@ class ScopeManagementPortAdapter(
         ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
+    }
+
+    override suspend fun listScopesWithAspect(query: ListScopesWithAspectQuery): Either<ScopeContractError, List<ScopeResult>> {
+        // Construct a query string and delegate to the new query handler
+        val aspectQuery = "\"${query.aspectKey}\"=\"${query.aspectValue}\""
+        val listQuery = ListScopesWithQueryQuery(
+            aspectQuery = aspectQuery,
+            parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
+        )
+        return listScopesWithQuery(listQuery)
+    }
+
+    override suspend fun listScopesWithQuery(query: ListScopesWithQueryQuery): Either<ScopeContractError, List<ScopeResult>> = filterScopesWithQueryHandler(
+        FilterScopesWithQuery(
+            query = query.aspectQuery,
+            parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
+        ),
+    ).mapLeft { error ->
+        errorMapper.mapToContractError(error)
+    }.map { scopeDtos ->
+        scopeDtos.map { scopeDto ->
+            ScopeResult(
+                id = scopeDto.id,
+                title = scopeDto.title,
+                description = scopeDto.description,
+                parentId = scopeDto.parentId,
+                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
+                createdAt = scopeDto.createdAt,
+                updatedAt = scopeDto.updatedAt,
+                isArchived = false, // TODO: Add isArchived to ScopeDto when available
+                aspects = scopeDto.aspects,
+            )
+        }
     }
 }

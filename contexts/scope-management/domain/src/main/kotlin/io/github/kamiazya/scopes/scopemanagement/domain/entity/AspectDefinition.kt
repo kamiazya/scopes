@@ -71,6 +71,17 @@ data class AspectDefinition private constructor(
                 allowMultiple = allowMultiple,
             )
         }
+
+        /**
+         * Create a duration aspect definition.
+         * Values must be in ISO 8601 duration format (e.g., "P1D", "PT2H30M").
+         */
+        fun createDuration(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
+            key = key,
+            type = AspectType.Duration,
+            description = description,
+            allowMultiple = allowMultiple,
+        )
     }
 
     /**
@@ -81,6 +92,7 @@ data class AspectDefinition private constructor(
         is AspectType.Numeric -> value.isNumeric()
         is AspectType.BooleanType -> value.isBoolean()
         is AspectType.Ordered -> type.allowedValues.contains(value)
+        is AspectType.Duration -> value.isDuration()
     }
 
     /**
@@ -122,6 +134,15 @@ data class AspectDefinition private constructor(
             val secondOrder = getValueOrder(second)
             if (firstOrder != null && secondOrder != null) {
                 firstOrder.compareTo(secondOrder)
+            } else {
+                null
+            }
+        }
+        is AspectType.Duration -> {
+            val firstDuration = first.parseDuration()
+            val secondDuration = second.parseDuration()
+            if (firstDuration != null && secondDuration != null) {
+                firstDuration.compareTo(secondDuration)
             } else {
                 null
             }

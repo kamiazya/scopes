@@ -103,4 +103,23 @@ class DomainKnowledgeAntiPatternsTest :
                     clazz.properties().all { !it.hasVarModifier }
                 }
         }
+
+        "avoid unsafe nullable assertions - use safe calls or proper error handling" {
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filterNot { it.path.contains("/tmp/") }
+                .filterNot { it.path.contains("/test/") }
+                .assertFalse { file ->
+                    val content = file.text
+                    // Check for the specific anti-pattern of .getOrNull()!!
+                    content.contains(".getOrNull()!!") ||
+                        // Also check for other unsafe patterns
+                        content.contains("?.let { }!!") ||
+                        // Check for double-bang on nullable results
+                        (content.contains(".firstOrNull()!!") && !file.path.contains("Test")) ||
+                        (content.contains(".singleOrNull()!!") && !file.path.contains("Test")) ||
+                        (content.contains(".find {") && content.contains("}!!") && !file.path.contains("Test"))
+                }
+        }
     })

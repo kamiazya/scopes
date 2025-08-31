@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import io.github.kamiazya.scopes.apps.cli.di.cliAppModule
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap
+import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -25,10 +27,19 @@ class ScopesCliApplication : AutoCloseable {
     }
 
     init {
-        // TODO: Re-enable after complete migration to SQLDelight
-        // Currently disabled as we're migrating from Exposed to SQLDelight
-        // val databaseBootstrap = koinApp.koin.get<DatabaseBootstrap>()
-        // databaseBootstrap.initialize()
+        // Initialize aspect presets
+        runBlocking {
+            val aspectPresetBootstrap = koinApp.koin.get<AspectPresetBootstrap>()
+            aspectPresetBootstrap.initialize().fold(
+                ifLeft = { error ->
+                    // Log error but don't fail application startup
+                    println("Warning: Failed to initialize aspect presets: $error")
+                },
+                ifRight = {
+                    // Success - presets initialized
+                },
+            )
+        }
     }
 
     /**
