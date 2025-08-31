@@ -129,13 +129,12 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val storedEvent = result.getOrNull()
-                    storedEvent shouldNotBe null
-                    storedEvent?.metadata?.eventId shouldBe event.eventId
-                    storedEvent?.metadata?.aggregateId shouldBe event.aggregateId
-                    storedEvent?.metadata?.aggregateVersion shouldBe event.aggregateVersion
-                    storedEvent?.metadata?.sequenceNumber shouldNotBe null
-                    storedEvent?.event shouldBe event
+                    val storedEvent = result.getOrNull()!!
+                    storedEvent.metadata.eventId shouldBe event.eventId
+                    storedEvent.metadata.aggregateId shouldBe event.aggregateId
+                    storedEvent.metadata.aggregateVersion shouldBe event.aggregateVersion
+                    storedEvent.metadata.sequenceNumber shouldNotBe null
+                    storedEvent.event shouldBe event
                 }
 
                 it("should assign sequential sequence numbers") {
@@ -171,7 +170,8 @@ class SqlDelightEventRepositoryTest :
                     }
 
                     // Then
-                    val sequenceNumbers = results.mapNotNull { it.getOrNull()?.metadata?.sequenceNumber }
+                    results.forEach { it.isRight() shouldBe true }
+                    val sequenceNumbers = results.map { it.getOrNull()!!.metadata.sequenceNumber }
                     sequenceNumbers shouldBe listOf(1L, 2L, 3L)
                 }
 
@@ -237,9 +237,11 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // Store first event and get its stored timestamp
-                    val firstStoredEvent = runBlocking {
+                    val firstStoreResult = runBlocking {
                         repository.store(firstEvent)
-                    }.getOrNull()!!
+                    }
+                    firstStoreResult.isRight() shouldBe true
+                    val firstStoredEvent = firstStoreResult.getOrNull()!!
 
                     // Wait for clock to advance past the first event's stored time
                     // Use a single loop with timestamp capture to avoid race conditions
@@ -271,9 +273,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()
-                    events?.shouldHaveSize(1)
-                    (events?.first()?.event as? TestEvent)?.testData shouldBe "second event"
+                    val events = result.getOrNull()!!
+                    events.shouldHaveSize(1)
+                    (events.first().event as TestEvent).testData shouldBe "second event"
                 }
 
                 it("should respect the limit parameter") {
@@ -299,7 +301,8 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    result.getOrNull()?.shouldHaveSize(3)
+                    val events = result.getOrNull()!!
+                    events.shouldHaveSize(3)
                 }
 
                 it("should handle deserialization errors gracefully by skipping failed events") {
@@ -385,9 +388,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val aggregateEvents = result.getOrNull()
-                    aggregateEvents?.shouldHaveSize(2)
-                    aggregateEvents?.all { it.metadata.aggregateId == aggregateId } shouldBe true
+                    val aggregateEvents = result.getOrNull()!!
+                    aggregateEvents.shouldHaveSize(2)
+                    aggregateEvents.all { it.metadata.aggregateId == aggregateId } shouldBe true
                 }
 
                 it("should retrieve events for an aggregate since a timestamp") {
@@ -403,9 +406,11 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // Store old event and get its stored timestamp
-                    val oldStoredEvent = runBlocking {
+                    val oldStoreResult = runBlocking {
                         repository.store(oldEvent)
-                    }.getOrNull()!!
+                    }
+                    oldStoreResult.isRight() shouldBe true
+                    val oldStoredEvent = oldStoreResult.getOrNull()!!
 
                     // Wait for clock to advance past the old event's stored time
                     // Use a single loop with timestamp capture to avoid race conditions
@@ -437,9 +442,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()
-                    events?.shouldHaveSize(1)
-                    (events?.first()?.event as? TestEvent)?.testData shouldBe "recent event"
+                    val events = result.getOrNull()!!
+                    events.shouldHaveSize(1)
+                    (events.first().event as TestEvent).testData shouldBe "recent event"
                 }
 
                 it("should respect limit when retrieving aggregate events") {
@@ -464,7 +469,8 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    result.getOrNull()?.shouldHaveSize(2)
+                    val events = result.getOrNull()!!
+                    events.shouldHaveSize(2)
                 }
 
                 it("should return empty list for aggregate with no events") {
@@ -553,12 +559,12 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val retrievedEvents = result.getOrNull()
-                    retrievedEvents?.shouldHaveSize(5)
+                    val retrievedEvents = result.getOrNull()!!
+                    retrievedEvents.shouldHaveSize(5)
 
                     // Events should be ordered by aggregate version (not sequence number)
                     // The SQL query orders by aggregate_version ASC
-                    val versions = retrievedEvents?.map { it.metadata.aggregateVersion?.value }
+                    val versions = retrievedEvents.map { it.metadata.aggregateVersion!!.value }
                     versions shouldBe listOf(1L, 2L, 3L, 4L, 5L)
                 }
             }
@@ -600,14 +606,15 @@ class SqlDelightEventRepositoryTest :
                     storeResult.isRight() shouldBe true
                     retrieveResult.isRight() shouldBe true
 
-                    val retrievedEvent = retrieveResult.getOrNull()?.first()
-                    retrievedEvent?.metadata?.eventId shouldBe event.eventId
-                    retrievedEvent?.metadata?.aggregateId shouldBe event.aggregateId
-                    retrievedEvent?.metadata?.aggregateVersion shouldBe event.aggregateVersion
-                    retrievedEvent?.metadata?.eventType shouldBe EventType("io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent")
-                    retrievedEvent?.metadata?.occurredAt shouldBe event.occurredAt
-                    retrievedEvent?.metadata?.storedAt shouldNotBe null
-                    retrievedEvent?.metadata?.sequenceNumber shouldNotBe null // Sequence number is auto-generated
+                    val events = retrieveResult.getOrNull()!!
+                    val retrievedEvent = events.first()
+                    retrievedEvent.metadata.eventId shouldBe event.eventId
+                    retrievedEvent.metadata.aggregateId shouldBe event.aggregateId
+                    retrievedEvent.metadata.aggregateVersion shouldBe event.aggregateVersion
+                    retrievedEvent.metadata.eventType shouldBe EventType("io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent")
+                    retrievedEvent.metadata.occurredAt shouldBe event.occurredAt
+                    retrievedEvent.metadata.storedAt shouldNotBe null
+                    retrievedEvent.metadata.sequenceNumber shouldNotBe null // Sequence number is auto-generated
                 }
             }
         }
