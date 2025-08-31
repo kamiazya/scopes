@@ -27,8 +27,8 @@ class ErrorHandlingArchitectureTest :
                     // Check for direct exception throwing (except CliktError in CLI)
                     file.text.contains(
                         Regex(
-                            """throw\s+(?!CliktError)[A-Z]\w*Exception\s*\("""
-                        )
+                            """throw\s+(?!CliktError)[A-Z]\w*Exception\s*\(""",
+                        ),
                     )
                 }
         }
@@ -59,8 +59,8 @@ class ErrorHandlingArchitectureTest :
                     // Look for patterns like: if (!condition) throw IllegalStateException
                     file.text.contains(
                         Regex(
-                            """if\s*\(\s*!.*?\)\s*throw\s+IllegalStateException"""
-                        )
+                            """if\s*\(\s*!.*?\)\s*throw\s+IllegalStateException""",
+                        ),
                     )
                 }
         }
@@ -78,10 +78,10 @@ class ErrorHandlingArchitectureTest :
                     // - return "unknown"
                     val hasUnknownFallback = file.text.contains(
                         Regex(
-                            """(?i)(?:\?:\s*"unknown"|else\s*->\s*"unknown"|=\s*"unknown"|return\s+"unknown")"""
-                        )
+                            """(?i)(?:\?:\s*"unknown"|else\s*->\s*"unknown"|=\s*"unknown"|return\s+"unknown")""",
+                        ),
                     )
-                    
+
                     hasUnknownFallback
                 }
         }
@@ -97,16 +97,18 @@ class ErrorHandlingArchitectureTest :
                     // We want to ensure unmapped errors throw exceptions
                     file.text.contains(
                         Regex(
-                            """else\s*->\s*[^{]*(?:\.copy\(|Error\(.*?"unknown"|return\s+\w+Error\()"""
-                        )
-                    ) && !file.text.contains("throw") && !file.text.contains("error(")
+                            """else\s*->\s*[^{]*(?:\.copy\(|Error\(.*?"unknown"|return\s+\w+Error\()""",
+                        ),
+                    ) &&
+                        !file.text.contains("throw") &&
+                        !file.text.contains("error(")
                 }
         }
 
         "repository implementations should validate data from external sources" {
             Konsist
                 .scopeFromDirectory("contexts")
-                .classes()  // This already excludes interfaces, only gets concrete classes
+                .classes() // This already excludes interfaces, only gets concrete classes
                 .filter { it.resideInPackage("..infrastructure..repository..") }
                 .filter { it.name.endsWith("Repository") }
                 .assertFalse { clazz ->
@@ -114,13 +116,13 @@ class ErrorHandlingArchitectureTest :
                     // This is a heuristic check - repositories should use .create() methods
                     // or throw exceptions for invalid data
                     val hasRowConversion = clazz.text.contains("row") || clazz.text.contains("Row")
-                    val hasValidation = clazz.text.contains(".create(") || 
-                                       clazz.text.contains("throw") ||
-                                       clazz.text.contains("error(") ||
-                                       clazz.text.contains("IllegalStateException") ||
-                                       clazz.text.contains("require") ||
-                                       clazz.text.contains("check(")
-                    
+                    val hasValidation = clazz.text.contains(".create(") ||
+                        clazz.text.contains("throw") ||
+                        clazz.text.contains("error(") ||
+                        clazz.text.contains("IllegalStateException") ||
+                        clazz.text.contains("require") ||
+                        clazz.text.contains("check(")
+
                     hasRowConversion && !hasValidation
                 }
         }
@@ -135,14 +137,14 @@ class ErrorHandlingArchitectureTest :
                 .assertFalse { file ->
                     // Check for simple name usage without qualified name fallback
                     val hasSimpleNameOnly = file.text.contains(
-                        Regex("""error::class\.simpleName\s*\?:\s*"Unknown"""")
+                        Regex("""error::class\.simpleName\s*\?:\s*"Unknown""""),
                     )
-                    
+
                     // We want qualified name as primary with simple name as fallback
                     val hasImprovedPattern = file.text.contains(
-                        Regex("""error::class\.qualifiedName\s*\?:.*?simpleName""")
+                        Regex("""error::class\.qualifiedName\s*\?:.*?simpleName"""),
                     )
-                    
+
                     hasSimpleNameOnly && !hasImprovedPattern
                 }
         }
@@ -157,7 +159,7 @@ class ErrorHandlingArchitectureTest :
                     // Domain classes shouldn't use string literals for error states
                     // They should use proper error types
                     clazz.text.contains(
-                        Regex("""return\s+"error"|return\s+"failed"|return\s+"invalid"""")
+                        Regex("""return\s+"error"|return\s+"failed"|return\s+"invalid""""),
                     )
                 }
         }

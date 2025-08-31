@@ -269,7 +269,7 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeAliasError.DataInconsistencyError ->
         error(
             "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +
-            "Please add proper error mapping for this error type."
+                "Please add proper error mapping for this error type.",
         )
 }
 

@@ -96,7 +96,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
             }
             else -> error(
                 "Unknown aspect type in database: '$typeString' for aspect key '$key'. " +
-                "Valid types are: TEXT, NUMERIC, BOOLEAN, or ORDERED:<json_array>"
+                    "Valid types are: TEXT, NUMERIC, BOOLEAN, or ORDERED:<json_array>",
             )
         }
 

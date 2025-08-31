@@ -126,11 +126,14 @@ class CreateScopeHandler(
                             existingScopeId = existingAlias.scopeId, // The actual scope that owns this alias
                             attemptedScopeId = savedScope.id, // The new scope that tried to use it
                         )
-                        logger.warn("Alias already exists", mapOf(
-                            "alias" to aliasName.value, 
-                            "existingScopeId" to existingAlias.scopeId.value,
-                            "attemptedScopeId" to savedScope.id.value
-                        ))
+                        logger.warn(
+                            "Alias already exists",
+                            mapOf(
+                                "alias" to aliasName.value,
+                                "existingScopeId" to existingAlias.scopeId.value,
+                                "attemptedScopeId" to savedScope.id.value,
+                            ),
+                        )
                         raise(duplicateError)
                     }
 
