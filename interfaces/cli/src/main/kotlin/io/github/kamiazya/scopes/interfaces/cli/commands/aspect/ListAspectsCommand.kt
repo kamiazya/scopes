@@ -32,8 +32,15 @@ class ListAspectsCommand :
 
     override fun run() {
         runBlocking {
+            // Validate and trim input
+            val trimmedScope = scope.trim()
+
+            if (trimmedScope.isBlank()) {
+                throw CliktError("Error: Scope parameter cannot be empty or blank")
+            }
+
             // Resolve scope ID from alias
-            val scopeId = parameterResolver.resolve(scope).fold(
+            val scopeId = parameterResolver.resolve(trimmedScope).fold(
                 { error ->
                     throw CliktError("Error resolving scope: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
@@ -60,15 +67,15 @@ class ListAspectsCommand :
                         }
 
                         if (aspects.isNotEmpty()) {
-                            echo("Aspects for scope '$scope':")
+                            echo("Aspects for scope '$trimmedScope':")
                             aspects.forEach { (key, value) ->
                                 echo("  $key: $value")
                             }
                         } else {
-                            echo("No aspects set for scope '$scope'")
+                            echo("No aspects set for scope '$trimmedScope'")
                         }
                     } else {
-                        echo("No aspects set for scope '$scope'")
+                        echo("No aspects set for scope '$trimmedScope'")
                     }
 
                     echo("\n⚠️  Note: This is a temporary implementation reading from the description field.")

@@ -34,8 +34,20 @@ class RemoveAspectCommand :
 
     override fun run() {
         runBlocking {
+            // Validate and trim inputs
+            val trimmedScope = scope.trim()
+            val trimmedKeys = keys.map { it.trim() }.filter { it.isNotBlank() }
+
+            if (trimmedScope.isBlank()) {
+                throw CliktError("Error: Scope parameter cannot be empty or blank")
+            }
+
+            if (trimmedKeys.isEmpty()) {
+                throw CliktError("Error: No valid aspect keys provided after trimming")
+            }
+
             // Resolve scope ID from alias
-            val scopeId = parameterResolver.resolve(scope).fold(
+            val scopeId = parameterResolver.resolve(trimmedScope).fold(
                 { error ->
                     throw CliktError("Error resolving scope: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
@@ -68,7 +80,7 @@ class RemoveAspectCommand :
                     val removedKeys = mutableListOf<String>()
                     val notFoundKeys = mutableListOf<String>()
 
-                    keys.forEach { key ->
+                    trimmedKeys.forEach { key ->
                         val removed = existingAspects.removeAll { it.first == key }
                         if (removed) {
                             removedKeys.add(key)
@@ -95,7 +107,7 @@ class RemoveAspectCommand :
                                 throw CliktError("Error updating scope: ${ContractErrorMessageMapper.getMessage(error)}")
                             },
                             {
-                                echo("✓ Removed aspects from scope '$scope':")
+                                echo("✓ Removed aspects from scope '$trimmedScope':")
                                 removedKeys.forEach { key ->
                                     echo("    - $key")
                                 }

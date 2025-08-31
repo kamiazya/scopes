@@ -44,6 +44,20 @@ class DefineCommand :
 
     override fun run() {
         runBlocking {
+            // Validate and trim inputs
+            val trimmedKey = key.trim()
+            val trimmedDescription = description.trim()
+
+            if (trimmedKey.isBlank()) {
+                echo("Error: Aspect key cannot be empty or blank", err = true)
+                return@runBlocking
+            }
+
+            if (trimmedDescription.isBlank()) {
+                echo("Error: Description cannot be empty or blank", err = true)
+                return@runBlocking
+            }
+
             // Parse aspect type based on the type parameter and options
             val aspectType = when (type) {
                 "text" -> {
@@ -66,7 +80,11 @@ class DefineCommand :
                         echo("Error: --values is required for ordered type", err = true)
                         return@runBlocking
                     }
-                    val valueList = values!!.split(",").map { it.trim() }
+                    val valueList = values!!.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    if (valueList.isEmpty()) {
+                        echo("Error: --values cannot be empty after trimming", err = true)
+                        return@runBlocking
+                    }
                     val aspectValues = valueList.map { value ->
                         AspectValue.create(value).fold(
                             { error ->
@@ -87,8 +105,8 @@ class DefineCommand :
 
             // Define the aspect
             aspectCommandAdapter.defineAspect(
-                key = key,
-                description = description,
+                key = trimmedKey,
+                description = trimmedDescription,
                 type = aspectType,
             ).fold(
                 { error ->

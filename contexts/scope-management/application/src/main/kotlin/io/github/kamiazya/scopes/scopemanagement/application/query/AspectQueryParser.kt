@@ -29,26 +29,34 @@ class AspectQueryParser {
     /**
      * Parse a query string into an AST.
      */
-    fun parse(query: String): Either<QueryParseError, AspectQueryAST> {
-        val tokens = tokenize(query)
-        return if (tokens.isEmpty()) {
-            QueryParseError.EmptyQuery.left()
-        } else {
-            val parser = Parser(tokens)
-            try {
-                val ast = parser.parseQuery()
-                if (parser.hasMore()) {
-                    QueryParseError.UnexpectedToken(parser.currentToken(), parser.position).left()
+    fun parse(query: String): Either<QueryParseError, AspectQueryAST> = try {
+        val tokensResult = tokenizeEither(query)
+        tokensResult.fold(
+            ifLeft = { it.left() },
+            ifRight = { tokens ->
+                if (tokens.isEmpty()) {
+                    QueryParseError.EmptyQuery.left()
                 } else {
-                    ast.right()
+                    val parser = Parser(tokens)
+                    val parseResult = parser.parseQuery()
+                    parseResult.fold(
+                        ifLeft = { it.left() },
+                        ifRight = { ast ->
+                            if (parser.hasMore()) {
+                                QueryParseError.UnexpectedToken(parser.currentToken(), parser.position).left()
+                            } else {
+                                ast.right()
+                            }
+                        },
+                    )
                 }
-            } catch (e: ParseException) {
-                e.error.left()
-            }
-        }
+            },
+        )
+    } catch (e: Exception) {
+        QueryParseError.EmptyQuery.left() // Fallback for any unexpected errors
     }
 
-    private fun tokenize(query: String): List<Token> {
+    private fun tokenizeEither(query: String): Either<QueryParseError, List<Token>> {
         val tokens = mutableListOf<Token>()
         var i = 0
 
@@ -75,7 +83,7 @@ class AspectQueryParser {
                         i++
                     }
                     if (i >= query.length) {
-                        throw ParseException(QueryParseError.UnterminatedString(start))
+                        return QueryParseError.UnterminatedString(start).left()
                     }
                     tokens.add(Token.Value(query.substring(start, i)))
                     i++ // Skip closing quote
@@ -138,13 +146,13 @@ class AspectQueryParser {
                     if (i > start) {
                         tokens.add(Token.Value(query.substring(start, i)))
                     } else {
-                        throw ParseException(QueryParseError.UnexpectedCharacter(query[i], i))
+                        return QueryParseError.UnexpectedCharacter(query[i], i).left()
                     }
                 }
             }
         }
 
-        return tokens
+        return tokens.right()
     }
 
     private fun isOperatorStart(query: String, index: Int): Boolean {
@@ -178,74 +186,94 @@ class AspectQueryParser {
 
         fun currentToken(): Token? = tokens.getOrNull(position)
 
-        fun parseQuery(): AspectQueryAST = parseOrExpression()
+        fun parseQuery(): Either<QueryParseError, AspectQueryAST> = parseOrExpression()
 
-        private fun parseOrExpression(): AspectQueryAST {
-            var left = parseAndExpression()
-
-            while (hasMore() && currentToken() == Token.Or) {
-                position++ // consume OR
-                val right = parseAndExpression()
-                left = AspectQueryAST.Or(left, right)
-            }
-
-            return left
+        private fun parseOrExpression(): Either<QueryParseError, AspectQueryAST> {
+            return parseAndExpression().fold(
+                ifLeft = { it.left() },
+                ifRight = { left ->
+                    var result = left
+                    while (hasMore() && currentToken() == Token.Or) {
+                        position++ // consume OR
+                        parseAndExpression().fold(
+                            ifLeft = { return it.left() },
+                            ifRight = { right ->
+                                result = AspectQueryAST.Or(result, right)
+                            },
+                        )
+                    }
+                    result.right()
+                },
+            )
         }
 
-        private fun parseAndExpression(): AspectQueryAST {
-            var left = parseNotExpression()
-
-            while (hasMore() && currentToken() == Token.And) {
-                position++ // consume AND
-                val right = parseNotExpression()
-                left = AspectQueryAST.And(left, right)
-            }
-
-            return left
+        private fun parseAndExpression(): Either<QueryParseError, AspectQueryAST> {
+            return parseNotExpression().fold(
+                ifLeft = { it.left() },
+                ifRight = { left ->
+                    var result = left
+                    while (hasMore() && currentToken() == Token.And) {
+                        position++ // consume AND
+                        parseNotExpression().fold(
+                            ifLeft = { return it.left() },
+                            ifRight = { right ->
+                                result = AspectQueryAST.And(result, right)
+                            },
+                        )
+                    }
+                    result.right()
+                },
+            )
         }
 
-        private fun parseNotExpression(): AspectQueryAST = if (hasMore() && currentToken() == Token.Not) {
+        private fun parseNotExpression(): Either<QueryParseError, AspectQueryAST> = if (hasMore() && currentToken() == Token.Not) {
             position++ // consume NOT
-            AspectQueryAST.Not(parseNotExpression())
+            parseNotExpression().fold(
+                ifLeft = { it.left() },
+                ifRight = { expr -> AspectQueryAST.Not(expr).right() },
+            )
         } else {
             parsePrimary()
         }
 
-        private fun parsePrimary(): AspectQueryAST = when (val token = currentToken()) {
+        private fun parsePrimary(): Either<QueryParseError, AspectQueryAST> = when (val token = currentToken()) {
             is Token.LeftParen -> {
                 position++ // consume (
-                val expr = parseQuery()
-                if (currentToken() != Token.RightParen) {
-                    throw ParseException(QueryParseError.MissingClosingParen(position))
-                }
-                position++ // consume )
-                AspectQueryAST.Parentheses(expr)
+                parseQuery().fold(
+                    ifLeft = { it.left() },
+                    ifRight = { expr ->
+                        if (currentToken() != Token.RightParen) {
+                            QueryParseError.MissingClosingParen(position).left()
+                        } else {
+                            position++ // consume )
+                            AspectQueryAST.Parentheses(expr).right()
+                        }
+                    },
+                )
             }
             is Token.Identifier -> parseComparison()
-            else -> throw ParseException(QueryParseError.ExpectedExpression(position))
+            else -> QueryParseError.ExpectedExpression(position).left()
         }
 
-        private fun parseComparison(): AspectQueryAST {
+        private fun parseComparison(): Either<QueryParseError, AspectQueryAST> {
             val identifier = currentToken() as? Token.Identifier
-                ?: throw ParseException(QueryParseError.ExpectedIdentifier(position))
+                ?: return QueryParseError.ExpectedIdentifier(position).left()
             position++ // consume identifier
 
             val operator = currentToken() as? Token.Operator
-                ?: throw ParseException(QueryParseError.ExpectedOperator(position))
+                ?: return QueryParseError.ExpectedOperator(position).left()
             position++ // consume operator
 
             val value = when (val token = currentToken()) {
                 is Token.Value -> token.value
                 is Token.Identifier -> token.name // Allow identifiers as values
-                else -> throw ParseException(QueryParseError.ExpectedValue(position))
+                else -> return QueryParseError.ExpectedValue(position).left()
             }
             position++ // consume value
 
-            return AspectQueryAST.Comparison(identifier.name, operator.op, value)
+            return AspectQueryAST.Comparison(identifier.name, operator.op, value).right()
         }
     }
-
-    private class ParseException(val error: QueryParseError) : Exception()
 }
 
 /**

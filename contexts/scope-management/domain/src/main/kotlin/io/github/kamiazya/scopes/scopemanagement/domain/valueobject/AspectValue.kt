@@ -74,8 +74,8 @@ value class AspectValue private constructor(val value: String) {
      * Parse ISO 8601 duration string to Kotlin Duration.
      */
     private fun parseISO8601Duration(iso8601: String): Duration {
-        require(iso8601.startsWith("P")) { "ISO 8601 duration must start with 'P'" }
-        require(iso8601.length > 1) { "ISO 8601 duration must contain at least one component" }
+        if (!iso8601.startsWith("P")) error("ISO 8601 duration must start with 'P'")
+        if (iso8601.length <= 1) error("ISO 8601 duration must contain at least one component")
 
         // Handle week format (PnW must be alone, no other components allowed)
         val weekMatch = Regex("^P(\\d+)W$").matchEntire(iso8601)
@@ -101,12 +101,12 @@ value class AspectValue private constructor(val value: String) {
                 val unit = match.groupValues[2][0]
 
                 // Validate order: Y must come before M, M before D
-                require(unit > lastUnit) { "Invalid ISO 8601 duration: $unit must come after $lastUnit" }
+                if (unit <= lastUnit) error("Invalid ISO 8601 duration: $unit must come after $lastUnit")
                 lastUnit = unit
 
                 when (unit) {
-                    'Y' -> throw IllegalArgumentException("Year durations are not supported")
-                    'M' -> throw IllegalArgumentException("Month durations are not supported")
+                    'Y' -> error("Year durations are not supported")
+                    'M' -> error("Month durations are not supported")
                     'D' -> totalSeconds += amount * 24 * 60 * 60
                 }
             }
@@ -122,7 +122,7 @@ value class AspectValue private constructor(val value: String) {
                 val unit = match.groupValues[2][0]
 
                 // Validate order: H must come before M, M before S
-                require(unit > lastUnit) { "Invalid ISO 8601 duration: $unit must come after $lastUnit in time part" }
+                if (unit <= lastUnit) error("Invalid ISO 8601 duration: $unit must come after $lastUnit in time part")
                 lastUnit = unit
 
                 when (unit) {
@@ -133,7 +133,7 @@ value class AspectValue private constructor(val value: String) {
             }
         }
 
-        require(totalSeconds > 0) { "ISO 8601 duration must specify at least one non-zero component" }
+        if (totalSeconds <= 0) error("ISO 8601 duration must specify at least one non-zero component")
         return totalSeconds.seconds
     }
 
