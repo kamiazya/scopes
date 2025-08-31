@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.userpreferences.domain.value
 
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -19,42 +21,27 @@ class HierarchyPreferencesPropertyTest :
             checkAll(validPositiveIntArb(), validPositiveIntArb()) { maxDepth, maxChildren ->
                 val result = HierarchyPreferences.create(maxDepth, maxChildren)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { throw AssertionError("Expected Right but got Left: $it") },
-                    { preferences ->
-                        preferences.maxDepth shouldBe maxDepth
-                        preferences.maxChildrenPerScope shouldBe maxChildren
-                    },
-                )
+                val preferences = result.shouldBeRight()
+                preferences.maxDepth shouldBe maxDepth
+                preferences.maxChildrenPerScope shouldBe maxChildren
             }
         }
 
         "creating preferences with null values should succeed and use defaults" {
             val result = HierarchyPreferences.create(null, null)
 
-            result.isRight() shouldBe true
-            result.fold(
-                { throw AssertionError("Expected Right but got Left: $it") },
-                { preferences ->
-                    preferences.maxDepth shouldBe null
-                    preferences.maxChildrenPerScope shouldBe null
-                },
-            )
+            val preferences = result.shouldBeRight()
+            preferences.maxDepth shouldBe null
+            preferences.maxChildrenPerScope shouldBe null
         }
 
         "creating preferences with mixed null and valid values should succeed" {
             checkAll(validPositiveIntArb().orNull(), validPositiveIntArb().orNull()) { maxDepth, maxChildren ->
                 val result = HierarchyPreferences.create(maxDepth, maxChildren)
 
-                result.isRight() shouldBe true
-                result.fold(
-                    { throw AssertionError("Expected Right but got Left: $it") },
-                    { preferences ->
-                        preferences.maxDepth shouldBe maxDepth
-                        preferences.maxChildrenPerScope shouldBe maxChildren
-                    },
-                )
+                val preferences = result.shouldBeRight()
+                preferences.maxDepth shouldBe maxDepth
+                preferences.maxChildrenPerScope shouldBe maxChildren
             }
         }
 
@@ -62,14 +49,9 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb()) { invalidDepth ->
                 val result = HierarchyPreferences.create(invalidDepth, null)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                        error.reason shouldBe "Maximum depth must be positive if specified"
-                    },
-                    { throw AssertionError("Expected Left but got Right: $it") },
-                )
+                val error = result.shouldBeLeft()
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                hierarchyError.reason shouldBe "Maximum depth must be positive if specified"
             }
         }
 
@@ -77,14 +59,9 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb()) { invalidChildren ->
                 val result = HierarchyPreferences.create(null, invalidChildren)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                        error.reason shouldBe "Maximum children per scope must be positive if specified"
-                    },
-                    { throw AssertionError("Expected Left but got Right: $it") },
-                )
+                val error = result.shouldBeLeft()
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                hierarchyError.reason shouldBe "Maximum children per scope must be positive if specified"
             }
         }
 
@@ -92,15 +69,10 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb(), invalidIntArb()) { invalidDepth, invalidChildren ->
                 val result = HierarchyPreferences.create(invalidDepth, invalidChildren)
 
-                result.isLeft() shouldBe true
-                result.fold(
-                    { error ->
-                        error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                        // Should fail on maxDepth first (as per implementation order)
-                        error.reason shouldBe "Maximum depth must be positive if specified"
-                    },
-                    { throw AssertionError("Expected Left but got Right: $it") },
-                )
+                val error = result.shouldBeLeft()
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                // Should fail on maxDepth first (as per implementation order)
+                hierarchyError.reason shouldBe "Maximum depth must be positive if specified"
             }
         }
 

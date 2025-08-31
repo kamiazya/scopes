@@ -11,6 +11,8 @@ import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
@@ -54,16 +56,11 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { dto ->
-                            dto.hierarchyPreferences.maxDepth shouldBe 10
-                            dto.hierarchyPreferences.maxChildrenPerScope shouldBe 20
-                            dto.createdAt shouldBe fixedInstant
-                            dto.updatedAt shouldBe fixedInstant
-                        },
-                    )
+                    val dto = result.shouldBeRight()
+                    dto.hierarchyPreferences.maxDepth shouldBe 10
+                    dto.hierarchyPreferences.maxChildrenPerScope shouldBe 20
+                    dto.createdAt shouldBe fixedInstant
+                    dto.updatedAt shouldBe fixedInstant
 
                     coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
                     coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -91,14 +88,9 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { dto ->
-                            dto.hierarchyPreferences.maxDepth shouldBe null
-                            dto.hierarchyPreferences.maxChildrenPerScope shouldBe null
-                        },
-                    )
+                    val dto = result.shouldBeRight()
+                    dto.hierarchyPreferences.maxDepth shouldBe null
+                    dto.hierarchyPreferences.maxChildrenPerScope shouldBe null
                 }
             }
 
@@ -124,14 +116,9 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { dto ->
-                            dto.hierarchyPreferences.maxDepth shouldBe null
-                            dto.hierarchyPreferences.maxChildrenPerScope shouldBe null
-                        },
-                    )
+                    val dto = result.shouldBeRight()
+                    dto.hierarchyPreferences.maxDepth shouldBe null
+                    dto.hierarchyPreferences.maxChildrenPerScope shouldBe null
 
                     coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
                     coVerify(exactly = 1) { mockRepository.save(any()) }
@@ -147,13 +134,8 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error shouldBe saveError
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    error shouldBe saveError
 
                     coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
                     coVerify(exactly = 1) { mockRepository.save(any()) }
@@ -170,13 +152,8 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error shouldBe repositoryError
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    error shouldBe repositoryError
 
                     coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
                     coVerify(exactly = 0) { mockRepository.save(any()) }
@@ -200,13 +177,8 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error shouldBe UserPreferencesError.PreferencesNotInitialized()
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    error shouldBe UserPreferencesError.PreferencesNotInitialized()
                 }
             }
 
@@ -234,14 +206,9 @@ class GetCurrentUserPreferencesHandlerTest :
 
                     // Then - all should succeed with same preferences
                     results.forEach { result ->
-                        result.isRight() shouldBe true
-                        result.fold(
-                            { throw AssertionError("Expected Right but got Left: $it") },
-                            { dto ->
-                                dto.hierarchyPreferences.maxDepth shouldBe 5
-                                dto.hierarchyPreferences.maxChildrenPerScope shouldBe 15
-                            },
-                        )
+                        val dto = result.shouldBeRight()
+                        dto.hierarchyPreferences.maxDepth shouldBe 5
+                        dto.hierarchyPreferences.maxChildrenPerScope shouldBe 15
                     }
 
                     coVerify(exactly = 3) { mockRepository.findForCurrentUser() }
@@ -269,14 +236,9 @@ class GetCurrentUserPreferencesHandlerTest :
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
                     // Query object should not affect the result - it's a data object
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { dto ->
-                            dto shouldBe UserPreferencesInternalDto.from(userPreferences)
-                        },
-                    )
+                    val dto = result.shouldBeRight()
+                    dto shouldBe UserPreferencesInternalDto.from(userPreferences)
                 }
             }
         }
