@@ -242,22 +242,23 @@ class SqlDelightEventRepositoryTest :
                     }.getOrNull()!!
 
                     // Wait for clock to advance past the first event's stored time
-                    // This ensures a deterministic boundary between events
-                    while (Clock.System.now() <= firstStoredEvent.metadata.storedAt) {
-                        // Spin until clock advances
-                    }
-                    val timestampBetween = Clock.System.now()
+                    // Use a single loop with timestamp capture to avoid race conditions
+                    var timestampBetween: Instant
+                    do {
+                        timestampBetween = Clock.System.now()
+                    } while (timestampBetween <= firstStoredEvent.metadata.storedAt)
                     
                     // Wait again to ensure the second event is stored after timestampBetween
-                    while (Clock.System.now() <= timestampBetween) {
-                        // Spin until clock advances past our boundary
-                    }
+                    var secondEventTime: Instant
+                    do {
+                        secondEventTime = Clock.System.now()
+                    } while (secondEventTime <= timestampBetween)
 
                     val secondEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-                        occurredAt = Clock.System.now(),
+                        occurredAt = secondEventTime,
                         testData = "second event",
                     )
 
@@ -407,22 +408,23 @@ class SqlDelightEventRepositoryTest :
                     }.getOrNull()!!
 
                     // Wait for clock to advance past the old event's stored time
-                    // This ensures a deterministic boundary between events
-                    while (Clock.System.now() <= oldStoredEvent.metadata.storedAt) {
-                        // Spin until clock advances
-                    }
-                    val timestampBetween = Clock.System.now()
+                    // Use a single loop with timestamp capture to avoid race conditions
+                    var timestampBetween: Instant
+                    do {
+                        timestampBetween = Clock.System.now()
+                    } while (timestampBetween <= oldStoredEvent.metadata.storedAt)
                     
                     // Wait again to ensure the recent event is stored after timestampBetween
-                    while (Clock.System.now() <= timestampBetween) {
-                        // Spin until clock advances past our boundary
-                    }
+                    var recentEventTime: Instant
+                    do {
+                        recentEventTime = Clock.System.now()
+                    } while (recentEventTime <= timestampBetween)
 
                     val recentEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.fromUnsafe(2),
-                        occurredAt = Clock.System.now(),
+                        occurredAt = recentEventTime,
                         testData = "recent event",
                     )
 
