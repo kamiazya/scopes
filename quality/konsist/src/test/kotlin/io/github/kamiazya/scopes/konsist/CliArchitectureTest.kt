@@ -102,9 +102,20 @@ class CliArchitectureTest :
                 .files
                 .filter { it.name.contains("Command") }
                 .assertTrue { file ->
-                    // When echoing errors, should use err = true
-                    !file.text.contains(Regex("""echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*\)""")) ||
-                        file.text.contains("err = true")
+                    // Check that error/warning messages are properly routed to stderr
+                    // This regex matches echo statements with Error/Warning that DON'T have stderr routing
+                    val errorWithoutStderr = Regex(
+                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*\)"""
+                    )
+                    
+                    // This regex matches echo statements that DO have stderr routing
+                    val errorWithStderr = Regex(
+                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*(?:,\s*err(?:or)?\s*=\s*true|,\s*stderr\b|>\&2)\s*\)"""
+                    )
+                    
+                    // Either no error messages at all, or if there are, they must be routed to stderr
+                    !file.text.contains(errorWithoutStderr) || 
+                        file.text.contains(errorWithStderr)
                 }
         }
     })
