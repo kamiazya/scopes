@@ -16,6 +16,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
@@ -33,6 +34,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
 import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
@@ -43,6 +45,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAlias
 import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
@@ -77,6 +80,7 @@ class ScopeManagementPortAdapter(
     private val removeAliasHandler: RemoveAliasHandler,
     private val setCanonicalAliasHandler: SetCanonicalAliasHandler,
     private val renameAliasHandler: RenameAliasHandler,
+    private val filterScopesWithQueryHandler: FilterScopesWithQueryHandler,
     private val transactionManager: TransactionManager,
     private val logger: Logger = ConsoleLogger("ScopeManagementPortAdapter"),
 ) : ScopeManagementPort {
@@ -333,6 +337,31 @@ class ScopeManagementPortAdapter(
                 updatedAt = scope.updatedAt,
                 isArchived = false, // TODO: Add isArchived to ScopeDto when available
                 aspects = mapOf(), // Temporary: no aspects in current implementation
+            )
+        }
+    }
+
+    override suspend fun listScopesWithQuery(query: ListScopesWithQueryQuery): Either<ScopeContractError, List<ScopeResult>> = filterScopesWithQueryHandler(
+        FilterScopesWithQuery(
+            query = query.aspectQuery,
+            parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
+        ),
+    ).mapLeft { error ->
+        errorMapper.mapToContractError(error)
+    }.map { scopeDtos ->
+        scopeDtos.map { scopeDto ->
+            ScopeResult(
+                id = scopeDto.id,
+                title = scopeDto.title,
+                description = scopeDto.description,
+                parentId = scopeDto.parentId,
+                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
+                createdAt = scopeDto.createdAt,
+                updatedAt = scopeDto.updatedAt,
+                isArchived = false, // TODO: Add isArchived to ScopeDto when available
+                aspects = scopeDto.aspects,
             )
         }
     }

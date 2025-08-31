@@ -233,6 +233,38 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
+    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+        try {
+            val rows = database.scopeQueries.selectAll()
+                .executeAsList()
+                .drop(offset)
+                .take(limit)
+                .map { row -> rowToScope(row) }
+            rows.right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "findAll",
+                cause = e,
+            ).left()
+        }
+    }
+
+    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+        try {
+            val rows = database.scopeQueries.findRootScopes()
+                .executeAsList()
+                .map { row -> rowToScope(row) }
+            rows.right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "findAllRoot",
+                cause = e,
+            ).left()
+        }
+    }
+
     private fun rowToScope(row: io.github.kamiazya.scopes.scopemanagement.db.Scopes): Scope {
         val scopeId = ScopeId.create(row.id).fold(
             ifLeft = { throw IllegalStateException("Invalid scope id in database: $it") },

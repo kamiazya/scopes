@@ -14,6 +14,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -113,4 +114,12 @@ public interface ScopeManagementPort {
      * @return Either an error or the list of scopes matching the criteria
      */
     public suspend fun listScopesWithAspect(query: ListScopesWithAspectQuery): Either<ScopeContractError, List<ScopeResult>>
+
+    /**
+     * Lists scopes filtered by advanced aspect query.
+     * Supports comparison operators (=, !=, >, >=, <, <=) and logical operators (AND, OR, NOT).
+     * @param query The query containing the aspect query string
+     * @return Either an error or the list of scopes matching the query
+     */
+    public suspend fun listScopesWithQuery(query: ListScopesWithQueryQuery): Either<ScopeContractError, List<ScopeResult>>
 }

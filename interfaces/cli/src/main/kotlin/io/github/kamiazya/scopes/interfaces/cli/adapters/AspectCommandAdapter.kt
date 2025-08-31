@@ -1,0 +1,69 @@
+package io.github.kamiazya.scopes.interfaces.cli.adapters
+
+import arrow.core.Either
+import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.GetAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+
+/**
+ * Adapter for aspect-related CLI commands.
+ * Maps between CLI commands and application use cases.
+ */
+class AspectCommandAdapter(
+    private val defineAspectUseCase: DefineAspectUseCase,
+    private val getAspectDefinitionUseCase: GetAspectDefinitionUseCase,
+    private val updateAspectDefinitionUseCase: UpdateAspectDefinitionUseCase,
+    private val deleteAspectDefinitionUseCase: DeleteAspectDefinitionUseCase,
+    private val listAspectDefinitionsUseCase: ListAspectDefinitionsUseCase,
+    private val validateAspectValueUseCase: ValidateAspectValueUseCase,
+) {
+    /**
+     * Define a new aspect.
+     */
+    suspend fun defineAspect(key: String, description: String, type: AspectType): Either<ScopesError, AspectDefinition> = defineAspectUseCase.execute(
+        key = key,
+        description = description,
+        type = type,
+    )
+
+    /**
+     * Get an aspect definition by key.
+     */
+    suspend fun getAspectDefinition(key: String): Either<ScopesError, AspectDefinition?> = getAspectDefinitionUseCase.execute(key)
+
+    /**
+     * Update an aspect definition.
+     */
+    suspend fun updateAspectDefinition(key: String, description: String? = null): Either<ScopesError, AspectDefinition> = updateAspectDefinitionUseCase.execute(
+        key = key,
+        description = description,
+    )
+
+    /**
+     * Delete an aspect definition.
+     */
+    suspend fun deleteAspectDefinition(key: String): Either<ScopesError, Unit> = deleteAspectDefinitionUseCase.execute(key)
+
+    /**
+     * List all aspect definitions.
+     */
+    suspend fun listAspectDefinitions(): Either<ScopesError, List<AspectDefinition>> = listAspectDefinitionsUseCase.execute()
+
+    /**
+     * Validate aspect values against their definitions.
+     */
+    suspend fun validateAspectValue(key: String, values: List<String>): Either<ScopesError, List<AspectValue>> = if (values.size == 1) {
+        validateAspectValueUseCase.execute(key, values.first()).map { listOf(it) }
+    } else {
+        validateAspectValueUseCase.executeMultiple(mapOf(key to values)).map {
+            it.values.first()
+        }
+    }
+}

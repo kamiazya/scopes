@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQu
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -143,6 +144,24 @@ class ScopeCommandAdapter(
             limit = limit,
         )
         return scopeManagementPort.listScopesWithAspect(query)
+    }
+
+    /**
+     * Lists scopes filtered by advanced aspect query
+     */
+    suspend fun listScopesWithQuery(
+        aspectQuery: String,
+        parentId: String? = null,
+        offset: Int = 0,
+        limit: Int = 20,
+    ): Either<ScopeContractError, List<ScopeResult>> {
+        val query = ListScopesWithQueryQuery(
+            aspectQuery = aspectQuery,
+            parentId = parentId,
+            offset = offset,
+            limit = limit,
+        )
+        return scopeManagementPort.listScopesWithQuery(query)
     }
 
     /**

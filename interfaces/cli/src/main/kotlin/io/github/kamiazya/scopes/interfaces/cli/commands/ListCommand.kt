@@ -33,9 +33,16 @@ class ListCommand :
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
     private val aspect by option("-a", "--aspect", help = "Filter by aspect (format: key=value)")
+    private val query by option("-q", "--query", help = "Filter by advanced query (e.g., 'priority>=high AND status!=closed')")
 
     override fun run() {
         runBlocking {
+            // Check for conflicting options
+            if (aspect != null && query != null) {
+                echo("Error: Cannot use both --aspect and --query options", err = true)
+                return@runBlocking
+            }
+
             // Parse aspect filter if provided
             val (aspectKey, aspectValue) = if (aspect != null) {
                 val parts = aspect!!.split("=", limit = 2)
@@ -49,6 +56,26 @@ class ListCommand :
             }
 
             when {
+                query != null -> {
+                    // Use advanced query filtering
+                    scopeCommandAdapter.listScopesWithQuery(
+                        aspectQuery = query!!,
+                        parentId = parentId,
+                        offset = offset,
+                        limit = limit,
+                    ).fold(
+                        { error ->
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                        },
+                        { scopes ->
+                            if (verbose) {
+                                echo(formatVerboseList(scopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                            }
+                        },
+                    )
+                }
                 aspect != null -> {
                     // Use aspect filtering
                     scopeCommandAdapter.listScopesWithAspect(

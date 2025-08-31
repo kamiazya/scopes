@@ -157,17 +157,67 @@ brave-star-e5n3     Optimize database queries       priority=high status=ready
 
 ### Aspect Definitions
 ```bash
-# Define ordered aspect
-$ scopes aspect define priority --type ordered --values low,medium,high
-✓ Defined aspect 'priority' (ordered): low < medium < high
+# Define text aspect (default)
+$ scopes aspect define description --type text
+✓ Defined aspect 'description' (text): any text value
+
+# Define numeric aspect
+$ scopes aspect define estimate --type numeric
+✓ Defined aspect 'estimate' (numeric): numeric values only
+
+# Define boolean aspect
+$ scopes aspect define completed --type boolean
+✓ Defined aspect 'completed' (boolean): true/false, yes/no, 1/0
+
+# Define ordered aspect with custom values
+$ scopes aspect define priority --type ordered --values low,medium,high,critical
+✓ Defined aspect 'priority' (ordered): low < medium < high < critical
+
+# Define duration aspect (ISO 8601 format)
+$ scopes aspect define timeSpent --type duration
+✓ Defined aspect 'timeSpent' (duration): ISO 8601 durations (P1D, PT2H30M, etc.)
 
 # List all aspect definitions
-$ scopes aspect list --definitions
-Defined aspects:
-- priority (ordered): low < medium < high
-- status (text): any text value
-- complexity (ordered): low < medium < high < large
-- estimate (duration): time values (1h, 2d, etc.)
+$ scopes aspect definitions
+Aspect Definitions:
+
+• priority - Task priority level
+  Type: Ordered (4 values)
+
+• status - Task status
+  Type: Text
+
+• type - Task type classification
+  Type: Text
+
+• completed - Completion status
+  Type: Boolean (true/false, yes/no, 1/0)
+
+• estimate - Estimated effort
+  Type: Numeric
+
+• timeSpent - Time spent on task
+  Type: Duration (ISO 8601)
+
+# Show specific aspect definition
+$ scopes aspect show priority
+Aspect Definition: priority
+Description: Task priority level
+Type: Ordered
+Values: low < medium < high < critical
+Allow Multiple: No
+Created: 2025-01-15 10:30:00
+
+# Update aspect definition
+$ scopes aspect update priority --description "Updated priority levels"
+✓ Updated aspect definition 'priority':
+    Description: Updated priority levels
+
+# Delete aspect definition (with confirmation)
+$ scopes aspect delete old-aspect
+Warning: This will delete the aspect definition 'old-aspect' and remove it from all scopes.
+Type 'yes' to confirm: yes
+✓ Deleted aspect definition 'old-aspect'
 ```
 
 ## Context Management (Named Views)
@@ -367,15 +417,100 @@ scopes context create "auth-work" --filter "parent=auth-system OR alias=auth-sys
 ```
 
 ### Advanced Filtering
-```bash
-# Complex aspect queries
-scopes list -a "priority>=medium AND estimate<=8h AND status!=done"
-scopes list -a "blocked=false AND (type=feature OR type=bug)"
 
-# Combined context and focus
-scopes context switch sprint-current
-scopes focus high-priority-items --recursive
-scopes list                           # Shows intersection of both filters
+#### Query Operators
+- **Comparison**: `=`, `!=`, `<`, `>`, `<=`, `>=`
+- **Logical**: `AND`, `OR`, `NOT`
+- **Grouping**: `(` and `)` for precedence
+
+#### Type-Specific Queries
+```bash
+# Text comparisons (case-sensitive)
+$ scopes list -a 'status="in-progress"'
+$ scopes list -a 'description!="legacy code"'
+
+# Numeric comparisons
+$ scopes list -a "estimate>=5"
+$ scopes list -a "storyPoints<8"
+
+# Boolean comparisons
+$ scopes list -a "completed=true"
+$ scopes list -a "blocked!=yes"
+
+# Ordered aspect comparisons (based on defined order)
+$ scopes list -a "priority>=medium"        # medium, high, critical
+$ scopes list -a "priority<high"           # low, medium
+
+# Duration comparisons (ISO 8601 format)
+$ scopes list -a "timeSpent>PT2H"          # More than 2 hours
+$ scopes list -a "estimatedTime<=P1D"      # Less than or equal to 1 day
+$ scopes list -a "actualTime>=P1W"         # Greater than or equal to 1 week
+```
+
+#### Complex Logical Queries
+```bash
+# Multiple conditions with AND
+$ scopes list -a "priority>=medium AND estimate<=8h AND status!=done"
+
+# Alternative conditions with OR
+$ scopes list -a "blocked=false OR priority=critical"
+
+# Negation with NOT
+$ scopes list -a "NOT (status=done OR status=cancelled)"
+
+# Complex grouping with parentheses
+$ scopes list -a "(priority=high OR priority=critical) AND estimate<=P3D"
+$ scopes list -a "NOT (completed=true) AND (type=feature OR type=bug)"
+
+# Nested logical expressions
+$ scopes list -a "((priority>=high AND estimate<=PT4H) OR type=hotfix) AND NOT blocked=true"
+```
+
+#### Duration Format Examples
+```bash
+# Basic durations
+"PT30M"     # 30 minutes
+"PT2H"      # 2 hours  
+"P1D"       # 1 day
+"P1W"       # 1 week
+
+# Combined durations
+"P1DT2H30M" # 1 day, 2 hours, 30 minutes
+"P2DT3H4M"  # 2 days, 3 hours, 4 minutes
+
+# Query examples
+$ scopes list -a "estimatedTime<PT4H"               # Less than 4 hours
+$ scopes list -a "actualTime>=P1D AND actualTime<=P1W" # Between 1 day and 1 week
+```
+
+#### Query Validation
+```bash
+# Invalid syntax examples (will show helpful errors)
+$ scopes list -a "priority=>high"          # Invalid operator
+Error: Invalid operator '=>' in query. Use '>=' instead.
+
+$ scopes list -a "priority=high AND"       # Incomplete expression
+Error: Incomplete logical expression after 'AND'
+
+$ scopes list -a "(priority=high"          # Unmatched parentheses
+Error: Unmatched opening parenthesis in query
+
+$ scopes list -a "unknownField=value"      # Undefined aspect
+Warning: Aspect 'unknownField' is not defined. Query will match no scopes.
+```
+
+#### Combined Context and Focus
+```bash
+# Apply context filter first, then additional query
+$ scopes context switch sprint-current
+$ scopes focus high-priority-items --recursive
+$ scopes list -a "NOT completed=true"      # Shows intersection of all filters
+[FOCUS: high-priority-items (recursive)] [CONTEXT: sprint-current]
+
+Found 8 scopes matching query 'NOT completed=true':
+auth-feature         Implement authentication      priority=high status=in-progress
+login-ui            Design login interface        priority=medium status=ready
+password-val        Add password validation       priority=high status=ready
 ```
 
 ## Tab Completion
