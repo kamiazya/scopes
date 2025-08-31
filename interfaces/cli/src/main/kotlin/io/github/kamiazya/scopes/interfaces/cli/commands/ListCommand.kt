@@ -40,9 +40,7 @@ class ListCommand :
         "-a",
         "--aspect",
         help = "Filter by aspect (format: key:value). Can be specified multiple times.",
-        completionCandidates = CompletionCandidates.Custom.fromStdout(
-            "scopes", "_complete-aspects",
-        ),
+        completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
     ).multiple()
 
     override fun run() {

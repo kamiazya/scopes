@@ -10,10 +10,10 @@ The Scopes CLI uses Clikt's built-in completion support. You can generate comple
 
 ```bash
 # Generate bash completion script
-scopes --generate-completion bash > scopes-completion.bash
+scopes --generate-completion bash > ~/scopes-completion.bash
 
 # Source it in your current session
-source scopes-completion.bash
+source ~/scopes-completion.bash
 
 # To make it permanent, add to your ~/.bashrc:
 echo "source ~/scopes-completion.bash" >> ~/.bashrc
@@ -102,7 +102,7 @@ scopes list -a priority:high -a status:active
 If no aspect suggestions appear, it might be because:
 - No scopes with aspects exist in the database
 - Database connection issues
-- The `_complete-aspects` command encounters an error (the command is silent by design; run it directly to verify output)
+- The `_complete-aspects` command encounters an error (the command is silent by design; run it directly to verify output or check application logs)
 
 ## Implementation Details
 
