@@ -23,7 +23,7 @@ class AspectCommandTest :
                 val command = AspectCommand().configureSubcommands()
                 val subcommandNames = command.registeredSubcommands().map { it.commandName }
 
-                subcommandNames shouldBe listOf("set", "list", "remove")
+                subcommandNames shouldBe listOf("define", "show", "edit", "rm", "definitions", "validate", "set", "list", "remove")
             }
         }
     })

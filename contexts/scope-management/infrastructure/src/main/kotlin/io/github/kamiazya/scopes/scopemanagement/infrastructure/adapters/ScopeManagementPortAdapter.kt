@@ -306,39 +306,16 @@ class ScopeManagementPortAdapter(
         errorMapper.mapToContractError(error)
     }
 
-    override suspend fun listScopesWithAspect(query: ListScopesWithAspectQuery): Either<ScopeContractError, List<ScopeResult>> = either {
-        // For now, we'll implement a simple temporary filter using description field
-        // This will be replaced with proper aspect filtering in later tasks
-        val allScopes = if (query.parentId != null) {
-            getChildrenHandler(GetChildren(query.parentId)).fold(
-                { error -> raise(errorMapper.mapToContractError(error)) },
-                { scopes -> scopes },
-            )
-        } else {
-            getRootScopesHandler(GetRootScopes(offset = query.offset, limit = query.limit)).fold(
-                { error -> raise(errorMapper.mapToContractError(error)) },
-                { scopes -> scopes },
-            )
-        }
-
-        // Temporary implementation: filter scopes by checking description field
-        val filteredScopes = allScopes.filter { scope ->
-            scope.description?.contains("${query.aspectKey}=${query.aspectValue}") == true
-        }
-
-        filteredScopes.map { scope ->
-            ScopeResult(
-                id = scope.id,
-                title = scope.title,
-                description = scope.description,
-                parentId = scope.parentId,
-                canonicalAlias = scope.canonicalAlias ?: scope.id,
-                createdAt = scope.createdAt,
-                updatedAt = scope.updatedAt,
-                isArchived = false, // TODO: Add isArchived to ScopeDto when available
-                aspects = mapOf(), // Temporary: no aspects in current implementation
-            )
-        }
+    override suspend fun listScopesWithAspect(query: ListScopesWithAspectQuery): Either<ScopeContractError, List<ScopeResult>> {
+        // Construct a query string and delegate to the new query handler
+        val aspectQuery = "\"${query.aspectKey}\"=\"${query.aspectValue}\""
+        val listQuery = ListScopesWithQueryQuery(
+            aspectQuery = aspectQuery,
+            parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
+        )
+        return listScopesWithQuery(listQuery)
     }
 
     override suspend fun listScopesWithQuery(query: ListScopesWithQueryQuery): Either<ScopeContractError, List<ScopeResult>> = filterScopesWithQueryHandler(

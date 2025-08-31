@@ -193,13 +193,13 @@ sealed class AspectQueryAST {
     ) : AspectQueryAST()
 }
 
-enum class ComparisonOperator {
-    EQ,    // =
-    NE,    // !=
-    LT,    // <
-    LE,    // <=
-    GT,    // >
-    GE     // >=
+enum class ComparisonOperator(val symbol: String) {
+    EQUALS("="),
+    NOT_EQUALS("!="),
+    GREATER_THAN(">"),
+    GREATER_THAN_OR_EQUALS(">="),
+    LESS_THAN("<"),
+    LESS_THAN_OR_EQUALS("<=")
 }
 ```
 

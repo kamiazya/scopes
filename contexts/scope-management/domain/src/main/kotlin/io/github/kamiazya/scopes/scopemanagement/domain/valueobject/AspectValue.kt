@@ -80,40 +80,66 @@ value class AspectValue private constructor(val value: String) {
      */
     private fun parseISO8601Duration(iso8601: String): Duration {
         require(iso8601.startsWith("P")) { "ISO 8601 duration must start with 'P'" }
+        require(iso8601.length > 1) { "ISO 8601 duration must contain at least one component" }
 
-        var remaining = iso8601.substring(1)
+        // Split into date and time parts
+        val parts = iso8601.substring(1).split("T", limit = 2)
+        val datePart = parts[0]
+        val timePart = parts.getOrNull(1) ?: ""
+
         var totalSeconds = 0L
-        var inTimeSection = false
 
-        val regex = Regex("(\\d+)([WDTHMS])")
+        // Parse date part (before T)
+        if (datePart.isNotEmpty()) {
+            val dateRegex = Regex("(\\d+)([YMD])")
+            var lastUnit = '@' // Use @ as a marker that's lexicographically before all valid units
 
-        for (match in regex.findAll(remaining)) {
-            val amount = match.groupValues[1].toLong()
-            val unit = match.groupValues[2]
+            for (match in dateRegex.findAll(datePart)) {
+                val amount = match.groupValues[1].toLong()
+                val unit = match.groupValues[2][0]
 
-            when (unit) {
-                "W" -> totalSeconds += amount * 7 * 24 * 60 * 60
-                "D" -> totalSeconds += amount * 24 * 60 * 60
-                "T" -> inTimeSection = true
-                "H" -> {
-                    require(inTimeSection) { "Hours must come after 'T' in ISO 8601 duration" }
-                    totalSeconds += amount * 60 * 60
-                }
-                "M" -> {
-                    if (inTimeSection) {
-                        totalSeconds += amount * 60
-                    } else {
-                        // Months are not supported for simplicity
-                        throw IllegalArgumentException("Month durations are not supported")
-                    }
-                }
-                "S" -> {
-                    require(inTimeSection) { "Seconds must come after 'T' in ISO 8601 duration" }
-                    totalSeconds += amount
+                // Validate order: Y must come before M, M before D
+                require(unit > lastUnit) { "Invalid ISO 8601 duration: $unit must come after $lastUnit" }
+                lastUnit = unit
+
+                when (unit) {
+                    'Y' -> throw IllegalArgumentException("Year durations are not supported")
+                    'M' -> throw IllegalArgumentException("Month durations are not supported")
+                    'D' -> totalSeconds += amount * 24 * 60 * 60
                 }
             }
         }
 
+        // Handle week format (PnW must be alone, no other components allowed)
+        val weekMatch = Regex("^(\\d+)W$").matchEntire(iso8601.substring(1))
+        if (weekMatch != null) {
+            require(datePart.isEmpty() && timePart.isEmpty()) { "Week duration cannot be combined with other components" }
+            val weeks = weekMatch.groupValues[1].toLong()
+            return (weeks * 7 * 24 * 60 * 60).seconds
+        }
+
+        // Parse time part (after T)
+        if (timePart.isNotEmpty()) {
+            val timeRegex = Regex("(\\d+(?:\\.\\d+)?)([HMS])")
+            var lastUnit = '@'
+
+            for (match in timeRegex.findAll(timePart)) {
+                val amount = match.groupValues[1].toDouble()
+                val unit = match.groupValues[2][0]
+
+                // Validate order: H must come before M, M before S
+                require(unit > lastUnit) { "Invalid ISO 8601 duration: $unit must come after $lastUnit in time part" }
+                lastUnit = unit
+
+                when (unit) {
+                    'H' -> totalSeconds += (amount * 60 * 60).toLong()
+                    'M' -> totalSeconds += (amount * 60).toLong()
+                    'S' -> totalSeconds += amount.toLong()
+                }
+            }
+        }
+
+        require(totalSeconds > 0) { "ISO 8601 duration must specify at least one non-zero component" }
         return totalSeconds.seconds
     }
 

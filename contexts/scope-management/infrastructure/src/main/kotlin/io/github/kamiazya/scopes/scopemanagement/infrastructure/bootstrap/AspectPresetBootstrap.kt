@@ -25,9 +25,9 @@ class AspectPresetBootstrap(private val aspectDefinitionRepository: AspectDefini
 
         // Define standard presets
         val presets = listOf(
-            createPriorityPreset(),
-            createStatusPreset(),
-            createTypePreset(),
+            createPriorityPreset().bind(),
+            createStatusPreset().bind(),
+            createTypePreset().bind(),
         )
 
         // Save each preset if it doesn't already exist
@@ -48,7 +48,7 @@ class AspectPresetBootstrap(private val aspectDefinitionRepository: AspectDefini
         logger.info("Aspect preset initialization completed")
     }
 
-    private suspend fun createPriorityPreset(): AspectDefinition = either<ScopesError, AspectDefinition> {
+    private fun createPriorityPreset(): Either<ScopesError, AspectDefinition> = either {
         val key = AspectKey.create("priority").bind()
         val values = listOf(
             AspectValue.create("low").bind(),
@@ -61,25 +61,25 @@ class AspectPresetBootstrap(private val aspectDefinitionRepository: AspectDefini
             description = "Task priority level",
             allowMultiple = false,
         ).bind()
-    }.getOrNull()!!
+    }
 
-    private suspend fun createStatusPreset(): AspectDefinition = either<ScopesError, AspectDefinition> {
+    private fun createStatusPreset(): Either<ScopesError, AspectDefinition> = either {
         val key = AspectKey.create("status").bind()
         AspectDefinition.createText(
             key = key,
             description = "Task status",
             allowMultiple = false,
         )
-    }.getOrNull()!!
+    }
 
-    private suspend fun createTypePreset(): AspectDefinition = either<ScopesError, AspectDefinition> {
+    private fun createTypePreset(): Either<ScopesError, AspectDefinition> = either {
         val key = AspectKey.create("type").bind()
         AspectDefinition.createText(
             key = key,
             description = "Task type classification",
             allowMultiple = false,
         )
-    }.getOrNull()!!
+    }
 
     companion object {
         // Standard preset values - these can be used as reference throughout the application

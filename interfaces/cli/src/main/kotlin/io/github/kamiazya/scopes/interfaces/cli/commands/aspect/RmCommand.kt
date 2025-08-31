@@ -29,8 +29,12 @@ class RmCommand :
             // Confirm deletion unless --force is used
             if (!force) {
                 echo("Are you sure you want to remove aspect '$key'? This action cannot be undone.")
-                echo("Use --force to skip this confirmation.")
-                return@runBlocking
+                echo("Type 'yes' to confirm, or anything else to cancel:")
+                val response = readLine()
+                if (response?.lowercase() != "yes") {
+                    echo("Deletion cancelled.")
+                    return@runBlocking
+                }
             }
 
             aspectCommandAdapter.deleteAspectDefinition(key).fold(

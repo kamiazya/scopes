@@ -27,13 +27,12 @@ class UpdateAspectDefinitionUseCase(private val aspectDefinitionRepository: Aspe
                 },
             )
 
-            // Update only the description for now
-            // Changing type would require data migration
-            val updated = if (description != null && description != existing.description) {
-                existing.copy(description = description)
-            } else {
-                existing
+            // Update only if description is provided and different
+            if (description == null || description == existing.description) {
+                return@either existing
             }
+
+            val updated = existing.copy(description = description)
 
             // Save updated definition
             aspectDefinitionRepository.save(updated).fold(

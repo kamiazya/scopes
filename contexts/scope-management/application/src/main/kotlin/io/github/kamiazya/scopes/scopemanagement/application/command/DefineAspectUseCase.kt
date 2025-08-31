@@ -21,7 +21,7 @@ class DefineAspectUseCase(private val aspectDefinitionRepository: AspectDefiniti
 
             // Check if aspect already exists
             aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { /* Error or not found - proceed */ },
+                { error -> raise(ScopesError.SystemError("Failed to check for existing aspect: $error")) },
                 { existing ->
                     if (existing != null) {
                         raise(ScopesError.AlreadyExists("Aspect definition with key '$key' already exists"))
