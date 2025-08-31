@@ -30,14 +30,12 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
         logger.debug(
             "Found root scopes",
             mapOf(
-                "totalCount" to rootScopes.size.toString(),
+                "pageSize" to rootScopes.size.toString(),
             ),
         )
 
         // Convert to DTOs
-        val result = rootScopes.map { scope ->
-            ScopeMapper.toDto(scope)
-        }
+        val result = rootScopes.map(ScopeMapper::toDto)
 
         logger.info(
             "Retrieved root scopes successfully",

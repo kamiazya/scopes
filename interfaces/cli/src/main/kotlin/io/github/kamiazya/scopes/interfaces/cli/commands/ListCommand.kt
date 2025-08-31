@@ -45,6 +45,16 @@ class ListCommand :
 
     override fun run() {
         runBlocking {
+            // Validate pagination inputs
+            if (offset < 0) {
+                echo("Error: offset must be >= 0", err = true)
+                return@runBlocking
+            }
+            if (limit !in 1..1000) {
+                echo("Error: limit must be in 1..1000", err = true)
+                return@runBlocking
+            }
+
             // Parse aspect filters
             val aspectFilters = aspects.mapNotNull { aspectStr ->
                 val parts = aspectStr.split(":", limit = 2)
@@ -75,6 +85,9 @@ class ListCommand :
                             } else {
                                 scopes
                             }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
+                            }
 
                             if (verbose) {
                                 // Fetch aliases for each scope and display verbosely
@@ -96,6 +109,9 @@ class ListCommand :
                             } else {
                                 scopes
                             }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
+                            }
 
                             if (verbose) {
                                 echo(formatVerboseList(filteredScopes, debugContext))
@@ -116,6 +132,9 @@ class ListCommand :
                                 filterByAspects(scopes, aspectFilters)
                             } else {
                                 scopes
+                            }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
                             }
 
                             if (verbose) {

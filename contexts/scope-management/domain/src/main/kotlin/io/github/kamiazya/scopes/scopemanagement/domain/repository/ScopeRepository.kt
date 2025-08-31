@@ -31,6 +31,7 @@ interface ScopeRepository {
     /**
      * Find scopes by parent ID.
      */
+    @Deprecated("Use paginated overload to avoid full scans; will be removed in a future release.")
     suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
 
     /**

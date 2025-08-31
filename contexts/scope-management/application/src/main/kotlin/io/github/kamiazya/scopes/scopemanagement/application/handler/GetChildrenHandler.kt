@@ -37,14 +37,12 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             "Found children",
             mapOf(
                 "parentId" to (parentId?.value ?: "root"),
-                "totalCount" to children.size.toString(),
+                "pageSize" to children.size.toString(),
             ),
         )
 
         // Convert to DTOs
-        val result = children.map { scope ->
-            ScopeMapper.toDto(scope)
-        }
+        val result = children.map(ScopeMapper::toDto)
 
         logger.info(
             "Retrieved children successfully",
