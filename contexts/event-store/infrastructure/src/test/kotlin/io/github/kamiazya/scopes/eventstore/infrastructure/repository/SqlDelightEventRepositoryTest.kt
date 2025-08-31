@@ -6,9 +6,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.domain.entity.PersistedEventRecord
 import io.github.kamiazya.scopes.eventstore.domain.error.EventStoreError
-import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventMetadata
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventType
-import io.github.kamiazya.scopes.eventstore.infrastructure.sqldelight.SqlDelightDatabaseProvider
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
@@ -23,8 +21,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 // Test domain event for testing
@@ -43,7 +39,7 @@ class MockEventSerializer : EventSerializer {
     var deserializeError: EventStoreError? = null
 
     override fun serialize(event: DomainEvent): Either<EventStoreError.InvalidEventError, String> {
-        serializeError?.let { 
+        serializeError?.let {
             return if (it is EventStoreError.InvalidEventError) {
                 it.left()
             } else {
@@ -53,9 +49,9 @@ class MockEventSerializer : EventSerializer {
                         EventStoreError.ValidationIssue(
                             field = "serialization",
                             rule = EventStoreError.ValidationRule.INVALID_TYPE,
-                            actualValue = "Serialization error"
-                        )
-                    )
+                            actualValue = "Serialization error",
+                        ),
+                    ),
                 ).left()
             }
         }
@@ -66,7 +62,7 @@ class MockEventSerializer : EventSerializer {
     }
 
     override fun deserialize(eventType: String, eventData: String): Either<EventStoreError.InvalidEventError, DomainEvent> {
-        deserializeError?.let { 
+        deserializeError?.let {
             return if (it is EventStoreError.InvalidEventError) {
                 it.left()
             } else {
@@ -76,9 +72,9 @@ class MockEventSerializer : EventSerializer {
                         EventStoreError.ValidationIssue(
                             field = "deserialization",
                             rule = EventStoreError.ValidationRule.INVALID_TYPE,
-                            actualValue = "Deserialization error"
-                        )
-                    )
+                            actualValue = "Deserialization error",
+                        ),
+                    ),
                 ).left()
             }
         }
@@ -244,7 +240,7 @@ class SqlDelightEventRepositoryTest :
                     runBlocking {
                         repository.store(firstEvent)
                     }
-                    
+
                     // Wait a bit to ensure different stored_at timestamps
                     Thread.sleep(100)
                     val timestampBetween = Clock.System.now()
@@ -401,7 +397,7 @@ class SqlDelightEventRepositoryTest :
                     runBlocking {
                         repository.store(oldEvent)
                     }
-                    
+
                     Thread.sleep(100) // Ensure different stored_at timestamps
                     val timestampBetween = Clock.System.now()
                     Thread.sleep(100)
@@ -530,7 +526,7 @@ class SqlDelightEventRepositoryTest :
                     runBlocking {
                         listOf(events[2], events[0], events[4], events[1], events[3]).forEach { event ->
                             val storeResult = repository.store(event)
-                            storeResult.isRight() shouldBe true  // Ensure each event is stored successfully
+                            storeResult.isRight() shouldBe true // Ensure each event is stored successfully
                         }
                     }
 

@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
-import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
@@ -14,7 +13,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 
 class SqlDelightScopeAliasRepositoryTest :
     DescribeSpec({

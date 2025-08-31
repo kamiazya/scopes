@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
-import arrow.core.NonEmptyList
-import arrow.core.left
 import arrow.core.nonEmptyListOf
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
@@ -646,7 +644,20 @@ class SqlDelightScopeRepositoryTest :
 
                     // When/Then - Test all operations return proper errors
                     val operations = listOf(
-                        runBlocking { repository.save(Scope(ScopeId.generate(), ScopeTitle.create("Test").getOrNull()!!, null, null, ScopeStatus.default(), Clock.System.now(), Clock.System.now(), Aspects.empty())) },
+                        runBlocking {
+                            repository.save(
+                                Scope(
+                                    ScopeId.generate(),
+                                    ScopeTitle.create("Test").getOrNull()!!,
+                                    null,
+                                    null,
+                                    ScopeStatus.default(),
+                                    Clock.System.now(),
+                                    Clock.System.now(),
+                                    Aspects.empty(),
+                                ),
+                            )
+                        },
                         runBlocking { repository.findById(ScopeId.generate()) },
                         runBlocking { repository.findAll() },
                         runBlocking { repository.findByParentId(null) },
