@@ -42,11 +42,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCanonicalAlias(scopeId, aliasName)
 
-                result.shouldBeRight().let { alias ->
-                    alias.scopeId shouldBe scopeId
-                    alias.aliasName shouldBe aliasName
-                    alias.aliasType shouldBe AliasType.CANONICAL
-                }
+                val alias = result.shouldBeRight()
+                alias.scopeId shouldBe scopeId
+                alias.aliasName shouldBe aliasName
+                alias.aliasType shouldBe AliasType.CANONICAL
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -63,12 +62,11 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCanonicalAlias(scopeId, aliasName)
 
-                result.shouldBeLeft().let { error ->
-                    error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
-                    error.aliasName shouldBe aliasName.value
-                    error.existingScopeId shouldBe otherScopeId
-                    error.attemptedScopeId shouldBe scopeId
-                }
+                val error = result.shouldBeLeft()
+                error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
+                error.aliasName shouldBe aliasName.value
+                error.existingScopeId shouldBe otherScopeId
+                error.attemptedScopeId shouldBe scopeId
             }
         }
 
@@ -79,11 +77,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCustomAlias(scopeId, aliasName)
 
-                result.shouldBeRight().let { alias ->
-                    alias.scopeId shouldBe scopeId
-                    alias.aliasName shouldBe aliasName
-                    alias.aliasType shouldBe AliasType.CUSTOM
-                }
+                val alias = result.shouldBeRight()
+                alias.scopeId shouldBe scopeId
+                alias.aliasName shouldBe aliasName
+                alias.aliasType shouldBe AliasType.CUSTOM
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -98,10 +95,9 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.assignCustomAlias(scopeId, aliasName)
 
-                result.shouldBeLeft().let { error ->
-                    error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
-                    error.aliasName shouldBe aliasName.value
-                }
+                val error = result.shouldBeLeft()
+                error.shouldBeInstanceOf<ScopeAliasError.DuplicateAlias>()
+                error.aliasName shouldBe aliasName.value
             }
         }
 
@@ -116,11 +112,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.generateCanonicalAlias(scopeId)
 
-                result.shouldBeRight().let { alias ->
-                    alias.scopeId shouldBe scopeId
-                    alias.aliasName shouldBe generatedName
-                    alias.aliasType shouldBe AliasType.CANONICAL
-                }
+                val alias = result.shouldBeRight()
+                alias.scopeId shouldBe scopeId
+                alias.aliasName shouldBe generatedName
+                alias.aliasType shouldBe AliasType.CANONICAL
 
                 verify(exactly = 1) {
                     aliasGenerationService.generateCanonicalAlias(any())
@@ -142,11 +137,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.generateCanonicalAlias(scopeId, maxRetries = 3)
 
-                result.shouldBeLeft().let { error ->
-                    error.shouldBeInstanceOf<ScopeAliasError.AliasGenerationFailed>()
-                    error.scopeId shouldBe scopeId
-                    error.retryCount shouldBe 3
-                }
+                val error = result.shouldBeLeft()
+                error.shouldBeInstanceOf<ScopeAliasError.AliasGenerationFailed>()
+                error.scopeId shouldBe scopeId
+                error.retryCount shouldBe 3
 
                 verify(exactly = 3) {
                     aliasGenerationService.generateCanonicalAlias(any())
@@ -166,9 +160,8 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.shouldBeRight().let { alias ->
-                    alias shouldBe customAlias
-                }
+                val alias = result.shouldBeRight()
+                alias shouldBe customAlias
 
                 coVerify(exactly = 1) {
                     aliasRepository.findByAliasName(aliasName)
@@ -183,11 +176,10 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.shouldBeLeft().let { error ->
-                    error.shouldBeInstanceOf<ScopeAliasError.CannotRemoveCanonicalAlias>()
-                    error.scopeId shouldBe scopeId
-                    error.aliasName shouldBe aliasName.value
-                }
+                val error = result.shouldBeLeft()
+                error.shouldBeInstanceOf<ScopeAliasError.CannotRemoveCanonicalAlias>()
+                error.scopeId shouldBe scopeId
+                error.aliasName shouldBe aliasName.value
             }
 
             it("should fail when alias not found") {
@@ -195,10 +187,9 @@ class ScopeAliasManagementServiceTest :
 
                 val result = service.removeAlias(aliasName)
 
-                result.shouldBeLeft().let { error ->
-                    error.shouldBeInstanceOf<ScopeAliasError.AliasNotFound>()
-                    error.aliasName shouldBe aliasName.value
-                }
+                val error = result.shouldBeLeft()
+                error.shouldBeInstanceOf<ScopeAliasError.AliasNotFound>()
+                error.aliasName shouldBe aliasName.value
             }
         }
     })

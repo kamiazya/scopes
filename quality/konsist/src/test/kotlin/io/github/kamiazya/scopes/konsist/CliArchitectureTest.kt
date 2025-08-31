@@ -42,16 +42,16 @@ class CliArchitectureTest :
                 .filter { it.text.contains("aspectFilters") }
                 .assertTrue { file ->
                     val whenBlocks = file.text.split("when").drop(1) // Get all when block contents
-                    
+
                     // Check that if any branch applies filtering, all branches should
                     val branchesWithFiltering = whenBlocks.count { block ->
                         block.contains("filterByAspects") || block.contains("filteredScopes")
                     }
-                    
+
                     val totalBranches = whenBlocks.count { block ->
                         block.contains("scopes ->") // Pattern for scope processing
                     }
-                    
+
                     // If filtering exists, it should be in all branches
                     branchesWithFiltering == 0 || branchesWithFiltering == totalBranches
                 }
@@ -105,16 +105,16 @@ class CliArchitectureTest :
                     // Check that error/warning messages are properly routed to stderr
                     // This regex matches echo statements with Error/Warning that DON'T have stderr routing
                     val errorWithoutStderr = Regex(
-                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*\)"""
+                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*\)""",
                     )
-                    
+
                     // This regex matches echo statements that DO have stderr routing
                     val errorWithStderr = Regex(
-                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*(?:,\s*err(?:or)?\s*=\s*true|,\s*stderr\b|>\&2)\s*\)"""
+                        """echo\s*\(\s*"(?:Error|Warning)[^"]*"\s*(?:,\s*err(?:or)?\s*=\s*true|,\s*stderr\b|>\&2)\s*\)""",
                     )
-                    
+
                     // Either no error messages at all, or if there are, they must be routed to stderr
-                    !file.text.contains(errorWithoutStderr) || 
+                    !file.text.contains(errorWithoutStderr) ||
                         file.text.contains(errorWithStderr)
                 }
         }

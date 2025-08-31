@@ -8,8 +8,11 @@ import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
 import io.github.kamiazya.scopes.userpreferences.infrastructure.config.UserPreferencesConfig
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.clearAllMocks
@@ -101,7 +104,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     // Verify file was created and contains correct JSON
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
@@ -137,7 +140,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
                     val jsonContent = configFile.readText()
@@ -167,7 +170,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
                     val jsonContent = configFile.readText()
@@ -191,13 +194,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error shouldBe UserPreferencesError.PreferencesNotInitialized()
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    error shouldBe UserPreferencesError.PreferencesNotInitialized()
                 }
 
                 it("should update cache after successful save") {
@@ -223,14 +221,12 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then - subsequent findForCurrentUser should return cached value without file I/O
                     val result = runBlocking { repository.findForCurrentUser() }
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { foundAggregate ->
-                            foundAggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 5
-                            foundAggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 10
-                        },
-                    )
+                    val foundAggregate = result.shouldBeRight()
+                    foundAggregate shouldNotBe null
+                    val preferences = foundAggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 5
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 10
                 }
             }
 
@@ -243,13 +239,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            aggregate shouldBe null
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    aggregate shouldBe null
 
                     verify { mockLogger.debug("No preferences file found at ${Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)}") }
                 }
@@ -275,16 +266,14 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 25
-                            aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 50
-                            aggregate.createdAt shouldBe fixedInstant
-                            aggregate.updatedAt shouldBe fixedInstant
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 25
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 50
+                    aggregate.createdAt shouldBe fixedInstant
+                    aggregate.updatedAt shouldBe fixedInstant
 
                     verify { mockLogger.info("Loaded user preferences from $configFile") }
                 }
@@ -309,14 +298,12 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe null
-                            aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe null
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe null
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe null
                 }
 
                 it("should handle corrupted JSON file") {
@@ -331,17 +318,11 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                            val invalidError = error as UserPreferencesError.InvalidPreferenceValue
-                            invalidError.key shouldBe "load"
-                            invalidError.value shouldBe configFile.toString()
-                            invalidError.reason shouldContain "Failed to read preferences"
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    invalidError.key shouldBe "load"
+                    invalidError.value shouldBe configFile.toString()
+                    invalidError.reason shouldContain "Failed to read preferences"
 
                     verify { mockLogger.error(match<String> { it.contains("Failed to load user preferences") }) }
                 }
@@ -367,13 +348,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                 }
 
                 it("should cache loaded preferences for subsequent calls") {
@@ -397,23 +373,18 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result2 = runBlocking { repository.findForCurrentUser() }
 
                     // Then - both should succeed with same data
-                    result1.isRight() shouldBe true
-                    result2.isRight() shouldBe true
-
-                    result1.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate1 ->
-                            result2.fold(
-                                { throw AssertionError("Expected Right but got Left: $it") },
-                                { aggregate2 ->
-                                    aggregate1!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 8
-                                    aggregate2!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 8
-                                    // Should be the same object due to caching
-                                    aggregate1 shouldBe aggregate2
-                                },
-                            )
-                        },
-                    )
+                    val aggregate1 = result1.shouldBeRight()
+                    val aggregate2 = result2.shouldBeRight()
+                    aggregate1 shouldNotBe null
+                    val preferences1 = aggregate1!!.preferences
+                    preferences1 shouldNotBe null
+                    preferences1!!.hierarchyPreferences.maxDepth shouldBe 8
+                    aggregate2 shouldNotBe null
+                    val preferences2 = aggregate2!!.preferences
+                    preferences2 shouldNotBe null
+                    preferences2!!.hierarchyPreferences.maxDepth shouldBe 8
+                    // Should be the same object due to caching
+                    aggregate1 shouldBe aggregate2
 
                     // File should only be loaded once (first call)
                     verify(exactly = 1) { mockLogger.info(match<String> { it.contains("Loaded user preferences from") }) }
@@ -439,23 +410,20 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Load once to get the current user ID from the repository
                     val currentUserResult = runBlocking { repository.findForCurrentUser() }
-                    val currentUserId = currentUserResult.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { it!!.id },
-                    )
+                    val currentUserAggregate = currentUserResult.shouldBeRight()
+                    currentUserAggregate shouldNotBe null
+                    val currentUserId = currentUserAggregate!!.id
 
                     // When
                     val result = runBlocking { repository.findById(currentUserId) }
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 12
-                            aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 24
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 12
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 24
                 }
 
                 it("should return null for non-current user IDs") {
@@ -467,13 +435,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findById(differentId) }
 
                     // Then
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            aggregate shouldBe null
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    aggregate shouldBe null
                 }
             }
 
@@ -501,16 +464,10 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then - should handle the I/O error gracefully
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                            val invalidError = error as UserPreferencesError.InvalidPreferenceValue
-                            invalidError.key shouldBe "save"
-                            invalidError.reason shouldContain "Failed to write preferences"
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    invalidError.key shouldBe "save"
+                    invalidError.reason shouldContain "Failed to write preferences"
 
                     verify { mockLogger.error(match<String> { it.contains("Failed to save user preferences") }) }
                 }
@@ -525,15 +482,9 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    result.isLeft() shouldBe true
-                    result.fold(
-                        { error ->
-                            error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                            val invalidError = error as UserPreferencesError.InvalidPreferenceValue
-                            invalidError.reason shouldContain "Failed to read preferences"
-                        },
-                        { throw AssertionError("Expected Left but got Right: $it") },
-                    )
+                    val error = result.shouldBeLeft()
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    invalidError.reason shouldContain "Failed to read preferences"
                 }
 
                 it("should handle JSON with missing required fields") {
@@ -553,15 +504,13 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then - should work due to default values in config class
-                    result.isRight() shouldBe true
-                    result.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            // Should use defaults (null values)
-                            aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe null
-                            aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe null
-                        },
-                    )
+                    val aggregate = result.shouldBeRight()
+                    // Should use defaults (null values)
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe null
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe null
                 }
             }
 
@@ -596,19 +545,18 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result2 = runBlocking { repository.save(aggregate2) }
 
                     // Then - both should succeed, last one should win
-                    result1.isRight() shouldBe true
-                    result2.isRight() shouldBe true
+                    result1.shouldBeRight()
+                    result2.shouldBeRight()
 
                     // Verify the last save is what's in the file
                     val finalResult = runBlocking { repository.findForCurrentUser() }
-                    finalResult.fold(
-                        { throw AssertionError("Expected Right but got Left: $it") },
-                        { aggregate ->
-                            // Should have the second aggregate's values
-                            aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 15
-                            aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 20
-                        },
-                    )
+                    val aggregate = finalResult.shouldBeRight()
+                    // Should have the second aggregate's values
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 15
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 20
                 }
             }
         }
