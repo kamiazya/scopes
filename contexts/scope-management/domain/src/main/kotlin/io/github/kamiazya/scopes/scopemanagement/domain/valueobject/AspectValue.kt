@@ -54,12 +54,7 @@ value class AspectValue private constructor(val value: String) {
      * Check if this value represents an ISO 8601 duration.
      * Examples: "P1D" (1 day), "PT2H30M" (2 hours 30 minutes), "P1W" (1 week)
      */
-    fun isDuration(): Boolean = try {
-        parseDuration()
-        true
-    } catch (e: Exception) {
-        false
-    }
+    fun isDuration(): Boolean = parseDuration() != null
 
     /**
      * Parse ISO 8601 duration to Kotlin Duration.
@@ -81,6 +76,13 @@ value class AspectValue private constructor(val value: String) {
     private fun parseISO8601Duration(iso8601: String): Duration {
         require(iso8601.startsWith("P")) { "ISO 8601 duration must start with 'P'" }
         require(iso8601.length > 1) { "ISO 8601 duration must contain at least one component" }
+
+        // Handle week format (PnW must be alone, no other components allowed)
+        val weekMatch = Regex("^P(\\d+)W$").matchEntire(iso8601)
+        if (weekMatch != null) {
+            val weeks = weekMatch.groupValues[1].toLong()
+            return (weeks * 7 * 24 * 60 * 60).seconds
+        }
 
         // Split into date and time parts
         val parts = iso8601.substring(1).split("T", limit = 2)
@@ -108,14 +110,6 @@ value class AspectValue private constructor(val value: String) {
                     'D' -> totalSeconds += amount * 24 * 60 * 60
                 }
             }
-        }
-
-        // Handle week format (PnW must be alone, no other components allowed)
-        val weekMatch = Regex("^(\\d+)W$").matchEntire(iso8601.substring(1))
-        if (weekMatch != null) {
-            require(datePart.isEmpty() && timePart.isEmpty()) { "Week duration cannot be combined with other components" }
-            val weeks = weekMatch.groupValues[1].toLong()
-            return (weeks * 7 * 24 * 60 * 60).seconds
         }
 
         // Parse time part (after T)

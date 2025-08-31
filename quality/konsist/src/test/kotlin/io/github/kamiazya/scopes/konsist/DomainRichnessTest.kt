@@ -114,6 +114,13 @@ class DomainRichnessTest :
                     .classes()
                     .filter { it.resideInPackage("..handler..") || it.resideInPackage("..usecase..") }
                     .filter { !it.name.endsWith("Test") }
+                    // Filter out inner data classes (like Query, Command classes)
+                    .filter { !it.hasDataModifier || it.hasPublicModifier }
+                    .filter { clazz ->
+                        // Only check actual handlers/use cases, not inner data classes
+                        val hasInvokeMethod = clazz.functions().any { it.name == "invoke" || it.name == "handle" }
+                        hasInvokeMethod || clazz.name.endsWith("Handler") || clazz.name.endsWith("UseCase")
+                    }
                     .assertTrue { handler ->
                         // Handlers should be thin - no more than 150 lines in their main method
                         // Increased threshold to account for error handling and logging

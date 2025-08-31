@@ -28,11 +28,13 @@ class FilterScopesWithQueryHandler(private val filterScopesWithQueryUseCase: Fil
         logger.debug("Filtering scopes with query", contextData)
 
         // Execute the use case
-        val scopes = if (input.parentId != null) {
-            filterScopesWithQueryUseCase.execute(input.query, input.parentId).bind()
-        } else {
-            filterScopesWithQueryUseCase.executeAll(input.query, input.offset, input.limit).bind()
-        }
+        val query = FilterScopesWithQueryUseCase.Query(
+            query = input.query,
+            parentId = input.parentId,
+            offset = input.offset,
+            limit = input.limit,
+        )
+        val scopes = filterScopesWithQueryUseCase(query).bind()
 
         logger.debug(
             "Query filter results",

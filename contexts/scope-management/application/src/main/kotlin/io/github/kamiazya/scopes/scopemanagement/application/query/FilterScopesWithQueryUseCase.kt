@@ -5,6 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryEvaluator
 import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -19,17 +20,18 @@ class FilterScopesWithQueryUseCase(
     private val scopeRepository: ScopeRepository,
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val parser: AspectQueryParser = AspectQueryParser(),
-) {
+) : UseCase<FilterScopesWithQueryUseCase.Query, ScopesError, List<Scope>> {
+
+    data class Query(val query: String, val parentId: String? = null, val offset: Int = 0, val limit: Int = 100)
 
     /**
      * Filter scopes using an aspect query.
-     * @param query The query string (e.g., "priority=high AND status!=closed")
-     * @param parentId Optional parent ID to filter children
+     * @param input Query containing the query string and optional parent ID
      * @return List of scopes matching the query
      */
-    suspend fun execute(query: String, parentId: String? = null): Either<ScopesError, List<Scope>> {
+    override suspend operator fun invoke(input: Query): Either<ScopesError, List<Scope>> {
         // Parse the query
-        val ast = parser.parse(query).fold(
+        val ast = parser.parse(input.query).fold(
             { error ->
                 return ScopesError.InvalidOperation("Invalid query: ${formatParseError(error)}").left()
             },
@@ -47,20 +49,31 @@ class FilterScopesWithQueryUseCase(
         val evaluator = AspectQueryEvaluator(definitions)
 
         // Get scopes to filter
-        val scopesToFilter = if (parentId != null) {
-            val parentScopeId = ScopeId.create(parentId).fold(
-                { return ScopesError.InvalidOperation("Invalid parent ID: $parentId").left() },
-                { it },
-            )
-            scopeRepository.findByParentId(parentScopeId).fold(
-                { return ScopesError.SystemError("Failed to load scopes: $it").left() },
-                { it },
-            )
-        } else {
-            scopeRepository.findAllRoot().fold(
-                { return ScopesError.SystemError("Failed to load scopes: $it").left() },
-                { it },
-            )
+        val scopesToFilter = when {
+            input.parentId != null -> {
+                val parentScopeId = ScopeId.create(input.parentId).fold(
+                    { return ScopesError.InvalidOperation("Invalid parent ID: ${input.parentId}").left() },
+                    { it },
+                )
+                scopeRepository.findByParentId(parentScopeId).fold(
+                    { return ScopesError.SystemError("Failed to load scopes: $it").left() },
+                    { it },
+                )
+            }
+            input.offset > 0 || input.limit < 100 -> {
+                // Use pagination - get all scopes with offset and limit
+                scopeRepository.findAll(input.offset, input.limit).fold(
+                    { return ScopesError.SystemError("Failed to load scopes: $it").left() },
+                    { it },
+                )
+            }
+            else -> {
+                // Default behavior - get root scopes only
+                scopeRepository.findAllRoot().fold(
+                    { return ScopesError.SystemError("Failed to load scopes: $it").left() },
+                    { it },
+                )
+            }
         }
 
         // Filter scopes based on the query

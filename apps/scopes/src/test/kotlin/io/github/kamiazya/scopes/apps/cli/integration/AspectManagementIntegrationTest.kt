@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateAspec
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetAspectDefinitionUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.ListAspectDefinitionsUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
@@ -59,11 +60,12 @@ class AspectManagementIntegrationTest :
                 it("should define a text aspect") {
                     runTest {
                         // Act
-                        val result = defineAspectUseCase.execute(
+                        val command = DefineAspectUseCase.Command(
                             key = "description",
                             description = "Task description",
                             type = AspectType.Text,
                         )
+                        val result = defineAspectUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -78,34 +80,38 @@ class AspectManagementIntegrationTest :
                 it("should define a numeric aspect") {
                     runTest {
                         // Act
-                        val result = defineAspectUseCase.execute(
+                        val command = DefineAspectUseCase.Command(
                             key = "estimatedHours",
                             description = "Estimated hours",
                             type = AspectType.Numeric,
                         )
+                        val result = defineAspectUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
-                        val definition = result.getOrNull()!!
-                        definition.key.value shouldBe "estimatedHours"
-                        definition.type shouldBe AspectType.Numeric
+                        result.getOrNull()?.let { definition ->
+                            definition.key.value shouldBe "estimatedHours"
+                            definition.type shouldBe AspectType.Numeric
+                        }
                     }
                 }
 
                 it("should define a boolean aspect") {
                     runTest {
                         // Act
-                        val result = defineAspectUseCase.execute(
+                        val command = DefineAspectUseCase.Command(
                             key = "isCompleted",
                             description = "Completion status",
                             type = AspectType.BooleanType,
                         )
+                        val result = defineAspectUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
-                        val definition = result.getOrNull()!!
-                        definition.key.value shouldBe "isCompleted"
-                        definition.type shouldBe AspectType.BooleanType
+                        result.getOrNull()?.let { definition ->
+                            definition.key.value shouldBe "isCompleted"
+                            definition.type shouldBe AspectType.BooleanType
+                        }
                     }
                 }
 
@@ -117,45 +123,49 @@ class AspectManagementIntegrationTest :
                         }
 
                         // Act
-                        val result = defineAspectUseCase.execute(
+                        val command = DefineAspectUseCase.Command(
                             key = "priority",
                             description = "Task priority",
                             type = AspectType.Ordered(values),
                         )
+                        val result = defineAspectUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
-                        val definition = result.getOrNull()!!
-                        definition.key.value shouldBe "priority"
-                        val orderedType = definition.type as AspectType.Ordered
-                        orderedType.allowedValues shouldContainExactlyInAnyOrder values
+                        result.getOrNull()?.let { definition ->
+                            definition.key.value shouldBe "priority"
+                            val orderedType = definition.type as AspectType.Ordered
+                            orderedType.allowedValues shouldContainExactlyInAnyOrder values
+                        }
                     }
                 }
 
                 it("should define a duration aspect") {
                     runTest {
                         // Act
-                        val result = defineAspectUseCase.execute(
+                        val command = DefineAspectUseCase.Command(
                             key = "timeSpent",
                             description = "Time spent on task",
                             type = AspectType.Duration,
                         )
+                        val result = defineAspectUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
-                        val definition = result.getOrNull()!!
-                        definition.key.value shouldBe "timeSpent"
-                        definition.type shouldBe AspectType.Duration
+                        result.getOrNull()?.let { definition ->
+                            definition.key.value shouldBe "timeSpent"
+                            definition.type shouldBe AspectType.Duration
+                        }
                     }
                 }
 
                 it("should prevent duplicate aspect definitions") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("status", "Task status", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("status", "Task status", AspectType.Text))
 
                         // Act
-                        val result = defineAspectUseCase.execute("status", "Another status", AspectType.Numeric)
+                        val result = defineAspectUseCase(DefineAspectUseCase.Command("status", "Another status", AspectType.Numeric))
 
                         // Assert
                         result.shouldBeLeft()
@@ -165,10 +175,11 @@ class AspectManagementIntegrationTest :
                 it("should retrieve an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("category", "Task category", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("category", "Task category", AspectType.Text))
 
                         // Act
-                        val result = getAspectDefinitionUseCase.execute("category")
+                        val query = GetAspectDefinitionUseCase.Query("category")
+                        val result = getAspectDefinitionUseCase(query)
 
                         // Assert
                         result.shouldBeRight()
@@ -181,34 +192,37 @@ class AspectManagementIntegrationTest :
                 it("should update an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("label", "Task label", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("label", "Task label", AspectType.Text))
 
                         // Act
-                        val result = updateAspectDefinitionUseCase.execute(
+                        val command = UpdateAspectDefinitionUseCase.Command(
                             key = "label",
                             description = "Updated task label",
                         )
+                        val result = updateAspectDefinitionUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
-                        val updated = result.getOrNull()!!
-                        updated.description shouldBe "Updated task label"
+                        result.getOrNull()?.let { updated ->
+                            updated.description shouldBe "Updated task label"
+                        }
                     }
                 }
 
                 it("should delete an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("temp", "Temporary aspect", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("temp", "Temporary aspect", AspectType.Text))
 
                         // Act
-                        val result = deleteAspectDefinitionUseCase.execute("temp")
+                        val command = DeleteAspectDefinitionUseCase.Command("temp")
+                        val result = deleteAspectDefinitionUseCase(command)
 
                         // Assert
                         result.shouldBeRight()
 
                         // Verify deletion
-                        val getResult = getAspectDefinitionUseCase.execute("temp")
+                        val getResult = getAspectDefinitionUseCase(GetAspectDefinitionUseCase.Query("temp"))
                         getResult.shouldBeRight()
                         getResult.getOrNull() shouldBe null
                     }
@@ -217,18 +231,20 @@ class AspectManagementIntegrationTest :
                 it("should list all aspect definitions") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("aspect1", "First aspect", AspectType.Text)
-                        defineAspectUseCase.execute("aspect2", "Second aspect", AspectType.Numeric)
-                        defineAspectUseCase.execute("aspect3", "Third aspect", AspectType.BooleanType)
+                        defineAspectUseCase(DefineAspectUseCase.Command("aspect1", "First aspect", AspectType.Text))
+                        defineAspectUseCase(DefineAspectUseCase.Command("aspect2", "Second aspect", AspectType.Numeric))
+                        defineAspectUseCase(DefineAspectUseCase.Command("aspect3", "Third aspect", AspectType.BooleanType))
 
                         // Act
-                        val result = listAspectDefinitionsUseCase.execute()
+                        val query = ListAspectDefinitionsUseCase.Query()
+                        val result = listAspectDefinitionsUseCase(query)
 
                         // Assert
                         result.shouldBeRight()
-                        val definitions = result.getOrNull()!!
-                        definitions.size shouldBe 3
-                        definitions.map { it.key.value } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
+                        result.getOrNull()?.let { definitions ->
+                            definitions.size shouldBe 3
+                            definitions.map { it.key.value } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
+                        }
                     }
                 }
             }
@@ -237,10 +253,11 @@ class AspectManagementIntegrationTest :
                 it("should validate text values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("note", "Task note", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("note", "Task note", AspectType.Text))
 
                         // Act
-                        val result = validateAspectValueUseCase.execute("note", "This is a valid note")
+                        val query = ValidateAspectValueUseCase.Query("note", "This is a valid note")
+                        val result = validateAspectValueUseCase(query)
 
                         // Assert
                         result.shouldBeRight()
@@ -251,11 +268,11 @@ class AspectManagementIntegrationTest :
                 it("should validate numeric values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("score", "Task score", AspectType.Numeric)
+                        defineAspectUseCase(DefineAspectUseCase.Command("score", "Task score", AspectType.Numeric))
 
                         // Act
-                        val validResult = validateAspectValueUseCase.execute("score", "42.5")
-                        val invalidResult = validateAspectValueUseCase.execute("score", "not a number")
+                        val validResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("score", "42.5"))
+                        val invalidResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("score", "not a number"))
 
                         // Assert
                         validResult.shouldBeRight()
@@ -266,13 +283,13 @@ class AspectManagementIntegrationTest :
                 it("should validate boolean values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("active", "Is active", AspectType.BooleanType)
+                        defineAspectUseCase(DefineAspectUseCase.Command("active", "Is active", AspectType.BooleanType))
 
                         // Act
-                        val trueResult = validateAspectValueUseCase.execute("active", "true")
-                        val falseResult = validateAspectValueUseCase.execute("active", "false")
-                        val yesResult = validateAspectValueUseCase.execute("active", "yes")
-                        val invalidResult = validateAspectValueUseCase.execute("active", "maybe")
+                        val trueResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("active", "true"))
+                        val falseResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("active", "false"))
+                        val yesResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("active", "yes"))
+                        val invalidResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("active", "maybe"))
 
                         // Assert
                         trueResult.shouldBeRight()
@@ -288,11 +305,11 @@ class AspectManagementIntegrationTest :
                         val sizes = listOf("small", "medium", "large").map {
                             AspectValue.create(it).getOrNull()!!
                         }
-                        defineAspectUseCase.execute("size", "Task size", AspectType.Ordered(sizes))
+                        defineAspectUseCase(DefineAspectUseCase.Command("size", "Task size", AspectType.Ordered(sizes)))
 
                         // Act
-                        val validResult = validateAspectValueUseCase.execute("size", "medium")
-                        val invalidResult = validateAspectValueUseCase.execute("size", "extra-large")
+                        val validResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("size", "medium"))
+                        val invalidResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("size", "extra-large"))
 
                         // Assert
                         validResult.shouldBeRight()
@@ -303,16 +320,16 @@ class AspectManagementIntegrationTest :
                 it("should validate duration values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("duration", "Task duration", AspectType.Duration)
+                        defineAspectUseCase(DefineAspectUseCase.Command("duration", "Task duration", AspectType.Duration))
 
                         // Act
                         val validResults = listOf(
-                            validateAspectValueUseCase.execute("duration", "P1D"),
-                            validateAspectValueUseCase.execute("duration", "PT2H30M"),
-                            validateAspectValueUseCase.execute("duration", "P1W"),
-                            validateAspectValueUseCase.execute("duration", "P2DT3H4M"),
+                            validateAspectValueUseCase(ValidateAspectValueUseCase.Query("duration", "P1D")),
+                            validateAspectValueUseCase(ValidateAspectValueUseCase.Query("duration", "PT2H30M")),
+                            validateAspectValueUseCase(ValidateAspectValueUseCase.Query("duration", "P1W")),
+                            validateAspectValueUseCase(ValidateAspectValueUseCase.Query("duration", "P2DT3H4M")),
                         )
-                        val invalidResult = validateAspectValueUseCase.execute("duration", "2 hours")
+                        val invalidResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("duration", "2 hours"))
 
                         // Assert
                         validResults.forEach { it.shouldBeRight() }
@@ -323,34 +340,39 @@ class AspectManagementIntegrationTest :
                 it("should validate multiple values when allowed") {
                     runTest {
                         // Arrange
+                        val tagsKey = AspectKey.create("tags").getOrNull() ?: error("Failed to create aspect key")
                         val tags = AspectDefinition.createText(
-                            key = AspectKey.create("tags").getOrNull()!!,
+                            key = tagsKey,
                             description = "Task tags",
                             allowMultiple = true,
                         )
                         aspectDefinitionRepository.save(tags)
 
                         // Act
-                        val result = validateAspectValueUseCase.executeMultiple(
+                        val query = ValidateAspectValueUseCase.MultipleQuery(
                             mapOf("tags" to listOf("frontend", "bug", "urgent")),
                         )
+                        val result = validateAspectValueUseCase(query)
 
                         // Assert
                         result.shouldBeRight()
-                        val validated = result.getOrNull()!!
-                        validated["tags"]?.size shouldBe 3
+                        result.getOrNull()?.let { validated ->
+                            val tagsKey = AspectKey.create("tags").getOrNull()!!
+                            validated[tagsKey]?.size shouldBe 3
+                        }
                     }
                 }
 
                 it("should reject multiple values when not allowed") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase.execute("status", "Task status", AspectType.Text)
+                        defineAspectUseCase(DefineAspectUseCase.Command("status", "Task status", AspectType.Text))
 
                         // Act
-                        val result = validateAspectValueUseCase.executeMultiple(
+                        val query = ValidateAspectValueUseCase.MultipleQuery(
                             mapOf("status" to listOf("open", "closed")),
                         )
+                        val result = validateAspectValueUseCase(query)
 
                         // Assert
                         result.shouldBeLeft()

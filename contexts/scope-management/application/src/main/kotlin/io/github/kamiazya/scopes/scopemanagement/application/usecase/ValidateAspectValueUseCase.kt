@@ -3,8 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.application.usecase
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ValidateAspectValueRequest
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
@@ -18,9 +16,14 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 class ValidateAspectValueUseCase(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val validationService: AspectValueValidationService,
-) : UseCase<ValidateAspectValueRequest, ScopesError, AspectValue> {
+) : UseCase<ValidateAspectValueUseCase.Query, ScopesError, AspectValue> {
 
-    override suspend operator fun invoke(input: ValidateAspectValueRequest): Either<ScopesError, AspectValue> {
+    // Query classes for different validation scenarios
+    data class Query(val key: String, val value: String)
+
+    data class MultipleQuery(val values: Map<String, List<String>>)
+
+    override suspend operator fun invoke(input: Query): Either<ScopesError, AspectValue> {
         // Parse the aspect key
         val aspectKey = AspectKey.create(input.key).fold(
             { return it.left() },
@@ -51,7 +54,14 @@ class ValidateAspectValueUseCase(
      * @param value The aspect value to validate
      * @return Either an error or the validated AspectValue
      */
-    suspend fun execute(key: String, value: String): Either<ScopesError, AspectValue> = invoke(ValidateAspectValueRequest(key, value))
+    suspend fun execute(key: String, value: String): Either<ScopesError, AspectValue> = invoke(Query(key, value))
+
+    /**
+     * Validate multiple aspect values.
+     * @param query MultipleQuery containing the values to validate
+     * @return Either an error (first validation failure) or the validated values
+     */
+    suspend operator fun invoke(query: MultipleQuery): Either<ScopesError, Map<AspectKey, List<AspectValue>>> = executeMultiple(query.values)
 
     /**
      * Validate multiple aspect values.

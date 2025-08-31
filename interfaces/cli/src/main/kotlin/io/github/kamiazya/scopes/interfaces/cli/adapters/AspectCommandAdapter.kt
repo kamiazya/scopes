@@ -27,42 +27,37 @@ class AspectCommandAdapter(
     /**
      * Define a new aspect.
      */
-    suspend fun defineAspect(key: String, description: String, type: AspectType): Either<ScopesError, AspectDefinition> = defineAspectUseCase.execute(
-        key = key,
-        description = description,
-        type = type,
-    )
+    suspend fun defineAspect(key: String, description: String, type: AspectType): Either<ScopesError, AspectDefinition> =
+        defineAspectUseCase(DefineAspectUseCase.Command(key, description, type))
 
     /**
      * Get an aspect definition by key.
      */
-    suspend fun getAspectDefinition(key: String): Either<ScopesError, AspectDefinition?> = getAspectDefinitionUseCase.execute(key)
+    suspend fun getAspectDefinition(key: String): Either<ScopesError, AspectDefinition?> = getAspectDefinitionUseCase(GetAspectDefinitionUseCase.Query(key))
 
     /**
      * Update an aspect definition.
      */
-    suspend fun updateAspectDefinition(key: String, description: String? = null): Either<ScopesError, AspectDefinition> = updateAspectDefinitionUseCase.execute(
-        key = key,
-        description = description,
-    )
+    suspend fun updateAspectDefinition(key: String, description: String? = null): Either<ScopesError, AspectDefinition> =
+        updateAspectDefinitionUseCase(UpdateAspectDefinitionUseCase.Command(key, description))
 
     /**
      * Delete an aspect definition.
      */
-    suspend fun deleteAspectDefinition(key: String): Either<ScopesError, Unit> = deleteAspectDefinitionUseCase.execute(key)
+    suspend fun deleteAspectDefinition(key: String): Either<ScopesError, Unit> = deleteAspectDefinitionUseCase(DeleteAspectDefinitionUseCase.Command(key))
 
     /**
      * List all aspect definitions.
      */
-    suspend fun listAspectDefinitions(): Either<ScopesError, List<AspectDefinition>> = listAspectDefinitionsUseCase.execute()
+    suspend fun listAspectDefinitions(): Either<ScopesError, List<AspectDefinition>> = listAspectDefinitionsUseCase(ListAspectDefinitionsUseCase.Query())
 
     /**
      * Validate aspect values against their definitions.
      */
     suspend fun validateAspectValue(key: String, values: List<String>): Either<ScopesError, List<AspectValue>> = if (values.size == 1) {
-        validateAspectValueUseCase.execute(key, values.first()).map { listOf(it) }
+        validateAspectValueUseCase(ValidateAspectValueUseCase.Query(key, values.first())).map { listOf(it) }
     } else {
-        validateAspectValueUseCase.executeMultiple(mapOf(key to values)).map {
+        validateAspectValueUseCase(ValidateAspectValueUseCase.MultipleQuery(mapOf(key to values))).map {
             it.values.first()
         }
     }
