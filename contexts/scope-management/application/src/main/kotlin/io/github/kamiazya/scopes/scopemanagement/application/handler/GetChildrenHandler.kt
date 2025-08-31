@@ -32,12 +32,14 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
 
         // Get children from repository with database-side pagination
         val children = scopeRepository.findByParentId(parentId, input.offset, input.limit).bind()
+        val totalCount = scopeRepository.countByParentId(parentId).bind()
 
         logger.debug(
             "Found children",
             mapOf(
                 "parentId" to (parentId?.value ?: "root"),
                 "pageSize" to children.size.toString(),
+                "totalCount" to totalCount.toString(),
             ),
         )
 

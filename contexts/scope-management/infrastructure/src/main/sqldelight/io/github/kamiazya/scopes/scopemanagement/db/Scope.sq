@@ -66,6 +66,17 @@ WHERE parent_id IS NULL
 ORDER BY created_at ASC, id ASC
 LIMIT ? OFFSET ?;
 
+-- Count helpers for pagination
+countScopesByParentId:
+SELECT COUNT(*) AS count
+FROM scopes
+WHERE parent_id = ?;
+
+countRootScopes:
+SELECT COUNT(*) AS count
+FROM scopes
+WHERE parent_id IS NULL;
+
 -- Check if scope exists
 existsById:
 SELECT COUNT(*) > 0 AS result

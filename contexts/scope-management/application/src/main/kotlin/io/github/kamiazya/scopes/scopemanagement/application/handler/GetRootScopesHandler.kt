@@ -26,11 +26,13 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
 
         // Get root scopes (parentId = null) with database-side pagination
         val rootScopes = scopeRepository.findByParentId(null, input.offset, input.limit).bind()
+        val totalCount = scopeRepository.countByParentId(null).bind()
 
         logger.debug(
             "Found root scopes",
             mapOf(
                 "pageSize" to rootScopes.size.toString(),
+                "totalCount" to totalCount.toString(),
             ),
         )
 

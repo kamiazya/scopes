@@ -90,6 +90,12 @@ interface ScopeRepository {
     suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int>
 
     /**
+     * Count scopes by parent id. When parentId is null, counts root scopes.
+     * Useful for pagination total counts.
+     */
+    suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int>
+
+    /**
      * Find all descendants of a scope recursively.
      * Used for hierarchy operations.
      */

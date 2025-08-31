@@ -224,6 +224,23 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
+    override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+        try {
+            val count = if (parentId != null) {
+                database.scopeQueries.countScopesByParentId(parentId.value).executeAsOne()
+            } else {
+                database.scopeQueries.countRootScopes().executeAsOne()
+            }
+            count.toInt().right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "countByParentId",
+                cause = e,
+            ).left()
+        }
+    }
+
     override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val descendants = mutableListOf<Scope>()

@@ -181,6 +181,16 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = either {
+        mutex.withLock {
+            try {
+                scopes.values.count { it.parentId == parentId }
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByParentId", e))
+            }
+        }
+    }
+
     override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
         mutex.withLock {
             try {
