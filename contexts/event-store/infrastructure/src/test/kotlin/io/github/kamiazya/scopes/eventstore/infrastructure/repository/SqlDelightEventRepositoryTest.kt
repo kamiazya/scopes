@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // Test domain event for testing
@@ -241,9 +240,13 @@ class SqlDelightEventRepositoryTest :
                     val firstStoredEvent = runBlocking {
                         repository.store(firstEvent)
                     }.getOrNull()!!
-                    
-                    // Use a timestamp just after the first event's stored time
-                    val timestampBetween = firstStoredEvent.metadata.storedAt.plus(1.milliseconds)
+
+                    // Wait for clock to advance past the first event's stored time
+                    // This ensures a deterministic boundary between events
+                    while (Clock.System.now() <= firstStoredEvent.metadata.storedAt) {
+                        // Spin until clock advances
+                    }
+                    val timestampBetween = Clock.System.now()
 
                     val secondEvent = TestEvent(
                         eventId = EventId.generate(),
@@ -397,9 +400,13 @@ class SqlDelightEventRepositoryTest :
                     val oldStoredEvent = runBlocking {
                         repository.store(oldEvent)
                     }.getOrNull()!!
-                    
-                    // Use a timestamp just after the old event's stored time
-                    val timestampBetween = oldStoredEvent.metadata.storedAt.plus(1.milliseconds)
+
+                    // Wait for clock to advance past the old event's stored time
+                    // This ensures a deterministic boundary between events
+                    while (Clock.System.now() <= oldStoredEvent.metadata.storedAt) {
+                        // Spin until clock advances
+                    }
+                    val timestampBetween = Clock.System.now()
 
                     val recentEvent = TestEvent(
                         eventId = EventId.generate(),
