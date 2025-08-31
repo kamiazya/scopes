@@ -273,9 +273,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()!!
-                    events.shouldHaveSize(1)
-                    (events.first().event as TestEvent).testData shouldBe "second event"
+                    val retrievedEvents = result.getOrNull()!!
+                    retrievedEvents.shouldHaveSize(1)
+                    (retrievedEvents.first().event as TestEvent).testData shouldBe "second event"
                 }
 
                 it("should respect the limit parameter") {
@@ -301,8 +301,8 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()!!
-                    events.shouldHaveSize(3)
+                    val retrievedEvents = result.getOrNull()!!
+                    retrievedEvents.shouldHaveSize(3)
                 }
 
                 it("should handle deserialization errors gracefully by skipping failed events") {
@@ -442,9 +442,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()!!
-                    events.shouldHaveSize(1)
-                    (events.first().event as TestEvent).testData shouldBe "recent event"
+                    val retrievedEvents = result.getOrNull()!!
+                    retrievedEvents.shouldHaveSize(1)
+                    (retrievedEvents.first().event as TestEvent).testData shouldBe "recent event"
                 }
 
                 it("should respect limit when retrieving aggregate events") {
@@ -469,8 +469,8 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isRight() shouldBe true
-                    val events = result.getOrNull()!!
-                    events.shouldHaveSize(2)
+                    val limitedEvents = result.getOrNull()!!
+                    limitedEvents.shouldHaveSize(2)
                 }
 
                 it("should return empty list for aggregate with no events") {
