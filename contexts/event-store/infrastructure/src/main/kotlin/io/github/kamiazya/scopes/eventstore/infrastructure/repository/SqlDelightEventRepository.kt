@@ -42,7 +42,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         aggregate_id = event.aggregateId.value,
                         aggregate_version = event.aggregateVersion.value,
                         event_type = event::class.qualifiedName ?: event::class.simpleName
-                            ?: throw IllegalArgumentException("Event class must have a name"),
+                            ?: error("Event class must have a name"),
                         event_data = eventData,
                         occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
@@ -60,7 +60,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateVersion = event.aggregateVersion,
                             eventType = EventType(
                                 event::class.qualifiedName ?: event::class.simpleName
-                                    ?: throw IllegalArgumentException("Event class must have a name"),
+                                    ?: error("Event class must have a name"),
                             ),
                             occurredAt = event.occurredAt,
                             storedAt = storedAt,
@@ -75,7 +75,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         EventStoreError.StorageError(
                             aggregateId = event.aggregateId.value,
                             eventType = event::class.qualifiedName ?: event::class.simpleName
-                                ?: throw IllegalArgumentException("Event class must have a name"),
+                                ?: error("Event class must have a name"),
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
                             cause = e,
@@ -170,7 +170,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 result.value.forEach { emit(it) }
             }
             is Either.Left -> {
-                throw IllegalStateException("Failed to stream events")
+                error("Failed to stream events")
             }
         }
     }
@@ -191,7 +191,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 metadata = EventMetadata(
                     eventId = EventId.fromUnsafe(eventId),
                     aggregateId = AggregateId.from(aggregateId).getOrNull()
-                        ?: throw IllegalStateException("Invalid aggregate ID in database"),
+                        ?: error("Invalid aggregate ID in database"),
                     aggregateVersion = AggregateVersion.fromUnsafe(aggregateVersion),
                     eventType = EventType(eventType),
                     occurredAt = Instant.fromEpochMilliseconds(occurredAt),

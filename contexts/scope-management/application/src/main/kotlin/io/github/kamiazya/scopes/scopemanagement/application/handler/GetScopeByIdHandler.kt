@@ -60,7 +60,7 @@ class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private 
             "Failed to get scope by ID",
             mapOf(
                 "scopeId" to input.id,
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )

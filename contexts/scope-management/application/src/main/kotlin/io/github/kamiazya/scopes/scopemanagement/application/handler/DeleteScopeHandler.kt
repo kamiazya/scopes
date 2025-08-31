@@ -89,7 +89,7 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
         logger.error(
             "Failed to delete scope",
             mapOf(
-                "error" to (error::class.simpleName ?: "Unknown"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )

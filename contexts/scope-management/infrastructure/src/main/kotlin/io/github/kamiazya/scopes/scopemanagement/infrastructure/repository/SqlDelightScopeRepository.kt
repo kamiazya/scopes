@@ -158,7 +158,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
             id?.let {
                 ScopeId.create(it).fold(
-                    ifLeft = { throw IllegalStateException("Invalid scope id in database: $it") },
+                    ifLeft = { error("Invalid scope id in database: $it") },
                     ifRight = { it },
                 )
             }.right()
@@ -267,7 +267,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     private fun rowToScope(row: io.github.kamiazya.scopes.scopemanagement.db.Scopes): Scope {
         val scopeId = ScopeId.create(row.id).fold(
-            ifLeft = { throw IllegalStateException("Invalid scope id in database: $it") },
+            ifLeft = { error("Invalid scope id in database: $it") },
             ifRight = { it },
         )
 
@@ -277,18 +277,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         val aspectMap = aspectRows
             .groupBy {
                 AspectKey.create(it.aspect_key).fold(
-                    ifLeft = { throw IllegalStateException("Invalid aspect key in database: $it") },
+                    ifLeft = { error("Invalid aspect key in database: $it") },
                     ifRight = { it },
                 )
             }
             .mapValues { (_, rows) ->
                 rows.map { aspectRow ->
                     AspectValue.create(aspectRow.aspect_value).fold(
-                        ifLeft = { throw IllegalStateException("Invalid aspect value in database: $it") },
+                        ifLeft = { error("Invalid aspect value in database: $it") },
                         ifRight = { it },
                     )
                 }
-                    .toNonEmptyListOrNull() ?: throw IllegalStateException(
+                    .toNonEmptyListOrNull() ?: error(
                     "Aspect key exists without values in database - data integrity violation",
                 )
             }
@@ -296,18 +296,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         return Scope(
             id = scopeId,
             title = ScopeTitle.create(row.title).fold(
-                ifLeft = { throw IllegalStateException("Invalid title in database: $it") },
+                ifLeft = { error("Invalid title in database: $it") },
                 ifRight = { it },
             ),
             description = row.description?.let { desc ->
                 ScopeDescription.create(desc).fold(
-                    ifLeft = { throw IllegalStateException("Invalid description in database: $it") },
+                    ifLeft = { error("Invalid description in database: $it") },
                     ifRight = { it },
                 )
             },
             parentId = row.parent_id?.let { pid ->
                 ScopeId.create(pid).fold(
-                    ifLeft = { throw IllegalStateException("Invalid parent id in database: $it") },
+                    ifLeft = { error("Invalid parent id in database: $it") },
                     ifRight = { it },
                 )
             },

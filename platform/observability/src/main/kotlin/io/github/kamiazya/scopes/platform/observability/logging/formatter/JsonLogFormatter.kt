@@ -36,7 +36,7 @@ class JsonLogFormatter : LogFormatter {
             // Add error information if present
             entry.throwable?.let { throwable ->
                 putJsonObject("error") {
-                    put("type", throwable::class.simpleName ?: "Unknown")
+                    put("type", throwable::class.qualifiedName ?: throwable::class.simpleName ?: "UnknownError")
                     put("message", throwable.message ?: "")
                     putJsonArray("stackTrace") {
                         throwable.stackTrace.forEach { element ->

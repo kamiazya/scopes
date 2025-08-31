@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
+import com.github.ajalt.clikt.completion.completionOption
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.flag
@@ -21,6 +22,9 @@ class ScopesCommand :
     private val debug by option("--debug", help = "Enable debug output showing ULIDs alongside aliases").flag()
 
     init {
+        // Add completion generation support
+        completionOption()
+
         subcommands(
             CreateCommand(),
             GetCommand(),
@@ -29,6 +33,7 @@ class ScopesCommand :
             ListCommand(),
             AliasCommand().configureSubcommands(),
             AspectCommand().configureSubcommands(),
+            CompletionCommand(), // Hidden command for shell completion
         )
     }
 

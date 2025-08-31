@@ -34,7 +34,7 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: U
                     "Failed to fetch user preferences, using defaults",
                     mapOf(
                         "error" to contractError.toString(),
-                        "errorType" to (contractError::class.simpleName ?: "Unknown"),
+                        "errorType" to (contractError::class.qualifiedName ?: contractError::class.simpleName ?: "UnknownError"),
                     ),
                 )
                 HierarchyPolicy.default()

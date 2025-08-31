@@ -1,9 +1,11 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
+import com.github.ajalt.clikt.completion.CompletionCandidates
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -32,28 +34,35 @@ class ListCommand :
     private val offset by option("--offset", help = "Number of items to skip").int().default(0)
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
-    private val aspect by option("-a", "--aspect", help = "Filter by aspect (format: key=value)")
     private val query by option("-q", "--query", help = "Filter by advanced query (e.g., 'priority>=high AND status!=closed')")
+
+    // Aspect filtering with completion support
+    private val aspects by option(
+        "-a",
+        "--aspect",
+        help = "Filter by aspect (format: key:value). Can be specified multiple times.",
+        completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
+    ).multiple()
 
     override fun run() {
         runBlocking {
-            // Check for conflicting options
-            if (aspect != null && query != null) {
-                echo("Error: Cannot use both --aspect and --query options", err = true)
-                return@runBlocking
-            }
-
-            // Parse aspect filter if provided
-            val (aspectKey, aspectValue) = if (aspect != null) {
-                val parts = aspect!!.split("=", limit = 2)
-                if (parts.size != 2) {
-                    echo("Error: Invalid aspect format. Use key=value", err = true)
-                    return@runBlocking
+            // Parse aspect filters
+            val aspectFilters = aspects.mapNotNull { aspectStr ->
+                val parts = aspectStr.split(":", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].trim()
+                    val value = parts[1].trim()
+                    if (key.isEmpty() || value.isEmpty()) {
+                        echo("Warning: Invalid aspect format: $aspectStr (expected non-empty key:value)", err = true)
+                        null
+                    } else {
+                        key to value
+                    }
+                } else {
+                    echo("Warning: Invalid aspect format: $aspectStr (expected key:value)", err = true)
+                    null
                 }
-                parts[0] to parts[1]
-            } else {
-                null to null
-            }
+            }.groupBy({ it.first }, { it.second })
 
             when {
                 query != null -> {
@@ -76,36 +85,23 @@ class ListCommand :
                         },
                     )
                 }
-                aspect != null -> {
-                    // Use aspect filtering
-                    scopeCommandAdapter.listScopesWithAspect(
-                        aspectKey = aspectKey!!,
-                        aspectValue = aspectValue!!,
-                        parentId = parentId,
-                    ).fold(
-                        { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
-                        },
-                        { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
-                            }
-                        },
-                    )
-                }
                 root -> {
                     scopeCommandAdapter.listRootScopes().fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                filterByAspects(scopes, aspectFilters)
+                            } else {
+                                scopes
+                            }
+
                             if (verbose) {
                                 // Fetch aliases for each scope and display verbosely
-                                echo(formatVerboseList(scopes, debugContext))
+                                echo(formatVerboseList(filteredScopes, debugContext))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )
@@ -116,10 +112,16 @@ class ListCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                filterByAspects(scopes, aspectFilters)
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                scopes
+                            }
+
+                            if (verbose) {
+                                echo(formatVerboseList(filteredScopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )
@@ -131,10 +133,16 @@ class ListCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                filterByAspects(scopes, aspectFilters)
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                scopes
+                            }
+
+                            if (verbose) {
+                                echo(formatVerboseList(filteredScopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )
@@ -201,5 +209,18 @@ class ListCommand :
                 }
             }
         }.trim()
+    }
+
+    /**
+     * Filters scopes by their aspects.
+     * A scope matches if it has all the specified aspect key:value pairs.
+     */
+    private fun filterByAspects(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>): List<ScopeResult> = scopes.filter { scope ->
+        aspectFilters.all { (key, requiredValues) ->
+            val scopeValues = scope.aspects[key] ?: emptyList()
+            requiredValues.all { requiredValue ->
+                scopeValues.contains(requiredValue)
+            }
+        }
     }
 }

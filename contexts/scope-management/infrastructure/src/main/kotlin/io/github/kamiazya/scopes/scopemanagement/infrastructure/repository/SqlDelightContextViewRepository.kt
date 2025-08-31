@@ -98,25 +98,25 @@ class SqlDelightContextViewRepository(private val database: ScopeManagementDatab
 
     private fun rowToContextView(row: Context_views): ContextView {
         val id = ContextViewId.create(row.id).fold(
-            ifLeft = { throw IllegalStateException("Invalid id in database: $it") },
+            ifLeft = { error("Invalid id in database: $it") },
             ifRight = { it },
         )
         val key = ContextViewKey.create(row.key).fold(
-            ifLeft = { throw IllegalStateException("Invalid key in database: $it") },
+            ifLeft = { error("Invalid key in database: $it") },
             ifRight = { it },
         )
         val name = ContextViewName.create(row.name).fold(
-            ifLeft = { throw IllegalStateException("Invalid name in database: $it") },
+            ifLeft = { error("Invalid name in database: $it") },
             ifRight = { it },
         )
         val description = row.description?.let { desc ->
             ContextViewDescription.create(desc).fold(
-                ifLeft = { throw IllegalStateException("Invalid description in database: $it") },
+                ifLeft = { error("Invalid description in database: $it") },
                 ifRight = { it },
             )
         }
         val filter = ContextViewFilter.create(row.filter).fold(
-            ifLeft = { throw IllegalStateException("Invalid filter in database: $it") },
+            ifLeft = { error("Invalid filter in database: $it") },
             ifRight = { it },
         )
 
