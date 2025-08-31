@@ -14,7 +14,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
-import kotlin.time.Duration.Companion.hours
+import kotlinx.datetime.Instant
 
 class SqlDelightSynchronizationRepositoryTest :
     DescribeSpec({
@@ -188,8 +188,10 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should update all sync state fields") {
                     // Given
                     val deviceId = DeviceId("update-test-device")
-                    val initialTime = Clock.System.now()
-                    val updatedTime = initialTime.plus(1.hours)
+                    // Use millisecond precision for timestamps since SQLite stores milliseconds
+                    val now = Clock.System.now()
+                    val initialTime = Instant.fromEpochMilliseconds(now.toEpochMilliseconds())
+                    val updatedTime = Instant.fromEpochMilliseconds(now.toEpochMilliseconds() + 3600000) // +1 hour
 
                     runBlocking { repository.registerDevice(deviceId) }
 
@@ -377,7 +379,10 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should handle database errors gracefully") {
                     // Given
                     val deviceId = DeviceId("error-test-device")
-                    (database as? AutoCloseable)?.close()
+                    // Close the driver to simulate database errors
+                    driver.close()
+                    // Create a new driver for afterEach to close without error
+                    driver = app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver(app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY)
 
                     // When
                     val operations = listOf(

@@ -106,7 +106,8 @@ class DatabaseTestingRulesTest :
                             function.text.contains("toEpochMilliseconds") ||
                                 function.text.contains("fromEpochMilliseconds") ||
                                 function.text.contains("truncatedTo") ||
-                                function.text.contains("shouldNotBe null") || // Loose comparison
+                                function.text.contains("shouldNotBe null") ||
+                                // Loose comparison
                                 function.text.contains("shouldBeCloseTo") ||
                                 function.text.contains("within")
 
@@ -138,7 +139,8 @@ class DatabaseTestingRulesTest :
 
                         if (hasHardcodedNumber) {
                             // Allow if it's in an isolated test context
-                            function.text.contains("DISTANT_PAST") || // Likely the only event
+                            function.text.contains("DISTANT_PAST") ||
+                                // Likely the only event
                                 function.text.contains("first()") // Explicitly getting first
                         } else {
                             true

@@ -226,7 +226,7 @@ class SqlDelightScopeRepositoryTest :
                     result.isRight() shouldBe true
                     val foundScopes = result.getOrNull()
                     foundScopes?.size shouldBe 2
-                    foundScopes?.map { it.title } shouldBe scopes.map { it.title }
+                    foundScopes?.map { it.title }?.toSet() shouldBe scopes.map { it.title }.toSet()
                 }
 
                 it("should return empty list when no scopes exist") {

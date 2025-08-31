@@ -66,7 +66,8 @@ class TestQualityArchitectureTest :
                     .assertTrue { function ->
                         // If checking for errors, should also check specific error type
                         function.text.contains("shouldBeInstanceOf") ||
-                            function.text.contains("shouldBe") && function.text.contains("Error")
+                            function.text.contains("shouldBe") &&
+                            function.text.contains("Error")
                     }
             }
 
