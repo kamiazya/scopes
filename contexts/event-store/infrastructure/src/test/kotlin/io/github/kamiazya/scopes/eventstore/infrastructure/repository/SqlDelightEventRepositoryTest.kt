@@ -20,7 +20,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.hours
@@ -129,7 +129,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runTest { repository.store(event) }
+                    val result = runBlocking { repository.store(event) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -170,7 +170,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val results = runTest {
+                    val results = runBlocking {
                         events.map { repository.store(it) }
                     }
 
@@ -200,7 +200,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runTest { repository.store(event) }
+                    val result = runBlocking { repository.store(event) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -218,10 +218,10 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // Store the same event twice to trigger a unique constraint violation
-                    runTest { repository.store(event) }
+                    runBlocking { repository.store(event) }
 
                     // When
-                    val result = runTest { repository.store(event) }
+                    val result = runBlocking { repository.store(event) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -252,13 +252,13 @@ class SqlDelightEventRepositoryTest :
                         testData = "recent event",
                     )
 
-                    runTest {
+                    runBlocking {
                         repository.store(pastEvent)
                         repository.store(recentEvent)
                     }
 
                     // When
-                    val result = runTest { repository.getEventsSince(now) }
+                    val result = runBlocking { repository.getEventsSince(now) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -280,12 +280,12 @@ class SqlDelightEventRepositoryTest :
                         )
                     }
 
-                    runTest {
+                    runBlocking {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runTest { repository.getEventsSince(baseTime, limit = 3) }
+                    val result = runBlocking { repository.getEventsSince(baseTime, limit = 3) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -310,7 +310,7 @@ class SqlDelightEventRepositoryTest :
                         testData = "event 2",
                     )
 
-                    runTest {
+                    runBlocking {
                         repository.store(event1)
                         repository.store(event2)
                     }
@@ -328,7 +328,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runTest { repository.getEventsSince(Instant.DISTANT_PAST) }
+                    val result = runBlocking { repository.getEventsSince(Instant.DISTANT_PAST) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -366,12 +366,12 @@ class SqlDelightEventRepositoryTest :
                         ),
                     )
 
-                    runTest {
+                    runBlocking {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -402,14 +402,14 @@ class SqlDelightEventRepositoryTest :
                         testData = "recent event",
                     )
 
-                    runTest {
+                    runBlocking {
                         repository.store(oldEvent)
                         Thread.sleep(100) // Ensure different stored_at timestamps
                         repository.store(recentEvent)
                     }
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId, since = now) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, since = now) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -431,12 +431,12 @@ class SqlDelightEventRepositoryTest :
                         )
                     }
 
-                    runTest {
+                    runBlocking {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId, limit = 2) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, limit = 2) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -448,7 +448,7 @@ class SqlDelightEventRepositoryTest :
                     val aggregateId = AggregateId.generate()
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result shouldBe emptyList<PersistedEventRecord>().right()
@@ -475,12 +475,12 @@ class SqlDelightEventRepositoryTest :
                         ),
                     )
 
-                    runTest {
+                    runBlocking {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val streamedEvents = runTest {
+                    val streamedEvents = runBlocking {
                         repository.streamEvents().toList()
                     }
 
@@ -491,7 +491,7 @@ class SqlDelightEventRepositoryTest :
 
                 it("should handle empty event store") {
                     // When
-                    val streamedEvents = runTest {
+                    val streamedEvents = runBlocking {
                         repository.streamEvents().toList()
                     }
 
@@ -515,14 +515,14 @@ class SqlDelightEventRepositoryTest :
                     }
 
                     // Store events in random order
-                    runTest {
+                    runBlocking {
                         listOf(events[2], events[0], events[4], events[1], events[3]).forEach {
                             repository.store(it)
                         }
                     }
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -542,7 +542,7 @@ class SqlDelightEventRepositoryTest :
                     driver.close()
 
                     // When
-                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -562,8 +562,8 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val storeResult = runTest { repository.store(event) }
-                    val retrieveResult = runTest { repository.getEventsSince(Instant.DISTANT_PAST) }
+                    val storeResult = runBlocking { repository.store(event) }
+                    val retrieveResult = runBlocking { repository.getEventsSince(Instant.DISTANT_PAST) }
 
                     // Then
                     storeResult.isRight() shouldBe true
