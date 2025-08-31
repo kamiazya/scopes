@@ -50,8 +50,8 @@ class HierarchyPreferencesPropertyTest :
                 val result = HierarchyPreferences.create(invalidDepth, null)
 
                 val error = result.shouldBeLeft()
-                error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                error.reason shouldBe "Maximum depth must be positive if specified"
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                hierarchyError.reason shouldBe "Maximum depth must be positive if specified"
             }
         }
 
@@ -60,8 +60,8 @@ class HierarchyPreferencesPropertyTest :
                 val result = HierarchyPreferences.create(null, invalidChildren)
 
                 val error = result.shouldBeLeft()
-                error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
-                error.reason shouldBe "Maximum children per scope must be positive if specified"
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                hierarchyError.reason shouldBe "Maximum children per scope must be positive if specified"
             }
         }
 
@@ -70,9 +70,9 @@ class HierarchyPreferencesPropertyTest :
                 val result = HierarchyPreferences.create(invalidDepth, invalidChildren)
 
                 val error = result.shouldBeLeft()
-                error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
                 // Should fail on maxDepth first (as per implementation order)
-                error.reason shouldBe "Maximum depth must be positive if specified"
+                hierarchyError.reason shouldBe "Maximum depth must be positive if specified"
             }
         }
 

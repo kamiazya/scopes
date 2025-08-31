@@ -12,6 +12,7 @@ import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.clearAllMocks
@@ -103,7 +104,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     // Verify file was created and contains correct JSON
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
@@ -139,7 +140,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
                     val jsonContent = configFile.readText()
@@ -169,7 +170,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
                     val jsonContent = configFile.readText()
@@ -221,8 +222,11 @@ class FileBasedUserPreferencesRepositoryTest :
                     // Then - subsequent findForCurrentUser should return cached value without file I/O
                     val result = runBlocking { repository.findForCurrentUser() }
                     val foundAggregate = result.shouldBeRight()
-                    foundAggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 5
-                    foundAggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 10
+                    foundAggregate shouldNotBe null
+                    val preferences = foundAggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 5
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 10
                 }
             }
 
@@ -263,8 +267,11 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then
                     val aggregate = result.shouldBeRight()
-                    aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 25
-                    aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 50
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 25
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 50
                     aggregate.createdAt shouldBe fixedInstant
                     aggregate.updatedAt shouldBe fixedInstant
 
@@ -292,8 +299,11 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then
                     val aggregate = result.shouldBeRight()
-                    aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe null
-                    aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe null
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe null
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe null
                 }
 
                 it("should handle corrupted JSON file") {
@@ -309,8 +319,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then
                     val error = result.shouldBeLeft()
-                    error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                    val invalidError = error as UserPreferencesError.InvalidPreferenceValue
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "load"
                     invalidError.value shouldBe configFile.toString()
                     invalidError.reason shouldContain "Failed to read preferences"
@@ -366,8 +375,14 @@ class FileBasedUserPreferencesRepositoryTest :
                     // Then - both should succeed with same data
                     val aggregate1 = result1.shouldBeRight()
                     val aggregate2 = result2.shouldBeRight()
-                    aggregate1!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 8
-                    aggregate2!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 8
+                    aggregate1 shouldNotBe null
+                    val preferences1 = aggregate1!!.preferences
+                    preferences1 shouldNotBe null
+                    preferences1!!.hierarchyPreferences.maxDepth shouldBe 8
+                    aggregate2 shouldNotBe null
+                    val preferences2 = aggregate2!!.preferences
+                    preferences2 shouldNotBe null
+                    preferences2!!.hierarchyPreferences.maxDepth shouldBe 8
                     // Should be the same object due to caching
                     aggregate1 shouldBe aggregate2
 
@@ -395,15 +410,20 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Load once to get the current user ID from the repository
                     val currentUserResult = runBlocking { repository.findForCurrentUser() }
-                    val currentUserId = currentUserResult.shouldBeRight()!!.id
+                    val currentUserAggregate = currentUserResult.shouldBeRight()
+                    currentUserAggregate shouldNotBe null
+                    val currentUserId = currentUserAggregate!!.id
 
                     // When
                     val result = runBlocking { repository.findById(currentUserId) }
 
                     // Then
                     val aggregate = result.shouldBeRight()
-                    aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 12
-                    aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 24
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 12
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 24
                 }
 
                 it("should return null for non-current user IDs") {
@@ -445,8 +465,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then - should handle the I/O error gracefully
                     val error = result.shouldBeLeft()
-                    error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                    val invalidError = error as UserPreferencesError.InvalidPreferenceValue
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "save"
                     invalidError.reason shouldContain "Failed to write preferences"
 
@@ -464,8 +483,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then
                     val error = result.shouldBeLeft()
-                    error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                    val invalidError = error as UserPreferencesError.InvalidPreferenceValue
+                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.reason shouldContain "Failed to read preferences"
                 }
 
@@ -488,8 +506,11 @@ class FileBasedUserPreferencesRepositoryTest :
                     // Then - should work due to default values in config class
                     val aggregate = result.shouldBeRight()
                     // Should use defaults (null values)
-                    aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe null
-                    aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe null
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe null
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe null
                 }
             }
 
@@ -524,15 +545,18 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result2 = runBlocking { repository.save(aggregate2) }
 
                     // Then - both should succeed, last one should win
-                    result1.isRight() shouldBe true
-                    result2.isRight() shouldBe true
+                    result1.shouldBeRight()
+                    result2.shouldBeRight()
 
                     // Verify the last save is what's in the file
                     val finalResult = runBlocking { repository.findForCurrentUser() }
                     val aggregate = finalResult.shouldBeRight()
                     // Should have the second aggregate's values
-                    aggregate!!.preferences!!.hierarchyPreferences.maxDepth shouldBe 15
-                    aggregate.preferences!!.hierarchyPreferences.maxChildrenPerScope shouldBe 20
+                    aggregate shouldNotBe null
+                    val preferences = aggregate!!.preferences
+                    preferences shouldNotBe null
+                    preferences!!.hierarchyPreferences.maxDepth shouldBe 15
+                    preferences.hierarchyPreferences.maxChildrenPerScope shouldBe 20
                 }
             }
         }
