@@ -1,9 +1,13 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateAspectDefinitionUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
@@ -13,8 +17,13 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQueryUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.GetAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.ListAspectDefinitionsUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import org.koin.dsl.module
 
@@ -29,6 +38,7 @@ import org.koin.dsl.module
 val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
+    single { AspectValueValidationService() }
     single {
         io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService(
             aliasRepository = get(),
@@ -155,6 +165,63 @@ val scopeManagementModule = module {
         RenameAliasHandler(
             scopeAliasService = get(),
             transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    // Aspect Definition Use Cases
+    single {
+        DefineAspectUseCase(
+            aspectDefinitionRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        GetAspectDefinitionUseCase(
+            aspectDefinitionRepository = get(),
+        )
+    }
+
+    single {
+        UpdateAspectDefinitionUseCase(
+            aspectDefinitionRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        DeleteAspectDefinitionUseCase(
+            aspectDefinitionRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        ListAspectDefinitionsUseCase(
+            aspectDefinitionRepository = get(),
+        )
+    }
+
+    single {
+        ValidateAspectValueUseCase(
+            aspectDefinitionRepository = get(),
+            validationService = get(),
+        )
+    }
+
+    // Query Use Case
+    single {
+        FilterScopesWithQueryUseCase(
+            scopeRepository = get(),
+            aspectDefinitionRepository = get(),
+        )
+    }
+
+    // Query Handler
+    single {
+        FilterScopesWithQueryHandler(
+            filterScopesWithQueryUseCase = get(),
             logger = get(),
         )
     }

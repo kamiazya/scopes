@@ -165,6 +165,29 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
+        mutex.withLock {
+            try {
+                scopes.values
+                    .sortedBy { it.createdAt }
+                    .drop(offset)
+                    .take(limit)
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+            }
+        }
+    }
+
+    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = either {
+        mutex.withLock {
+            try {
+                scopes.values.filter { it.parentId == null }.toList()
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAllRoot", e))
+            }
+        }
+    }
+
     /**
      * Utility method for testing - clear all scopes.
      */

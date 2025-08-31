@@ -5,6 +5,8 @@ import app.cash.sqldelight.TransactionWithoutReturn
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.application.port.TransactionContext
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -52,7 +54,7 @@ class TransactionRollbackTest :
                     }
 
                     wasMarkedForRollback shouldBe true
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
                     result.getOrNull() shouldBe "result"
                 }
 
@@ -167,7 +169,7 @@ class TransactionRollbackTest :
                         }
                     }
 
-                    result.isLeft() shouldBe true
+                    result.shouldBeLeft()
                     result.swap().getOrNull().shouldBeInstanceOf<BusinessError>()
                 }
             }
@@ -183,7 +185,7 @@ class TransactionRollbackTest :
                         domainError.left()
                     }
 
-                    result.isLeft() shouldBe true
+                    result.shouldBeLeft()
                     result.swap().getOrNull() shouldBe domainError
                 }
 

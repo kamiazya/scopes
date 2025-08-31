@@ -10,6 +10,8 @@ import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -56,7 +58,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     val result = handler(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     // Verify the sequence of calls
                     coVerify(exactly = 2) { repository.findForCurrentUser() }
@@ -77,7 +79,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     val result = handler(GetCurrentUserPreferences)
 
                     // Then
-                    result.isLeft() shouldBe true
+                    result.shouldBeLeft()
                     result.leftOrNull() shouldBe customError
 
                     coVerify(exactly = 1) { repository.findForCurrentUser() }
@@ -96,7 +98,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     val result = handler(GetCurrentUserPreferences)
 
                     // Then
-                    result.isRight() shouldBe true
+                    result.shouldBeRight()
 
                     coVerify(exactly = 1) { repository.findForCurrentUser() }
                     coVerify(exactly = 1) { repository.save(any()) }

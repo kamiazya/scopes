@@ -25,6 +25,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
             is AspectType.Numeric -> "NUMERIC" to null
             is AspectType.BooleanType -> "BOOLEAN" to null
             is AspectType.Ordered -> "ORDERED" to json.encodeToString(type.allowedValues.map { it.value })
+            is AspectType.Duration -> "DURATION" to null
         }
 
         val aspectTypeStr = if (allowedValues != null) "$typeString:$allowedValues" else typeString
@@ -82,6 +83,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
             typeString == "TEXT" -> AspectType.Text
             typeString == "NUMERIC" -> AspectType.Numeric
             typeString == "BOOLEAN" -> AspectType.BooleanType
+            typeString == "DURATION" -> AspectType.Duration
             typeString.startsWith("ORDERED:") -> {
                 val valuesJson = typeString.substring("ORDERED:".length)
                 val values = json.decodeFromString<List<String>>(valuesJson)
@@ -104,6 +106,7 @@ class SqlDelightAspectDefinitionRepository(private val database: ScopeManagement
             is AspectType.Text -> AspectDefinition.createText(key, description, allowMultiple)
             is AspectType.Numeric -> AspectDefinition.createNumeric(key, description, allowMultiple)
             is AspectType.BooleanType -> AspectDefinition.createBoolean(key, description, allowMultiple)
+            is AspectType.Duration -> AspectDefinition.createDuration(key, description, allowMultiple)
             is AspectType.Ordered -> {
                 AspectDefinition.createOrdered(key, type.allowedValues, description, allowMultiple)
                     .fold(

@@ -34,6 +34,7 @@ class ListCommand :
     private val offset by option("--offset", help = "Number of items to skip").int().default(0)
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
+    private val query by option("-q", "--query", help = "Filter by advanced query (e.g., 'priority>=high AND status!=closed')")
 
     // Aspect filtering with completion support
     private val aspects by option(
@@ -64,6 +65,26 @@ class ListCommand :
             }.groupBy({ it.first }, { it.second })
 
             when {
+                query != null -> {
+                    // Use advanced query filtering
+                    scopeCommandAdapter.listScopesWithQuery(
+                        aspectQuery = query!!,
+                        parentId = parentId,
+                        offset = offset,
+                        limit = limit,
+                    ).fold(
+                        { error ->
+                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                        },
+                        { scopes ->
+                            if (verbose) {
+                                echo(formatVerboseList(scopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                            }
+                        },
+                    )
+                }
                 root -> {
                     scopeCommandAdapter.listRootScopes().fold(
                         { error ->

@@ -34,6 +34,7 @@ val contractsModule = module {
             removeAliasHandler = get(),
             setCanonicalAliasHandler = get(),
             renameAliasHandler = get(),
+            filterScopesWithQueryHandler = get(),
             transactionManager = get(),
             logger = get(),
         )

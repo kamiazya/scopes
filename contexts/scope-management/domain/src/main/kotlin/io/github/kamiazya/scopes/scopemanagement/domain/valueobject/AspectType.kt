@@ -23,4 +23,10 @@ sealed class AspectType {
      * Ordered values from a predefined list.
      */
     data class Ordered(val allowedValues: List<AspectValue>) : AspectType()
+
+    /**
+     * Duration values in ISO 8601 format (e.g., "P1D", "PT2H30M", "P1W").
+     * Supports comparisons for time-based queries.
+     */
+    data object Duration : AspectType()
 }

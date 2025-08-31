@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValueError
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Value object representing an aspect value.
@@ -46,6 +48,93 @@ value class AspectValue private constructor(val value: String) {
         "true", "yes", "1" -> true
         "false", "no", "0" -> false
         else -> null
+    }
+
+    /**
+     * Check if this value represents an ISO 8601 duration.
+     * Examples: "P1D" (1 day), "PT2H30M" (2 hours 30 minutes), "P1W" (1 week)
+     */
+    fun isDuration(): Boolean = parseDuration() != null
+
+    /**
+     * Parse ISO 8601 duration to Kotlin Duration.
+     * Supports formats like:
+     * - P1D (1 day)
+     * - PT2H30M (2 hours 30 minutes)
+     * - P1W (1 week)
+     * - P2DT3H4M (2 days, 3 hours, 4 minutes)
+     */
+    fun parseDuration(): Duration? = try {
+        parseISO8601Duration(value)
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
+     * Parse ISO 8601 duration string to Kotlin Duration.
+     */
+    private fun parseISO8601Duration(iso8601: String): Duration {
+        if (!iso8601.startsWith("P")) error("ISO 8601 duration must start with 'P'")
+        if (iso8601.length <= 1) error("ISO 8601 duration must contain at least one component")
+
+        // Handle week format (PnW must be alone, no other components allowed)
+        val weekMatch = Regex("^P(\\d+)W$").matchEntire(iso8601)
+        if (weekMatch != null) {
+            val weeks = weekMatch.groupValues[1].toLong()
+            return (weeks * 7 * 24 * 60 * 60).seconds
+        }
+
+        // Split into date and time parts
+        val parts = iso8601.substring(1).split("T", limit = 2)
+        val datePart = parts[0]
+        val timePart = parts.getOrNull(1) ?: ""
+
+        var totalSeconds = 0L
+
+        // Parse date part (before T)
+        if (datePart.isNotEmpty()) {
+            val dateRegex = Regex("(\\d+)([YMD])")
+            var lastUnit = '@' // Use @ as a marker that's lexicographically before all valid units
+
+            for (match in dateRegex.findAll(datePart)) {
+                val amount = match.groupValues[1].toLong()
+                val unit = match.groupValues[2][0]
+
+                // Validate order: Y must come before M, M before D
+                if (unit <= lastUnit) error("Invalid ISO 8601 duration: $unit must come after $lastUnit")
+                lastUnit = unit
+
+                when (unit) {
+                    'Y' -> error("Year durations are not supported")
+                    'M' -> error("Month durations are not supported")
+                    'D' -> totalSeconds += amount * 24 * 60 * 60
+                }
+            }
+        }
+
+        // Parse time part (after T)
+        if (timePart.isNotEmpty()) {
+            val timeRegex = Regex("(\\d+(?:\\.\\d+)?)([HMS])")
+            var lastUnit = '@'
+
+            for (match in timeRegex.findAll(timePart)) {
+                val amount = match.groupValues[1].toDouble()
+                val unit = match.groupValues[2][0]
+
+                // Validate order: H must come before M, M before S
+                if (unit <= lastUnit) error("Invalid ISO 8601 duration: $unit must come after $lastUnit in time part")
+                lastUnit = unit
+
+                when (unit) {
+                    'H' -> totalSeconds += (amount * 60 * 60).toLong()
+                    'M' -> totalSeconds += (amount * 60).toLong()
+                    'S' -> totalSeconds += amount.toLong()
+                }
+            }
+        }
+
+        if (totalSeconds <= 0) error("ISO 8601 duration must specify at least one non-zero component")
+        return totalSeconds.seconds
     }
 
     override fun toString(): String = value
