@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.dto.PagedResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
@@ -14,9 +15,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 /**
  * Handler for getting children of a scope.
  */
-class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val logger: Logger) : UseCase<GetChildren, ScopesError, List<ScopeDto>> {
+class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val logger: Logger) : UseCase<GetChildren, ScopesError, PagedResult<ScopeDto>> {
 
-    override suspend operator fun invoke(input: GetChildren): Either<ScopesError, List<ScopeDto>> = either {
+    override suspend operator fun invoke(input: GetChildren): Either<ScopesError, PagedResult<ScopeDto>> = either {
         val contextData = mapOf(
             "parentId" to (input.parentId ?: "root"),
             "offset" to input.offset.toString(),
@@ -54,7 +55,12 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ),
         )
 
-        result
+        PagedResult(
+            items = result,
+            totalCount = totalCount,
+            offset = input.offset,
+            limit = input.limit,
+        )
     }.onLeft { error ->
         logger.error(
             "Failed to get children",

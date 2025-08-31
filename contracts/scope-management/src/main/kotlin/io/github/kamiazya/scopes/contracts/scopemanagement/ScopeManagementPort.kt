@@ -59,14 +59,18 @@ public interface ScopeManagementPort {
      * @param query The query containing the parent scope ID
      * @return Either an error or the list of child scopes
      */
-    public suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getChildren(
+        query: GetChildrenQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult>
 
     /**
      * Retrieves root scopes (scopes without parent) with deterministic ordering.
      * Pagination is controlled by the query (offset ≥ 0, limit > 0).
      * @return Either an error or the list of root scopes for the requested page
      */
-    public suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getRootScopes(
+        query: GetRootScopesQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult>
 
     /**
      * Retrieves a scope by its alias name.

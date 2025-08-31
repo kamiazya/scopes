@@ -14,6 +14,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWit
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 
 /**
@@ -112,7 +113,7 @@ class ScopeCommandAdapter(
     /**
      * Lists child scopes
      */
-    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, List<ScopeResult>> {
+    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> {
         val query = GetChildrenQuery(parentId = parentId, offset = offset, limit = limit)
         return scopeManagementPort.getChildren(query)
     }
@@ -120,7 +121,7 @@ class ScopeCommandAdapter(
     /**
      * Lists root scopes
      */
-    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, List<ScopeResult>> =
+    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> =
         scopeManagementPort.getRootScopes(GetRootScopesQuery(offset = offset, limit = limit))
 
     /**

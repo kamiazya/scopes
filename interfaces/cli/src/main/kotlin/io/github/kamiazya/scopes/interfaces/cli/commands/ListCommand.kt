@@ -100,7 +100,8 @@ class ListCommand :
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {
@@ -124,7 +125,8 @@ class ListCommand :
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {
@@ -148,7 +150,8 @@ class ListCommand :
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {

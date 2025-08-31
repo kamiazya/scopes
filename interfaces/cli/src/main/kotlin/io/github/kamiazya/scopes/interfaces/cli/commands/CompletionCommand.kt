@@ -40,12 +40,13 @@ class CompletionCommand :
             while (true) {
                 val page = scopeCommandAdapter
                     .listRootScopes(offset = offset, limit = pageLimit)
-                    .fold({ emptyList() }, { it })
+                    .fold({ null }, { it }) ?: break
 
-                if (page.isEmpty()) break
+                val items = page.scopes
+                if (items.isEmpty()) break
 
-                rootScopes.addAll(page)
-                if (page.size < pageLimit) break
+                rootScopes.addAll(items)
+                if (items.size < pageLimit) break
                 offset += pageLimit
             }
 
@@ -67,10 +68,10 @@ class CompletionCommand :
                             val localPairs = mutableSetOf<String>()
                             var childOffset = 0
                             while (true) {
-                                val children = scopeCommandAdapter
+                                val childPage = scopeCommandAdapter
                                     .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
-                                    .fold({ emptyList() }, { it })
-
+                                    .fold({ null }, { it }) ?: break
+                                val children = childPage.scopes
                                 if (children.isEmpty()) break
 
                                 children.forEach { child ->
