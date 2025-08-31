@@ -14,6 +14,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
@@ -165,6 +166,8 @@ class ScopeManagementPortAdapter(
     override suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>> = getChildrenHandler(
         GetChildren(
             parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
         ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
@@ -184,8 +187,11 @@ class ScopeManagementPortAdapter(
         }
     }
 
-    override suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>> = getRootScopesHandler(
-        GetRootScopes(),
+    override suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>> = getRootScopesHandler(
+        GetRootScopes(
+            offset = query.offset,
+            limit = query.limit,
+        ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
     }.map { scopeDtos ->

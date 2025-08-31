@@ -30,8 +30,8 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ScopeId.create(parentIdString).bind()
         }
 
-        // Get children from repository
-        val children = scopeRepository.findByParentId(parentId).bind()
+        // Get children from repository with database-side pagination
+        val children = scopeRepository.findByParentId(parentId, input.offset, input.limit).bind()
 
         logger.debug(
             "Found children",
@@ -41,14 +41,8 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ),
         )
 
-        // Apply pagination
-        val paginatedChildren = children
-            .sortedBy { it.createdAt } // Sort by creation time
-            .drop(input.offset)
-            .take(input.limit)
-
         // Convert to DTOs
-        val result = paginatedChildren.map { scope ->
+        val result = children.map { scope ->
             ScopeMapper.toDto(scope)
         }
 

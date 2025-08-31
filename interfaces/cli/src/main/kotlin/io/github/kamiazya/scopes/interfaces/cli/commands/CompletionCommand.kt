@@ -28,7 +28,7 @@ class CompletionCommand :
     override fun run() {
         runBlocking {
             // Get all scopes to collect their aspects
-            scopeCommandAdapter.listRootScopes().fold(
+            scopeCommandAdapter.listRootScopes(offset = 0, limit = 1000).fold(
                 {
                     // On error, output nothing (silent failure for completion)
                 },
@@ -48,7 +48,7 @@ class CompletionCommand :
                     coroutineScope {
                         val jobs = scopes.map { rootScope ->
                             async {
-                                scopeCommandAdapter.listChildren(rootScope.id)
+                                scopeCommandAdapter.listChildren(rootScope.id, offset = 0, limit = 1000)
                             }
                         }
                         jobs.awaitAll().forEach { result ->

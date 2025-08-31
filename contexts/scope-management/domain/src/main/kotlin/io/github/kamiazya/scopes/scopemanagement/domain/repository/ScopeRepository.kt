@@ -34,6 +34,13 @@ interface ScopeRepository {
     suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
 
     /**
+     * Find scopes by parent ID with pagination.
+     * Results are ordered by creation time ascending to provide stable paging.
+     * When parentId is null, returns root scopes.
+     */
+    suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
+
+    /**
      * Check if a scope exists.
      */
     suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean>

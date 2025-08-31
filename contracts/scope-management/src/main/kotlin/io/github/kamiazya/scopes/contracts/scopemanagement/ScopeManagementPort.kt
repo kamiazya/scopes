@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
@@ -62,7 +63,7 @@ public interface ScopeManagementPort {
      * Retrieves all root scopes (scopes without parent).
      * @return Either an error or the list of root scopes
      */
-    public suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, List<ScopeResult>>
 
     /**
      * Retrieves a scope by its alias name.

@@ -24,8 +24,8 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
             ),
         )
 
-        // Get root scopes (parentId = null)
-        val rootScopes = scopeRepository.findByParentId(null).bind()
+        // Get root scopes (parentId = null) with database-side pagination
+        val rootScopes = scopeRepository.findByParentId(null, input.offset, input.limit).bind()
 
         logger.debug(
             "Found root scopes",
@@ -34,14 +34,8 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
             ),
         )
 
-        // Apply pagination
-        val paginatedScopes = rootScopes
-            .sortedBy { it.createdAt } // Sort by creation time
-            .drop(input.offset)
-            .take(input.limit)
-
         // Convert to DTOs
-        val result = paginatedScopes.map { scope ->
+        val result = rootScopes.map { scope ->
             ScopeMapper.toDto(scope)
         }
 

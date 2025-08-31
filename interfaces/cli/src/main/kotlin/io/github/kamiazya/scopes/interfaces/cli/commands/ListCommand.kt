@@ -65,7 +65,7 @@ class ListCommand :
 
             when {
                 root -> {
-                    scopeCommandAdapter.listRootScopes().fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -86,7 +86,7 @@ class ListCommand :
                     )
                 }
                 parentId != null -> {
-                    scopeCommandAdapter.listChildren(parentId!!).fold(
+                    scopeCommandAdapter.listChildren(parentId!!, offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -107,7 +107,7 @@ class ListCommand :
                 }
                 else -> {
                     // Default: list root scopes
-                    scopeCommandAdapter.listRootScopes().fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },

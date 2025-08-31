@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -109,15 +110,16 @@ class ScopeCommandAdapter(
     /**
      * Lists child scopes
      */
-    suspend fun listChildren(parentId: String): Either<ScopeContractError, List<ScopeResult>> {
-        val query = GetChildrenQuery(parentId = parentId)
+    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, List<ScopeResult>> {
+        val query = GetChildrenQuery(parentId = parentId, offset = offset, limit = limit)
         return scopeManagementPort.getChildren(query)
     }
 
     /**
      * Lists root scopes
      */
-    suspend fun listRootScopes(): Either<ScopeContractError, List<ScopeResult>> = scopeManagementPort.getRootScopes()
+    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, List<ScopeResult>> =
+        scopeManagementPort.getRootScopes(GetRootScopesQuery(offset = offset, limit = limit))
 
     /**
      * Lists all aliases for a specific scope
