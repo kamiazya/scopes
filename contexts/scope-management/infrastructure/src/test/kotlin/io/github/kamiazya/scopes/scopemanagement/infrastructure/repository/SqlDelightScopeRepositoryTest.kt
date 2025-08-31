@@ -647,14 +647,14 @@ class SqlDelightScopeRepositoryTest :
                         runBlocking {
                             repository.save(
                                 Scope(
-                                    ScopeId.generate(),
-                                    ScopeTitle.create("Test").getOrNull()!!,
-                                    null,
-                                    null,
-                                    ScopeStatus.default(),
-                                    Clock.System.now(),
-                                    Clock.System.now(),
-                                    Aspects.empty(),
+                                    id = ScopeId.generate(),
+                                    title = ScopeTitle.create("Test").getOrNull()!!,
+                                    description = null,
+                                    parentId = null,
+                                    status = ScopeStatus.default(),
+                                    createdAt = Clock.System.now(),
+                                    updatedAt = Clock.System.now(),
+                                    aspects = Aspects.empty(),
                                 ),
                             )
                         },

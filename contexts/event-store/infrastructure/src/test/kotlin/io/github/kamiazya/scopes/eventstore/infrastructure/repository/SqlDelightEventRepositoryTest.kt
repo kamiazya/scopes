@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 // Test domain event for testing
@@ -236,15 +237,13 @@ class SqlDelightEventRepositoryTest :
                         testData = "first event",
                     )
 
-                    // Store first event
-                    runBlocking {
+                    // Store first event and get its stored timestamp
+                    val firstStoredEvent = runBlocking {
                         repository.store(firstEvent)
-                    }
-
-                    // Wait a bit to ensure different stored_at timestamps
-                    Thread.sleep(100)
-                    val timestampBetween = Clock.System.now()
-                    Thread.sleep(100)
+                    }.getOrNull()!!
+                    
+                    // Use a timestamp just after the first event's stored time
+                    val timestampBetween = firstStoredEvent.metadata.storedAt.plus(1.milliseconds)
 
                     val secondEvent = TestEvent(
                         eventId = EventId.generate(),
@@ -270,8 +269,6 @@ class SqlDelightEventRepositoryTest :
 
                 it("should respect the limit parameter") {
                     // Given
-                    val baseTime = Clock.System.now()
-                    Thread.sleep(100) // Ensure events are stored after baseTime
                     val events = (1..10).map { i ->
                         TestEvent(
                             eventId = EventId.generate(),
@@ -282,6 +279,8 @@ class SqlDelightEventRepositoryTest :
                         )
                     }
 
+                    // Store all events and get the timestamp before storing
+                    val baseTime = Clock.System.now()
                     runBlocking {
                         events.forEach { repository.store(it) }
                     }
@@ -394,13 +393,13 @@ class SqlDelightEventRepositoryTest :
                         testData = "old event",
                     )
 
-                    runBlocking {
+                    // Store old event and get its stored timestamp
+                    val oldStoredEvent = runBlocking {
                         repository.store(oldEvent)
-                    }
-
-                    Thread.sleep(100) // Ensure different stored_at timestamps
-                    val timestampBetween = Clock.System.now()
-                    Thread.sleep(100)
+                    }.getOrNull()!!
+                    
+                    // Use a timestamp just after the old event's stored time
+                    val timestampBetween = oldStoredEvent.metadata.storedAt.plus(1.milliseconds)
 
                     val recentEvent = TestEvent(
                         eventId = EventId.generate(),
