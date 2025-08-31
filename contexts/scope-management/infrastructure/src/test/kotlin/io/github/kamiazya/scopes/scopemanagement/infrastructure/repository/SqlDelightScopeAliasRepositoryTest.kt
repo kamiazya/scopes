@@ -13,7 +13,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 
 class SqlDelightScopeAliasRepositoryTest :
@@ -41,7 +41,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCanonical(scopeId, aliasName)
 
                     // When
-                    val result = runBlocking { repository.save(alias) }
+                    val result = runTest { repository.save(alias) }
 
                     // Then
                     result shouldBe Unit.right()
@@ -52,13 +52,13 @@ class SqlDelightScopeAliasRepositoryTest :
                     val scopeId = ScopeId.generate()
                     val aliasName = AliasName.create("initial-alias").getOrNull()!!
                     val alias = ScopeAlias.createCanonical(scopeId, aliasName)
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     val updatedAlias = alias.withNewName(AliasName.create("updated-alias").getOrNull()!!)
 
                     // When
-                    val result = runBlocking { repository.save(updatedAlias) }
-                    val foundAlias = runBlocking { repository.findById(alias.id) }
+                    val result = runTest { repository.save(updatedAlias) }
+                    val foundAlias = runTest { repository.findById(alias.id) }
 
                     // Then
                     result shouldBe Unit.right()
@@ -74,7 +74,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     database.close()
 
                     // When
-                    val result = runBlocking { repository.save(alias) }
+                    val result = runTest { repository.save(alias) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -88,10 +88,10 @@ class SqlDelightScopeAliasRepositoryTest :
                     val scopeId = ScopeId.generate()
                     val aliasName = AliasName.create("find-me").getOrNull()!!
                     val alias = ScopeAlias.createCanonical(scopeId, aliasName)
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val result = runBlocking { repository.findByAliasName(aliasName) }
+                    val result = runTest { repository.findByAliasName(aliasName) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -106,7 +106,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val nonExistentName = AliasName.create("non-existent").getOrNull()!!
 
                     // When
-                    val result = runBlocking { repository.findByAliasName(nonExistentName) }
+                    val result = runTest { repository.findByAliasName(nonExistentName) }
 
                     // Then
                     result shouldBe null.right()
@@ -116,12 +116,12 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val aliasName = AliasName.create("TestAlias").getOrNull()!!
                     val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     val lowerCaseName = AliasName.create("testalias").getOrNull()!!
 
                     // When
-                    val result = runBlocking { repository.findByAliasName(lowerCaseName) }
+                    val result = runTest { repository.findByAliasName(lowerCaseName) }
 
                     // Then
                     result shouldBe null.right() // Should not find due to case sensitivity
@@ -135,10 +135,10 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeId.generate(),
                         AliasName.create("custom-alias").getOrNull()!!,
                     )
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val result = runBlocking { repository.findById(alias.id) }
+                    val result = runTest { repository.findById(alias.id) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -152,7 +152,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val nonExistentId = AliasId.generate()
 
                     // When
-                    val result = runBlocking { repository.findById(nonExistentId) }
+                    val result = runTest { repository.findById(nonExistentId) }
 
                     // Then
                     result shouldBe null.right()
@@ -176,14 +176,14 @@ class SqlDelightScopeAliasRepositoryTest :
                         AliasName.create("custom-2").getOrNull()!!,
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(canonicalAlias)
                         repository.save(customAlias1)
                         repository.save(customAlias2)
                     }
 
                     // When
-                    val result = runBlocking { repository.findByScopeId(scopeId) }
+                    val result = runTest { repository.findByScopeId(scopeId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -198,7 +198,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val scopeId = ScopeId.generate()
 
                     // When
-                    val result = runBlocking { repository.findByScopeId(scopeId) }
+                    val result = runTest { repository.findByScopeId(scopeId) }
 
                     // Then
                     result shouldBe emptyList<ScopeAlias>().right()
@@ -218,13 +218,13 @@ class SqlDelightScopeAliasRepositoryTest :
                         AliasName.create("secondary-alias").getOrNull()!!,
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(canonicalAlias)
                         repository.save(customAlias)
                     }
 
                     // When
-                    val result = runBlocking { repository.findCanonicalByScopeId(scopeId) }
+                    val result = runTest { repository.findCanonicalByScopeId(scopeId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -240,10 +240,10 @@ class SqlDelightScopeAliasRepositoryTest :
                         scopeId,
                         AliasName.create("only-custom").getOrNull()!!,
                     )
-                    runBlocking { repository.save(customAlias) }
+                    runTest { repository.save(customAlias) }
 
                     // When
-                    val result = runBlocking { repository.findCanonicalByScopeId(scopeId) }
+                    val result = runTest { repository.findCanonicalByScopeId(scopeId) }
 
                     // Then
                     result shouldBe null.right()
@@ -267,15 +267,15 @@ class SqlDelightScopeAliasRepositoryTest :
                         AliasName.create("custom-2").getOrNull()!!,
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(canonicalAlias)
                         repository.save(customAlias1)
                         repository.save(customAlias2)
                     }
 
                     // When
-                    val customAliases = runBlocking { repository.findByScopeIdAndType(scopeId, AliasType.CUSTOM) }
-                    val canonicalAliases = runBlocking { repository.findByScopeIdAndType(scopeId, AliasType.CANONICAL) }
+                    val customAliases = runTest { repository.findByScopeIdAndType(scopeId, AliasType.CUSTOM) }
+                    val canonicalAliases = runTest { repository.findByScopeIdAndType(scopeId, AliasType.CANONICAL) }
 
                     // Then
                     customAliases.getOrNull()?.size shouldBe 2
@@ -292,12 +292,12 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeAlias.createCanonical(ScopeId.generate(), AliasName.create("other-alias").getOrNull()!!),
                     )
 
-                    runBlocking {
+                    runTest {
                         aliases.forEach { repository.save(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.findByAliasNamePrefix("test", limit = 10) }
+                    val result = runTest { repository.findByAliasNamePrefix("test", limit = 10) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -315,12 +315,12 @@ class SqlDelightScopeAliasRepositoryTest :
                         )
                     }
 
-                    runBlocking {
+                    runTest {
                         aliases.forEach { repository.save(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.findByAliasNamePrefix("prefix", limit = 3) }
+                    val result = runTest { repository.findByAliasNamePrefix("prefix", limit = 3) }
 
                     // Then
                     result.getOrNull()?.size shouldBe 3
@@ -328,7 +328,7 @@ class SqlDelightScopeAliasRepositoryTest :
 
                 it("should return empty list for non-matching prefix") {
                     // When
-                    val result = runBlocking { repository.findByAliasNamePrefix("nonexistent", limit = 10) }
+                    val result = runTest { repository.findByAliasNamePrefix("nonexistent", limit = 10) }
 
                     // Then
                     result shouldBe emptyList<ScopeAlias>().right()
@@ -340,10 +340,10 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val aliasName = AliasName.create("exists").getOrNull()!!
                     val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val result = runBlocking { repository.existsByAliasName(aliasName) }
+                    val result = runTest { repository.existsByAliasName(aliasName) }
 
                     // Then
                     result shouldBe true.right()
@@ -354,7 +354,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val aliasName = AliasName.create("does-not-exist").getOrNull()!!
 
                     // When
-                    val result = runBlocking { repository.existsByAliasName(aliasName) }
+                    val result = runTest { repository.existsByAliasName(aliasName) }
 
                     // Then
                     result shouldBe false.right()
@@ -368,11 +368,11 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeId.generate(),
                         AliasName.create("to-remove").getOrNull()!!,
                     )
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val removeResult = runBlocking { repository.removeById(alias.id) }
-                    val findResult = runBlocking { repository.findById(alias.id) }
+                    val removeResult = runTest { repository.removeById(alias.id) }
+                    val findResult = runTest { repository.findById(alias.id) }
 
                     // Then
                     removeResult shouldBe true.right()
@@ -384,7 +384,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val nonExistentId = AliasId.generate()
 
                     // When
-                    val result = runBlocking { repository.removeById(nonExistentId) }
+                    val result = runTest { repository.removeById(nonExistentId) }
 
                     // Then
                     result shouldBe true.right() // Operation succeeds even if nothing was deleted
@@ -396,11 +396,11 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val aliasName = AliasName.create("remove-by-name").getOrNull()!!
                     val alias = ScopeAlias.createCustom(ScopeId.generate(), aliasName)
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val removeResult = runBlocking { repository.removeByAliasName(aliasName) }
-                    val findResult = runBlocking { repository.findByAliasName(aliasName) }
+                    val removeResult = runTest { repository.removeByAliasName(aliasName) }
+                    val findResult = runTest { repository.findByAliasName(aliasName) }
 
                     // Then
                     removeResult shouldBe true.right()
@@ -418,13 +418,13 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!),
                     )
 
-                    runBlocking {
+                    runTest {
                         aliases.forEach { repository.save(it) }
                     }
 
                     // When
-                    val removeResult = runBlocking { repository.removeByScopeId(scopeId) }
-                    val findResult = runBlocking { repository.findByScopeId(scopeId) }
+                    val removeResult = runTest { repository.removeByScopeId(scopeId) }
+                    val findResult = runTest { repository.findByScopeId(scopeId) }
 
                     // Then
                     removeResult.isRight() shouldBe true
@@ -439,13 +439,13 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeId.generate(),
                         AliasName.create("original").getOrNull()!!,
                     )
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     val updatedAlias = alias.withNewName(AliasName.create("updated").getOrNull()!!)
 
                     // When
-                    val updateResult = runBlocking { repository.update(updatedAlias) }
-                    val findResult = runBlocking { repository.findById(alias.id) }
+                    val updateResult = runTest { repository.update(updatedAlias) }
+                    val findResult = runTest { repository.findById(alias.id) }
 
                     // Then
                     updateResult shouldBe true.right()
@@ -458,13 +458,13 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeId.generate(),
                         AliasName.create("promotable").getOrNull()!!,
                     )
-                    runBlocking { repository.save(customAlias) }
+                    runTest { repository.save(customAlias) }
 
                     val promotedAlias = customAlias.promoteToCanonical()
 
                     // When
-                    val updateResult = runBlocking { repository.update(promotedAlias) }
-                    val findResult = runBlocking { repository.findById(customAlias.id) }
+                    val updateResult = runTest { repository.update(promotedAlias) }
+                    val findResult = runTest { repository.findById(customAlias.id) }
 
                     // Then
                     updateResult shouldBe true.right()
@@ -482,12 +482,12 @@ class SqlDelightScopeAliasRepositoryTest :
                         )
                     }
 
-                    runBlocking {
+                    runTest {
                         aliases.forEach { repository.save(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.count() }
+                    val result = runTest { repository.count() }
 
                     // Then
                     result shouldBe 5L.right()
@@ -495,7 +495,7 @@ class SqlDelightScopeAliasRepositoryTest :
 
                 it("should return 0 when no aliases exist") {
                     // When
-                    val result = runBlocking { repository.count() }
+                    val result = runTest { repository.count() }
 
                     // Then
                     result shouldBe 0L.right()
@@ -512,14 +512,14 @@ class SqlDelightScopeAliasRepositoryTest :
                         )
                     }
 
-                    runBlocking {
+                    runTest {
                         aliases.forEach { repository.save(it) }
                     }
 
                     // When
-                    val page1 = runBlocking { repository.listAll(offset = 0, limit = 3) }
-                    val page2 = runBlocking { repository.listAll(offset = 3, limit = 3) }
-                    val page3 = runBlocking { repository.listAll(offset = 6, limit = 10) }
+                    val page1 = runTest { repository.listAll(offset = 0, limit = 3) }
+                    val page2 = runTest { repository.listAll(offset = 3, limit = 3) }
+                    val page3 = runTest { repository.listAll(offset = 6, limit = 10) }
 
                     // Then
                     page1.getOrNull()?.size shouldBe 3
@@ -539,10 +539,10 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeId.generate(),
                         AliasName.create("single").getOrNull()!!,
                     )
-                    runBlocking { repository.save(alias) }
+                    runTest { repository.save(alias) }
 
                     // When
-                    val result = runBlocking { repository.listAll(offset = 10, limit = 5) }
+                    val result = runTest { repository.listAll(offset = 10, limit = 5) }
 
                     // Then
                     result shouldBe emptyList<ScopeAlias>().right()
@@ -560,20 +560,20 @@ class SqlDelightScopeAliasRepositoryTest :
 
                     // When/Then - Test all operations return proper errors
                     val operations = listOf(
-                        runBlocking { repository.save(alias) },
-                        runBlocking { repository.findByAliasName(aliasName) },
-                        runBlocking { repository.findById(aliasId) },
-                        runBlocking { repository.findByScopeId(scopeId) },
-                        runBlocking { repository.findCanonicalByScopeId(scopeId) },
-                        runBlocking { repository.findByScopeIdAndType(scopeId, AliasType.CANONICAL) },
-                        runBlocking { repository.findByAliasNamePrefix("test", 10) },
-                        runBlocking { repository.existsByAliasName(aliasName) },
-                        runBlocking { repository.removeById(aliasId) },
-                        runBlocking { repository.removeByAliasName(aliasName) },
-                        runBlocking { repository.removeByScopeId(scopeId) },
-                        runBlocking { repository.update(alias) },
-                        runBlocking { repository.count() },
-                        runBlocking { repository.listAll(0, 10) },
+                        runTest { repository.save(alias) },
+                        runTest { repository.findByAliasName(aliasName) },
+                        runTest { repository.findById(aliasId) },
+                        runTest { repository.findByScopeId(scopeId) },
+                        runTest { repository.findCanonicalByScopeId(scopeId) },
+                        runTest { repository.findByScopeIdAndType(scopeId, AliasType.CANONICAL) },
+                        runTest { repository.findByAliasNamePrefix("test", 10) },
+                        runTest { repository.existsByAliasName(aliasName) },
+                        runTest { repository.removeById(aliasId) },
+                        runTest { repository.removeByAliasName(aliasName) },
+                        runTest { repository.removeByScopeId(scopeId) },
+                        runTest { repository.update(alias) },
+                        runTest { repository.count() },
+                        runTest { repository.listAll(0, 10) },
                     )
 
                     operations.forEach { result ->
@@ -593,12 +593,12 @@ class SqlDelightScopeAliasRepositoryTest :
                     val canonicalAlias = ScopeAlias.createCanonical(scopeId, initialName)
 
                     // Phase 1: Create canonical alias
-                    runBlocking { repository.save(canonicalAlias) }
+                    runTest { repository.save(canonicalAlias) }
 
                     // Phase 2: Add custom aliases
                     val customAlias1 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-1").getOrNull()!!)
                     val customAlias2 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!)
-                    runBlocking {
+                    runTest {
                         repository.save(customAlias1)
                         repository.save(customAlias2)
                     }
@@ -606,14 +606,14 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Phase 3: Demote canonical to custom and promote a custom to canonical
                     val demotedCanonical = canonicalAlias.demoteToCustom()
                     val promotedCustom = customAlias1.promoteToCanonical()
-                    runBlocking {
+                    runTest {
                         repository.update(demotedCanonical)
                         repository.update(promotedCustom)
                     }
 
                     // Verify final state
-                    val finalCanonical = runBlocking { repository.findCanonicalByScopeId(scopeId) }
-                    val allAliases = runBlocking { repository.findByScopeId(scopeId) }
+                    val finalCanonical = runTest { repository.findCanonicalByScopeId(scopeId) }
+                    val allAliases = runTest { repository.findByScopeId(scopeId) }
 
                     finalCanonical.getOrNull()?.id shouldBe customAlias1.id
                     allAliases.getOrNull()?.size shouldBe 3
@@ -624,10 +624,10 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val aliasName = AliasName.create("unique-name").getOrNull()!!
                     val scope1Alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
-                    runBlocking { repository.save(scope1Alias) }
+                    runTest { repository.save(scope1Alias) }
 
                     // When trying to use the same alias name for a different scope
-                    val exists = runBlocking { repository.existsByAliasName(aliasName) }
+                    val exists = runTest { repository.existsByAliasName(aliasName) }
 
                     // Then
                     exists shouldBe true.right()

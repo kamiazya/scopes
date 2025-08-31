@@ -20,9 +20,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 // Test domain event for testing
 data class TestEvent(
@@ -40,15 +43,45 @@ class MockEventSerializer : EventSerializer {
     var deserializeError: EventStoreError? = null
 
     override fun serialize(event: DomainEvent): Either<EventStoreError.InvalidEventError, String> {
-        serializeError?.let { return it.left() }
+        serializeError?.let { 
+            return if (it is EventStoreError.InvalidEventError) {
+                it.left()
+            } else {
+                EventStoreError.InvalidEventError(
+                    eventType = event::class.simpleName ?: "Unknown",
+                    validationErrors = listOf(
+                        EventStoreError.ValidationIssue(
+                            field = "serialization",
+                            rule = EventStoreError.ValidationRule.INVALID_TYPE,
+                            actualValue = "Serialization error"
+                        )
+                    )
+                ).left()
+            }
+        }
 
         val key = "${event.eventId.value}:${event::class.simpleName}"
         events[key] = event
         return key.right()
     }
 
-    override fun deserialize(eventType: String, eventData: String): Either<EventStoreError, DomainEvent> {
-        deserializeError?.let { return it.left() }
+    override fun deserialize(eventType: String, eventData: String): Either<EventStoreError.InvalidEventError, DomainEvent> {
+        deserializeError?.let { 
+            return if (it is EventStoreError.InvalidEventError) {
+                it.left()
+            } else {
+                EventStoreError.InvalidEventError(
+                    eventType = eventType,
+                    validationErrors = listOf(
+                        EventStoreError.ValidationIssue(
+                            field = "deserialization",
+                            rule = EventStoreError.ValidationRule.INVALID_TYPE,
+                            actualValue = "Deserialization error"
+                        )
+                    )
+                ).left()
+            }
+        }
 
         return events[eventData]?.right() ?: EventStoreError.InvalidEventError(
             eventType = eventType,
@@ -69,17 +102,19 @@ class SqlDelightEventRepositoryTest :
         describe("SqlDelightEventRepository") {
             lateinit var repository: SqlDelightEventRepository
             lateinit var serializer: MockEventSerializer
-            lateinit var database: AutoCloseable
+            lateinit var database: io.github.kamiazya.scopes.eventstore.db.EventStoreDatabase
+            lateinit var driver: app.cash.sqldelight.db.SqlDriver
 
             beforeEach {
                 serializer = MockEventSerializer()
-                val db = SqlDelightDatabaseProvider.createInMemoryDatabase()
-                database = db
-                repository = SqlDelightEventRepository(db.eventQueries, serializer)
+                driver = app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver(app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY)
+                io.github.kamiazya.scopes.eventstore.db.EventStoreDatabase.Schema.create(driver)
+                database = io.github.kamiazya.scopes.eventstore.db.EventStoreDatabase(driver)
+                repository = SqlDelightEventRepository(database.eventQueries, serializer)
             }
 
             afterEach {
-                (database as? AutoCloseable)?.close()
+                driver.close()
             }
 
             describe("store") {
@@ -94,7 +129,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runBlocking { repository.store(event) }
+                    val result = runTest { repository.store(event) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -135,7 +170,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val results = runBlocking {
+                    val results = runTest {
                         events.map { repository.store(it) }
                     }
 
@@ -165,7 +200,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runBlocking { repository.store(event) }
+                    val result = runTest { repository.store(event) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -183,10 +218,10 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // Store the same event twice to trigger a unique constraint violation
-                    runBlocking { repository.store(event) }
+                    runTest { repository.store(event) }
 
                     // When
-                    val result = runBlocking { repository.store(event) }
+                    val result = runTest { repository.store(event) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -198,8 +233,8 @@ class SqlDelightEventRepositoryTest :
                 it("should retrieve events since a given timestamp") {
                     // Given
                     val now = Clock.System.now()
-                    val past = now.minus(kotlinx.datetime.DateTimeUnit.HOUR, 1)
-                    val future = now.plus(kotlinx.datetime.DateTimeUnit.HOUR, 1)
+                    val past = now.minus(1.hours)
+                    val future = now.plus(1.hours)
 
                     val pastEvent = TestEvent(
                         eventId = EventId.generate(),
@@ -217,18 +252,18 @@ class SqlDelightEventRepositoryTest :
                         testData = "recent event",
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.store(pastEvent)
                         repository.store(recentEvent)
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsSince(now) }
+                    val result = runTest { repository.getEventsSince(now) }
 
                     // Then
                     result.isRight() shouldBe true
                     val events = result.getOrNull()
-                    events shouldHaveSize 1
+                    events?.shouldHaveSize(1)
                     (events?.first()?.event as? TestEvent)?.testData shouldBe "recent event"
                 }
 
@@ -240,21 +275,21 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = AggregateId.generate(),
                             aggregateVersion = AggregateVersion.initial(),
-                            occurredAt = baseTime.plus(kotlinx.datetime.DateTimeUnit.MINUTE * i),
+                            occurredAt = baseTime.plus(i.minutes),
                             testData = "event $i",
                         )
                     }
 
-                    runBlocking {
+                    runTest {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsSince(baseTime, limit = 3) }
+                    val result = runTest { repository.getEventsSince(baseTime, limit = 3) }
 
                     // Then
                     result.isRight() shouldBe true
-                    result.getOrNull() shouldHaveSize 3
+                    result.getOrNull()?.shouldHaveSize(3)
                 }
 
                 it("should handle deserialization errors gracefully by skipping failed events") {
@@ -275,7 +310,7 @@ class SqlDelightEventRepositoryTest :
                         testData = "event 2",
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.store(event1)
                         repository.store(event2)
                     }
@@ -293,7 +328,7 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val result = runBlocking { repository.getEventsSince(Instant.DISTANT_PAST) }
+                    val result = runTest { repository.getEventsSince(Instant.DISTANT_PAST) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -331,17 +366,17 @@ class SqlDelightEventRepositoryTest :
                         ),
                     )
 
-                    runBlocking {
+                    runTest {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isRight() shouldBe true
                     val aggregateEvents = result.getOrNull()
-                    aggregateEvents shouldHaveSize 2
+                    aggregateEvents?.shouldHaveSize(2)
                     aggregateEvents?.all { it.metadata.aggregateId == aggregateId } shouldBe true
                 }
 
@@ -349,7 +384,7 @@ class SqlDelightEventRepositoryTest :
                     // Given
                     val aggregateId = AggregateId.generate()
                     val now = Clock.System.now()
-                    val past = now.minus(kotlinx.datetime.DateTimeUnit.HOUR, 1)
+                    val past = now.minus(1.hours)
 
                     val oldEvent = TestEvent(
                         eventId = EventId.generate(),
@@ -363,23 +398,23 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.fromUnsafe(2),
-                        occurredAt = now.plus(kotlinx.datetime.DateTimeUnit.MINUTE, 1),
+                        occurredAt = now.plus(1.minutes),
                         testData = "recent event",
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.store(oldEvent)
                         Thread.sleep(100) // Ensure different stored_at timestamps
                         repository.store(recentEvent)
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, since = now) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId, since = now) }
 
                     // Then
                     result.isRight() shouldBe true
                     val events = result.getOrNull()
-                    events shouldHaveSize 1
+                    events?.shouldHaveSize(1)
                     (events?.first()?.event as? TestEvent)?.testData shouldBe "recent event"
                 }
 
@@ -396,16 +431,16 @@ class SqlDelightEventRepositoryTest :
                         )
                     }
 
-                    runBlocking {
+                    runTest {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, limit = 2) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId, limit = 2) }
 
                     // Then
                     result.isRight() shouldBe true
-                    result.getOrNull() shouldHaveSize 2
+                    result.getOrNull()?.shouldHaveSize(2)
                 }
 
                 it("should return empty list for aggregate with no events") {
@@ -413,7 +448,7 @@ class SqlDelightEventRepositoryTest :
                     val aggregateId = AggregateId.generate()
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result shouldBe emptyList<PersistedEventRecord>().right()
@@ -440,12 +475,12 @@ class SqlDelightEventRepositoryTest :
                         ),
                     )
 
-                    runBlocking {
+                    runTest {
                         events.forEach { repository.store(it) }
                     }
 
                     // When
-                    val streamedEvents = runBlocking {
+                    val streamedEvents = runTest {
                         repository.streamEvents().toList()
                     }
 
@@ -456,7 +491,7 @@ class SqlDelightEventRepositoryTest :
 
                 it("should handle empty event store") {
                     // When
-                    val streamedEvents = runBlocking {
+                    val streamedEvents = runTest {
                         repository.streamEvents().toList()
                     }
 
@@ -474,25 +509,25 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(i.toLong()),
-                            occurredAt = Clock.System.now().plus(kotlinx.datetime.DateTimeUnit.SECOND * i),
+                            occurredAt = Clock.System.now().plus(i.seconds),
                             testData = "event $i",
                         )
                     }
 
                     // Store events in random order
-                    runBlocking {
+                    runTest {
                         listOf(events[2], events[0], events[4], events[1], events[3]).forEach {
                             repository.store(it)
                         }
                     }
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isRight() shouldBe true
                     val retrievedEvents = result.getOrNull()
-                    retrievedEvents shouldHaveSize 5
+                    retrievedEvents?.shouldHaveSize(5)
 
                     // Events should be ordered by sequence number (which is insertion order)
                     val sequenceNumbers = retrievedEvents?.map { it.metadata.sequenceNumber }
@@ -504,10 +539,10 @@ class SqlDelightEventRepositoryTest :
                 it("should handle persistence errors") {
                     // Given
                     val aggregateId = AggregateId.generate()
-                    database.close()
+                    driver.close()
 
                     // When
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId) }
+                    val result = runTest { repository.getEventsByAggregate(aggregateId) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -527,8 +562,8 @@ class SqlDelightEventRepositoryTest :
                     )
 
                     // When
-                    val storeResult = runBlocking { repository.store(event) }
-                    val retrieveResult = runBlocking { repository.getEventsSince(Instant.DISTANT_PAST) }
+                    val storeResult = runTest { repository.store(event) }
+                    val retrieveResult = runTest { repository.getEventsSince(Instant.DISTANT_PAST) }
 
                     // Then
                     storeResult.isRight() shouldBe true

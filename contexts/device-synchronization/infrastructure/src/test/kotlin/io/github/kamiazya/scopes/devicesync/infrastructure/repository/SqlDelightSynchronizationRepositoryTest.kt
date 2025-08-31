@@ -14,24 +14,27 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlin.time.Duration.Companion.hours
 
 class SqlDelightSynchronizationRepositoryTest :
     DescribeSpec({
 
         describe("SqlDelightSynchronizationRepository") {
             lateinit var repository: SqlDelightSynchronizationRepository
-            lateinit var database: AutoCloseable
+            lateinit var database: io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
+            lateinit var driver: app.cash.sqldelight.db.SqlDriver
 
             beforeEach {
-                val db = SqlDelightDatabaseProvider.createInMemoryDatabase()
-                database = db
-                repository = SqlDelightSynchronizationRepository(db.deviceQueries, db.vectorClockQueries)
+                driver = app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver(app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY)
+                io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase.Schema.create(driver)
+                database = io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase(driver)
+                repository = SqlDelightSynchronizationRepository(database.deviceQueries, database.vectorClockQueries)
             }
 
             afterEach {
-                (database as? AutoCloseable)?.close()
+                driver.close()
             }
 
             describe("registerDevice") {
@@ -40,7 +43,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     val deviceId = DeviceId("test-device-001")
 
                     // When
-                    val result = runBlocking { repository.registerDevice(deviceId) }
+                    val result = runTest { repository.registerDevice(deviceId) }
 
                     // Then
                     result shouldBe Unit.right()
@@ -49,10 +52,10 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should handle registering the same device twice") {
                     // Given
                     val deviceId = DeviceId("duplicate-device")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     // When
-                    val result = runBlocking { repository.registerDevice(deviceId) }
+                    val result = runTest { repository.registerDevice(deviceId) }
 
                     // Then
                     result shouldBe Unit.right() // Upsert behavior should handle duplicates
@@ -63,8 +66,8 @@ class SqlDelightSynchronizationRepositoryTest :
                     val deviceId = DeviceId("new-device")
 
                     // When
-                    runBlocking { repository.registerDevice(deviceId) }
-                    val syncState = runBlocking { repository.getSyncState(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
+                    val syncState = runTest { repository.getSyncState(deviceId) }
 
                     // Then
                     syncState.isRight() shouldBe true
@@ -81,10 +84,10 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should unregister an existing device") {
                     // Given
                     val deviceId = DeviceId("device-to-remove")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     // When
-                    val result = runBlocking { repository.unregisterDevice(deviceId) }
+                    val result = runTest { repository.unregisterDevice(deviceId) }
 
                     // Then
                     result shouldBe Unit.right()
@@ -93,11 +96,11 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should remove device from known devices list") {
                     // Given
                     val deviceId = DeviceId("device-to-unregister")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     // When
-                    runBlocking { repository.unregisterDevice(deviceId) }
-                    val devices = runBlocking { repository.listKnownDevices() }
+                    runTest { repository.unregisterDevice(deviceId) }
+                    val devices = runTest { repository.listKnownDevices() }
 
                     // Then
                     devices.isRight() shouldBe true
@@ -110,7 +113,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     val deviceId = DeviceId("device-with-clock")
                     val vectorClock = VectorClock(mapOf("device1" to 10L, "device2" to 20L))
                     
-                    runBlocking {
+                    runTest {
                         repository.registerDevice(deviceId)
                         val syncState = SyncState(
                             deviceId = deviceId,
@@ -118,15 +121,15 @@ class SqlDelightSynchronizationRepositoryTest :
                             remoteVectorClock = vectorClock,
                             lastSuccessfulPush = null,
                             lastSuccessfulPull = null,
-                            syncStatus = SyncStatus.UP_TO_DATE,
+                            syncStatus = SyncStatus.SUCCESS,
                             pendingChanges = 0,
                         )
                         repository.updateSyncState(syncState)
                     }
 
                     // When
-                    runBlocking { repository.unregisterDevice(deviceId) }
-                    val syncState = runBlocking { repository.getSyncState(deviceId) }
+                    runTest { repository.unregisterDevice(deviceId) }
+                    val syncState = runTest { repository.getSyncState(deviceId) }
 
                     // Then
                     syncState.isLeft() shouldBe true
@@ -140,7 +143,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     val deviceId = DeviceId("sync-state-device")
                     val now = Clock.System.now()
                     
-                    runBlocking {
+                    runTest {
                         repository.registerDevice(deviceId)
                         val syncState = SyncState(
                             deviceId = deviceId,
@@ -148,20 +151,20 @@ class SqlDelightSynchronizationRepositoryTest :
                             remoteVectorClock = VectorClock(mapOf("device1" to 100L)),
                             lastSuccessfulPush = now,
                             lastSuccessfulPull = now,
-                            syncStatus = SyncStatus.UP_TO_DATE,
+                            syncStatus = SyncStatus.SUCCESS,
                             pendingChanges = 5,
                         )
                         repository.updateSyncState(syncState)
                     }
 
                     // When
-                    val result = runBlocking { repository.getSyncState(deviceId) }
+                    val result = runTest { repository.getSyncState(deviceId) }
 
                     // Then
                     result.isRight() shouldBe true
                     val state = result.getOrNull()
                     state?.deviceId shouldBe deviceId
-                    state?.syncStatus shouldBe SyncStatus.UP_TO_DATE
+                    state?.syncStatus shouldBe SyncStatus.SUCCESS
                     state?.pendingChanges shouldBe 5
                     state?.lastSyncAt shouldNotBe null
                     state?.remoteVectorClock?.clocks?.get("device1") shouldBe 100L
@@ -172,7 +175,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     val nonExistentDevice = DeviceId("non-existent")
 
                     // When
-                    val result = runBlocking { repository.getSyncState(nonExistentDevice) }
+                    val result = runTest { repository.getSyncState(nonExistentDevice) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -188,9 +191,9 @@ class SqlDelightSynchronizationRepositoryTest :
                     // Given
                     val deviceId = DeviceId("update-test-device")
                     val initialTime = Clock.System.now()
-                    val updatedTime = initialTime.plus(kotlinx.datetime.DateTimeUnit.HOUR, 1)
+                    val updatedTime = initialTime.plus(1.hours)
                     
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     val updatedState = SyncState(
                         deviceId = deviceId,
@@ -198,13 +201,13 @@ class SqlDelightSynchronizationRepositoryTest :
                         remoteVectorClock = VectorClock(mapOf("device1" to 50L, "device2" to 75L)),
                         lastSuccessfulPush = updatedTime,
                         lastSuccessfulPull = updatedTime,
-                        syncStatus = SyncStatus.SYNCING,
+                        syncStatus = SyncStatus.IN_PROGRESS,
                         pendingChanges = 10,
                     )
 
                     // When
-                    val updateResult = runBlocking { repository.updateSyncState(updatedState) }
-                    val retrievedState = runBlocking { repository.getSyncState(deviceId) }
+                    val updateResult = runTest { repository.updateSyncState(updatedState) }
+                    val retrievedState = runTest { repository.getSyncState(deviceId) }
 
                     // Then
                     updateResult shouldBe Unit.right()
@@ -214,7 +217,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     state?.lastSyncAt shouldBe updatedTime
                     state?.lastSuccessfulPush shouldBe updatedTime
                     state?.lastSuccessfulPull shouldBe updatedTime
-                    state?.syncStatus shouldBe SyncStatus.SYNCING
+                    state?.syncStatus shouldBe SyncStatus.IN_PROGRESS
                     state?.pendingChanges shouldBe 10
                     state?.remoteVectorClock?.clocks shouldBe mapOf("device1" to 50L, "device2" to 75L)
                 }
@@ -222,7 +225,7 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should handle partial updates with null values") {
                     // Given
                     val deviceId = DeviceId("partial-update-device")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     val partialState = SyncState(
                         deviceId = deviceId,
@@ -230,17 +233,17 @@ class SqlDelightSynchronizationRepositoryTest :
                         remoteVectorClock = VectorClock(emptyMap()),
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = Clock.System.now(),
-                        syncStatus = SyncStatus.PUSH_REQUIRED,
+                        syncStatus = SyncStatus.FAILED,
                         pendingChanges = 3,
                     )
 
                     // When
-                    val result = runBlocking { repository.updateSyncState(partialState) }
+                    val result = runTest { repository.updateSyncState(partialState) }
 
                     // Then
                     result shouldBe Unit.right()
                     
-                    val state = runBlocking { repository.getSyncState(deviceId) }
+                    val state = runTest { repository.getSyncState(deviceId) }
                     state.getOrNull()?.lastSyncAt shouldBe null
                     state.getOrNull()?.lastSuccessfulPush shouldBe null
                     state.getOrNull()?.lastSuccessfulPull shouldNotBe null
@@ -259,8 +262,8 @@ class SqlDelightSynchronizationRepositoryTest :
                     )
 
                     // When
-                    val updateResult = runBlocking { repository.updateLocalVectorClock(localClock) }
-                    val getResult = runBlocking { repository.getLocalVectorClock() }
+                    val updateResult = runTest { repository.updateLocalVectorClock(localClock) }
+                    val getResult = runTest { repository.getLocalVectorClock() }
 
                     // Then
                     updateResult shouldBe Unit.right()
@@ -270,7 +273,7 @@ class SqlDelightSynchronizationRepositoryTest :
 
                 it("should return empty vector clock initially") {
                     // When
-                    val result = runBlocking { repository.getLocalVectorClock() }
+                    val result = runTest { repository.getLocalVectorClock() }
 
                     // Then
                     result.isRight() shouldBe true
@@ -283,11 +286,11 @@ class SqlDelightSynchronizationRepositoryTest :
                     val updatedClock = VectorClock(mapOf("device1" to 15L, "device3" to 30L))
 
                     // When
-                    runBlocking {
+                    runTest {
                         repository.updateLocalVectorClock(initialClock)
                         repository.updateLocalVectorClock(updatedClock)
                     }
-                    val result = runBlocking { repository.getLocalVectorClock() }
+                    val result = runTest { repository.getLocalVectorClock() }
 
                     // Then
                     result.isRight() shouldBe true
@@ -307,25 +310,25 @@ class SqlDelightSynchronizationRepositoryTest :
                         DeviceId("device-003"),
                     )
 
-                    runBlocking {
+                    runTest {
                         devices.forEach { repository.registerDevice(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.listKnownDevices() }
+                    val result = runTest { repository.listKnownDevices() }
 
                     // Then
                     result.isRight() shouldBe true
                     val knownDevices = result.getOrNull()
-                    knownDevices shouldHaveSize 3
+                    knownDevices?.shouldHaveSize(3)
                     devices.forEach { device ->
-                        knownDevices shouldContain device
+                        knownDevices?.shouldContain(device)
                     }
                 }
 
                 it("should return empty list when no devices registered") {
                     // When
-                    val result = runBlocking { repository.listKnownDevices() }
+                    val result = runTest { repository.listKnownDevices() }
 
                     // Then
                     result shouldBe emptyList<DeviceId>().right()
@@ -336,7 +339,7 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should handle complex vector clock scenarios") {
                     // Given
                     val deviceId = DeviceId("complex-clock-device")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     // Scenario: Multiple updates with different components
                     val clock1 = VectorClock(mapOf("A" to 1L, "B" to 2L, "C" to 3L))
@@ -344,14 +347,14 @@ class SqlDelightSynchronizationRepositoryTest :
                     val clock3 = VectorClock(mapOf("E" to 10L))
 
                     // When
-                    runBlocking {
+                    runTest {
                         val state1 = SyncState(
                             deviceId = deviceId,
                             lastSyncAt = Clock.System.now(),
                             remoteVectorClock = clock1,
                             lastSuccessfulPush = null,
                             lastSuccessfulPull = null,
-                            syncStatus = SyncStatus.UP_TO_DATE,
+                            syncStatus = SyncStatus.SUCCESS,
                             pendingChanges = 0,
                         )
                         repository.updateSyncState(state1)
@@ -363,7 +366,7 @@ class SqlDelightSynchronizationRepositoryTest :
                         repository.updateSyncState(state3)
                     }
 
-                    val finalState = runBlocking { repository.getSyncState(deviceId) }
+                    val finalState = runTest { repository.getSyncState(deviceId) }
 
                     // Then
                     finalState.isRight() shouldBe true
@@ -380,23 +383,23 @@ class SqlDelightSynchronizationRepositoryTest :
 
                     // When
                     val operations = listOf(
-                        runBlocking { repository.registerDevice(deviceId) },
-                        runBlocking { repository.getSyncState(deviceId) },
-                        runBlocking { repository.updateSyncState(
+                        runTest { repository.registerDevice(deviceId) },
+                        runTest { repository.getSyncState(deviceId) },
+                        runTest { repository.updateSyncState(
                             SyncState(
                                 deviceId = deviceId,
                                 lastSyncAt = Clock.System.now(),
                                 remoteVectorClock = VectorClock(emptyMap()),
                                 lastSuccessfulPush = null,
                                 lastSuccessfulPull = null,
-                                syncStatus = SyncStatus.UP_TO_DATE,
+                                syncStatus = SyncStatus.SUCCESS,
                                 pendingChanges = 0,
                             )
                         ) },
-                        runBlocking { repository.getLocalVectorClock() },
-                        runBlocking { repository.updateLocalVectorClock(VectorClock(emptyMap())) },
-                        runBlocking { repository.listKnownDevices() },
-                        runBlocking { repository.unregisterDevice(deviceId) },
+                        runTest { repository.getLocalVectorClock() },
+                        runTest { repository.updateLocalVectorClock(VectorClock(emptyMap())) },
+                        runTest { repository.listKnownDevices() },
+                        runTest { repository.unregisterDevice(deviceId) },
                     )
 
                     // Then
@@ -413,16 +416,14 @@ class SqlDelightSynchronizationRepositoryTest :
                 it("should handle all sync status values") {
                     // Given
                     val deviceId = DeviceId("status-test-device")
-                    runBlocking { repository.registerDevice(deviceId) }
+                    runTest { repository.registerDevice(deviceId) }
 
                     val statuses = listOf(
                         SyncStatus.NEVER_SYNCED,
-                        SyncStatus.UP_TO_DATE,
-                        SyncStatus.SYNCING,
-                        SyncStatus.PUSH_REQUIRED,
-                        SyncStatus.PULL_REQUIRED,
-                        SyncStatus.CONFLICT,
-                        SyncStatus.ERROR,
+                        SyncStatus.SUCCESS,
+                        SyncStatus.IN_PROGRESS,
+                        SyncStatus.FAILED,
+                        SyncStatus.OFFLINE,
                     )
 
                     // When/Then
@@ -437,8 +438,8 @@ class SqlDelightSynchronizationRepositoryTest :
                             pendingChanges = 0,
                         )
 
-                        val updateResult = runBlocking { repository.updateSyncState(syncState) }
-                        val getResult = runBlocking { repository.getSyncState(deviceId) }
+                        val updateResult = runTest { repository.updateSyncState(syncState) }
+                        val getResult = runTest { repository.getSyncState(deviceId) }
 
                         updateResult shouldBe Unit.right()
                         getResult.getOrNull()?.syncStatus shouldBe status

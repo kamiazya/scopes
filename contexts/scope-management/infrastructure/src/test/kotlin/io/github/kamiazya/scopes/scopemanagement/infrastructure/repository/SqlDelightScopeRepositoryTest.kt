@@ -15,7 +15,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 
 class SqlDelightScopeRepositoryTest :
@@ -49,7 +49,7 @@ class SqlDelightScopeRepositoryTest :
                     )
 
                     // When
-                    val result = runBlocking { repository.save(scope) }
+                    val result = runTest { repository.save(scope) }
 
                     // Then
                     result shouldBe scope.right()
@@ -72,8 +72,8 @@ class SqlDelightScopeRepositoryTest :
                     )
 
                     // When
-                    val saveResult = runBlocking { repository.save(scope) }
-                    val findResult = runBlocking { repository.findById(scope.id) }
+                    val saveResult = runTest { repository.save(scope) }
+                    val findResult = runTest { repository.findById(scope.id) }
 
                     // Then
                     saveResult shouldBe scope.right()
@@ -95,7 +95,7 @@ class SqlDelightScopeRepositoryTest :
                         updatedAt = Clock.System.now(),
                     )
 
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     val updatedScope = scope.copy(
                         title = ScopeTitle.create("Updated Title").getOrNull()!!,
@@ -104,8 +104,8 @@ class SqlDelightScopeRepositoryTest :
                     )
 
                     // When
-                    val result = runBlocking { repository.save(updatedScope) }
-                    val findResult = runBlocking { repository.findById(scope.id) }
+                    val result = runTest { repository.save(updatedScope) }
+                    val findResult = runTest { repository.findById(scope.id) }
 
                     // Then
                     result shouldBe updatedScope.right()
@@ -131,7 +131,7 @@ class SqlDelightScopeRepositoryTest :
                     database.close()
 
                     // When
-                    val result = runBlocking { repository.save(scope) }
+                    val result = runTest { repository.save(scope) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -151,10 +151,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.findById(scope.id) }
+                    val result = runTest { repository.findById(scope.id) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -170,7 +170,7 @@ class SqlDelightScopeRepositoryTest :
                     val nonExistentId = ScopeId.generate()
 
                     // When
-                    val result = runBlocking { repository.findById(nonExistentId) }
+                    val result = runTest { repository.findById(nonExistentId) }
 
                     // Then
                     result shouldBe null.right()
@@ -182,7 +182,7 @@ class SqlDelightScopeRepositoryTest :
                     database.close()
 
                     // When
-                    val result = runBlocking { repository.findById(scopeId) }
+                    val result = runTest { repository.findById(scopeId) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -215,11 +215,11 @@ class SqlDelightScopeRepositoryTest :
                     )
 
                     scopes.forEach { scope ->
-                        runBlocking { repository.save(scope) }
+                        runTest { repository.save(scope) }
                     }
 
                     // When
-                    val result = runBlocking { repository.findAll() }
+                    val result = runTest { repository.findAll() }
 
                     // Then
                     result.isRight() shouldBe true
@@ -230,7 +230,7 @@ class SqlDelightScopeRepositoryTest :
 
                 it("should return empty list when no scopes exist") {
                     // When
-                    val result = runBlocking { repository.findAll() }
+                    val result = runTest { repository.findAll() }
 
                     // Then
                     result shouldBe emptyList<Scope>().right()
@@ -260,13 +260,13 @@ class SqlDelightScopeRepositoryTest :
                         updatedAt = Clock.System.now(),
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(rootScope)
                         repository.save(childScope)
                     }
 
                     // When
-                    val result = runBlocking { repository.findByParentId(null) }
+                    val result = runTest { repository.findByParentId(null) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -309,13 +309,13 @@ class SqlDelightScopeRepositoryTest :
                         ),
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(parentScope)
                         childScopes.forEach { repository.save(it) }
                     }
 
                     // When
-                    val result = runBlocking { repository.findByParentId(parentId) }
+                    val result = runTest { repository.findByParentId(parentId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -337,10 +337,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.existsById(scope.id) }
+                    val result = runTest { repository.existsById(scope.id) }
 
                     // Then
                     result shouldBe true.right()
@@ -351,7 +351,7 @@ class SqlDelightScopeRepositoryTest :
                     val nonExistentId = ScopeId.generate()
 
                     // When
-                    val result = runBlocking { repository.existsById(nonExistentId) }
+                    val result = runTest { repository.existsById(nonExistentId) }
 
                     // Then
                     result shouldBe false.right()
@@ -372,10 +372,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.existsByParentIdAndTitle(parentId, title) }
+                    val result = runTest { repository.existsByParentIdAndTitle(parentId, title) }
 
                     // Then
                     result shouldBe true.right()
@@ -383,7 +383,7 @@ class SqlDelightScopeRepositoryTest :
 
                 it("should return false when scope doesn't exist with given parent and title") {
                     // When
-                    val result = runBlocking { repository.existsByParentIdAndTitle(ScopeId.generate(), "Non-existent") }
+                    val result = runTest { repository.existsByParentIdAndTitle(ScopeId.generate(), "Non-existent") }
 
                     // Then
                     result shouldBe false.right()
@@ -401,10 +401,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.existsByParentIdAndTitle(null, title) }
+                    val result = runTest { repository.existsByParentIdAndTitle(null, title) }
 
                     // Then
                     result shouldBe true.right()
@@ -427,11 +427,11 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val deleteResult = runBlocking { repository.deleteById(scope.id) }
-                    val findResult = runBlocking { repository.findById(scope.id) }
+                    val deleteResult = runTest { repository.deleteById(scope.id) }
+                    val findResult = runTest { repository.findById(scope.id) }
 
                     // Then
                     deleteResult shouldBe Unit.right()
@@ -443,7 +443,7 @@ class SqlDelightScopeRepositoryTest :
                     val nonExistentId = ScopeId.generate()
 
                     // When
-                    val result = runBlocking { repository.deleteById(nonExistentId) }
+                    val result = runTest { repository.deleteById(nonExistentId) }
 
                     // Then
                     result shouldBe Unit.right()
@@ -464,7 +464,7 @@ class SqlDelightScopeRepositoryTest :
                         updatedAt = Clock.System.now(),
                     )
 
-                    runBlocking { repository.save(parentScope) }
+                    runTest { repository.save(parentScope) }
 
                     // Create 3 direct children
                     repeat(3) { i ->
@@ -477,11 +477,11 @@ class SqlDelightScopeRepositoryTest :
                             createdAt = Clock.System.now(),
                             updatedAt = Clock.System.now(),
                         )
-                        runBlocking { repository.save(child) }
+                        runTest { repository.save(child) }
                     }
 
                     // When
-                    val result = runBlocking { repository.countChildrenOf(parentId) }
+                    val result = runTest { repository.countChildrenOf(parentId) }
 
                     // Then
                     result shouldBe 3.right()
@@ -492,7 +492,7 @@ class SqlDelightScopeRepositoryTest :
                     val scopeId = ScopeId.generate()
 
                     // When
-                    val result = runBlocking { repository.countChildrenOf(scopeId) }
+                    val result = runTest { repository.countChildrenOf(scopeId) }
 
                     // Then
                     result shouldBe 0.right()
@@ -544,7 +544,7 @@ class SqlDelightScopeRepositoryTest :
                         updatedAt = Clock.System.now(),
                     )
 
-                    runBlocking {
+                    runTest {
                         repository.save(rootScope)
                         repository.save(child1)
                         repository.save(child2)
@@ -552,7 +552,7 @@ class SqlDelightScopeRepositoryTest :
                     }
 
                     // When
-                    val result = runBlocking { repository.findDescendantsOf(rootId) }
+                    val result = runTest { repository.findDescendantsOf(rootId) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -573,10 +573,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.findDescendantsOf(scopeId) }
+                    val result = runTest { repository.findDescendantsOf(scopeId) }
 
                     // Then
                     result shouldBe emptyList<Scope>().right()
@@ -597,10 +597,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.findIdByParentIdAndTitle(parentId, title) }
+                    val result = runTest { repository.findIdByParentIdAndTitle(parentId, title) }
 
                     // Then
                     result shouldBe scope.id.right()
@@ -608,7 +608,7 @@ class SqlDelightScopeRepositoryTest :
 
                 it("should return null when scope not found") {
                     // When
-                    val result = runBlocking { repository.findIdByParentIdAndTitle(ScopeId.generate(), "Not Found") }
+                    val result = runTest { repository.findIdByParentIdAndTitle(ScopeId.generate(), "Not Found") }
 
                     // Then
                     result shouldBe null.right()
@@ -626,10 +626,10 @@ class SqlDelightScopeRepositoryTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    runBlocking { repository.save(scope) }
+                    runTest { repository.save(scope) }
 
                     // When
-                    val result = runBlocking { repository.findIdByParentIdAndTitle(null, title) }
+                    val result = runTest { repository.findIdByParentIdAndTitle(null, title) }
 
                     // Then
                     result shouldBe scope.id.right()
@@ -643,16 +643,16 @@ class SqlDelightScopeRepositoryTest :
 
                     // When/Then - Test all operations return proper errors
                     val operations = listOf(
-                        runBlocking { repository.save(Scope(ScopeId.generate(), ScopeTitle.create("Test").getOrNull()!!, null, null, Aspects.empty(), Clock.System.now(), Clock.System.now())) },
-                        runBlocking { repository.findById(ScopeId.generate()) },
-                        runBlocking { repository.findAll() },
-                        runBlocking { repository.findByParentId(null) },
-                        runBlocking { repository.existsById(ScopeId.generate()) },
-                        runBlocking { repository.existsByParentIdAndTitle(null, "Test") },
-                        runBlocking { repository.deleteById(ScopeId.generate()) },
-                        runBlocking { repository.countChildrenOf(ScopeId.generate()) },
-                        runBlocking { repository.findDescendantsOf(ScopeId.generate()) },
-                        runBlocking { repository.findIdByParentIdAndTitle(null, "Test") },
+                        runTest { repository.save(Scope(ScopeId.generate(), ScopeTitle.create("Test").getOrNull()!!, null, null, Aspects.empty(), Clock.System.now(), Clock.System.now())) },
+                        runTest { repository.findById(ScopeId.generate()) },
+                        runTest { repository.findAll() },
+                        runTest { repository.findByParentId(null) },
+                        runTest { repository.existsById(ScopeId.generate()) },
+                        runTest { repository.existsByParentIdAndTitle(null, "Test") },
+                        runTest { repository.deleteById(ScopeId.generate()) },
+                        runTest { repository.countChildrenOf(ScopeId.generate()) },
+                        runTest { repository.findDescendantsOf(ScopeId.generate()) },
+                        runTest { repository.findIdByParentIdAndTitle(null, "Test") },
                     )
 
                     operations.forEach { result ->
