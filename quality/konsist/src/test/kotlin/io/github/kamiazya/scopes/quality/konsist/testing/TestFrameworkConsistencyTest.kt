@@ -172,17 +172,43 @@ class TestFrameworkConsistencyTest :
                     .files
                     .filter { file ->
                         file.path.contains("/test/") &&
-                            file.text.contains("shouldBeInstanceOf")
+                            file.text.contains("shouldBeInstanceOf") &&
+                            // Skip this test file itself to avoid self-referential detection
+                            !file.path.contains("TestFrameworkConsistencyTest.kt")
                     }
                     .assertFalse { file ->
-                        // Look for pattern: shouldBeInstanceOf followed by manual casting
+                        // Look for pattern: shouldBeInstanceOf followed by manual casting on same or next line
                         val lines = file.text.lines()
+
+                        // Check for same-line pattern first
+                        val hasSameLinePattern = lines.any { line ->
+                            val trimmedLine = line.trim()
+                            trimmedLine.contains("shouldBeInstanceOf<") &&
+                                trimmedLine.contains(" as ") &&
+                                !trimmedLine.startsWith("//") &&
+                                // Ignore comments
+                                !trimmedLine.startsWith("*") // Ignore doc comments
+                        }
+
+                        if (hasSameLinePattern) return@assertFalse true
+
+                        // Check for multi-line pattern
                         for (i in 0 until lines.size - 1) {
                             val currentLine = lines[i].trim()
                             val nextLine = lines.getOrNull(i + 1)?.trim() ?: ""
 
+                            // Skip comments and empty lines
+                            if (currentLine.startsWith("//") ||
+                                currentLine.startsWith("*") ||
+                                nextLine.startsWith("//") ||
+                                nextLine.startsWith("*")
+                            ) {
+                                continue
+                            }
+
                             if (currentLine.contains("shouldBeInstanceOf<") &&
-                                nextLine.contains(" as ")
+                                nextLine.contains(" as ") &&
+                                !nextLine.contains("assertFalse") // Don't flag our test logic
                             ) {
                                 return@assertFalse true
                             }
