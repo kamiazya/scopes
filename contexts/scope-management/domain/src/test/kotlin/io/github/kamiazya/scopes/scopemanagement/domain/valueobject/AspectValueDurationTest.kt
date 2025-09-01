@@ -260,6 +260,13 @@ class AspectValueDurationTest :
                     aspectValue.parseDuration() shouldBe null
                 }
 
+                it("should handle zero weeks: P0W") {
+                    val aspectValue = AspectValue.create("P0W").getOrNull()!!
+                    // P0W should be rejected consistently by both isDuration and parseDuration
+                    aspectValue.isDuration() shouldBe false
+                    aspectValue.parseDuration() shouldBe null
+                }
+
                 it("should handle very large values: P365D") {
                     val aspectValue = AspectValue.create("P365D").getOrNull()!!
                     aspectValue.isDuration() shouldBe true
