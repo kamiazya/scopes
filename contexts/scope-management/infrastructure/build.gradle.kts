@@ -20,6 +20,7 @@ dependencies {
 
     // Database
     implementation(libs.sqlite.jdbc)
+    implementation(libs.hikari.cp)
 
     // SQLDelight
     implementation(libs.sqldelight.driver.sqlite)
