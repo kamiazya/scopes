@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
@@ -12,6 +13,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeRe
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.seconds
 
 class ContractTypesTest :
@@ -64,9 +66,23 @@ class ContractTypesTest :
                 it("GetChildrenQuery should use primitive types") {
                     val query = GetChildrenQuery(
                         parentId = "01HX3BQXYZ123456789ABCDEF",
+                        afterCreatedAt = Instant.fromEpochMilliseconds(1),
+                        afterId = "01HX3BQXYZ123456789ABCDE0",
                     )
 
                     query.parentId shouldBe "01HX3BQXYZ123456789ABCDEF"
+                    query.afterCreatedAt shouldBe Instant.fromEpochMilliseconds(1)
+                    query.afterId shouldBe "01HX3BQXYZ123456789ABCDE0"
+                }
+
+                it("GetRootScopesQuery should use primitive types") {
+                    val query = GetRootScopesQuery(
+                        afterCreatedAt = Instant.fromEpochMilliseconds(1),
+                        afterId = "01HX3BQXYZ123456789ABCDE0",
+                    )
+
+                    query.afterCreatedAt shouldBe Instant.fromEpochMilliseconds(1)
+                    query.afterId shouldBe "01HX3BQXYZ123456789ABCDE0"
                 }
             }
 

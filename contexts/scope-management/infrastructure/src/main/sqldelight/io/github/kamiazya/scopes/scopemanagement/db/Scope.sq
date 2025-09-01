@@ -66,6 +66,22 @@ WHERE parent_id IS NULL
 ORDER BY created_at ASC, id ASC
 LIMIT ? OFFSET ?;
 
+-- Find scopes by parent ID after cursor (keyset pagination)
+findScopesByParentIdAfter:
+SELECT *
+FROM scopes
+WHERE parent_id = :parent_id AND (created_at, id) > (:created_at, :id)
+ORDER BY created_at ASC, id ASC
+LIMIT :limit;
+
+-- Find root scopes after cursor (keyset pagination)
+findRootScopesAfter:
+SELECT *
+FROM scopes
+WHERE parent_id IS NULL AND (created_at, id) > (:created_at, :id)
+ORDER BY created_at ASC, id ASC
+LIMIT :limit;
+
 -- Count helpers for pagination
 countScopesByParentId:
 SELECT COUNT(*) AS count

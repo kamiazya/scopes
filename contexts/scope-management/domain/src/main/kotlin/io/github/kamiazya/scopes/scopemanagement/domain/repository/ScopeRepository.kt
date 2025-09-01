@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Instant
 
 /**
  * Repository interface for Scope entity operations.
@@ -45,6 +46,18 @@ interface ScopeRepository {
      * When parentId is null, returns root scopes.
      */
     suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Find scopes by parent ID after a cursor (keyset pagination).
+     * Results are ordered by creation time ascending.
+     * When parentId is null, returns root scopes after the cursor.
+     */
+    suspend fun findByParentIdAfter(
+        parentId: ScopeId?,
+        afterCreatedAt: Instant,
+        afterId: ScopeId,
+        limit: Int,
+    ): Either<PersistenceError, List<Scope>>
 
     /**
      * Find all root scopes (scopes with no parent).
