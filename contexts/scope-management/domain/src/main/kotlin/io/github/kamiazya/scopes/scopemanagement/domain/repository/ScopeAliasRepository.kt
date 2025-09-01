@@ -69,6 +69,8 @@ interface ScopeAliasRepository {
      * Finds aliases whose names start with the given prefix.
      * Used for tab completion and partial matching.
      *
+     * Ordering: deterministic, by alias name ascending (ties broken by `id DESC`).
+     *
      * @param prefix The prefix to match
      * @param limit Maximum number of results to return
      * @return Either a persistence error or the list of matching aliases
@@ -125,6 +127,8 @@ interface ScopeAliasRepository {
 
     /**
      * Lists all aliases with pagination support.
+     *
+     * Ordering: deterministic, newest first (ordered by `created_at DESC, id DESC`).
      *
      * @param offset The number of aliases to skip
      * @param limit The maximum number of aliases to return
