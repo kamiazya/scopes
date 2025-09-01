@@ -12,7 +12,7 @@ import io.kotest.core.spec.style.DescribeSpec
 class RepositoryOrderingConsistencyTest : DescribeSpec({
     describe("Repository ordering consistency") {
 
-        it("repository tests should avoid order-sensitive list equality for general queries") {
+        it("repository tests should avoid order-sensitive list equality for non-ordered methods") {
             val orderSensitiveMatchers = listOf(
                 "shouldBe listOf(",
                 "shouldContainExactly",
@@ -20,11 +20,8 @@ class RepositoryOrderingConsistencyTest : DescribeSpec({
             )
 
             val repoCallsWithoutExplicitOrder = listOf(
-                // General fetches where ordering should not be asserted strictly in tests
-                ".findAll()",
-                ".findAll(", // paginated overload
-                ".listAll(",
-                ".findByAliasNamePrefix(",
+                // Methods which do NOT guarantee ordering
+                ".findDescendantsOf(",
             )
 
             Konsist.scopeFromTest()
@@ -42,4 +39,3 @@ class RepositoryOrderingConsistencyTest : DescribeSpec({
         }
     }
 })
-

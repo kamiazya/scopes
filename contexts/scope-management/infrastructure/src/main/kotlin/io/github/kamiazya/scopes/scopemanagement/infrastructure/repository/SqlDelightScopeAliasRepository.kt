@@ -106,8 +106,8 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     }
 
     override suspend fun findByAliasNamePrefix(prefix: String, limit: Int): Either<PersistenceError, List<ScopeAlias>> = try {
-        val results = database.scopeAliasQueries.findByPrefix("$prefix%").executeAsList()
-        results.take(limit).map { rowToScopeAlias(it) }.right()
+        val results = database.scopeAliasQueries.findByPrefix("$prefix%", limit.toLong()).executeAsList()
+        results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
             occurredAt = Clock.System.now(),
@@ -189,9 +189,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     }
 
     override suspend fun listAll(offset: Int, limit: Int): Either<PersistenceError, List<ScopeAlias>> = try {
-        val results = database.scopeAliasQueries.getAllAliases().executeAsList()
-            .drop(offset)
-            .take(limit)
+        val results = database.scopeAliasQueries.getAllAliasesPaged(limit.toLong(), offset.toLong()).executeAsList()
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(

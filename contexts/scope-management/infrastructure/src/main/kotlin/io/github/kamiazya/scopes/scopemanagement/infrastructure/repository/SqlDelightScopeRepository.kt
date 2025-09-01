@@ -270,10 +270,8 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
-            val rows = database.scopeQueries.selectAll()
+            val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
                 .executeAsList()
-                .drop(offset)
-                .take(limit)
                 .map { row -> rowToScope(row) }
             rows.right()
         } catch (e: Exception) {
