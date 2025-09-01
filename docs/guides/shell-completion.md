@@ -50,8 +50,11 @@ The `list` command supports filtering by aspects (tags) with shell completion:
 
 ```bash
 # List scopes with specific aspects
+# Both key:value and key=value are supported
 scopes list --aspect priority:high
+scopes list --aspect priority=high
 scopes list -a status:active -a priority:high
+scopes list -a status=active -a priority=high
 
 # Tab completion will suggest available aspect:value pairs
 scopes list --aspect <TAB>
@@ -60,16 +63,18 @@ scopes list --aspect <TAB>
 ### How It Works
 
 1. When you type `scopes list --aspect <TAB>`, the shell completion script calls `scopes _complete-aspects`
-2. This hidden command queries root scopes and their children for available aspect key:value pairs
+2. This hidden command queries root scopes and their children for available aspect key:value pairs (also valid with key=value)
 3. The results are presented as completion candidates
 
 ### Multiple Aspect Filters
 
-You can specify multiple aspect filters. A scope matches if it has ALL the specified aspects:
+You can specify multiple aspect filters (either key:value or key=value). A scope matches if it has ALL the specified aspects:
 
 ```bash
 # Find scopes that have both "priority:high" AND "status:active"
 scopes list --aspect priority:high --aspect status:active
+# Or using '='
+scopes list --aspect priority=high --aspect status=active
 
 # Short form
 scopes list -a priority:high -a status:active
@@ -113,3 +118,9 @@ The aspect completion feature consists of:
 3. **Shell completion script**: Calls the hidden command to get suggestions.
 
 This design allows dynamic completion based on actual database content rather than static lists.
+
+## Notes on Delimiters and Quoting
+
+- The parser splits on the first `:` or `=` only; additional `:`/`=` remain in the value. Example: `version=v:1` parses as key `version`, value `v:1`.
+- Escaping of delimiters (like `\:` or `\=`) is not supported. If values contain spaces, quote them using your shell: `--aspect "status=in progress"`.
+- Completion suggestions are shown in `key:value` form, but input accepts both `key:value` and `key=value`.

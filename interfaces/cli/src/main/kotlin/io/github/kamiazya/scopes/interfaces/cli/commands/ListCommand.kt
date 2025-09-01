@@ -40,7 +40,7 @@ class ListCommand :
     private val aspects by option(
         "-a",
         "--aspect",
-        help = "Filter by aspect (format: key:value). Can be specified multiple times.",
+        help = "Filter by aspect (format: key:value or key=value). Splits on the first delimiter; subsequent ':' or '=' are part of the value. Use shell quotes if values contain spaces. Can be specified multiple times.",
         completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
     ).multiple()
 
@@ -56,23 +56,15 @@ class ListCommand :
                 return@runBlocking
             }
 
-            // Parse aspect filters
-            val aspectFilters = aspects.mapNotNull { aspectStr ->
-                val parts = aspectStr.split(":", limit = 2)
-                if (parts.size == 2) {
-                    val key = parts[0].trim()
-                    val value = parts[1].trim()
-                    if (key.isEmpty() || value.isEmpty()) {
-                        echo("Warning: Invalid aspect format: $aspectStr (expected non-empty key:value)", err = true)
-                        null
-                    } else {
-                        key to value
-                    }
-                } else {
-                    echo("Warning: Invalid aspect format: $aspectStr (expected key:value)", err = true)
-                    null
-                }
-            }.groupBy({ it.first }, { it.second })
+            // Parse aspect filters (supports key:value and key=value)
+            val aspectFilters = parseAspectFilters(aspects)
+            val invalidAspects = aspects.filter { parseAspectEntry(it) == null }
+            invalidAspects.forEach { invalid ->
+                echo(
+                    "Warning: Invalid aspect format: $invalid (expected key:value or key=value)",
+                    err = true,
+                )
+            }
 
             when {
                 query != null -> {
