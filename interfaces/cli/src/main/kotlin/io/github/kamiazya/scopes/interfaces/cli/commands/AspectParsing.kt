@@ -29,7 +29,5 @@ fun parseAspectEntry(entry: String): Pair<String, String>? {
  * Each input can be formatted as `key:value` or `key=value`.
  * Invalid entries are ignored.
  */
-fun parseAspectFilters(entries: List<String>): Map<String, List<String>> =
-    entries.mapNotNull { parseAspectEntry(it) }
-        .groupBy({ it.first }, { it.second })
-
+fun parseAspectFilters(entries: List<String>): Map<String, List<String>> = entries.mapNotNull { parseAspectEntry(it) }
+    .groupBy({ it.first }, { it.second })
