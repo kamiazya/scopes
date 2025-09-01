@@ -18,11 +18,13 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val logger: Logger) : UseCase<GetChildren, ScopesError, PagedResult<ScopeDto>> {
 
     override suspend operator fun invoke(input: GetChildren): Either<ScopesError, PagedResult<ScopeDto>> = either {
-        val contextData = mapOf(
-            "parentId" to (input.parentId ?: "root"),
-            "offset" to input.offset.toString(),
-            "limit" to input.limit.toString(),
-        )
+        val contextData = buildMap {
+            put("parentId", input.parentId ?: "root")
+            put("offset", input.offset.toString())
+            put("limit", input.limit.toString())
+            input.afterCreatedAt?.let { put("afterCreatedAt", it.toString()) }
+            input.afterId?.let { put("afterId", it) }
+        }
 
         logger.debug("Getting children scopes", contextData)
 
@@ -32,7 +34,17 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
         }
 
         // Get children from repository with database-side pagination
-        val children = scopeRepository.findByParentId(parentId, input.offset, input.limit).bind()
+        val children = if (input.afterCreatedAt != null && input.afterId != null) {
+            val cursorId = ScopeId.create(input.afterId).bind()
+            scopeRepository.findByParentIdAfter(
+                parentId,
+                input.afterCreatedAt,
+                cursorId,
+                input.limit,
+            ).bind()
+        } else {
+            scopeRepository.findByParentId(parentId, input.offset, input.limit).bind()
+        }
         val totalCount = scopeRepository.countByParentId(parentId).bind()
 
         logger.debug(

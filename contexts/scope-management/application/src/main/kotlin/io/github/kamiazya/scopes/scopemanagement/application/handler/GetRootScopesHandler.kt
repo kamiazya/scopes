@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for getting root scopes (scopes without parent).
@@ -20,14 +21,26 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
     override suspend operator fun invoke(input: GetRootScopes): Either<ScopesError, PagedResult<ScopeDto>> = either {
         logger.debug(
             "Getting root scopes",
-            mapOf(
-                "offset" to input.offset.toString(),
-                "limit" to input.limit.toString(),
-            ),
+            buildMap {
+                put("offset", input.offset.toString())
+                put("limit", input.limit.toString())
+                input.afterCreatedAt?.let { put("afterCreatedAt", it.toString()) }
+                input.afterId?.let { put("afterId", it) }
+            },
         )
 
         // Get root scopes (parentId = null) with database-side pagination
-        val rootScopes = scopeRepository.findByParentId(null, input.offset, input.limit).bind()
+        val rootScopes = if (input.afterCreatedAt != null && input.afterId != null) {
+            val cursorId = ScopeId.create(input.afterId).bind()
+            scopeRepository.findByParentIdAfter(
+                null,
+                input.afterCreatedAt,
+                cursorId,
+                input.limit,
+            ).bind()
+        } else {
+            scopeRepository.findByParentId(null, input.offset, input.limit).bind()
+        }
         val totalCount = scopeRepository.countByParentId(null).bind()
 
         logger.debug(

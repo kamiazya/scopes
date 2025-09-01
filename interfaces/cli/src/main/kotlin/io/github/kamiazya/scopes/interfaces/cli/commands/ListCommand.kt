@@ -7,7 +7,9 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.types.int
+import kotlinx.datetime.Instant
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
@@ -33,6 +35,8 @@ class ListCommand :
     private val root by option("--root", help = "List only root scopes").flag()
     private val offset by option("--offset", help = "Number of items to skip").int().default(0)
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
+    private val afterTime by option("--after-created-at", help = "Fetch scopes created after this ISO-8601 timestamp").convert { Instant.parse(it) }
+    private val afterId by option("--after-id", help = "Fetch scopes after this scope id")
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
     private val query by option("-q", "--query", help = "Filter by advanced query (e.g., 'priority>=high AND status!=closed')")
 
@@ -53,6 +57,14 @@ class ListCommand :
             }
             if (limit !in 1..1000) {
                 echo("Error: limit must be in 1..1000", err = true)
+                return@runBlocking
+            }
+
+            // Validate cursor inputs
+            val afterTimeProvided = afterTime != null
+            val afterIdProvided = afterId != null
+            if (afterTimeProvided xor afterIdProvided) {
+                echo("Error: --after-created-at and --after-id must be used together", err = true)
                 return@runBlocking
             }
 
@@ -88,7 +100,7 @@ class ListCommand :
                     )
                 }
                 root -> {
-                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit, afterTime, afterId).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -113,7 +125,7 @@ class ListCommand :
                     )
                 }
                 parentId != null -> {
-                    scopeCommandAdapter.listChildren(parentId!!, offset, limit).fold(
+                    scopeCommandAdapter.listChildren(parentId!!, offset, limit, afterTime, afterId).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -138,7 +150,7 @@ class ListCommand :
                 }
                 else -> {
                     // Default: list root scopes
-                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit, afterTime, afterId).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },

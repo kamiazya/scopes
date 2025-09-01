@@ -175,6 +175,8 @@ class ScopeManagementPortAdapter(
             parentId = query.parentId,
             offset = query.offset,
             limit = query.limit,
+            afterCreatedAt = query.afterCreatedAt,
+            afterId = query.afterId,
         ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
@@ -205,6 +207,8 @@ class ScopeManagementPortAdapter(
         GetRootScopes(
             offset = query.offset,
             limit = query.limit,
+            afterCreatedAt = query.afterCreatedAt,
+            afterId = query.afterId,
         ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
