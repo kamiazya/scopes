@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration
 DB_DIR="${SCOPES_DB_DIR:-${HOME}/.scopes/data}"
-LOG_FILE="${SCOPES_LOG_DIR:-${HOME}/.scopes/logs}/db-maintenance-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="${SCOPES_LOG_DIR:-${HOME}/.scopes/logs}/db-maintenance-$(date '+%Y%m%d-%H%M%S').log"
 
 # Ensure directories exist
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -33,7 +33,7 @@ optimize_database() {
     fi
 
     # Create backup before optimization
-    local backup_path="${db_path}.backup.$(date +%Y%m%d-%H%M%S)"
+    local backup_path="${db_path}.backup.$(date '+%Y%m%d-%H%M%S')"
     log "Creating backup: $backup_path"
     cp "$db_path" "$backup_path"
 
