@@ -25,11 +25,16 @@ interface ScopeRepository {
 
     /**
      * Find all scopes.
+     *
+     * Ordering: deterministic, newest first (ordered by `created_at DESC, id DESC`).
+     * Use the paginated overload for large datasets.
      */
     suspend fun findAll(): Either<PersistenceError, List<Scope>>
 
     /**
      * Find all scopes with pagination.
+     *
+     * Ordering: deterministic, newest first (ordered by `created_at DESC, id DESC`).
      */
     suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
 
@@ -41,8 +46,9 @@ interface ScopeRepository {
 
     /**
      * Find scopes by parent ID with pagination.
-     * Results are ordered by creation time ascending to provide stable paging.
-     * When parentId is null, returns root scopes.
+     * Results are ordered by creation time ascending to provide stable paging
+     * within a parent group (ties broken by `id ASC`). When parentId is null,
+     * returns root scopes.
      */
     suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
 
@@ -98,6 +104,9 @@ interface ScopeRepository {
     /**
      * Find all descendants of a scope recursively.
      * Used for hierarchy operations.
+     *
+     * Ordering: no guarantees. Consumers and tests must not rely on the
+     * traversal order; treat the returned list as an unordered collection.
      */
     suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>>
 }

@@ -123,3 +123,10 @@ selectAll:
 SELECT *
 FROM scopes
 ORDER BY created_at DESC, id DESC;
+
+-- Select all scopes with pagination
+selectAllPaged:
+SELECT *
+FROM scopes
+ORDER BY created_at DESC, id DESC
+LIMIT ? OFFSET ?;

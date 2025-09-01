@@ -42,7 +42,7 @@ findByScopeId:
 SELECT *
 FROM scope_aliases
 WHERE scope_id = ?
-ORDER BY created_at DESC;
+ORDER BY created_at DESC, id DESC;
 
 -- Find canonical alias for scope
 findCanonicalAlias:
@@ -56,14 +56,15 @@ findByTypeForScope:
 SELECT *
 FROM scope_aliases
 WHERE scope_id = ? AND alias_type = ?
-ORDER BY created_at DESC;
+ORDER BY created_at DESC, id DESC;
 
 -- Find aliases by prefix
 findByPrefix:
 SELECT *
 FROM scope_aliases
 WHERE alias_name LIKE ?
-ORDER BY alias_name;
+ORDER BY alias_name ASC, id DESC
+LIMIT ?;
 
 -- Check if alias exists
 existsByAliasName:
@@ -95,4 +96,11 @@ FROM scope_aliases;
 getAllAliases:
 SELECT *
 FROM scope_aliases
-ORDER BY created_at DESC;
+ORDER BY created_at DESC, id DESC;
+
+-- Get all aliases with pagination
+getAllAliasesPaged:
+SELECT *
+FROM scope_aliases
+ORDER BY created_at DESC, id DESC
+LIMIT ? OFFSET ?;
