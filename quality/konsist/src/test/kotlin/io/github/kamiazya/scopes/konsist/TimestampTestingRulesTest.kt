@@ -29,7 +29,7 @@ class TimestampTestingRulesTest :
                             function.text.contains("Clock.System.now()")
                         val hasExplanation = function.text.contains("deterministic") ||
                             function.text.contains("clock advancement")
-                        
+
                         hasClockWait && hasExplanation
                     }
             }
@@ -49,7 +49,7 @@ class TimestampTestingRulesTest :
                         val hasDoWhile = function.text.contains("do {") &&
                             function.text.contains("} while")
                         val hasSimpleWhile = function.text.contains("while (Clock.System.now()")
-                        
+
                         // Allow either pattern but prefer do-while
                         hasDoWhile || hasSimpleWhile
                     }
@@ -72,7 +72,7 @@ class TimestampTestingRulesTest :
                             function.text.contains("= Clock.System.now()")
                         val hasDoWhileCapture = function.text.contains("do {") &&
                             function.text.contains("Clock.System.now()")
-                        
+
                         hasTimestampVar || hasDoWhileCapture
                     }
             }
@@ -89,16 +89,16 @@ class TimestampTestingRulesTest :
                     .assertTrue { function ->
                         // Should use captured timestamp variables for occurredAt
                         val hasCapturedTime = function.text.matches(
-                            Regex(".*val\\s+\\w+Time\\s*=\\s*Clock\\.System\\.now\\(\\).*", RegexOption.DOT_MATCHES_ALL)
+                            Regex(".*val\\s+\\w+Time\\s*=\\s*Clock\\.System\\.now\\(\\).*", RegexOption.DOT_MATCHES_ALL),
                         )
                         val usesVariableForOccurredAt = function.text.matches(
-                            Regex(".*occurredAt\\s*=\\s*\\w+Time.*", RegexOption.DOT_MATCHES_ALL)
+                            Regex(".*occurredAt\\s*=\\s*\\w+Time.*", RegexOption.DOT_MATCHES_ALL),
                         )
-                        
+
                         // Allow direct Clock.System.now() if not doing boundary testing
                         val isSimpleTest = !function.text.contains("timestampBetween") &&
                             !function.text.contains("since")
-                        
+
                         isSimpleTest || (hasCapturedTime && usesVariableForOccurredAt)
                     }
             }
@@ -116,11 +116,11 @@ class TimestampTestingRulesTest :
                         val hasExplanation = file.text.contains("ensure") ||
                             file.text.contains("guarantee") ||
                             file.text.contains("deterministic")
-                        
+
                         // Better to use clock advancement
                         val hasClockAdvancement = file.text.contains("while") &&
                             file.text.contains("Clock.System.now()")
-                        
+
                         hasExplanation || hasClockAdvancement
                     }
             }
