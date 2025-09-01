@@ -14,7 +14,7 @@ konsist = "0.17.3"
 
 # Database and persistence
 sqlite = "3.50.3.0"
-exposed = "0.57.0"
+exposed = "0.61.0"
 sqldelight = "2.1.0"
 
 # Logging
