@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.dto.PagedResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
@@ -14,9 +15,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 /**
  * Handler for getting children of a scope.
  */
-class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val logger: Logger) : UseCase<GetChildren, ScopesError, List<ScopeDto>> {
+class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val logger: Logger) : UseCase<GetChildren, ScopesError, PagedResult<ScopeDto>> {
 
-    override suspend operator fun invoke(input: GetChildren): Either<ScopesError, List<ScopeDto>> = either {
+    override suspend operator fun invoke(input: GetChildren): Either<ScopesError, PagedResult<ScopeDto>> = either {
         val contextData = mapOf(
             "parentId" to (input.parentId ?: "root"),
             "offset" to input.offset.toString(),
@@ -30,27 +31,21 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ScopeId.create(parentIdString).bind()
         }
 
-        // Get children from repository
-        val children = scopeRepository.findByParentId(parentId).bind()
+        // Get children from repository with database-side pagination
+        val children = scopeRepository.findByParentId(parentId, input.offset, input.limit).bind()
+        val totalCount = scopeRepository.countByParentId(parentId).bind()
 
         logger.debug(
             "Found children",
             mapOf(
                 "parentId" to (parentId?.value ?: "root"),
-                "totalCount" to children.size.toString(),
+                "pageSize" to children.size.toString(),
+                "totalCount" to totalCount.toString(),
             ),
         )
 
-        // Apply pagination
-        val paginatedChildren = children
-            .sortedBy { it.createdAt } // Sort by creation time
-            .drop(input.offset)
-            .take(input.limit)
-
         // Convert to DTOs
-        val result = paginatedChildren.map { scope ->
-            ScopeMapper.toDto(scope)
-        }
+        val result = children.map(ScopeMapper::toDto)
 
         logger.info(
             "Retrieved children successfully",
@@ -60,7 +55,12 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ),
         )
 
-        result
+        PagedResult(
+            items = result,
+            totalCount = totalCount,
+            offset = input.offset,
+            limit = input.limit,
+        )
     }.onLeft { error ->
         logger.error(
             "Failed to get children",

@@ -36,7 +36,15 @@ interface ScopeRepository {
     /**
      * Find scopes by parent ID.
      */
+    @Deprecated("Use paginated overload to avoid full scans; will be removed in a future release.")
     suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Find scopes by parent ID with pagination.
+     * Results are ordered by creation time ascending to provide stable paging.
+     * When parentId is null, returns root scopes.
+     */
+    suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
 
     /**
      * Find all root scopes (scopes with no parent).
@@ -80,6 +88,12 @@ interface ScopeRepository {
      * Used for validating children limits.
      */
     suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int>
+
+    /**
+     * Count scopes by parent id. When parentId is null, counts root scopes.
+     * Useful for pagination total counts.
+     */
+    suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int>
 
     /**
      * Find all descendants of a scope recursively.

@@ -7,12 +7,14 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 
 /**
@@ -111,15 +113,16 @@ class ScopeCommandAdapter(
     /**
      * Lists child scopes
      */
-    suspend fun listChildren(parentId: String): Either<ScopeContractError, List<ScopeResult>> {
-        val query = GetChildrenQuery(parentId = parentId)
+    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> {
+        val query = GetChildrenQuery(parentId = parentId, offset = offset, limit = limit)
         return scopeManagementPort.getChildren(query)
     }
 
     /**
      * Lists root scopes
      */
-    suspend fun listRootScopes(): Either<ScopeContractError, List<ScopeResult>> = scopeManagementPort.getRootScopes()
+    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> =
+        scopeManagementPort.getRootScopes(GetRootScopesQuery(offset = offset, limit = limit))
 
     /**
      * Lists all aliases for a specific scope

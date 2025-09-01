@@ -6,6 +6,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -27,52 +29,73 @@ class CompletionCommand :
 
     override fun run() {
         runBlocking {
-            // Get all scopes to collect their aspects
-            scopeCommandAdapter.listRootScopes().fold(
-                {
-                    // On error, output nothing (silent failure for completion)
-                },
-                { scopes ->
-                    // Collect all unique aspect key:value pairs
-                    val aspectPairs = mutableSetOf<String>()
+            // Collect unique aspect key:value pairs across all scopes (roots + children)
+            val aspectPairs = mutableSetOf<String>()
 
-                    scopes.forEach { scope ->
-                        scope.aspects.forEach { (key, values) ->
-                            values.forEach { value ->
-                                aspectPairs.add("$key:$value")
-                            }
-                        }
+            // Page through all root scopes to avoid missing candidates
+            val pageLimit = 1000
+            var offset = 0
+            val rootScopes = mutableListOf<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>()
+
+            while (true) {
+                val page = scopeCommandAdapter
+                    .listRootScopes(offset = offset, limit = pageLimit)
+                    .fold({ null }, { it }) ?: break
+
+                val items = page.scopes
+                if (items.isEmpty()) break
+
+                rootScopes.addAll(items)
+                if (items.size < pageLimit) break
+                offset += pageLimit
+            }
+
+            // Extract aspects from root scopes
+            rootScopes.forEach { scope ->
+                scope.aspects.forEach { (key, values) ->
+                    values.forEach { value ->
+                        aspectPairs.add("$key:$value")
                     }
+                }
+            }
 
-                    // Also check children of root scopes in parallel
-                    coroutineScope {
-                        val jobs = scopes.map { rootScope ->
-                            async {
-                                scopeCommandAdapter.listChildren(rootScope.id)
-                            }
-                        }
-                        jobs.awaitAll().forEach { result ->
-                            result.fold(
-                                { /* ignore errors */ },
-                                { children ->
-                                    children.forEach { child ->
-                                        child.aspects.forEach { (key, values) ->
-                                            values.forEach { value ->
-                                                aspectPairs.add("$key:$value")
-                                            }
+            // Also extract from children of each root scope with capped concurrency
+            coroutineScope {
+                val semaphore = Semaphore(8)
+                val jobs = rootScopes.map { rootScope ->
+                    async {
+                        semaphore.withPermit {
+                            val localPairs = mutableSetOf<String>()
+                            var childOffset = 0
+                            while (true) {
+                                val childPage = scopeCommandAdapter
+                                    .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
+                                    .fold({ null }, { it }) ?: break
+                                val children = childPage.scopes
+                                if (children.isEmpty()) break
+
+                                children.forEach { child ->
+                                    child.aspects.forEach { (key, values) ->
+                                        values.forEach { value ->
+                                            localPairs.add("$key:$value")
                                         }
                                     }
-                                },
-                            )
+                                }
+
+                                if (children.size < pageLimit) break
+                                childOffset += pageLimit
+                            }
+                            localPairs
                         }
                     }
+                }
+                jobs.awaitAll().forEach { local -> aspectPairs.addAll(local) }
+            }
 
-                    // Output each aspect pair on a new line for shell completion
-                    aspectPairs.sorted().forEach { pair ->
-                        echo(pair)
-                    }
-                },
-            )
+            // Output each aspect pair on a new line for shell completion
+            aspectPairs.sorted().forEach { pair ->
+                echo(pair)
+            }
         }
     }
 }

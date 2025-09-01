@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonical
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
@@ -167,46 +168,65 @@ class ScopeManagementPortAdapter(
         )
     }
 
-    override suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>> = getChildrenHandler(
+    override suspend fun getChildren(
+        query: GetChildrenQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult> = getChildrenHandler(
         GetChildren(
             parentId = query.parentId,
+            offset = query.offset,
+            limit = query.limit,
         ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
-    }.map { scopeDtos ->
-        scopeDtos.map { scopeDto ->
-            ScopeResult(
-                id = scopeDto.id,
-                title = scopeDto.title,
-                description = scopeDto.description,
-                parentId = scopeDto.parentId,
-                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
-                createdAt = scopeDto.createdAt,
-                updatedAt = scopeDto.updatedAt,
-                isArchived = false, // TODO: Implement archive status when available in domain
-                aspects = scopeDto.aspects,
-            )
-        }
+    }.map { paged ->
+        io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+            scopes = paged.items.map { scopeDto ->
+                ScopeResult(
+                    id = scopeDto.id,
+                    title = scopeDto.title,
+                    description = scopeDto.description,
+                    parentId = scopeDto.parentId,
+                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
+                    createdAt = scopeDto.createdAt,
+                    updatedAt = scopeDto.updatedAt,
+                    isArchived = false, // TODO: Implement archive status when available in domain
+                    aspects = scopeDto.aspects,
+                )
+            },
+            totalCount = paged.totalCount,
+            offset = paged.offset,
+            limit = paged.limit,
+        )
     }
 
-    override suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>> = getRootScopesHandler(
-        GetRootScopes(),
+    override suspend fun getRootScopes(
+        query: GetRootScopesQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult> = getRootScopesHandler(
+        GetRootScopes(
+            offset = query.offset,
+            limit = query.limit,
+        ),
     ).mapLeft { error ->
         errorMapper.mapToContractError(error)
-    }.map { scopeDtos ->
-        scopeDtos.map { scopeDto ->
-            ScopeResult(
-                id = scopeDto.id,
-                title = scopeDto.title,
-                description = scopeDto.description,
-                parentId = scopeDto.parentId,
-                canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
-                createdAt = scopeDto.createdAt,
-                updatedAt = scopeDto.updatedAt,
-                isArchived = false, // TODO: Implement archive status when available in domain
-                aspects = scopeDto.aspects,
-            )
-        }
+    }.map { paged ->
+        io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+            scopes = paged.items.map { scopeDto ->
+                ScopeResult(
+                    id = scopeDto.id,
+                    title = scopeDto.title,
+                    description = scopeDto.description,
+                    parentId = scopeDto.parentId,
+                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
+                    createdAt = scopeDto.createdAt,
+                    updatedAt = scopeDto.updatedAt,
+                    isArchived = false, // TODO: Implement archive status when available in domain
+                    aspects = scopeDto.aspects,
+                )
+            },
+            totalCount = paged.totalCount,
+            offset = paged.offset,
+            limit = paged.limit,
+        )
     }
 
     override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult> = either {

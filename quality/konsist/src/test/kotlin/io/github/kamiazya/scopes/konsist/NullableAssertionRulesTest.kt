@@ -21,20 +21,22 @@ class NullableAssertionRulesTest :
                     .filter { function ->
                         // Look for Either result patterns
                         function.text.contains("getOrNull()") &&
-                            (function.text.contains("shouldBe") || 
-                             function.text.contains("shouldHave") ||
-                             function.text.contains("shouldContain"))
+                            (
+                                function.text.contains("shouldBe") ||
+                                    function.text.contains("shouldHave") ||
+                                    function.text.contains("shouldContain")
+                                )
                     }
                     .assertTrue { function ->
                         // Should check isRight() before getOrNull()
                         val hasRightCheck = function.text.contains("isRight() shouldBe true") ||
                             function.text.contains("isRight()).isTrue()") ||
                             function.text.contains("shouldBeRight()")
-                        
+
                         // Allow direct comparison to null or empty
                         val isNullOrEmptyCheck = function.text.contains("getOrNull() shouldBe null") ||
                             function.text.contains("getOrNull() shouldBe emptyList")
-                        
+
                         hasRightCheck || isNullOrEmptyCheck
                     }
             }
@@ -56,7 +58,7 @@ class NullableAssertionRulesTest :
                         val hasExplanatoryComment = function.text.contains("nullable") ||
                             function.text.contains("optional") ||
                             function.text.contains("may be null")
-                        
+
                         hasNonNullAssertion || hasExplanatoryComment
                     }
             }
@@ -77,7 +79,7 @@ class NullableAssertionRulesTest :
                         val hasProperAssertion = function.text.contains("shouldNotBe null") ||
                             function.text.contains("getOrNull()!!") ||
                             function.text.contains("isRight() shouldBe true")
-                        
+
                         !hasNullableChaining || hasProperAssertion
                     }
             }
@@ -99,7 +101,7 @@ class NullableAssertionRulesTest :
                             function.text.contains("leftOrNull()") ||
                             function.text.contains("shouldBeLeft()")
                         val hasErrorAssertion = function.text.contains("shouldBeInstanceOf")
-                        
+
                         hasRightCheck || hasLeftHandling || hasErrorAssertion
                     }
             }
@@ -120,7 +122,7 @@ class NullableAssertionRulesTest :
                             function.text.contains("as? ")
                         val hasGenericErrorCheck = function.text.contains("shouldNotBe null") ||
                             function.text.contains("shouldBe true")
-                        
+
                         hasTypeAssertion || hasGenericErrorCheck
                     }
             }

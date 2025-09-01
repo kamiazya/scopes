@@ -249,7 +249,7 @@ class SqlDelightEventRepositoryTest :
                     do {
                         timestampBetween = Clock.System.now()
                     } while (timestampBetween <= firstStoredEvent.metadata.storedAt)
-                    
+
                     // Wait again to ensure the second event is stored after timestampBetween
                     var secondEventTime: Instant
                     do {
@@ -418,7 +418,7 @@ class SqlDelightEventRepositoryTest :
                     do {
                         timestampBetween = Clock.System.now()
                     } while (timestampBetween <= oldStoredEvent.metadata.storedAt)
-                    
+
                     // Wait again to ensure the recent event is stored after timestampBetween
                     var recentEventTime: Instant
                     do {

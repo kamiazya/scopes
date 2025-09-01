@@ -46,6 +46,16 @@ class ListCommand :
 
     override fun run() {
         runBlocking {
+            // Validate pagination inputs
+            if (offset < 0) {
+                echo("Error: offset must be >= 0", err = true)
+                return@runBlocking
+            }
+            if (limit !in 1..1000) {
+                echo("Error: limit must be in 1..1000", err = true)
+                return@runBlocking
+            }
+
             // Parse aspect filters
             val aspectFilters = aspects.mapNotNull { aspectStr ->
                 val parts = aspectStr.split(":", limit = 2)
@@ -86,15 +96,19 @@ class ListCommand :
                     )
                 }
                 root -> {
-                    scopeCommandAdapter.listRootScopes().fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {
                                 scopes
+                            }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
                             }
 
                             if (verbose) {
@@ -107,15 +121,19 @@ class ListCommand :
                     )
                 }
                 parentId != null -> {
-                    scopeCommandAdapter.listChildren(parentId!!).fold(
+                    scopeCommandAdapter.listChildren(parentId!!, offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {
                                 scopes
+                            }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
                             }
 
                             if (verbose) {
@@ -128,15 +146,19 @@ class ListCommand :
                 }
                 else -> {
                     // Default: list root scopes
-                    scopeCommandAdapter.listRootScopes().fold(
+                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
-                        { scopes ->
+                        { page ->
+                            val scopes = page.scopes
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
                                 filterByAspects(scopes, aspectFilters)
                             } else {
                                 scopes
+                            }
+                            if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
                             }
 
                             if (verbose) {

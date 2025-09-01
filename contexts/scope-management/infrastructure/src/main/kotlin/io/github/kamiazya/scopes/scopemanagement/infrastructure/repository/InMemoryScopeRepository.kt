@@ -91,6 +91,22 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
+        mutex.withLock {
+            try {
+                scopes.values
+                    .asSequence()
+                    .filter { it.parentId == parentId }
+                    .sortedBy { it.createdAt }
+                    .drop(offset)
+                    .take(limit)
+                    .toList()
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId(offset,limit)", e))
+            }
+        }
+    }
+
     override suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit> = either {
         mutex.withLock {
             try {
@@ -161,6 +177,16 @@ open class InMemoryScopeRepository : ScopeRepository {
                 descendants
             } catch (e: Exception) {
                 raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findDescendantsOf", e))
+            }
+        }
+    }
+
+    override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = either {
+        mutex.withLock {
+            try {
+                scopes.values.count { it.parentId == parentId }
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByParentId", e))
             }
         }
     }

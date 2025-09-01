@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonical
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
@@ -58,13 +59,18 @@ public interface ScopeManagementPort {
      * @param query The query containing the parent scope ID
      * @return Either an error or the list of child scopes
      */
-    public suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getChildren(
+        query: GetChildrenQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult>
 
     /**
-     * Retrieves all root scopes (scopes without parent).
-     * @return Either an error or the list of root scopes
+     * Retrieves root scopes (scopes without parent) with deterministic ordering.
+     * Pagination is controlled by the query (offset ≥ 0, limit > 0).
+     * @return Either an error or the list of root scopes for the requested page
      */
-    public suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>>
+    public suspend fun getRootScopes(
+        query: GetRootScopesQuery,
+    ): Either<ScopeContractError, io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult>
 
     /**
      * Retrieves a scope by its alias name.
