@@ -13,7 +13,7 @@ mockk = "1.13.12"
 konsist = "0.17.3"
 
 # Database and persistence
-sqlite = "3.47.1.0"
+sqlite = "3.50.3.0"
 exposed = "0.57.0"
 sqldelight = "2.1.0"
 
