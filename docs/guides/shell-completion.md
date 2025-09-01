@@ -118,3 +118,9 @@ The aspect completion feature consists of:
 3. **Shell completion script**: Calls the hidden command to get suggestions.
 
 This design allows dynamic completion based on actual database content rather than static lists.
+
+## Notes on Delimiters and Quoting
+
+- The parser splits on the first `:` or `=` only; additional `:`/`=` remain in the value. Example: `version=v:1` parses as key `version`, value `v:1`.
+- Escaping of delimiters (like `\:` or `\=`) is not supported. If values contain spaces, quote them using your shell: `--aspect "status=in progress"`.
+- Completion suggestions are shown in `key:value` form, but input accepts both `key:value` and `key=value`.

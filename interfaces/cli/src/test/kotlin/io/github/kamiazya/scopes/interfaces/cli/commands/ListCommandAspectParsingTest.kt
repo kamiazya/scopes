@@ -36,6 +36,13 @@ class ListCommandAspectParsingTest : DescribeSpec({
             result["status"]!!.shouldContainExactlyInAnyOrder("ready")
         }
 
+        it("preserves additional delimiters in values") {
+            val result = parseAspectFilters(listOf("version:v:1", "build=a=b"))
+
+            result["version"]!!.shouldContainExactlyInAnyOrder("v:1")
+            result["build"]!!.shouldContainExactlyInAnyOrder("a=b")
+        }
+
         it("ignores invalid entries without key or value") {
             val result = parseAspectFilters(listOf(":nope", "=nope", "keyonly:", "valu e", ""))
 
@@ -43,4 +50,3 @@ class ListCommandAspectParsingTest : DescribeSpec({
         }
     }
 })
-

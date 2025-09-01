@@ -40,7 +40,7 @@ class ListCommand :
     private val aspects by option(
         "-a",
         "--aspect",
-        help = "Filter by aspect (format: key:value or key=value). Can be specified multiple times.",
+        help = "Filter by aspect (format: key:value or key=value). Splits on the first delimiter; subsequent ':' or '=' are part of the value. Use shell quotes if values contain spaces. Can be specified multiple times.",
         completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
     ).multiple()
 
