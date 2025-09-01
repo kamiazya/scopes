@@ -41,7 +41,7 @@ findScopesByParentId:
 SELECT *
 FROM scopes
 WHERE parent_id = ?
-ORDER BY created_at DESC, id DESC;
+ORDER BY created_at ASC, id ASC;
 
 -- Find scopes by parent ID with pagination (ascending by creation time)
 findScopesByParentIdPaged:
@@ -56,7 +56,7 @@ findRootScopes:
 SELECT *
 FROM scopes
 WHERE parent_id IS NULL
-ORDER BY created_at DESC, id DESC;
+ORDER BY created_at ASC, id ASC;
 
 -- Find root scopes with pagination (ascending by creation time)
 findRootScopesPaged:

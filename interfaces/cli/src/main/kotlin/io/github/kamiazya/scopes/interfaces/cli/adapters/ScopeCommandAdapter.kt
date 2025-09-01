@@ -121,9 +121,10 @@ class ScopeCommandAdapter(
         afterCreatedAt: Instant? = null,
         afterId: String? = null,
     ): Either<ScopeContractError, ScopeListResult> {
+        val effectiveOffset = if (afterCreatedAt != null && afterId != null) 0 else offset
         val query = GetChildrenQuery(
             parentId = parentId,
-            offset = offset,
+            offset = effectiveOffset,
             limit = limit,
             afterCreatedAt = afterCreatedAt,
             afterId = afterId,
@@ -139,15 +140,17 @@ class ScopeCommandAdapter(
         limit: Int,
         afterCreatedAt: Instant? = null,
         afterId: String? = null,
-    ): Either<ScopeContractError, ScopeListResult> =
-        scopeManagementPort.getRootScopes(
+    ): Either<ScopeContractError, ScopeListResult> {
+        val effectiveOffset = if (afterCreatedAt != null && afterId != null) 0 else offset
+        return scopeManagementPort.getRootScopes(
             GetRootScopesQuery(
-                offset = offset,
+                offset = effectiveOffset,
                 limit = limit,
                 afterCreatedAt = afterCreatedAt,
                 afterId = afterId,
             ),
         )
+    }
 
     /**
      * Lists all aliases for a specific scope

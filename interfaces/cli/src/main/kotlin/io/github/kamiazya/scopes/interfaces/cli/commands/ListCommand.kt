@@ -67,6 +67,10 @@ class ListCommand :
                 echo("Error: --after-created-at and --after-id must be used together", err = true)
                 return@runBlocking
             }
+            if (afterTimeProvided && afterIdProvided && offset != 0) {
+                echo("Error: --offset cannot be used with cursor options", err = true)
+                return@runBlocking
+            }
 
             // Parse aspect filters (supports key:value and key=value)
             val aspectFilters = parseAspectFilters(aspects)

@@ -67,10 +67,11 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
             ),
         )
 
+        val normalizedOffset = if (input.afterCreatedAt != null && input.afterId != null) 0 else input.offset
         PagedResult(
             items = result,
             totalCount = totalCount,
-            offset = input.offset,
+            offset = normalizedOffset,
             limit = input.limit,
         )
     }.onLeft { error ->
