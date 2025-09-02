@@ -118,7 +118,41 @@ object ErrorMessageMapper {
             is ContextError.EmptyFilter -> "Context view filter cannot be empty"
             is ContextError.FilterTooShort -> "Context view filter must be at least ${error.minimumLength} characters"
             is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
-            is ContextError.InvalidFilterSyntax -> "Invalid filter syntax: ${error.reason}"
+            is ContextError.InvalidFilterSyntax ->
+                "Invalid filter syntax: ${
+                    when (val errorType = error.errorType) {
+                        is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
+                        is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
+                        is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
+                            "Unexpected character '${errorType.char}' at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnterminatedString ->
+                            "Unterminated string at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
+                            "Unexpected token at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
+                            "Missing closing parenthesis at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
+                            "Expected expression at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
+                            "Expected identifier at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
+                            "Expected operator at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedValue ->
+                            "Expected value at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
+                            "Unbalanced parentheses"
+                        is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
+                            "Unbalanced quotes"
+                        is ContextError.FilterSyntaxErrorType.EmptyOperator ->
+                            "Empty operator"
+                        is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
+                            "Invalid syntax"
+                    }
+                }"
+            // New domain validation error cases
+            is ContextError.InvalidScope -> "Invalid scope '${error.scopeId}': ${error.reason}"
+            is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${error.reason}"
+            is ContextError.DuplicateScope -> "Duplicate scope title '${error.title}'${error.contextId?.let { " in context $it" } ?: ""}: ${error.reason}"
         }
         is AspectValidationError -> when (error) {
             is AspectValidationError.EmptyAspectKey -> "Aspect key cannot be empty"
