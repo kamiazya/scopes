@@ -127,3 +127,49 @@ data class ContextViewChanges(
     data class FilterChange(val oldFilter: ContextViewFilter, val newFilter: ContextViewFilter)
     data class DescriptionChange(val oldDescription: ContextViewDescription?, val newDescription: ContextViewDescription?)
 }
+
+/**
+ * Event fired when a ContextView is activated (becomes the active context).
+ * This event is critical for audit logging of context switches.
+ */
+data class ContextViewActivated(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val aggregateVersion: AggregateVersion,
+    val contextViewId: ContextViewId,
+    val contextKey: ContextViewKey,
+    val contextName: ContextViewName,
+    val previousContextId: ContextViewId? = null,
+    val activatedBy: String? = null, // User/system that activated the context
+) : ContextViewEvent()
+
+/**
+ * Event fired when the active context is cleared (no context is active).
+ * This event is important for tracking when users work without an active filter.
+ */
+data class ActiveContextCleared(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val aggregateVersion: AggregateVersion,
+    val previousContextId: ContextViewId,
+    val previousContextKey: ContextViewKey,
+    val clearedBy: String? = null, // User/system that cleared the context
+) : ContextViewEvent()
+
+/**
+ * Event fired when scopes are filtered using a context view.
+ * This provides audit trail for context usage without switching active context.
+ */
+data class ContextViewApplied(
+    override val aggregateId: AggregateId,
+    override val eventId: EventId,
+    override val occurredAt: Instant,
+    override val aggregateVersion: AggregateVersion,
+    val contextViewId: ContextViewId,
+    val contextKey: ContextViewKey,
+    val scopeCount: Int, // Number of scopes returned after filtering
+    val totalScopeCount: Int, // Total number of scopes before filtering
+    val appliedBy: String? = null, // User/system that applied the filter
+) : ContextViewEvent()
