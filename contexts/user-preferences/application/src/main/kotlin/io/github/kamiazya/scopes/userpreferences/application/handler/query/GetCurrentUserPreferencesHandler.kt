@@ -1,15 +1,15 @@
-package io.github.kamiazya.scopes.userpreferences.application.handler
+package io.github.kamiazya.scopes.userpreferences.application.handler.query
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.application.usecase.UseCase
+import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.userpreferences.application.dto.UserPreferencesInternalDto
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRepository) :
-    UseCase<GetCurrentUserPreferences, UserPreferencesError, UserPreferencesInternalDto> {
+    QueryHandler<GetCurrentUserPreferences, UserPreferencesError, UserPreferencesInternalDto> {
 
     override suspend fun invoke(query: GetCurrentUserPreferences): Either<UserPreferencesError, UserPreferencesInternalDto> = either {
         val aggregate = repository.findForCurrentUser().bind()

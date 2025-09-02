@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.devicesync.application.handler
+package io.github.kamiazya.scopes.devicesync.application.handler.command
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -8,14 +8,14 @@ import io.github.kamiazya.scopes.devicesync.application.dto.SynchronizationResul
 import io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
-import io.github.kamiazya.scopes.platform.application.usecase.UseCase
 
 /**
  * Handler for synchronizing with a remote device.
  */
 class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchronizationService, private val transactionManager: TransactionManager) :
-    UseCase<SynchronizeDevice, DeviceSyncApplicationError, SynchronizationResultDto> {
+    CommandHandler<SynchronizeDevice, DeviceSyncApplicationError, SynchronizationResultDto> {
 
     override suspend fun invoke(input: SynchronizeDevice): Either<DeviceSyncApplicationError, SynchronizationResultDto> {
         // Validate device ID

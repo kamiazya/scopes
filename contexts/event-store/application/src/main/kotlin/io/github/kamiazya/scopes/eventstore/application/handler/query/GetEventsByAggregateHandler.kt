@@ -1,17 +1,17 @@
-package io.github.kamiazya.scopes.eventstore.application.handler
+package io.github.kamiazya.scopes.eventstore.application.handler.query
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.eventstore.application.dto.PersistedEventRecordDto
 import io.github.kamiazya.scopes.eventstore.application.error.EventStoreApplicationError
 import io.github.kamiazya.scopes.eventstore.application.query.GetEventsByAggregate
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
-import io.github.kamiazya.scopes.platform.application.usecase.UseCase
+import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 
 /**
  * Handler for retrieving events by aggregate ID.
  */
 class GetEventsByAggregateHandler(private val eventRepository: EventRepository) :
-    UseCase<GetEventsByAggregate, EventStoreApplicationError, List<PersistedEventRecordDto>> {
+    QueryHandler<GetEventsByAggregate, EventStoreApplicationError, List<PersistedEventRecordDto>> {
 
     override suspend fun invoke(input: GetEventsByAggregate): Either<EventStoreApplicationError, List<PersistedEventRecordDto>> {
         // Validate input

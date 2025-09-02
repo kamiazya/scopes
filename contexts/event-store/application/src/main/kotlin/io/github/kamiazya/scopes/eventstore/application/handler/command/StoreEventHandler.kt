@@ -1,12 +1,12 @@
-package io.github.kamiazya.scopes.eventstore.application.handler
+package io.github.kamiazya.scopes.eventstore.application.handler.command
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.eventstore.application.command.StoreEvent
 import io.github.kamiazya.scopes.eventstore.application.dto.PersistedEventRecordDto
 import io.github.kamiazya.scopes.eventstore.application.error.EventStoreApplicationError
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
-import io.github.kamiazya.scopes.platform.application.usecase.UseCase
 
 /**
  * Handler for storing domain events in the event store.
@@ -31,7 +31,7 @@ import io.github.kamiazya.scopes.platform.application.usecase.UseCase
  * @see PersistedEventRecordDto
  */
 class StoreEventHandler(private val eventRepository: EventRepository, private val transactionManager: TransactionManager) :
-    UseCase<StoreEvent, EventStoreApplicationError, PersistedEventRecordDto> {
+    CommandHandler<StoreEvent, EventStoreApplicationError, PersistedEventRecordDto> {
 
     /**
      * Stores a domain event in the event store.
