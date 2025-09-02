@@ -103,4 +103,10 @@ interface ScopeRepository {
      * Used for validating aspect usage before deletion.
      */
     suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int>
+
+    /**
+     * Count all scopes in the repository.
+     * More efficient than loading all scopes with findAll().
+     */
+    suspend fun countAll(): Either<PersistenceError, Int>
 }

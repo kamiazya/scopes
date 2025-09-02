@@ -51,8 +51,9 @@ class FilterEvaluationService {
             { it },
         )
 
-        // Convert Aspects to a map for evaluation
-        val aspectMap = aspects.toMap().mapKeys { it.key.value }
+        // Convert Aspects to a case-insensitive map for evaluation
+        val aspectMap = aspects.toMap()
+            .mapKeys { it.key.value.lowercase() }
             .mapValues { it.value.toList() }
 
         // Evaluate the parsed AST
@@ -75,7 +76,9 @@ class FilterEvaluationService {
         aspectMap: Map<String, List<AspectValue>>,
         aspectDefinitions: Map<String, AspectDefinition>,
     ): Boolean {
-        val aspectValues = aspectMap[comparison.key] ?: return false
+        // Use lowercase lookup key for case-insensitive matching
+        val lookupKey = comparison.key.lowercase()
+        val aspectValues = aspectMap[lookupKey] ?: return false
         val definition = aspectDefinitions[comparison.key]
 
         // For each value, check if it matches the comparison

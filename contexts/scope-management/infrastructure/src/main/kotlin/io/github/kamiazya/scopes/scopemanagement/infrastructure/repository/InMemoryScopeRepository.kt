@@ -197,6 +197,16 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
+    override suspend fun countAll(): Either<PersistenceError, Int> = either {
+        mutex.withLock {
+            try {
+                scopes.size
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countAll", e))
+            }
+        }
+    }
+
     /**
      * Utility method for testing - clear all scopes.
      */

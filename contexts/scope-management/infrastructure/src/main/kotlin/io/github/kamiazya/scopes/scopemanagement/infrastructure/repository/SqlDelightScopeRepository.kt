@@ -401,4 +401,17 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             ).left()
         }
     }
+
+    override suspend fun countAll(): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+        try {
+            val count = database.scopeQueries.countAll().executeAsOne()
+            count.toInt().right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "countAll",
+                cause = e,
+            ).left()
+        }
+    }
 }

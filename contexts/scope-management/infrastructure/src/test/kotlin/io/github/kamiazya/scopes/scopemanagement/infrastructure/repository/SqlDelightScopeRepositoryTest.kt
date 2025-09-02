@@ -558,6 +558,59 @@ class SqlDelightScopeRepositoryTest :
                 }
             }
 
+            describe("countAll") {
+                it("should count all scopes in the repository") {
+                    // Given
+                    val scopes = listOf(
+                        Scope(
+                            id = ScopeId.generate(),
+                            title = ScopeTitle.create("Scope 1").getOrNull()!!,
+                            description = null,
+                            parentId = null,
+                            aspects = Aspects.empty(),
+                            createdAt = Clock.System.now(),
+                            updatedAt = Clock.System.now(),
+                        ),
+                        Scope(
+                            id = ScopeId.generate(),
+                            title = ScopeTitle.create("Scope 2").getOrNull()!!,
+                            description = null,
+                            parentId = null,
+                            aspects = Aspects.empty(),
+                            createdAt = Clock.System.now(),
+                            updatedAt = Clock.System.now(),
+                        ),
+                        Scope(
+                            id = ScopeId.generate(),
+                            title = ScopeTitle.create("Scope 3").getOrNull()!!,
+                            description = null,
+                            parentId = ScopeId.generate(), // Child scope
+                            aspects = Aspects.empty(),
+                            createdAt = Clock.System.now(),
+                            updatedAt = Clock.System.now(),
+                        ),
+                    )
+
+                    scopes.forEach { scope ->
+                        runBlocking { repository.save(scope) }
+                    }
+
+                    // When
+                    val result = runBlocking { repository.countAll() }
+
+                    // Then
+                    result shouldBe 3.right()
+                }
+
+                it("should return 0 when no scopes exist") {
+                    // When
+                    val result = runBlocking { repository.countAll() }
+
+                    // Then
+                    result shouldBe 0.right()
+                }
+            }
+
             describe("error handling") {
                 it("should handle database errors consistently across all operations") {
                     // Given
@@ -587,6 +640,7 @@ class SqlDelightScopeRepositoryTest :
                         runBlocking { repository.deleteById(ScopeId.generate()) },
                         runBlocking { repository.countChildrenOf(ScopeId.generate()) },
                         runBlocking { repository.findIdByParentIdAndTitle(null, "Test") },
+                        runBlocking { repository.countAll() },
                     )
 
                     operations.forEach { result ->
