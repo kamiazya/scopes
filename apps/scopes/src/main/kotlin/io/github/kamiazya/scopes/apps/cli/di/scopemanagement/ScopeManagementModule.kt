@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
@@ -20,16 +21,15 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQueryUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
-import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
-import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.context.GetContextViewUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.context.ListContextViewsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
+import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
@@ -85,17 +85,17 @@ val scopeManagementModule = module {
             }
         }
     }
-    
-    single { 
+
+    single {
         ContextAuditService(
-            eventPublisher = get()
+            eventPublisher = get(),
         )
     }
     single {
         ActiveContextService(
             contextViewRepository = get(),
             activeContextRepository = get(),
-            contextAuditService = get()
+            contextAuditService = get(),
         )
     }
 

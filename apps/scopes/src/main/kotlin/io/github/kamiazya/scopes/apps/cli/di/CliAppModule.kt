@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModu
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
@@ -18,6 +19,7 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.UpdateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.configureSubcommands
 import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import org.koin.dsl.module
@@ -80,10 +82,21 @@ val cliAppModule = module {
             validateAspectValueUseCase = get(),
         )
     }
+    single {
+        ContextCommandAdapter(
+            createContextViewUseCase = get(),
+            listContextViewsUseCase = get(),
+            getContextViewUseCase = get(),
+            updateContextViewUseCase = get(),
+            deleteContextViewUseCase = get(),
+            activeContextService = get(),
+        )
+    }
 
     // CLI Formatters
     single { ScopeOutputFormatter() }
     single { AliasOutputFormatter() }
+    single { ContextOutputFormatter() }
 
     // CLI Utilities
     single {
