@@ -1,8 +1,12 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.CreateContextViewUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.DeleteContextViewUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.UpdateContextViewUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
@@ -17,13 +21,24 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
+import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQueryUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.context.GetContextViewUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.context.ListContextViewsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
+import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import org.koin.dsl.module
 
@@ -39,24 +54,54 @@ val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
     single { AspectValueValidationService() }
-    single {
-        io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService(
-            aliasRepository = get(),
-            aliasGenerationService = get(),
-        )
-    }
+    single { ScopeHierarchyValidationService(scopeRepository = get()) }
+    single { ScopeUniquenessValidationService(scopeRepository = get()) }
+    single { AspectUsageValidationService(scopeRepository = get()) }
+
+    // Query Components
+    single { AspectQueryParser() }
 
     // Application Services
+    single { ScopeAliasPolicy() }
+    single {
+        ScopeAliasApplicationService(
+            aliasRepository = get(),
+            aliasGenerationService = get(),
+            aliasPolicy = get(),
+        )
+    }
     single {
         ScopeHierarchyApplicationService(
             repository = get(),
             domainService = get(),
         )
     }
-    single { CrossAggregateValidationService(scopeRepository = get()) }
     single {
-        io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService(
+        CrossAggregateValidationService(
+            hierarchyValidationService = get(),
+            uniquenessValidationService = get(),
+        )
+    }
+
+    // Event publishing (temporary no-op implementation)
+    single<DomainEventPublisher> {
+        object : DomainEventPublisher {
+            override suspend fun publish(event: DomainEvent) {
+                // TODO: Implement proper event publishing
+            }
+        }
+    }
+
+    single {
+        ContextAuditService(
+            eventPublisher = get(),
+        )
+    }
+    single {
+        ActiveContextService(
             contextViewRepository = get(),
+            activeContextRepository = get(),
+            contextAuditService = get(),
         )
     }
 
@@ -193,6 +238,7 @@ val scopeManagementModule = module {
     single {
         DeleteAspectDefinitionUseCase(
             aspectDefinitionRepository = get(),
+            aspectUsageValidationService = get(),
             transactionManager = get(),
         )
     }
@@ -223,6 +269,43 @@ val scopeManagementModule = module {
         FilterScopesWithQueryHandler(
             filterScopesWithQueryUseCase = get(),
             logger = get(),
+        )
+    }
+
+    // Context View Use Cases
+    single {
+        CreateContextViewUseCase(
+            contextViewRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        ListContextViewsUseCase(
+            contextViewRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        GetContextViewUseCase(
+            contextViewRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        UpdateContextViewUseCase(
+            contextViewRepository = get(),
+            transactionManager = get(),
+        )
+    }
+
+    single {
+        DeleteContextViewUseCase(
+            contextViewRepository = get(),
+            transactionManager = get(),
+            activeContextService = get(),
         )
     }
 }

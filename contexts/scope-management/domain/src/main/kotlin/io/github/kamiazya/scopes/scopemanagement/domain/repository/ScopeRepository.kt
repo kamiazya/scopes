@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.repository
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
@@ -38,11 +39,7 @@ interface ScopeRepository {
      */
     suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
 
-    /**
-     * Find scopes by parent ID.
-     */
-    @Deprecated("Use paginated overload to avoid full scans; will be removed in a future release.")
-    suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
+    // NOTE: Non-paginated version removed. Use paginated overload to avoid full scans.
 
     /**
      * Find scopes by parent ID with pagination.
@@ -102,11 +99,8 @@ interface ScopeRepository {
     suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int>
 
     /**
-     * Find all descendants of a scope recursively.
-     * Used for hierarchy operations.
-     *
-     * Ordering: no guarantees. Consumers and tests must not rely on the
-     * traversal order; treat the returned list as an unordered collection.
+     * Count scopes that have a specific aspect key.
+     * Used for validating aspect usage before deletion.
      */
-    suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>>
+    suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int>
 }

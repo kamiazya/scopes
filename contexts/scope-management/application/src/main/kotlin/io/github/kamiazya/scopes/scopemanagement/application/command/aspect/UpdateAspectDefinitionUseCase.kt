@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.command
+package io.github.kamiazya.scopes.scopemanagement.application.command.aspect
 
 import arrow.core.Either
 import arrow.core.raise.either

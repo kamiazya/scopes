@@ -133,8 +133,35 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
 
     is ContextError.InvalidFilterSyntax ->
         AppContextError.InvalidFilter(
-            filter = "",
-            reason = this.reason,
+            filter = this.expression,
+            reason = when (val errorType = this.errorType) {
+                is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
+                is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
+                is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
+                    "Unexpected character '${errorType.char}' at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.UnterminatedString ->
+                    "Unterminated string at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
+                    "Unexpected token at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
+                    "Missing closing parenthesis at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
+                    "Expected expression at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
+                    "Expected identifier at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
+                    "Expected operator at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.ExpectedValue ->
+                    "Expected value at position ${errorType.position}"
+                is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
+                    "Unbalanced parentheses"
+                is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
+                    "Unbalanced quotes"
+                is ContextError.FilterSyntaxErrorType.EmptyOperator ->
+                    "Empty operator"
+                is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
+                    "Invalid syntax"
+            },
         )
 
     ContextError.EmptyKey ->
@@ -151,6 +178,22 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
         AppContextError.InvalidFilter(
             filter = "",
             reason = "Empty filter",
+        )
+
+    // New domain validation error cases
+    is ContextError.InvalidScope ->
+        AppContextError.StateNotFound(
+            contextId = this.scopeId,
+        )
+
+    is ContextError.InvalidHierarchy ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "Invalid hierarchy: ${this.reason}",
+        )
+
+    is ContextError.DuplicateScope ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "Duplicate scope: ${this.title}",
         )
 }
 

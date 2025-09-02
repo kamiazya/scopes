@@ -1,0 +1,91 @@
+package io.github.kamiazya.scopes.interfaces.cli.commands.context
+
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.requireObject
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.required
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewRequest
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
+import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import kotlinx.coroutines.runBlocking
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+/**
+ * Command for creating a new context view.
+ */
+class CreateContextCommand :
+    CliktCommand(
+        name = "create",
+        help = """
+        Create a new context view
+
+        Context views are named filter configurations that can be reused across sessions.
+        They help organize and quickly access different work contexts.
+
+        Examples:
+            # Create a context for active tasks assigned to you
+            scopes context create my-work "My Work" --filter "assignee=me AND status!=closed" -d "Active tasks assigned to me"
+
+            # Create a context for client project work
+            scopes context create client-a "Client A Project" --filter "project=client-a" -d "All work for Client A"
+
+            # Create a context for urgent items
+            scopes context create urgent "Urgent Items" --filter "priority=high OR priority=critical" -d "High priority items"
+        """.trimIndent(),
+    ),
+    KoinComponent {
+    private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val contextOutputFormatter: ContextOutputFormatter by inject()
+    private val debugContext by requireObject<DebugContext>()
+
+    private val key by argument(
+        name = "key",
+        help = "Unique identifier for the context view (e.g., 'my-work', 'client-project')",
+    )
+
+    private val name by argument(
+        name = "name",
+        help = "Human-readable name for the context view",
+    )
+
+    private val filter by option(
+        "-f",
+        "--filter",
+        help = "Aspect query filter expression (e.g., 'status=active AND assignee=me')",
+    ).required()
+
+    private val description by option(
+        "-d",
+        "--description",
+        help = "Optional description of what this context view represents",
+    )
+
+    override fun run() {
+        runBlocking {
+            val request = CreateContextViewRequest(
+                key = key,
+                name = name,
+                filter = filter,
+                description = description,
+            )
+
+            when (val result = contextCommandAdapter.createContext(request)) {
+                is ContextViewContract.CreateContextViewResponse.Success -> {
+                    echo("Context view '${result.contextView.key}' created successfully")
+                    echo(contextOutputFormatter.formatContextView(result.contextView, debugContext.debug))
+                }
+                is ContextViewContract.CreateContextViewResponse.InvalidFilter -> {
+                    echo("Error: Invalid filter syntax: ${result.reason}", err = true)
+                    echo("Filter: '${result.filter}'", err = true)
+                }
+                is ContextViewContract.CreateContextViewResponse.DuplicateKey -> {
+                    echo("Error: Context with key '${result.key}' already exists", err = true)
+                }
+            }
+        }
+    }
+}

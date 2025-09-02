@@ -11,9 +11,9 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericAppl
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -22,7 +22,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * This supports both canonical and custom aliases.
  */
 class GetScopeByAliasHandler(
-    private val scopeAliasService: ScopeAliasManagementService,
+    private val scopeAliasService: ScopeAliasApplicationService,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
@@ -58,26 +58,29 @@ class GetScopeByAliasHandler(
                 }
                 .bind()
 
-            // Resolve alias to scope ID through domain service
-            val scopeId = scopeAliasService.resolveAlias(aliasName)
+            // Find alias through application service
+            val alias = scopeAliasService.findAliasByName(aliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to resolve alias",
+                        "Failed to find alias",
                         mapOf(
                             "aliasName" to input.aliasName,
                             "error" to error.toString(),
                         ),
                     )
-                    // Map domain error to appropriate application error
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound ->
-                            ScopeInputError.AliasNotFound(input.aliasName)
-                        else ->
-                            // For other errors (like persistence errors), use the generic error mapping
-                            error.toGenericApplicationError()
-                    }
+                    error.toGenericApplicationError()
                 }
                 .bind()
+
+            if (alias == null) {
+                logger.warn(
+                    "Alias not found",
+                    mapOf("aliasName" to input.aliasName),
+                )
+                raise(ScopeInputError.AliasNotFound(input.aliasName))
+            }
+
+            val scopeId = alias.scopeId
 
             // Get scope by ID
             val scope = scopeRepository.findById(scopeId)
@@ -110,8 +113,8 @@ class GetScopeByAliasHandler(
                 )
             }
 
-            // Get all aliases for the scope to include in response through domain service
-            val aliases = scopeAliasService.getAliasesForScope(scope.id)
+            // Get all aliases for the scope to include in response through application service
+            val aliases = scopeAliasService.listAliasesForScope(scope.id)
                 .mapLeft { error ->
                     logger.warn(
                         "Failed to get aliases for scope",

@@ -13,6 +13,13 @@ CREATE TABLE IF NOT EXISTS context_views (
 CREATE INDEX IF NOT EXISTS idx_context_views_key ON context_views(key);
 CREATE INDEX IF NOT EXISTS idx_context_views_name ON context_views(name);
 
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_context_views_created_at ON context_views(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_context_views_updated_at ON context_views(updated_at DESC);
+
+-- Composite index for common query patterns
+CREATE INDEX IF NOT EXISTS idx_context_views_key_filter ON context_views(key, filter) WHERE filter IS NOT NULL;
+
 -- Insert context view
 insertContextView:
 INSERT INTO context_views (id, key, name, description, filter, created_at, updated_at)
@@ -64,3 +71,36 @@ WHERE name = ?;
 deleteById:
 DELETE FROM context_views
 WHERE id = ?;
+
+-- Get all views with pagination
+getAllViewsPaginated:
+SELECT *
+FROM context_views
+ORDER BY name
+LIMIT :limit OFFSET :offset;
+
+-- Count total views
+countViews:
+SELECT COUNT(*) AS count
+FROM context_views;
+
+-- Find views by filter pattern (for search functionality)
+findByFilterPattern:
+SELECT *
+FROM context_views
+WHERE filter LIKE :pattern
+ORDER BY name
+LIMIT :limit;
+
+-- Get recently updated views (for quick access)
+getRecentlyUpdatedViews:
+SELECT *
+FROM context_views
+ORDER BY updated_at DESC
+LIMIT :limit;
+
+-- Batch existence check for performance
+existsByKeys:
+SELECT key
+FROM context_views
+WHERE key IN :keys;

@@ -1,0 +1,45 @@
+-- Active Context table
+-- Stores the currently active context view per user/session
+CREATE TABLE IF NOT EXISTS active_context (
+    id TEXT PRIMARY KEY NOT NULL DEFAULT 'default', -- Single row for now, can be extended for multi-user
+    context_view_id TEXT,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (context_view_id) REFERENCES context_views(id) ON DELETE SET NULL
+);
+
+-- Ensure only one active context exists
+CREATE UNIQUE INDEX IF NOT EXISTS idx_active_context_single ON active_context(id);
+
+-- Performance index for foreign key lookup
+CREATE INDEX IF NOT EXISTS idx_active_context_view_id ON active_context(context_view_id) WHERE context_view_id IS NOT NULL;
+
+-- Get current active context
+getActiveContext:
+SELECT cv.*
+FROM active_context ac
+LEFT JOIN context_views cv ON ac.context_view_id = cv.id
+WHERE ac.id = 'default'
+AND cv.id IS NOT NULL
+LIMIT 1;
+
+-- Set active context
+setActiveContext:
+INSERT OR REPLACE INTO active_context (id, context_view_id, updated_at)
+VALUES ('default', ?, ?);
+
+-- Clear active context
+clearActiveContext:
+UPDATE active_context
+SET context_view_id = NULL, updated_at = ?
+WHERE id = 'default';
+
+-- Check if active context exists
+hasActiveContext:
+SELECT COUNT(*) > 0 AS result
+FROM active_context
+WHERE id = 'default' AND context_view_id IS NOT NULL;
+
+-- Initialize active context table
+initializeActiveContext:
+INSERT OR IGNORE INTO active_context (id, context_view_id, updated_at)
+VALUES ('default', NULL, ?);

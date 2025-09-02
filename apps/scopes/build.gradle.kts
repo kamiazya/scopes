@@ -10,6 +10,7 @@ plugins {
 dependencies {
     // Platform layer
     implementation(project(":platform-commons"))
+    implementation(project(":platform-domain-commons"))
     implementation(project(":platform-observability"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-infrastructure"))

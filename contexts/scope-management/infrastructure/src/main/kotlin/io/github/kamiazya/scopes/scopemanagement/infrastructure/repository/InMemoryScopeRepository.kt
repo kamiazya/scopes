@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.sync.Mutex
@@ -81,16 +82,6 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = either {
-        mutex.withLock {
-            try {
-                scopes.values.filter { it.parentId == parentId }.toList()
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId", e))
-            }
-        }
-    }
-
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
         mutex.withLock {
             try {
@@ -161,26 +152,6 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
-    override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = either {
-        mutex.withLock {
-            try {
-                val descendants = mutableListOf<Scope>()
-                val toProcess = mutableListOf(scopeId)
-
-                while (toProcess.isNotEmpty()) {
-                    val currentId = toProcess.removeAt(0)
-                    val children = scopes.values.filter { it.parentId == currentId }
-                    descendants.addAll(children)
-                    toProcess.addAll(children.map { it.id })
-                }
-
-                descendants
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findDescendantsOf", e))
-            }
-        }
-    }
-
     override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = either {
         mutex.withLock {
             try {
@@ -200,6 +171,18 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .take(limit)
             } catch (e: Exception) {
                 raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+            }
+        }
+    }
+
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = either {
+        mutex.withLock {
+            try {
+                scopes.values.count { scope ->
+                    scope.aspects.contains(aspectKey)
+                }
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByAspectKey", e))
             }
         }
     }

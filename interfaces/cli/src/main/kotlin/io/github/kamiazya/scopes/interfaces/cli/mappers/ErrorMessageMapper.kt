@@ -2,16 +2,22 @@ package io.github.kamiazya.scopes.interfaces.cli.mappers
 
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateVersionError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectKeyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValidationError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValueError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextManagementError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.EventIdError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyPolicyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.UserPreferencesIntegrationError
 
 /**
  * Maps domain errors to user-friendly messages for CLI output.
@@ -118,7 +124,41 @@ object ErrorMessageMapper {
             is ContextError.EmptyFilter -> "Context view filter cannot be empty"
             is ContextError.FilterTooShort -> "Context view filter must be at least ${error.minimumLength} characters"
             is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
-            is ContextError.InvalidFilterSyntax -> "Invalid filter syntax: ${error.reason}"
+            is ContextError.InvalidFilterSyntax ->
+                "Invalid filter syntax: ${
+                    when (val errorType = error.errorType) {
+                        is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
+                        is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
+                        is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
+                            "Unexpected character '${errorType.char}' at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnterminatedString ->
+                            "Unterminated string at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
+                            "Unexpected token at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
+                            "Missing closing parenthesis at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
+                            "Expected expression at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
+                            "Expected identifier at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
+                            "Expected operator at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.ExpectedValue ->
+                            "Expected value at position ${errorType.position}"
+                        is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
+                            "Unbalanced parentheses"
+                        is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
+                            "Unbalanced quotes"
+                        is ContextError.FilterSyntaxErrorType.EmptyOperator ->
+                            "Empty operator"
+                        is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
+                            "Invalid syntax"
+                    }
+                }"
+            // New domain validation error cases
+            is ContextError.InvalidScope -> "Invalid scope '${error.scopeId}': ${error.reason}"
+            is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${error.reason}"
+            is ContextError.DuplicateScope -> "Duplicate scope title '${error.title}'${error.contextId?.let { " in context $it" } ?: ""}: ${error.reason}"
         }
         is AspectValidationError -> when (error) {
             is AspectValidationError.EmptyAspectKey -> "Aspect key cannot be empty"
@@ -131,6 +171,46 @@ object ErrorMessageMapper {
             is AspectValidationError.EmptyAspectAllowedValues -> "Aspect allowed values cannot be empty"
             is AspectValidationError.DuplicateAspectAllowedValues -> "Aspect allowed values contain duplicates"
         }
-        else -> "An error occurred: ${error::class.simpleName}"
+        is AspectKeyError -> when (error) {
+            is AspectKeyError.EmptyKey -> "Aspect key cannot be empty"
+            is AspectKeyError.TooShort -> "Aspect key '${error.value}' is too short: minimum ${error.minLength} characters"
+            is AspectKeyError.TooLong -> "Aspect key '${error.value}' is too long: maximum ${error.maxLength} characters"
+            is AspectKeyError.InvalidFormat -> "Invalid aspect key format: ${error.value}"
+        }
+        is AspectValueError -> when (error) {
+            is AspectValueError.EmptyValue -> "Aspect value cannot be empty"
+            is AspectValueError.TooLong -> "Aspect value '${error.value}' is too long: maximum ${error.maxLength} characters"
+        }
+        is HierarchyPolicyError -> when (error) {
+            is HierarchyPolicyError.InvalidMaxDepth -> "Invalid maximum depth: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
+            is HierarchyPolicyError.InvalidMaxChildrenPerScope ->
+                "Invalid maximum children per scope: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
+        }
+        is ScopeAliasError -> when (error) {
+            is ScopeAliasError.AliasNotFound -> "Alias not found: ${error.aliasName}"
+            is ScopeAliasError.AliasNotFoundById -> "Alias not found by ID: ${error.aliasId.value}"
+            is ScopeAliasError.DuplicateAlias -> "Duplicate alias '${error.aliasName}': already assigned to scope ${error.existingScopeId.value}"
+            is ScopeAliasError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias '${error.aliasName}' from scope ${error.scopeId.value}"
+            is ScopeAliasError.AliasGenerationFailed -> "Failed to generate alias for scope ${error.scopeId.value} after ${error.retryCount} attempts"
+            is ScopeAliasError.AliasGenerationValidationFailed -> "Alias generation validation failed for scope ${error.scopeId.value}: ${error.reason}"
+            is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+                "Data inconsistency: alias '${error.aliasName}' references non-existent scope ${error.scopeId.value}"
+        }
+        is UserPreferencesIntegrationError -> when (error) {
+            is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> "User preferences service unavailable${error.retryAfter?.let {
+                ", retry after: $it"
+            } ?: ""}"
+            is UserPreferencesIntegrationError.HierarchySettingsNotFound -> "Hierarchy settings not found in user preferences"
+            is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
+            is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"
+            is UserPreferencesIntegrationError.PreferencesRequestTimeout -> "Preferences request timed out after ${error.timeout}"
+        }
+        is ContextManagementError -> "Context management error"
+        is ScopesError.InvalidOperation -> "Invalid operation: ${error.message}"
+        is ScopesError.AlreadyExists -> "Already exists: ${error.message}"
+        is ScopesError.NotFound -> "Not found: ${error.message}"
+        is ScopesError.SystemError -> "System error: ${error.message}"
+        is ScopesError.ValidationFailed -> "Validation failed: ${error.message}"
+        is ScopesError.Conflict -> "Conflict: ${error.message}"
     }
 }

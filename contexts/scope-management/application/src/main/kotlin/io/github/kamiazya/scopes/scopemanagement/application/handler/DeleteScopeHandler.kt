@@ -45,7 +45,7 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                 }
 
                 // Check for children
-                val children = scopeRepository.findByParentId(scopeId).bind()
+                val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
 
                 if (children.isNotEmpty()) {
                     if (input.cascade) {
@@ -97,7 +97,7 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
 
     private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopesError, Unit> = either {
         // Find children of this scope
-        val children = scopeRepository.findByParentId(scopeId).bind()
+        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
 
         // Recursively delete all children
         for (child in children) {

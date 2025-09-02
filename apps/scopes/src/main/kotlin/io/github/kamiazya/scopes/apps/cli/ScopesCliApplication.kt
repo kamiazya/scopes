@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.apps.cli
 
 import io.github.kamiazya.scopes.apps.cli.di.cliAppModule
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap
-import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -26,9 +25,14 @@ class ScopesCliApplication : AutoCloseable {
         modules(cliAppModule)
     }
 
-    init {
-        // Initialize aspect presets
-        runBlocking {
+    private var isInitialized = false
+
+    /**
+     * Initialize aspect presets lazily.
+     * This will be called automatically when needed.
+     */
+    suspend fun ensureInitialized() {
+        if (!isInitialized) {
             val aspectPresetBootstrap = koinApp.koin.get<AspectPresetBootstrap>()
             aspectPresetBootstrap.initialize().fold(
                 ifLeft = { error ->
@@ -37,6 +41,7 @@ class ScopesCliApplication : AutoCloseable {
                 },
                 ifRight = {
                     // Success - presets initialized
+                    isInitialized = true
                 },
             )
         }

@@ -23,4 +23,10 @@ dependencies {
     implementation(libs.koin.core)
 
     testImplementation(libs.bundles.kotest)
+    testImplementation(libs.mockk)
+    testImplementation(libs.koin.test)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
