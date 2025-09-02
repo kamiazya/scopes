@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -200,7 +201,9 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<EventStoreError.InvalidEventError>()
+                    val error = result.leftOrNull().shouldBeInstanceOf<EventStoreError.InvalidEventError>()
+                    error.eventType shouldBe "TestEvent"
+                    error.validationErrors.shouldNotBeEmpty()
                 }
 
                 it("should handle storage errors") {
@@ -221,7 +224,10 @@ class SqlDelightEventRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<EventStoreError.StorageError>()
+                    val error = result.leftOrNull().shouldBeInstanceOf<EventStoreError.StorageError>()
+                    error.aggregateId shouldBe event.aggregateId.value
+                    error.eventType shouldBe "TestEvent"
+                    error.storageFailureType shouldNotBe null
                 }
             }
 

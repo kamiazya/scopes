@@ -74,7 +74,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     Either.Left(
                         EventStoreError.StorageError(
                             aggregateId = event.aggregateId.value,
-                            eventType = event::class.qualifiedName ?: event::class.simpleName
+                            eventType = event::class.simpleName ?: event::class.qualifiedName
                                 ?: error("Event class must have a name"),
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
