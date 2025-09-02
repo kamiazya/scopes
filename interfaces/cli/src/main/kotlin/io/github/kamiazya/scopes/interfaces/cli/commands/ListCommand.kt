@@ -8,7 +8,10 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
@@ -26,6 +29,7 @@ class ListCommand :
     ),
     KoinComponent {
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
+    private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
 
@@ -35,6 +39,7 @@ class ListCommand :
     private val limit by option("--limit", help = "Maximum number of items to return").int().default(20)
     private val verbose by option("-v", "--verbose", help = "Show all aliases for each scope").flag()
     private val query by option("-q", "--query", help = "Filter by advanced query (e.g., 'priority>=high AND status!=closed')")
+    private val ignoreContext by option("--no-context", help = "Ignore the current context and show all scopes").flag()
 
     // Aspect filtering with completion support
     private val aspects by option(
@@ -66,11 +71,35 @@ class ListCommand :
                 )
             }
 
+            // Get current context filter if not ignoring context
+            val contextFilter = if (!ignoreContext) {
+                when (val result = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)) {
+                    is ContextViewContract.GetActiveContextResponse.Success -> {
+                        result.contextView?.filter
+                    }
+                }
+            } else {
+                null
+            }
+
+            // Combine query with context filter
+            val effectiveQuery = when {
+                query != null && contextFilter != null -> "($contextFilter) AND ($query)"
+                query != null -> query
+                contextFilter != null -> contextFilter
+                else -> null
+            }
+
+            // Show active context if one is being applied
+            if (contextFilter != null && !ignoreContext) {
+                echo("Using context filter: $contextFilter", err = true)
+            }
+
             when {
-                query != null -> {
-                    // Use advanced query filtering
+                effectiveQuery != null -> {
+                    // Use advanced query filtering (either from context, query param, or both)
                     scopeCommandAdapter.listScopesWithQuery(
-                        aspectQuery = query!!,
+                        aspectQuery = effectiveQuery,
                         parentId = parentId,
                         offset = offset,
                         limit = limit,

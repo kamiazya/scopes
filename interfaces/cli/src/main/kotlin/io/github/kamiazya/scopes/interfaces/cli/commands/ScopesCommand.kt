@@ -33,6 +33,7 @@ class ScopesCommand :
             ListCommand(),
             AliasCommand().configureSubcommands(),
             AspectCommand().configureSubcommands(),
+            ContextCommand().configureSubcommands(),
             CompletionCommand(), // Hidden command for shell completion
         )
     }
