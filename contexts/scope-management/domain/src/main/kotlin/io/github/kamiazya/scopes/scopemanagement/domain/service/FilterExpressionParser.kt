@@ -120,6 +120,18 @@ class FilterExpressionParser {
                     position++
                 }
 
+                // Support documented field:value syntax
+                expression[position] == ':' -> {
+                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
+                    position++
+                }
+
+                // Support single '=' (must check after '==' and '!=' to avoid conflicts)
+                expression[position] == '=' -> {
+                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
+                    position++
+                }
+
                 expression.substring(position).uppercase().startsWith("AND") &&
                     (position + 3 >= expression.length || !expression[position + 3].isLetterOrDigit()) -> {
                     tokens.add(Token.And(position))
@@ -234,12 +246,22 @@ class FilterExpressionParser {
                     val operator = (tokens[position] as Token.Operator).op
                     position++
 
-                    if (!hasMoreTokens() || tokens[position] !is Token.StringLiteral) {
+                    if (!hasMoreTokens()) {
                         error("Expected value after operator")
                     }
 
-                    val value = (tokens[position] as Token.StringLiteral).value
-                    position++
+                    val value = when (val valueToken = tokens[position]) {
+                        is Token.StringLiteral -> {
+                            position++
+                            valueToken.value
+                        }
+                        is Token.Identifier -> {
+                            // Allow unquoted identifiers as values (e.g., status:active)
+                            position++
+                            valueToken.value
+                        }
+                        else -> error("Expected value after operator, but got: $valueToken")
+                    }
 
                     return FilterExpressionAST.Comparison(key, operator, value)
                 }

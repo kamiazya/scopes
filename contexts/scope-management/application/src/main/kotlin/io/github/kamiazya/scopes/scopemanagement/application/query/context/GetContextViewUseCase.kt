@@ -38,10 +38,10 @@ class GetContextViewUseCase(private val contextViewRepository: ContextViewReposi
                         )
                     }
                 }
-                .getOrNull()
+                .bind()
 
-            ensureNotNull(contextView) {
-                ContextError.ContextNotFound(key = key)
+            if (contextView == null) {
+                raise(ContextError.ContextNotFound(key = key))
             }
 
             // Map to DTO

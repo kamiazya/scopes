@@ -42,10 +42,10 @@ class DeleteContextViewUseCase(
                         )
                     }
                 }
-                .getOrNull()
+                .bind()
 
-            ensureNotNull(existingContext) {
-                ContextError.ContextNotFound(key = key)
+            if (existingContext == null) {
+                raise(ContextError.ContextNotFound(key = key))
             }
 
             // Check if this context is currently active

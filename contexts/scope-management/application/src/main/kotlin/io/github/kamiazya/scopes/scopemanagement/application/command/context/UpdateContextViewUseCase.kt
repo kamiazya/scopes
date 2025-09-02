@@ -40,12 +40,14 @@ class UpdateContextViewUseCase(private val contextViewRepository: ContextViewRep
                         )
                     }
                 }
-                .getOrNull()
+                .bind()
 
-            ensureNotNull(existingContextView) {
-                PersistenceError.NotFound(
-                    entityType = "ContextView",
-                    entityId = command.key,
+            if (existingContextView == null) {
+                raise(
+                    PersistenceError.NotFound(
+                        entityType = "ContextView",
+                        entityId = command.key,
+                    )
                 )
             }
 
