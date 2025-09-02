@@ -23,30 +23,23 @@ import kotlinx.datetime.Instant
  * SQLDelight implementation of ScopeRepository.
  */
 class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) : ScopeRepository {
+    companion object {
+        // SQLite has a default limit of 999 variables in a single query
+        private const val SQLITE_VARIABLE_LIMIT = 999
+    }
 
     override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
         try {
             database.transaction {
-                val existingScope = database.scopeQueries.findScopeById(scope.id.value).executeAsOneOrNull()
-
-                if (existingScope != null) {
-                    database.scopeQueries.updateScope(
-                        title = scope.title.value,
-                        description = scope.description?.value,
-                        parent_id = scope.parentId?.value,
-                        updated_at = scope.updatedAt.toEpochMilliseconds(),
-                        id = scope.id.value,
-                    )
-                } else {
-                    database.scopeQueries.insertScope(
-                        id = scope.id.value,
-                        title = scope.title.value,
-                        description = scope.description?.value,
-                        parent_id = scope.parentId?.value,
-                        created_at = scope.createdAt.toEpochMilliseconds(),
-                        updated_at = scope.updatedAt.toEpochMilliseconds(),
-                    )
-                }
+                // Use UPSERT for atomic operation
+                database.scopeQueries.upsertScope(
+                    id = scope.id.value,
+                    title = scope.title.value,
+                    description = scope.description?.value,
+                    parent_id = scope.parentId?.value,
+                    created_at = scope.createdAt.toEpochMilliseconds(),
+                    updated_at = scope.updatedAt.toEpochMilliseconds(),
+                )
 
                 // Delete existing aspects
                 database.scopeAspectQueries.deleteAllForScope(scope.id.value)
@@ -88,7 +81,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun findAll(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
-            val scopes = database.scopeQueries.selectAll().executeAsList().map { rowToScope(it) }
+            val scopeRows = database.scopeQueries.selectAll().executeAsList()
+            if (scopeRows.isEmpty()) {
+                return@withContext emptyList<Scope>().right()
+            }
+
+            // Batch load all aspects to avoid N+1 queries
+            val scopeIds = scopeRows.map { it.id }
+            val aspectsMap = loadAspectsForScopes(scopeIds)
+
+            val scopes = scopeRows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
+            }
             scopes.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
@@ -101,11 +105,23 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
-            val scopes = if (parentId != null) {
+            val scopeRows = if (parentId != null) {
                 database.scopeQueries.findScopesByParentId(parentId.value).executeAsList()
             } else {
                 database.scopeQueries.findRootScopes().executeAsList()
-            }.map { rowToScope(it) }
+            }
+
+            if (scopeRows.isEmpty()) {
+                return@withContext emptyList<Scope>().right()
+            }
+
+            // Batch load all aspects to avoid N+1 queries
+            val scopeIds = scopeRows.map { it.id }
+            val aspectsMap = loadAspectsForScopes(scopeIds)
+
+            val scopes = scopeRows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
+            }
 
             scopes.right()
         } catch (e: Exception) {
@@ -125,7 +141,13 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 database.scopeQueries.findRootScopesPaged(limit.toLong(), offset.toLong()).executeAsList()
             }
 
-            rows.map { rowToScope(it) }.right()
+            if (rows.isEmpty()) {
+                emptyList<Scope>().right()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectsMap = loadAspectsForScopes(scopeIds)
+                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
@@ -243,19 +265,30 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
     override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
-            val descendants = mutableListOf<Scope>()
-            val queue = mutableListOf(scopeId)
+            // In-memory processing due to SQLDelight CTE limitations
+            val allDescendants = mutableListOf<io.github.kamiazya.scopes.scopemanagement.db.Scopes>()
+            val queue = mutableListOf(scopeId.value)
 
             while (queue.isNotEmpty()) {
                 val currentId = queue.removeAt(0)
-                val children = database.scopeQueries.findScopesByParentId(currentId.value)
+                val children = database.scopeQueries.findAllDescendantsIterative(currentId)
                     .executeAsList()
-                    .map { row ->
-                        val scope = rowToScope(row)
-                        queue.add(scope.id)
-                        scope
-                    }
-                descendants.addAll(children)
+                allDescendants.addAll(children)
+                queue.addAll(children.map { it.id })
+            }
+
+            val descendantRows = allDescendants
+
+            if (descendantRows.isEmpty()) {
+                return@withContext emptyList<Scope>().right()
+            }
+
+            // Batch load all aspects for descendants
+            val descendantIds = descendantRows.map { it.id }
+            val aspectsMap = loadAspectsForScopes(descendantIds)
+
+            val descendants = descendantRows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
             }
 
             descendants.right()
@@ -272,8 +305,14 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         try {
             val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
                 .executeAsList()
-                .map { row -> rowToScope(row) }
-            rows.right()
+
+            if (rows.isEmpty()) {
+                emptyList<Scope>().right()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectsMap = loadAspectsForScopes(scopeIds)
+                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
@@ -306,6 +345,74 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
         // Load aspects
         val aspectRows = database.scopeAspectQueries.findByScopeId(scopeId.value).executeAsList()
+
+        val aspectMap = aspectRows
+            .groupBy {
+                AspectKey.create(it.aspect_key).fold(
+                    ifLeft = { error("Invalid aspect key in database: $it") },
+                    ifRight = { it },
+                )
+            }
+            .mapValues { (_, rows) ->
+                rows.map { aspectRow ->
+                    AspectValue.create(aspectRow.aspect_value).fold(
+                        ifLeft = { error("Invalid aspect value in database: $it") },
+                        ifRight = { it },
+                    )
+                }
+                    .toNonEmptyListOrNull() ?: error(
+                    "Aspect key exists without values in database - data integrity violation",
+                )
+            }
+
+        return Scope(
+            id = scopeId,
+            title = ScopeTitle.create(row.title).fold(
+                ifLeft = { error("Invalid title in database: $it") },
+                ifRight = { it },
+            ),
+            description = row.description?.let { desc ->
+                ScopeDescription.create(desc).fold(
+                    ifLeft = { error("Invalid description in database: $it") },
+                    ifRight = { it },
+                )
+            },
+            parentId = row.parent_id?.let { pid ->
+                ScopeId.create(pid).fold(
+                    ifLeft = { error("Invalid parent id in database: $it") },
+                    ifRight = { it },
+                )
+            },
+            aspects = if (aspectMap.isEmpty()) Aspects.empty() else Aspects.from(aspectMap),
+            createdAt = Instant.fromEpochMilliseconds(row.created_at),
+            updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
+        )
+    }
+
+    private fun loadAspectsForScopes(scopeIds: List<String>): Map<String, List<io.github.kamiazya.scopes.scopemanagement.db.FindByScopeIds>> {
+        if (scopeIds.isEmpty()) return emptyMap()
+
+        // SQLite has a limit on the number of variables in a single query,
+        // so we need to chunk large lists
+        return if (scopeIds.size <= SQLITE_VARIABLE_LIMIT) {
+            database.scopeAspectQueries.findByScopeIds(scopeIds)
+                .executeAsList()
+                .groupBy { it.scope_id }
+        } else {
+            scopeIds.chunked(SQLITE_VARIABLE_LIMIT).flatMap { chunk ->
+                database.scopeAspectQueries.findByScopeIds(chunk).executeAsList()
+            }.groupBy { it.scope_id }
+        }
+    }
+
+    private fun rowToScopeWithAspects(
+        row: io.github.kamiazya.scopes.scopemanagement.db.Scopes,
+        aspectRows: List<io.github.kamiazya.scopes.scopemanagement.db.FindByScopeIds>,
+    ): Scope {
+        val scopeId = ScopeId.create(row.id).fold(
+            ifLeft = { error("Invalid scope id in database: $it") },
+            ifRight = { it },
+        )
 
         val aspectMap = aspectRows
             .groupBy {

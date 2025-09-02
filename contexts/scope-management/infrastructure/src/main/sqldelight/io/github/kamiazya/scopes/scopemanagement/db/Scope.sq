@@ -24,6 +24,16 @@ insertScope:
 INSERT INTO scopes (id, title, description, parent_id, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?);
 
+-- Upsert scope (INSERT OR UPDATE)
+upsertScope:
+INSERT INTO scopes (id, title, description, parent_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+    title = excluded.title,
+    description = excluded.description,
+    parent_id = excluded.parent_id,
+    updated_at = excluded.updated_at;
+
 -- Update scope
 updateScope:
 UPDATE scopes
@@ -130,3 +140,11 @@ SELECT *
 FROM scopes
 ORDER BY created_at DESC, id DESC
 LIMIT ? OFFSET ?;
+
+-- Find all descendants (without CTE due to SQLDelight limitations)
+-- This will be replaced with in-memory processing in the repository
+findAllDescendantsIterative:
+SELECT *
+FROM scopes
+WHERE parent_id = ?
+ORDER BY created_at DESC;

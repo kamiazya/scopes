@@ -34,8 +34,9 @@ class NullableAssertionRulesTest :
                             function.text.contains("shouldBeRight()")
 
                         // Allow direct comparison to null or empty
-                        val isNullOrEmptyCheck = function.text.contains("getOrNull() shouldBe null") ||
-                            function.text.contains("getOrNull() shouldBe emptyList")
+                        val isNullOrEmptyCheck =
+                            Regex("""getOrNull\(\)\s*shouldBe\s*null""").containsMatchIn(function.text) ||
+                                Regex("""getOrNull\(\)\s*shouldBe\s*emptyList\s*\(\s*\)""").containsMatchIn(function.text)
 
                         hasRightCheck || isNullOrEmptyCheck
                     }
@@ -78,7 +79,9 @@ class NullableAssertionRulesTest :
                         val hasNullableChaining = Regex("""\.getOrNull\(\)\?\.should""").containsMatchIn(function.text)
                         val hasProperAssertion = function.text.contains("shouldNotBe null") ||
                             function.text.contains("getOrNull()!!") ||
-                            function.text.contains("isRight() shouldBe true")
+                            function.text.contains("isRight() shouldBe true") ||
+                            function.text.contains("shouldBeRight()") ||
+                            function.text.contains("isRight()).isTrue()")
 
                         !hasNullableChaining || hasProperAssertion
                     }

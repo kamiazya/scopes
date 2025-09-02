@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS events (
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_events_aggregate_id_version ON events(aggregate_id, aggregate_version);
 CREATE INDEX IF NOT EXISTS idx_events_stored_at ON events(stored_at);
-CREATE INDEX IF NOT EXISTS idx_events_sequence_number ON events(sequence_number);
+-- sequence_number is PRIMARY KEY, already indexed
+-- Composite index for event_type + sequence_number queries (covers findEventsByType queries)
+CREATE INDEX IF NOT EXISTS idx_events_event_type_sequence_number ON events(event_type, sequence_number);
 
 -- Insert event (sequence_number is auto-generated)
 insertEvent:
@@ -52,3 +54,18 @@ FROM events
 WHERE aggregate_id = ?
 AND stored_at >= ?
 ORDER BY aggregate_version ASC;
+
+-- Find events by event type
+findEventsByType:
+SELECT *
+FROM events
+WHERE event_type = ?
+ORDER BY sequence_number ASC;
+
+-- Find events by event type since timestamp
+findEventsByTypeSince:
+SELECT *
+FROM events
+WHERE event_type = ?
+AND stored_at >= ?
+ORDER BY sequence_number ASC;

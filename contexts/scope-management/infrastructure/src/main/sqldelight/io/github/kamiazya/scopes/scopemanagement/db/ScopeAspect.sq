@@ -25,6 +25,13 @@ FROM scope_aspects
 WHERE scope_id = ?
 ORDER BY aspect_key;
 
+-- Find aspects by multiple scope IDs (batch query to fix N+1 problem)
+findByScopeIds:
+SELECT scope_id, aspect_key, aspect_value
+FROM scope_aspects
+WHERE scope_id IN ?
+ORDER BY scope_id, aspect_key;
+
 -- Delete all aspects for scope
 deleteAllForScope:
 DELETE FROM scope_aspects
