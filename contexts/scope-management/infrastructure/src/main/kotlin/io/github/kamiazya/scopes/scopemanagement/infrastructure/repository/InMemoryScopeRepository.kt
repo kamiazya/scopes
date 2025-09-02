@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.sync.Mutex
@@ -191,6 +192,18 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .take(limit)
             } catch (e: Exception) {
                 raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+            }
+        }
+    }
+
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = either {
+        mutex.withLock {
+            try {
+                scopes.values.count { scope ->
+                    scope.aspects.contains(aspectKey)
+                }
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByAspectKey", e))
             }
         }
     }

@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.repository
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
@@ -105,4 +106,10 @@ interface ScopeRepository {
      * traversal order; treat the returned list as an unordered collection.
      */
     suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>>
+
+    /**
+     * Count scopes that have a specific aspect key.
+     * Used for validating aspect usage before deletion.
+     */
+    suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int>
 }

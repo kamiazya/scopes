@@ -38,6 +38,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAsp
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import org.koin.dsl.module
@@ -56,6 +57,7 @@ val scopeManagementModule = module {
     single { AspectValueValidationService() }
     single { ScopeHierarchyValidationService(scopeRepository = get()) }
     single { ScopeUniquenessValidationService(scopeRepository = get()) }
+    single { AspectUsageValidationService(scopeRepository = get()) }
 
     // Query Components
     single { AspectQueryParser() }
@@ -237,6 +239,7 @@ val scopeManagementModule = module {
     single {
         DeleteAspectDefinitionUseCase(
             aspectDefinitionRepository = get(),
+            aspectUsageValidationService = get(),
             transactionManager = get(),
         )
     }

@@ -426,4 +426,17 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
         )
     }
+
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+        try {
+            val count = database.scopeAspectQueries.countByAspectKey(aspectKey.value).executeAsOne()
+            count.toInt().right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "countByAspectKey",
+                cause = e,
+            ).left()
+        }
+    }
 }

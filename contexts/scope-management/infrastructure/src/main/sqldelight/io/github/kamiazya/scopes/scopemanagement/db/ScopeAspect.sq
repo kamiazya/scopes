@@ -36,3 +36,9 @@ ORDER BY scope_id, aspect_key;
 deleteAllForScope:
 DELETE FROM scope_aspects
 WHERE scope_id = ?;
+
+-- Count scopes that have a specific aspect key
+countByAspectKey:
+SELECT COUNT(DISTINCT scope_id) AS count
+FROM scope_aspects
+WHERE aspect_key = ?;

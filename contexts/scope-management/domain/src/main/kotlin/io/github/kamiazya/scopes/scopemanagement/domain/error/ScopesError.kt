@@ -52,4 +52,9 @@ sealed class ScopesError {
      * Error indicating a validation failure.
      */
     data class ValidationFailed(val message: String, val details: Any? = null, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
+
+    /**
+     * Error indicating a resource conflict (e.g., resource is in use).
+     */
+    data class Conflict(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
 }
