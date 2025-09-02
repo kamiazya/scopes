@@ -18,6 +18,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -234,48 +235,49 @@ class SqlDelightEventRepositoryTest :
             describe("getEventsSince") {
                 it("should retrieve events since a given timestamp") {
                     // Given
+                    val baseTime = Clock.System.now()
+
+                    // Create first event with a timestamp in the past
                     val firstEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-                        occurredAt = Clock.System.now(),
+                        occurredAt = baseTime.minus(10.seconds),
                         testData = "first event",
                     )
 
-                    // Store first event and get its stored timestamp
+                    // Store first event
                     val firstStoreResult = runBlocking {
                         repository.store(firstEvent)
                     }
                     firstStoreResult.isRight() shouldBe true
                     val firstStoredEvent = firstStoreResult.getOrNull()!!
 
-                    // Wait for clock to advance past the first event's stored time
-                    // Use a single loop with timestamp capture to avoid race conditions
-                    var timestampBetween: Instant
-                    do {
-                        timestampBetween = Clock.System.now()
-                    } while (timestampBetween <= firstStoredEvent.metadata.storedAt)
+                    // Add a small delay to ensure database timestamp precision
+                    runBlocking { delay(100) }
 
-                    // Wait again to ensure the second event is stored after timestampBetween
-                    var secondEventTime: Instant
-                    do {
-                        secondEventTime = Clock.System.now()
-                    } while (secondEventTime <= timestampBetween)
+                    // Use a timestamp slightly after the first event's stored time
+                    // This ensures the query (which uses >=) won't include the first event
+                    val cutoffTimestamp = Instant.fromEpochMilliseconds(
+                        firstStoredEvent.metadata.storedAt.toEpochMilliseconds() + 1,
+                    )
 
+                    // Create second event with a more recent timestamp
                     val secondEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-                        occurredAt = secondEventTime,
+                        occurredAt = baseTime.minus(5.seconds),
                         testData = "second event",
                     )
 
-                    runBlocking {
+                    val secondStoreResult = runBlocking {
                         repository.store(secondEvent)
                     }
+                    secondStoreResult.isRight() shouldBe true
 
-                    // When - get events since the timestamp between the two stores
-                    val result = runBlocking { repository.getEventsSince(timestampBetween) }
+                    // When - get events since the cutoff timestamp (after first event was stored)
+                    val result = runBlocking { repository.getEventsSince(cutoffTimestamp) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -402,49 +404,49 @@ class SqlDelightEventRepositoryTest :
                 it("should retrieve events for an aggregate since a timestamp") {
                     // Given
                     val aggregateId = AggregateId.generate()
+                    val baseTime = Clock.System.now()
 
+                    // Create old event with a timestamp in the past
                     val oldEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.initial(),
-                        occurredAt = Clock.System.now(),
+                        occurredAt = baseTime.minus(10.seconds),
                         testData = "old event",
                     )
 
-                    // Store old event and get its stored timestamp
+                    // Store old event
                     val oldStoreResult = runBlocking {
                         repository.store(oldEvent)
                     }
                     oldStoreResult.isRight() shouldBe true
                     val oldStoredEvent = oldStoreResult.getOrNull()!!
 
-                    // Wait for clock to advance past the old event's stored time
-                    // Use a single loop with timestamp capture to avoid race conditions
-                    var timestampBetween: Instant
-                    do {
-                        timestampBetween = Clock.System.now()
-                    } while (timestampBetween <= oldStoredEvent.metadata.storedAt)
+                    // Add a small delay to ensure database timestamp precision
+                    runBlocking { delay(100) }
 
-                    // Wait again to ensure the recent event is stored after timestampBetween
-                    var recentEventTime: Instant
-                    do {
-                        recentEventTime = Clock.System.now()
-                    } while (recentEventTime <= timestampBetween)
+                    // Use a timestamp slightly after the old event's stored time
+                    // This ensures the query (which uses >=) won't include the old event
+                    val cutoffTimestamp = Instant.fromEpochMilliseconds(
+                        oldStoredEvent.metadata.storedAt.toEpochMilliseconds() + 1,
+                    )
 
+                    // Create recent event with a more recent timestamp
                     val recentEvent = TestEvent(
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.fromUnsafe(2),
-                        occurredAt = recentEventTime,
+                        occurredAt = baseTime.minus(5.seconds),
                         testData = "recent event",
                     )
 
-                    runBlocking {
+                    val recentStoreResult = runBlocking {
                         repository.store(recentEvent)
                     }
+                    recentStoreResult.isRight() shouldBe true
 
-                    // When - get events since the timestamp between stores
-                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, since = timestampBetween) }
+                    // When - get events since the cutoff timestamp (after old event was stored)
+                    val result = runBlocking { repository.getEventsByAggregate(aggregateId, since = cutoffTimestamp) }
 
                     // Then
                     result.isRight() shouldBe true
