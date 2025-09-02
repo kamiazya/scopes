@@ -27,6 +27,15 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class SqlDelightEventRepository(private val queries: EventQueries, private val eventSerializer: EventSerializer) : EventRepository {
 
+    private fun DomainEvent.typeName(preferSimple: Boolean = false): String {
+        val k = this::class
+        return if (preferSimple) {
+            k.simpleName ?: k.qualifiedName ?: error("Event class must have a name")
+        } else {
+            k.qualifiedName ?: k.simpleName ?: error("Event class must have a name")
+        }
+    }
+
     override suspend fun store(event: DomainEvent): Either<EventStoreError, PersistedEventRecord> = withContext(Dispatchers.IO) {
         // Serialize the event
         when (val serializationResult = eventSerializer.serialize(event)) {
@@ -41,8 +50,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         event_id = event.eventId.value,
                         aggregate_id = event.aggregateId.value,
                         aggregate_version = event.aggregateVersion.value,
-                        event_type = event::class.qualifiedName ?: event::class.simpleName
-                            ?: error("Event class must have a name"),
+                        event_type = event.typeName(preferSimple = false),
                         event_data = eventData,
                         occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
@@ -58,10 +66,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             eventId = event.eventId,
                             aggregateId = event.aggregateId,
                             aggregateVersion = event.aggregateVersion,
-                            eventType = EventType(
-                                event::class.qualifiedName ?: event::class.simpleName
-                                    ?: error("Event class must have a name"),
-                            ),
+                            eventType = EventType(event.typeName(preferSimple = false)),
                             occurredAt = event.occurredAt,
                             storedAt = storedAt,
                             sequenceNumber = sequenceNumber,
@@ -74,8 +79,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     Either.Left(
                         EventStoreError.StorageError(
                             aggregateId = event.aggregateId.value,
-                            eventType = event::class.simpleName ?: event::class.qualifiedName
-                                ?: error("Event class must have a name"),
+                            eventType = event.typeName(preferSimple = true),
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
                             cause = e,
