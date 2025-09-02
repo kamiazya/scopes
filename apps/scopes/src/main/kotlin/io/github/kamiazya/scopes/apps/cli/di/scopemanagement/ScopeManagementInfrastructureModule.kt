@@ -3,20 +3,24 @@ package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationStrategy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.FilterExpressionValidator
 import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.ActiveContextRepositoryImpl
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.service.AspectQueryFilterValidator
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.TransactionManagerAdapter
 import org.koin.core.qualifier.named
@@ -64,6 +68,18 @@ val scopeManagementInfrastructureModule = module {
         SqlDelightAspectDefinitionRepository(database)
     }
 
+    // Active Context Repository
+    single<ActiveContextRepository> {
+        val database: ScopeManagementDatabase = get(named("scopeManagement"))
+        val repo = ActiveContextRepositoryImpl(database)
+        // Initialize the active context table
+        repo.also {
+            kotlinx.coroutines.runBlocking {
+                it.initialize()
+            }
+        }
+    }
+
     // Platform TransactionManager for this bounded context
     single<PlatformTransactionManager>(named("scopeManagement")) {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
@@ -81,6 +97,11 @@ val scopeManagementInfrastructureModule = module {
     single<AliasGenerationStrategy> { HaikunatorStrategy() }
     single<AliasGenerationService> {
         DefaultAliasGenerationService(get(), get())
+    }
+
+    // Domain service implementations
+    single<FilterExpressionValidator> {
+        AspectQueryFilterValidator(aspectQueryParser = get())
     }
 
     // External Services are now provided by their own modules

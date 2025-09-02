@@ -9,8 +9,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -19,7 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * Returns aliases sorted with canonical first, then by creation date.
  */
 class ListAliasesHandler(
-    private val scopeAliasService: ScopeAliasManagementService,
+    private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : UseCase<ListAliases, ScopesError, AliasListDto> {
@@ -54,8 +54,8 @@ class ListAliasesHandler(
                 }
                 .bind()
 
-            // Retrieve all aliases for the scope through domain service
-            val aliases = scopeAliasService.getAliasesForScope(scopeId)
+            // Retrieve all aliases for the scope through application service
+            val aliases = scopeAliasService.listAliasesForScope(scopeId)
                 .mapLeft { error ->
                     logger.error(
                         "Failed to retrieve aliases",

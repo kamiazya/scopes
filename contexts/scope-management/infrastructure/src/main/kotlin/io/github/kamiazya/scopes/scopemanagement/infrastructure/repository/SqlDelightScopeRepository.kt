@@ -103,36 +103,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            val scopeRows = if (parentId != null) {
-                database.scopeQueries.findScopesByParentId(parentId.value).executeAsList()
-            } else {
-                database.scopeQueries.findRootScopes().executeAsList()
-            }
-
-            if (scopeRows.isEmpty()) {
-                return@withContext emptyList<Scope>().right()
-            }
-
-            // Batch load all aspects to avoid N+1 queries
-            val scopeIds = scopeRows.map { it.id }
-            val aspectsMap = loadAspectsForScopes(scopeIds)
-
-            val scopes = scopeRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
-            }
-
-            scopes.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findByParentId",
-                cause = e,
-            ).left()
-        }
-    }
-
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = if (parentId != null) {
@@ -258,44 +228,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
                 operation = "countByParentId",
-                cause = e,
-            ).left()
-        }
-    }
-
-    override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            // In-memory processing due to SQLDelight CTE limitations
-            val allDescendants = mutableListOf<io.github.kamiazya.scopes.scopemanagement.db.Scopes>()
-            val queue = mutableListOf(scopeId.value)
-
-            while (queue.isNotEmpty()) {
-                val currentId = queue.removeAt(0)
-                val children = database.scopeQueries.findAllDescendantsIterative(currentId)
-                    .executeAsList()
-                allDescendants.addAll(children)
-                queue.addAll(children.map { it.id })
-            }
-
-            val descendantRows = allDescendants
-
-            if (descendantRows.isEmpty()) {
-                return@withContext emptyList<Scope>().right()
-            }
-
-            // Batch load all aspects for descendants
-            val descendantIds = descendantRows.map { it.id }
-            val aspectsMap = loadAspectsForScopes(descendantIds)
-
-            val descendants = descendantRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
-            }
-
-            descendants.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findDescendantsOf",
                 cause = e,
             ).left()
         }
@@ -455,5 +387,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             createdAt = Instant.fromEpochMilliseconds(row.created_at),
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
         )
+    }
+
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+        try {
+            val count = database.scopeAspectQueries.countByAspectKey(aspectKey.value).executeAsOne()
+            count.toInt().right()
+        } catch (e: Exception) {
+            PersistenceError.StorageUnavailable(
+                occurredAt = Clock.System.now(),
+                operation = "countByAspectKey",
+                cause = e,
+            ).left()
+        }
     }
 }

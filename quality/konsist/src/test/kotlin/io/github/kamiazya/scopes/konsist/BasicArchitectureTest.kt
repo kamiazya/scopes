@@ -77,6 +77,8 @@ class BasicArchitectureTest :
                         it.name.endsWith("Entity")
                 }
                 .filter { !it.name.endsWith("Test") }
+                // Exclude DTOs in contracts layer - they are not domain entities
+                .filterNot { it.packagee?.name?.contains("contracts") == true }
                 .assertTrue { entity ->
                     val packageName = entity.packagee?.name ?: ""
                     // Entities should be in .entity package

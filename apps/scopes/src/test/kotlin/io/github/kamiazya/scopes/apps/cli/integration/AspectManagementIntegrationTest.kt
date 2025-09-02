@@ -1,10 +1,11 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -50,7 +51,8 @@ class AspectManagementIntegrationTest :
                 defineAspectUseCase = DefineAspectUseCase(aspectDefinitionRepository, transactionManager)
                 getAspectDefinitionUseCase = GetAspectDefinitionUseCase(aspectDefinitionRepository)
                 updateAspectDefinitionUseCase = UpdateAspectDefinitionUseCase(aspectDefinitionRepository, transactionManager)
-                deleteAspectDefinitionUseCase = DeleteAspectDefinitionUseCase(aspectDefinitionRepository, transactionManager)
+                deleteAspectDefinitionUseCase =
+                    DeleteAspectDefinitionUseCase(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
                 listAspectDefinitionsUseCase = ListAspectDefinitionsUseCase(aspectDefinitionRepository)
                 validationService = AspectValueValidationService()
                 validateAspectValueUseCase = ValidateAspectValueUseCase(aspectDefinitionRepository, validationService)

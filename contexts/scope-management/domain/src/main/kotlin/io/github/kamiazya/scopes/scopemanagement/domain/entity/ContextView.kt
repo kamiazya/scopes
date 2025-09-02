@@ -4,6 +4,8 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.service.FilterEvaluationService
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewId
@@ -109,4 +111,60 @@ data class ContextView(
      * Check if this context view matches a given name.
      */
     fun hasName(name: String): Boolean = this.name.value == name
+
+    /**
+     * Evaluate if a scope matches this context view's filter.
+     * This method encapsulates the filter evaluation logic in the domain entity,
+     * making ContextView a richer domain model.
+     *
+     * @param scope The scope to evaluate
+     * @param aspectDefinitions Map of aspect definitions for type-aware comparison
+     * @param filterEvaluationService The domain service for filter evaluation
+     * @return Either an error or boolean indicating if the scope matches
+     */
+    fun evaluateScope(
+        scope: Scope,
+        aspectDefinitions: Map<String, AspectDefinition>,
+        filterEvaluationService: FilterEvaluationService,
+    ): Either<ContextError, Boolean> = filterEvaluationService.evaluateScope(filter, scope, aspectDefinitions)
+
+    /**
+     * Check if aspects match this context view's filter.
+     * This is a lower-level method that works directly with aspects.
+     *
+     * @param aspects The aspects to evaluate
+     * @param aspectDefinitions Map of aspect definitions for type-aware comparison
+     * @param filterEvaluationService The domain service for filter evaluation
+     * @return Either an error or boolean indicating if the aspects match
+     */
+    fun matchesAspects(
+        aspects: Aspects,
+        aspectDefinitions: Map<String, AspectDefinition>,
+        filterEvaluationService: FilterEvaluationService,
+    ): Either<ContextError, Boolean> = filterEvaluationService.evaluateAspects(filter, aspects, aspectDefinitions)
+
+    /**
+     * Get all scopes that match this context view's filter from a list.
+     *
+     * @param scopes List of scopes to filter
+     * @param aspectDefinitions Map of aspect definitions for type-aware comparison
+     * @param filterEvaluationService The domain service for filter evaluation
+     * @return List of scopes that match the filter
+     */
+    fun filterScopes(
+        scopes: List<Scope>,
+        aspectDefinitions: Map<String, AspectDefinition>,
+        filterEvaluationService: FilterEvaluationService,
+    ): Either<ContextError, List<Scope>> {
+        val results = mutableListOf<Scope>()
+
+        for (scope in scopes) {
+            when (val result = evaluateScope(scope, aspectDefinitions, filterEvaluationService)) {
+                is Either.Left -> return result
+                is Either.Right -> if (result.value) results.add(scope)
+            }
+        }
+
+        return results.right()
+    }
 }

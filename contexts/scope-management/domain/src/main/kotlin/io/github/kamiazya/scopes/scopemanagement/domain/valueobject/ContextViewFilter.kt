@@ -37,9 +37,14 @@ value class ContextViewFilter private constructor(val expression: String) {
             ensure(trimmedExpression.length >= MIN_LENGTH) { ContextError.FilterTooShort(MIN_LENGTH) }
             ensure(trimmedExpression.length <= MAX_LENGTH) { ContextError.FilterTooLong(MAX_LENGTH) }
 
-            // Basic syntax validation
-            ensure(isValidSyntax(trimmedExpression)) {
-                ContextError.InvalidFilterSyntax("Invalid filter syntax: $trimmedExpression")
+            // Basic syntax validation - only check for obvious issues
+            // Advanced validation is done by FilterExpressionValidator
+            val validationError = getBasicSyntaxError(trimmedExpression)
+            ensure(validationError == null) {
+                ContextError.InvalidFilterSyntax(
+                    expression = trimmedExpression,
+                    errorType = validationError ?: ContextError.FilterSyntaxErrorType.InvalidSyntax,
+                )
             }
 
             ContextViewFilter(trimmedExpression)
@@ -47,9 +52,10 @@ value class ContextViewFilter private constructor(val expression: String) {
 
         /**
          * Perform basic syntax validation of the filter expression.
+         * Returns error type if validation fails, null if valid.
          * This is a simplified validation - actual parsing happens during evaluation.
          */
-        private fun isValidSyntax(expression: String): Boolean {
+        private fun getBasicSyntaxError(expression: String): ContextError.FilterSyntaxErrorType? {
             // Check for balanced parentheses
             var parenCount = 0
             for (char in expression) {
@@ -57,24 +63,24 @@ value class ContextViewFilter private constructor(val expression: String) {
                     '(' -> parenCount++
                     ')' -> parenCount--
                 }
-                if (parenCount < 0) return false // More closing than opening
+                if (parenCount < 0) return ContextError.FilterSyntaxErrorType.UnbalancedParentheses
             }
-            if (parenCount != 0) return false // Unbalanced parentheses
+            if (parenCount != 0) return ContextError.FilterSyntaxErrorType.MissingClosingParen(expression.length)
 
             // Check for balanced quotes
             val singleQuoteCount = expression.count { it == '\'' }
             val doubleQuoteCount = expression.count { it == '"' }
             if (singleQuoteCount % 2 != 0 || doubleQuoteCount % 2 != 0) {
-                return false // Unbalanced quotes
+                return ContextError.FilterSyntaxErrorType.UnbalancedQuotes
             }
 
             // Check for empty operators (like "AND AND" or "OR OR")
             val operatorPattern = "\\b(AND|OR|NOT)\\s+(AND|OR|NOT)\\b".toRegex()
             if (operatorPattern.containsMatchIn(expression)) {
-                return false
+                return ContextError.FilterSyntaxErrorType.EmptyOperator
             }
 
-            return true
+            return null // No errors found
         }
 
         /**

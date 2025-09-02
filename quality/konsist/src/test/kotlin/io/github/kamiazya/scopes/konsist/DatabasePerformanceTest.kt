@@ -16,11 +16,9 @@ import io.kotest.core.spec.style.StringSpec
 class DatabasePerformanceTest :
     StringSpec({
 
-        "repository implementations should not use in-memory pagination".config(enabled = false) {
-            // Temporarily disabled: Known violations tracked in GitHub issue #131
-            // Files with violations:
-            // - SqlDelightScopeRepository.kt
-            // - SqlDelightScopeAliasRepository.kt
+        "repository implementations should not use in-memory pagination" {
+            // This test ensures that pagination is done at database level, not in-memory
+            // Previously had violations in SqlDelightEventRepository.kt - now fixed
             Konsist
                 .scopeFromProduction()
                 .files
@@ -31,8 +29,7 @@ class DatabasePerformanceTest :
                 }
                 .assertFalse { file ->
                     // Look for patterns like:
-                    // .drop(offset).take(limit)
-                    // after a database query
+                    // .drop(offset).take(limit) - classic pagination
                     val hasDropTake = file.text.contains(
                         Regex(
                             """\.drop\s*\(\s*\w+\s*\)\s*\.take\s*\(""",
@@ -48,7 +45,15 @@ class DatabasePerformanceTest :
                         ),
                     )
 
-                    hasDropTake || hasToListDropTake
+                    // Check for executeAsList().take() pattern - loads all then limits in memory
+                    val hasExecuteTake = file.text.contains(
+                        Regex(
+                            """\.executeAsList\s*\(\s*\)\s*\.take\s*\(""",
+                            RegexOption.DOT_MATCHES_ALL,
+                        ),
+                    )
+
+                    hasDropTake || hasToListDropTake || hasExecuteTake
                 }
         }
 

@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.RemoveAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -17,7 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * Ensures canonical aliases cannot be removed.
  */
 class RemoveAliasHandler(
-    private val scopeAliasService: ScopeAliasManagementService,
+    private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : UseCase<RemoveAlias, ScopesError, Unit> {
@@ -52,8 +52,30 @@ class RemoveAliasHandler(
                 }
                 .bind()
 
-            // Remove alias through domain service
-            scopeAliasService.removeAlias(aliasName)
+            // Find alias by name first
+            val alias = scopeAliasService.findAliasByName(aliasName)
+                .mapLeft { error ->
+                    logger.error(
+                        "Failed to find alias",
+                        mapOf(
+                            "aliasName" to input.aliasName,
+                            "error" to error.toString(),
+                        ),
+                    )
+                    error.toGenericApplicationError()
+                }
+                .bind()
+
+            if (alias == null) {
+                logger.error(
+                    "Alias not found",
+                    mapOf("aliasName" to input.aliasName),
+                )
+                raise(ScopeInputError.AliasNotFound(input.aliasName))
+            }
+
+            // Remove alias through application service
+            scopeAliasService.deleteAlias(alias.id)
                 .mapLeft { error ->
                     logger.error(
                         "Failed to remove alias",
