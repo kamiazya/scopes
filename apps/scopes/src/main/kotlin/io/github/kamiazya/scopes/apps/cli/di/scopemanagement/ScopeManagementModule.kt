@@ -33,14 +33,13 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAudi
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
 import org.koin.dsl.module
 
 /**

@@ -505,90 +505,6 @@ class SqlDelightScopeRepositoryTest :
                 }
             }
 
-            describe("findDescendantsOf") {
-                it("should find all descendants recursively") {
-                    // Given
-                    val rootId = ScopeId.generate()
-                    val rootScope = Scope(
-                        id = rootId,
-                        title = ScopeTitle.create("Root").getOrNull()!!,
-                        description = null,
-                        parentId = null,
-                        aspects = Aspects.empty(),
-                        createdAt = Clock.System.now(),
-                        updatedAt = Clock.System.now(),
-                    )
-
-                    val child1Id = ScopeId.generate()
-                    val child1 = Scope(
-                        id = child1Id,
-                        title = ScopeTitle.create("Child 1").getOrNull()!!,
-                        description = null,
-                        parentId = rootId,
-                        aspects = Aspects.empty(),
-                        createdAt = Clock.System.now(),
-                        updatedAt = Clock.System.now(),
-                    )
-
-                    val grandchild1 = Scope(
-                        id = ScopeId.generate(),
-                        title = ScopeTitle.create("Grandchild 1").getOrNull()!!,
-                        description = null,
-                        parentId = child1Id,
-                        aspects = Aspects.empty(),
-                        createdAt = Clock.System.now(),
-                        updatedAt = Clock.System.now(),
-                    )
-
-                    val child2 = Scope(
-                        id = ScopeId.generate(),
-                        title = ScopeTitle.create("Child 2").getOrNull()!!,
-                        description = null,
-                        parentId = rootId,
-                        aspects = Aspects.empty(),
-                        createdAt = Clock.System.now(),
-                        updatedAt = Clock.System.now(),
-                    )
-
-                    runBlocking {
-                        repository.save(rootScope)
-                        repository.save(child1)
-                        repository.save(child2)
-                        repository.save(grandchild1)
-                    }
-
-                    // When
-                    val result = runBlocking { repository.findDescendantsOf(rootId) }
-
-                    // Then
-                    result.isRight() shouldBe true
-                    val descendants = result.getOrNull()
-                    descendants?.size shouldBe 3
-                    descendants?.map { it.title.value }?.toSet() shouldBe setOf("Child 1", "Child 2", "Grandchild 1")
-                }
-
-                it("should return empty list for scope with no descendants") {
-                    // Given
-                    val scopeId = ScopeId.generate()
-                    val scope = Scope(
-                        id = scopeId,
-                        title = ScopeTitle.create("Leaf").getOrNull()!!,
-                        description = null,
-                        parentId = null,
-                        aspects = Aspects.empty(),
-                        createdAt = Clock.System.now(),
-                        updatedAt = Clock.System.now(),
-                    )
-                    runBlocking { repository.save(scope) }
-
-                    // When
-                    val result = runBlocking { repository.findDescendantsOf(scopeId) }
-
-                    // Then
-                    result shouldBe emptyList<Scope>().right()
-                }
-            }
-
             describe("findIdByParentIdAndTitle") {
                 it("should find scope ID by parent and title") {
                     // Given
@@ -670,7 +586,6 @@ class SqlDelightScopeRepositoryTest :
                         runBlocking { repository.existsByParentIdAndTitle(null, "Test") },
                         runBlocking { repository.deleteById(ScopeId.generate()) },
                         runBlocking { repository.countChildrenOf(ScopeId.generate()) },
-                        runBlocking { repository.findDescendantsOf(ScopeId.generate()) },
                         runBlocking { repository.findIdByParentIdAndTitle(null, "Test") },
                     )
 

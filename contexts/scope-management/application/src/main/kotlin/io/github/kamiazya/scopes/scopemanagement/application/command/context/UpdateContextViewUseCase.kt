@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.context
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
@@ -47,7 +46,7 @@ class UpdateContextViewUseCase(private val contextViewRepository: ContextViewRep
                     PersistenceError.NotFound(
                         entityType = "ContextView",
                         entityId = command.key,
-                    )
+                    ),
                 )
             }
 

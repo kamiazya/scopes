@@ -82,7 +82,6 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
-
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
         mutex.withLock {
             try {

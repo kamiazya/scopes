@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
@@ -55,27 +55,26 @@ class RenameAliasHandler(
         }
     }
 
-    private suspend fun validateAliasName(aliasName: String, fieldName: String): Either<ScopesError, AliasName> =
-        AliasName.create(aliasName).mapLeft { error ->
-            logger.error(
-                "Invalid alias name",
-                mapOf(
-                    "fieldName" to fieldName,
-                    "aliasName" to aliasName,
-                    "error" to error.toString(),
-                ),
-            )
-            when (error) {
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                    ScopeInputError.AliasEmpty(aliasName)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                    ScopeInputError.AliasTooShort(aliasName, error.minimumLength)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                    ScopeInputError.AliasTooLong(aliasName, error.maximumLength)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                    ScopeInputError.AliasInvalidFormat(aliasName, error.expectedPattern)
-            }
+    private suspend fun validateAliasName(aliasName: String, fieldName: String): Either<ScopesError, AliasName> = AliasName.create(aliasName).mapLeft { error ->
+        logger.error(
+            "Invalid alias name",
+            mapOf(
+                "fieldName" to fieldName,
+                "aliasName" to aliasName,
+                "error" to error.toString(),
+            ),
+        )
+        when (error) {
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                ScopeInputError.AliasEmpty(aliasName)
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
+                ScopeInputError.AliasTooShort(aliasName, error.minimumLength)
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
+                ScopeInputError.AliasTooLong(aliasName, error.maximumLength)
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
+                ScopeInputError.AliasInvalidFormat(aliasName, error.expectedPattern)
         }
+    }
 
     private suspend fun findCurrentAlias(currentAliasName: AliasName, inputAlias: String): Either<ScopesError, ScopeAlias> = either {
         val currentAlias = scopeAliasService.findAliasByName(currentAliasName)
@@ -102,11 +101,7 @@ class RenameAliasHandler(
         currentAlias
     }
 
-    private suspend fun performAtomicRename(
-        currentAlias: ScopeAlias, 
-        newAliasName: AliasName, 
-        input: RenameAlias
-    ): Either<ScopesError, Unit> = either {
+    private suspend fun performAtomicRename(currentAlias: ScopeAlias, newAliasName: AliasName, input: RenameAlias): Either<ScopesError, Unit> = either {
         // Check if new alias name is already taken
         val existingNewAlias = scopeAliasService.findAliasByName(newAliasName)
             .mapLeft { error ->
@@ -135,7 +130,7 @@ class RenameAliasHandler(
                     aliasName = input.newAliasName,
                     existingScopeId = existingNewAlias.scopeId.value,
                     attemptedScopeId = currentAlias.scopeId.value,
-                )
+                ),
             )
         }
 

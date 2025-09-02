@@ -85,16 +85,16 @@ class TransactionManagementTest :
                 // This test is temporarily disabled as the current criteria are too strict
                 // The main violation (findDescendantsOf with tree traversal) has been fixed
                 // by moving the logic to the application layer.
-                // 
+                //
                 // Repository classes legitimately need some complexity for:
                 // - Data mapping and transformation
-                // - Transaction management  
+                // - Transaction management
                 // - Null checking and validation
                 // - CRUD operations with conditional logic
                 //
                 // A more focused test should check for specific business logic anti-patterns
                 // rather than general complexity metrics.
-                
+
                 Konsist
                     .scopeFromProject()
                     .classes()

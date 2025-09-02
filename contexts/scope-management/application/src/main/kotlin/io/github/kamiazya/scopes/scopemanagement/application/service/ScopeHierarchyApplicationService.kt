@@ -225,7 +225,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         // Breadth-first traversal to collect all descendants
         while (queue.isNotEmpty()) {
             val currentId = queue.removeAt(0)
-            
+
             // Find all children of the current scope
             val children = repository.findByParentId(currentId, offset = 0, limit = Int.MAX_VALUE)
                 .mapLeft { error ->

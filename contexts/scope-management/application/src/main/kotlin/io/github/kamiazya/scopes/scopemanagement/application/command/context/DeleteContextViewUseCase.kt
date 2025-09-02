@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.context
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError

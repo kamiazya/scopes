@@ -183,7 +183,8 @@ object ErrorMessageMapper {
         }
         is HierarchyPolicyError -> when (error) {
             is HierarchyPolicyError.InvalidMaxDepth -> "Invalid maximum depth: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
-            is HierarchyPolicyError.InvalidMaxChildrenPerScope -> "Invalid maximum children per scope: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
+            is HierarchyPolicyError.InvalidMaxChildrenPerScope ->
+                "Invalid maximum children per scope: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
         }
         is ScopeAliasError -> when (error) {
             is ScopeAliasError.AliasNotFound -> "Alias not found: ${error.aliasName}"
@@ -192,10 +193,13 @@ object ErrorMessageMapper {
             is ScopeAliasError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias '${error.aliasName}' from scope ${error.scopeId.value}"
             is ScopeAliasError.AliasGenerationFailed -> "Failed to generate alias for scope ${error.scopeId.value} after ${error.retryCount} attempts"
             is ScopeAliasError.AliasGenerationValidationFailed -> "Alias generation validation failed for scope ${error.scopeId.value}: ${error.reason}"
-            is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> "Data inconsistency: alias '${error.aliasName}' references non-existent scope ${error.scopeId.value}"
+            is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+                "Data inconsistency: alias '${error.aliasName}' references non-existent scope ${error.scopeId.value}"
         }
         is UserPreferencesIntegrationError -> when (error) {
-            is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> "User preferences service unavailable${error.retryAfter?.let { ", retry after: $it" } ?: ""}"
+            is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> "User preferences service unavailable${error.retryAfter?.let {
+                ", retry after: $it"
+            } ?: ""}"
             is UserPreferencesIntegrationError.HierarchySettingsNotFound -> "Hierarchy settings not found in user preferences"
             is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
             is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"

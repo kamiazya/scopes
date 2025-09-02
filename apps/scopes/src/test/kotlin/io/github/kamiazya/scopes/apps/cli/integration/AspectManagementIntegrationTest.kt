@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.Dele
 import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -50,7 +51,8 @@ class AspectManagementIntegrationTest :
                 defineAspectUseCase = DefineAspectUseCase(aspectDefinitionRepository, transactionManager)
                 getAspectDefinitionUseCase = GetAspectDefinitionUseCase(aspectDefinitionRepository)
                 updateAspectDefinitionUseCase = UpdateAspectDefinitionUseCase(aspectDefinitionRepository, transactionManager)
-                deleteAspectDefinitionUseCase = DeleteAspectDefinitionUseCase(aspectDefinitionRepository, transactionManager)
+                deleteAspectDefinitionUseCase =
+                    DeleteAspectDefinitionUseCase(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
                 listAspectDefinitionsUseCase = ListAspectDefinitionsUseCase(aspectDefinitionRepository)
                 validationService = AspectValueValidationService()
                 validateAspectValueUseCase = ValidateAspectValueUseCase(aspectDefinitionRepository, validationService)

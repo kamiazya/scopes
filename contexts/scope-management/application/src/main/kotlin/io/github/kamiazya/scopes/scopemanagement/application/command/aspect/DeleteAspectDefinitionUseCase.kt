@@ -17,8 +17,7 @@ class DeleteAspectDefinitionUseCase(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val aspectUsageValidationService: AspectUsageValidationService,
     private val transactionManager: TransactionManager,
-) :
-    UseCase<DeleteAspectDefinitionUseCase.Command, ScopesError, Unit> {
+) : UseCase<DeleteAspectDefinitionUseCase.Command, ScopesError, Unit> {
 
     data class Command(val key: String)
 
