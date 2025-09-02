@@ -92,9 +92,8 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
 
     override suspend fun getEventsSince(since: Instant, limit: Int?): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
         try {
-            val events = queries.findEventsSince(since.toEpochMilliseconds())
+            val events = queries.findEventsSince(since.toEpochMilliseconds(), (limit ?: Int.MAX_VALUE).toLong())
                 .executeAsList()
-                .take(limit ?: Int.MAX_VALUE)
                 .mapNotNull { row ->
                     when (
                         val result = deserializeEvent(
@@ -127,14 +126,16 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
     override suspend fun getEventsByAggregate(aggregateId: AggregateId, since: Instant?, limit: Int?): Either<EventStoreError, List<PersistedEventRecord>> =
         withContext(Dispatchers.IO) {
             try {
+                val limitLong = (limit ?: Int.MAX_VALUE).toLong()
                 val events = if (since != null) {
                     queries.findEventsByAggregateIdSince(
                         aggregate_id = aggregateId.value,
                         stored_at = since.toEpochMilliseconds(),
+                        value_ = limitLong,
                     ).executeAsList()
                 } else {
-                    queries.findEventsByAggregateId(aggregateId.value).executeAsList()
-                }.take(limit ?: Int.MAX_VALUE)
+                    queries.findEventsByAggregateId(aggregateId.value, limitLong).executeAsList()
+                }
                     .mapNotNull { row ->
                         when (
                             val result = deserializeEvent(

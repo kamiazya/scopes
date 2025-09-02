@@ -38,14 +38,16 @@ findEventsSince:
 SELECT *
 FROM events
 WHERE stored_at >= ?
-ORDER BY sequence_number ASC;
+ORDER BY sequence_number ASC
+LIMIT ?;
 
 -- Find events by aggregate ID
 findEventsByAggregateId:
 SELECT *
 FROM events
 WHERE aggregate_id = ?
-ORDER BY aggregate_version ASC;
+ORDER BY aggregate_version ASC
+LIMIT ?;
 
 -- Find events by aggregate ID since timestamp
 findEventsByAggregateIdSince:
@@ -53,14 +55,16 @@ SELECT *
 FROM events
 WHERE aggregate_id = ?
 AND stored_at >= ?
-ORDER BY aggregate_version ASC;
+ORDER BY aggregate_version ASC
+LIMIT ?;
 
 -- Find events by event type
 findEventsByType:
 SELECT *
 FROM events
 WHERE event_type = ?
-ORDER BY sequence_number ASC;
+ORDER BY sequence_number ASC
+LIMIT ?;
 
 -- Find events by event type since timestamp
 findEventsByTypeSince:
@@ -68,4 +72,5 @@ SELECT *
 FROM events
 WHERE event_type = ?
 AND stored_at >= ?
-ORDER BY sequence_number ASC;
+ORDER BY sequence_number ASC
+LIMIT ?;
