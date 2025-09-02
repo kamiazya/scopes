@@ -38,7 +38,7 @@ class CompletionCommand :
             val rootScopes = mutableListOf<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>()
 
             while (true) {
-                val page = scopeCommandAdapter
+                val page = scopeQueryAdapter
                     .listRootScopes(offset = offset, limit = pageLimit)
                     .fold({ null }, { it }) ?: break
 
@@ -68,7 +68,7 @@ class CompletionCommand :
                             val localPairs = mutableSetOf<String>()
                             var childOffset = 0
                             while (true) {
-                                val childPage = scopeCommandAdapter
+                                val childPage = scopeQueryAdapter
                                     .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
                                     .fold({ null }, { it }) ?: break
                                 val children = childPage.scopes

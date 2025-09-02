@@ -12,6 +12,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
+import io.github.kamiazya.scopes.platform.kernel.logger.ConsoleLogger
+import io.github.kamiazya.scopes.platform.kernel.logger.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.AddAlias
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteScope
@@ -30,8 +32,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetSc
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.error.ErrorMapper
-import io.github.kamiazya.scopes.shared.kernel.logger.ConsoleLogger
-import io.github.kamiazya.scopes.shared.kernel.logger.Logger
 
 /**
  * Command port adapter implementing the ScopeManagementCommandPort interface.
@@ -59,7 +59,7 @@ class ScopeManagementCommandPortAdapter(
     private val logger: Logger = ConsoleLogger("ScopeManagementCommandPortAdapter"),
 ) : ScopeManagementCommandPort {
 
-    private val errorMapper = ErrorMapper(logger.withName("ErrorMapper"))
+    private val errorMapper = ErrorMapper(ConsoleLogger("${logger.name}.ErrorMapper"))
 
     override suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = createScopeHandler(
         CreateScope(

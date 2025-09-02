@@ -55,7 +55,7 @@ class RemoveAspectCommand :
             )
 
             // Get current scope
-            scopeCommandAdapter.getScopeById(scopeId).fold(
+            scopeQueryAdapter.getScopeById(scopeId).fold(
                 { error ->
                     throw CliktError("Error getting scope: ${ContractErrorMessageMapper.getMessage(error)}")
                 },

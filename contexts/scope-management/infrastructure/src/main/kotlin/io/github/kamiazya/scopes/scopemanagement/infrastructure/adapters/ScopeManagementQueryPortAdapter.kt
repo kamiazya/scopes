@@ -15,6 +15,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWit
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.platform.kernel.logger.ConsoleLogger
+import io.github.kamiazya.scopes.platform.kernel.logger.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.handler.query.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetChildrenHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetRootScopesHandler
@@ -26,10 +28,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
-import io.github.kamiazya.scopes.scopemanagement.domain.model.errors.ScopeError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.error.ErrorMapper
-import io.github.kamiazya.scopes.shared.kernel.logger.ConsoleLogger
-import io.github.kamiazya.scopes.shared.kernel.logger.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery as AppGetScopeByAliasQuery
 
 /**
@@ -56,7 +56,7 @@ class ScopeManagementQueryPortAdapter(
     private val logger: Logger = ConsoleLogger("ScopeManagementQueryPortAdapter"),
 ) : ScopeManagementQueryPort {
 
-    private val errorMapper = ErrorMapper(logger.withName("ErrorMapper"))
+    private val errorMapper = ErrorMapper(ConsoleLogger("${logger.name}.ErrorMapper"))
 
     override suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?> = either {
         getScopeByIdHandler(
