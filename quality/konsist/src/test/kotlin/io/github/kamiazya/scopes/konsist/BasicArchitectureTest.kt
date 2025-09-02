@@ -73,7 +73,7 @@ class BasicArchitectureTest :
                     it.name == "Scope" ||
                         it.name == "ScopeAlias" ||
                         it.name == "AspectDefinition" ||
-                        it.name == "ContextView" ||
+                        (it.name == "ContextView" && it.packagee?.name?.contains(".entity") == true) ||
                         it.name.endsWith("Entity")
                 }
                 .filter { !it.name.endsWith("Test") }
