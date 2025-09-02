@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDe
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 
@@ -76,7 +77,9 @@ class SqlDelightScopeAliasRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+                    val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+                    error.operation shouldBe "save"
+                    error.cause shouldNotBe null
                 }
             }
 
@@ -581,9 +584,10 @@ class SqlDelightScopeAliasRepositoryTest :
 
                     operations.forEach { result ->
                         result.isLeft() shouldBe true
-                        val error = result.leftOrNull()
-                        error.shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+                        val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
                         error.operation shouldNotBe null
+                        error.operation.shouldNotBeBlank()
+                        error.cause shouldNotBe null
                     }
                 }
             }
