@@ -41,9 +41,9 @@ class ScopesCliApplication : AutoCloseable {
                 },
                 ifRight = {
                     // Success - presets initialized
+                    isInitialized = true
                 },
             )
-            isInitialized = true
         }
     }
 

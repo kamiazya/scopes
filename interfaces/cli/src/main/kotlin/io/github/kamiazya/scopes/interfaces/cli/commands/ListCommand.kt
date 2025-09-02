@@ -108,10 +108,16 @@ class ListCommand :
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
                         { scopes ->
-                            if (verbose) {
-                                echo(formatVerboseList(scopes, debugContext))
+                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
+                                filterByAspects(scopes, aspectFilters)
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(scopes, debugContext.debug))
+                                scopes
+                            }
+                            if (verbose) {
+                                echo(formatVerboseList(filteredScopes, debugContext))
+                            } else {
+                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
                             }
                         },
                     )

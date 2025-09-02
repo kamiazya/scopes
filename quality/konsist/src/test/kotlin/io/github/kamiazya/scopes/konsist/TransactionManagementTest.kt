@@ -74,7 +74,7 @@ class TransactionManagementTest :
                             }
 
                         // Handler should have TransactionManager and use it
-                        hasTransactionManager || usesTransaction
+                        hasTransactionManager && usesTransaction
                     }
             }
         }
