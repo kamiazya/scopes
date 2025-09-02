@@ -224,58 +224,90 @@ Type 'yes' to confirm: yes
 
 ### Context Operations
 ```bash
-# Create context
-$ scopes context create "client-work" --filter "project=acme AND priority>=medium"
-✓ Created context 'client-work' with filter: project=acme AND priority>=medium
+# Create context with filter
+$ scopes context create my-work "My Work" --filter "assignee=me AND status!=closed" -d "Active tasks assigned to me"
+✓ Context view 'my-work' created successfully
+Key: my-work
+Name: My Work
+Description: Active tasks assigned to me
+Filter: assignee=me AND status!=closed
 
-# Create global context
-$ scopes context create --global "urgent" --filter "priority=high"
-✓ Created global context 'urgent'
+# Create context for client project
+$ scopes context create client-a "Client A Project" --filter "project=client-a"
+✓ Context view 'client-a' created successfully
 
-# Apply context
-$ scopes context switch client-work
-✓ Switched to context 'client-work'
-    Filter: project=acme AND priority>=medium
-    Matching scopes: 8
-
-# List contexts
+# List all contexts
 $ scopes context list
-Available contexts:
-- client-work (active) - project=acme AND priority>=medium
-- personal-projects - project=personal
-- urgent (global) - priority=high
-- default - logged!=true
+Context Views (3):
 
-# Show active context
+• my-work [CURRENT] - My Work
+  Active tasks assigned to me
+  Filter: assignee=me AND status!=closed
+
+• client-a - Client A Project
+  Filter: project=client-a
+
+• urgent - Urgent Items
+  High priority tasks
+  Filter: priority=high OR priority=critical
+
+# Show specific context details
+$ scopes context show my-work
+Context View Details
+===================
+
+Key: my-work
+Name: My Work
+Description: Active tasks assigned to me
+
+Filter Expression:
+  assignee=me AND status!=closed
+
+Timestamps:
+  Created: 2025-01-15 10:30:00
+  Updated: 2025-01-15 14:22:00
+
+# Edit existing context
+$ scopes context edit my-work --name "My Active Tasks" --filter "assignee=me AND status=active"
+✓ Context view 'my-work' updated successfully
+
+# Switch to a different context
+$ scopes context switch client-a
+✓ Switched to context 'client-a'
+Active filter: project=client-a
+
+# Show current active context
 $ scopes context current
-Current context: client-work
-Filter: project=acme AND priority>=medium
-Level: workspace-local
-Matching scopes: 8 of 247 total
+Current context: client-a
+Key: client-a
+Name: Client A Project
+Filter: project=client-a
 
-# Show context details
-$ scopes context show client-work
-Context: client-work
-Type: workspace-local
-Filter: project=acme AND priority>=medium
-Created: 2025-01-15 09:00:00
-Last used: 2025-01-15 15:30:00
-Matching scopes: 8
+# Clear current context
+$ scopes context current --clear
+✓ Current context cleared. All scopes will be visible.
 
-# Modify context
-$ scopes context edit client-work --filter "project=acme AND status!=completed"
-✓ Updated context 'client-work':
-    Filter: project=acme AND status!=completed
+# Delete a context
+$ scopes context delete old-context
+✓ Context view 'old-context' deleted successfully
 
-# Remove context
-$ scopes context rm old-context
-✓ Removed context 'old-context'
+# List scopes with active context filter applied
+$ scopes list
+Using context filter: project=client-a
+Found 8 scopes:
+...
+
+# List scopes ignoring the active context
+$ scopes list --no-context
+Found 42 scopes:
+...
+
+# Combine context filter with additional query
+$ scopes list --query "priority=high"
+Using context filter: project=client-a
+Found 3 scopes:
+... (shows only high priority items within client-a project)
 ```
-
-### Context Scopes
-- **Global**: Available everywhere (`--global`)
-- **Local**: Workspace-specific (`--local`)
-- **Default**: System-wide fallback context
 
 ## Focus Management
 
