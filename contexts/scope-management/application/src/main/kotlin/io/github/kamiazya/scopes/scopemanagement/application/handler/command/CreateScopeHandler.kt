@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -6,10 +6,10 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
 import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
@@ -38,15 +38,15 @@ class CreateScopeHandler(
     private val transactionManager: TransactionManager,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val logger: Logger,
-) : UseCase<CreateScope, ScopesError, CreateScopeResult> {
+) : CommandHandler<CreateScope, CreateScopeResult> {
 
-    override suspend operator fun invoke(input: CreateScope): Either<ScopesError, CreateScopeResult> = either {
+    override suspend operator fun invoke(command: CreateScope): Either<ScopesError, CreateScopeResult> = either {
         logger.info(
             "Creating new scope",
             mapOf(
-                "title" to input.title,
-                "parentId" to (input.parentId ?: "none"),
-                "generateAlias" to input.generateAlias.toString(),
+                "title" to command.title,
+                "parentId" to (command.parentId ?: "none"),
+                "generateAlias" to command.generateAlias.toString(),
             ),
         )
 
@@ -63,7 +63,7 @@ class CreateScopeHandler(
         transactionManager.inTransaction {
             either {
                 // Parse parent ID if provided
-                val parentId = input.parentId?.let { parentIdString ->
+                val parentId = command.parentId?.let { parentIdString ->
                     ScopeId.create(parentIdString).mapLeft { idError ->
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
                         ScopeHierarchyError.InvalidParentId(
@@ -75,8 +75,8 @@ class CreateScopeHandler(
 
                 // Delegate scope creation to factory
                 val scopeAggregate = scopeFactory.createScope(
-                    title = input.title,
-                    description = input.description,
+                    title = command.title,
+                    description = command.description,
                     parentId = parentId,
                     hierarchyPolicy = hierarchyPolicy,
                 ).bind()
@@ -89,22 +89,22 @@ class CreateScopeHandler(
                 logger.info("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
 
                 // Handle alias generation and storage
-                val canonicalAlias = if (input.generateAlias || input.customAlias != null) {
+                val canonicalAlias = if (command.generateAlias || command.customAlias != null) {
                     logger.debug(
                         "Processing alias generation",
                         mapOf(
                             "scopeId" to savedScope.id.value,
-                            "generateAlias" to input.generateAlias.toString(),
-                            "customAlias" to (input.customAlias ?: "none"),
+                            "generateAlias" to command.generateAlias.toString(),
+                            "customAlias" to (command.customAlias ?: "none"),
                         ),
                     )
 
-                    // Determine alias name based on input
-                    val aliasName = if (input.customAlias != null) {
+                    // Determine alias name based on command
+                    val aliasName = if (command.customAlias != null) {
                         // Custom alias provided - validate format
-                        logger.debug("Validating custom alias", mapOf("customAlias" to input.customAlias))
-                        AliasName.create(input.customAlias).mapLeft { aliasError ->
-                            logger.warn("Invalid custom alias format", mapOf("alias" to input.customAlias, "error" to aliasError.toString()))
+                        logger.debug("Validating custom alias", mapOf("customAlias" to command.customAlias))
+                        AliasName.create(command.customAlias).mapLeft { aliasError ->
+                            logger.warn("Invalid custom alias format", mapOf("alias" to command.customAlias, "error" to aliasError.toString()))
                             aliasError
                         }.bind()
                     } else {
