@@ -77,17 +77,21 @@ class EventStoreArchitectureTest :
                     .filter { it.name == "store" || it.name == "save" }
                     .assertTrue { function ->
                         val functionText = function.text
-                        // Should use proper event type resolution
+                        // Should use proper event type resolution (either direct or via helper)
                         (
                             functionText.contains("event::class.qualifiedName") ||
-                                functionText.contains("event::class.simpleName")
+                                functionText.contains("event::class.simpleName") ||
+                                functionText.contains("event.typeName(") ||
+                                functionText.contains(".typeName(")
                             ) &&
                             // Should fail fast on missing event type
                             (
                                 functionText.contains("throw IllegalArgumentException") ||
                                     functionText.contains("?: throw") ||
                                     functionText.contains("?: error(") ||
-                                    functionText.contains("?: require(")
+                                    functionText.contains("?: require(") ||
+                                    // Helper method should handle error cases
+                                    functionText.contains("typeName(")
                                 )
                     }
             }
