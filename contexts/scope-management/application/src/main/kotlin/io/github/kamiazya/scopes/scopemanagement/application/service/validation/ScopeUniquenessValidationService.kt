@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.service.validation
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -51,7 +51,7 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
      * @return Either a domain error or Unit on success
      */
     suspend fun validateTitleUniquenessInContext(title: String, parentId: ScopeId?, excludeId: ScopeId? = null): Either<ContextError, Unit> = either {
-        val existingScopes = scopeRepository.findByParentId(parentId)
+        val existingScopes = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
             .mapLeft { ContextError.DuplicateScope(title, parentId?.value, "Failed to check existing scopes") }
             .bind()
 

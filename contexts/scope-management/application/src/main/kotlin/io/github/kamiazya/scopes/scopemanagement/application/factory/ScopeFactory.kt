@@ -120,7 +120,7 @@ class ScopeFactory(
             ).bind()
 
             // Get existing children count
-            val existingChildren = scopeRepository.findByParentId(parentId)
+            val existingChildren = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
                 .mapLeft { error ->
                     mapPersistenceError(error, HierarchyOperation.COUNT_CHILDREN, parentId)
                 }

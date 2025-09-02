@@ -31,12 +31,15 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.context.ListC
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeUniquenessValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import org.koin.dsl.module
 
 /**
@@ -53,17 +56,19 @@ val scopeManagementModule = module {
     single { AspectValueValidationService() }
     single { ScopeHierarchyValidationService(scopeRepository = get()) }
     single { ScopeUniquenessValidationService(scopeRepository = get()) }
-    single {
-        io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService(
-            aliasRepository = get(),
-            aliasGenerationService = get(),
-        )
-    }
 
     // Query Components
     single { AspectQueryParser() }
 
     // Application Services
+    single { ScopeAliasPolicy() }
+    single {
+        ScopeAliasApplicationService(
+            aliasRepository = get(),
+            aliasGenerationService = get(),
+            aliasPolicy = get(),
+        )
+    }
     single {
         ScopeHierarchyApplicationService(
             repository = get(),

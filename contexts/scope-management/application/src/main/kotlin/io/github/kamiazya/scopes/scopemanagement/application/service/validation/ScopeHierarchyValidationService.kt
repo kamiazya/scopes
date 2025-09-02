@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.application.service.validation
 
 import arrow.core.Either
 import arrow.core.raise.either

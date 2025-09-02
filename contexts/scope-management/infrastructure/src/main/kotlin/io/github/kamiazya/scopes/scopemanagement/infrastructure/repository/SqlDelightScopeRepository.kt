@@ -103,36 +103,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            val scopeRows = if (parentId != null) {
-                database.scopeQueries.findScopesByParentId(parentId.value).executeAsList()
-            } else {
-                database.scopeQueries.findRootScopes().executeAsList()
-            }
-
-            if (scopeRows.isEmpty()) {
-                return@withContext emptyList<Scope>().right()
-            }
-
-            // Batch load all aspects to avoid N+1 queries
-            val scopeIds = scopeRows.map { it.id }
-            val aspectsMap = loadAspectsForScopes(scopeIds)
-
-            val scopes = scopeRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
-            }
-
-            scopes.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findByParentId",
-                cause = e,
-            ).left()
-        }
-    }
-
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = if (parentId != null) {

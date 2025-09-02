@@ -272,7 +272,7 @@ class SqlDelightScopeRepositoryTest :
                     }
 
                     // When
-                    val result = runBlocking { repository.findByParentId(null) }
+                    val result = runBlocking { repository.findByParentId(null, offset = 0, limit = 1000) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -321,7 +321,7 @@ class SqlDelightScopeRepositoryTest :
                     }
 
                     // When
-                    val result = runBlocking { repository.findByParentId(parentId) }
+                    val result = runBlocking { repository.findByParentId(parentId, offset = 0, limit = 1000) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -665,7 +665,7 @@ class SqlDelightScopeRepositoryTest :
                         },
                         runBlocking { repository.findById(ScopeId.generate()) },
                         runBlocking { repository.findAll() },
-                        runBlocking { repository.findByParentId(null) },
+                        runBlocking { repository.findByParentId(null, offset = 0, limit = 1000) },
                         runBlocking { repository.existsById(ScopeId.generate()) },
                         runBlocking { repository.existsByParentIdAndTitle(null, "Test") },
                         runBlocking { repository.deleteById(ScopeId.generate()) },

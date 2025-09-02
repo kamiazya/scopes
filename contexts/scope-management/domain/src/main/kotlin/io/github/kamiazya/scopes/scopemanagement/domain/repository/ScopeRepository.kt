@@ -38,11 +38,7 @@ interface ScopeRepository {
      */
     suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
 
-    /**
-     * Find scopes by parent ID.
-     */
-    @Deprecated("Use paginated overload to avoid full scans; will be removed in a future release.")
-    suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>>
+    // NOTE: Non-paginated version removed. Use paginated overload to avoid full scans.
 
     /**
      * Find scopes by parent ID with pagination.

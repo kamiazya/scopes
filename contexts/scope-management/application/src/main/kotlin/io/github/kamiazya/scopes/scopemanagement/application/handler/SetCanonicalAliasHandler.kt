@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasManagementService
+import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -17,7 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationEr
  * Automatically demotes the previous canonical alias to a custom alias.
  */
 class SetCanonicalAliasHandler(
-    private val scopeAliasService: ScopeAliasManagementService,
+    private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : UseCase<SetCanonicalAlias, ScopesError, Unit> {
@@ -55,26 +55,29 @@ class SetCanonicalAliasHandler(
                 }
                 .bind()
 
-            // Resolve current alias to get scope ID through domain service
-            val scopeId = scopeAliasService.resolveAlias(currentAliasName)
+            // Find current alias through application service
+            val currentAlias = scopeAliasService.findAliasByName(currentAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to resolve current alias",
+                        "Failed to find current alias",
                         mapOf(
                             "currentAlias" to input.currentAlias,
                             "error" to error.toString(),
                         ),
                     )
-                    // Map domain error to appropriate application error
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound ->
-                            ScopeInputError.AliasNotFound(input.currentAlias)
-                        else ->
-                            // For other errors (like persistence errors), use the generic error mapping
-                            error.toGenericApplicationError()
-                    }
+                    error.toGenericApplicationError()
                 }
                 .bind()
+
+            if (currentAlias == null) {
+                logger.error(
+                    "Current alias not found",
+                    mapOf("currentAlias" to input.currentAlias),
+                )
+                raise(ScopeInputError.AliasNotFound(input.currentAlias))
+            }
+
+            val scopeId = currentAlias.scopeId
 
             // Validate newCanonicalAlias
             val newCanonicalAliasName = AliasName.create(input.newCanonicalAlias)
@@ -99,26 +102,29 @@ class SetCanonicalAliasHandler(
                 }
                 .bind()
 
-            // Resolve new canonical alias to verify it exists and get its scope ID
-            val newCanonicalAliasScopeId = scopeAliasService.resolveAlias(newCanonicalAliasName)
+            // Find new canonical alias to verify it exists and get its scope ID
+            val newCanonicalAlias = scopeAliasService.findAliasByName(newCanonicalAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to resolve new canonical alias",
+                        "Failed to find new canonical alias",
                         mapOf(
                             "newCanonicalAlias" to input.newCanonicalAlias,
                             "error" to error.toString(),
                         ),
                     )
-                    // Map domain error to appropriate application error
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.AliasNotFound ->
-                            ScopeInputError.AliasNotFound(input.newCanonicalAlias)
-                        else ->
-                            // For other errors (like persistence errors), use the generic error mapping
-                            error.toGenericApplicationError()
-                    }
+                    error.toGenericApplicationError()
                 }
                 .bind()
+
+            if (newCanonicalAlias == null) {
+                logger.error(
+                    "New canonical alias not found",
+                    mapOf("newCanonicalAlias" to input.newCanonicalAlias),
+                )
+                raise(ScopeInputError.AliasNotFound(input.newCanonicalAlias))
+            }
+
+            val newCanonicalAliasScopeId = newCanonicalAlias.scopeId
 
             // Verify the new canonical alias belongs to the same scope
             if (newCanonicalAliasScopeId != scopeId) {

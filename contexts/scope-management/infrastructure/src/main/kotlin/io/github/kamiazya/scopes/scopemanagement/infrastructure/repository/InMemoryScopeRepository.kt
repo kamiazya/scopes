@@ -81,15 +81,6 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?): Either<PersistenceError, List<Scope>> = either {
-        mutex.withLock {
-            try {
-                scopes.values.filter { it.parentId == parentId }.toList()
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId", e))
-            }
-        }
-    }
 
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
         mutex.withLock {

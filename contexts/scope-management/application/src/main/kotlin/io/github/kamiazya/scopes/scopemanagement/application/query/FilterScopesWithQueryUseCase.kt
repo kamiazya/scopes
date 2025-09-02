@@ -55,7 +55,7 @@ class FilterScopesWithQueryUseCase(
                     { return ScopesError.InvalidOperation("Invalid parent ID: ${input.parentId}").left() },
                     { it },
                 )
-                scopeRepository.findByParentId(parentScopeId).fold(
+                scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000).fold(
                     { return ScopesError.SystemError("Failed to load scopes: $it").left() },
                     { it },
                 )
