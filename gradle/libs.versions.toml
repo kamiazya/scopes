@@ -4,7 +4,7 @@ kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.9.0"
 kotlinx-datetime = "0.6.1"
 arrow = "2.1.2"
-clikt = "4.4.0"
+clikt = "5.0.3"
 kulid = "2.0.0.0"
 koin-bom = "4.1.0"
 
