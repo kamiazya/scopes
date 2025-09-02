@@ -1,12 +1,12 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import arrow.core.toNonEmptyListOrNull
-import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQueryUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository

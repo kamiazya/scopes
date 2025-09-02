@@ -4,12 +4,13 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryEvaluator
-import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
@@ -123,24 +124,24 @@ class FilterScopesWithQueryUseCase(
         return filteredScopes.right()
     }
 
-    private fun formatParseError(error: io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError): String = when (error) {
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.EmptyQuery ->
+    private fun formatParseError(error: QueryParseError): String = when (error) {
+        is QueryParseError.EmptyQuery ->
             "Query cannot be empty"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.UnexpectedCharacter ->
+        is QueryParseError.UnexpectedCharacter ->
             "Unexpected character '${error.char}' at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.UnterminatedString ->
+        is QueryParseError.UnterminatedString ->
             "Unterminated string at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.UnexpectedToken ->
+        is QueryParseError.UnexpectedToken ->
             "Unexpected token at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.MissingClosingParen ->
+        is QueryParseError.MissingClosingParen ->
             "Missing closing parenthesis at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.ExpectedExpression ->
+        is QueryParseError.ExpectedExpression ->
             "Expected expression at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.ExpectedIdentifier ->
+        is QueryParseError.ExpectedIdentifier ->
             "Expected identifier at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.ExpectedOperator ->
+        is QueryParseError.ExpectedOperator ->
             "Expected operator at position ${error.position}"
-        is io.github.kamiazya.scopes.scopemanagement.application.query.QueryParseError.ExpectedValue ->
+        is QueryParseError.ExpectedValue ->
             "Expected value at position ${error.position}"
     }
 }

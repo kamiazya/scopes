@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.scopemanagement.application.query
 
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryAST
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.ComparisonOperator
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
