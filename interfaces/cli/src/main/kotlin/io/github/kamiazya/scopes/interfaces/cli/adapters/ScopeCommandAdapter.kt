@@ -16,6 +16,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResu
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import kotlinx.datetime.Instant
 
 /**
  * Adapter for CLI commands to interact with Scope Management
@@ -113,16 +114,43 @@ class ScopeCommandAdapter(
     /**
      * Lists child scopes
      */
-    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> {
-        val query = GetChildrenQuery(parentId = parentId, offset = offset, limit = limit)
+    suspend fun listChildren(
+        parentId: String,
+        offset: Int,
+        limit: Int,
+        afterCreatedAt: Instant? = null,
+        afterId: String? = null,
+    ): Either<ScopeContractError, ScopeListResult> {
+        val effectiveOffset = if (afterCreatedAt != null && afterId != null) 0 else offset
+        val query = GetChildrenQuery(
+            parentId = parentId,
+            offset = effectiveOffset,
+            limit = limit,
+            afterCreatedAt = afterCreatedAt,
+            afterId = afterId,
+        )
         return scopeManagementPort.getChildren(query)
     }
 
     /**
      * Lists root scopes
      */
-    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> =
-        scopeManagementPort.getRootScopes(GetRootScopesQuery(offset = offset, limit = limit))
+    suspend fun listRootScopes(
+        offset: Int,
+        limit: Int,
+        afterCreatedAt: Instant? = null,
+        afterId: String? = null,
+    ): Either<ScopeContractError, ScopeListResult> {
+        val effectiveOffset = if (afterCreatedAt != null && afterId != null) 0 else offset
+        return scopeManagementPort.getRootScopes(
+            GetRootScopesQuery(
+                offset = effectiveOffset,
+                limit = limit,
+                afterCreatedAt = afterCreatedAt,
+                afterId = afterId,
+            ),
+        )
+    }
 
     /**
      * Lists all aliases for a specific scope

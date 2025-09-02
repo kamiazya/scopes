@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Instant
 
 /**
  * In-memory implementation of ScopeRepository for initial development and testing.
@@ -103,6 +104,27 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .toList()
             } catch (e: Exception) {
                 raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId(offset,limit)", e))
+            }
+        }
+    }
+
+    override suspend fun findByParentIdAfter(
+        parentId: ScopeId?,
+        afterCreatedAt: Instant,
+        afterId: ScopeId,
+        limit: Int,
+    ): Either<PersistenceError, List<Scope>> = either {
+        mutex.withLock {
+            try {
+                scopes.values
+                    .asSequence()
+                    .filter { it.parentId == parentId }
+                    .sortedWith(compareBy({ it.createdAt }, { it.id.value }))
+                    .filter { it.createdAt > afterCreatedAt || (it.createdAt == afterCreatedAt && it.id.value > afterId.value) }
+                    .take(limit)
+                    .toList()
+            } catch (e: Exception) {
+                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentIdAfter", e))
             }
         }
     }

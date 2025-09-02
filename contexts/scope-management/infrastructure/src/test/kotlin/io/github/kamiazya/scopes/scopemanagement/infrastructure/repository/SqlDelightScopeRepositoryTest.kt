@@ -18,6 +18,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 class SqlDelightScopeRepositoryTest :
     DescribeSpec({
@@ -323,6 +324,89 @@ class SqlDelightScopeRepositoryTest :
                     val foundScopes = result.getOrNull()
                     foundScopes?.size shouldBe 2
                     foundScopes?.all { it.parentId == parentId } shouldBe true
+                }
+            }
+
+            describe("findByParentIdAfter") {
+                it("should return children after cursor") {
+                    val parentId = ScopeId.generate()
+                    val parentScope = Scope(
+                        id = parentId,
+                        title = ScopeTitle.create("Parent").getOrNull()!!,
+                        description = null,
+                        parentId = null,
+                        aspects = Aspects.empty(),
+                        createdAt = Instant.fromEpochMilliseconds(0),
+                        updatedAt = Instant.fromEpochMilliseconds(0),
+                    )
+                    val child1 = Scope(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Child1").getOrNull()!!,
+                        description = null,
+                        parentId = parentId,
+                        aspects = Aspects.empty(),
+                        createdAt = Instant.fromEpochMilliseconds(1),
+                        updatedAt = Instant.fromEpochMilliseconds(1),
+                    )
+                    val child2 = child1.copy(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Child2").getOrNull()!!,
+                        createdAt = Instant.fromEpochMilliseconds(2),
+                        updatedAt = Instant.fromEpochMilliseconds(2),
+                    )
+                    val child3 = child1.copy(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Child3").getOrNull()!!,
+                        createdAt = Instant.fromEpochMilliseconds(3),
+                        updatedAt = Instant.fromEpochMilliseconds(3),
+                    )
+
+                    runBlocking {
+                        repository.save(parentScope)
+                        listOf(child1, child2, child3).forEach { repository.save(it) }
+                    }
+
+                    val result = runBlocking {
+                        repository.findByParentIdAfter(parentId, child1.createdAt, child1.id, 10)
+                    }
+
+                    result.isRight() shouldBe true
+                    result.getOrNull() shouldBe listOf(child2, child3)
+                }
+
+                it("should return root scopes after cursor") {
+                    val root1 = Scope(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Root1").getOrNull()!!,
+                        description = null,
+                        parentId = null,
+                        aspects = Aspects.empty(),
+                        createdAt = Instant.fromEpochMilliseconds(1),
+                        updatedAt = Instant.fromEpochMilliseconds(1),
+                    )
+                    val root2 = root1.copy(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Root2").getOrNull()!!,
+                        createdAt = Instant.fromEpochMilliseconds(2),
+                        updatedAt = Instant.fromEpochMilliseconds(2),
+                    )
+                    val root3 = root1.copy(
+                        id = ScopeId.generate(),
+                        title = ScopeTitle.create("Root3").getOrNull()!!,
+                        createdAt = Instant.fromEpochMilliseconds(3),
+                        updatedAt = Instant.fromEpochMilliseconds(3),
+                    )
+
+                    runBlocking {
+                        listOf(root1, root2, root3).forEach { repository.save(it) }
+                    }
+
+                    val result = runBlocking {
+                        repository.findByParentIdAfter(null, root1.createdAt, root1.id, 10)
+                    }
+
+                    result.isRight() shouldBe true
+                    result.getOrNull() shouldBe listOf(root2, root3)
                 }
             }
 
