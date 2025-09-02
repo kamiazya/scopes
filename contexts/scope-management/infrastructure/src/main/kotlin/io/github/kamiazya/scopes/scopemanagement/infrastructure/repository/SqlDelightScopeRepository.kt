@@ -233,44 +233,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
-    override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            // In-memory processing due to SQLDelight CTE limitations
-            val allDescendants = mutableListOf<io.github.kamiazya.scopes.scopemanagement.db.Scopes>()
-            val queue = mutableListOf(scopeId.value)
-
-            while (queue.isNotEmpty()) {
-                val currentId = queue.removeAt(0)
-                val children = database.scopeQueries.findAllDescendantsIterative(currentId)
-                    .executeAsList()
-                allDescendants.addAll(children)
-                queue.addAll(children.map { it.id })
-            }
-
-            val descendantRows = allDescendants
-
-            if (descendantRows.isEmpty()) {
-                return@withContext emptyList<Scope>().right()
-            }
-
-            // Batch load all aspects for descendants
-            val descendantIds = descendantRows.map { it.id }
-            val aspectsMap = loadAspectsForScopes(descendantIds)
-
-            val descendants = descendantRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
-            }
-
-            descendants.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findDescendantsOf",
-                cause = e,
-            ).left()
-        }
-    }
-
     override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())

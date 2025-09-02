@@ -99,15 +99,6 @@ interface ScopeRepository {
     suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int>
 
     /**
-     * Find all descendants of a scope recursively.
-     * Used for hierarchy operations.
-     *
-     * Ordering: no guarantees. Consumers and tests must not rely on the
-     * traversal order; treat the returned list as an unordered collection.
-     */
-    suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>>
-
-    /**
      * Count scopes that have a specific aspect key.
      * Used for validating aspect usage before deletion.
      */

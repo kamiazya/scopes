@@ -153,26 +153,6 @@ open class InMemoryScopeRepository : ScopeRepository {
         }
     }
 
-    override suspend fun findDescendantsOf(scopeId: ScopeId): Either<PersistenceError, List<Scope>> = either {
-        mutex.withLock {
-            try {
-                val descendants = mutableListOf<Scope>()
-                val toProcess = mutableListOf(scopeId)
-
-                while (toProcess.isNotEmpty()) {
-                    val currentId = toProcess.removeAt(0)
-                    val children = scopes.values.filter { it.parentId == currentId }
-                    descendants.addAll(children)
-                    toProcess.addAll(children.map { it.id })
-                }
-
-                descendants
-            } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findDescendantsOf", e))
-            }
-        }
-    }
-
     override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = either {
         mutex.withLock {
             try {

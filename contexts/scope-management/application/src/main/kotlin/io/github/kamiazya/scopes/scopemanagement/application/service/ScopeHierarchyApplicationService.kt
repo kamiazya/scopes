@@ -213,16 +213,33 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
     }
 
     /**
-     * Retrieves all descendants of a scope.
+     * Retrieves all descendants of a scope by traversing the hierarchy.
      *
      * @param scopeId The scope to get descendants for
      * @return Either an error or list of all descendant scopes
      */
     suspend fun getDescendants(scopeId: ScopeId): Either<ScopeHierarchyError, List<Scope>> = either {
-        repository.findDescendantsOf(scopeId)
-            .mapLeft { error ->
-                mapPersistenceError(error, HierarchyOperation.FIND_DESCENDANTS, scopeId)
+        val descendants = mutableListOf<Scope>()
+        val queue = mutableListOf(scopeId)
+
+        // Breadth-first traversal to collect all descendants
+        while (queue.isNotEmpty()) {
+            val currentId = queue.removeAt(0)
+            
+            // Find all children of the current scope
+            val children = repository.findByParentId(currentId, offset = 0, limit = Int.MAX_VALUE)
+                .mapLeft { error ->
+                    mapPersistenceError(error, HierarchyOperation.FIND_DESCENDANTS, currentId)
+                }
+                .bind()
+
+            // Add children to descendants and queue for further traversal
+            for (child in children) {
+                descendants.add(child)
+                queue.add(child.id)
             }
-            .bind()
+        }
+
+        descendants
     }
 }
