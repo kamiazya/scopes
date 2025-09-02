@@ -204,6 +204,10 @@ open class InMemoryScopeRepository : ScopeRepository {
         scopes.clear()
     }
 
+    override suspend fun countAll(): Either<PersistenceError, Int> = mutex.withLock {
+        Either.Right(scopes.size)
+    }
+
     /**
      * Utility method for testing - get current scope count.
      */

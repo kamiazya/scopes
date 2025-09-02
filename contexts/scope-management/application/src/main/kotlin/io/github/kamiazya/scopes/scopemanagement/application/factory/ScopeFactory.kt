@@ -119,8 +119,8 @@ class ScopeFactory(
                 hierarchyPolicy.maxDepth,
             ).bind()
 
-            // Get existing children count
-            val existingChildren = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
+            // Get existing children count efficiently
+            val existingChildrenCount = scopeRepository.countChildrenOf(parentId)
                 .mapLeft { error ->
                     mapPersistenceError(error, HierarchyOperation.COUNT_CHILDREN, parentId)
                 }
@@ -129,7 +129,7 @@ class ScopeFactory(
             // Validate children limit
             hierarchyService.validateChildrenLimit(
                 parentId,
-                existingChildren.size,
+                existingChildrenCount,
                 hierarchyPolicy.maxChildrenPerScope,
             ).bind()
         }

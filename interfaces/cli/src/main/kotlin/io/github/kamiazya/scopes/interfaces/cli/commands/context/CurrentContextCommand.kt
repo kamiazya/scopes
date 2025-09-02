@@ -47,9 +47,16 @@ class CurrentContextCommand :
     override fun run() {
         runBlocking {
             if (clear) {
-                // Clear the current context - this needs clearCurrentContext method in adapter
-                echo("Context clearing is not yet implemented.")
-                echo("Use 'scopes context switch <key>' to switch to a different context.")
+                // Clear the current context
+                when (val result = contextCommandAdapter.clearCurrentContext()) {
+                    is ContextViewContract.SetActiveContextResponse.Success -> {
+                        echo("Context cleared successfully.")
+                        echo("All scopes are now visible.")
+                    }
+                    is ContextViewContract.SetActiveContextResponse.NotFound -> {
+                        echo("No context was active.")
+                    }
+                }
             } else {
                 // Show the current context
                 when (val result = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)) {

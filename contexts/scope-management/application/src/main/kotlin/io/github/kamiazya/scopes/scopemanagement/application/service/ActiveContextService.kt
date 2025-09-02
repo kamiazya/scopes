@@ -2,9 +2,8 @@ package io.github.kamiazya.scopes.scopemanagement.application.service
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.scopemanagement.application.error.*
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
@@ -134,16 +133,16 @@ class ActiveContextService(
             }
             .bind()
 
-        ensure(context != null) {
+        val nonNullContext = ensureNotNull(context) {
             ContextError.InvalidContextSwitch(key = key)
         }
 
         // Use setActiveContext method to ensure audit event is published
-        setActiveContext(context, activatedBy)
+        setActiveContext(nonNullContext, activatedBy)
             .mapLeft { it } // Already mapped to ApplicationError
             .bind()
 
-        context
+        nonNullContext
     }
 
     /**

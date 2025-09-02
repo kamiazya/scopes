@@ -33,7 +33,8 @@ class FilterEvaluationService {
      * @return Either an error or boolean result
      */
     fun evaluateScope(filter: ContextViewFilter, scope: Scope, aspectDefinitions: Map<String, AspectDefinition>): Either<ContextError, Boolean> =
-        evaluateAspects(filter, scope.aspects, aspectDefinitions)
+        // Normalize aspect definitions to lowercase keys for case-insensitive matching
+        evaluateAspects(filter, scope.aspects, aspectDefinitions.mapKeys { it.key.lowercase() })
 
     /**
      * Evaluate if aspects match the given filter.
@@ -51,12 +52,16 @@ class FilterEvaluationService {
             { it },
         )
 
-        // Convert Aspects to a map for evaluation
-        val aspectMap = aspects.toMap().mapKeys { it.key.value }
+        // Convert Aspects to a case-insensitive map for evaluation
+        val aspectMap = aspects.toMap()
+            .mapKeys { it.key.value.lowercase() }
             .mapValues { it.value.toList() }
 
+        // Normalize aspect definitions to lowercase keys as well
+        val normalizedDefinitions = aspectDefinitions.mapKeys { it.key.lowercase() }
+
         // Evaluate the parsed AST
-        return evaluateNode(ast, aspectMap, aspectDefinitions).right()
+        return evaluateNode(ast, aspectMap, normalizedDefinitions).right()
     }
 
     private fun evaluateNode(node: FilterExpressionAST, aspectMap: Map<String, List<AspectValue>>, aspectDefinitions: Map<String, AspectDefinition>): Boolean =
@@ -75,8 +80,10 @@ class FilterEvaluationService {
         aspectMap: Map<String, List<AspectValue>>,
         aspectDefinitions: Map<String, AspectDefinition>,
     ): Boolean {
-        val aspectValues = aspectMap[comparison.key] ?: return false
-        val definition = aspectDefinitions[comparison.key]
+        // Use lowercase lookup key for case-insensitive matching
+        val lookupKey = comparison.key.lowercase()
+        val aspectValues = aspectMap[lookupKey] ?: return false
+        val definition = aspectDefinitions[lookupKey]
 
         // For each value, check if it matches the comparison
         return aspectValues.any { aspectValue ->

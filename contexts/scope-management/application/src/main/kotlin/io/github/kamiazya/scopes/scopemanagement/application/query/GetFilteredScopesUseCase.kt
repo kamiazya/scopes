@@ -58,14 +58,17 @@ class GetFilteredScopesUseCase(
             }
         }
 
-        // Get all scopes with pagination
-        val allScopes = scopeRepository.findAll(input.offset, input.limit).fold(
+        // Get total count first (more efficient than loading all scopes)
+        val totalCount = scopeRepository.countAll().fold(
             { return it.left() },
             { it },
         )
 
-        // Get total count - use findAll() and count since there's no count() method
-        val totalCount = allScopes.size
+        // Get scopes with pagination
+        val allScopes = scopeRepository.findAll(input.offset, input.limit).fold(
+            { return it.left() },
+            { it },
+        )
 
         // Apply filter if we have a context view
         val filteredScopes = if (contextView != null) {

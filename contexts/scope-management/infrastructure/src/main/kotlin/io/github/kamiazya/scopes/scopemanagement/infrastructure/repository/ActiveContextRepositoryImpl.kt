@@ -50,7 +50,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
         either {
             try {
                 val result = database.activeContextQueries.getActiveContext().executeAsOneOrNull()
-                result?.let { activeContextToContextView(it) }
+                if (result == null) {
+                    null
+                } else {
+                    activeContextToContextView(result).bind()
+                }
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
@@ -116,31 +120,55 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
         }
     }
 
-    private fun rowToContextView(row: Context_views): ContextView {
-        val id = ContextViewId.create(row.id).fold(
-            ifLeft = { error("Invalid id in database: $it") },
-            ifRight = { it },
-        )
-        val key = ContextViewKey.create(row.key).fold(
-            ifLeft = { error("Invalid key in database: $it") },
-            ifRight = { it },
-        )
-        val name = ContextViewName.create(row.name).fold(
-            ifLeft = { error("Invalid name in database: $it") },
-            ifRight = { it },
-        )
-        val description = row.description?.let { desc ->
-            ContextViewDescription.create(desc).fold(
-                ifLeft = { error("Invalid description in database: $it") },
-                ifRight = { it },
+    private suspend fun rowToContextView(row: Context_views): Either<ScopesError, ContextView> = either {
+        val id = ContextViewId.create(row.id).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid id in database: $error",
             )
-        }
-        val filter = ContextViewFilter.create(row.filter).fold(
-            ifLeft = { error("Invalid filter in database: $it") },
-            ifRight = { it },
-        )
+        }.bind()
 
-        return ContextView(
+        val key = ContextViewKey.create(row.key).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid key in database: $error",
+            )
+        }.bind()
+
+        val name = ContextViewName.create(row.name).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid name in database: $error",
+            )
+        }.bind()
+
+        val description = row.description?.let { desc ->
+            ContextViewDescription.create(desc).mapLeft { error ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "ContextView",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $error",
+                )
+            }.bind()
+        }
+
+        val filter = ContextViewFilter.create(row.filter).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid filter in database: $error",
+            )
+        }.bind()
+
+        ContextView(
             id = id,
             key = key,
             name = name,
@@ -151,7 +179,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
         )
     }
 
-    private fun activeContextToContextView(row: GetActiveContext): ContextView? {
+    private suspend fun activeContextToContextView(row: GetActiveContext): Either<ScopesError, ContextView?> = either {
         // All fields except id can be null due to LEFT JOIN
         if (row.key == null ||
             row.name == null ||
@@ -159,33 +187,57 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             row.created_at == null ||
             row.updated_at == null
         ) {
-            return null
+            return@either null
         }
 
-        val id = ContextViewId.create(row.id).fold(
-            ifLeft = { error("Invalid id in database: $it") },
-            ifRight = { it },
-        )
-        val key = ContextViewKey.create(row.key).fold(
-            ifLeft = { error("Invalid key in database: $it") },
-            ifRight = { it },
-        )
-        val name = ContextViewName.create(row.name).fold(
-            ifLeft = { error("Invalid name in database: $it") },
-            ifRight = { it },
-        )
-        val description = row.description?.let { desc ->
-            ContextViewDescription.create(desc).fold(
-                ifLeft = { error("Invalid description in database: $it") },
-                ifRight = { it },
+        val id = ContextViewId.create(row.id).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid id in database: $error",
             )
-        }
-        val filter = ContextViewFilter.create(row.filter).fold(
-            ifLeft = { error("Invalid filter in database: $it") },
-            ifRight = { it },
-        )
+        }.bind()
 
-        return ContextView(
+        val key = ContextViewKey.create(row.key!!).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid key in database: $error",
+            )
+        }.bind()
+
+        val name = ContextViewName.create(row.name!!).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid name in database: $error",
+            )
+        }.bind()
+
+        val description = row.description?.let { desc ->
+            ContextViewDescription.create(desc).mapLeft { error ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "ContextView",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $error",
+                )
+            }.bind()
+        }
+
+        val filter = ContextViewFilter.create(row.filter!!).mapLeft { error ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "ContextView",
+                entityId = row.id,
+                reason = "Invalid filter in database: $error",
+            )
+        }.bind()
+
+        ContextView(
             id = id,
             key = key,
             name = name,
