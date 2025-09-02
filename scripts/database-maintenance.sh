@@ -32,10 +32,10 @@ optimize_database() {
         return 0
     fi
 
-    # Create backup before optimization
+    # Create backup before optimization using sqlite3 .backup for WAL safety
     local backup_path="${db_path}.backup.$(date '+%Y%m%d-%H%M%S')"
     log "Creating backup: $backup_path"
-    cp "$db_path" "$backup_path"
+    sqlite3 "$db_path" ".backup '$backup_path'"
 
     # Run SQLite optimization commands
     sqlite3 "$db_path" <<EOF 2>&1 | tee -a "$LOG_FILE"

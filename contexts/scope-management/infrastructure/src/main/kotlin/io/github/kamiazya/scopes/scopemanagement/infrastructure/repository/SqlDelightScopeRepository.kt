@@ -23,6 +23,10 @@ import kotlinx.datetime.Instant
  * SQLDelight implementation of ScopeRepository.
  */
 class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) : ScopeRepository {
+    companion object {
+        // SQLite has a default limit of 999 variables in a single query
+        private const val SQLITE_VARIABLE_LIMIT = 999
+    }
 
     override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
         try {
@@ -137,7 +141,13 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 database.scopeQueries.findRootScopesPaged(limit.toLong(), offset.toLong()).executeAsList()
             }
 
-            rows.map { rowToScope(it) }.right()
+            if (rows.isEmpty()) {
+                emptyList<Scope>().right()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectsMap = loadAspectsForScopes(scopeIds)
+                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
@@ -295,8 +305,14 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         try {
             val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
                 .executeAsList()
-                .map { row -> rowToScope(row) }
-            rows.right()
+
+            if (rows.isEmpty()) {
+                emptyList<Scope>().right()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectsMap = loadAspectsForScopes(scopeIds)
+                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
@@ -376,9 +392,17 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
     private fun loadAspectsForScopes(scopeIds: List<String>): Map<String, List<io.github.kamiazya.scopes.scopemanagement.db.FindByScopeIds>> {
         if (scopeIds.isEmpty()) return emptyMap()
 
-        return database.scopeAspectQueries.findByScopeIds(scopeIds)
-            .executeAsList()
-            .groupBy { it.scope_id }
+        // SQLite has a limit on the number of variables in a single query,
+        // so we need to chunk large lists
+        return if (scopeIds.size <= SQLITE_VARIABLE_LIMIT) {
+            database.scopeAspectQueries.findByScopeIds(scopeIds)
+                .executeAsList()
+                .groupBy { it.scope_id }
+        } else {
+            scopeIds.chunked(SQLITE_VARIABLE_LIMIT).flatMap { chunk ->
+                database.scopeAspectQueries.findByScopeIds(chunk).executeAsList()
+            }.groupBy { it.scope_id }
+        }
     }
 
     private fun rowToScopeWithAspects(

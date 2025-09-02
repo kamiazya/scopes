@@ -65,10 +65,11 @@ monitor_queries() {
 
 # Function to check for long-running operations
 check_locks() {
-    if sqlite3 "$DB_PATH" "PRAGMA lock_status;" 2>/dev/null | grep -q "exclusive\|reserved"; then
-        print_color $YELLOW "WARNING: Database has active locks"
-    else
+    # Check if database is locked by trying to begin an immediate transaction
+    if ! sqlite3 "$DB_PATH" "BEGIN IMMEDIATE; ROLLBACK;" 2>&1 | grep -q "locked"; then
         print_color $GREEN "No active locks detected"
+    else
+        print_color $YELLOW "WARNING: Database has active locks"
     fi
 }
 
@@ -76,6 +77,12 @@ check_locks() {
 main() {
     if [[ ! -f "$DB_PATH" ]]; then
         print_color $RED "ERROR: Database $DB_PATH not found"
+        exit 1
+    fi
+
+    # Check if sqlite3 command is available
+    if ! command -v sqlite3 &> /dev/null; then
+        print_color $RED "ERROR: sqlite3 command not found. Please install SQLite3."
         exit 1
     fi
 
