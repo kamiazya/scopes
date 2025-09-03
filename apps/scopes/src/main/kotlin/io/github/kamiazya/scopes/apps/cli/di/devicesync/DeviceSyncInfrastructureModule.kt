@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.apps.cli.di.devicesync
 import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationPort
 import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
 import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSyncPortAdapter
-import io.github.kamiazya.scopes.devicesync.application.handler.SynchronizeDeviceHandler
+import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService

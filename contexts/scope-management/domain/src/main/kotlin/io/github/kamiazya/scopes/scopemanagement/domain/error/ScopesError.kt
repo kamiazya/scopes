@@ -57,4 +57,24 @@ sealed class ScopesError {
      * Error indicating a resource conflict (e.g., resource is in use).
      */
     data class Conflict(val message: String, override val occurredAt: Instant = Clock.System.now()) : ScopesError()
+
+    /**
+     * Error for concurrency conflicts during event sourcing operations.
+     */
+    data class ConcurrencyError(
+        val message: String,
+        val expectedVersion: Int? = null,
+        val actualVersion: Int? = null,
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : ScopesError()
+
+    /**
+     * Error for repository-level operations.
+     */
+    data class RepositoryError(
+        val message: String,
+        val cause: Throwable? = null,
+        val operation: String? = null,
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : ScopesError()
 }

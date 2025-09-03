@@ -9,9 +9,9 @@ import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggrega
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
 import io.github.kamiazya.scopes.contracts.eventstore.results.EventResult
 import io.github.kamiazya.scopes.eventstore.application.command.StoreEvent
-import io.github.kamiazya.scopes.eventstore.application.handler.GetEventsByAggregateHandler
-import io.github.kamiazya.scopes.eventstore.application.handler.GetEventsSinceHandler
-import io.github.kamiazya.scopes.eventstore.application.handler.StoreEventHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.command.StoreEventHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsByAggregateHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsSinceHandler
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.application.query.GetEventsByAggregate
 import io.github.kamiazya.scopes.eventstore.application.query.GetEventsSince

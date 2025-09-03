@@ -1,0 +1,106 @@
+package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
+
+import arrow.core.Either
+import arrow.core.raise.either
+import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.scopemanagement.application.error.EventStoreErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
+import kotlinx.datetime.Instant
+
+/**
+ * Implementation of EventSourcingRepository using the EventStore bounded context.
+ *
+ * This adapter bridges between the scope-management domain's event sourcing needs
+ * and the dedicated event-store infrastructure. It handles:
+ * - Storing domain events with optimistic concurrency control
+ * - Retrieving events for aggregate reconstruction
+ * - Mapping errors between contexts
+ *
+ * Thread-safety: This implementation is thread-safe as it delegates to EventRepository
+ * which handles concurrency at the database level.
+ */
+class EventStoreScopeEventSourcingRepository(private val eventRepository: EventRepository, private val eventStoreErrorMapper: EventStoreErrorMapper) :
+    EventSourcingRepository<DomainEvent> {
+
+    override suspend fun saveEvents(aggregateId: AggregateId, events: List<DomainEvent>, expectedVersion: Int): Either<ScopesError, Unit> = either {
+        // Validate expected version matches current version
+        val currentVersion = getCurrentVersion(aggregateId).bind()
+        if (currentVersion != expectedVersion) {
+            raise(
+                ScopesError.ConcurrencyError(
+                    message = "Version mismatch: expected $expectedVersion but was $currentVersion",
+                ),
+            )
+        }
+
+        // Store events sequentially to maintain order
+        events.forEach { event ->
+            eventRepository.store(event)
+                .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
+                .bind()
+        }
+    }
+
+    override suspend fun getEvents(aggregateId: AggregateId): Either<ScopesError, List<DomainEvent>> = eventRepository.getEventsByAggregate(aggregateId)
+        .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
+        .map { persistedEvents ->
+            persistedEvents.map { it.event }
+        }
+
+    override suspend fun getEventsFromVersion(aggregateId: AggregateId, fromVersion: Int): Either<ScopesError, List<DomainEvent>> =
+        getEvents(aggregateId).map { events ->
+            events.filter { event ->
+                event.aggregateVersion.value >= fromVersion
+            }
+        }
+
+    override suspend fun getEventsBetweenVersions(aggregateId: AggregateId, fromVersion: Int, toVersion: Int): Either<ScopesError, List<DomainEvent>> =
+        getEvents(aggregateId).map { events ->
+            events.filter { event ->
+                event.aggregateVersion.value in fromVersion..toVersion
+            }
+        }
+
+    override suspend fun getCurrentVersion(aggregateId: AggregateId): Either<ScopesError, Int> = getEvents(aggregateId).map { events ->
+        events.maxOfOrNull { it.aggregateVersion.value.toInt() } ?: 0
+    }
+
+    override suspend fun exists(aggregateId: AggregateId): Either<ScopesError, Boolean> = getEvents(aggregateId).map { events ->
+        events.isNotEmpty()
+    }
+
+    override suspend fun getEventsByType(eventType: String, limit: Int, offset: Int): Either<ScopesError, List<DomainEvent>> =
+        // Get all events and filter by type
+        // This is inefficient but EventRepository doesn't support type filtering yet
+        eventRepository.getEventsSince(Instant.DISTANT_PAST, limit = limit + offset)
+            .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
+            .map { persistedEvents ->
+                persistedEvents
+                    .filter { it.event::class.simpleName == eventType || it.event::class.qualifiedName == eventType }
+                    .drop(offset)
+                    .take(limit)
+                    .map { it.event }
+            }
+
+    override suspend fun getEventsByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): Either<ScopesError, List<DomainEvent>> =
+        eventRepository.getEventsSince(from, limit = limit + offset)
+            .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
+            .map { persistedEvents ->
+                persistedEvents
+                    .filter { it.metadata.occurredAt < to }
+                    .drop(offset)
+                    .take(limit)
+                    .map { it.event }
+            }
+
+    override suspend fun saveSnapshot(aggregateId: AggregateId, snapshot: ByteArray, version: Int): Either<ScopesError, Unit> =
+        // Snapshots not yet implemented in EventRepository
+        Either.Right(Unit)
+
+    override suspend fun getLatestSnapshot(aggregateId: AggregateId): Either<ScopesError, Pair<ByteArray, Int>?> =
+        // Snapshots not yet implemented in EventRepository
+        Either.Right(null)
+}

@@ -11,7 +11,7 @@ import io.github.kamiazya.scopes.contracts.devicesync.results.ConflictResult
 import io.github.kamiazya.scopes.contracts.devicesync.results.RegisterDeviceResult
 import io.github.kamiazya.scopes.contracts.devicesync.results.SynchronizationResult
 import io.github.kamiazya.scopes.devicesync.application.command.SynchronizeDevice
-import io.github.kamiazya.scopes.devicesync.application.handler.SynchronizeDeviceHandler
+import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
 import kotlinx.datetime.Clock

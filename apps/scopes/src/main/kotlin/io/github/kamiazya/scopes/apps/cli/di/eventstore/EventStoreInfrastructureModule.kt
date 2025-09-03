@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.apps.cli.di.eventstore
 
 import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
 import io.github.kamiazya.scopes.eventstore.application.adapter.EventStorePortAdapter
-import io.github.kamiazya.scopes.eventstore.application.handler.GetEventsByAggregateHandler
-import io.github.kamiazya.scopes.eventstore.application.handler.GetEventsSinceHandler
-import io.github.kamiazya.scopes.eventstore.application.handler.StoreEventHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.command.StoreEventHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsByAggregateHandler
+import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsSinceHandler
 import io.github.kamiazya.scopes.eventstore.application.port.EventPublisher
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.db.EventStoreDatabase

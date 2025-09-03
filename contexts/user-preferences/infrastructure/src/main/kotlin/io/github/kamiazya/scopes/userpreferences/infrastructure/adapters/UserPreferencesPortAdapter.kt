@@ -7,8 +7,9 @@ import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreference
 import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.userpreferences.application.handler.GetCurrentUserPreferencesHandler
+import io.github.kamiazya.scopes.userpreferences.application.handler.query.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
+import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.ErrorMapper
 
 /**
  * Adapter implementation of UserPreferencesPort.

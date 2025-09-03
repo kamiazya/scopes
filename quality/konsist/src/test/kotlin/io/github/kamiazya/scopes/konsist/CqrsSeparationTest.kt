@@ -43,11 +43,12 @@ class CqrsSeparationTest :
                     .assertTrue { commandHandler ->
                         commandHandler.properties().any { property ->
                             property.type?.name == "TransactionManager"
-                        } || commandHandler.functions().any { function ->
-                            // Check if handler uses transaction manager in method calls
-                            function.text?.contains("transactionManager") == true ||
-                                function.text?.contains("inTransaction") == true
-                        }
+                        } ||
+                            commandHandler.functions().any { function ->
+                                // Check if handler uses transaction manager in method calls
+                                function.text?.contains("transactionManager") == true ||
+                                    function.text?.contains("inTransaction") == true
+                            }
                     }
             }
 
@@ -76,12 +77,13 @@ class CqrsSeparationTest :
                         port.functions().all { function ->
                             val returnType = function.returnType?.name
                             // Commands should return Either<Error, Unit> or Either<Error, SimpleResult>
-                            returnType?.contains("Either") == true && (
-                                returnType.contains("Unit") ||
-                                    returnType.contains("Result") ||
-                                    returnType.contains("CreateScope") ||
-                                    returnType.contains("UpdateScope")
-                                )
+                            returnType?.contains("Either") == true &&
+                                (
+                                    returnType.contains("Unit") ||
+                                        returnType.contains("Result") ||
+                                        returnType.contains("CreateScope") ||
+                                        returnType.contains("UpdateScope")
+                                    )
                         }
                     }
             }
@@ -147,11 +149,12 @@ class CqrsSeparationTest :
                         port.functions().all { function ->
                             val returnType = function.returnType?.name
                             // Queries should return Either<Error, RichResult> or Either<Error, List<Result>>
-                            returnType?.contains("Either") == true && (
-                                returnType.contains("Result") ||
-                                    returnType.contains("List") ||
-                                    returnType.contains("Projection")
-                                )
+                            returnType?.contains("Either") == true &&
+                                (
+                                    returnType.contains("Result") ||
+                                        returnType.contains("List") ||
+                                        returnType.contains("Projection")
+                                    )
                         }
                     }
             }
@@ -236,7 +239,8 @@ class CqrsSeparationTest :
                         // Query handlers should either use caching or be simple enough not to need it
                         queryHandler.properties().any { property ->
                             property.type?.name?.contains("Cache") == true
-                        } || queryHandler.functions().size <= 2 // Simple handlers are okay without cache
+                        } ||
+                            queryHandler.functions().size <= 2 // Simple handlers are okay without cache
                     }
             }
 
@@ -252,7 +256,8 @@ class CqrsSeparationTest :
                             text.contains("JOIN") ||
                                 text.contains("GROUP BY") ||
                                 text.contains("ORDER BY") ||
-                                text.contains("filter") && text.contains("map") ||
+                                text.contains("filter") &&
+                                text.contains("map") ||
                                 text.contains("sortedBy") ||
                                 text.contains("groupBy")
                         }

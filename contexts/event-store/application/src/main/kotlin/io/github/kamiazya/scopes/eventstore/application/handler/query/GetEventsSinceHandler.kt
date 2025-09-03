@@ -10,7 +10,8 @@ import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 /**
  * Handler for retrieving events since a timestamp.
  */
-class GetEventsSinceHandler(private val eventRepository: EventRepository) : QueryHandler<GetEventsSince, EventStoreApplicationError, List<PersistedEventRecordDto>> {
+class GetEventsSinceHandler(private val eventRepository: EventRepository) :
+    QueryHandler<GetEventsSince, EventStoreApplicationError, List<PersistedEventRecordDto>> {
 
     override suspend fun invoke(input: GetEventsSince): Either<EventStoreApplicationError, List<PersistedEventRecordDto>> {
         // Validate input

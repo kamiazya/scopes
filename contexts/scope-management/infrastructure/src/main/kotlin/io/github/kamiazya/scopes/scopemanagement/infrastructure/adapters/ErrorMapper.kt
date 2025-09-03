@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
@@ -20,14 +21,14 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
  * - Hide internal implementation details
  * - Log unmapped errors for visibility and debugging
  */
-class ErrorMapper(private val logger: Logger) {
+class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
     /**
      * Maps a ScopesError to a ScopeContractError.
      *
-     * @param error The domain/application error to map
+     * @param domainError The domain/application error to map
      * @return The corresponding contract error
      */
-    fun mapToContractError(error: ScopesError): ScopeContractError = when (error) {
+    override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedValue,
@@ -238,19 +239,12 @@ class ErrorMapper(private val logger: Logger) {
         )
 
         // Default mapping for any unmapped errors
-        else -> {
-            logger.error(
-                "Unmapped ScopesError encountered, mapping to ServiceUnavailable",
-                mapOf(
-                    "errorClass" to error::class.simpleName.orEmpty(),
-                    "errorMessage" to error.toString(),
-                    "errorType" to error::class.qualifiedName.orEmpty(),
-                ),
-            )
-            ScopeContractError.SystemError.ServiceUnavailable(
+        else -> handleUnmappedError(
+            unmappedError = domainError,
+            fallbackError = ScopeContractError.SystemError.ServiceUnavailable(
                 service = "scope-management",
-            )
-        }
+            ),
+        )
     }
 
     /**

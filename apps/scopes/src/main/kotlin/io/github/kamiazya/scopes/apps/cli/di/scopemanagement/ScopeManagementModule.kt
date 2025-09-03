@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.Upda
 import io.github.kamiazya.scopes.scopemanagement.application.command.context.CreateContextViewUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.command.context.DeleteContextViewUseCase
 import io.github.kamiazya.scopes.scopemanagement.application.command.context.UpdateContextViewUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.error.EventStoreErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
@@ -307,5 +308,10 @@ val scopeManagementModule = module {
             transactionManager = get(),
             activeContextService = get(),
         )
+    }
+
+    // Error Mappers
+    single {
+        EventStoreErrorMapper(logger = get())
     }
 }
