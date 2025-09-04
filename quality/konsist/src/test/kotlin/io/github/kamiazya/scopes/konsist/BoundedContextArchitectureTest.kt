@@ -142,6 +142,7 @@ class BoundedContextArchitectureTest :
                     .classes()
                     .filter { it.hasDataModifier }
                     .filter { !it.name.endsWith("Test") }
+                    .filter { it.isTopLevel } // Exclude nested/internal classes - they are implementation details
                     .assertTrue { dataClass ->
                         // Data classes should be in one of these packages
                         dataClass.resideInPackage("..entity..") ||

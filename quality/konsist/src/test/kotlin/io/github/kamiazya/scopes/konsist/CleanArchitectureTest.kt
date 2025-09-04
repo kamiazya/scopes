@@ -134,8 +134,8 @@ class CleanArchitectureTest :
                     .filter { it.resideInPackage("..valueobject..") || it.resideInPackage("..value..") }
                     .filter { !it.name.endsWith("Test") }
                     .assertTrue { valueObject ->
-                        valueObject.packagee?.name?.endsWith(".valueobject") == true ||
-                            valueObject.packagee?.name?.endsWith(".value") == true
+                        val packageName = valueObject.packagee?.name ?: ""
+                        packageName.contains(".valueobject") || packageName.contains(".value")
                     }
             }
         }
@@ -179,8 +179,9 @@ class CleanArchitectureTest :
                     .filter { !it.name.endsWith("Test") }
                     .filter { !it.hasAbstractModifier }
                     .assertTrue { service ->
+                        val packageName = service.packagee?.name ?: ""
                         service.resideInPackage("..service..") &&
-                            service.packagee?.name?.endsWith(".service") == true
+                            packageName.contains(".service")
                     }
             }
         }

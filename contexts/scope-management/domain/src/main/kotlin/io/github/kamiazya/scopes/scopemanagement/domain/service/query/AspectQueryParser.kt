@@ -3,8 +3,9 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.query
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.model.AspectQueryAST
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.model.ComparisonOperator
+import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.AspectQueryAST
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.ComparisonOperator
 
 /**
  * Parser for aspect query expressions.
@@ -276,19 +277,4 @@ class AspectQueryParser {
             return AspectQueryAST.Comparison(identifier.name, operator.op, value).right()
         }
     }
-}
-
-/**
- * Errors that can occur during query parsing.
- */
-sealed class QueryParseError {
-    object EmptyQuery : QueryParseError()
-    data class UnexpectedCharacter(val char: Char, val position: Int) : QueryParseError()
-    data class UnterminatedString(val position: Int) : QueryParseError()
-    data class UnexpectedToken(val token: Any?, val position: Int) : QueryParseError()
-    data class MissingClosingParen(val position: Int) : QueryParseError()
-    data class ExpectedExpression(val position: Int) : QueryParseError()
-    data class ExpectedIdentifier(val position: Int) : QueryParseError()
-    data class ExpectedOperator(val position: Int) : QueryParseError()
-    data class ExpectedValue(val position: Int) : QueryParseError()
 }

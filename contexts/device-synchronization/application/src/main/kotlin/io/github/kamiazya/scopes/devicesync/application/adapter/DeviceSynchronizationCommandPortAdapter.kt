@@ -15,7 +15,7 @@ import io.github.kamiazya.scopes.devicesync.application.handler.command.Synchron
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
 import kotlinx.datetime.Clock
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictResolutionStrategy as DomainConflictResolutionStrategy
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictResolutionStrategy as DomainConflictResolutionStrategy
 
 /**
  * Adapter that implements the Device Sync contract command port.

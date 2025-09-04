@@ -1,11 +1,11 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.service.query
 
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.model.AspectQueryAST
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.model.ComparisonOperator
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.AspectQueryAST
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.ComparisonOperator
 
 /**
  * Evaluates aspect query AST against a set of aspects.

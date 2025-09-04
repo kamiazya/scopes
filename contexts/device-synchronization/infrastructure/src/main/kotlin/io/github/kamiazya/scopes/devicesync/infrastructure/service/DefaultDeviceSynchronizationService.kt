@@ -6,16 +6,16 @@ import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
 import io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictResolution
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictResolutionStrategy
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictStatus
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictType
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
-import io.github.kamiazya.scopes.devicesync.domain.service.EventConflict
-import io.github.kamiazya.scopes.devicesync.domain.service.ResolutionAction
-import io.github.kamiazya.scopes.devicesync.domain.service.ResolvedConflict
-import io.github.kamiazya.scopes.devicesync.domain.service.SynchronizationResult
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictResolution
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictResolutionStrategy
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictStatus
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.EventConflict
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolvedConflict
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.SynchronizationResult
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -163,7 +163,7 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                     resolved.add(
                         ResolvedConflict(
                             conflict = conflict,
-                            resolution = ResolutionAction.KEPT_REMOTE,
+                            resolution = ResolutionAction.ACCEPTED_REMOTE,
                         ),
                     )
                 }
@@ -177,6 +177,10 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                     )
                 }
                 ConflictResolutionStrategy.MANUAL -> {
+                    unresolved.add(conflict)
+                }
+                ConflictResolutionStrategy.MERGE -> {
+                    // For now, MERGE is not implemented, defer to manual
                     unresolved.add(conflict)
                 }
             }

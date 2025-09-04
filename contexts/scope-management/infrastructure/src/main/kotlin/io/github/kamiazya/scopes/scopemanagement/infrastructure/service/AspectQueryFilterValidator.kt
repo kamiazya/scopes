@@ -2,8 +2,8 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.service
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.FilterExpressionValidator
 
 /**

@@ -27,7 +27,7 @@ interface ScopeProjectionService {
     /**
      * Builds a hierarchical tree structure for navigation
      */
-    suspend fun getScopeTree(rootScopeId: String?, maxDepth: Int = 10): Either<ScopesError, List<ScopeTreeProjection>>
+    suspend fun getScopeTree(rootScopeId: String?, maxDepth: Int = 10, offset: Int = 0, limit: Int = 100): Either<ScopesError, List<ScopeTreeProjection>>
 
     /**
      * Searches scopes with full-text search capabilities
@@ -52,7 +52,7 @@ interface ScopeProjectionService {
     /**
      * Gets recently modified scopes for "recent activity" views
      */
-    suspend fun getRecentlyModifiedScopes(limit: Int = 20): Either<ScopesError, List<ScopeSummaryProjection>>
+    suspend fun getRecentlyModifiedScopes(offset: Int = 0, limit: Int = 20): Either<ScopesError, List<ScopeSummaryProjection>>
 
     /**
      * Refreshes a specific projection from the current domain state

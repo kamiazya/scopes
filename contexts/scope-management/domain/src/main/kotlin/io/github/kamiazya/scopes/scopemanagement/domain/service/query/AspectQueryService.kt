@@ -2,8 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.query
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
-import io.github.kamiazya.scopes.scopemanagement.domain.service.query.model.AspectQueryAST
+import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.AspectQueryAST
 
 /**
  * Domain service for parsing and evaluating aspect queries.

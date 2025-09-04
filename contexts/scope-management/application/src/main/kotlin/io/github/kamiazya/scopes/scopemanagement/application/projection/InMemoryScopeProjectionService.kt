@@ -36,14 +36,17 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
 
     override suspend fun getScopeDetail(scopeId: String): Either<ScopesError, ScopeDetailProjection?> = scopeDetails[scopeId].right()
 
-    override suspend fun getScopeTree(rootScopeId: String?, maxDepth: Int): Either<ScopesError, List<ScopeTreeProjection>> {
+    override suspend fun getScopeTree(rootScopeId: String?, maxDepth: Int, offset: Int, limit: Int): Either<ScopesError, List<ScopeTreeProjection>> {
         val rootScopes = if (rootScopeId != null) {
             scopeDetails[rootScopeId]?.let { listOf(it) } ?: emptyList()
         } else {
             scopeDetails.values.filter { it.parentId == null }
         }
 
-        val treeNodes = rootScopes.map { buildTreeNode(it, 0, maxDepth) }
+        val treeNodes = rootScopes
+            .drop(offset)
+            .take(limit)
+            .map { buildTreeNode(it, 0, maxDepth) }
         return treeNodes.right()
     }
 
@@ -185,9 +188,10 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         return matchingScopes.right()
     }
 
-    override suspend fun getRecentlyModifiedScopes(limit: Int): Either<ScopesError, List<ScopeSummaryProjection>> {
+    override suspend fun getRecentlyModifiedScopes(offset: Int, limit: Int): Either<ScopesError, List<ScopeSummaryProjection>> {
         val recentScopes = scopeSummaries.values
             .sortedByDescending { it.lastModified }
+            .drop(offset)
             .take(limit)
 
         return recentScopes.right()

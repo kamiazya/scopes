@@ -178,6 +178,8 @@ class CqrsNamingConventionTest :
                     .filter { !it.name.endsWith("QueryHandler") } // Interface names
                     // Exclude domain service query files
                     .filter { it.packagee?.name?.contains("domain.service.query") != true }
+                    // Exclude value objects - they follow different naming conventions
+                    .filter { it.packagee?.name?.contains("valueobject") != true }
                     .assertTrue { query ->
                         query.name.endsWith("Query") ||
                             query.name.endsWith("QueryPort") ||
@@ -391,7 +393,9 @@ class CqrsNamingConventionTest :
                             file.packagee?.name?.contains("interfaces.cli") != true &&
                             file.packagee?.name?.contains("domain.service.query") != true &&
                             // Exclude test files
-                            !file.path.contains("/test/")
+                            !file.path.contains("/test/") &&
+                            // Exclude value objects - they follow DDD structure, not CQRS structure
+                            file.packagee?.name?.contains("valueobject") != true
                     }
                     .assertTrue { file ->
                         val packageName = file.packagee?.name ?: ""

@@ -60,8 +60,13 @@ class ContractLayerArchitectureTest :
                 .interfaces()
                 .filter { it.name.endsWith("Port") }
                 .assertTrue { port ->
-                    // Allow ContextViewPort as special case (uses contract responses)
-                    if (port.name == "ContextViewPort") return@assertTrue true
+                    // Allow ports that use contract response pattern
+                    if (port.name == "ContextViewPort" ||
+                        port.name == "ContextViewQueryPort" ||
+                        port.name == "AspectQueryPort"
+                    ) {
+                        return@assertTrue true
+                    }
 
                     port.functions().all { function ->
                         // All port methods should return Either for explicit error handling

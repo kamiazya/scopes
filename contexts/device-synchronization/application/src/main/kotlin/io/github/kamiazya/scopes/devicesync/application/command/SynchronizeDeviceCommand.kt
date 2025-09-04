@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.devicesync.application.command
 
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictResolutionStrategy
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictResolutionStrategy
 import kotlinx.datetime.Instant
 
 /**

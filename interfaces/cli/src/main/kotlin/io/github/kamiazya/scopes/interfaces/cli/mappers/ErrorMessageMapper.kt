@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextManagementE
 import io.github.kamiazya.scopes.scopemanagement.domain.error.EventIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyPolicyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
@@ -204,6 +205,17 @@ object ErrorMessageMapper {
             is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
             is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"
             is UserPreferencesIntegrationError.PreferencesRequestTimeout -> "Preferences request timed out after ${error.timeout}"
+        }
+        is QueryParseError -> when (error) {
+            is QueryParseError.EmptyQuery -> "Empty query"
+            is QueryParseError.UnexpectedCharacter -> "Unexpected character '${error.char}' at position ${error.position}"
+            is QueryParseError.UnterminatedString -> "Unterminated string at position ${error.position}"
+            is QueryParseError.UnexpectedToken -> "Unexpected token at position ${error.position}"
+            is QueryParseError.MissingClosingParen -> "Missing closing parenthesis at position ${error.position}"
+            is QueryParseError.ExpectedExpression -> "Expected expression at position ${error.position}"
+            is QueryParseError.ExpectedIdentifier -> "Expected identifier at position ${error.position}"
+            is QueryParseError.ExpectedOperator -> "Expected operator at position ${error.position}"
+            is QueryParseError.ExpectedValue -> "Expected value at position ${error.position}"
         }
         is ContextManagementError -> "Context management error"
         is ScopesError.InvalidOperation -> "Invalid operation: ${error.message}"

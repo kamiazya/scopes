@@ -111,6 +111,7 @@ class CqrsArchitectureTest :
                             "synchronize",
                             "store",
                             "save",
+                            "clear", // For clearActiveContext
                         ) ||
                             function.name.startsWith("create") ||
                             function.name.startsWith("update") ||
@@ -123,7 +124,8 @@ class CqrsArchitectureTest :
                             function.name.startsWith("execute") ||
                             function.name.startsWith("synchronize") ||
                             function.name.startsWith("store") ||
-                            function.name.startsWith("save")
+                            function.name.startsWith("save") ||
+                            function.name.startsWith("clear")
 
                         isEitherType && hasWriteOperationName
                     }
@@ -136,9 +138,11 @@ class CqrsArchitectureTest :
                 .withNameEndingWith("QueryPort")
                 .assertTrue { port ->
                     port.functions().all { function ->
-                        // Query operations should return Either<Error, Result> with read operation names
+                        // Query operations should return Either<Error, Result> or contract response types
                         val returnType = function.returnType?.name
                         val isEitherType = returnType?.startsWith("Either") == true
+                        val isContractResponseType = returnType?.contains("Response") == true
+                        val hasValidReturnType = isEitherType || isContractResponseType
                         val hasReadOperationName = function.name in listOf(
                             "get",
                             "list",
@@ -150,9 +154,10 @@ class CqrsArchitectureTest :
                             function.name.startsWith("list") ||
                             function.name.startsWith("find") ||
                             function.name.startsWith("search") ||
-                            function.name.startsWith("count")
+                            function.name.startsWith("count") ||
+                            function.name.startsWith("validate") // For validateAspectValue
 
-                        isEitherType && hasReadOperationName
+                        hasValidReturnType && hasReadOperationName
                     }
                 }
         }

@@ -1,7 +1,6 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service
+package io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy
 
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
-import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight

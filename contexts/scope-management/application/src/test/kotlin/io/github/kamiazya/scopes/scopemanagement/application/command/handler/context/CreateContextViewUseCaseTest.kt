@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.command.context
+package io.github.kamiazya.scopes.scopemanagement.application.command.handler.context
 
 import arrow.core.Either
 import arrow.core.left
@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription

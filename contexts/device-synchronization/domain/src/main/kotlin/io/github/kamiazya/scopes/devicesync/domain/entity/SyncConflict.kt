@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.devicesync.domain.entity
 
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictType
-import io.github.kamiazya.scopes.devicesync.domain.service.ResolutionAction
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -67,6 +67,14 @@ data class SyncConflict(
             // Missing dependencies are always conflicts
             true
         }
+        ConflictType.DELETED_MODIFIED -> {
+            // Deleted/modified conflicts are always true conflicts
+            true
+        }
+        ConflictType.SCHEMA_MISMATCH -> {
+            // Schema mismatches are always conflicts
+            true
+        }
     }
 
     /**
@@ -84,7 +92,7 @@ data class SyncConflict(
      */
     fun suggestResolution(): ResolutionAction = when {
         // If local happened before remote, keep remote
-        localVectorClock.happenedBefore(remoteVectorClock) -> ResolutionAction.KEPT_REMOTE
+        localVectorClock.happenedBefore(remoteVectorClock) -> ResolutionAction.ACCEPTED_REMOTE
 
         // If remote happened before local, keep local
         remoteVectorClock.happenedBefore(localVectorClock) -> ResolutionAction.KEPT_LOCAL

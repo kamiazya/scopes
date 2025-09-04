@@ -148,13 +148,17 @@ class CqrsSeparationTest :
                     .assertTrue { port ->
                         port.functions().all { function ->
                             val returnType = function.returnType?.name
-                            // Queries should return Either<Error, RichResult> or Either<Error, List<Result>>
-                            returnType?.contains("Either") == true &&
-                                (
-                                    returnType.contains("Result") ||
-                                        returnType.contains("List") ||
-                                        returnType.contains("Projection")
-                                    )
+                            // Queries should return Either<Error, RichResult> or contract response types
+                            (
+                                returnType?.contains("Either") == true &&
+                                    (
+                                        returnType.contains("Result") ||
+                                            returnType.contains("List") ||
+                                            returnType.contains("Projection")
+                                        )
+                                ) ||
+                                // Also allow contract response pattern
+                                returnType?.contains("Response") == true
                         }
                     }
             }

@@ -100,6 +100,7 @@ class CqrsBasicTest :
             scope
                 .classes()
                 .filter { it.packagee?.name?.contains("handler.query") == true }
+                .filter { !it.name.endsWith("Test") } // Exclude test classes
                 .assertTrue { handler ->
                     handler.name.endsWith("Handler") ||
                         handler.name == "QueryHandler" // Interface

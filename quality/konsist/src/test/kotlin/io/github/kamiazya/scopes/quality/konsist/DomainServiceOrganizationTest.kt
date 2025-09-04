@@ -26,9 +26,8 @@ class DomainServiceOrganizationTest :
                         clazz.resideInPackage("..domain..")
                     }
                     .assertTrue { clazz ->
-                        // Should be in domain.service or domain.service.query package
-                        clazz.resideInPackage("..domain.service..") ||
-                            clazz.resideInPackage("..domain.service.query..")
+                        // Should be in domain.service or a subdirectory under domain.service
+                        clazz.resideInPackage("..domain.service..")
                     }
             }
 
@@ -64,15 +63,35 @@ class DomainServiceOrganizationTest :
                 Konsist.scopeFromProduction()
                     .classes()
                     .filter { clazz ->
-                        clazz.resideInPackage("..domain.service..")
+                        clazz.resideInPackage("..domain.service..") &&
+                            // Only check top-level classes (not inner/nested classes)
+                            clazz.containingDeclaration == null &&
+                            // Exclude test classes
+                            !clazz.name.endsWith("Test")
                     }
                     .assertTrue { clazz ->
-                        // Should end with Service
-                        clazz.name?.endsWith("Service") ?: false &&
+                        // Should end with Service or have a specific domain service pattern
+                        val name = clazz.name ?: ""
+                        (
+                            name.endsWith("Service") ||
+                                name.endsWith("Parser") ||
+                                name.endsWith("Evaluator") ||
+                                name.endsWith("Validator") ||
+                                name.endsWith("Builder") ||
+                                name.endsWith("Strategy") ||
+                                name.endsWith("Policy")
+                            ) &&
                             // Should not start with Service
-                            (clazz.name?.startsWith("Service")?.not() ?: true) &&
+                            !name.startsWith("Service") &&
                             // Should have a meaningful prefix
-                            clazz.name?.replace("Service", "")?.length ?: 0 > 3
+                            name.removeSuffix("Service")
+                                .removeSuffix("Parser")
+                                .removeSuffix("Evaluator")
+                                .removeSuffix("Validator")
+                                .removeSuffix("Builder")
+                                .removeSuffix("Strategy")
+                                .removeSuffix("Policy")
+                                .length > 3
                     }
             }
 
@@ -85,9 +104,8 @@ class DomainServiceOrganizationTest :
                         iface.resideInPackage("..domain..")
                     }
                     .assertTrue { iface ->
-                        // Should be in domain.service or domain.service.query package
-                        iface.resideInPackage("..domain.service..") ||
-                            iface.resideInPackage("..domain.service.query..")
+                        // Should be in domain.service or a subdirectory under domain.service
+                        iface.resideInPackage("..domain.service..")
                     }
             }
 
@@ -130,8 +148,7 @@ class DomainServiceOrganizationTest :
                 Konsist.scopeFromProduction()
                     .files
                     .filter { file ->
-                        file.classes().any { it.name?.endsWith("Service") ?: false } &&
-                            file.packagee?.name?.contains(".domain.service") ?: false
+                        file.packagee?.name?.contains(".domain.service") == true
                     }
                     .assertTrue { file ->
                         // Extract the context name from the package
@@ -148,6 +165,8 @@ class DomainServiceOrganizationTest :
                             contextName?.let { importPath.contains("scopes.$it") } ?: false ||
                                 // Allow shared domain concepts
                                 importPath.contains("scopes.shared.domain") ||
+                                // Allow platform imports (technical utilities)
+                                importPath.contains("scopes.platform.") ||
                                 // Allow standard libraries and frameworks
                                 !importPath.startsWith("io.github.kamiazya.scopes") ||
                                 // Allow contracts

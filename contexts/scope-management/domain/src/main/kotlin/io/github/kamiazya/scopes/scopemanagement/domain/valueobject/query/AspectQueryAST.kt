@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.service.query.model
+package io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query
 
 /**
  * Abstract Syntax Tree for aspect queries.

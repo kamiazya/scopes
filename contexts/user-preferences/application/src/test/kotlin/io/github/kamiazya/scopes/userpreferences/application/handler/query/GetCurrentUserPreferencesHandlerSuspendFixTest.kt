@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.userpreferences.application.handler
+package io.github.kamiazya.scopes.userpreferences.application.handler.query
 
 import arrow.core.left
 import arrow.core.right

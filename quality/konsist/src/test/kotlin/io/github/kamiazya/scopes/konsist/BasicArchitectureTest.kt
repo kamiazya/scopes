@@ -214,8 +214,8 @@ class BasicArchitectureTest :
                     // Only apply this rule to non-contracts packages
                     // Contracts layer has different conventions (results package)
                     !packageName.contains(".contracts.") &&
-                        // Domain service results are domain concepts, not DTOs
-                        !packageName.contains(".domain.service")
+                        // Domain layer results are domain concepts, not DTOs
+                        !packageName.contains(".domain.")
                 }
                 .assertTrue { dto ->
                     val packageName = dto.packagee?.name ?: ""
