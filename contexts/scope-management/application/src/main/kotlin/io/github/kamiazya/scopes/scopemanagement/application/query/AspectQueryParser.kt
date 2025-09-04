@@ -141,12 +141,29 @@ class AspectQueryParser {
                     i++
                 }
                 query[i].isLetter() -> {
-                    // Parse identifier
-                    val start = i
-                    while (i < query.length && (query[i].isLetterOrDigit() || query[i] == '_')) {
-                        i++
+                    // Check if the previous token was an IN operator
+                    val lastToken = tokens.lastOrNull()
+                    val isAfterInOperator = lastToken is Token.Operator && lastToken.op == ComparisonOperator.IN
+                    
+                    if (isAfterInOperator) {
+                        // After IN operator, parse value including commas
+                        val start = i
+                        while (i < query.length && 
+                            !query[i].isWhitespace() && 
+                            query[i] != ')' && 
+                            query[i] != '(' &&
+                            !isLogicalOperatorStart(query, i)) {
+                            i++
+                        }
+                        tokens.add(Token.Value(query.substring(start, i)))
+                    } else {
+                        // Parse identifier
+                        val start = i
+                        while (i < query.length && (query[i].isLetterOrDigit() || query[i] == '_')) {
+                            i++
+                        }
+                        tokens.add(Token.Identifier(query.substring(start, i)))
                     }
-                    tokens.add(Token.Identifier(query.substring(start, i)))
                 }
                 else -> {
                     // Parse unquoted value until whitespace or special character
@@ -184,6 +201,16 @@ class AspectQueryParser {
             query[index] == '>' -> true
             query[index] == '<' -> true
             query[index] == '=' -> true
+            else -> false
+        }
+    }
+    
+    private fun isLogicalOperatorStart(query: String, index: Int): Boolean {
+        if (index >= query.length) return false
+        return when {
+            query.startsWith("AND", index) && (index + 3 >= query.length || !query[index + 3].isLetterOrDigit()) -> true
+            query.startsWith("OR", index) && (index + 2 >= query.length || !query[index + 2].isLetterOrDigit()) -> true
+            query.startsWith("NOT", index) && (index + 3 >= query.length || !query[index + 3].isLetterOrDigit()) -> true
             else -> false
         }
     }
