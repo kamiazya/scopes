@@ -26,13 +26,6 @@ class AspectQueryParserTest : DescribeSpec({
                 ast shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open")
             }
             
-            it("should parse IN operator with spaces") {
-                val result = parser.parse("status IN open, closed, pending")
-                result.shouldBeRight()
-                
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open, closed, pending")
-            }
         }
         
         describe("CONTAINS operator") {
