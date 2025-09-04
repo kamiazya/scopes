@@ -129,7 +129,7 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.KeyInvalidFormat) shouldBe true
+                    (error is ContextError.InvalidKeyFormat) shouldBe true
                 }
 
                 it("should return validation error for invalid filter syntax") {
