@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.query
 
-import io.kotest.assertions.arrow.core.shouldBeLeft
+import arrow.core.getOrElse
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -14,18 +14,19 @@ class AspectQueryParserTest : DescribeSpec({
                 val result = parser.parse("status IN open,closed")
                 result.shouldBeRight()
                 
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open,closed")
+                result.getOrElse { 
+                    throw AssertionError("Expected Right but got Left: $it") 
+                } shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open,closed")
             }
             
             it("should parse IN operator with single value") {
                 val result = parser.parse("status IN open")
                 result.shouldBeRight()
                 
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open")
+                result.getOrElse { 
+                    throw AssertionError("Expected Right but got Left: $it") 
+                } shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.IN, "open")
             }
-            
         }
         
         describe("CONTAINS operator") {
@@ -33,8 +34,9 @@ class AspectQueryParserTest : DescribeSpec({
                 val result = parser.parse("status CONTAINS pen")
                 result.shouldBeRight()
                 
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.CONTAINS, "pen")
+                result.getOrElse { 
+                    throw AssertionError("Expected Right but got Left: $it") 
+                } shouldBe AspectQueryAST.Comparison("status", ComparisonOperator.CONTAINS, "pen")
             }
         }
         
@@ -43,8 +45,9 @@ class AspectQueryParserTest : DescribeSpec({
                 val result = parser.parse("priority EXISTS")
                 result.shouldBeRight()
                 
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("priority", ComparisonOperator.EXISTS, "")
+                result.getOrElse { 
+                    throw AssertionError("Expected Right but got Left: $it") 
+                } shouldBe AspectQueryAST.Comparison("priority", ComparisonOperator.EXISTS, "")
             }
         }
         
@@ -53,8 +56,9 @@ class AspectQueryParserTest : DescribeSpec({
                 val result = parser.parse("assignee IS_NULL")
                 result.shouldBeRight()
                 
-                val ast = result.getOrNull()!!
-                ast shouldBe AspectQueryAST.Comparison("assignee", ComparisonOperator.IS_NULL, "")
+                result.getOrElse { 
+                    throw AssertionError("Expected Right but got Left: $it") 
+                } shouldBe AspectQueryAST.Comparison("assignee", ComparisonOperator.IS_NULL, "")
             }
         }
     }
