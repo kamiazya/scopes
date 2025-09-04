@@ -1,15 +1,15 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.UpdateScope
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -29,26 +29,26 @@ class UpdateScopeHandler(
     private val transactionManager: TransactionManager,
     private val logger: Logger,
     private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
-) : UseCase<UpdateScope, ScopesError, ScopeDto> {
+) : CommandHandler<UpdateScopeCommand, ScopesError, ScopeDto> {
 
-    override suspend operator fun invoke(input: UpdateScope): Either<ScopesError, ScopeDto> = either {
+    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopesError, ScopeDto> = either {
         logger.info(
             "Updating scope",
             mapOf(
-                "scopeId" to input.id,
-                "hasTitle" to (input.title != null).toString(),
-                "hasDescription" to (input.description != null).toString(),
+                "scopeId" to command.id,
+                "hasTitle" to (command.title != null).toString(),
+                "hasDescription" to (command.description != null).toString(),
             ),
         )
 
         transactionManager.inTransaction {
             either {
                 // Parse scope ID
-                val scopeId = ScopeId.create(input.id).bind()
+                val scopeId = ScopeId.create(command.id).bind()
 
                 // Find existing scope
                 val existingScope = ensureNotNull(scopeRepository.findById(scopeId).bind()) {
-                    logger.warn("Scope not found for update", mapOf("scopeId" to input.id))
+                    logger.warn("Scope not found for update", mapOf("scopeId" to command.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
                         occurredAt = Clock.System.now(),
@@ -58,8 +58,8 @@ class UpdateScopeHandler(
                 var updatedScope = existingScope
 
                 // Update title if provided
-                if (input.title != null) {
-                    val newTitle = ScopeTitle.create(input.title).bind()
+                if (command.title != null) {
+                    val newTitle = ScopeTitle.create(command.title).bind()
 
                     // Use specification to validate title uniqueness
                     titleUniquenessSpec.isSatisfiedByForUpdate(
@@ -72,31 +72,31 @@ class UpdateScopeHandler(
                         },
                     ).bind()
 
-                    updatedScope = updatedScope.updateTitle(input.title).bind()
+                    updatedScope = updatedScope.updateTitle(command.title).bind()
                     logger.debug(
                         "Title updated",
                         mapOf(
                             "scopeId" to scopeId.value,
-                            "newTitle" to input.title,
+                            "newTitle" to command.title,
                         ),
                     )
                 }
 
                 // Update description if provided
-                if (input.description != null) {
-                    updatedScope = updatedScope.updateDescription(input.description).bind()
+                if (command.description != null) {
+                    updatedScope = updatedScope.updateDescription(command.description).bind()
                     logger.debug(
                         "Description updated",
                         mapOf(
                             "scopeId" to scopeId.value,
-                            "hasDescription" to input.description.isNotEmpty().toString(),
+                            "hasDescription" to command.description.isNotEmpty().toString(),
                         ),
                     )
                 }
 
                 // Update metadata/aspects if provided
-                if (input.metadata.isNotEmpty()) {
-                    val aspects = input.metadata.mapNotNull { (key, value) ->
+                if (command.metadata.isNotEmpty()) {
+                    val aspects = command.metadata.mapNotNull { (key, value) ->
                         val aspectKey = AspectKey.create(key).getOrNull()
                         val aspectValue = AspectValue.create(value).getOrNull()
                         if (aspectKey != null && aspectValue != null) {

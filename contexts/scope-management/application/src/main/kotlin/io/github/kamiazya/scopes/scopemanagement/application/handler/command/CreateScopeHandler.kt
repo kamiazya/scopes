@@ -2,21 +2,22 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.CreateScope
-import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
@@ -38,9 +39,9 @@ class CreateScopeHandler(
     private val transactionManager: TransactionManager,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val logger: Logger,
-) : CommandHandler<CreateScope, CreateScopeResult> {
+) : CommandHandler<CreateScopeCommand, ScopesError, CreateScopeResult> {
 
-    override suspend operator fun invoke(command: CreateScope): Either<ScopesError, CreateScopeResult> = either {
+    override suspend operator fun invoke(command: CreateScopeCommand): Either<ScopesError, CreateScopeResult> = either {
         logger.info(
             "Creating new scope",
             mapOf(
@@ -119,11 +120,11 @@ class CreateScopeHandler(
                     // Check if alias already exists
                     // Check if alias already exists and get the existing scope ID if it does
                     val existingAlias = scopeAliasRepository.findByAliasName(aliasName).bind()
-                    if (existingAlias != null) {
+                    ensure(existingAlias == null) {
                         val duplicateError = ScopeAliasError.DuplicateAlias(
                             occurredAt = Clock.System.now(),
                             aliasName = aliasName.value,
-                            existingScopeId = existingAlias.scopeId, // The actual scope that owns this alias
+                            existingScopeId = existingAlias!!.scopeId, // The actual scope that owns this alias
                             attemptedScopeId = savedScope.id, // The new scope that tried to use it
                         )
                         logger.warn(
@@ -134,7 +135,7 @@ class CreateScopeHandler(
                                 "attemptedScopeId" to savedScope.id.value,
                             ),
                         )
-                        raise(duplicateError)
+                        duplicateError
                     }
 
                     // Create and save the canonical alias

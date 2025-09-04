@@ -31,18 +31,29 @@ class EditCommand :
                 return@runBlocking
             }
 
-            aspectCommandAdapter.updateAspectDefinition(
+            val result = aspectCommandAdapter.updateAspectDefinition(
                 key = key,
                 description = description,
-            ).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+            )
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to update aspect '$key': ${formatError(error)}", err = true)
                 },
-                { definition ->
-                    echo("Aspect '${definition.key.value}' updated successfully")
-                    echo("Description: ${definition.description}")
+                ifRight = {
+                    echo("Aspect '$key' updated successfully")
+                    description?.let { echo("Description: $it") }
                 },
             )
         }
+    }
+
+    private fun formatError(error: io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError): String = when (error) {
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.SystemError.ServiceUnavailable ->
+            "Service unavailable: ${error.service}"
+        else -> error.toString()
     }
 }

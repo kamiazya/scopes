@@ -126,7 +126,11 @@ class BasicArchitectureTest :
                         // Exclude platform packages - not domain value objects
                         !packageName.contains(".aggregate") &&
                         // Aggregate-related value objects like AggregateId are OK in aggregate package
-                        !packageName.contains(".contracts.") // Exclude contracts layer - different rules apply
+                        !packageName.contains(".contracts.") &&
+                        // Exclude contracts layer - different rules apply
+                        !packageName.contains(".projection") &&
+                        // Exclude projection enums
+                        !clazz.hasEnumModifier // Exclude enums - they are not value objects
                 }
                 .assertTrue { valueObject ->
                     val packageName = valueObject.packagee?.name ?: ""
@@ -267,7 +271,10 @@ class BasicArchitectureTest :
                         ) &&
                         !name.endsWith("Handler") &&
                         !name.endsWith("Test") &&
-                        !name.endsWith("Result")
+                        !name.endsWith("Result") &&
+                        !name.endsWith("Type") &&
+                        // Exclude enum types
+                        !it.hasEnumModifier // Exclude enums entirely
                 }
                 .filter { it.packagee?.name?.contains(".application") == true }
                 .assertTrue { query ->

@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.devicesync.infrastructure.service
 
 import arrow.core.Either
 import arrow.core.flatMap
-import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
 import io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
@@ -23,7 +23,7 @@ import kotlinx.datetime.Instant
 /**
  * Default implementation of DeviceSynchronizationService.
  */
-class DefaultDeviceSynchronizationService(private val syncRepository: SynchronizationRepository, private val eventStore: EventStorePort) :
+class DefaultDeviceSynchronizationService(private val syncRepository: SynchronizationRepository, private val eventStore: EventStoreQueryPort) :
     DeviceSynchronizationService {
 
     override suspend fun synchronize(remoteDeviceId: DeviceId, since: Instant?): Either<SynchronizationError, SynchronizationResult> =

@@ -1,14 +1,14 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.RenameAlias
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RenameAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
@@ -22,33 +22,33 @@ class RenameAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : UseCase<RenameAlias, ScopesError, Unit> {
+) : CommandHandler<RenameAliasCommand, ScopesError, Unit> {
 
-    override suspend operator fun invoke(input: RenameAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: RenameAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Renaming alias",
                 mapOf(
-                    "currentAlias" to input.currentAlias,
-                    "newAliasName" to input.newAliasName,
+                    "currentAlias" to command.currentAlias,
+                    "newAliasName" to command.newAliasName,
                 ),
             )
 
             // Validate input parameters
-            val currentAliasName = validateAliasName(input.currentAlias, "currentAlias").bind()
-            val newAliasName = validateAliasName(input.newAliasName, "newAliasName").bind()
+            val currentAliasName = validateAliasName(command.currentAlias, "currentAlias").bind()
+            val newAliasName = validateAliasName(command.newAliasName, "newAliasName").bind()
 
             // Find the current alias
-            val currentAlias = findCurrentAlias(currentAliasName, input.currentAlias).bind()
+            val currentAlias = findCurrentAlias(currentAliasName, command.currentAlias).bind()
 
             // Perform the atomic rename operation
-            performAtomicRename(currentAlias, newAliasName, input).bind()
+            performAtomicRename(currentAlias, newAliasName, command).bind()
 
             logger.info(
                 "Successfully renamed alias",
                 mapOf(
-                    "currentAlias" to input.currentAlias,
-                    "newAliasName" to input.newAliasName,
+                    "currentAlias" to command.currentAlias,
+                    "newAliasName" to command.newAliasName,
                     "scopeId" to currentAlias.scopeId.value,
                 ),
             )
@@ -101,82 +101,83 @@ class RenameAliasHandler(
         currentAlias
     }
 
-    private suspend fun performAtomicRename(currentAlias: ScopeAlias, newAliasName: AliasName, input: RenameAlias): Either<ScopesError, Unit> = either {
-        // Check if new alias name is already taken
-        val existingNewAlias = scopeAliasService.findAliasByName(newAliasName)
-            .mapLeft { error ->
-                logger.error(
-                    "Failed to check new alias availability",
-                    mapOf(
-                        "newAlias" to input.newAliasName,
-                        "error" to error.toString(),
-                    ),
-                )
-                error.toGenericApplicationError()
-            }
-            .bind()
-
-        if (existingNewAlias != null) {
-            logger.error(
-                "New alias already exists",
-                mapOf(
-                    "newAlias" to input.newAliasName,
-                    "existingScopeId" to existingNewAlias.scopeId.value,
-                    "attemptedScopeId" to currentAlias.scopeId.value,
-                ),
-            )
-            raise(
-                io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError.AliasDuplicate(
-                    aliasName = input.newAliasName,
-                    existingScopeId = existingNewAlias.scopeId.value,
-                    attemptedScopeId = currentAlias.scopeId.value,
-                ),
-            )
-        }
-
-        // Delete the old alias and create new one with same type
-        scopeAliasService.deleteAlias(currentAlias.id)
-            .mapLeft { error ->
-                logger.error(
-                    "Failed to delete old alias",
-                    mapOf(
-                        "currentAlias" to input.currentAlias,
-                        "error" to error.toString(),
-                    ),
-                )
-                error.toGenericApplicationError()
-            }
-            .bind()
-
-        // Create new alias preserving the type
-        if (currentAlias.isCanonical()) {
-            scopeAliasService.assignCanonicalAlias(currentAlias.scopeId, newAliasName)
+    private suspend fun performAtomicRename(currentAlias: ScopeAlias, newAliasName: AliasName, command: RenameAliasCommand): Either<ScopesError, Unit> =
+        either {
+            // Check if new alias name is already taken
+            val existingNewAlias = scopeAliasService.findAliasByName(newAliasName)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to create new canonical alias",
+                        "Failed to check new alias availability",
                         mapOf(
-                            "newAlias" to input.newAliasName,
-                            "scopeId" to currentAlias.scopeId.value,
+                            "newAlias" to command.newAliasName,
                             "error" to error.toString(),
                         ),
                     )
                     error.toGenericApplicationError()
                 }
                 .bind()
-        } else {
-            scopeAliasService.createCustomAlias(currentAlias.scopeId, newAliasName)
+
+            if (existingNewAlias != null) {
+                logger.error(
+                    "New alias already exists",
+                    mapOf(
+                        "newAlias" to command.newAliasName,
+                        "existingScopeId" to existingNewAlias.scopeId.value,
+                        "attemptedScopeId" to currentAlias.scopeId.value,
+                    ),
+                )
+                raise(
+                    io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError.AliasDuplicate(
+                        aliasName = command.newAliasName,
+                        existingScopeId = existingNewAlias.scopeId.value,
+                        attemptedScopeId = currentAlias.scopeId.value,
+                    ),
+                )
+            }
+
+            // Delete the old alias and create new one with same type
+            scopeAliasService.deleteAlias(currentAlias.id)
                 .mapLeft { error ->
                     logger.error(
-                        "Failed to create new custom alias",
+                        "Failed to delete old alias",
                         mapOf(
-                            "newAlias" to input.newAliasName,
-                            "scopeId" to currentAlias.scopeId.value,
+                            "currentAlias" to command.currentAlias,
                             "error" to error.toString(),
                         ),
                     )
                     error.toGenericApplicationError()
                 }
                 .bind()
+
+            // Create new alias preserving the type
+            if (currentAlias.isCanonical()) {
+                scopeAliasService.assignCanonicalAlias(currentAlias.scopeId, newAliasName)
+                    .mapLeft { error ->
+                        logger.error(
+                            "Failed to create new canonical alias",
+                            mapOf(
+                                "newAlias" to command.newAliasName,
+                                "scopeId" to currentAlias.scopeId.value,
+                                "error" to error.toString(),
+                            ),
+                        )
+                        error.toGenericApplicationError()
+                    }
+                    .bind()
+            } else {
+                scopeAliasService.createCustomAlias(currentAlias.scopeId, newAliasName)
+                    .mapLeft { error ->
+                        logger.error(
+                            "Failed to create new custom alias",
+                            mapOf(
+                                "newAlias" to command.newAliasName,
+                                "scopeId" to currentAlias.scopeId.value,
+                                "error" to error.toString(),
+                            ),
+                        )
+                        error.toGenericApplicationError()
+                    }
+                    .bind()
+            }
         }
-    }
 }

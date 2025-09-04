@@ -1,14 +1,14 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.RemoveAlias
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
@@ -20,34 +20,34 @@ class RemoveAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : UseCase<RemoveAlias, ScopesError, Unit> {
+) : CommandHandler<RemoveAliasCommand, ScopesError, Unit> {
 
-    override suspend operator fun invoke(input: RemoveAlias): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Removing alias",
-                mapOf("aliasName" to input.aliasName),
+                mapOf("aliasName" to command.aliasName),
             )
 
             // Validate aliasName
-            val aliasName = AliasName.create(input.aliasName)
+            val aliasName = AliasName.create(command.aliasName)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid alias name",
                         mapOf(
-                            "aliasName" to input.aliasName,
+                            "aliasName" to command.aliasName,
                             "error" to error.toString(),
                         ),
                     )
                     when (error) {
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
-                            ScopeInputError.AliasEmpty(input.aliasName)
+                            ScopeInputError.AliasEmpty(command.aliasName)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(input.aliasName, error.minimumLength)
+                            ScopeInputError.AliasTooShort(command.aliasName, error.minimumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(input.aliasName, error.maximumLength)
+                            ScopeInputError.AliasTooLong(command.aliasName, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(input.aliasName, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(command.aliasName, error.expectedPattern)
                     }
                 }
                 .bind()
@@ -58,7 +58,7 @@ class RemoveAliasHandler(
                     logger.error(
                         "Failed to find alias",
                         mapOf(
-                            "aliasName" to input.aliasName,
+                            "aliasName" to command.aliasName,
                             "error" to error.toString(),
                         ),
                     )
@@ -69,9 +69,9 @@ class RemoveAliasHandler(
             if (alias == null) {
                 logger.error(
                     "Alias not found",
-                    mapOf("aliasName" to input.aliasName),
+                    mapOf("aliasName" to command.aliasName),
                 )
-                raise(ScopeInputError.AliasNotFound(input.aliasName))
+                raise(ScopeInputError.AliasNotFound(command.aliasName))
             }
 
             // Remove alias through application service
@@ -80,7 +80,7 @@ class RemoveAliasHandler(
                     logger.error(
                         "Failed to remove alias",
                         mapOf(
-                            "aliasName" to input.aliasName,
+                            "aliasName" to command.aliasName,
                             "error" to error.toString(),
                         ),
                     )
@@ -90,7 +90,7 @@ class RemoveAliasHandler(
 
             logger.info(
                 "Successfully removed alias",
-                mapOf("aliasName" to input.aliasName),
+                mapOf("aliasName" to command.aliasName),
             )
         }
     }

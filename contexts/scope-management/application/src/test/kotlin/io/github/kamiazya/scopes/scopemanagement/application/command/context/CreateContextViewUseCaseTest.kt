@@ -3,12 +3,13 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.context
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.scopemanagement.application.command.CreateContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ContextViewDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
@@ -23,22 +24,21 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.datetime.Clock
-import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError as AppContextError
 
 class CreateContextViewUseCaseTest :
     DescribeSpec({
-        describe("CreateContextViewUseCase") {
+        describe("CreateContextViewHandler") {
             val contextViewRepository = mockk<ContextViewRepository>()
             val transactionManager = mockk<TransactionManager>()
-            val useCase = CreateContextViewUseCase(contextViewRepository, transactionManager)
+            val handler = CreateContextViewHandler(contextViewRepository, transactionManager)
 
             beforeEach {
                 // Clear all mocks before each test
                 io.mockk.clearAllMocks()
 
                 // Setup transaction manager to execute the block directly
-                coEvery { transactionManager.inTransaction<ApplicationError, ContextViewDto>(any()) } coAnswers {
-                    val block = arg<suspend () -> Either<ApplicationError, ContextViewDto>>(0)
+                coEvery { transactionManager.inTransaction<ScopesError, ContextViewDto>(any()) } coAnswers {
+                    val block = arg<suspend () -> Either<ScopesError, ContextViewDto>>(0)
                     block()
                 }
             }
@@ -67,7 +67,7 @@ class CreateContextViewUseCaseTest :
                     coEvery { contextViewRepository.save(any()) } returns contextView.right()
 
                     // When
-                    val result = useCase.execute(command)
+                    val result = handler(command)
 
                     // Then
                     result.shouldBeRight()
@@ -104,7 +104,7 @@ class CreateContextViewUseCaseTest :
                     coEvery { contextViewRepository.save(any()) } returns contextView.right()
 
                     // When
-                    val result = useCase.execute(command)
+                    val result = handler(command)
 
                     // Then
                     result.shouldBeRight()
@@ -123,12 +123,12 @@ class CreateContextViewUseCaseTest :
                     )
 
                     // When
-                    val result = useCase.execute(command)
+                    val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is AppContextError.KeyInvalidFormat) shouldBe true
+                    (error is ContextError.KeyInvalidFormat) shouldBe true
                 }
 
                 it("should return validation error for invalid filter syntax") {
@@ -141,13 +141,13 @@ class CreateContextViewUseCaseTest :
                     )
 
                     // When
-                    val result = useCase.execute(command)
+                    val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is AppContextError.InvalidFilter) shouldBe true
-                    if (error is AppContextError.InvalidFilter) {
+                    (error is ContextError.InvalidFilter) shouldBe true
+                    if (error is ContextError.InvalidFilter) {
                         error.filter shouldBe "((unclosed parenthesis"
                         error.reason shouldBe "Missing closing parenthesis at position 22"
                     }
@@ -166,7 +166,7 @@ class CreateContextViewUseCaseTest :
                     coEvery { contextViewRepository.save(any()) } returns errorMessage.left()
 
                     // When
-                    val result = useCase.execute(command)
+                    val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()

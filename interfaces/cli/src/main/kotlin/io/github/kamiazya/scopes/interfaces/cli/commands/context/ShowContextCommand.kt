@@ -6,7 +6,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import kotlinx.coroutines.runBlocking
@@ -34,7 +34,7 @@ class ShowContextCommand :
         """.trimIndent(),
     ),
     KoinComponent {
-    private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
 
@@ -47,7 +47,7 @@ class ShowContextCommand :
         runBlocking {
             val contextKey = if (key == "current") {
                 // Get the current context key
-                when (val result = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)) {
+                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)) {
                     is ContextViewContract.GetActiveContextResponse.Success -> {
                         val activeContext = result.contextView
                         if (activeContext == null) {
@@ -56,12 +56,16 @@ class ShowContextCommand :
                         }
                         activeContext.key
                     }
+                    else -> {
+                        echo("Failed to get current context.", err = true)
+                        return@runBlocking
+                    }
                 }
             } else {
                 key
             }
 
-            when (val result = contextCommandAdapter.getContext(GetContextViewRequest(contextKey))) {
+            when (val result = contextQueryAdapter.getContext(GetContextViewRequest(contextKey))) {
                 is ContextViewContract.GetContextViewResponse.Success -> {
                     echo(contextOutputFormatter.formatContextViewDetailed(result.contextView, debugContext.debug))
                 }

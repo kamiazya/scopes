@@ -212,5 +212,9 @@ object ErrorMessageMapper {
         is ScopesError.SystemError -> "System error: ${error.message}"
         is ScopesError.ValidationFailed -> "Validation failed: ${error.message}"
         is ScopesError.Conflict -> "Conflict: ${error.message}"
+        is ScopesError.ConcurrencyError -> "Concurrency error: ${error.message}${error.expectedVersion?.let {
+            " (expected: $it, actual: ${error.actualVersion})"
+        } ?: ""}"
+        is ScopesError.RepositoryError -> "Repository error: ${error.message}${error.operation?.let { " during $it" } ?: ""}"
     }
 }

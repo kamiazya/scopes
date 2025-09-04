@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.formatters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult as ContractCreateScopeResult
 
 /**
@@ -32,7 +32,7 @@ class ScopeOutputFormatter {
     /**
      * Formats scope tree structure (for future hierarchical display)
      */
-    fun formatScopeTree(scopes: List<ScopeDto>, rootId: String? = null, indent: String = ""): String = buildString {
+    fun formatScopeTree(scopes: List<ScopeResult>, rootId: String? = null, indent: String = ""): String = buildString {
         val children = if (rootId == null) {
             scopes.filter { it.parentId == null }
         } else {
@@ -157,6 +157,19 @@ class ScopeOutputFormatter {
      * Formats a contract update result with debug information when enabled
      */
     fun formatContractUpdateResult(scope: ScopeResult, debugMode: Boolean = false): String = buildString {
+        appendLine("Scope updated successfully!")
+        if (debugMode) {
+            appendLine("ID: ${scope.id}")
+        }
+        appendLine("Title: ${scope.title}")
+        scope.description?.let { appendLine("Description: $it") }
+        appendLine("Updated: ${scope.updatedAt}")
+    }.trim()
+
+    /**
+     * Formats a contract update result with debug information when enabled
+     */
+    fun formatContractUpdateResult(scope: UpdateScopeResult, debugMode: Boolean = false): String = buildString {
         appendLine("Scope updated successfully!")
         if (debugMode) {
             appendLine("ID: ${scope.id}")

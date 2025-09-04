@@ -1,12 +1,12 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.DeleteScope
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.usecase.UseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -18,26 +18,26 @@ import kotlinx.datetime.Clock
  * Handler for deleting a scope.
  */
 class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    UseCase<DeleteScope, ScopesError, Unit> {
+    CommandHandler<DeleteScopeCommand, ScopesError, Unit> {
 
-    override suspend operator fun invoke(input: DeleteScope): Either<ScopesError, Unit> = either {
+    override suspend operator fun invoke(command: DeleteScopeCommand): Either<ScopesError, Unit> = either {
         logger.info(
             "Deleting scope",
             mapOf(
-                "scopeId" to input.id,
-                "cascade" to input.cascade.toString(),
+                "scopeId" to command.id,
+                "cascade" to command.cascade.toString(),
             ),
         )
 
         transactionManager.inTransaction {
             either {
                 // Parse scope ID
-                val scopeId = ScopeId.create(input.id).bind()
+                val scopeId = ScopeId.create(command.id).bind()
 
                 // Find existing scope
                 val existingScope = scopeRepository.findById(scopeId).bind()
                 ensure(existingScope != null) {
-                    logger.warn("Scope not found for deletion", mapOf("scopeId" to input.id))
+                    logger.warn("Scope not found for deletion", mapOf("scopeId" to command.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
                         occurredAt = Clock.System.now(),
@@ -48,7 +48,7 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                 val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
 
                 if (children.isNotEmpty()) {
-                    if (input.cascade) {
+                    if (command.cascade) {
                         // Cascade delete children
                         logger.debug(
                             "Cascade deleting children",

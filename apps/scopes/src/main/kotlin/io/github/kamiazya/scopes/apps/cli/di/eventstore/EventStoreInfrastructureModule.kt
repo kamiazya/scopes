@@ -1,7 +1,9 @@
 package io.github.kamiazya.scopes.apps.cli.di.eventstore
 
-import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
-import io.github.kamiazya.scopes.eventstore.application.adapter.EventStorePortAdapter
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
+import io.github.kamiazya.scopes.eventstore.application.adapter.EventStoreCommandPortAdapter
+import io.github.kamiazya.scopes.eventstore.application.adapter.EventStoreQueryPortAdapter
 import io.github.kamiazya.scopes.eventstore.application.handler.command.StoreEventHandler
 import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsByAggregateHandler
 import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsSinceHandler
@@ -64,10 +66,16 @@ val eventStoreInfrastructureModule = module {
     single { GetEventsByAggregateHandler(get()) }
     single { GetEventsSinceHandler(get()) }
 
-    // Port Adapter
-    single<EventStorePort> {
-        EventStorePortAdapter(
+    // Port Adapters
+    single<EventStoreCommandPort> {
+        EventStoreCommandPortAdapter(
             storeEventHandler = get(),
+            eventSerializer = get(),
+        )
+    }
+
+    single<EventStoreQueryPort> {
+        EventStoreQueryPortAdapter(
             getEventsByAggregateHandler = get(),
             getEventsSinceHandler = get(),
             eventSerializer = get(),

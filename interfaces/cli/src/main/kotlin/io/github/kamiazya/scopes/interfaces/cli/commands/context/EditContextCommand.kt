@@ -4,8 +4,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
@@ -79,19 +79,23 @@ class EditContextCommand :
                 description = description,
             )
 
-            when (val result = contextCommandAdapter.updateContext(request)) {
-                is ContextViewContract.UpdateContextViewResponse.Success -> {
-                    echo("Context view '${result.contextView.key}' updated successfully")
-                    echo(contextOutputFormatter.formatContextView(result.contextView, debugContext.debug))
-                }
-                is ContextViewContract.UpdateContextViewResponse.NotFound -> {
-                    echo("Error: Context view '${result.key}' not found.", err = true)
-                }
-                is ContextViewContract.UpdateContextViewResponse.InvalidFilter -> {
-                    echo("Error: Invalid filter syntax: ${result.reason}", err = true)
-                    echo("Filter: '${result.filter}'", err = true)
-                }
-            }
+            val result = contextCommandAdapter.updateContext(request)
+            result.fold(
+                { error ->
+                    echo("Error: Failed to update context '$key': ${formatError(error)}", err = true)
+                },
+                {
+                    echo("Context view '$key' updated successfully")
+                },
+            )
         }
+    }
+
+    private fun formatError(error: ScopeContractError): String = when (error) {
+        is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
+        is ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
+        is ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
+        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
+        else -> error.toString()
     }
 }

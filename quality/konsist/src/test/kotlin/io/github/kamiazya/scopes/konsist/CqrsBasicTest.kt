@@ -5,6 +5,7 @@ import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 
 /**
  * Basic CQRS architecture tests that should pass immediately to validate
@@ -20,9 +21,7 @@ class CqrsBasicTest :
                 .classes()
                 .withNameEndingWith("CommandAdapter")
 
-            assertTrue("Should have at least one command adapter") {
-                commandAdapters.isNotEmpty()
-            }
+            commandAdapters.isNotEmpty() shouldBe true
 
             commandAdapters.assertTrue { adapter ->
                 adapter.name.contains("Command") && adapter.name.endsWith("Adapter")
@@ -34,9 +33,7 @@ class CqrsBasicTest :
                 .classes()
                 .withNameEndingWith("QueryAdapter")
 
-            assertTrue("Should have at least one query adapter") {
-                queryAdapters.isNotEmpty()
-            }
+            queryAdapters.isNotEmpty() shouldBe true
 
             queryAdapters.assertTrue { adapter ->
                 adapter.name.contains("Query") && adapter.name.endsWith("Adapter")
@@ -48,9 +45,7 @@ class CqrsBasicTest :
                 .interfaces()
                 .withNameEndingWith("CommandPort")
 
-            assertTrue("Should have at least one command port") {
-                commandPorts.isNotEmpty()
-            }
+            commandPorts.isNotEmpty() shouldBe true
 
             commandPorts.assertTrue { port ->
                 port.name.endsWith("CommandPort")
@@ -62,9 +57,7 @@ class CqrsBasicTest :
                 .interfaces()
                 .withNameEndingWith("QueryPort")
 
-            assertTrue("Should have at least one query port") {
-                queryPorts.isNotEmpty()
-            }
+            queryPorts.isNotEmpty() shouldBe true
 
             queryPorts.assertTrue { port ->
                 port.name.endsWith("QueryPort")
@@ -76,7 +69,7 @@ class CqrsBasicTest :
                 .classes()
                 .withNameEndingWith("CommandAdapter")
                 .assertFalse { commandAdapter ->
-                    commandAdapter.imports.any { import ->
+                    commandAdapter.containingFile.imports.any { import ->
                         import.name.contains("QueryAdapter") ||
                             import.name.contains("QueryPort")
                     }
@@ -86,7 +79,7 @@ class CqrsBasicTest :
                 .classes()
                 .withNameEndingWith("QueryAdapter")
                 .assertFalse { queryAdapter ->
-                    queryAdapter.imports.any { import ->
+                    queryAdapter.containingFile.imports.any { import ->
                         import.name.contains("CommandAdapter") ||
                             import.name.contains("CommandPort")
                     }
@@ -118,9 +111,7 @@ class CqrsBasicTest :
                 .classes()
                 .withNameEndingWith("Projection")
 
-            assertTrue("Should have at least one projection") {
-                projections.isNotEmpty()
-            }
+            projections.isNotEmpty() shouldBe true
 
             projections.assertTrue { projection ->
                 projection.packagee?.name?.contains("projection") == true

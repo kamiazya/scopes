@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.eventstore.application.handler.command
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.eventstore.application.command.StoreEvent
+import io.github.kamiazya.scopes.eventstore.application.command.StoreEventCommand
 import io.github.kamiazya.scopes.eventstore.application.dto.PersistedEventRecordDto
 import io.github.kamiazya.scopes.eventstore.application.error.EventStoreApplicationError
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
@@ -27,26 +27,26 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
  * @property transactionManager The transaction manager for ensuring atomicity
  *
  * @since 1.0.0
- * @see StoreEvent
+ * @see StoreEventCommand
  * @see PersistedEventRecordDto
  */
 class StoreEventHandler(private val eventRepository: EventRepository, private val transactionManager: TransactionManager) :
-    CommandHandler<StoreEvent, EventStoreApplicationError, PersistedEventRecordDto> {
+    CommandHandler<StoreEventCommand, EventStoreApplicationError, PersistedEventRecordDto> {
 
     /**
      * Stores a domain event in the event store.
      *
-     * @param input The command containing the event to store
+     * @param command The command containing the event to store
      * @return Either an error or the DTO representing the persisted event
      */
-    override suspend fun invoke(input: StoreEvent): Either<EventStoreApplicationError, PersistedEventRecordDto> = transactionManager.inTransaction {
-        eventRepository.store(input.event)
+    override suspend fun invoke(command: StoreEventCommand): Either<EventStoreApplicationError, PersistedEventRecordDto> = transactionManager.inTransaction {
+        eventRepository.store(command.event)
             .mapLeft { error ->
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.APPEND_EVENT,
-                    aggregateId = input.event.aggregateId.value,
-                    eventType = input.event::class.simpleName
-                        ?: input.event::class.qualifiedName
+                    aggregateId = command.event.aggregateId.value,
+                    eventType = command.event::class.simpleName
+                        ?: command.event::class.qualifiedName
                         ?: "DomainEvent",
                     occurredAt = error.occurredAt,
                     cause = null,

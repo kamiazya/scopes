@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesPort
+import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesQueryPort
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
 import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
@@ -17,7 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPol
  * Translates between the User Preferences context and the Scope Management context
  * for hierarchy-related settings only.
  */
-class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: UserPreferencesPort, private val logger: Logger) : HierarchyPolicyProvider {
+class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: UserPreferencesQueryPort, private val logger: Logger) : HierarchyPolicyProvider {
 
     override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
         logger.debug("Fetching hierarchy policy from user preferences")

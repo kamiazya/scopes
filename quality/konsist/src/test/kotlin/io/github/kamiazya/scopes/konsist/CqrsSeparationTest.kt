@@ -271,7 +271,7 @@ class CqrsSeparationTest :
                     .assertTrue { projectionService ->
                         // Projection services should focus on efficient read operations
                         projectionService.functions().all { function ->
-                            function.hasParameters == false ||
+                            function.parameters.isEmpty() ||
                                 function.parameters.size <= 5 // Avoid complex parameter sets
                         }
                     }

@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.eventstore.application.handler.query
 import arrow.core.Either
 import io.github.kamiazya.scopes.eventstore.application.dto.PersistedEventRecordDto
 import io.github.kamiazya.scopes.eventstore.application.error.EventStoreApplicationError
-import io.github.kamiazya.scopes.eventstore.application.query.GetEventsSince
+import io.github.kamiazya.scopes.eventstore.application.query.GetEventsSinceQuery
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 
@@ -11,11 +11,11 @@ import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
  * Handler for retrieving events since a timestamp.
  */
 class GetEventsSinceHandler(private val eventRepository: EventRepository) :
-    QueryHandler<GetEventsSince, EventStoreApplicationError, List<PersistedEventRecordDto>> {
+    QueryHandler<GetEventsSinceQuery, EventStoreApplicationError, List<PersistedEventRecordDto>> {
 
-    override suspend fun invoke(input: GetEventsSince): Either<EventStoreApplicationError, List<PersistedEventRecordDto>> {
-        // Validate input
-        input.limit?.let { limit ->
+    override suspend fun invoke(query: GetEventsSinceQuery): Either<EventStoreApplicationError, List<PersistedEventRecordDto>> {
+        // Validate query
+        query.limit?.let { limit ->
             if (limit <= 0) {
                 return Either.Left(
                     EventStoreApplicationError.ValidationError(
@@ -28,8 +28,8 @@ class GetEventsSinceHandler(private val eventRepository: EventRepository) :
         }
 
         return eventRepository.getEventsSince(
-            since = input.since,
-            limit = input.limit,
+            since = query.since,
+            limit = query.limit,
         )
             .mapLeft { error ->
                 EventStoreApplicationError.RepositoryError(

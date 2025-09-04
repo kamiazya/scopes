@@ -4,6 +4,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import io.github.kamiazya.scopes.userpreferences.application.handler.query.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences

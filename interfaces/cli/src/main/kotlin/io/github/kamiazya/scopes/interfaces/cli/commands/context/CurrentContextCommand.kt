@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import kotlinx.coroutines.runBlocking
@@ -35,6 +36,7 @@ class CurrentContextCommand :
     ),
     KoinComponent {
     private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
 
@@ -52,7 +54,7 @@ class CurrentContextCommand :
                 echo("Use 'scopes context switch <key>' to switch to a different context.")
             } else {
                 // Show the current context
-                when (val result = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)) {
+                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)) {
                     is ContextViewContract.GetActiveContextResponse.Success -> {
                         val context = result.contextView
                         if (context == null) {

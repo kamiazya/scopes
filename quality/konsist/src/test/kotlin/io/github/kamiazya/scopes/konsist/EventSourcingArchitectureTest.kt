@@ -140,7 +140,7 @@ class EventSourcingArchitectureTest :
                         }
 
                         // If it's a domain event, it should have occurredAt
-                        if (eventClass.hasParentWithName("DomainEvent")) {
+                        if (eventClass.parents().any { it.name == "DomainEvent" }) {
                             hasOccurredAt
                         } else {
                             true // Non-domain events don't need occurredAt

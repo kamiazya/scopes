@@ -7,7 +7,11 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
 import io.kotest.assertions.arrow.core.shouldBeLeft

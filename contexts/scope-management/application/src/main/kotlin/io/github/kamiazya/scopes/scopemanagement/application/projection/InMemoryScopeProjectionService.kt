@@ -8,8 +8,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * In-memory implementation of ScopeProjectionService for development and testing.
@@ -25,9 +26,10 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class InMemoryScopeProjectionService : ScopeProjectionService {
 
-    private val scopeSummaries = ConcurrentHashMap<String, ScopeSummaryProjection>()
-    private val scopeDetails = ConcurrentHashMap<String, ScopeDetailProjection>()
-    private val scopeActivities = ConcurrentHashMap<String, MutableList<ScopeActivityProjection>>()
+    private val mutex = Mutex()
+    private var scopeSummaries = mutableMapOf<String, ScopeSummaryProjection>()
+    private var scopeDetails = mutableMapOf<String, ScopeDetailProjection>()
+    private var scopeActivities = mutableMapOf<String, MutableList<ScopeActivityProjection>>()
     private var cachedMetrics: ScopeMetricsProjection? = null
 
     override suspend fun getScopeSummary(scopeId: String): Either<ScopesError, ScopeSummaryProjection?> = scopeSummaries[scopeId].right()
@@ -213,20 +215,20 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
 
     // Internal methods for managing projections (would be called by event handlers)
 
-    fun addScopeProjection(summary: ScopeSummaryProjection, detail: ScopeDetailProjection) {
+    suspend fun addScopeProjection(summary: ScopeSummaryProjection, detail: ScopeDetailProjection) = mutex.withLock {
         scopeSummaries[summary.id] = summary
         scopeDetails[detail.id] = detail
         cachedMetrics = null // Invalidate cached metrics
     }
 
-    fun removeScopeProjection(scopeId: String) {
+    suspend fun removeScopeProjection(scopeId: String) = mutex.withLock {
         scopeSummaries.remove(scopeId)
         scopeDetails.remove(scopeId)
         scopeActivities.remove(scopeId)
         cachedMetrics = null // Invalidate cached metrics
     }
 
-    fun addScopeActivity(activity: ScopeActivityProjection) {
+    suspend fun addScopeActivity(activity: ScopeActivityProjection) = mutex.withLock {
         scopeActivities.computeIfAbsent(activity.scopeId) { mutableListOf() }
             .add(activity)
     }

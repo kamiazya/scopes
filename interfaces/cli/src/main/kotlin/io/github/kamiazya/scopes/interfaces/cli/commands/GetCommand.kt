@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
@@ -21,7 +21,7 @@ class GetCommand :
         help = "Get a scope by ID or alias",
     ),
     KoinComponent {
-    private val scopeCommandAdapter: ScopeCommandAdapter by inject()
+    private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
     private val debugContext by requireObject<DebugContext>()
@@ -40,13 +40,13 @@ class GetCommand :
                 },
                 { resolvedId ->
                     // Fetch the scope using the resolved ID
-                    scopeCommandAdapter.getScopeById(resolvedId).fold(
+                    scopeQueryAdapter.getScopeById(resolvedId).fold(
                         { error ->
                             throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
                         },
                         { scope ->
                             // Fetch all aliases for the scope
-                            scopeCommandAdapter.listAliases(scope.id).fold(
+                            scopeQueryAdapter.listAliases(scope.id).fold(
                                 { aliasError ->
                                     // If we can't fetch aliases, still show the scope with just canonical alias
                                     echo(scopeOutputFormatter.formatContractScope(scope, debugContext.debug))

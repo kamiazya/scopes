@@ -104,21 +104,32 @@ class DefineCommand :
             }
 
             // Define the aspect
-            aspectCommandAdapter.defineAspect(
+            val result = aspectCommandAdapter.defineAspect(
                 key = trimmedKey,
                 description = trimmedDescription,
-                type = aspectType,
-            ).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+                type = aspectType.toString(),
+            )
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to define aspect '$trimmedKey': ${formatError(error)}", err = true)
                 },
-                { definition ->
-                    echo("Aspect '${definition.key.value}' defined successfully")
-                    echo("Type: ${formatType(definition.type)}")
-                    echo("Description: ${definition.description}")
+                ifRight = {
+                    echo("Aspect '$trimmedKey' defined successfully")
+                    echo("Type: $aspectType")
+                    echo("Description: $trimmedDescription")
                 },
             )
         }
+    }
+
+    private fun formatError(error: io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError): String = when (error) {
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.SystemError.ServiceUnavailable ->
+            "Service unavailable: ${error.service}"
+        else -> error.toString()
     }
 
     private fun formatType(type: AspectType): String = when (type) {

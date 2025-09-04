@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -25,7 +25,7 @@ class CompletionCommand :
     ),
     KoinComponent {
 
-    private val scopeCommandAdapter: ScopeCommandAdapter by inject()
+    private val scopeQueryAdapter: ScopeQueryAdapter by inject()
 
     override fun run() {
         runBlocking {

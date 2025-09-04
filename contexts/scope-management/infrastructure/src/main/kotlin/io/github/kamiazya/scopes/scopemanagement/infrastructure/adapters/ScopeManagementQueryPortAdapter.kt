@@ -1,8 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import arrow.core.Either
-import arrow.core.either
-import arrow.core.raise
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
@@ -15,22 +13,23 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWit
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
-import io.github.kamiazya.scopes.platform.kernel.logger.ConsoleLogger
-import io.github.kamiazya.scopes.platform.kernel.logger.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.FilterScopesWithQueryHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetChildrenHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetRootScopesHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetScopeByAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.GetScopeByIdHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.query.ListAliasesHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQuery
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetChildren
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetRootScopes
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeById
-import io.github.kamiazya.scopes.scopemanagement.application.query.ListAliases
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetChildren
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetRootScopes
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAliases
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetChildrenHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.error.ErrorMapper
-import io.github.kamiazya.scopes.scopemanagement.application.query.GetScopeByAliasQuery as AppGetScopeByAliasQuery
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias as AppGetScopeByAliasQuery
 
 /**
  * Query port adapter implementing the ScopeManagementQueryPort interface.
@@ -56,37 +55,37 @@ class ScopeManagementQueryPortAdapter(
     private val logger: Logger = ConsoleLogger("ScopeManagementQueryPortAdapter"),
 ) : ScopeManagementQueryPort {
 
-    private val errorMapper = ErrorMapper(ConsoleLogger("${logger.name}.ErrorMapper"))
-
-    override suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?> = either {
-        getScopeByIdHandler(
-            GetScopeById(
-                id = query.id,
-            ),
-        ).fold(
-            { error ->
-                // For GET operations, NotFound is not an error but returns null
-                if (error is ScopeError.NotFound) {
-                    null
-                } else {
-                    raise(errorMapper.mapToContractError(error))
-                }
-            },
-            { scopeDto ->
-                ScopeResult(
-                    id = scopeDto.id,
-                    title = scopeDto.title,
-                    description = scopeDto.description,
-                    parentId = scopeDto.parentId,
-                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
-                    createdAt = scopeDto.createdAt,
-                    updatedAt = scopeDto.updatedAt,
-                    isArchived = false, // TODO: Implement archive status when available in domain
-                    aspects = scopeDto.aspects,
-                )
-            },
-        )
-    }
+    override suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?> = getScopeByIdHandler(
+        GetScopeById(
+            id = query.id,
+        ),
+    ).fold(
+        { error ->
+            // For GET operations, NotFound is not an error but returns null
+            if (error is ScopeError.NotFound) {
+                Either.Right(null)
+            } else {
+                Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(error))
+            }
+        },
+        { scopeDto ->
+            Either.Right(
+                scopeDto?.let {
+                    ScopeResult(
+                        id = it.id,
+                        title = it.title,
+                        description = it.description,
+                        parentId = it.parentId,
+                        canonicalAlias = it.canonicalAlias ?: it.id,
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                        isArchived = false, // TODO: Implement archive status when available in domain
+                        aspects = it.aspects,
+                    )
+                },
+            )
+        },
+    )
 
     override suspend fun getChildren(
         query: GetChildrenQuery,
@@ -97,7 +96,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        ErrorMapper.mapScopesErrorToScopeContractError(error)
     }.map { paged ->
         io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
             scopes = paged.items.map { scopeDto ->
@@ -127,7 +126,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        ErrorMapper.mapScopesErrorToScopeContractError(error)
     }.map { paged ->
         io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
             scopes = paged.items.map { scopeDto ->
@@ -149,49 +148,51 @@ class ScopeManagementQueryPortAdapter(
         )
     }
 
-    override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult> = either {
-        getScopeByAliasHandler(
-            AppGetScopeByAliasQuery(
-                aliasName = query.aliasName,
-            ),
-        ).fold(
-            { error ->
-                raise(errorMapper.mapToContractError(error))
-            },
-            { scopeDto ->
-                ScopeResult(
-                    id = scopeDto.id,
-                    title = scopeDto.title,
-                    description = scopeDto.description,
-                    parentId = scopeDto.parentId,
-                    canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
-                    createdAt = scopeDto.createdAt,
-                    updatedAt = scopeDto.updatedAt,
-                    isArchived = false, // TODO: Implement archive status when available in domain
-                    aspects = scopeDto.aspects,
+    override suspend fun getScopeByAlias(query: GetScopeByAliasQuery): Either<ScopeContractError, ScopeResult> = getScopeByAliasHandler(
+        AppGetScopeByAliasQuery(
+            aliasName = query.aliasName,
+        ),
+    ).fold(
+        { error ->
+            Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(error))
+        },
+        { scopeDto ->
+            scopeDto?.let {
+                Either.Right(
+                    ScopeResult(
+                        id = it.id,
+                        title = it.title,
+                        description = it.description,
+                        parentId = it.parentId,
+                        canonicalAlias = it.canonicalAlias ?: it.id,
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                        isArchived = false, // TODO: Implement archive status when available in domain
+                        aspects = it.aspects,
+                    ),
                 )
-            },
-        )
-    }
+            } ?: Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(ScopesError.NotFound("Scope not found by alias")))
+        },
+    )
 
     override suspend fun listAliases(query: ListAliasesQuery): Either<ScopeContractError, AliasListResult> = listAliasesHandler(
         ListAliases(
             scopeId = query.scopeId,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
-    }.map { aliasListDto ->
+        ErrorMapper.mapScopesErrorToScopeContractError(error)
+    }.map { aliasDtos ->
         AliasListResult(
-            scopeId = aliasListDto.scopeId,
-            aliases = aliasListDto.aliases.map { aliasDto ->
+            scopeId = query.scopeId,
+            aliases = aliasDtos.map { aliasDto ->
                 AliasInfo(
-                    aliasName = aliasDto.aliasName,
-                    aliasType = aliasDto.aliasType,
+                    aliasName = aliasDto.alias,
+                    aliasType = if (aliasDto.isCanonical) "canonical" else "regular",
                     isCanonical = aliasDto.isCanonical,
                     createdAt = aliasDto.createdAt,
                 )
             },
-            totalCount = aliasListDto.totalCount,
+            totalCount = aliasDtos.size,
         )
     }
 
@@ -215,7 +216,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        ErrorMapper.mapScopesErrorToScopeContractError(error)
     }.map { scopeDtos ->
         scopeDtos.map { scopeDto ->
             ScopeResult(

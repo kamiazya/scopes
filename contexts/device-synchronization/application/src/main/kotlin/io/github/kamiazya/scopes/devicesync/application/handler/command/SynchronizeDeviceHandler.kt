@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.devicesync.application.handler.command
 
 import arrow.core.Either
 import arrow.core.flatMap
-import io.github.kamiazya.scopes.devicesync.application.command.SynchronizeDevice
+import io.github.kamiazya.scopes.devicesync.application.command.SynchronizeDeviceCommand
 import io.github.kamiazya.scopes.devicesync.application.dto.SyncStatusDto
 import io.github.kamiazya.scopes.devicesync.application.dto.SynchronizationResultDto
 import io.github.kamiazya.scopes.devicesync.application.error.DeviceSyncApplicationError
@@ -15,15 +15,15 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
  * Handler for synchronizing with a remote device.
  */
 class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchronizationService, private val transactionManager: TransactionManager) :
-    CommandHandler<SynchronizeDevice, DeviceSyncApplicationError, SynchronizationResultDto> {
+    CommandHandler<SynchronizeDeviceCommand, DeviceSyncApplicationError, SynchronizationResultDto> {
 
-    override suspend fun invoke(input: SynchronizeDevice): Either<DeviceSyncApplicationError, SynchronizationResultDto> {
+    override suspend fun invoke(command: SynchronizeDeviceCommand): Either<DeviceSyncApplicationError, SynchronizationResultDto> {
         // Validate device ID
-        val deviceId = DeviceId.fromStringOrNull(input.remoteDeviceId)
+        val deviceId = DeviceId.fromStringOrNull(command.remoteDeviceId)
             ?: return Either.Left(
                 DeviceSyncApplicationError.ValidationError(
                     fieldName = "remoteDeviceId",
-                    invalidValue = input.remoteDeviceId,
+                    invalidValue = command.remoteDeviceId,
                     validationRule = DeviceSyncApplicationError.ValidationRule.FORMAT_INVALID,
                 ),
             )
@@ -31,12 +31,12 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
         return transactionManager.inTransaction {
             synchronizationService.synchronize(
                 remoteDeviceId = deviceId,
-                since = input.since,
+                since = command.since,
             )
                 .mapLeft { error ->
                     DeviceSyncApplicationError.SyncOperationError(
                         operation = DeviceSyncApplicationError.SyncOperation.FULL_SYNC,
-                        deviceId = input.remoteDeviceId,
+                        deviceId = command.remoteDeviceId,
                         failureReason = when (error) {
                             is io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError.NetworkError ->
                                 DeviceSyncApplicationError.SyncFailureReason.NETWORK_ERROR
@@ -55,12 +55,12 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                     if (result.conflicts.isNotEmpty()) {
                         synchronizationService.resolveConflicts(
                             conflicts = result.conflicts,
-                            strategy = input.conflictStrategy,
+                            strategy = command.conflictStrategy,
                         )
                             .mapLeft { error ->
                                 DeviceSyncApplicationError.SyncOperationError(
                                     operation = DeviceSyncApplicationError.SyncOperation.CONFLICT_RESOLUTION,
-                                    deviceId = input.remoteDeviceId,
+                                    deviceId = command.remoteDeviceId,
                                     failureReason = DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION,
                                     occurredAt = error.occurredAt,
                                     cause = null,
@@ -74,7 +74,7 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                 }
 
                                 SynchronizationResultDto(
-                                    deviceId = input.remoteDeviceId,
+                                    deviceId = command.remoteDeviceId,
                                     eventsPushed = result.eventsPushed,
                                     eventsPulled = result.eventsPulled,
                                     conflictsDetected = result.conflicts.size,
@@ -86,7 +86,7 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                     } else {
                         Either.Right(
                             SynchronizationResultDto(
-                                deviceId = input.remoteDeviceId,
+                                deviceId = command.remoteDeviceId,
                                 eventsPushed = result.eventsPushed,
                                 eventsPulled = result.eventsPulled,
                                 conflictsDetected = 0,

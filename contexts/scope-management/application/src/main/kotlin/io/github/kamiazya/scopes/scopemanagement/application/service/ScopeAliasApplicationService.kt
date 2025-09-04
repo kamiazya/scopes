@@ -3,12 +3,13 @@ package io.github.kamiazya.scopes.scopemanagement.application.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.ScopeAliasPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasOperation
@@ -194,25 +195,19 @@ class ScopeAliasApplicationService(
      * @return Either an error or Unit
      */
     suspend fun deleteAlias(aliasId: AliasId): Either<ScopesError, Unit> = either {
-        val alias = aliasRepository.findById(aliasId).bind()
-
-        if (alias == null) {
-            raise(
-                ScopeAliasError.AliasNotFoundById(
-                    occurredAt = Clock.System.now(),
-                    aliasId = aliasId,
-                ),
+        val alias = ensureNotNull(aliasRepository.findById(aliasId).bind()) {
+            ScopeAliasError.AliasNotFoundById(
+                occurredAt = Clock.System.now(),
+                aliasId = aliasId,
             )
         }
 
         // Check if this is a canonical alias - they cannot be deleted
-        if (alias.isCanonical()) {
-            raise(
-                ScopeAliasError.CannotRemoveCanonicalAlias(
-                    occurredAt = Clock.System.now(),
-                    scopeId = alias.scopeId,
-                    aliasName = alias.aliasName.value,
-                ),
+        ensure(!alias.isCanonical()) {
+            ScopeAliasError.CannotRemoveCanonicalAlias(
+                occurredAt = Clock.System.now(),
+                scopeId = alias.scopeId,
+                aliasName = alias.aliasName.value,
             )
         }
 

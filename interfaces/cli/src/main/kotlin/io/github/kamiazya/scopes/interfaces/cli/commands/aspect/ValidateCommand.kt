@@ -5,7 +5,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -20,24 +20,24 @@ class ValidateCommand :
         help = "Validate aspect values against their definitions",
     ),
     KoinComponent {
-    private val aspectCommandAdapter: AspectCommandAdapter by inject()
+    private val aspectQueryAdapter: AspectQueryAdapter by inject()
 
     private val key by argument(help = "The aspect key to validate")
     private val values by option("-v", "--value", help = "Value(s) to validate").multiple(required = true)
 
     override fun run() {
         runBlocking {
-            aspectCommandAdapter.validateAspectValue(key, values).fold(
-                { error ->
-                    echo("Validation failed: ${formatError(error)}", err = true)
-                },
-                { validatedValues ->
+            when (val result = aspectQueryAdapter.validateAspectValue(key, values)) {
+                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidateAspectValueResponse.Success -> {
                     echo("✓ All values are valid for aspect '$key'")
-                    validatedValues.forEach { value ->
+                    result.validatedValues.forEach { value ->
                         echo("  - $value")
                     }
-                },
-            )
+                }
+                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidateAspectValueResponse.ValidationFailed -> {
+                    echo("Validation failed for aspect '${result.key}': ${result.message}", err = true)
+                }
+            }
         }
     }
 

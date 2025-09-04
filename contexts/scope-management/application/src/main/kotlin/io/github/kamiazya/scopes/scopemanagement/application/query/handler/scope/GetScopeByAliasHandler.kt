@@ -1,0 +1,47 @@
+package io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope
+
+import arrow.core.Either
+import arrow.core.raise.either
+import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+
+/**
+ * Handler for retrieving a scope by its alias name.
+ *
+ * This handler validates the alias, retrieves the scope from the repository,
+ * and maps it to a DTO for external consumption.
+ */
+class GetScopeByAliasHandler(
+    private val scopeAliasRepository: ScopeAliasRepository,
+    private val scopeRepository: ScopeRepository,
+    private val transactionManager: TransactionManager,
+) : QueryHandler<GetScopeByAlias, ScopesError, ScopeDto?> {
+
+    override suspend operator fun invoke(query: GetScopeByAlias): Either<ScopesError, ScopeDto?> = transactionManager.inTransaction {
+        either {
+            // Validate and create alias value object
+            val aliasName = AliasName.create(query.aliasName).bind()
+
+            // Find alias entity
+            val scopeAlias = scopeAliasRepository.findByAliasName(aliasName)
+                .mapLeft { ScopesError.SystemError("Failed to find alias: $it") }
+                .bind()
+
+            // If alias found, get the scope
+            scopeAlias?.let { alias ->
+                val scope = scopeRepository.findById(alias.scopeId)
+                    .mapLeft { ScopesError.SystemError("Failed to find scope: $it") }
+                    .bind()
+
+                scope?.let { ScopeMapper.toDto(it) }
+            }
+        }
+    }
+}

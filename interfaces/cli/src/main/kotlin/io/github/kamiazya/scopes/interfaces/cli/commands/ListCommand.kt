@@ -11,8 +11,8 @@ import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
@@ -28,8 +28,8 @@ class ListCommand :
         help = "List scopes",
     ),
     KoinComponent {
-    private val scopeCommandAdapter: ScopeCommandAdapter by inject()
-    private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val scopeQueryAdapter: ScopeQueryAdapter by inject()
+    private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
 
@@ -73,7 +73,7 @@ class ListCommand :
 
             // Get current context filter if not ignoring context
             val contextFilter = if (!ignoreContext) {
-                when (val result = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)) {
+                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)) {
                     is ContextViewContract.GetActiveContextResponse.Success -> {
                         result.contextView?.filter
                     }
@@ -98,7 +98,7 @@ class ListCommand :
             when {
                 effectiveQuery != null -> {
                     // Use advanced query filtering (either from context, query param, or both)
-                    scopeCommandAdapter.listScopesWithQuery(
+                    scopeQueryAdapter.listScopesWithQuery(
                         aspectQuery = effectiveQuery,
                         parentId = parentId,
                         offset = offset,
@@ -123,7 +123,7 @@ class ListCommand :
                     )
                 }
                 root -> {
-                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
+                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -148,7 +148,7 @@ class ListCommand :
                     )
                 }
                 parentId != null -> {
-                    scopeCommandAdapter.listChildren(parentId!!, offset, limit).fold(
+                    scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -173,7 +173,7 @@ class ListCommand :
                 }
                 else -> {
                     // Default: list root scopes
-                    scopeCommandAdapter.listRootScopes(offset, limit).fold(
+                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
                         { error ->
                             echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                         },
@@ -220,7 +220,7 @@ class ListCommand :
                 }
 
                 // Fetch and display all aliases
-                scopeCommandAdapter.listAliases(scope.id).fold(
+                scopeQueryAdapter.listAliases(scope.id).fold(
                     { error ->
                         // If we can't fetch aliases, show just the canonical one
                         if (debugContext.debug) {

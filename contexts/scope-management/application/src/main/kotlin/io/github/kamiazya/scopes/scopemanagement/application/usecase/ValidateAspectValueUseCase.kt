@@ -5,7 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 

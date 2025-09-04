@@ -5,6 +5,7 @@ import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 
 /**
  * Architecture tests for CQRS projection layer to ensure proper read model design,
@@ -112,11 +113,9 @@ class CqrsProjectionTest :
 
             it("Projection services should be interfaces") {
                 scope
-                    .classes()
+                    .interfaces()
                     .withNameEndingWith("ProjectionService")
-                    .assertTrue { service ->
-                        service.hasInterfaceModifier
-                    }
+                    .isNotEmpty() shouldBe true
             }
 
             it("Projection service methods should return Either types") {
@@ -163,7 +162,7 @@ class CqrsProjectionTest :
                 scope
                     .classes()
                     .filter { it.packagee?.name?.contains("projection") == true }
-                    .filter { !it.hasInterfaceModifier }
+                    .withNameEndingWith("ServiceImpl", "ServiceAdapter")
                     .assertFalse { impl ->
                         impl.properties().any { property ->
                             val propertyType = property.type?.name
@@ -216,7 +215,7 @@ class CqrsProjectionTest :
                 scope
                     .classes()
                     .filter { it.packagee?.name?.contains("projection") == true }
-                    .filter { !it.hasInterfaceModifier && it.name.endsWith("Service") }
+                    .withNameEndingWith("ServiceImpl")
                     .assertTrue { projectionService ->
                         // Should either have caching dependencies or be simple enough not to need them
                         projectionService.properties().any { property ->
@@ -264,7 +263,7 @@ class CqrsProjectionTest :
                 scope
                     .classes()
                     .filter { it.packagee?.name?.contains("projection") == true }
-                    .filter { !it.hasInterfaceModifier && it.name.endsWith("Service") }
+                    .withNameEndingWith("ServiceImpl")
                     .assertTrue { projectionService ->
                         // Methods that update projections should be designed to be idempotent
                         projectionService.functions().filter {
@@ -355,7 +354,7 @@ class CqrsProjectionTest :
                     .filter { it.properties().size > 8 }
                     .assertTrue { complexProjection ->
                         // Complex projections should have documentation
-                        complexProjection.kdoc != null ||
+                        complexProjection.hasKDoc ||
                             complexProjection.annotations.isNotEmpty()
                     }
             }

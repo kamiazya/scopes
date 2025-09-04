@@ -7,30 +7,19 @@ import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import kotlinx.datetime.Instant
 
 /**
- * Domain service for device synchronization operations.
+ * Domain service contract for device synchronization.
  *
- * This service handles the core logic of multi-device synchronization,
- * including conflict detection and resolution strategies.
+ * Implementations provide I/O-bound synchronization operations and
+ * conflict detection/resolution strategies.
  */
 interface DeviceSynchronizationService {
+    /** Perform synchronization with a remote device. */
+    suspend fun synchronize(remoteDeviceId: DeviceId, since: Instant?): Either<SynchronizationError, SynchronizationResult>
 
-    /**
-     * Performs synchronization with a remote device.
-     *
-     * @param remoteDeviceId The device to synchronize with
-     * @param since Optional timestamp to sync events after
-     * @return Either an error or the synchronization result
-     */
-    suspend fun synchronize(remoteDeviceId: DeviceId, since: Instant? = null): Either<SynchronizationError, SynchronizationResult>
-
-    /**
-     * Determines if two vector clocks indicate a conflict.
-     */
+    /** Detect conflict status between two vector clocks. */
     fun detectConflict(localClock: VectorClock, remoteClock: VectorClock): ConflictStatus
 
-    /**
-     * Resolves conflicts between local and remote states.
-     */
+    /** Resolve conflicts using the specified strategy. */
     suspend fun resolveConflicts(conflicts: List<EventConflict>, strategy: ConflictResolutionStrategy): Either<SynchronizationError, ConflictResolution>
 }
 

@@ -37,14 +37,25 @@ class RmCommand :
                 }
             }
 
-            aspectCommandAdapter.deleteAspectDefinition(key).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+            val result = aspectCommandAdapter.deleteAspectDefinition(key)
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to delete aspect '$key': ${formatError(error)}", err = true)
                 },
-                {
+                ifRight = {
                     echo("Aspect '$key' removed successfully")
                 },
             )
         }
+    }
+
+    private fun formatError(error: io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError): String = when (error) {
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
+        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.SystemError.ServiceUnavailable ->
+            "Service unavailable: ${error.service}"
+        else -> error.toString()
     }
 }

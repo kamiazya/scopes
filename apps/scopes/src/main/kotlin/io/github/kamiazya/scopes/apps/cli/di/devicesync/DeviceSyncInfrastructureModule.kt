@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.di.devicesync
 
-import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationPort
-import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
-import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSyncPortAdapter
+import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationCommandPort
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
+import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSynchronizationCommandPortAdapter
 import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
@@ -43,7 +43,7 @@ val deviceSyncInfrastructureModule = module {
     single<DeviceSynchronizationService> {
         DefaultDeviceSynchronizationService(
             syncRepository = get(),
-            eventStore = get<EventStorePort>(),
+            eventStore = get<EventStoreQueryPort>(),
         )
     }
 
@@ -51,8 +51,8 @@ val deviceSyncInfrastructureModule = module {
     single { SynchronizeDeviceHandler(get(), get()) }
 
     // Port Adapter
-    single<DeviceSynchronizationPort> {
-        DeviceSyncPortAdapter(
+    single<DeviceSynchronizationCommandPort> {
+        DeviceSynchronizationCommandPortAdapter(
             synchronizeHandler = get(),
             syncRepository = get(),
         )

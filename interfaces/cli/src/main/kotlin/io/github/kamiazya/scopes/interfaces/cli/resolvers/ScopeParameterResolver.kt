@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.resolvers
 
 import arrow.core.Either
 import arrow.core.right
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery as ContractGetScopeByAliasQuery
 
@@ -13,7 +13,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
  * - ULIDs: Direct scope identifiers (e.g., "01HZQB5QKM0WDG7ZBHSPKT3N2Y")
  * - Aliases: Human-readable names (e.g., "project-name", "epic-feature")
  */
-class ScopeParameterResolver(private val scopeManagementPort: ScopeManagementPort) {
+class ScopeParameterResolver(private val scopeManagementPort: ScopeManagementQueryPort) {
     /**
      * Resolves a parameter to a scope ID.
      *

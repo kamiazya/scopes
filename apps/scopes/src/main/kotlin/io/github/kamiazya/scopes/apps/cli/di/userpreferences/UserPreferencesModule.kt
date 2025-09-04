@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.di.userpreferences
 
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.userpreferences.application.handler.GetCurrentUserPreferencesHandler
+import io.github.kamiazya.scopes.userpreferences.application.handler.query.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferencesRepository
 import io.github.kamiazya.scopes.userpreferences.infrastructure.repository.FileBasedUserPreferencesRepository
 import org.koin.dsl.module
