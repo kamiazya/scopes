@@ -10,11 +10,11 @@ The Scopes project follows a clear separation of concerns for error handling acr
 
 ```
 Domain Layer:       Rich errors with value objects (ScopeId, AliasName, etc.)
-     ↓
+    ↓
 Application Layer:  Simplified errors with primitive types (String, Int)
-     ↓
+    ↓
 Contract Layer:     Structured errors as stable API (no messages, just data)
-     ↓
+    ↓
 Interface Layer:    User-friendly messages (formatted for CLI/API output)
 ```
 
@@ -49,7 +49,7 @@ sealed interface ScopeContractError {
 // 4. Interface Layer - Messages created here
 object ContractErrorMessageMapper {
     fun getMessage(error: ScopeContractError, debug: Boolean = false): String = when (error) {
-        is ScopeContractError.NotFound -> 
+        is ScopeContractError.NotFound ->
             "Scope not found: ${error.scopeId}"
         // ... message formatting logic
     }
@@ -89,7 +89,7 @@ Purpose: Simplify rich domain types to primitives
 // In application layer
 internal object ScopeDomainErrorMapper {
     fun toApplicationError(domainError: ScopesError): ApplicationError = when (domainError) {
-        is ScopeError.NotFound -> 
+        is ScopeError.NotFound ->
             ApplicationError.ScopeNotFound(domainError.scopeId.value) // value object → string
     }
 }
@@ -104,7 +104,7 @@ Purpose: Create stable API errors
 // In infrastructure layer
 internal object ErrorMapper {
     fun mapToContractError(error: ApplicationError): ScopeContractError = when (error) {
-        is ApplicationError.ScopeNotFound -> 
+        is ApplicationError.ScopeNotFound ->
             ScopeContractError.NotFound(scopeId = error.scopeId)
     }
 }
@@ -119,7 +119,7 @@ Purpose: Format human-readable messages
 // In interface layer
 object ContractErrorMessageMapper {
     fun getMessage(error: ScopeContractError): String = when (error) {
-        is ScopeContractError.NotFound -> 
+        is ScopeContractError.NotFound ->
             "Scope not found: ${error.scopeId}\n" +
             "💡 Tip: Use 'scopes list' to see available scopes"
     }
@@ -156,7 +156,7 @@ data class NotFound(val scopeId: String) : ContractError
 // BAD - Message formatting scattered across layers
 // In domain
 override fun toString() = "Scope $id not found"
-// In application  
+// In application
 fun toMessage() = "Cannot find scope: $scopeId"
 // In contract
 val userMessage = "Scope with ID '$scopeId' does not exist"
