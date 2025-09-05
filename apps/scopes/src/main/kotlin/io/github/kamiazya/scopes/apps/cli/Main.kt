@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
+import kotlinx.coroutines.runBlocking
 
 /**
  * Main entry point for the Scopes CLI application.
@@ -21,6 +22,8 @@ fun main(args: Array<String>) {
     }
 
     ScopesCliApplication().use {
+        // Initialize aspect presets before running commands
+        runBlocking { it.ensureInitialized() }
         it.container.get<ScopesCommand>().main(args)
     }
 }
