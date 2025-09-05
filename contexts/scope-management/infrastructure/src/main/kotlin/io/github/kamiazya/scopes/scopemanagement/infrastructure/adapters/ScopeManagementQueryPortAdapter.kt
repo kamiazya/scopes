@@ -171,7 +171,15 @@ class ScopeManagementQueryPortAdapter(
                         aspects = it.aspects,
                     ),
                 )
-            } ?: Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(ScopesError.NotFound("Scope not found by alias")))
+            } ?: Either.Left(
+                ErrorMapper.mapScopesErrorToScopeContractError(
+                    ScopesError.NotFound(
+                        entityType = "Scope",
+                        identifier = query.aliasName,
+                        identifierType = "alias",
+                    ),
+                ),
+            )
         },
     )
 

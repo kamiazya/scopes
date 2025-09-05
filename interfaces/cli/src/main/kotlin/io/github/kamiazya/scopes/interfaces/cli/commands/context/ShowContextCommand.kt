@@ -15,6 +15,8 @@ import org.koin.core.component.inject
 
 /**
  * Command for showing details of a specific context view.
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ShowContextCommand :
     CliktCommand(

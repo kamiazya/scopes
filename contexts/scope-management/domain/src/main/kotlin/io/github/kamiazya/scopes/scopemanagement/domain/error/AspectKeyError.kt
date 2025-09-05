@@ -10,7 +10,7 @@ sealed class AspectKeyError : ScopesError() {
     override val occurredAt: Instant = Clock.System.now()
 
     data object EmptyKey : AspectKeyError()
-    data class TooShort(val value: String, val minLength: Int) : AspectKeyError()
-    data class TooLong(val value: String, val maxLength: Int) : AspectKeyError()
-    data class InvalidFormat(val value: String) : AspectKeyError()
+    data class TooShort(val actualLength: Int, val minLength: Int) : AspectKeyError()
+    data class TooLong(val actualLength: Int, val maxLength: Int) : AspectKeyError()
+    data object InvalidFormat : AspectKeyError()
 }

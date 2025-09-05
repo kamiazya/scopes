@@ -25,10 +25,25 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
 
             // Check if aspect already exists
             aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error -> raise(ScopesError.SystemError("Failed to check for existing aspect: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "check-existing-aspect", "key" to command.key),
+                        ),
+                    )
+                },
                 { existing ->
                     if (existing != null) {
-                        raise(ScopesError.AlreadyExists("Aspect definition with key '${command.key}' already exists"))
+                        raise(
+                            ScopesError.AlreadyExists(
+                                entityType = "AspectDefinition",
+                                identifier = command.key,
+                                identifierType = "key",
+                            ),
+                        )
                     }
                 },
             )
@@ -60,7 +75,16 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
 
             // Save to repository
             aspectDefinitionRepository.save(aspectDefinition).fold(
-                { error -> raise(ScopesError.SystemError("Failed to save aspect definition: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "save-aspect-definition", "key" to command.key),
+                        ),
+                    )
+                },
                 { saved -> saved },
             )
         }

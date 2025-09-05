@@ -23,7 +23,14 @@ class ListAspectDefinitionsHandler(private val aspectDefinitionRepository: Aspec
             // Note: Current implementation returns all definitions
             // TODO: Implement pagination support in repository
             val definitions = aspectDefinitionRepository.findAll()
-                .mapLeft { ScopesError.SystemError("Failed to list aspect definitions: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "aspect-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "list-aspect-definitions"),
+                    )
+                }
                 .bind()
 
             // Map to DTOs

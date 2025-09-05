@@ -38,7 +38,14 @@ class FilterScopesWithQueryHandler(
 
             // Get all aspect definitions for type-aware comparison
             val definitions = aspectDefinitionRepository.findAll()
-                .mapLeft { ScopesError.SystemError("Failed to load aspect definitions: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "aspect-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "findAll"),
+                    )
+                }
                 .bind()
                 .associateBy { it.key.value }
 
@@ -50,19 +57,47 @@ class FilterScopesWithQueryHandler(
                 query.parentId != null -> {
                     val parentScopeId = ScopeId.create(query.parentId).bind()
                     scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                        .mapLeft { ScopesError.SystemError("Failed to find scopes: $it") }
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "scope-repository",
+                                cause = error as? Throwable,
+                                context = mapOf(
+                                    "operation" to "findByParentId",
+                                    "parentId" to parentScopeId.value.toString(),
+                                ),
+                            )
+                        }
                         .bind()
                 }
-                query.offset > 0 || query.limit < 100 -> {
+                query.limit != 100 || query.offset > 0 -> {
                     // Use pagination - get all scopes with offset and limit
                     scopeRepository.findAll(query.offset, query.limit)
-                        .mapLeft { ScopesError.SystemError("Failed to find scopes: $it") }
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "scope-repository",
+                                cause = error as? Throwable,
+                                context = mapOf(
+                                    "operation" to "findAll",
+                                    "offset" to query.offset,
+                                    "limit" to query.limit,
+                                ),
+                            )
+                        }
                         .bind()
                 }
                 else -> {
                     // Default behavior - get root scopes only
                     scopeRepository.findAllRoot()
-                        .mapLeft { ScopesError.SystemError("Failed to find root scopes: $it") }
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "scope-repository",
+                                cause = error as? Throwable,
+                                context = mapOf("operation" to "findAllRoot"),
+                            )
+                        }
                         .bind()
                 }
             }

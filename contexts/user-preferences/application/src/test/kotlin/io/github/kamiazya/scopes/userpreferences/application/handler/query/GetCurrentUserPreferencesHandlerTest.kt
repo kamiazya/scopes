@@ -126,7 +126,7 @@ class GetCurrentUserPreferencesHandlerTest :
 
                 it("should handle save failure when creating default preferences") {
                     // Given
-                    val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", "Database error")
+                    val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", UserPreferencesError.ValidationError.INVALID_FORMAT)
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
                     coEvery { mockRepository.save(any()) } returns saveError.left()
 
@@ -145,7 +145,7 @@ class GetCurrentUserPreferencesHandlerTest :
             describe("when repository returns errors") {
                 it("should propagate repository read errors") {
                     // Given
-                    val repositoryError = UserPreferencesError.InvalidPreferenceValue("read", "config", "File corrupted")
+                    val repositoryError = UserPreferencesError.InvalidPreferenceValue("read", "config", UserPreferencesError.ValidationError.INVALID_FORMAT)
                     coEvery { mockRepository.findForCurrentUser() } returns repositoryError.left()
 
                     // When
@@ -178,7 +178,7 @@ class GetCurrentUserPreferencesHandlerTest :
 
                     // Then
                     val error = result.shouldBeLeft()
-                    error shouldBe UserPreferencesError.PreferencesNotInitialized()
+                    error shouldBe UserPreferencesError.PreferencesNotInitialized
                 }
             }
 

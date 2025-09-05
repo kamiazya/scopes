@@ -14,7 +14,7 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
  * the system follows the Zero-Configuration Start principle and always
  * returns default values when preferences don't exist.
  */
-class ErrorMapper(private val logger: Logger) {
+internal class ErrorMapper(private val logger: Logger) {
 
     /**
      * Maps a domain error to a contract error.
@@ -24,8 +24,18 @@ class ErrorMapper(private val logger: Logger) {
      */
     fun mapToContractError(domainError: UserPreferencesError): UserPreferencesContractError = when (domainError) {
         is UserPreferencesError.InvalidPreferenceValue -> {
+            val validationDetails = when (domainError.validationError) {
+                UserPreferencesError.ValidationError.INVALID_TYPE ->
+                    "Invalid type"
+                UserPreferencesError.ValidationError.OUT_OF_RANGE ->
+                    "Value out of range"
+                UserPreferencesError.ValidationError.INVALID_FORMAT ->
+                    "Invalid format"
+                UserPreferencesError.ValidationError.UNSUPPORTED_VALUE ->
+                    "Unsupported value"
+            }
             UserPreferencesContractError.DataError.PreferencesCorrupted(
-                details = "Invalid value '${domainError.value}' for preference '${domainError.key}': ${domainError.reason}",
+                details = "Invalid value '${domainError.value}' for preference '${domainError.key}': $validationDetails",
                 configPath = null,
             )
         }
@@ -38,15 +48,27 @@ class ErrorMapper(private val logger: Logger) {
         }
 
         is UserPreferencesError.InvalidHierarchySettings -> {
+            val settingDetails = when (domainError.settingType) {
+                UserPreferencesError.HierarchySettingType.INVALID_DEPTH -> "Invalid hierarchy depth"
+                UserPreferencesError.HierarchySettingType.CIRCULAR_REFERENCE -> "Circular reference detected"
+                UserPreferencesError.HierarchySettingType.ORPHANED_NODE -> "Orphaned node found"
+                UserPreferencesError.HierarchySettingType.DUPLICATE_PATH -> "Duplicate path detected"
+            }
             UserPreferencesContractError.DataError.PreferencesCorrupted(
-                details = domainError.reason,
+                details = "Invalid hierarchy settings: $settingDetails",
                 configPath = null,
             )
         }
 
         is UserPreferencesError.InvalidHierarchyPreferences -> {
+            val preferenceDetails = when (domainError.preferenceType) {
+                UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT -> "Invalid default value"
+                UserPreferencesError.HierarchyPreferenceType.CONFLICTING_RULES -> "Conflicting rules"
+                UserPreferencesError.HierarchyPreferenceType.MISSING_REQUIRED -> "Missing required preference"
+                UserPreferencesError.HierarchyPreferenceType.INVALID_INHERITANCE -> "Invalid inheritance"
+            }
             UserPreferencesContractError.DataError.PreferencesCorrupted(
-                details = domainError.reason,
+                details = "Invalid hierarchy preferences: $preferenceDetails",
                 configPath = null,
             )
         }
@@ -64,22 +86,6 @@ class ErrorMapper(private val logger: Logger) {
             // This is an internal error that shouldn't be exposed to external consumers
             UserPreferencesContractError.DataError.PreferencesCorrupted(
                 details = "Preferences already initialized",
-                configPath = null,
-            )
-        }
-
-        // Default mapping for any unmapped errors
-        else -> {
-            logger.error(
-                "Unmapped UserPreferencesError encountered, mapping to PreferencesCorrupted",
-                mapOf(
-                    "errorClass" to domainError::class.simpleName.orEmpty(),
-                    "errorMessage" to (domainError.message ?: "No message provided"),
-                    "errorType" to domainError::class.qualifiedName.orEmpty(),
-                ),
-            )
-            UserPreferencesContractError.DataError.PreferencesCorrupted(
-                details = "Unexpected error occurred",
                 configPath = null,
             )
         }

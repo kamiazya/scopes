@@ -21,10 +21,32 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
         either {
             // Get root scopes (parentId = null) with database-side pagination
             val rootScopes = scopeRepository.findByParentId(null, query.offset, query.limit)
-                .mapLeft { ScopesError.SystemError("Failed to find root scopes: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findByParentId",
+                            "parentId" to "null",
+                            "offset" to query.offset,
+                            "limit" to query.limit,
+                        ),
+                    )
+                }
                 .bind()
             val totalCount = scopeRepository.countByParentId(null)
-                .mapLeft { ScopesError.SystemError("Failed to count root scopes: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "countByParentId",
+                            "parentId" to "null",
+                        ),
+                    )
+                }
                 .bind()
 
             PagedResult(

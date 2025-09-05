@@ -39,8 +39,10 @@ class CreateContextViewUseCaseTest :
 
                 // Setup transaction manager to execute the block directly
                 coEvery { transactionManager.inTransaction<ScopesError, ContextViewDto>(any()) } coAnswers {
-                    val block = arg<suspend () -> Either<ScopesError, ContextViewDto>>(0)
-                    block()
+                    val block = arg<suspend io.github.kamiazya.scopes.platform.application.port.TransactionContext.() -> Either<ScopesError, ContextViewDto>>(0)
+                    // Create a mock transaction context
+                    val transactionContext = mockk<io.github.kamiazya.scopes.platform.application.port.TransactionContext>()
+                    block(transactionContext)
                 }
             }
 
@@ -129,7 +131,7 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.InvalidKeyFormat) shouldBe true
+                    (error is ContextError.EmptyKey) shouldBe true
                 }
 
                 it("should return validation error for invalid filter syntax") {
@@ -147,10 +149,10 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.InvalidFilter) shouldBe true
-                    if (error is ContextError.InvalidFilter) {
-                        error.filter shouldBe "((unclosed parenthesis"
-                        error.reason shouldBe "Missing closing parenthesis at position 22"
+                    (error is ContextError.InvalidFilterSyntax) shouldBe true
+                    if (error is ContextError.InvalidFilterSyntax) {
+                        error.expression shouldBe "((unclosed parenthesis"
+                        error.errorType shouldBe ContextError.FilterSyntaxErrorType.MissingClosingParen(22)
                     }
                 }
 
@@ -164,7 +166,12 @@ class CreateContextViewUseCaseTest :
                     )
 
                     val errorMessage = "Database connection failed"
-                    coEvery { contextViewRepository.save(any()) } returns errorMessage.left()
+                    val persistenceError = PersistenceError.StorageUnavailable(
+                        occurredAt = kotlinx.datetime.Clock.System.now(),
+                        operation = "save-context-view",
+                        cause = RuntimeException(errorMessage),
+                    )
+                    coEvery { contextViewRepository.save(any()) } returns persistenceError.left()
 
                     // When
                     val result = handler(command)
@@ -175,7 +182,7 @@ class CreateContextViewUseCaseTest :
                     (error is PersistenceError.StorageUnavailable) shouldBe true
                     if (error is PersistenceError.StorageUnavailable) {
                         error.operation shouldBe "save-context-view"
-                        error.cause shouldBe errorMessage
+                        error.cause?.message shouldBe errorMessage
                     }
                 }
             }

@@ -16,6 +16,8 @@ import org.koin.core.component.inject
 
 /**
  * Command for showing the currently active context.
+ *
+ * Note: Uses CliktError for error handling.
  */
 class CurrentContextCommand :
     CliktCommand(

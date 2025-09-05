@@ -9,6 +9,8 @@ import org.koin.core.component.inject
 /**
  * Command for listing all aspect definitions.
  * Usage: scopes aspect definitions
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ListDefinitionsCommand :
     CliktCommand(

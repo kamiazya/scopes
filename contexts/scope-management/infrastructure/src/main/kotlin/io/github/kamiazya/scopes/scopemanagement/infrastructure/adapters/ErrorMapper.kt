@@ -19,7 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
  * - Hide internal implementation details
  * - Log unmapped errors for visibility and debugging
  */
-object ErrorMapper {
+internal object ErrorMapper {
     /**
      * Maps domain errors to contract errors.
      */
@@ -58,7 +58,7 @@ object ErrorMapper {
             ),
         )
         is ScopeInputError.DescriptionError.TooLong -> ScopeContractError.InputError.InvalidDescription(
-            description = domainError.attemptedValue,
+            descriptionText = domainError.attemptedValue,
             validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
                 maximumLength = domainError.maximumLength,
                 actualLength = domainError.attemptedValue.length,
@@ -124,6 +124,67 @@ object ErrorMapper {
             title = domainError.title,
             parentId = domainError.parentScopeId?.value,
             existingScopeId = domainError.existingScopeId?.value,
+        )
+
+        // New structured errors
+        is ScopesError.NotFound -> when (domainError.identifierType) {
+            "alias" -> ScopeContractError.BusinessError.AliasNotFound(alias = domainError.identifier)
+            else -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.identifier)
+        }
+        is ScopesError.AlreadyExists -> when (domainError.entityType) {
+            "AspectDefinition" -> ScopeContractError.BusinessError.DuplicateAlias(
+                alias = domainError.identifier, // Using DuplicateAlias for aspect keys as a workaround
+            )
+            else -> ScopeContractError.BusinessError.DuplicateAlias(
+                alias = domainError.identifier,
+            )
+        }
+        is ScopesError.SystemError -> when (domainError.errorType) {
+            ScopesError.SystemError.SystemErrorType.SERVICE_UNAVAILABLE ->
+                ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: "scope-management")
+            else -> ScopeContractError.SystemError.ServiceUnavailable(
+                service = domainError.service ?: "scope-management",
+            )
+        }
+        is ScopesError.ValidationFailed -> {
+            // Map validation errors to appropriate input errors
+            when (domainError.field) {
+                "title" -> ScopeContractError.InputError.InvalidTitle(
+                    title = domainError.value,
+                    validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
+                )
+                "description" -> ScopeContractError.InputError.InvalidDescription(
+                    descriptionText = domainError.value,
+                    validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(1000, domainError.value.length),
+                )
+                else -> ScopeContractError.InputError.InvalidId(
+                    id = domainError.value,
+                    expectedFormat = "Valid ${domainError.field} value",
+                )
+            }
+        }
+        is ScopesError.InvalidOperation -> when {
+            domainError.reason == ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
+                ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.entityId ?: "")
+            else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+        }
+        is ScopesError.Conflict -> when (domainError.conflictType) {
+            ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
+                ScopeContractError.BusinessError.HasChildren(
+                    scopeId = domainError.resourceId,
+                    childrenCount = null,
+                )
+            else -> ScopeContractError.BusinessError.DuplicateAlias(
+                alias = domainError.resourceId,
+            )
+        }
+        is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
+            scopeId = domainError.aggregateId,
+            expectedVersion = domainError.expectedVersion?.toLong() ?: 0,
+            actualVersion = domainError.actualVersion?.toLong() ?: 0,
+        )
+        is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "scope-management",
         )
 
         // Default fallback for unmapped errors

@@ -25,7 +25,17 @@ class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private 
 
             // Retrieve the scope from repository
             val scope = scopeRepository.findById(scopeId)
-                .mapLeft { ScopesError.SystemError("Failed to find scope: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findById",
+                            "scopeId" to scopeId.value.toString(),
+                        ),
+                    )
+                }
                 .bind()
 
             // Map to DTO if found

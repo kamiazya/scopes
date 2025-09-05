@@ -28,13 +28,39 @@ class ListAliasesHandler(
 
             // Get the scope to verify it exists
             val scope = scopeRepository.findById(scopeId)
-                .mapLeft { ScopesError.SystemError("Failed to find scope: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findById",
+                            "scopeId" to scopeId.value.toString(),
+                        ),
+                    )
+                }
                 .bind()
-                ?: raise(ScopesError.NotFound("Scope not found: ${query.scopeId}"))
+                ?: raise(
+                    ScopesError.NotFound(
+                        entityType = "Scope",
+                        identifier = query.scopeId,
+                        identifierType = "id",
+                    ),
+                )
 
             // Get all aliases for the scope
             val aliases = scopeAliasRepository.findByScopeId(scopeId)
-                .mapLeft { ScopesError.SystemError("Failed to find aliases: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "alias-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findByScopeId",
+                            "scopeId" to scopeId.value.toString(),
+                        ),
+                    )
+                }
                 .bind()
 
             // Map to DTOs

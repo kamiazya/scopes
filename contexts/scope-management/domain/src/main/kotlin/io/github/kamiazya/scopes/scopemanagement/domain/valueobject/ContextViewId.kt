@@ -61,7 +61,7 @@ value class ContextViewId private constructor(val value: String) {
         AggregateIdError.InvalidFormat(
             occurredAt = Clock.System.now(),
             value = value,
-            message = "Failed to create AggregateId from ContextViewId",
+            formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )
     }
 }

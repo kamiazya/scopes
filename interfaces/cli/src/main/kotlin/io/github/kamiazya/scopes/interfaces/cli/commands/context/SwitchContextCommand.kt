@@ -6,10 +6,10 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -52,7 +52,7 @@ class SwitchContextCommand :
             val result = contextCommandAdapter.setCurrentContext(SetActiveContextRequest(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to switch to context '$key': ${formatError(error)}", err = true)
+                    echo("Error: Failed to switch to context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 {
                     echo("Switched to context '$key'")
@@ -69,13 +69,5 @@ class SwitchContextCommand :
                 },
             )
         }
-    }
-
-    private fun formatError(error: ScopeContractError): String = when (error) {
-        is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
-        is ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
-        is ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
-        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
-        else -> error.toString()
     }
 }

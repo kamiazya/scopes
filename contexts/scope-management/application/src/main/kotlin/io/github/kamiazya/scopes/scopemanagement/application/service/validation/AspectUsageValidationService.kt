@@ -23,7 +23,10 @@ class AspectUsageValidationService(private val scopeRepository: ScopeRepository)
 
         ensure(count == 0) {
             ScopesError.Conflict(
-                "Cannot delete aspect '${aspectKey.value}' because it is in use by $count scope(s)",
+                resourceType = "AspectDefinition",
+                resourceId = aspectKey.value,
+                conflictType = ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES,
+                details = mapOf("usage_count" to count),
             )
         }
     }

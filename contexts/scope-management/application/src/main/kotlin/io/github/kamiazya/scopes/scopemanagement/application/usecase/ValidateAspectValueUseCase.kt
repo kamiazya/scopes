@@ -32,9 +32,20 @@ class ValidateAspectValueUseCase(
 
         // Find the aspect definition
         val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
-            { return ScopesError.SystemError("Failed to find aspect definition: $it").left() },
             {
-                it ?: return ScopesError.NotFound("Aspect definition not found for key: ${input.key}").left()
+                return ScopesError.SystemError(
+                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                    service = "aspect-repository",
+                    cause = it as? Throwable,
+                    context = mapOf("operation" to "find-aspect-definition", "key" to input.key),
+                ).left()
+            },
+            {
+                it ?: return ScopesError.NotFound(
+                    entityType = "AspectDefinition",
+                    identifier = input.key,
+                    identifierType = "key",
+                ).left()
             },
         )
 
@@ -80,9 +91,20 @@ class ValidateAspectValueUseCase(
 
             // Find the aspect definition
             val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { return ScopesError.SystemError("Failed to find aspect definition: $it").left() },
                 {
-                    it ?: return ScopesError.NotFound("Aspect definition not found for key: $key").left()
+                    return ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "aspect-repository",
+                        cause = it as? Throwable,
+                        context = mapOf("operation" to "find-aspect-definition", "key" to key),
+                    ).left()
+                },
+                {
+                    it ?: return ScopesError.NotFound(
+                        entityType = "AspectDefinition",
+                        identifier = key,
+                        identifierType = "key",
+                    ).left()
                 },
             )
 

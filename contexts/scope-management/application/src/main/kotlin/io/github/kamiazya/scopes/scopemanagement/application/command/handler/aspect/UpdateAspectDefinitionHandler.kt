@@ -25,9 +25,24 @@ class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: Aspe
 
             // Find existing definition
             val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error -> raise(ScopesError.SystemError("Failed to retrieve aspect definition: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
+                        ),
+                    )
+                },
                 { definition ->
-                    definition ?: raise(ScopesError.NotFound("Aspect definition with key '${command.key}' not found"))
+                    definition ?: raise(
+                        ScopesError.NotFound(
+                            entityType = "AspectDefinition",
+                            identifier = command.key,
+                            identifierType = "key",
+                        ),
+                    )
                 },
             )
 
@@ -40,7 +55,16 @@ class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: Aspe
 
             // Save updated definition
             aspectDefinitionRepository.save(updated).fold(
-                { error -> raise(ScopesError.SystemError("Failed to update aspect definition: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "update-aspect-definition", "key" to command.key),
+                        ),
+                    )
+                },
                 { saved -> saved },
             )
         }

@@ -75,11 +75,11 @@ public class AspectCommandPortAdapter(
      */
     private fun mapScopesErrorToScopeContractError(error: ScopesError): ScopeContractError = when (error) {
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
-            ScopeContractError.BusinessError.NotFound(error.message)
+            ScopeContractError.BusinessError.NotFound(error.identifier)
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.AlreadyExists ->
-            ScopeContractError.BusinessError.DuplicateAlias(error.message)
+            ScopeContractError.BusinessError.DuplicateAlias(error.identifier)
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
-            ScopeContractError.InputError.InvalidTitle(error.message, ScopeContractError.TitleValidationFailure.Empty)
+            ScopeContractError.InputError.InvalidTitle(error.field, ScopeContractError.TitleValidationFailure.Empty)
         else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")
     }
 }

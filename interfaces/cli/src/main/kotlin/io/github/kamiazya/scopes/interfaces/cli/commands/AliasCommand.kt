@@ -13,6 +13,8 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.alias.SetCanonicalAlias
  *
  * This command serves as a group for all alias-related subcommands,
  * providing a unified interface for managing scope aliases.
+ *
+ * Note: Subcommands handle errors using CliktError framework.
  */
 class AliasCommand :
     CliktCommand(
@@ -24,20 +26,20 @@ class AliasCommand :
         Each scope can have multiple aliases, with one designated as canonical.
 
         Examples:
-          # Add a new alias to a scope
-          scopes alias add "project-alpha" --scope 01HX5Y2Z1A2B3C4D5E6F7G8H9J
+            # Add a new alias to a scope
+            scopes alias add "project-alpha" --scope 01HX5Y2Z1A2B3C4D5E6F7G8H9J
 
-          # List all aliases for a scope
-          scopes alias list --scope project-alpha
+            # List all aliases for a scope
+            scopes alias list --scope project-alpha
 
-          # Set the canonical alias for a scope
-          scopes alias set-canonical "alpha" --scope project-alpha
+            # Set the canonical alias for a scope
+            scopes alias set-canonical "alpha" --scope project-alpha
 
-          # Remove an alias
-          scopes alias rm "old-name" --scope project-alpha
+            # Remove an alias
+            scopes alias rm "old-name" --scope project-alpha
 
-          # Rename an alias
-          scopes alias rename "old-name" "new-name"
+            # Rename an alias
+            scopes alias rename "old-name" "new-name"
         """.trimIndent(),
         printHelpOnEmptyArgs = true,
     ) {

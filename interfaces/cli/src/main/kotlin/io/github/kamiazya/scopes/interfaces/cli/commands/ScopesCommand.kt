@@ -12,6 +12,8 @@ import com.github.ajalt.clikt.parameters.options.option
  * This is the root command that serves as the entry point for all
  * scope-related CLI operations. It delegates to subcommands for
  * specific operations.
+ *
+ * Note: Subcommands handle errors using CliktError framework.
  */
 class ScopesCommand :
     CliktCommand(

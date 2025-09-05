@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.error
+package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.eventstore.domain.error.EventStoreError
 import io.github.kamiazya.scopes.platform.application.error.BaseCrossContextErrorMapper
@@ -17,41 +17,45 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
  * - Provide fallback mapping for unmapped errors
  * - Log unmapped errors for monitoring and debugging
  */
-class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
+internal class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
 
     override fun mapCrossContext(sourceError: EventStoreError): ScopesError = when (sourceError) {
         is EventStoreError.StorageError -> {
             when (sourceError.storageFailureType) {
                 EventStoreError.StorageFailureType.VERSION_CONFLICT -> ScopesError.ConcurrencyError(
-                    message = "Event storage version conflict for aggregate ${sourceError.aggregateId}",
+                    aggregateId = sourceError.aggregateId,
+                    aggregateType = "Scope",
                     expectedVersion = sourceError.eventVersion?.toInt(),
                     actualVersion = null, // EventStoreError doesn't provide actual version
+                    operation = "save_events",
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.StorageFailureType.DUPLICATE_EVENT -> ScopesError.ConcurrencyError(
-                    message = "Duplicate event detected for aggregate ${sourceError.aggregateId}",
+                    aggregateId = sourceError.aggregateId,
+                    aggregateType = "Scope",
                     expectedVersion = null,
                     actualVersion = null,
+                    operation = "save_events",
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.StorageFailureType.SERIALIZATION_FAILED -> ScopesError.SystemError(
-                    message = "Event serialization failed for ${sourceError.eventType}",
+                    errorType = ScopesError.SystemError.SystemErrorType.SERIALIZATION_FAILED,
+                    service = "event-store",
                     cause = sourceError.cause,
-                    errorCode = "EVENT_SERIALIZATION_FAILED",
-                    context = mapOf("component" to "event-store", "operation" to "serialize-event"),
+                    context = mapOf("component" to "event-store", "operation" to "serialize-event", "eventType" to sourceError.eventType),
                     occurredAt = sourceError.occurredAt,
                 )
-                EventStoreError.StorageFailureType.VALIDATION_FAILED -> ScopesError.SystemError(
-                    message = "Event validation failed for ${sourceError.eventType}",
-                    cause = sourceError.cause,
-                    errorCode = "EVENT_VALIDATION_FAILED",
-                    context = mapOf("component" to "event-store", "operation" to "validate-event"),
+                EventStoreError.StorageFailureType.VALIDATION_FAILED -> ScopesError.ValidationFailed(
+                    field = "event",
+                    value = sourceError.eventType,
+                    constraint = ScopesError.ValidationConstraintType.InvalidValue("Event validation failed"),
+                    details = mapOf("component" to "event-store", "operation" to "validate-event"),
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.StorageFailureType.CAPACITY_EXCEEDED -> ScopesError.SystemError(
-                    message = "Event store capacity exceeded",
+                    errorType = ScopesError.SystemError.SystemErrorType.CAPACITY_EXCEEDED,
+                    service = "event-store",
                     cause = sourceError.cause,
-                    errorCode = "EVENT_STORE_CAPACITY_EXCEEDED",
                     context = mapOf("component" to "event-store", "operation" to "store-event"),
                     occurredAt = sourceError.occurredAt,
                 )
@@ -61,35 +65,37 @@ class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventS
         is EventStoreError.RetrievalError -> {
             when (sourceError.failureReason) {
                 EventStoreError.RetrievalFailureReason.NOT_FOUND -> ScopesError.RepositoryError(
-                    message = "Events not found for query: ${sourceError.query}",
+                    repositoryName = "EventStore",
+                    operation = ScopesError.RepositoryError.RepositoryOperation.QUERY,
+                    entityType = "Event",
                     cause = sourceError.cause,
-                    operation = "retrieve-events",
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.RetrievalFailureReason.DESERIALIZATION_FAILED -> ScopesError.SystemError(
-                    message = "Event deserialization failed",
+                    errorType = ScopesError.SystemError.SystemErrorType.DESERIALIZATION_FAILED,
+                    service = "event-store",
                     cause = sourceError.cause,
-                    errorCode = "EVENT_DESERIALIZATION_FAILED",
                     context = mapOf("component" to "event-store", "operation" to "deserialize-event"),
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.RetrievalFailureReason.QUERY_TIMEOUT -> ScopesError.SystemError(
-                    message = "Event query timeout",
+                    errorType = ScopesError.SystemError.SystemErrorType.QUERY_TIMEOUT,
+                    service = "event-store",
                     cause = sourceError.cause,
-                    errorCode = "EVENT_QUERY_TIMEOUT",
                     context = mapOf("component" to "event-store", "operation" to "query-events"),
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.RetrievalFailureReason.INVALID_QUERY_PARAMETERS -> ScopesError.RepositoryError(
-                    message = "Invalid event query parameters: ${sourceError.query}",
+                    repositoryName = "EventStore",
+                    operation = ScopesError.RepositoryError.RepositoryOperation.QUERY,
+                    entityType = "Event",
                     cause = sourceError.cause,
-                    operation = "validate-query",
                     occurredAt = sourceError.occurredAt,
                 )
                 EventStoreError.RetrievalFailureReason.ACCESS_DENIED -> ScopesError.SystemError(
-                    message = "Access denied to event store",
+                    errorType = ScopesError.SystemError.SystemErrorType.ACCESS_DENIED,
+                    service = "event-store",
                     cause = sourceError.cause,
-                    errorCode = "EVENT_STORE_ACCESS_DENIED",
                     context = mapOf("component" to "event-store", "operation" to "access-events"),
                     occurredAt = sourceError.occurredAt,
                 )
@@ -110,19 +116,30 @@ class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventS
             }
 
             ScopesError.SystemError(
-                message = "Event store database error: ${sourceError.operation} (${sourceError.connectionState})",
+                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                service = "event-store-database",
                 cause = sourceError.cause,
-                errorCode = "EVENT_STORE_DATABASE_ERROR",
-                context = mapOf("component" to "event-store-database", "operation" to operation),
+                context = mapOf(
+                    "component" to "event-store-database",
+                    "operation" to operation,
+                    "databaseOperation" to sourceError.operation.name,
+                    "connectionState" to sourceError.connectionState.name,
+                ),
                 occurredAt = sourceError.occurredAt,
             )
         }
 
-        is EventStoreError.InvalidEventError -> ScopesError.SystemError(
-            message = "Invalid event data for ${sourceError.eventType}: ${sourceError.validationErrors.joinToString(", ") { "${it.field}: ${it.rule}" }}",
-            cause = null,
-            errorCode = "INVALID_EVENT_DATA",
-            context = mapOf("component" to "event-store", "operation" to "validate-event"),
+        is EventStoreError.InvalidEventError -> ScopesError.ValidationFailed(
+            field = "event",
+            value = sourceError.eventType ?: "",
+            constraint = ScopesError.ValidationConstraintType.InvalidValue(
+                sourceError.validationErrors.joinToString(", ") { "${it.field}: ${it.rule}" },
+            ),
+            details = mapOf(
+                "component" to "event-store",
+                "operation" to "validate-event",
+                "validationErrors" to sourceError.validationErrors,
+            ),
             occurredAt = sourceError.occurredAt,
         )
 
@@ -136,9 +153,16 @@ class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventS
             }
 
             ScopesError.RepositoryError(
-                message = "Event store persistence error during ${sourceError.operation} for ${sourceError.dataType}",
+                repositoryName = "EventStore",
+                operation = when (sourceError.operation) {
+                    EventStoreError.PersistenceOperation.WRITE_TO_DISK -> ScopesError.RepositoryError.RepositoryOperation.SAVE
+                    EventStoreError.PersistenceOperation.READ_FROM_DISK -> ScopesError.RepositoryError.RepositoryOperation.FIND
+                    EventStoreError.PersistenceOperation.CREATE_SNAPSHOT -> ScopesError.RepositoryError.RepositoryOperation.SAVE
+                    EventStoreError.PersistenceOperation.DELETE_OLD_EVENTS -> ScopesError.RepositoryError.RepositoryOperation.DELETE
+                    EventStoreError.PersistenceOperation.COMPACT_STORAGE -> ScopesError.RepositoryError.RepositoryOperation.UPDATE
+                },
+                entityType = sourceError.dataType,
                 cause = null,
-                operation = operation,
                 occurredAt = sourceError.occurredAt,
             )
         }
@@ -146,10 +170,10 @@ class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventS
         else -> handleUnmappedCrossContextError(
             unmappedError = sourceError,
             fallbackError = ScopesError.SystemError(
-                message = "Unknown event store error: ${sourceError::class.simpleName}",
+                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                service = "event-store",
                 cause = null,
-                errorCode = "UNKNOWN_EVENT_STORE_ERROR",
-                context = mapOf("component" to "event-store", "operation" to "unknown"),
+                context = mapOf("component" to "event-store", "operation" to "unspecified"),
                 occurredAt = sourceError.occurredAt,
             ),
         )

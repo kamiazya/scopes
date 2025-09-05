@@ -15,6 +15,8 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.context.SwitchContextCo
  *
  * This command serves as a group for all context-related subcommands,
  * providing a unified interface for managing context views.
+ *
+ * Note: Subcommands handle errors using CliktError framework.
  */
 class ContextCommand :
     CliktCommand(

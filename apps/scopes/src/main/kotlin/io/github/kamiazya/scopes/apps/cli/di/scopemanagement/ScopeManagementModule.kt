@@ -7,7 +7,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.asp
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
-import io.github.kamiazya.scopes.scopemanagement.application.error.EventStoreErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateScopeHandler
@@ -316,7 +315,5 @@ val scopeManagementModule = module {
     }
 
     // Error Mappers
-    single {
-        EventStoreErrorMapper(logger = get())
-    }
+    // EventStoreErrorMapper is now created internally in infrastructure layer
 }

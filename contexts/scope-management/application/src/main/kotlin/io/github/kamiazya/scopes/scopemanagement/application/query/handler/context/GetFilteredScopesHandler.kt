@@ -43,20 +43,41 @@ class GetFilteredScopesHandler(
 
                     // Use specified context
                     contextViewRepository.findByKey(contextViewKey)
-                        .mapLeft { ScopesError.SystemError("Failed to find context view: $it") }
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "context-repository",
+                                cause = error as? Throwable,
+                                context = mapOf("operation" to "find-context-view", "key" to query.contextKey),
+                            )
+                        }
                         .bind()
                 }
                 else -> {
                     // Use active context if available
                     activeContextRepository.getActiveContext()
-                        .mapLeft { ScopesError.SystemError("Failed to get active context: $it") }
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "active-context-repository",
+                                cause = error as? Throwable,
+                                context = mapOf("operation" to "get-active-context"),
+                            )
+                        }
                         .bind()
                 }
             }
 
             // Get all scopes with pagination
             val allScopes = scopeRepository.findAll(query.offset, query.limit)
-                .mapLeft { ScopesError.SystemError("Failed to find scopes: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "find-all-scopes", "offset" to query.offset, "limit" to query.limit),
+                    )
+                }
                 .bind()
 
             // Get total count - use findAll() and count since there's no count() method
@@ -66,13 +87,27 @@ class GetFilteredScopesHandler(
             val filteredScopes = if (contextView != null) {
                 // Get aspect definitions for type-aware comparison
                 val aspectDefinitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { ScopesError.SystemError("Failed to load aspect definitions: $it") }
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "load-aspect-definitions"),
+                        )
+                    }
                     .bind()
                     .associateBy { def -> def.key.value }
 
                 // Use the domain-rich filter method
                 val filtered = contextView.filterScopes(allScopes, aspectDefinitions, filterEvaluationService)
-                    .mapLeft { ScopesError.SystemError("Failed to apply filter: $it") }
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "filter-evaluation",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "apply-filter", "filter" to contextView.filter.expression),
+                        )
+                    }
                     .bind()
 
                 // Publish audit event for context usage (non-blocking)

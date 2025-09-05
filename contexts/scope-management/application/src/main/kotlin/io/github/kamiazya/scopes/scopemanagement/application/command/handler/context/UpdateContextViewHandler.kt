@@ -28,7 +28,13 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
 
             // Retrieve existing context view
             val existingContextView = contextViewRepository.findByKey(key).mapLeft { it as ScopesError }.bind()
-                ?: raise(ScopesError.NotFound("ContextView with key '${command.key}' not found"))
+                ?: raise(
+                    ScopesError.NotFound(
+                        entityType = "ContextView",
+                        identifier = command.key,
+                        identifierType = "key",
+                    ),
+                )
 
             // Prepare updated values
             val updatedName = command.name?.let { newName ->

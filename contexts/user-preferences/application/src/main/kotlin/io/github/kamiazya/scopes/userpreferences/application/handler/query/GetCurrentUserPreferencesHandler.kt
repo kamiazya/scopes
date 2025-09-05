@@ -13,10 +13,10 @@ class GetCurrentUserPreferencesHandler(private val repository: UserPreferencesRe
     override suspend fun invoke(query: GetCurrentUserPreferences): Either<UserPreferencesError, UserPreferencesInternalDto> = either {
         // Query handlers should only read data, not create or modify state
         val aggregate = repository.findForCurrentUser().bind()
-            ?: raise(UserPreferencesError.PreferencesNotInitialized())
+            ?: raise(UserPreferencesError.PreferencesNotInitialized)
 
         val preferences = aggregate.preferences
-            ?: raise(UserPreferencesError.PreferencesNotInitialized())
+            ?: raise(UserPreferencesError.PreferencesNotInitialized)
 
         UserPreferencesInternalDto.from(preferences)
     }

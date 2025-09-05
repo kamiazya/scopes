@@ -250,7 +250,7 @@ class AspectManagementIntegrationTest :
                         result.shouldBeRight()
                         result.getOrNull()?.let { definitions ->
                             definitions.size shouldBe 3
-                            definitions.map { it.key.value } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
+                            definitions.map { it.key } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
                         }
                     }
                 }

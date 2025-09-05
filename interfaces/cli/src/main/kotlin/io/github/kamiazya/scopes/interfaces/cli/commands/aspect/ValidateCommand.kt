@@ -13,6 +13,8 @@ import org.koin.core.component.inject
 /**
  * Command for validating aspect values against their definitions.
  * Usage: scopes aspect validate <key> --value <value> [--value <value2>...]
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ValidateCommand :
     CliktCommand(
@@ -35,7 +37,22 @@ class ValidateCommand :
                     }
                 }
                 is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidateAspectValueResponse.ValidationFailed -> {
-                    echo("Validation failed for aspect '${result.key}': ${result.message}", err = true)
+                    val failureMessage = when (val failure = result.validationFailure) {
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.Empty -> "Value cannot be empty"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.TooShort ->
+                            "Value is too short (minimum length: ${failure.minimumLength})"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.TooLong ->
+                            "Value is too long (maximum length: ${failure.maximumLength})"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.InvalidFormat ->
+                            "Invalid format (expected: ${failure.expectedFormat})"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.InvalidType ->
+                            "Invalid type (expected: ${failure.expectedType})"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.NotInAllowedValues ->
+                            "Value not in allowed values: ${failure.allowedValues.joinToString(", ")}"
+                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.MultipleValuesNotAllowed ->
+                            "Multiple values not allowed"
+                    }
+                    echo("Validation failed for aspect '${result.key}': $failureMessage", err = true)
                 }
             }
         }
@@ -56,7 +73,7 @@ class ValidateCommand :
                     "Required aspects are missing: ${details.missingKeys.joinToString(", ")}"
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ValidationError.InvalidDurationValue ->
                     "Value '${details.value}' is not a valid ISO 8601 duration for aspect '${details.aspectKey}'. Examples: P1D, PT2H30M, P1W"
-                else -> error.message
+                else -> "Unknown validation error"
             }
         }
         else -> error.toString()

@@ -26,7 +26,14 @@ class GetAspectDefinitionHandler(private val aspectDefinitionRepository: AspectD
 
             // Find by key
             val aspectDefinition = aspectDefinitionRepository.findByKey(aspectKey)
-                .mapLeft { ScopesError.SystemError("Failed to find aspect definition: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "aspect-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "find-aspect-definition", "key" to query.key),
+                    )
+                }
                 .bind()
 
             // Map to DTO if found

@@ -26,7 +26,14 @@ class GetContextViewHandler(private val contextViewRepository: ContextViewReposi
 
             // Retrieve context view
             val contextView = contextViewRepository.findByKey(contextKey)
-                .mapLeft { ScopesError.SystemError("Failed to find context view: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "context-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "find-context-view", "key" to query.key),
+                    )
+                }
                 .bind()
 
             // Map to DTO if found

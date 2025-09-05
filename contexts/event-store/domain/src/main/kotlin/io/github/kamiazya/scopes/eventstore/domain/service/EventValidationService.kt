@@ -125,7 +125,7 @@ class DefaultEventValidationService : EventValidationService {
                 if (actualVersion != expectedVersion) {
                     return EventStoreDomainError.EventOrderingViolation(
                         aggregateId = aggregateId,
-                        message = "Expected version $expectedVersion but got $actualVersion",
+                        violationType = EventStoreDomainError.OrderingViolationType.GAPS_IN_VERSION,
                     ).left()
                 }
                 expectedVersion++
@@ -138,7 +138,7 @@ class DefaultEventValidationService : EventValidationService {
                 if (curr.metadata.occurredAt < prev.metadata.occurredAt) {
                     return EventStoreDomainError.EventOrderingViolation(
                         aggregateId = aggregateId,
-                        message = "Event ${curr.metadata.eventId.value} occurred before ${prev.metadata.eventId.value} but has higher version",
+                        violationType = EventStoreDomainError.OrderingViolationType.RETROACTIVE_EVENT,
                     ).left()
                 }
             }

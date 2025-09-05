@@ -60,7 +60,7 @@ value class AliasId private constructor(val value: String) {
         AggregateIdError.InvalidFormat(
             occurredAt = Clock.System.now(),
             value = value,
-            message = "Failed to create AggregateId from AliasId",
+            formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )
     }
 }

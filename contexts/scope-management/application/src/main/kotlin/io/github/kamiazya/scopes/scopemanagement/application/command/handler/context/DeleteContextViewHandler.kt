@@ -29,12 +29,24 @@ class DeleteContextViewHandler(
 
             // Check if context view exists
             val existingContext = contextViewRepository.findByKey(contextKey).mapLeft { it as ScopesError }.bind()
-                ?: raise(ScopesError.NotFound("ContextView with key '${command.key}' not found"))
+                ?: raise(
+                    ScopesError.NotFound(
+                        entityType = "ContextView",
+                        identifier = command.key,
+                        identifierType = "key",
+                    ),
+                )
 
             // Check if this context is currently active
             val currentContext = activeContextService.getCurrentContext()
             if (currentContext != null && currentContext.key.value == command.key) {
-                raise(ScopesError.ValidationFailed("Cannot delete an active context: ${command.key}"))
+                raise(
+                    ScopesError.ValidationFailed(
+                        field = "context",
+                        value = command.key,
+                        constraint = ScopesError.ValidationConstraintType.InvalidValue("Cannot delete an active context"),
+                    ),
+                )
             }
 
             // Delete the context view by its ID

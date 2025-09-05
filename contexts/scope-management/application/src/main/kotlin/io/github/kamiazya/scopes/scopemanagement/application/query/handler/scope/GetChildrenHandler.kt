@@ -27,10 +27,32 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
 
             // Get children from repository with database-side pagination
             val children = scopeRepository.findByParentId(parentId, query.offset, query.limit)
-                .mapLeft { ScopesError.SystemError("Failed to find children: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findByParentId",
+                            "parentId" to (parentId?.value?.toString() ?: "null"),
+                            "offset" to query.offset,
+                            "limit" to query.limit,
+                        ),
+                    )
+                }
                 .bind()
             val totalCount = scopeRepository.countByParentId(parentId)
-                .mapLeft { ScopesError.SystemError("Failed to count children: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "countByParentId",
+                            "parentId" to (parentId?.value?.toString() ?: "null"),
+                        ),
+                    )
+                }
                 .bind()
 
             PagedResult(

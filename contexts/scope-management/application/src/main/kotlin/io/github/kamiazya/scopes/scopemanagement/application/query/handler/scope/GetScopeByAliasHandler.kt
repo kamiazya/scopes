@@ -31,13 +31,33 @@ class GetScopeByAliasHandler(
 
             // Find alias entity
             val scopeAlias = scopeAliasRepository.findByAliasName(aliasName)
-                .mapLeft { ScopesError.SystemError("Failed to find alias: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "alias-repository",
+                        cause = error as? Throwable,
+                        context = mapOf(
+                            "operation" to "findByAliasName",
+                            "aliasName" to aliasName.value,
+                        ),
+                    )
+                }
                 .bind()
 
             // If alias found, get the scope
             scopeAlias?.let { alias ->
                 val scope = scopeRepository.findById(alias.scopeId)
-                    .mapLeft { ScopesError.SystemError("Failed to find scope: $it") }
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "scope-repository",
+                            cause = error as? Throwable,
+                            context = mapOf(
+                                "operation" to "findById",
+                                "scopeId" to alias.scopeId.value.toString(),
+                            ),
+                        )
+                    }
                     .bind()
 
                 scope?.let { ScopeMapper.toDto(it) }

@@ -14,6 +14,8 @@ import org.koin.core.component.inject
 
 /**
  * Command for listing all context views.
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ListContextsCommand :
     CliktCommand(

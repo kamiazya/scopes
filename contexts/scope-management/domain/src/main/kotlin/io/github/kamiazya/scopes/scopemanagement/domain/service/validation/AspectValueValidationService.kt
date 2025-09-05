@@ -6,6 +6,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ValidationError
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 
@@ -31,8 +32,13 @@ class AspectValueValidationService {
             is AspectType.Numeric -> {
                 if (!value.isNumeric()) {
                     ScopesError.ValidationFailed(
-                        "Value '${value.value}' is not a valid number for aspect '${definition.key.value}'",
-                        ValidationError.InvalidNumericValue(definition.key.value, value.value),
+                        field = definition.key.value,
+                        value = value.value,
+                        constraint = ScopesError.ValidationConstraintType.InvalidType(
+                            expectedType = "number",
+                            actualType = "text",
+                        ),
+                        details = mapOf("error" to ValidationError.InvalidNumericValue(definition.key, value)),
                     ).left()
                 } else {
                     value.right()
@@ -41,8 +47,13 @@ class AspectValueValidationService {
             is AspectType.BooleanType -> {
                 if (!value.isBoolean()) {
                     ScopesError.ValidationFailed(
-                        "Value '${value.value}' is not a valid boolean for aspect '${definition.key.value}'",
-                        ValidationError.InvalidBooleanValue(definition.key.value, value.value),
+                        field = definition.key.value,
+                        value = value.value,
+                        constraint = ScopesError.ValidationConstraintType.InvalidType(
+                            expectedType = "boolean",
+                            actualType = "text",
+                        ),
+                        details = mapOf("error" to ValidationError.InvalidBooleanValue(definition.key, value)),
                     ).left()
                 } else {
                     value.right()
@@ -52,13 +63,17 @@ class AspectValueValidationService {
                 val orderedType = definition.type as AspectType.Ordered
                 if (!orderedType.allowedValues.contains(value)) {
                     ScopesError.ValidationFailed(
-                        "Value '${value.value}' is not allowed for aspect '${definition.key.value}'. Allowed values: ${orderedType.allowedValues.map {
-                            it.value
-                        }.joinToString(", ")}",
-                        ValidationError.ValueNotInAllowedList(
-                            definition.key.value,
-                            value.value,
-                            orderedType.allowedValues.map { it.value },
+                        field = definition.key.value,
+                        value = value.value,
+                        constraint = ScopesError.ValidationConstraintType.NotInAllowedValues(
+                            allowedValues = orderedType.allowedValues.map { it.value },
+                        ),
+                        details = mapOf(
+                            "error" to ValidationError.ValueNotInAllowedList(
+                                definition.key,
+                                value,
+                                orderedType.allowedValues,
+                            ),
                         ),
                     ).left()
                 } else {
@@ -68,8 +83,12 @@ class AspectValueValidationService {
             is AspectType.Duration -> {
                 if (!value.isDuration()) {
                     ScopesError.ValidationFailed(
-                        "Value '${value.value}' is not a valid ISO 8601 duration for aspect '${definition.key.value}' (e.g., 'P1D', 'PT2H30M')",
-                        ValidationError.InvalidDurationValue(definition.key.value, value.value),
+                        field = definition.key.value,
+                        value = value.value,
+                        constraint = ScopesError.ValidationConstraintType.InvalidFormat(
+                            expectedFormat = "ISO 8601 duration (e.g., 'P1D', 'PT2H30M')",
+                        ),
+                        details = mapOf("error" to ValidationError.InvalidDurationValue(definition.key, value)),
                     ).left()
                 } else {
                     value.right()
@@ -87,8 +106,12 @@ class AspectValueValidationService {
     fun validateMultipleValuesAllowed(definition: AspectDefinition, valueCount: Int): Either<ScopesError, Unit> =
         if (valueCount > 1 && !definition.allowMultiple) {
             ScopesError.ValidationFailed(
-                "Multiple values are not allowed for aspect '${definition.key.value}'",
-                ValidationError.MultipleValuesNotAllowed(definition.key.value),
+                field = definition.key.value,
+                value = valueCount.toString(),
+                constraint = ScopesError.ValidationConstraintType.MultipleValuesNotAllowed(
+                    field = definition.key.value,
+                ),
+                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key)),
             ).left()
         } else {
             Unit.right()
@@ -103,9 +126,19 @@ class AspectValueValidationService {
     fun validateRequiredAspects(providedKeys: Set<String>, requiredKeys: Set<String>): Either<ScopesError, Unit> {
         val missingKeys = requiredKeys - providedKeys
         return if (missingKeys.isNotEmpty()) {
+            // Convert strings to AspectKey objects for the error
+            // We can safely assume these are valid since they come from the system
+            val missingAspectKeys = missingKeys.mapNotNull { key ->
+                AspectKey.create(key).getOrNull()
+            }.toSet()
+
             ScopesError.ValidationFailed(
-                "Required aspects are missing: ${missingKeys.joinToString(", ")}",
-                ValidationError.RequiredAspectsMissing(missingKeys),
+                field = "aspects",
+                value = providedKeys.joinToString(", "),
+                constraint = ScopesError.ValidationConstraintType.MissingRequired(
+                    requiredFields = missingKeys.toList(),
+                ),
+                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys)),
             ).left()
         } else {
             Unit.right()

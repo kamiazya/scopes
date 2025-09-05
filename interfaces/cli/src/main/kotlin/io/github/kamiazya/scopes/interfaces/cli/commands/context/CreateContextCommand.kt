@@ -6,10 +6,10 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -76,20 +76,12 @@ class CreateContextCommand :
             val result = contextCommandAdapter.createContext(request)
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to create context '$key': ${formatError(error)}", err = true)
+                    echo("Error: Failed to create context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 ifRight = {
                     echo("Context view '$key' created successfully")
                 },
             )
         }
-    }
-
-    private fun formatError(error: ScopeContractError): String = when (error) {
-        is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
-        is ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
-        is ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
-        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
-        else -> error.toString()
     }
 }

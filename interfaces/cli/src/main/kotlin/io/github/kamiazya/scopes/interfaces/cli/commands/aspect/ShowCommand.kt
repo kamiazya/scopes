@@ -10,6 +10,8 @@ import org.koin.core.component.inject
 /**
  * Command for showing aspect definition details.
  * Usage: scopes aspect show <key>
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ShowCommand :
     CliktCommand(

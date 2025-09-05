@@ -22,7 +22,14 @@ class ListContextViewsHandler(private val contextViewRepository: ContextViewRepo
         either {
             // Retrieve all context views
             val contextViews = contextViewRepository.findAll()
-                .mapLeft { ScopesError.SystemError("Failed to list context views: $it") }
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "context-repository",
+                        cause = error as? Throwable,
+                        context = mapOf("operation" to "findAll"),
+                    )
+                }
                 .bind()
 
             // Map to DTOs

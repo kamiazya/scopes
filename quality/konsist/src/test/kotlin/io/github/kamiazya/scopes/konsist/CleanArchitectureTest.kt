@@ -365,6 +365,7 @@ class CleanArchitectureTest :
                     .filter { it.name.endsWith("Error") }
                     .filter { !it.hasAbstractModifier }
                     .filter { !it.hasSealedModifier } // Sealed classes are base classes themselves
+                    .filter { !it.hasEnumModifier } // Exclude enums
                     .assertTrue { error ->
                         error.parents().any { parent ->
                             parent.name.endsWith("Error")

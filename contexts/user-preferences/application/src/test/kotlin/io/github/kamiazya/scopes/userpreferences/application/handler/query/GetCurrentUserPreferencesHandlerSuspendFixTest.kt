@@ -53,7 +53,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     )
 
                     // save() returns PreferencesAlreadyInitialized error (race condition)
-                    coEvery { repository.save(any()) } returns UserPreferencesError.PreferencesAlreadyInitialized().left()
+                    coEvery { repository.save(any()) } returns UserPreferencesError.PreferencesAlreadyInitialized.left()
 
                     // When
                     val result = handler(GetCurrentUserPreferences)
@@ -71,7 +71,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     val repository = mockk<UserPreferencesRepository>()
                     val handler = GetCurrentUserPreferencesHandler(repository)
 
-                    val customError = UserPreferencesError.InvalidPreferenceValue("test", "value", "reason")
+                    val customError = UserPreferencesError.InvalidPreferenceValue("test", "value", UserPreferencesError.ValidationError.INVALID_FORMAT)
 
                     coEvery { repository.findForCurrentUser() } returns null.right()
                     coEvery { repository.save(any()) } returns customError.left()

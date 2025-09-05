@@ -8,10 +8,10 @@ import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -73,20 +73,12 @@ class DeleteContextCommand :
             val result = contextCommandAdapter.deleteContext(DeleteContextViewRequest(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to delete context '$key': ${formatError(error)}", err = true)
+                    echo("Error: Failed to delete context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 {
                     echo("Context view '$key' deleted successfully")
                 },
             )
         }
-    }
-
-    private fun formatError(error: ScopeContractError): String = when (error) {
-        is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
-        is ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
-        is ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
-        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
-        else -> error.toString()
     }
 }

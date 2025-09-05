@@ -27,9 +27,24 @@ class DeleteAspectDefinitionHandler(
 
             // Check if definition exists
             val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error -> raise(ScopesError.SystemError("Failed to retrieve aspect definition: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
+                        ),
+                    )
+                },
                 { definition ->
-                    definition ?: raise(ScopesError.NotFound("Aspect definition with key '${command.key}' not found"))
+                    definition ?: raise(
+                        ScopesError.NotFound(
+                            entityType = "AspectDefinition",
+                            identifier = command.key,
+                            identifierType = "key",
+                        ),
+                    )
                 },
             )
 
@@ -38,7 +53,16 @@ class DeleteAspectDefinitionHandler(
 
             // Delete from repository
             aspectDefinitionRepository.deleteByKey(aspectKey).fold(
-                { error -> raise(ScopesError.SystemError("Failed to delete aspect definition: $error")) },
+                { error ->
+                    raise(
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
+                        ),
+                    )
+                },
                 { Unit },
             )
         }

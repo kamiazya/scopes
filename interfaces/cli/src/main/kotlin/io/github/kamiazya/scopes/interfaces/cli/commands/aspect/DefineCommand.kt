@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import kotlinx.coroutines.runBlocking
@@ -112,7 +113,7 @@ class DefineCommand :
 
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to define aspect '$trimmedKey': ${formatError(error)}", err = true)
+                    echo("Error: Failed to define aspect '$trimmedKey': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 ifRight = {
                     echo("Aspect '$trimmedKey' defined successfully")
@@ -121,15 +122,6 @@ class DefineCommand :
                 },
             )
         }
-    }
-
-    private fun formatError(error: io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError): String = when (error) {
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.SystemError.ServiceUnavailable ->
-            "Service unavailable: ${error.service}"
-        else -> error.toString()
     }
 
     private fun formatType(type: AspectType): String = when (type) {

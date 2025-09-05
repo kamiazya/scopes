@@ -199,6 +199,7 @@ class BoundedContextArchitectureTest :
                     .filter { !it.name.endsWith("ManagementError") } // Base error classes for each context
                     .filter { it.name != "UserPreferencesError" } // Base error class for user-preferences
                     .filter { !it.hasSealedModifier } // Exclude sealed base classes
+                    .filter { !it.hasEnumModifier } // Exclude enums
                     .assertTrue { clazz ->
                         clazz.parents().any { parent ->
                             parent.name.endsWith("Error")

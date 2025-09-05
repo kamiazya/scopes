@@ -5,9 +5,10 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
-import io.github.kamiazya.scopes.scopemanagement.application.error.EventStoreErrorMapper
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.EventStoreErrorMapper
 import kotlinx.datetime.Instant
 
 /**
@@ -22,8 +23,9 @@ import kotlinx.datetime.Instant
  * Thread-safety: This implementation is thread-safe as it delegates to EventRepository
  * which handles concurrency at the database level.
  */
-class EventStoreScopeEventSourcingRepository(private val eventRepository: EventRepository, private val eventStoreErrorMapper: EventStoreErrorMapper) :
-    EventSourcingRepository<DomainEvent> {
+internal class EventStoreScopeEventSourcingRepository(private val eventRepository: EventRepository, logger: Logger) : EventSourcingRepository<DomainEvent> {
+
+    private val eventStoreErrorMapper = EventStoreErrorMapper(logger)
 
     override suspend fun saveEvents(aggregateId: AggregateId, events: List<DomainEvent>, expectedVersion: Int): Either<ScopesError, Unit> = either {
         // Validate expected version matches current version
@@ -31,7 +33,11 @@ class EventStoreScopeEventSourcingRepository(private val eventRepository: EventR
         if (currentVersion != expectedVersion) {
             raise(
                 ScopesError.ConcurrencyError(
-                    message = "Version mismatch: expected $expectedVersion but was $currentVersion",
+                    aggregateId = aggregateId.value,
+                    aggregateType = "Scope",
+                    expectedVersion = expectedVersion,
+                    actualVersion = currentVersion,
+                    operation = "saveEvents",
                 ),
             )
         }

@@ -88,7 +88,12 @@ data class Scope(
      */
     fun updateTitle(newTitle: String): Either<ScopesError, Scope> = either {
         ensure(status.canBeEdited()) {
-            ScopesError.InvalidOperation("Cannot update title in $status status")
+            ScopesError.InvalidOperation(
+                operation = "updateTitle",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
@@ -101,7 +106,12 @@ data class Scope(
      */
     fun updateDescription(newDescription: String?): Either<ScopesError, Scope> = either {
         ensure(status.canBeEdited()) {
-            ScopesError.InvalidOperation("Cannot update description in $status status")
+            ScopesError.InvalidOperation(
+                operation = "updateDescription",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
@@ -114,7 +124,12 @@ data class Scope(
      */
     fun moveToParent(newParentId: ScopeId?): Either<ScopesError, Scope> = either {
         ensure(status.canBeEdited()) {
-            ScopesError.InvalidOperation("Cannot move scope in $status status")
+            ScopesError.InvalidOperation(
+                operation = "moveScope",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         copy(parentId = newParentId, updatedAt = Clock.System.now())
     }
@@ -186,7 +201,12 @@ data class Scope(
      */
     fun transitionTo(newStatus: ScopeStatus): Either<ScopesError, Scope> = either {
         status.transitionTo(newStatus).mapLeft {
-            ScopesError.InvalidOperation(it.reason)
+            ScopesError.InvalidOperation(
+                operation = "updateStatus",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }.bind()
         copy(status = newStatus, updatedAt = Clock.System.now())
     }

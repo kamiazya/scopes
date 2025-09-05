@@ -78,8 +78,42 @@ public class AspectQueryPortAdapter(
 
     private fun mapScopesErrorToValidateResponse(error: ScopesError, key: String): AspectContract.ValidateAspectValueResponse = when (error) {
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
-            AspectContract.ValidateAspectValueResponse.ValidationFailed(key, error.message)
-        else -> AspectContract.ValidateAspectValueResponse.ValidationFailed(key, error.toString())
+            when (val constraint = error.constraint) {
+                is ScopesError.ValidationConstraintType.InvalidType ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.InvalidType(constraint.expectedType),
+                    )
+                is ScopesError.ValidationConstraintType.MissingRequired ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.Empty,
+                    )
+                is ScopesError.ValidationConstraintType.InvalidFormat ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.InvalidFormat(constraint.expectedFormat),
+                    )
+                is ScopesError.ValidationConstraintType.NotInAllowedValues ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.NotInAllowedValues(constraint.allowedValues),
+                    )
+                is ScopesError.ValidationConstraintType.InvalidValue ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.InvalidFormat(constraint.reason),
+                    )
+                is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
+                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                        key,
+                        AspectContract.ValidationFailure.MultipleValuesNotAllowed,
+                    )
+            }
+        else -> AspectContract.ValidateAspectValueResponse.ValidationFailed(
+            key,
+            AspectContract.ValidationFailure.InvalidType("validation error"),
+        )
     }
 
     private fun io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto.toContractAspectDefinition() =

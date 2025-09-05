@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -41,21 +42,12 @@ class RmCommand :
 
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to delete aspect '$key': ${formatError(error)}", err = true)
+                    echo("Error: Failed to delete aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 ifRight = {
                     echo("Aspect '$key' removed successfully")
                 },
             )
         }
-    }
-
-    private fun formatError(error: io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError): String = when (error) {
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.BusinessError.DuplicateAlias -> "Already exists: ${error.alias}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.InputError.InvalidTitle -> "Invalid input: ${error.title}"
-        is io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError.SystemError.ServiceUnavailable ->
-            "Service unavailable: ${error.service}"
-        else -> error.toString()
     }
 }
