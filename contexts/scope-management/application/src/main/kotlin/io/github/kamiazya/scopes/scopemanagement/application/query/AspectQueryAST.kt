@@ -46,6 +46,10 @@ enum class ComparisonOperator(val symbol: String) {
     GREATER_THAN_OR_EQUALS(">="),
     LESS_THAN("<"),
     LESS_THAN_OR_EQUALS("<="),
+    CONTAINS("CONTAINS"),
+    IN("IN"),
+    EXISTS("EXISTS"),
+    IS_NULL("IS_NULL"),
     ;
 
     companion object {

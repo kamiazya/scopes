@@ -94,7 +94,7 @@ class AspectQueryIntegrationTest :
                                 AspectKey.create("status").getOrNull()!! to listOf(AspectValue.create("open").getOrNull()!!).toNonEmptyListOrNull()!!,
                                 AspectKey.create("size").getOrNull()!! to listOf(AspectValue.create("10").getOrNull()!!).toNonEmptyListOrNull()!!,
                                 AspectKey.create("active").getOrNull()!! to listOf(AspectValue.create("true").getOrNull()!!).toNonEmptyListOrNull()!!,
-                                AspectKey.create("priority").getOrNull()!! to listOf(AspectValue.create("high").getOrNull()!!).toNonEmptyListOrNull()!!,
+                                // No priority aspect for scope1 
                                 AspectKey.create("estimatedTime").getOrNull()!! to listOf(AspectValue.create("PT2H").getOrNull()!!).toNonEmptyListOrNull()!!,
                             ),
                         ),
@@ -113,7 +113,7 @@ class AspectQueryIntegrationTest :
                                 AspectKey.create("status").getOrNull()!! to listOf(AspectValue.create("closed").getOrNull()!!).toNonEmptyListOrNull()!!,
                                 AspectKey.create("size").getOrNull()!! to listOf(AspectValue.create("5").getOrNull()!!).toNonEmptyListOrNull()!!,
                                 AspectKey.create("active").getOrNull()!! to listOf(AspectValue.create("false").getOrNull()!!).toNonEmptyListOrNull()!!,
-                                AspectKey.create("priority").getOrNull()!! to listOf(AspectValue.create("low").getOrNull()!!).toNonEmptyListOrNull()!!,
+                                // No priority aspect for scope2
                                 AspectKey.create("estimatedTime").getOrNull()!! to listOf(AspectValue.create("P1D").getOrNull()!!).toNonEmptyListOrNull()!!,
                             ),
                         ),
@@ -150,8 +150,7 @@ class AspectQueryIntegrationTest :
                             mapOf(
                                 AspectKey.create("status").getOrNull()!! to listOf(AspectValue.create("pending").getOrNull()!!).toNonEmptyListOrNull()!!,
                                 AspectKey.create("size").getOrNull()!! to listOf(AspectValue.create("15").getOrNull()!!).toNonEmptyListOrNull()!!,
-                                AspectKey.create("priority").getOrNull()!! to listOf(AspectValue.create("medium").getOrNull()!!).toNonEmptyListOrNull()!!,
-                                // Note: No active or estimatedTime aspects
+                                // No priority, active or estimatedTime aspects for scope4
                             ),
                         ),
                         createdAt = Clock.System.now(),
@@ -236,7 +235,7 @@ class AspectQueryIntegrationTest :
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope3.id)
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id)
                     }
                 }
 
@@ -277,7 +276,7 @@ class AspectQueryIntegrationTest :
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope2.id, scope3.id)
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id)
                     }
                 }
 
@@ -306,6 +305,58 @@ class AspectQueryIntegrationTest :
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
                         scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope3.id)
+                    }
+                }
+
+                it("should handle CONTAINS operator") {
+                    runTest {
+                        // Act
+                        val query = FilterScopesWithQueryUseCase.Query("status CONTAINS pen")
+                        val result = filterScopesWithQueryUseCase(query)
+
+                        // Assert
+                        result.shouldBeRight()
+                        val scopes = result.getOrNull()!!
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope3.id, scope4.id)
+                    }
+                }
+
+                it("should handle IN operator") {
+                    runTest {
+                        // Act
+                        val query = FilterScopesWithQueryUseCase.Query("status IN open,closed")
+                        val result = filterScopesWithQueryUseCase(query)
+
+                        // Assert
+                        result.shouldBeRight()
+                        val scopes = result.getOrNull()!!
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope2.id, scope3.id)
+                    }
+                }
+
+                it("should handle EXISTS operator") {
+                    runTest {
+                        // Act
+                        val query = FilterScopesWithQueryUseCase.Query("priority EXISTS")
+                        val result = filterScopesWithQueryUseCase(query)
+
+                        // Assert
+                        result.shouldBeRight()
+                        val scopes = result.getOrNull()!!
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id)
+                    }
+                }
+
+                it("should handle IS_NULL operator") {
+                    runTest {
+                        // Act
+                        val query = FilterScopesWithQueryUseCase.Query("priority IS_NULL")
+                        val result = filterScopesWithQueryUseCase(query)
+
+                        // Assert
+                        result.shouldBeRight()
+                        val scopes = result.getOrNull()!!
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope2.id, scope4.id)
                     }
                 }
 
@@ -387,8 +438,8 @@ class AspectQueryIntegrationTest :
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        // scope4 doesn't have active aspect, so NOT active=false should include it
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id, scope3.id, scope4.id)
+                        // Only scope3 has priority, so only it matches all conditions
+                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id)
                     }
                 }
             }

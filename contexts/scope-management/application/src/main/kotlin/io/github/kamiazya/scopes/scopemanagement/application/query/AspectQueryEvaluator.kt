@@ -34,11 +34,21 @@ class AspectQueryEvaluator(private val aspectDefinitions: Map<String, AspectDefi
     }
 
     private fun evaluateComparison(comparison: AspectQueryAST.Comparison, aspectMap: Map<String, List<AspectValue>>): Boolean {
-        val aspectValues = aspectMap[comparison.key] ?: return false
+        val aspectValues = aspectMap[comparison.key]
         val definition = aspectDefinitions[comparison.key]
 
+        // Handle special cases for EXISTS and IS_NULL operators
+        when (comparison.operator) {
+            ComparisonOperator.EXISTS -> return aspectValues != null && aspectValues.isNotEmpty()
+            ComparisonOperator.IS_NULL -> return aspectValues == null || aspectValues.isEmpty() || aspectValues.all { it.value.isEmpty() }
+            else -> {
+                // For other operators, aspect key must exist
+                if (aspectValues == null || aspectValues.isEmpty()) return false
+            }
+        }
+
         // For each value, check if it matches the comparison
-        return aspectValues.any { aspectValue ->
+        return aspectValues!!.any { aspectValue ->
             evaluateValueComparison(
                 aspectValue,
                 comparison.operator,
@@ -70,19 +80,44 @@ class AspectQueryEvaluator(private val aspectDefinitions: Map<String, AspectDefi
         ComparisonOperator.GREATER_THAN_OR_EQUALS -> actual >= expected
         ComparisonOperator.LESS_THAN -> actual < expected
         ComparisonOperator.LESS_THAN_OR_EQUALS -> actual <= expected
+        ComparisonOperator.CONTAINS -> actual.contains(expected, ignoreCase = true)
+        ComparisonOperator.IN -> evaluateInComparison(actual, expected)
+        ComparisonOperator.EXISTS -> true // EXISTS just checks if the aspect key exists
+        ComparisonOperator.IS_NULL -> actual.isEmpty()
     }
 
     private fun evaluateNumericComparison(actualValue: AspectValue, operator: ComparisonOperator, expectedValue: String): Boolean {
         val actual = actualValue.toNumericValue() ?: return false
-        val expected = expectedValue.toDoubleOrNull() ?: return false
-
+        
         return when (operator) {
-            ComparisonOperator.EQUALS -> actual == expected
-            ComparisonOperator.NOT_EQUALS -> actual != expected
-            ComparisonOperator.GREATER_THAN -> actual > expected
-            ComparisonOperator.GREATER_THAN_OR_EQUALS -> actual >= expected
-            ComparisonOperator.LESS_THAN -> actual < expected
-            ComparisonOperator.LESS_THAN_OR_EQUALS -> actual <= expected
+            ComparisonOperator.EQUALS -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual == expected
+            }
+            ComparisonOperator.NOT_EQUALS -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual != expected
+            }
+            ComparisonOperator.GREATER_THAN -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual > expected
+            }
+            ComparisonOperator.GREATER_THAN_OR_EQUALS -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual >= expected
+            }
+            ComparisonOperator.LESS_THAN -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual < expected
+            }
+            ComparisonOperator.LESS_THAN_OR_EQUALS -> {
+                val expected = expectedValue.toDoubleOrNull() ?: return false
+                actual <= expected
+            }
+            ComparisonOperator.CONTAINS -> actual.toString().contains(expectedValue, ignoreCase = true)
+            ComparisonOperator.IN -> evaluateInComparison(actual.toString(), expectedValue)
+            ComparisonOperator.EXISTS -> true
+            ComparisonOperator.IS_NULL -> false // numbers are never null if they exist
         }
     }
 
@@ -97,6 +132,8 @@ class AspectQueryEvaluator(private val aspectDefinitions: Map<String, AspectDefi
         return when (operator) {
             ComparisonOperator.EQUALS -> actual == expected
             ComparisonOperator.NOT_EQUALS -> actual != expected
+            ComparisonOperator.EXISTS -> true
+            ComparisonOperator.IS_NULL -> false // booleans are never null if they exist
             // Other operators don't make sense for booleans
             else -> false
         }
@@ -108,37 +145,64 @@ class AspectQueryEvaluator(private val aspectDefinitions: Map<String, AspectDefi
         expectedValue: String,
         definition: AspectDefinition,
     ): Boolean {
-        // Parse expected value to AspectValue
-        val expectedAspectValue = AspectValue.create(expectedValue).getOrNull() ?: return false
-
-        // Get the order indices
-        val actualOrder = definition.getValueOrder(actualValue) ?: return false
-        val expectedOrder = definition.getValueOrder(expectedAspectValue) ?: return false
-
         return when (operator) {
-            ComparisonOperator.EQUALS -> actualOrder == expectedOrder
-            ComparisonOperator.NOT_EQUALS -> actualOrder != expectedOrder
-            ComparisonOperator.GREATER_THAN -> actualOrder > expectedOrder
-            ComparisonOperator.GREATER_THAN_OR_EQUALS -> actualOrder >= expectedOrder
-            ComparisonOperator.LESS_THAN -> actualOrder < expectedOrder
-            ComparisonOperator.LESS_THAN_OR_EQUALS -> actualOrder <= expectedOrder
+            ComparisonOperator.CONTAINS -> actualValue.value.contains(expectedValue, ignoreCase = true)
+            ComparisonOperator.IN -> evaluateInComparison(actualValue.value, expectedValue)
+            ComparisonOperator.EXISTS -> true
+            ComparisonOperator.IS_NULL -> actualValue.value.isEmpty()
+            else -> {
+                // Parse expected value to AspectValue for order-based comparisons
+                val expectedAspectValue = AspectValue.create(expectedValue).getOrNull() ?: return false
+                
+                // Get the order indices
+                val actualOrder = definition.getValueOrder(actualValue) ?: return false
+                val expectedOrder = definition.getValueOrder(expectedAspectValue) ?: return false
+                
+                when (operator) {
+                    ComparisonOperator.EQUALS -> actualOrder == expectedOrder
+                    ComparisonOperator.NOT_EQUALS -> actualOrder != expectedOrder
+                    ComparisonOperator.GREATER_THAN -> actualOrder > expectedOrder
+                    ComparisonOperator.GREATER_THAN_OR_EQUALS -> actualOrder >= expectedOrder
+                    ComparisonOperator.LESS_THAN -> actualOrder < expectedOrder
+                    ComparisonOperator.LESS_THAN_OR_EQUALS -> actualOrder <= expectedOrder
+                    else -> false
+                }
+            }
         }
     }
 
     private fun evaluateDurationComparison(actualValue: AspectValue, operator: ComparisonOperator, expectedValue: String): Boolean {
-        val actual = actualValue.parseDuration() ?: return false
-
-        // Parse expected value as AspectValue first, then as Duration
-        val expectedAspectValue = AspectValue.create(expectedValue).getOrNull() ?: return false
-        val expected = expectedAspectValue.parseDuration() ?: return false
-
         return when (operator) {
-            ComparisonOperator.EQUALS -> actual == expected
-            ComparisonOperator.NOT_EQUALS -> actual != expected
-            ComparisonOperator.GREATER_THAN -> actual > expected
-            ComparisonOperator.GREATER_THAN_OR_EQUALS -> actual >= expected
-            ComparisonOperator.LESS_THAN -> actual < expected
-            ComparisonOperator.LESS_THAN_OR_EQUALS -> actual <= expected
+            ComparisonOperator.CONTAINS -> actualValue.value.contains(expectedValue, ignoreCase = true)
+            ComparisonOperator.IN -> evaluateInComparison(actualValue.value, expectedValue)
+            ComparisonOperator.EXISTS -> true
+            ComparisonOperator.IS_NULL -> actualValue.value.isEmpty()
+            else -> {
+                val actual = actualValue.parseDuration() ?: return false
+                
+                // Parse expected value as AspectValue first, then as Duration
+                val expectedAspectValue = AspectValue.create(expectedValue).getOrNull() ?: return false
+                val expected = expectedAspectValue.parseDuration() ?: return false
+                
+                when (operator) {
+                    ComparisonOperator.EQUALS -> actual == expected
+                    ComparisonOperator.NOT_EQUALS -> actual != expected
+                    ComparisonOperator.GREATER_THAN -> actual > expected
+                    ComparisonOperator.GREATER_THAN_OR_EQUALS -> actual >= expected
+                    ComparisonOperator.LESS_THAN -> actual < expected
+                    ComparisonOperator.LESS_THAN_OR_EQUALS -> actual <= expected
+                    else -> false
+                }
+            }
         }
+    }
+
+    /**
+     * Helper function to evaluate IN operator.
+     * Expected value should be comma-separated values: "value1,value2,value3"
+     */
+    private fun evaluateInComparison(actual: String, expectedValues: String): Boolean {
+        val values = expectedValues.split(",").map { it.trim() }
+        return values.any { it.equals(actual, ignoreCase = true) }
     }
 }

@@ -100,6 +100,22 @@ class AspectQueryParser {
                     tokens.add(Token.Not)
                     i += 3
                 }
+                query.startsWith("CONTAINS", i) && (i + 8 >= query.length || !query[i + 8].isLetterOrDigit()) -> {
+                    tokens.add(Token.Operator(ComparisonOperator.CONTAINS))
+                    i += 8
+                }
+                query.startsWith("EXISTS", i) && (i + 6 >= query.length || !query[i + 6].isLetterOrDigit()) -> {
+                    tokens.add(Token.Operator(ComparisonOperator.EXISTS))
+                    i += 6
+                }
+                query.startsWith("IS_NULL", i) && (i + 7 >= query.length || !query[i + 7].isLetterOrDigit()) -> {
+                    tokens.add(Token.Operator(ComparisonOperator.IS_NULL))
+                    i += 7
+                }
+                query.startsWith("IN", i) && (i + 2 >= query.length || !query[i + 2].isLetterOrDigit()) -> {
+                    tokens.add(Token.Operator(ComparisonOperator.IN))
+                    i += 2
+                }
                 query.startsWith(">=", i) -> {
                     tokens.add(Token.Operator(ComparisonOperator.GREATER_THAN_OR_EQUALS))
                     i += 2
@@ -125,12 +141,29 @@ class AspectQueryParser {
                     i++
                 }
                 query[i].isLetter() -> {
-                    // Parse identifier
-                    val start = i
-                    while (i < query.length && (query[i].isLetterOrDigit() || query[i] == '_')) {
-                        i++
+                    // Check if the previous token was an IN operator
+                    val lastToken = tokens.lastOrNull()
+                    val isAfterInOperator = lastToken is Token.Operator && lastToken.op == ComparisonOperator.IN
+                    
+                    if (isAfterInOperator) {
+                        // After IN operator, parse value including commas
+                        val start = i
+                        while (i < query.length && 
+                            !query[i].isWhitespace() && 
+                            query[i] != ')' && 
+                            query[i] != '(' &&
+                            !isLogicalOperatorStart(query, i)) {
+                            i++
+                        }
+                        tokens.add(Token.Value(query.substring(start, i)))
+                    } else {
+                        // Parse identifier
+                        val start = i
+                        while (i < query.length && (query[i].isLetterOrDigit() || query[i] == '_')) {
+                            i++
+                        }
+                        tokens.add(Token.Identifier(query.substring(start, i)))
                     }
-                    tokens.add(Token.Identifier(query.substring(start, i)))
                 }
                 else -> {
                     // Parse unquoted value until whitespace or special character
@@ -158,12 +191,26 @@ class AspectQueryParser {
     private fun isOperatorStart(query: String, index: Int): Boolean {
         if (index >= query.length) return false
         return when {
+            query.startsWith("CONTAINS", index) -> true
+            query.startsWith("EXISTS", index) -> true
+            query.startsWith("IS_NULL", index) -> true
+            query.startsWith("IN", index) -> true
             query.startsWith(">=", index) -> true
             query.startsWith("<=", index) -> true
             query.startsWith("!=", index) -> true
             query[index] == '>' -> true
             query[index] == '<' -> true
             query[index] == '=' -> true
+            else -> false
+        }
+    }
+    
+    private fun isLogicalOperatorStart(query: String, index: Int): Boolean {
+        if (index >= query.length) return false
+        return when {
+            query.startsWith("AND", index) && (index + 3 >= query.length || !query[index + 3].isLetterOrDigit()) -> true
+            query.startsWith("OR", index) && (index + 2 >= query.length || !query[index + 2].isLetterOrDigit()) -> true
+            query.startsWith("NOT", index) && (index + 3 >= query.length || !query[index + 3].isLetterOrDigit()) -> true
             else -> false
         }
     }
@@ -264,12 +311,37 @@ class AspectQueryParser {
                 ?: return QueryParseError.ExpectedOperator(position).left()
             position++ // consume operator
 
-            val value = when (val token = currentToken()) {
-                is Token.Value -> token.value
-                is Token.Identifier -> token.name // Allow identifiers as values
-                else -> return QueryParseError.ExpectedValue(position).left()
+            // EXISTS and IS_NULL are unary operators that don't require a value
+            val value = when (operator.op) {
+                ComparisonOperator.EXISTS, ComparisonOperator.IS_NULL -> ""
+                ComparisonOperator.IN -> {
+                    // For IN operator, get the comma-separated value and keep it as is
+                    when (val token = currentToken()) {
+                        is Token.Value -> {
+                            position++ // consume value
+                            token.value // This will be something like "open,closed"
+                        }
+                        is Token.Identifier -> {
+                            position++ // consume identifier as value
+                            token.name 
+                        }
+                        else -> return QueryParseError.ExpectedValue(position).left()
+                    }
+                }
+                else -> {
+                    when (val token = currentToken()) {
+                        is Token.Value -> {
+                            position++ // consume value
+                            token.value
+                        }
+                        is Token.Identifier -> {
+                            position++ // consume identifier as value
+                            token.name 
+                        }
+                        else -> return QueryParseError.ExpectedValue(position).left()
+                    }
+                }
             }
-            position++ // consume value
 
             return AspectQueryAST.Comparison(identifier.name, operator.op, value).right()
         }
