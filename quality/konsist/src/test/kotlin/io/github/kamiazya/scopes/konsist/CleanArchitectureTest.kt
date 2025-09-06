@@ -382,6 +382,7 @@ class CleanArchitectureTest :
                     .filter { it.resideInPackage("..valueobject..") || it.resideInPackage("..value..") }
                     .filter { !it.name.endsWith("Test") }
                     .filter { !it.hasEnumModifier && !it.hasSealedModifier } // Exclude enums and sealed classes
+                    .filter { !it.hasAnnotationModifier } // Exclude annotations
                     .assertTrue { valueObject ->
                         valueObject.hasDataModifier || valueObject.hasValueModifier
                     }
