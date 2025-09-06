@@ -232,8 +232,9 @@ verify_sbom() {
     local version="$1"
     local platform="$2"
     local arch="$3"
-    local sbom_json="sbom-$platform-$arch.json"
-    local sbom_xml="sbom-$platform-$arch.xml"
+    local sbom_build_json="sbom-build-$platform-$arch.json"
+    local sbom_build_xml="sbom-build-$platform-$arch.xml"
+    local sbom_image_json="sbom-image-$platform-$arch.cyclonedx.json"
     local base_url
     local sbom_hash_entry
     local expected_sbom_hash
@@ -242,52 +243,119 @@ verify_sbom() {
     print_header "SBOM Verification"
 
     # Try to download SBOM files if not present
-    if [[ ! -f "$sbom_json" ]] && [[ "$AUTO_DOWNLOAD" == "true" ]]; then
-        print_status "Downloading SBOM files..."
+    if [[ "$AUTO_DOWNLOAD" == "true" ]]; then
         base_url="https://github.com/$GITHUB_REPO/releases/download/$version"
-        curl -fsSL -o "$sbom_json" "$base_url/$sbom_json" || print_warning "Failed to download $sbom_json"
-        curl -fsSL -o "$sbom_xml" "$base_url/$sbom_xml" || print_warning "Failed to download $sbom_xml"
+        
+        print_status "Downloading SBOM files..."
+        
+        # Download build-time SBOMs
+        if [[ ! -f "$sbom_build_json" ]]; then
+            curl -fsSL -o "$sbom_build_json" "$base_url/$sbom_build_json" || print_warning "Failed to download $sbom_build_json"
+        fi
+        if [[ ! -f "$sbom_build_xml" ]]; then
+            curl -fsSL -o "$sbom_build_xml" "$base_url/$sbom_build_xml" || print_warning "Failed to download $sbom_build_xml"
+        fi
+        
+        # Download image-level SBOM
+        if [[ ! -f "$sbom_image_json" ]]; then
+            curl -fsSL -o "$sbom_image_json" "$base_url/$sbom_image_json" || print_warning "Failed to download $sbom_image_json"
+        fi
     fi
 
-    if [[ -f "$sbom_json" ]]; then
-        print_status "Verifying SBOM JSON format..."
+    local sbom_verified=false
+
+    # Verify build-time SBOM (CycloneDX from Gradle)
+    if [[ -f "$sbom_build_json" ]]; then
+        print_status "Verifying build-time SBOM (from Gradle build)..."
         if command -v cyclonedx >/dev/null 2>&1; then
-            if cyclonedx validate "$sbom_json"; then
-                print_status "✅ SBOM JSON validation PASSED"
+            if cyclonedx validate "$sbom_build_json"; then
+                print_status "✅ Build-time SBOM JSON validation PASSED"
             else
-                print_error "❌ SBOM JSON validation FAILED"
+                print_error "❌ Build-time SBOM JSON validation FAILED"
             fi
         else
             print_warning "CycloneDX CLI not found, skipping SBOM validation"
         fi
 
-        # Verify SBOM hash if hash file contains it
-        if [[ -f "$HASH_FILE" ]] && grep -q "$sbom_json" "$HASH_FILE"; then
-            print_status "Verifying SBOM hash..."
+        # Verify build-time SBOM hash if hash file contains it
+        if [[ -f "$HASH_FILE" ]] && grep -q "$sbom_build_json" "$HASH_FILE"; then
+            print_status "Verifying build-time SBOM hash..."
 
-            if ! sbom_hash_entry=$(grep "$sbom_json" "$HASH_FILE"); then
-                print_error "Failed to read SBOM hash entry from hash file"
+            if ! sbom_hash_entry=$(grep "$sbom_build_json" "$HASH_FILE"); then
+                print_error "Failed to read build-time SBOM hash entry from hash file"
                 return 1
             fi
 
             if ! expected_sbom_hash=$(echo "$sbom_hash_entry" | cut -d':' -f2 | tr -d ' \r\n'); then
-                print_error "Failed to parse expected SBOM hash"
+                print_error "Failed to parse expected build-time SBOM hash"
                 return 1
             fi
 
-            if ! calculated_sbom_hash=$(calculate_hash "$sbom_json"); then
-                print_error "Failed to calculate SBOM hash"
+            if ! calculated_sbom_hash=$(calculate_hash "$sbom_build_json"); then
+                print_error "Failed to calculate build-time SBOM hash"
                 return 1
             fi
 
             if [[ "$calculated_sbom_hash" == "$expected_sbom_hash" ]]; then
-                print_status "✅ SBOM hash verification PASSED"
+                print_status "✅ Build-time SBOM hash verification PASSED"
             else
-                print_error "❌ SBOM hash verification FAILED"
+                print_error "❌ Build-time SBOM hash verification FAILED"
             fi
         fi
+        sbom_verified=true
     else
-        print_warning "SBOM JSON file not found: $sbom_json"
+        print_warning "Build-time SBOM JSON file not found: $sbom_build_json"
+    fi
+
+    # Verify image-level SBOM (from Syft)
+    if [[ -f "$sbom_image_json" ]]; then
+        print_status "Verifying image-level SBOM (from Syft binary analysis)..."
+        if command -v cyclonedx >/dev/null 2>&1; then
+            if cyclonedx validate "$sbom_image_json"; then
+                print_status "✅ Image-level SBOM JSON validation PASSED"
+            else
+                print_error "❌ Image-level SBOM JSON validation FAILED"
+            fi
+        else
+            print_warning "CycloneDX CLI not found, skipping SBOM validation"
+        fi
+
+        # Verify image-level SBOM hash if hash file contains it
+        if [[ -f "$HASH_FILE" ]] && grep -q "$sbom_image_json" "$HASH_FILE"; then
+            print_status "Verifying image-level SBOM hash..."
+
+            if ! sbom_hash_entry=$(grep "$sbom_image_json" "$HASH_FILE"); then
+                print_error "Failed to read image-level SBOM hash entry from hash file"
+                return 1
+            fi
+
+            if ! expected_sbom_hash=$(echo "$sbom_hash_entry" | cut -d':' -f2 | tr -d ' \r\n'); then
+                print_error "Failed to parse expected image-level SBOM hash"
+                return 1
+            fi
+
+            if ! calculated_sbom_hash=$(calculate_hash "$sbom_image_json"); then
+                print_error "Failed to calculate image-level SBOM hash"
+                return 1
+            fi
+
+            if [[ "$calculated_sbom_hash" == "$expected_sbom_hash" ]]; then
+                print_status "✅ Image-level SBOM hash verification PASSED"
+            else
+                print_error "❌ Image-level SBOM hash verification FAILED"
+            fi
+        fi
+        sbom_verified=true
+        
+        print_status "📋 SBOM Types Available:"
+        print_status "  Build-time SBOM: Gradle dependencies and declared components"
+        print_status "  Image-level SBOM: Binary analysis of final native executable"
+    else
+        print_warning "Image-level SBOM not found: $sbom_image_json"
+    fi
+
+    if [[ "$sbom_verified" == false ]]; then
+        print_warning "No SBOM files found for verification"
     fi
 }
 
