@@ -109,8 +109,8 @@ val scopeManagementInfrastructureModule = module {
     // External Services are now provided by their own modules
     // UserPreferencesService is provided by UserPreferencesModule
 
-    // Bootstrap services
-    single {
+    // Bootstrap services - registered as ApplicationBootstrapper for lifecycle management
+    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("AspectPresetBootstrap")) {
         io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap(
             aspectDefinitionRepository = get(),
             logger = get(),

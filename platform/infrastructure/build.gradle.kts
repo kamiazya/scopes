@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":platform-commons"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-domain-commons"))
+    implementation(project(":platform-observability"))
 
     implementation(libs.arrow.core)
 

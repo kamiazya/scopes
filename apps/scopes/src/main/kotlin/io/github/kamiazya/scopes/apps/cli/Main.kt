@@ -22,8 +22,8 @@ fun main(args: Array<String>) {
     }
 
     ScopesCliApplication().use {
-        // Initialize aspect presets before running commands
-        runBlocking { it.ensureInitialized() }
+        // Initialize application lifecycle before running commands
+        runBlocking { it.initialize() }
         it.container.get<ScopesCommand>().main(args)
     }
 }
