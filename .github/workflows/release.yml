@@ -79,6 +79,19 @@ jobs:
         with:
           validate-wrappers: true
 
+      - name: Install Syft (SBOM generation tool)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Installing Syft for binary SBOM generation..."
+          
+          # Install Syft using the official installer
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Verify installation
+          syft version
+          echo "Syft installed successfully"
+
       - name: Extract version from tag
         id: version
         shell: bash
@@ -142,6 +155,25 @@ jobs:
           echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
         id: binary
 
+      - name: Generate binary SBOM using Syft
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Generating binary SBOM for: ${{ steps.binary.outputs.binary_name }}"
+          
+          # Generate SBOM using Syft in CycloneDX format
+          syft "${{ steps.binary.outputs.binary_name }}" -o cyclonedx-json > "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json"
+          
+          echo "Successfully generated binary SBOM using Syft"
+          echo "Generated files:"
+          ls -la sbom-image-*
+          
+          # Verify the SBOM is valid JSON
+          if command -v jq &> /dev/null; then
+            echo "Validating SBOM JSON structure..."
+            jq empty "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" && echo "SBOM JSON is valid" || echo "Warning: SBOM JSON may be invalid"
+          fi
+
       - name: Generate SBOM (CycloneDX) (Windows)
         if: matrix.platform == 'win32'
         run: |
@@ -191,7 +223,7 @@ jobs:
           echo "Generated hash file content:"
           cat binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
-          # Generate hashes for SBOM files with fallback detection
+          # Generate hashes for build-time SBOM files with fallback detection
           if [ "${{ matrix.platform }}" = "win32" ]; then
             # Check for SBOM files in the default location first
             if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
@@ -202,7 +234,7 @@ jobs:
               SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
               SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
             else
-              echo "Warning: SBOM files not found in expected locations"
+              echo "Warning: Build-time SBOM files not found in expected locations"
               SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
               SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
             fi
@@ -216,7 +248,7 @@ jobs:
               SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
               SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
             else
-              echo "Warning: SBOM files not found in expected locations"
+              echo "Warning: Build-time SBOM files not found in expected locations"
               SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
               SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
             fi
@@ -231,7 +263,7 @@ jobs:
             else
               SBOM_JSON_HASH=$(sha256sum "$SBOM_JSON_PATH" | awk '{print $1}')
             fi
-            echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
+            echo "sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
           fi
 
           if [ -f "$SBOM_XML_PATH" ]; then
@@ -243,7 +275,20 @@ jobs:
             else
               SBOM_XML_HASH=$(sha256sum "$SBOM_XML_PATH" | awk '{print $1}')
             fi
-            echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
+            echo "sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
+          fi
+
+          # Generate hashes for image-level SBOM files if they exist
+          if [ -f "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" ]; then
+            if [[ "${{ runner.os }}" == "Windows" ]]; then
+              IMAGE_SBOM_HASH_OUTPUT=$(certutil -hashfile "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" SHA256)
+              IMAGE_SBOM_HASH=$(echo "$IMAGE_SBOM_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+            elif [[ "${{ runner.os }}" == "macOS" ]]; then
+              IMAGE_SBOM_HASH=$(shasum -a 256 "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" | awk '{print $1}')
+            else
+              IMAGE_SBOM_HASH=$(sha256sum "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" | awk '{print $1}')
+            fi
+            echo "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json:$IMAGE_SBOM_HASH" >> hashes.txt
           fi
 
           # Create base64 encoded hash for SLSA (encoded_hash artifact_name format)
@@ -262,7 +307,7 @@ jobs:
       - name: Prepare SBOM files for upload
         shell: bash
         run: |
-          # Copy SBOM files with platform-specific names using same fallback detection logic
+          # Copy build-time SBOM files with platform-specific names using same fallback detection logic
           if [ "${{ matrix.platform }}" = "win32" ]; then
             # Check for SBOM files in the default location first
             if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
@@ -273,7 +318,7 @@ jobs:
               SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
               SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
             else
-              echo "Warning: SBOM files not found in expected locations"
+              echo "Warning: Build-time SBOM files not found in expected locations"
               SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
               SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
             fi
@@ -287,18 +332,28 @@ jobs:
               SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
               SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
             else
-              echo "Warning: SBOM files not found in expected locations"
+              echo "Warning: Build-time SBOM files not found in expected locations"
               SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
               SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
             fi
           fi
 
+          # Copy build-time SBOM files with new naming convention
           if [ -f "$SBOM_JSON_PATH" ]; then
-            cp "$SBOM_JSON_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
+            cp "$SBOM_JSON_PATH" "sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.json"
+            echo "Copied build-time SBOM JSON: $(ls -la sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.json)"
           fi
 
           if [ -f "$SBOM_XML_PATH" ]; then
-            cp "$SBOM_XML_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
+            cp "$SBOM_XML_PATH" "sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.xml"
+            echo "Copied build-time SBOM XML: $(ls -la sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.xml)"
+          fi
+
+          # Image-level SBOM files are already in the correct location with correct names
+          if [ -f "sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json" ]; then
+            echo "Image-level SBOM available (Syft): $(ls -la sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json)"
+          else
+            echo "No binary-level SBOM available"
           fi
 
       - name: Upload SBOM artifacts
@@ -306,8 +361,9 @@ jobs:
         with:
           name: sbom-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
-            sbom-${{ matrix.platform }}-${{ matrix.arch }}.json
-            sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml
+            sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.json
+            sbom-build-${{ matrix.platform }}-${{ matrix.arch }}.xml
+            sbom-image-${{ matrix.platform }}-${{ matrix.arch }}.cyclonedx.json
 
 
       - name: Upload hash artifact
@@ -461,9 +517,10 @@ jobs:
             find ../provenance -name "*.intoto.jsonl" -type f -exec cp {} verification/multiple.intoto.jsonl \;
           fi
           
-          # Copy SBOM files
-          find ../sbom-artifacts -name "sbom-*.json" -type f -exec cp {} sbom/ \;
-          find ../sbom-artifacts -name "sbom-*.xml" -type f -exec cp {} sbom/ \;
+          # Copy SBOM files (both build-time and image-level)
+          find ../sbom-artifacts -name "sbom-build-*.json" -type f -exec cp {} sbom/ \;
+          find ../sbom-artifacts -name "sbom-build-*.xml" -type f -exec cp {} sbom/ \;
+          find ../sbom-artifacts -name "sbom-image-*.cyclonedx.json" -type f -exec cp {} sbom/ \;
           
           # Copy installation scripts and documentation
           cp ../install/offline/README.md .
@@ -720,9 +777,10 @@ jobs:
           # Upload hash files
           find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
-          # Upload SBOM files
-          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          # Upload SBOM files (both build-time and image-level)
+          find sbom-artifacts -name "sbom-build-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find sbom-artifacts -name "sbom-build-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find sbom-artifacts -name "sbom-image-*.cyclonedx.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
           # Upload distribution packages
           find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;

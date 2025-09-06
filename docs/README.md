@@ -33,6 +33,8 @@ Practical guides for accomplishing specific tasks and solving problems.
 
 - [Using Aliases](./guides/using-aliases.md) - Best practices for alias management
 - [Migrating to Aliases](./guides/migrating-to-aliases.md) - Transition from other systems
+- [SBOM Types Guide](./guides/sbom-types-guide.md) - Understanding build-time vs image-level SBOMs
+- [SBOM Verification](./guides/sbom-verification.md) - Security analysis with Software Bill of Materials
 - [Use Case Style Guide](./guides/use-case-style-guide.md) - Guidelines for implementing use cases
 
 ### 📋 [Reference](./reference/)
