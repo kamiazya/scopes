@@ -1,6 +1,27 @@
 # Scopes Installation Scripts
 
-This directory contains secure, modern installation scripts for Scopes that provide one-liner installation with integrated cryptographic verification.
+This directory contains secure, modern installation scripts for Scopes with a unified distribution approach that simplifies deployment across all platforms.
+
+## 🎯 Unified Distribution Architecture
+
+Scopes uses a **unified offline package** as the single source of truth for all installations:
+
+```
+┌─────────────────────────────────────┐
+│     Unified Offline Package         │
+│  (scopes-vX.X.X-offline.tar.gz)     │
+│                                     │
+│  • All platform binaries            │
+│  • Verification tools               │
+│  • Documentation                    │
+│  • SBOM files                       │
+└─────────────────────────────────────┘
+           ↓            ↓
+    ┌──────────┐  ┌──────────┐
+    │  Online  │  │ Offline  │
+    │ Installer│  │ Installer│
+    └──────────┘  └──────────┘
+```
 
 ## 🚀 Quick Start
 
@@ -14,23 +35,34 @@ curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install
 iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 | iex
 ```
 
-### Windows
-For Windows users, please use PowerShell (available on Windows 10/11 by default).
+### Offline Installation
+Download the unified package from GitHub Releases and run the included installer:
+```bash
+tar -xzf scopes-vX.X.X-offline.tar.gz
+cd scopes-vX.X.X-offline
+./install.sh
+```
 
 ## 🔒 Security First
 
-All installation scripts include **integrated cryptographic verification**:
+All installation methods provide **integrated cryptographic verification**:
 
 - ✅ **SHA256 Hash Verification** - Every binary verified against published hashes
 - ✅ **SLSA Level 3 Provenance** - Supply chain integrity verified cryptographically  
 - ✅ **HTTPS-Only Downloads** - All network communication over encrypted channels
 - ✅ **Automatic Verification** - No manual steps required
+- ✅ **Unified Package Integrity** - Single package checksum for simplified verification
 
 ## 📋 Available Scripts
 
-### Installation Scripts
-- **`install.sh`** - Unix installation with integrated verification (Linux/macOS/WSL)
-- **`install.ps1`** - PowerShell installation for Windows (and cross-platform PowerShell)
+### Primary Installation Scripts
+- **`install.sh`** - Main installer that uses unified package (recommended)
+- **`install-unified.sh`** - Explicit unified package installer
+- **`install.ps1`** - PowerShell installation for Windows
+
+### Offline Installation
+- **`offline/install.sh`** - Offline installer included in unified package
+- **`offline/README.md`** - Detailed offline installation guide
 
 ### Verification Scripts  
 - **`verify-release.sh`** - Standalone verification for downloaded releases (Unix)
@@ -222,6 +254,13 @@ curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install
 
 ## 🏢 Enterprise Deployment
 
+### Benefits of Unified Distribution
+
+1. **Single Source of Truth**: One package contains all platforms and architectures
+2. **Reduced Complexity**: Same verification process for online and offline
+3. **Bandwidth Optimization**: Download once, deploy anywhere
+4. **Compliance Ready**: SBOM and verification tools included
+
 ### CI/CD Integration
 
 #### GitHub Actions
@@ -237,8 +276,15 @@ curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install
 
 #### Docker
 ```dockerfile
+# Option 1: Online installation
 RUN curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | \
     SCOPES_FORCE_INSTALL=true SCOPES_INSTALL_DIR=/usr/local/bin sh
+
+# Option 2: Offline installation (for reproducible builds)
+COPY scopes-v1.0.0-offline.tar.gz /tmp/
+RUN tar -xzf /tmp/scopes-v1.0.0-offline.tar.gz -C /tmp && \
+    cd /tmp/scopes-v1.0.0-offline && \
+    SCOPES_FORCE_INSTALL=true ./install.sh
 ```
 
 ### Security Scanning

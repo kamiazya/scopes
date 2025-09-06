@@ -1,47 +1,25 @@
 #!/bin/bash
 
-# Scopes Installation Script
-# This script downloads and installs Scopes using the unified offline package
+# Scopes Offline Installation Script
+# This script installs Scopes from a pre-downloaded offline package
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+#   ./install.sh [OPTIONS]
 #
-# This is a wrapper that uses the unified installer for consistent distribution
-# For the legacy individual binary installer, use install-legacy.sh
+# Options:
+#   -d, --install-dir DIR     Installation directory (default: /usr/local/bin)
+#   -f, --force              Skip confirmation prompts
+#   -s, --skip-verification  Skip security verification (not recommended)
+#   -v, --verbose            Enable verbose output
+#   -h, --help               Show help message
 #
 # Environment variables:
-#   SCOPES_VERSION              - Version to install (default: latest)
-#   SCOPES_INSTALL_DIR          - Installation directory (default: /usr/local/bin)
-#   SCOPES_GITHUB_REPO          - GitHub repository (default: kamiazya/scopes)
+#   SCOPES_INSTALL_DIR          - Installation directory
 #   SCOPES_SKIP_VERIFICATION    - Skip SLSA verification (not recommended)
 #   SCOPES_FORCE_INSTALL        - Skip confirmation prompts
 #   SCOPES_VERBOSE              - Enable verbose output
-#   SCOPES_USE_LEGACY           - Use legacy individual binary installer
 
 set -Eeuo pipefail
-
-# Check if we should use legacy installer
-USE_LEGACY="${SCOPES_USE_LEGACY:-false}"
-
-# If not using legacy, delegate to unified installer
-if [[ "$USE_LEGACY" != "true" ]]; then
-    # Download and run unified installer
-    UNIFIED_INSTALLER_URL="https://raw.githubusercontent.com/${SCOPES_GITHUB_REPO:-kamiazya/scopes}/main/install/install-unified.sh"
-
-    if command -v curl >/dev/null 2>&1; then
-        curl -sSL "$UNIFIED_INSTALLER_URL" | bash -s -- "$@"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "$UNIFIED_INSTALLER_URL" | bash -s -- "$@"
-    else
-        echo "Error: Neither curl nor wget is available" >&2
-        exit 1
-    fi
-    exit $?
-fi
-
-# Legacy installer code follows (for backward compatibility)
-echo "Note: Using legacy individual binary installer. For better experience, unset SCOPES_USE_LEGACY."
-echo ""
 
 # Colors for output
 RED='\033[0;31m'
@@ -51,21 +29,22 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# Script directory (where the offline package is extracted)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PACKAGE_ROOT="$SCRIPT_DIR"
+
 # Configuration from environment or defaults
-VERSION="${SCOPES_VERSION:-}"
 INSTALL_DIR="${SCOPES_INSTALL_DIR:-/usr/local/bin}"
-GITHUB_REPO="${SCOPES_GITHUB_REPO:-kamiazya/scopes}"
 SKIP_VERIFICATION="${SCOPES_SKIP_VERIFICATION:-false}"
 FORCE_INSTALL="${SCOPES_FORCE_INSTALL:-false}"
 VERBOSE="${SCOPES_VERBOSE:-false}"
 
 # Internal variables
-TEMP_DIR=""
 BINARY_NAME=""
 BINARY_PATH=""
 HASH_FILE=""
-PROVENANCE_FILE=""
-NEEDS_SUDO=""
+PROVENANCE_FILE="$PACKAGE_ROOT/verification/multiple.intoto.jsonl"
+SLSA_VERIFIER=""
 
 # Function to print colored output
 print_status() {
@@ -90,16 +69,79 @@ print_verbose() {
     fi
 }
 
-# Function to clean up temporary files
-cleanup() {
-    if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
-        print_verbose "Cleaning up temporary directory: $TEMP_DIR"
-        rm -rf "$TEMP_DIR"
-    fi
+# Function to show help
+show_help() {
+    cat << EOF
+Scopes Offline Installation Script
+
+This script installs Scopes from a pre-downloaded offline package with
+integrated security verification.
+
+USAGE:
+    $0 [OPTIONS]
+
+OPTIONS:
+    -d, --install-dir DIR     Installation directory (default: /usr/local/bin)
+    -f, --force              Skip confirmation prompts
+    -s, --skip-verification  Skip security verification (not recommended)
+    -v, --verbose            Enable verbose output
+    -h, --help               Show this help message
+
+ENVIRONMENT VARIABLES:
+    SCOPES_INSTALL_DIR          Installation directory
+    SCOPES_SKIP_VERIFICATION    Skip SLSA verification (not recommended)
+    SCOPES_FORCE_INSTALL        Skip confirmation prompts
+    SCOPES_VERBOSE              Enable verbose output
+
+EXAMPLES:
+    # Standard installation
+    ./install.sh
+
+    # Custom installation directory
+    ./install.sh --install-dir /opt/scopes/bin
+
+    # Automated installation (no prompts)
+    ./install.sh --force
+
+    # Installation with verbose output
+    ./install.sh --verbose
+
+For more information, see README.md or docs/INSTALL.md
+EOF
 }
 
-# Set up cleanup trap
-trap cleanup EXIT INT TERM
+# Function to parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -d|--install-dir)
+                INSTALL_DIR="$2"
+                shift 2
+                ;;
+            -f|--force)
+                FORCE_INSTALL="true"
+                shift
+                ;;
+            -s|--skip-verification)
+                SKIP_VERIFICATION="true"
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE="true"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
 
 # Function to detect platform
 detect_platform() {
@@ -125,11 +167,6 @@ is_root() {
     [[ $EUID -eq 0 ]]
 }
 
-# Function to check if directory is writable
-is_writable() {
-    [[ -w "$1" ]]
-}
-
 # Function to determine if sudo is needed
 needs_sudo() {
     if is_root; then
@@ -143,27 +180,43 @@ needs_sudo() {
     return 1  # Don't need sudo
 }
 
-# Function to get latest version from GitHub
-get_latest_version() {
-    print_status "Fetching latest version from GitHub..."
-    local api_url="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
-    local latest_version
+# Function to validate package structure
+validate_package() {
+    print_status "Validating offline package structure..."
 
-    if command -v curl >/dev/null 2>&1; then
-        latest_version=$(curl -sSL "$api_url" | grep '"tag_name"' | cut -d'"' -f4)
-    elif command -v wget >/dev/null 2>&1; then
-        latest_version=$(wget -qO- "$api_url" | grep '"tag_name"' | cut -d'"' -f4)
+    local required_dirs=("binaries" "verification" "sbom" "docs" "tools")
+    for dir in "${required_dirs[@]}"; do
+        if [[ ! -d "$PACKAGE_ROOT/$dir" ]]; then
+            print_error "Missing required directory: $dir"
+            print_error "This does not appear to be a valid Scopes offline package"
+            exit 1
+        fi
+        print_verbose "Found directory: $dir"
+    done
+
+    # Check for README
+    if [[ ! -f "$PACKAGE_ROOT/README.md" ]]; then
+        print_error "Missing README.md - invalid package structure"
+        exit 1
+    fi
+
+    print_status "✅ Package structure validation passed"
+}
+
+# Function to find version from binaries
+detect_version() {
+    local binary_file
+    binary_file=$(find "$PACKAGE_ROOT/binaries" -name "scopes-v*" -type f | head -1)
+
+    if [[ -n "$binary_file" ]]; then
+        local filename
+        filename=$(basename "$binary_file")
+        # Extract version from filename like "scopes-v1.0.0-linux-x64"
+        echo "$filename" | sed -n 's/scopes-\(v[0-9]*\.[0-9]*\.[0-9]*[^-]*\).*/\1/p'
     else
-        print_error "Neither curl nor wget is available"
+        print_error "Cannot detect version from binaries"
         exit 1
     fi
-
-    if [[ -z "$latest_version" ]]; then
-        print_error "Failed to fetch latest version"
-        exit 1
-    fi
-
-    echo "$latest_version"
 }
 
 # Function to calculate hash
@@ -199,12 +252,10 @@ verify_hash() {
     local calculated_hash
     calculated_hash=$(calculate_hash "$binary_file")
 
-    # Read and parse hash file content
     local hash_file_content
     hash_file_content=$(cat "$hash_file" 2>/dev/null || echo "")
     print_verbose "Hash file content: '$hash_file_content'"
 
-    # Try different parsing methods for better compatibility
     local expected_hash=""
     if [[ "$hash_file_content" == *":"* ]]; then
         # Format: "filename:hash" - extract hash part
@@ -217,11 +268,9 @@ verify_hash() {
     print_verbose "Expected hash: '$expected_hash'"
     print_verbose "Calculated hash: '$calculated_hash'"
 
-    # Check if we got a valid hash
     if [[ -z "$expected_hash" ]]; then
         print_error "❌ Hash verification FAILED"
         print_error "Could not extract hash from file: $hash_file"
-        print_error "Hash file content: '$hash_file_content'"
         return 1
     fi
 
@@ -236,36 +285,43 @@ verify_hash() {
     fi
 }
 
+# Function to find SLSA verifier
+find_slsa_verifier() {
+    local platform="$1"
+    local arch="$2"
+
+    local verifier_name="slsa-verifier-$platform-$arch"
+    if [[ "$platform" == "win32" ]]; then
+        verifier_name="$verifier_name.exe"
+    fi
+
+    local verifier_path="$PACKAGE_ROOT/tools/$verifier_name"
+
+    if [[ -f "$verifier_path" && -x "$verifier_path" ]]; then
+        echo "$verifier_path"
+    else
+        echo ""
+    fi
+}
+
 # Function to verify SLSA provenance
 verify_slsa() {
     local binary_file="$1"
     local provenance_file="$2"
+    local platform="$3"
+    local arch="$4"
 
     print_status "Verifying SLSA provenance..."
 
-    # Check if slsa-verifier is installed
-    if ! command -v slsa-verifier >/dev/null 2>&1; then
-        print_warning "slsa-verifier not found. Installing..."
-        if command -v go >/dev/null 2>&1; then
-            print_status "Installing slsa-verifier with Go..."
-            go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
-            # Add GOPATH/bin to PATH if not already there
-            if [[ ":$PATH:" != *":$HOME/go/bin:"* ]]; then
-                export PATH="$HOME/go/bin:$PATH"
-            fi
-        else
-            print_warning "Go is not installed. Skipping SLSA verification."
-            print_warning "For complete security, please install Go and slsa-verifier manually:"
-            print_warning "  go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest"
-            return 0
-        fi
-    fi
+    # Find offline SLSA verifier
+    SLSA_VERIFIER=$(find_slsa_verifier "$platform" "$arch")
 
-    if command -v slsa-verifier >/dev/null 2>&1; then
-        print_status "Running SLSA verification..."
-        if slsa-verifier verify-artifact "$binary_file" \
+    if [[ -n "$SLSA_VERIFIER" ]]; then
+        print_status "Using offline SLSA verifier: $SLSA_VERIFIER"
+
+        if "$SLSA_VERIFIER" verify-artifact "$binary_file" \
             --provenance-path "$provenance_file" \
-            --source-uri "github.com/$GITHUB_REPO"; then
+            --source-uri "github.com/kamiazya/scopes"; then
             print_status "✅ SLSA verification PASSED"
             return 0
         else
@@ -273,86 +329,63 @@ verify_slsa() {
             return 1
         fi
     else
-        print_warning "Could not install slsa-verifier. Skipping SLSA verification."
-        return 0
+        # Try system slsa-verifier if available
+        if command -v slsa-verifier >/dev/null 2>&1; then
+            print_status "Using system SLSA verifier"
+            if slsa-verifier verify-artifact "$binary_file" \
+                --provenance-path "$provenance_file" \
+                --source-uri "github.com/kamiazya/scopes"; then
+                print_status "✅ SLSA verification PASSED"
+                return 0
+            else
+                print_error "❌ SLSA verification FAILED"
+                return 1
+            fi
+        else
+            print_warning "SLSA verifier not available. Skipping SLSA verification."
+            print_warning "For complete security, ensure slsa-verifier is available."
+            return 0
+        fi
     fi
 }
 
-# Function to download file
-download_file() {
-    local url="$1"
-    local output="$2"
-
-    print_verbose "Downloading: $url"
-    print_verbose "Output: $output"
-
-    if command -v curl >/dev/null 2>&1; then
-        if ! curl -sSL -o "$output" "$url"; then
-            print_error "Failed to download: $url"
-            return 1
-        fi
-    elif command -v wget >/dev/null 2>&1; then
-        if ! wget -q -O "$output" "$url"; then
-            print_error "Failed to download: $url"
-            return 1
-        fi
-    else
-        print_error "Neither curl nor wget is available"
-        return 1
-    fi
-
-    print_verbose "Successfully downloaded: $output"
-}
-
-# Function to download and verify release
-download_and_verify() {
+# Function to setup binary paths
+setup_binary_paths() {
     local version="$1"
     local platform="$2"
     local arch="$3"
 
-    print_header "Downloading Scopes $version"
-
-    # Create temporary directory
-    TEMP_DIR=$(mktemp -d)
-    print_verbose "Using temporary directory: $TEMP_DIR"
-
-    # Set up file names
     BINARY_NAME="scopes-$version-$platform-$arch"
     if [[ "$platform" == "win32" ]]; then
         BINARY_NAME="$BINARY_NAME.exe"
     fi
 
-    BINARY_PATH="$TEMP_DIR/$BINARY_NAME"
-    HASH_FILE="$TEMP_DIR/binary-hash-$platform-$arch.txt"
-    PROVENANCE_FILE="$TEMP_DIR/multiple.intoto.jsonl"
+    BINARY_PATH="$PACKAGE_ROOT/binaries/$BINARY_NAME"
+    HASH_FILE="$PACKAGE_ROOT/verification/binary-hash-$platform-$arch.txt"
 
-    local base_url="https://github.com/$GITHUB_REPO/releases/download/$version"
+    print_verbose "Binary path: $BINARY_PATH"
+    print_verbose "Hash file: $HASH_FILE"
 
-    # Download binary
-    print_status "Downloading binary: $BINARY_NAME"
-    if ! download_file "$base_url/$BINARY_NAME" "$BINARY_PATH"; then
+    # Check if binary exists
+    if [[ ! -f "$BINARY_PATH" ]]; then
+        print_error "Binary not found: $BINARY_PATH"
+        print_error "Available binaries:"
+        ls -la "$PACKAGE_ROOT/binaries/" || true
         exit 1
     fi
 
-    # Download hash file
-    print_status "Downloading hash file..."
-    if ! download_file "$base_url/binary-hash-$platform-$arch.txt" "$HASH_FILE"; then
+    # Check if hash file exists
+    if [[ ! -f "$HASH_FILE" ]]; then
+        print_error "Hash file not found: $HASH_FILE"
         exit 1
     fi
-
-    # Download provenance file (if verification is enabled)
-    if [[ "$SKIP_VERIFICATION" != "true" ]]; then
-        print_status "Downloading SLSA provenance..."
-        if ! download_file "$base_url/multiple.intoto.jsonl" "$PROVENANCE_FILE"; then
-            print_warning "Failed to download provenance file. SLSA verification will be skipped."
-        fi
-    fi
-
-    print_status "✅ Download completed"
 }
 
 # Function to perform verification
 perform_verification() {
+    local platform="$1"
+    local arch="$2"
+
     if [[ "$SKIP_VERIFICATION" == "true" ]]; then
         print_warning "⚠️  Verification skipped by user request"
         return 0
@@ -369,7 +402,7 @@ perform_verification() {
 
     # SLSA verification (if provenance file exists)
     if [[ -f "$PROVENANCE_FILE" ]]; then
-        if ! verify_slsa "$BINARY_PATH" "$PROVENANCE_FILE"; then
+        if ! verify_slsa "$BINARY_PATH" "$PROVENANCE_FILE" "$platform" "$arch"; then
             verification_failed=true
         fi
     else
@@ -457,9 +490,11 @@ verify_installation() {
 
 # Function to show next steps
 show_next_steps() {
+    local version="$1"
+
     print_header "Next Steps"
 
-    echo -e "${BOLD}Scopes has been successfully installed!${NC}"
+    echo -e "${BOLD}Scopes $version has been successfully installed offline!${NC}"
     echo ""
     echo "Quick start:"
     echo "  scopes --help                 # Show help"
@@ -473,11 +508,15 @@ show_next_steps() {
         echo ""
     fi
 
-    echo "Documentation:"
-    echo "  https://github.com/$GITHUB_REPO"
+    echo "Documentation (included in this package):"
+    echo "  docs/INSTALL.md               # Detailed installation guide"
+    echo "  docs/SECURITY.md              # Security verification guide"
+    echo "  docs/ENTERPRISE.md            # Enterprise deployment guide"
+    echo ""
+    echo "SBOM files are available in the sbom/ directory for compliance requirements."
     echo ""
     echo "Security verification:"
-    echo "  All downloaded artifacts were cryptographically verified"
+    echo "  All artifacts were cryptographically verified offline"
     echo "  SLSA Level 3 provenance ensures supply chain integrity"
 }
 
@@ -491,11 +530,11 @@ confirm_installation() {
         return 0
     fi
 
-    echo -e "${BOLD}Scopes Installation${NC}"
+    echo -e "${BOLD}Scopes Offline Installation${NC}"
     echo ""
     echo "This script will:"
-    echo "  • Download Scopes $version for $platform-$arch"
-    echo "  • Verify cryptographic signatures and hashes"
+    echo "  • Install Scopes $version for $platform-$arch from offline package"
+    echo "  • Verify cryptographic signatures and hashes (offline)"
     echo "  • Install to: $INSTALL_DIR"
     if needs_sudo; then
         echo "  • Require sudo privileges for installation"
@@ -513,13 +552,13 @@ confirm_installation() {
 
 # Main function
 main() {
-    print_header "Scopes Installer"
+    # Parse command line arguments
+    parse_args "$@"
 
-    # Check prerequisites
-    if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
-        print_error "Either curl or wget is required for installation"
-        exit 1
-    fi
+    print_header "Scopes Offline Installer"
+
+    # Validate package structure
+    validate_package
 
     # Detect platform and architecture
     local platform
@@ -533,19 +572,19 @@ main() {
         exit 1
     fi
 
-    # Get version to install
-    if [[ -z "$VERSION" ]]; then
-        VERSION=$(get_latest_version)
-        print_status "Latest version: $VERSION"
-    else
-        print_status "Installing specified version: $VERSION"
-    fi
+    # Detect version from package
+    local version
+    version=$(detect_version)
+    print_status "Detected version: $version"
+
+    # Setup binary paths
+    setup_binary_paths "$version" "$platform" "$arch"
 
     # Show configuration
     print_status "Configuration:"
+    print_status "  Package root: $PACKAGE_ROOT"
     print_status "  Platform: $platform-$arch"
-    print_status "  Version: $VERSION"
-    print_status "  Repository: $GITHUB_REPO"
+    print_status "  Version: $version"
     print_status "  Install directory: $INSTALL_DIR"
     print_status "  Skip verification: $SKIP_VERIFICATION"
 
@@ -553,25 +592,23 @@ main() {
     if needs_sudo; then
         if ! command -v sudo >/dev/null 2>&1; then
             print_error "Installation requires write access to $INSTALL_DIR"
-            print_error "Please run as root or change SCOPES_INSTALL_DIR to a writable location"
+            print_error "Please run as root or use --install-dir to specify a writable location"
             exit 1
         fi
-        NEEDS_SUDO="true"
     fi
 
     # Confirm installation
-    confirm_installation "$VERSION" "$platform" "$arch"
+    confirm_installation "$version" "$platform" "$arch"
 
-    # Download and verify
-    download_and_verify "$VERSION" "$platform" "$arch"
-    perform_verification
+    # Perform verification
+    perform_verification "$platform" "$arch"
 
     # Install
     install_binary "$BINARY_PATH" "$INSTALL_DIR"
     verify_installation
 
     # Show next steps
-    show_next_steps
+    show_next_steps "$version"
 }
 
 # Run main function
