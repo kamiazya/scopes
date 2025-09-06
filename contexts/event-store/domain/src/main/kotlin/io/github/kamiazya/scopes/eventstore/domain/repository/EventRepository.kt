@@ -77,4 +77,25 @@ interface EventRepository {
      * @return A Flow of stored events
      */
     fun streamEvents(): Flow<PersistedEventRecord>
+
+    /**
+     * Finds events by event type with pagination support.
+     *
+     * @param eventType The event type to filter by
+     * @param limit The maximum number of events to retrieve
+     * @param offset The number of events to skip
+     * @return A list of stored events
+     */
+    suspend fun findByEventType(eventType: String, limit: Int, offset: Int): List<PersistedEventRecord>
+
+    /**
+     * Finds events within a time range with pagination support.
+     *
+     * @param from The start timestamp (inclusive, based on occurredAt)
+     * @param to The end timestamp (exclusive, based on occurredAt)
+     * @param limit The maximum number of events to retrieve
+     * @param offset The number of events to skip
+     * @return A list of stored events
+     */
+    suspend fun findByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): List<PersistedEventRecord>
 }

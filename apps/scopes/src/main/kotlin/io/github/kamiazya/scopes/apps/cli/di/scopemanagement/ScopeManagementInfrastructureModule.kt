@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
@@ -14,7 +15,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvid
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.FilterExpressionValidator
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.EventStoreErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
@@ -103,8 +103,17 @@ val scopeManagementInfrastructureModule = module {
         ApplicationErrorMapper(logger = get())
     }
 
-    single<EventStoreErrorMapper> {
-        EventStoreErrorMapper(logger = get())
+    // Event Sourcing Repository using contracts
+    single<EventSourcingRepository<io.github.kamiazya.scopes.platform.domain.event.DomainEvent>> {
+        val eventStoreCommandPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort = get()
+        val eventStoreQueryPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort = get()
+        val logger: io.github.kamiazya.scopes.platform.observability.logging.Logger = get()
+
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.factory.EventSourcingRepositoryFactory.createContractBased(
+            eventStoreCommandPort = eventStoreCommandPort,
+            eventStoreQueryPort = eventStoreQueryPort,
+            logger = logger,
+        )
     }
 
     // External Services are now provided by their own modules

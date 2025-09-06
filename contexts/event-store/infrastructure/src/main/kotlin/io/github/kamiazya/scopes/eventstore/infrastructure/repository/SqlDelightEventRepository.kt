@@ -294,6 +294,67 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
         }
     }
 
+    override suspend fun findByEventType(eventType: String, limit: Int, offset: Int): List<PersistedEventRecord> = withContext(Dispatchers.IO) {
+        try {
+            queries.findEventsByTypeWithPagination(
+                eventType,
+                limit.toLong(),
+                offset.toLong(),
+            )
+                .executeAsList()
+                .mapNotNull { row ->
+                    when (
+                        val result = deserializeEvent(
+                            eventId = row.event_id,
+                            aggregateId = row.aggregate_id,
+                            aggregateVersion = row.aggregate_version,
+                            eventType = row.event_type,
+                            eventData = row.event_data,
+                            occurredAt = row.occurred_at,
+                            storedAt = row.stored_at,
+                            sequenceNumber = row.sequence_number,
+                        )
+                    ) {
+                        is Either.Right -> result.value
+                        is Either.Left -> null // Skip failed deserialization
+                    }
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun findByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): List<PersistedEventRecord> = withContext(Dispatchers.IO) {
+        try {
+            queries.findEventsByTimeRangeWithPagination(
+                from.toEpochMilliseconds(),
+                to.toEpochMilliseconds(),
+                limit.toLong(),
+                offset.toLong(),
+            )
+                .executeAsList()
+                .mapNotNull { row ->
+                    when (
+                        val result = deserializeEvent(
+                            eventId = row.event_id,
+                            aggregateId = row.aggregate_id,
+                            aggregateVersion = row.aggregate_version,
+                            eventType = row.event_type,
+                            eventData = row.event_data,
+                            occurredAt = row.occurred_at,
+                            storedAt = row.stored_at,
+                            sequenceNumber = row.sequence_number,
+                        )
+                    ) {
+                        is Either.Right -> result.value
+                        is Either.Left -> null // Skip failed deserialization
+                    }
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     private fun deserializeEvent(
         eventId: String,
         aggregateId: String,

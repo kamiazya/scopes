@@ -5,6 +5,8 @@ import arrow.core.flatMap
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.contracts.eventstore.errors.EventStoreContractError
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateQuery
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTimeRangeQuery
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
 import io.github.kamiazya.scopes.contracts.eventstore.results.EventResult
 import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsByAggregateHandler
@@ -22,6 +24,7 @@ class EventStoreQueryPortAdapter(
     private val getEventsByAggregateHandler: GetEventsByAggregateHandler,
     private val getEventsSinceHandler: GetEventsSinceHandler,
     private val eventSerializer: EventSerializer,
+    private val eventRepository: io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository,
 ) : EventStoreQueryPort {
 
     override suspend fun getEventsByAggregate(query: GetEventsByAggregateQuery): Either<EventStoreContractError, List<EventResult>> =
@@ -127,4 +130,77 @@ class EventStoreQueryPortAdapter(
             }
             Either.Right(results)
         }
+
+    override suspend fun getEventsByType(query: GetEventsByTypeQuery): Either<EventStoreContractError, List<EventResult>> {
+        // Use the event repository to query by event type
+        return try {
+            val events = eventRepository.findByEventType(
+                eventType = query.eventType,
+                limit = query.limit,
+                offset = query.offset,
+            )
+
+            val results = events.mapNotNull { storedEvent ->
+                when (val serialized = eventSerializer.serialize(storedEvent.event)) {
+                    is Either.Right -> EventResult(
+                        eventId = storedEvent.metadata.eventId.value,
+                        aggregateId = storedEvent.metadata.aggregateId.value,
+                        aggregateVersion = storedEvent.metadata.aggregateVersion.value,
+                        eventType = storedEvent.metadata.eventType.value,
+                        eventData = serialized.value,
+                        occurredAt = storedEvent.metadata.occurredAt,
+                        storedAt = storedEvent.metadata.storedAt,
+                        sequenceNumber = storedEvent.metadata.sequenceNumber,
+                    )
+                    is Either.Left -> null // Skip events that can't be serialized
+                }
+            }
+            Either.Right(results)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreContractError.EventRetrievalError(
+                    retrievalReason = EventStoreContractError.RetrievalFailureReason.CORRUPTED_DATA,
+                    occurredAt = kotlinx.datetime.Clock.System.now(),
+                    cause = e,
+                ),
+            )
+        }
+    }
+
+    override suspend fun getEventsByTimeRange(query: GetEventsByTimeRangeQuery): Either<EventStoreContractError, List<EventResult>> {
+        // Use the event repository to query by time range
+        return try {
+            val events = eventRepository.findByTimeRange(
+                from = query.from,
+                to = query.to,
+                limit = query.limit,
+                offset = query.offset,
+            )
+
+            val results = events.mapNotNull { storedEvent ->
+                when (val serialized = eventSerializer.serialize(storedEvent.event)) {
+                    is Either.Right -> EventResult(
+                        eventId = storedEvent.metadata.eventId.value,
+                        aggregateId = storedEvent.metadata.aggregateId.value,
+                        aggregateVersion = storedEvent.metadata.aggregateVersion.value,
+                        eventType = storedEvent.metadata.eventType.value,
+                        eventData = serialized.value,
+                        occurredAt = storedEvent.metadata.occurredAt,
+                        storedAt = storedEvent.metadata.storedAt,
+                        sequenceNumber = storedEvent.metadata.sequenceNumber,
+                    )
+                    is Either.Left -> null // Skip events that can't be serialized
+                }
+            }
+            Either.Right(results)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreContractError.EventRetrievalError(
+                    retrievalReason = EventStoreContractError.RetrievalFailureReason.CORRUPTED_DATA,
+                    occurredAt = kotlinx.datetime.Clock.System.now(),
+                    cause = e,
+                ),
+            )
+        }
+    }
 }

@@ -87,6 +87,7 @@ val eventStoreInfrastructureModule = module {
             getEventsByAggregateHandler = get(),
             getEventsSinceHandler = get(),
             eventSerializer = get(),
+            eventRepository = get(),
         )
     }
 

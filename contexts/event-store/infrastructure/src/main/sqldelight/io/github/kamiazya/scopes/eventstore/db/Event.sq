@@ -86,3 +86,22 @@ WHERE occurred_at >= ?
 AND occurred_at < ?
 ORDER BY sequence_number ASC
 LIMIT ?;
+
+-- Find events by event type with pagination
+findEventsByTypeWithPagination:
+SELECT *
+FROM events
+WHERE event_type = ?
+ORDER BY sequence_number ASC
+LIMIT ?
+OFFSET ?;
+
+-- Find events by time range with pagination (by occurredAt)
+findEventsByTimeRangeWithPagination:
+SELECT *
+FROM events
+WHERE occurred_at >= ?
+AND occurred_at < ?
+ORDER BY sequence_number ASC
+LIMIT ?
+OFFSET ?;
