@@ -2,8 +2,7 @@ package io.github.kamiazya.scopes.devicesync.infrastructure.service
 
 import arrow.core.Either
 import arrow.core.flatMap
-import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
-import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
+import io.github.kamiazya.scopes.devicesync.application.port.EventAppender
 import io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
@@ -23,7 +22,7 @@ import kotlinx.datetime.Instant
 /**
  * Default implementation of DeviceSynchronizationService.
  */
-class DefaultDeviceSynchronizationService(private val syncRepository: SynchronizationRepository, private val eventStore: EventStoreQueryPort) :
+class DefaultDeviceSynchronizationService(private val syncRepository: SynchronizationRepository, private val eventAppender: EventAppender) :
     DeviceSynchronizationService {
 
     override suspend fun synchronize(remoteDeviceId: DeviceId, since: Instant?): Either<SynchronizationError, SynchronizationResult> =
@@ -46,11 +45,9 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                         // Get events to push
                         val pushSince = since ?: syncState.lastSuccessfulPush ?: Instant.DISTANT_PAST
 
-                        eventStore.getEventsSince(
-                            GetEventsSinceQuery(
-                                since = pushSince,
-                                limit = 1000,
-                            ),
+                        eventAppender.getEventsSince(
+                            since = pushSince,
+                            limit = 1000,
                         )
                             .mapLeft { error ->
                                 SynchronizationError.NetworkError(

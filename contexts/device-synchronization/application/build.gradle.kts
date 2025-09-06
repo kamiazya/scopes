@@ -5,8 +5,8 @@ plugins {
 dependencies {
     implementation(project(":device-synchronization-domain"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":platform-domain-commons"))
     implementation(project(":contracts-device-synchronization"))
-    implementation(project(":contracts-event-store")) // For using EventStorePort
 
     // Functional programming
     implementation(libs.arrow.core)
