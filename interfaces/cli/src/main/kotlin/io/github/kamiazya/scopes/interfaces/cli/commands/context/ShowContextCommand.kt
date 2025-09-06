@@ -4,8 +4,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
@@ -49,7 +49,7 @@ class ShowContextCommand :
         runBlocking {
             val contextKey = if (key == "current") {
                 // Get the current context key
-                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)) {
+                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
                     is ContextViewContract.GetActiveContextResponse.Success -> {
                         val activeContext = result.contextView
                         if (activeContext == null) {
@@ -67,7 +67,7 @@ class ShowContextCommand :
                 key
             }
 
-            when (val result = contextQueryAdapter.getContext(GetContextViewRequest(contextKey))) {
+            when (val result = contextQueryAdapter.getContext(GetContextViewQuery(contextKey))) {
                 is ContextViewContract.GetContextViewResponse.Success -> {
                     echo(contextOutputFormatter.formatContextViewDetailed(result.contextView, debugContext.debug))
                 }

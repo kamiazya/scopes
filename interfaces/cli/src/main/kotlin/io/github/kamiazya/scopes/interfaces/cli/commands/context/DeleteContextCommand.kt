@@ -6,8 +6,8 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
@@ -55,7 +55,7 @@ class DeleteContextCommand :
     override fun run() {
         runBlocking {
             // Check if this is the current context
-            val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)
+            val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)
             if (currentContextResult is ContextViewContract.GetActiveContextResponse.Success) {
                 val currentContext = currentContextResult.contextView
                 if (currentContext?.key == key && !force) {
@@ -70,7 +70,7 @@ class DeleteContextCommand :
                 }
             }
 
-            val result = contextCommandAdapter.deleteContext(DeleteContextViewRequest(key))
+            val result = contextCommandAdapter.deleteContext(DeleteContextViewCommand(key))
             result.fold(
                 { error ->
                     echo("Error: Failed to delete context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)

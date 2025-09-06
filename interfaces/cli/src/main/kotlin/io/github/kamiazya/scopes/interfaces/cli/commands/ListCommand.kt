@@ -9,7 +9,7 @@ import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
@@ -73,7 +73,7 @@ class ListCommand :
 
             // Get current context filter if not ignoring context
             val contextFilter = if (!ignoreContext) {
-                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)) {
+                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
                     is ContextViewContract.GetActiveContextResponse.Success -> {
                         result.contextView?.filter
                     }

@@ -8,8 +8,8 @@ import io.github.kamiazya.scopes.devicesync.application.port.EventQueryPort
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
-import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventStoreEventAppender
-import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventStoreEventReader
+import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventCommandPortAdapter
+import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventQueryPortAdapter
 import io.github.kamiazya.scopes.devicesync.infrastructure.repository.SqlDelightSynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.infrastructure.service.DefaultDeviceSynchronizationService
 import io.github.kamiazya.scopes.devicesync.infrastructure.sqldelight.SqlDelightDatabaseProvider
@@ -44,7 +44,7 @@ val deviceSyncInfrastructureModule = module {
 
     // Event Query (Adapter)
     single<EventQueryPort> {
-        EventStoreEventReader(
+        EventQueryPortAdapter(
             eventStoreQueryPort = get(),
             logger = get(),
             json = get(),
@@ -53,7 +53,7 @@ val deviceSyncInfrastructureModule = module {
 
     // Event Command (Adapter)
     single<EventCommandPort> {
-        EventStoreEventAppender(
+        EventCommandPortAdapter(
             eventStoreCommandPort = get(),
             logger = get(),
             json = get(),

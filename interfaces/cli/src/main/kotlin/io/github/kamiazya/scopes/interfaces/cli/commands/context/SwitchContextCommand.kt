@@ -4,8 +4,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
@@ -49,7 +49,7 @@ class SwitchContextCommand :
 
     override fun run() {
         runBlocking {
-            val result = contextCommandAdapter.setCurrentContext(SetActiveContextRequest(key))
+            val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
             result.fold(
                 { error ->
                     echo("Error: Failed to switch to context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
@@ -58,7 +58,7 @@ class SwitchContextCommand :
                     echo("Switched to context '$key'")
 
                     // Show the active filter
-                    when (val contextResult = contextQueryAdapter.getContext(GetContextViewRequest(key))) {
+                    when (val contextResult = contextQueryAdapter.getContext(GetContextViewQuery(key))) {
                         is ContextViewContract.GetContextViewResponse.Success -> {
                             echo("Active filter: ${contextResult.contextView.filter}")
                         }

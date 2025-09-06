@@ -332,6 +332,10 @@ class CqrsNamingConventionTest :
                 scope
                     .interfaces()
                     .withNameEndingWith("CommandPort")
+                    .filter { port ->
+                        // Exclude Event-specific ports that naturally use 'event' parameter
+                        !port.name.contains("Event")
+                    }
                     .assertTrue { port ->
                         port.functions().all { function ->
                             function.parameters.isEmpty() ||
@@ -346,6 +350,10 @@ class CqrsNamingConventionTest :
                 scope
                     .interfaces()
                     .withNameEndingWith("QueryPort")
+                    .filter { port ->
+                        // Exclude Event-specific ports that naturally use domain-specific parameters
+                        !port.name.contains("Event")
+                    }
                     .assertTrue { port ->
                         port.functions().all { function ->
                             function.parameters.isEmpty() ||

@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
@@ -72,7 +72,7 @@ class EditContextCommand :
                 return@runBlocking
             }
 
-            val request = UpdateContextViewRequest(
+            val request = UpdateContextViewCommand(
                 key = key,
                 name = name,
                 filter = filter,

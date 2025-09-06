@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewCommand
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.coEvery
@@ -30,7 +30,7 @@ class ContextCommandAdapterIntegrationTestSimple :
                 it("should create context view successfully") {
                     runBlocking {
                         // Arrange
-                        val request = CreateContextViewRequest(
+                        val request = CreateContextViewCommand(
                             key = "test-context",
                             name = "Test Context",
                             filter = "status=active",

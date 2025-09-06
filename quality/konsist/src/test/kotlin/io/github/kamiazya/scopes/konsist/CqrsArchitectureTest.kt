@@ -112,6 +112,7 @@ class CqrsArchitectureTest :
                             "store",
                             "save",
                             "clear", // For clearActiveContext
+                            "append", // For EventCommandPort
                         ) ||
                             function.name.startsWith("create") ||
                             function.name.startsWith("update") ||
@@ -125,7 +126,8 @@ class CqrsArchitectureTest :
                             function.name.startsWith("synchronize") ||
                             function.name.startsWith("store") ||
                             function.name.startsWith("save") ||
-                            function.name.startsWith("clear")
+                            function.name.startsWith("clear") ||
+                            function.name.startsWith("append")
 
                         isEitherType && hasWriteOperationName
                     }

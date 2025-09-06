@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.context
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsQuery
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
@@ -38,14 +38,14 @@ class ListContextsCommand :
 
     override fun run() {
         runBlocking {
-            when (val result = contextQueryAdapter.listContexts(ListContextViewsRequest)) {
+            when (val result = contextQueryAdapter.listContexts(ListContextViewsQuery)) {
                 is ContextViewContract.ListContextViewsResponse.Success -> {
                     if (result.contextViews.isEmpty()) {
                         echo("No context views defined.")
                         echo("Create one with: scopes context create <key> <name> --filter <expression>")
                     } else {
                         // Get current active context to highlight it
-                        val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextRequest)
+                        val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)
                         val currentContextKey = when (currentContextResult) {
                             is ContextViewContract.GetActiveContextResponse.Success -> currentContextResult.contextView?.key
                             else -> null

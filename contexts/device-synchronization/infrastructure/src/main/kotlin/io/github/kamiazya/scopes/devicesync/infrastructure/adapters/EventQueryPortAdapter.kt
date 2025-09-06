@@ -12,12 +12,12 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 
 /**
- * Infrastructure adapter that implements EventReader using event store contracts.
+ * Infrastructure adapter that implements EventQueryPort using event store contracts.
  *
- * This adapter bridges the application layer's EventReader port with the
+ * This adapter bridges the application layer's EventQueryPort with the
  * concrete event store contract implementation for reading events.
  */
-class EventStoreEventReader(private val eventStoreQueryPort: EventStoreQueryPort, private val logger: Logger, private val json: Json) : EventQueryPort {
+class EventQueryPortAdapter(private val eventStoreQueryPort: EventStoreQueryPort, private val logger: Logger, private val json: Json) : EventQueryPort {
 
     override suspend fun getEventsSince(since: Instant, limit: Int): Either<DeviceSyncApplicationError, List<DomainEvent>> {
         logger.debug("Retrieving events since $since with limit $limit")

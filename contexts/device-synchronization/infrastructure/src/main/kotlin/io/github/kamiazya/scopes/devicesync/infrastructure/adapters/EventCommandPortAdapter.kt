@@ -11,12 +11,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Infrastructure adapter that implements EventAppender using event store contracts.
+ * Infrastructure adapter that implements EventCommandPort using event store contracts.
  *
- * This adapter bridges the application layer's EventAppender port with the
+ * This adapter bridges the application layer's EventCommandPort with the
  * concrete event store contract implementation for writing events.
  */
-class EventStoreEventAppender(private val eventStoreCommandPort: EventStoreCommandPort, private val logger: Logger, private val json: Json) :
+class EventCommandPortAdapter(private val eventStoreCommandPort: EventStoreCommandPort, private val logger: Logger, private val json: Json) :
     EventCommandPort {
 
     override suspend fun append(event: DomainEvent): Either<DeviceSyncApplicationError, Unit> {
