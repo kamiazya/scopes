@@ -126,6 +126,22 @@ jobs:
       env:
         GRADLE_USER_HOME: C:\gradle-cache
 
+    - name: Run E2E tests on native binary (Windows)
+      if: matrix.platform == 'win32' && matrix.experimental != true
+      run: |
+        Set-Location "C:\build-workspace\scopes"
+        Write-Host "Running E2E tests on native binary..."
+        & .\gradlew.bat --no-daemon :apps-scopes:nativeSmokeTest
+        
+        # Run full E2E test suite only on primary Windows build
+        if ("${{ matrix.arch }}" -eq "x64") {
+          & .\gradlew.bat --no-daemon :apps-scopes:nativeE2eTest
+        }
+      shell: powershell
+      continue-on-error: ${{ matrix.experimental == true }}
+      env:
+        GRADLE_USER_HOME: C:\gradle-cache
+
     - name: Generate source-level SBOM
       if: matrix.platform != 'win32'
       run: |
@@ -152,6 +168,19 @@ jobs:
 
         # Build the CLI application with native compilation
         ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
+
+    - name: Run E2E tests on native binary
+      if: matrix.experimental != true  # Skip for experimental builds
+      run: |
+        echo "Running E2E tests on native binary..."
+        ./gradlew --no-daemon :apps-scopes:nativeSmokeTest
+        
+        # Run full E2E test suite only on main platform builds
+        if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ]; then
+          ./gradlew --no-daemon :apps-scopes:nativeE2eTest
+        fi
+      shell: bash
+      continue-on-error: ${{ matrix.experimental == true }}
 
     - name: Prepare binary for security check
       shell: bash

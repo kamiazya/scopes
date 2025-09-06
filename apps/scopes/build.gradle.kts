@@ -124,3 +124,98 @@ graalvmNative {
 tasks.named("nativeCompile") {
     dependsOn(":checkGraalVM")
 }
+
+// E2E Test Tasks for Native Binary
+
+// Smoke test - quick verification that binary can run
+tasks.register<Exec>("nativeSmokeTest") {
+    group = "verification"
+    description = "Run basic smoke test on native binary"
+    dependsOn("nativeCompile")
+
+    val os =
+        org.gradle.internal.os.OperatingSystem
+            .current()
+    val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
+    val binaryPath =
+        layout.buildDirectory
+            .file("native/nativeCompile/$binaryName")
+            .get()
+            .asFile
+
+    doFirst {
+        if (!binaryPath.exists()) {
+            throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
+        }
+        if (!os.isWindows && !binaryPath.canExecute()) {
+            binaryPath.setExecutable(true)
+        }
+        logger.lifecycle("Running smoke test on: ${binaryPath.absolutePath}")
+    }
+
+    // Test --help flag
+    commandLine(binaryPath.absolutePath, "--help")
+
+    doLast {
+        // Also test --version flag
+        exec {
+            commandLine(binaryPath.absolutePath, "--version")
+        }
+        logger.lifecycle("✅ Smoke test passed: binary is executable")
+    }
+}
+
+// Full E2E test suite
+tasks.register("nativeE2eTest") {
+    group = "verification"
+    description = "Run full E2E test suite on native binary"
+    dependsOn("nativeSmokeTest")
+
+    doLast {
+        val os =
+            org.gradle.internal.os.OperatingSystem
+                .current()
+        val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
+        val binaryPath =
+            layout.buildDirectory
+                .file("native/nativeCompile/$binaryName")
+                .get()
+                .asFile
+
+        if (!binaryPath.exists()) {
+            throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
+        }
+
+        logger.lifecycle("Running E2E tests on native binary...")
+
+        // Test basic commands
+        val testCases =
+            listOf(
+                listOf("--help"),
+                listOf("--version"),
+                listOf("scope", "--help"),
+                listOf("context", "--help"),
+                listOf("workspace", "--help"),
+            )
+
+        testCases.forEach { args ->
+            try {
+                exec {
+                    commandLine(listOf(binaryPath.absolutePath) + args)
+                    standardOutput = System.out
+                    errorOutput = System.err
+                }
+                logger.lifecycle("✅ Test passed: ${args.joinToString(" ")}")
+            } catch (e: Exception) {
+                throw GradleException("❌ Test failed for: ${args.joinToString(" ")}\n${e.message}")
+            }
+        }
+
+        logger.lifecycle("✅ All E2E tests passed successfully")
+    }
+}
+
+// Add smoke test to check task
+tasks.named("check") {
+    dependsOn("nativeSmokeTest")
+}
