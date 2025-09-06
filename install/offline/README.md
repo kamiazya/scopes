@@ -6,44 +6,33 @@ This distribution package contains everything needed to install Scopes, suitable
 
 ### Package Structure
 
-```text
-scopes-v1.0.0-dist.tar.gz
-├── README.md                    # This file - installation guide
-├── install.sh                   # Offline installation script (Unix)
-├── install.ps1                  # Offline installation script (Windows)
-├── binaries/
-│   ├── scopes-v1.0.0-linux-x64      # Linux x64 binary
-│   ├── scopes-v1.0.0-linux-arm64    # Linux ARM64 binary
-│   ├── scopes-v1.0.0-darwin-x64     # macOS x64 binary
-│   ├── scopes-v1.0.0-darwin-arm64   # macOS ARM64 binary (Apple Silicon)
-│   ├── scopes-v1.0.0-win32-x64.exe  # Windows x64 binary
-│   └── scopes-v1.0.0-win32-arm64.exe # Windows ARM64 binary
-├── verification/
-│   ├── binary-hash-linux-x64.txt        # SHA256 hashes
-│   ├── binary-hash-linux-arm64.txt
-│   ├── binary-hash-darwin-x64.txt
-│   ├── binary-hash-darwin-arm64.txt
-│   ├── binary-hash-win32-x64.txt
-│   ├── binary-hash-win32-arm64.txt
-│   ├── multiple.intoto.jsonl             # SLSA provenance
-│   └── verify-offline.sh                # Offline verification script
-├── sbom/
-│   ├── sbom-linux-x64.json             # Software Bill of Materials
-│   ├── sbom-linux-x64.xml
-│   ├── sbom-linux-arm64.json
-│   ├── sbom-linux-arm64.xml
-│   ├── sbom-darwin-x64.json
-│   ├── sbom-darwin-x64.xml
-│   ├── sbom-darwin-arm64.json
-│   ├── sbom-darwin-arm64.xml
-│   ├── sbom-win32-x64.json
-│   ├── sbom-win32-x64.xml
-│   ├── sbom-win32-arm64.json
-│   └── sbom-win32-arm64.xml
-└── docs/
-    ├── SECURITY.md                      # Security verification guide
-    ├── INSTALL.md                       # Detailed installation guide
-    └── ENTERPRISE.md                    # Enterprise deployment guide
+```mermaid
+graph LR
+    Package[📦 scopes-v1.0.0-dist.tar.gz]
+    
+    Package --- Root[📄 Root Files]
+    Package --- Binaries[💾 binaries/]
+    Package --- Verification[🔐 verification/]
+    Package --- SBOM[📋 sbom/]
+    Package --- Docs[📚 docs/]
+    
+    Root --- README[README.md<br/>Installation guide]
+    Root --- InstallSh[install.sh<br/>Unix installer]
+    Root --- InstallPs1[install.ps1<br/>Windows installer]
+    
+    Binaries --- Linux[🐧 Linux<br/>x64/ARM64 binaries]
+    Binaries --- Darwin[🍎 macOS<br/>x64/ARM64 binaries]
+    Binaries --- Windows[🪟 Windows<br/>x64/ARM64 binaries]
+    
+    Verification --- Hashes[📝 SHA256 Hashes<br/>binary-hash-*.txt]
+    Verification --- SLSA[🔒 SLSA Provenance<br/>multiple.intoto.jsonl]
+    
+    SBOM --- JSON[📄 JSON Format<br/>sbom-*.json]
+    SBOM --- XML[📄 XML Format<br/>sbom-*.xml]
+    
+    Docs --- Security[🔐 SECURITY.md]
+    Docs --- Install[📖 INSTALL.md]
+    Docs --- Enterprise[🏢 ENTERPRISE.md]
 ```
 
 ## 🚀 Quick Installation

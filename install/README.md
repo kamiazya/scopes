@@ -6,21 +6,18 @@ This directory contains secure, modern installation scripts for Scopes with a un
 
 Scopes uses a **unified distribution package** as the single source of truth for all installations:
 
-```text
-┌─────────────────────────────────────┐
-│   Unified Distribution Package      │
-│    (scopes-vX.X.X-dist.tar.gz)      │
-│                                     │
-│  • All platform binaries            │
-│  • Verification tools               │
-│  • Documentation                    │
-│  • SBOM files                       │
-└─────────────────────────────────────┘
-           ↓            ↓
-    ┌──────────┐  ┌──────────┐
-    │  Online  │  │ Offline  │
-    │ Installer│  │ Installer│
-    └──────────┘  └──────────┘
+```mermaid
+graph TB
+    Package[📦 Unified Distribution Package<br/>scopes-vX.X.X-dist.tar.gz<br/><br/>• All platform binaries<br/>• Verification tools<br/>• Documentation<br/>• SBOM files]
+    
+    Online[🌐 Online Installer<br/>install.sh → install-unified.sh]
+    Offline[💾 Offline Installer<br/>Direct extraction + install.sh]
+    
+    Package --> Online
+    Package --> Offline
+    
+    Online --> Result[✅ Scopes Installed]
+    Offline --> Result
 ```
 
 ## 🚀 Quick Start
