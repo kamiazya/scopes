@@ -17,6 +17,7 @@ val platformModule = module {
     // Collect all ApplicationBootstrapper instances for lifecycle management
     single<List<ApplicationBootstrapper>> {
         listOf(
+            get<ApplicationBootstrapper>(named("EventTypeRegistrar")),
             get<ApplicationBootstrapper>(named("AspectPresetBootstrap")),
             get<ApplicationBootstrapper>(named("ActiveContextBootstrap")),
         )
