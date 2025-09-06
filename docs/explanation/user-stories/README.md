@@ -56,14 +56,27 @@ Stories covering secure installation and verification.
 ### AI Integration Stories
 Stories focused on human-AI collaboration features.
 
-- **US-XXX**: MCP-Based AI Integration (Future) - AI assistant integration via Model Context Protocol
+- [US-008: AI-Driven Change Proposals](0008-ai-driven-change-proposals.md) - AI suggests improvements to any entity with user review workflow
+- [US-010: User Preferences AI Optimization](0010-user-preferences-ai-optimization.md) - Automatic preference adaptation based on usage patterns
+- [US-011: A2A Conversation Collaboration](0011-a2a-conversation-collaboration.md) - AI agents collaborate with each other on complex multi-step tasks
+- [US-012: AI Conflict Resolution](0012-ai-conflict-resolution.md) - AI agents resolve disagreements systematically without constant user mediation
+- **US-XXX**: MCP-Based External AI Agents (Future) - External AI assistant integration via Model Context Protocol
+- **US-XXX**: AI Learning and Personalization (Future) - AI learns from user feedback to improve suggestions
+- **US-XXX**: Collaborative AI Reviews (Future) - Team-based review of AI proposals
+
+### Entity Lifecycle Stories
+Stories covering version management and change tracking capabilities.
+
+- [US-009: Entity Version Management](0009-entity-version-management.md) - Git-like branching for safe experimentation with any entity type
+- **US-XXX**: Change History Visualization (Future) - Visual timeline of entity evolution
+- **US-XXX**: Multi-Entity Version Coordination (Future) - Coordinated versioning across related entities
 
 ### Productivity Stories
 Stories about efficiency and workflow optimization.
 
 - [US-006: Scope Alias System](0006-scope-alias-system.md) - User-friendly ID management for easier scope reference
 - **US-XXX**: SQL-Based Analysis (Future) - Direct SQL queries for scope data analysis
-- **US-XXX**: Audit and Log Analysis (Future) - Activity tracking and audit trails
+- **US-XXX**: Audit and Log Analysis (Future) - Activity tracking and audit trails powered by Entity Lifecycle
 
 ### Integration Stories
 Stories covering tool ecosystem integration.

@@ -112,12 +112,15 @@ journey
 - Hierarchical data model implementation
 - Parent-child relationship management
 - Consistent UI/CLI across all levels
+- Generic Entity Lifecycle system for change tracking
 
 ### Enables
 - Advanced hierarchy management
 - Workspace and focus features
 - AI integration with hierarchical context
 - Advanced querying and filtering
+- Version management for Scope experiments (US-009)
+- AI-driven hierarchy optimization (US-008)
 
 ## Implementation Notes
 
@@ -144,9 +147,28 @@ Help users transition from:
 - **Traditional**: "I need to create a project, then add epics, then add tasks"
 - **Scopes**: "I need to create a scope, then add child scopes as needed"
 
+### Entity Lifecycle Benefits
+With the generic Entity Lifecycle system, every Scope automatically gets:
+- **Change Tracking**: See who changed what and when
+- **Version Management**: Experiment with different hierarchies safely
+- **AI Optimization**: Get suggestions for better organization
+- **Complete History**: Never lose track of how your project evolved
+
+```bash
+# View change history for any scope
+scopes history auth-01HBQ...
+
+# Create experimental version of hierarchy
+scopes version create "reorg-experiment"
+
+# Get AI suggestions for hierarchy optimization
+scopes ai analyze --entity-type scope
+```
+
 ## Related Stories
 
 - **US-001**: First-Time Installation (provides foundation)
+- **US-008**: AI-Driven Change Proposals (optimize hierarchies with AI)
+- **US-009**: Entity Version Management (experiment with reorganization)
 - **Future**: Workspace management (builds on hierarchy)
-- **Future**: AI integration (uses hierarchical context)
 - **Future**: Focus management (operates on any scope level)

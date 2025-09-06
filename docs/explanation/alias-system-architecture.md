@@ -10,17 +10,25 @@ The alias system provides human-friendly identifiers for scopes, replacing crypt
 
 ### Core Concepts
 
-```
-┌─────────────┐         ┌─────────────┐
-│    Scope    │◄────────│ ScopeAlias  │
-├─────────────┤         ├─────────────┤
-│ id: ScopeId │         │ id: AliasId │
-│ title       │         │ scopeId     │
-│ ...         │         │ aliasName   │
-└─────────────┘         │ aliasType   │
-                        │ createdAt   │
-                        │ updatedAt   │
-                        └─────────────┘
+```mermaid
+---
+title: Alias System Core Concepts
+---
+erDiagram
+    Scope ||--o{ ScopeAlias : has
+    Scope {
+        ScopeId id PK
+        string title
+        string description
+    }
+    ScopeAlias {
+        AliasId id PK
+        ScopeId scopeId FK
+        AliasName aliasName
+        AliasType aliasType
+        Instant createdAt
+        Instant updatedAt
+    }
 ```
 
 ### Value Objects
@@ -192,40 +200,47 @@ interface WordProvider {
 
 ### Creating a Scope with Alias
 
-```
-User Input → CreateScopeCommand
-    ↓
-CreateScopeCommandHandler
-    ↓
-┌─────────────────────────────┐
-│ 1. Create Scope Entity      │
-│ 2. Generate/Validate Alias  │
-│ 3. Create ScopeAlias Entity │
-│ 4. Begin Transaction        │
-│ 5. Save Scope              │
-│ 6. Save ScopeAlias         │
-│ 7. Commit Transaction      │
-└─────────────────────────────┘
-    ↓
-Return Scope with Alias
+```mermaid
+---
+title: Creating a Scope with Alias Data Flow
+---
+flowchart TD
+    UI[User Input] --> CMD[CreateScopeCommand]
+    CMD --> HANDLER[CreateScopeCommandHandler]
+    HANDLER --> PROCESS[
+        1. Create Scope Entity<br/>
+        2. Generate/Validate Alias<br/>
+        3. Create ScopeAlias Entity<br/>
+        4. Begin Transaction<br/>
+        5. Save Scope<br/>
+        6. Save ScopeAlias<br/>
+        7. Commit Transaction
+    ]
+    PROCESS --> RESULT[Return Scope with Alias]
+    
+    style PROCESS fill:#e1f5fe
+    style RESULT fill:#e8f5e8
 ```
 
 ### Finding a Scope by Alias
 
-```
-User Input (alias string)
-    ↓
-Normalize to lowercase
-    ↓
-GetScopeByAliasQuery
-    ↓
-┌─────────────────────────────┐
-│ 1. Create AliasName VO      │
-│ 2. Query ScopeAliasRepo     │
-│ 3. Get ScopeId from Alias   │
-│ 4. Query ScopeRepository    │
-│ 5. Return Scope + Aliases   │
-└─────────────────────────────┘
+```mermaid
+---
+title: Finding a Scope by Alias Data Flow
+---
+flowchart TD
+    INPUT[User Input: alias string]
+    INPUT --> NORMALIZE[Normalize to lowercase]
+    NORMALIZE --> QUERY[GetScopeByAliasQuery]
+    QUERY --> PROCESS[
+        1. Create AliasName VO<br/>
+        2. Query ScopeAliasRepo<br/>
+        3. Get ScopeId from Alias<br/>
+        4. Query ScopeRepository<br/>
+        5. Return Scope + Aliases
+    ]
+    
+    style PROCESS fill:#e1f5fe
 ```
 
 ## Design Decisions
