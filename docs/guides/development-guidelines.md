@@ -1484,3 +1484,372 @@ This error mapping architecture ensures:
 - **Observability**: Comprehensive logging of error mapping decisions
 - **Type Safety**: Exhaustive pattern matching prevents missed cases
 - **Separation of Concerns**: Each layer handles its own error semantics
+
+## Contracts Slim Policy
+
+The contract layer serves as the public API boundary between bounded contexts and external consumers. To maintain stability, evolvability, and clear separation of concerns, contracts must remain **slim** - containing only essential structure without behavior.
+
+### Core Principles
+
+#### 1. Structure Only, No Behavior
+
+Contracts should contain only data structures and function signatures, never implementation logic:
+
+```kotlin
+// ✅ Correct: Pure data structure
+public data class CreateScopeCommand(
+    public val title: String,
+    public val description: String? = null,
+    public val parentId: String? = null,
+    public val generateAlias: Boolean = true,
+    public val customAlias: String? = null,
+)
+
+// ❌ Incorrect: Contains validation logic
+public data class CreateScopeCommand(
+    public val title: String,
+    public val description: String? = null,
+    public val parentId: String? = null,
+    public val generateAlias: Boolean = true,
+    public val customAlias: String? = null,
+) {
+    init {
+        require(title.isNotBlank()) { "Title cannot be blank" }
+        require(parentId?.matches(ULID_PATTERN) != false) { "Invalid parent ID format" }
+    }
+}
+```
+
+#### 2. Immutable Data Transfer Objects
+
+All contract DTOs must be immutable data classes with sensible defaults:
+
+```kotlin
+// ✅ Correct: Immutable with defaults
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    public val description: String?,
+    public val parentId: String?,
+    public val canonicalAlias: String,
+    public val createdAt: Instant,
+    public val updatedAt: Instant,
+    public val isArchived: Boolean = false,
+    public val aspects: Map<String, List<String>> = emptyMap(),
+)
+
+// ❌ Incorrect: Mutable properties
+public data class ScopeResult(
+    public var id: String,
+    public var title: String,
+    // ...
+)
+```
+
+#### 3. Rich Error Types Without Logic
+
+Error types should provide rich structure for clients while avoiding validation logic:
+
+```kotlin
+// ✅ Correct: Rich structure, no behavior
+public sealed interface ScopeContractError {
+    public sealed interface TitleValidationFailure {
+        public data object Empty : TitleValidationFailure
+        public data class TooShort(
+            public val minimumLength: Int, 
+            public val actualLength: Int
+        ) : TitleValidationFailure
+        public data class InvalidCharacters(
+            public val prohibitedCharacters: List<Char>
+        ) : TitleValidationFailure
+    }
+    
+    public sealed interface InputError : ScopeContractError {
+        public data class InvalidTitle(
+            public val title: String, 
+            public val validationFailure: TitleValidationFailure
+        ) : InputError
+    }
+}
+
+// ❌ Incorrect: Contains validation logic
+public data class TitleValidationFailure(val title: String) {
+    fun validate(): List<String> {
+        val errors = mutableListOf<String>()
+        if (title.isBlank()) errors.add("Title cannot be blank")
+        if (title.length < 3) errors.add("Title too short")
+        return errors
+    }
+}
+```
+
+### Contract Layer Organization
+
+#### Directory Structure
+
+Each contract module should follow a consistent organization:
+
+```
+contracts/
+├── scope-management/
+│   └── src/main/kotlin/../contracts/scopemanagement/
+│       ├── commands/           # Command DTOs
+│       ├── queries/            # Query DTOs  
+│       ├── results/            # Result DTOs
+│       ├── errors/             # Error types
+│       ├── *Port.kt           # Port interfaces
+│       └── *Contract.kt       # Grouped contracts (optional)
+├── device-synchronization/
+├── user-preferences/
+└── event-store/
+```
+
+#### Naming Conventions
+
+**Command DTOs**: End with `Command`
+```kotlin
+public data class CreateScopeCommand(...)
+public data class UpdateScopeCommand(...)
+public data class DeleteScopeCommand(...)
+```
+
+**Query DTOs**: End with `Query`  
+```kotlin
+public data class GetScopeQuery(...)
+public data class ListScopesQuery(...)
+public data class GetChildrenQuery(...)
+```
+
+**Result DTOs**: End with `Result`
+```kotlin
+public data class ScopeResult(...)
+public data class ScopeListResult(...)
+public data class CreateScopeResult(...)
+```
+
+**Error Types**: End with `ContractError`
+```kotlin
+public sealed interface ScopeContractError
+public sealed interface DeviceSynchronizationContractError
+```
+
+**Port Interfaces**: End with `Port`
+```kotlin
+public interface ScopeManagementCommandPort
+public interface ScopeManagementQueryPort
+```
+
+### Slim Policy Rules
+
+#### ✅ Allowed in Contracts
+
+1. **Data Classes**: Pure data transfer objects
+2. **Sealed Interfaces/Classes**: For error hierarchies and result types
+3. **Enums**: For well-defined value sets
+4. **Interface Definitions**: Port contracts with function signatures
+5. **Type Aliases**: For primitive type clarity
+6. **Default Parameters**: Sensible defaults for optional fields
+7. **Documentation**: Comprehensive KDoc for public APIs
+
+#### ❌ Prohibited in Contracts  
+
+1. **Validation Logic**: `require()`, `check()`, custom validation
+2. **Business Logic**: Any domain rules or calculations
+3. **Mutable State**: `var` properties, mutable collections
+4. **Implementation**: Function bodies (interfaces only)
+5. **External Dependencies**: Beyond kotlinx and Arrow basics
+6. **Database Annotations**: JPA, serialization frameworks
+7. **Platform-Specific Code**: Android, JVM-only dependencies
+8. **Constructor Logic**: `init` blocks with behavior
+9. **Extension Functions**: Business logic extensions
+10. **Companion Objects**: With behavior (constants are OK)
+
+### Error Design Patterns
+
+#### Hierarchical Error Structure
+
+```kotlin
+public sealed interface ContractError {
+    // Input validation errors
+    public sealed interface InputError : ContractError
+    
+    // Business rule violations  
+    public sealed interface BusinessError : ContractError
+    
+    // System/infrastructure issues
+    public sealed interface SystemError : ContractError
+}
+```
+
+#### Rich Error Information
+
+Provide structured data instead of plain strings:
+
+```kotlin
+// ✅ Correct: Structured error data
+public data class InvalidTitle(
+    public val title: String,
+    public val validationFailure: TitleValidationFailure
+) : InputError
+
+public sealed interface TitleValidationFailure {
+    public data class TooShort(
+        public val minimumLength: Int,
+        public val actualLength: Int
+    ) : TitleValidationFailure
+}
+
+// ❌ Incorrect: Plain string errors
+public data class ValidationError(
+    public val message: String
+) : InputError
+```
+
+### Port Interface Patterns
+
+#### CQRS Separation
+
+Separate command and query ports for clear responsibility:
+
+```kotlin
+// Command operations (write side)
+public interface ScopeManagementCommandPort {
+    public suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
+    public suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult>
+    public suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit>
+}
+
+// Query operations (read side)  
+public interface ScopeManagementQueryPort {
+    public suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
+    public suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, ScopeListResult>
+}
+```
+
+#### Explicit Error Handling
+
+All port methods must return `Either<Error, Result>` for explicit error handling:
+
+```kotlin
+// ✅ Correct: Explicit error handling
+public suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
+
+// ❌ Incorrect: Exception-based error handling  
+public suspend fun getScope(query: GetScopeQuery): ScopeResult?
+```
+
+### Contract Evolution Strategy
+
+#### Backward Compatibility
+
+When evolving contracts:
+
+1. **Additive Changes**: Add optional fields with defaults
+2. **New Error Types**: Extend sealed hierarchies
+3. **New Methods**: Add to port interfaces
+4. **Deprecation**: Mark obsolete elements, provide migration path
+
+```kotlin
+// ✅ Correct: Backward compatible evolution
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    public val description: String?,
+    // New optional field with default
+    public val tags: List<String> = emptyList(),
+)
+
+// ❌ Incorrect: Breaking change
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    // Removed description field - breaking change!
+    public val tags: List<String>,
+)
+```
+
+#### Versioning Strategy
+
+For major breaking changes:
+1. Create new contract module version (e.g., `v2`)
+2. Maintain old version during transition period
+3. Provide clear migration documentation
+4. Remove old version after deprecation period
+
+### Architecture Testing
+
+Use Konsist rules to enforce slim policy:
+
+```kotlin
+"contracts should not contain business logic" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .classes()
+        .assertFalse { it.hasInitBlock() }
+}
+
+"contract data classes should be immutable" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .classes()
+        .withModifier(KoModifier.DATA)
+        .assertFalse { 
+            it.properties().any { prop -> prop.hasModifier(KoModifier.VAR) }
+        }
+}
+
+"contracts should not have validation logic" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .files
+        .assertFalse { file ->
+            file.text.contains("require(") || 
+            file.text.contains("check(") ||
+            file.text.contains("error(")
+        }
+}
+```
+
+### Benefits of Slim Contracts
+
+#### 1. **API Stability**
+- Contracts change only when business requirements change
+- No implementation details leak through API boundaries
+- Clear separation between what and how
+
+#### 2. **Client Simplicity** 
+- Consumers get only essential data structures
+- No accidental coupling to implementation details
+- Easy to mock and test client code
+
+#### 3. **Evolution Flexibility**
+- Internal implementation can evolve independently
+- Contract changes are explicit and intentional
+- Multiple implementations can satisfy same contract
+
+#### 4. **Clear Boundaries**
+- Enforces separation between contexts
+- Prevents business logic leakage across boundaries  
+- Makes dependencies explicit and minimal
+
+#### 5. **Multi-Platform Readiness**
+- Pure Kotlin data structures work across platforms
+- No JVM-specific dependencies in contracts
+- Easy to generate clients for other languages
+
+### Contract Slim Policy Checklist
+
+When creating or reviewing contracts:
+
+- [ ] **No Business Logic**: No validation, calculations, or domain rules
+- [ ] **Immutable DTOs**: All properties are `val`, collections are immutable
+- [ ] **Rich Error Types**: Structured error hierarchies with useful data
+- [ ] **Port Interfaces Only**: No implementation, only function signatures  
+- [ ] **Either Return Types**: Explicit error handling for all operations
+- [ ] **Consistent Naming**: Commands, Queries, Results, Errors follow conventions
+- [ ] **Backward Compatibility**: Changes are additive with defaults
+- [ ] **Minimal Dependencies**: Only kotlinx and Arrow basics
+- [ ] **Clear Documentation**: KDoc for all public APIs
+- [ ] **Architecture Tests**: Konsist rules enforce slim policy
+
+This slim policy ensures contracts remain stable, evolvable, and focused on their core purpose: defining the structure of data and operations between bounded contexts.

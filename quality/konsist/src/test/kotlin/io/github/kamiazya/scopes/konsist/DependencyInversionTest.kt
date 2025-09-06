@@ -226,4 +226,8 @@ class DependencyInversionTest :
                 }
             }
         }
+
+        // ========== Contracts Slim Policy Rules ==========
+        // These rules enforce the contracts slim policy documented in development-guidelines.md
+        // Note: Individual contract module validation should be added to specific tests
     })
