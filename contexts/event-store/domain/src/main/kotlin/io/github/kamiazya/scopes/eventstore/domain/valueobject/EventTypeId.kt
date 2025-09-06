@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.eventstore.domain.model
+package io.github.kamiazya.scopes.eventstore.domain.valueobject
 
 /**
  * Annotation to declare a stable type identifier for a domain event.

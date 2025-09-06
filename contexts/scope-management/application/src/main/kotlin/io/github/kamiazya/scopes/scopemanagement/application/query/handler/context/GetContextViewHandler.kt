@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -16,10 +17,19 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewK
  * This handler validates the key, retrieves the context view from the repository,
  * and maps it to a DTO for external consumption.
  */
-class GetContextViewHandler(private val contextViewRepository: ContextViewRepository, private val transactionManager: TransactionManager) :
-    QueryHandler<GetContextView, ScopesError, ContextViewDto?> {
+class GetContextViewHandler(
+    private val contextViewRepository: ContextViewRepository,
+    private val transactionManager: TransactionManager,
+    private val logger: Logger,
+) : QueryHandler<GetContextView, ScopesError, ContextViewDto?> {
 
     override suspend operator fun invoke(query: GetContextView): Either<ScopesError, ContextViewDto?> = transactionManager.inTransaction {
+        logger.debug(
+            "Getting context view by key",
+            mapOf(
+                "key" to query.key,
+            ),
+        )
         either {
             // Validate and create key value object
             val contextKey = ContextViewKey.create(query.key).bind()
@@ -37,7 +47,7 @@ class GetContextViewHandler(private val contextViewRepository: ContextViewReposi
                 .bind()
 
             // Map to DTO if found
-            contextView?.let {
+            val result = contextView?.let {
                 ContextViewDto(
                     id = it.id.value.toString(),
                     key = it.key.value,
@@ -48,6 +58,25 @@ class GetContextViewHandler(private val contextViewRepository: ContextViewReposi
                     updatedAt = it.updatedAt,
                 )
             }
+
+            logger.info(
+                "Context view lookup completed",
+                mapOf(
+                    "key" to contextKey.value,
+                    "found" to (result != null).toString(),
+                ),
+            )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to get context view",
+            mapOf(
+                "key" to query.key,
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }

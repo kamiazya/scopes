@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ContextViewResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.FilteredScopesResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeResult
@@ -30,10 +31,19 @@ class GetFilteredScopesHandler(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val contextAuditService: ContextAuditService,
     private val transactionManager: TransactionManager,
+    private val logger: Logger,
     private val filterEvaluationService: FilterEvaluationService = FilterEvaluationService(),
 ) : QueryHandler<GetFilteredScopes, ScopesError, FilteredScopesResult> {
 
     override suspend operator fun invoke(query: GetFilteredScopes): Either<ScopesError, FilteredScopesResult> = transactionManager.inTransaction {
+        logger.debug(
+            "Getting filtered scopes",
+            mapOf(
+                "contextKey" to (query.contextKey ?: "active"),
+                "offset" to query.offset,
+                "limit" to query.limit,
+            ),
+        )
         either {
             // Get the context view to use
             val contextView: ContextView? = when {
@@ -145,13 +155,35 @@ class GetFilteredScopesHandler(
                 toContextViewResult(cv, isActive = cv.id == activeContextId)
             }
 
-            FilteredScopesResult(
+            val result = FilteredScopesResult(
                 scopes = scopeResults,
                 appliedContext = contextViewResult,
                 totalCount = totalCount,
                 filteredCount = filteredScopes.size,
             )
+
+            logger.info(
+                "Successfully filtered scopes",
+                mapOf(
+                    "contextKey" to (contextView?.key?.value ?: "none"),
+                    "totalScopes" to totalCount,
+                    "filteredScopes" to filteredScopes.size,
+                    "offset" to query.offset,
+                    "limit" to query.limit,
+                ),
+            )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to get filtered scopes",
+            mapOf(
+                "contextKey" to (query.contextKey ?: "active"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 
     private fun toScopeResult(scope: Scope): ScopeResult = ScopeResult(

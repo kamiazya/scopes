@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
-import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion

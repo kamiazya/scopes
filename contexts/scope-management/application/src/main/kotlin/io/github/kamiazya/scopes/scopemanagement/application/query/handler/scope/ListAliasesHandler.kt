@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAliases
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -19,9 +20,16 @@ class ListAliasesHandler(
     private val scopeAliasRepository: ScopeAliasRepository,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
+    private val logger: Logger,
 ) : QueryHandler<ListAliases, ScopesError, List<AliasDto>> {
 
     override suspend operator fun invoke(query: ListAliases): Either<ScopesError, List<AliasDto>> = transactionManager.inTransaction {
+        logger.debug(
+            "Listing aliases for scope",
+            mapOf(
+                "scopeId" to query.scopeId,
+            ),
+        )
         either {
             // Validate and create scope ID
             val scopeId = ScopeId.create(query.scopeId).bind()
@@ -64,7 +72,7 @@ class ListAliasesHandler(
                 .bind()
 
             // Map to DTOs
-            aliases.map { alias ->
+            val result = aliases.map { alias ->
                 AliasDto(
                     alias = alias.aliasName.value,
                     scopeId = alias.scopeId.value.toString(),
@@ -75,6 +83,25 @@ class ListAliasesHandler(
                 compareByDescending<AliasDto> { it.isCanonical }
                     .thenBy { it.alias },
             )
+
+            logger.info(
+                "Successfully listed aliases for scope",
+                mapOf(
+                    "scopeId" to scopeId.value.toString(),
+                    "aliasCount" to result.size,
+                ),
+            )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to list aliases",
+            mapOf(
+                "scopeId" to query.scopeId,
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }

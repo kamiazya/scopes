@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
@@ -23,10 +24,20 @@ class FilterScopesWithQueryHandler(
     private val scopeRepository: ScopeRepository,
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val transactionManager: TransactionManager,
+    private val logger: Logger,
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopesError, List<ScopeDto>> {
 
     override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inTransaction {
+        logger.debug(
+            "Filtering scopes with query",
+            mapOf(
+                "query" to query.query,
+                "parentId" to (query.parentId ?: "none"),
+                "offset" to query.offset,
+                "limit" to query.limit,
+            ),
+        )
         either {
             // Parse the query
             val ast = parser.parse(query.query).fold(
@@ -108,10 +119,32 @@ class FilterScopesWithQueryHandler(
             }
 
             // Map to DTOs
-            filteredScopes.map { scope ->
+            val result = filteredScopes.map { scope ->
                 ScopeMapper.toDto(scope)
             }
+
+            logger.info(
+                "Successfully filtered scopes with query",
+                mapOf(
+                    "query" to query.query,
+                    "parentId" to (query.parentId ?: "none"),
+                    "totalScopes" to scopesToFilter.size,
+                    "filteredScopes" to result.size,
+                ),
+            )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to filter scopes with query",
+            mapOf(
+                "query" to query.query,
+                "parentId" to (query.parentId ?: "none"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 
     private fun formatParseError(error: QueryParseError): String = when (error) {

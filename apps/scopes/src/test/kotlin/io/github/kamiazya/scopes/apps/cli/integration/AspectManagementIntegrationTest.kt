@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
+import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand
@@ -36,6 +38,7 @@ class AspectManagementIntegrationTest :
             lateinit var aspectDefinitionRepository: AspectDefinitionRepository
             lateinit var scopeRepository: ScopeRepository
             lateinit var transactionManager: NoopTransactionManager
+            lateinit var logger: Logger
 
             // Handlers
             lateinit var defineAspectHandler: DefineAspectHandler
@@ -51,14 +54,23 @@ class AspectManagementIntegrationTest :
                 aspectDefinitionRepository = InMemoryAspectDefinitionRepository()
                 scopeRepository = InMemoryScopeRepository()
                 transactionManager = NoopTransactionManager()
+                logger = object : Logger {
+                    override fun debug(message: String, context: Map<String, Any>) {}
+                    override fun info(message: String, context: Map<String, Any>) {}
+                    override fun warn(message: String, context: Map<String, Any>) {}
+                    override fun error(message: String, context: Map<String, Any>, throwable: Throwable?) {}
+                    override fun isEnabledFor(level: LogLevel): Boolean = true
+                    override fun withContext(context: Map<String, Any>): Logger = this
+                    override fun withName(name: String): Logger = this
+                }
 
                 // Initialize handlers
                 defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager)
-                getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager)
+                getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
                 updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager)
                 deleteAspectDefinitionHandler =
                     DeleteAspectDefinitionHandler(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
-                listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager)
+                listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager, logger)
                 validationService = AspectValueValidationService()
                 validateAspectValueUseCase = ValidateAspectValueUseCase(aspectDefinitionRepository, validationService)
             }

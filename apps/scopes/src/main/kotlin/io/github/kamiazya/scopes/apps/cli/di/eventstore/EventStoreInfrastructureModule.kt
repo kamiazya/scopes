@@ -89,4 +89,12 @@ val eventStoreInfrastructureModule = module {
             eventSerializer = get(),
         )
     }
+
+    // Bootstrap services - registered as ApplicationBootstrapper for lifecycle management
+    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("EventTypeRegistrar")) {
+        io.github.kamiazya.scopes.apps.cli.bootstrap.EventTypeRegistrar(
+            eventTypeMapping = get(),
+            logger = get(),
+        )
+    }
 }

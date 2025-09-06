@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias
@@ -22,9 +23,16 @@ class GetScopeByAliasHandler(
     private val scopeAliasRepository: ScopeAliasRepository,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
+    private val logger: Logger,
 ) : QueryHandler<GetScopeByAlias, ScopesError, ScopeDto?> {
 
     override suspend operator fun invoke(query: GetScopeByAlias): Either<ScopesError, ScopeDto?> = transactionManager.inTransaction {
+        logger.debug(
+            "Getting scope by alias",
+            mapOf(
+                "aliasName" to query.aliasName,
+            ),
+        )
         either {
             // Validate and create alias value object
             val aliasName = AliasName.create(query.aliasName).bind()
@@ -60,8 +68,36 @@ class GetScopeByAliasHandler(
                     }
                     .bind()
 
-                scope?.let { ScopeMapper.toDto(it) }
+                val result = scope?.let { ScopeMapper.toDto(it) }
+
+                logger.info(
+                    "Scope by alias lookup completed",
+                    mapOf(
+                        "aliasName" to aliasName.value,
+                        "scopeId" to (alias.scopeId.value.toString()),
+                        "found" to (result != null).toString(),
+                    ),
+                )
+
+                result
+            } ?: run {
+                logger.info(
+                    "Alias not found",
+                    mapOf(
+                        "aliasName" to aliasName.value,
+                    ),
+                )
+                null
             }
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to get scope by alias",
+            mapOf(
+                "aliasName" to query.aliasName,
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }

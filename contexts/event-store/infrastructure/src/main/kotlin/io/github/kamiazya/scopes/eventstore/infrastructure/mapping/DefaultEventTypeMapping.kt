@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.eventstore.infrastructure.mapping
 
-import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeId
 import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeMapping
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import kotlin.reflect.KClass

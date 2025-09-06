@@ -147,6 +147,7 @@ val scopeManagementModule = module {
         GetScopeByIdHandler(
             scopeRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -154,6 +155,7 @@ val scopeManagementModule = module {
         GetChildrenHandler(
             scopeRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -161,6 +163,7 @@ val scopeManagementModule = module {
         GetRootScopesHandler(
             scopeRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -169,6 +172,7 @@ val scopeManagementModule = module {
             scopeAliasRepository = get(),
             scopeRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -194,6 +198,7 @@ val scopeManagementModule = module {
             scopeAliasRepository = get(),
             scopeRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -225,6 +230,7 @@ val scopeManagementModule = module {
         GetAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -247,6 +253,7 @@ val scopeManagementModule = module {
         ListAspectDefinitionsHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -263,6 +270,7 @@ val scopeManagementModule = module {
             scopeRepository = get(),
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -278,6 +286,7 @@ val scopeManagementModule = module {
         ListContextViewsHandler(
             contextViewRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -285,6 +294,7 @@ val scopeManagementModule = module {
         GetContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -296,6 +306,7 @@ val scopeManagementModule = module {
             aspectDefinitionRepository = get(),
             contextAuditService = get(),
             transactionManager = get(),
+            logger = get(),
         )
     }
 

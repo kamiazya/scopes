@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -15,10 +16,17 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRe
  * This handler retrieves all context views from the repository
  * and maps them to DTOs for external consumption.
  */
-class ListContextViewsHandler(private val contextViewRepository: ContextViewRepository, private val transactionManager: TransactionManager) :
-    QueryHandler<ListContextViews, ScopesError, List<ContextViewDto>> {
+class ListContextViewsHandler(
+    private val contextViewRepository: ContextViewRepository,
+    private val transactionManager: TransactionManager,
+    private val logger: Logger,
+) : QueryHandler<ListContextViews, ScopesError, List<ContextViewDto>> {
 
     override suspend operator fun invoke(query: ListContextViews): Either<ScopesError, List<ContextViewDto>> = transactionManager.inTransaction {
+        logger.debug(
+            "Listing all context views",
+            mapOf<String, Any>(),
+        )
         either {
             // Retrieve all context views
             val contextViews = contextViewRepository.findAll()
@@ -33,7 +41,7 @@ class ListContextViewsHandler(private val contextViewRepository: ContextViewRepo
                 .bind()
 
             // Map to DTOs
-            contextViews.map { contextView ->
+            val result = contextViews.map { contextView ->
                 ContextViewDto(
                     id = contextView.id.value.toString(),
                     key = contextView.key.value,
@@ -44,6 +52,23 @@ class ListContextViewsHandler(private val contextViewRepository: ContextViewRepo
                     updatedAt = contextView.updatedAt,
                 )
             }
+
+            logger.info(
+                "Successfully listed context views",
+                mapOf(
+                    "count" to result.size,
+                ),
+            )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to list context views",
+            mapOf(
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
     }
 }

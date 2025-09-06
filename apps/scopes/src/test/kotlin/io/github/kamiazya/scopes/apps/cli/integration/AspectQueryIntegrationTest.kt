@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import arrow.core.toNonEmptyListOrNull
+import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
@@ -30,6 +32,7 @@ class AspectQueryIntegrationTest :
             lateinit var scopeRepository: ScopeRepository
             lateinit var filterScopesWithQueryHandler: FilterScopesWithQueryHandler
             lateinit var parser: AspectQueryParser
+            lateinit var logger: Logger
 
             // Test scopes
             lateinit var scope1: Scope
@@ -42,11 +45,20 @@ class AspectQueryIntegrationTest :
                 aspectDefinitionRepository = InMemoryAspectDefinitionRepository()
                 scopeRepository = InMemoryScopeRepository()
                 parser = AspectQueryParser()
+                logger = object : Logger {
+                    override fun debug(message: String, context: Map<String, Any>) {}
+                    override fun info(message: String, context: Map<String, Any>) {}
+                    override fun warn(message: String, context: Map<String, Any>) {}
+                    override fun error(message: String, context: Map<String, Any>, throwable: Throwable?) {}
+                    override fun isEnabledFor(level: LogLevel): Boolean = true
+                    override fun withContext(context: Map<String, Any>): Logger = this
+                    override fun withName(name: String): Logger = this
+                }
                 filterScopesWithQueryHandler = FilterScopesWithQueryHandler(
                     scopeRepository,
                     aspectDefinitionRepository,
                     NoopTransactionManager(),
-                    parser,
+                    logger,
                 )
 
                 // Setup aspect definitions
