@@ -771,7 +771,7 @@ jobs:
 
           The offline package includes:
           - All platform binaries (Linux, macOS, Windows - x64 & ARM64)
-          - Security verification tools (SLSA verifier)
+          - Security verification (SHA256 hashes + SLSA provenance)
           - Complete documentation
           - SBOM files for compliance
 

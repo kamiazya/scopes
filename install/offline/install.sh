@@ -211,8 +211,8 @@ detect_version() {
     if [[ -n "$binary_file" ]]; then
         local filename
         filename=$(basename "$binary_file")
-        # Extract version from filename like "scopes-v1.0.0-linux-x64"
-        echo "$filename" | sed -n 's/scopes-\(v[0-9]*\.[0-9]*\.[0-9]*[^-]*\).*/\1/p'
+        # Extract version from filename like "scopes-v1.0.0-linux-x64" or "scopes-v0.0.0-test20250906140650-linux-x64"
+        echo "$filename" | sed -n 's/scopes-\(v[0-9][^-]*\(-[^-]*\)*\)-[^-]*-[^-]*/\1/p'
     else
         print_error "Cannot detect version from binaries"
         exit 1
