@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
+import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
@@ -23,7 +24,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.NoopTransactionManager
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
@@ -37,7 +37,7 @@ class AspectManagementIntegrationTest :
         describe("Aspect Management Integration") {
             lateinit var aspectDefinitionRepository: AspectDefinitionRepository
             lateinit var scopeRepository: ScopeRepository
-            lateinit var transactionManager: NoopTransactionManager
+            lateinit var transactionManager: NoOpTransactionManager
             lateinit var logger: Logger
 
             // Handlers
@@ -53,7 +53,7 @@ class AspectManagementIntegrationTest :
                 // Initialize repositories
                 aspectDefinitionRepository = InMemoryAspectDefinitionRepository()
                 scopeRepository = InMemoryScopeRepository()
-                transactionManager = NoopTransactionManager()
+                transactionManager = NoOpTransactionManager()
                 logger = object : Logger {
                     override fun debug(message: String, context: Map<String, Any>) {}
                     override fun info(message: String, context: Map<String, Any>) {}

@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import arrow.core.toNonEmptyListOrNull
+import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
@@ -17,7 +18,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.NoopTransactionManager
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
@@ -57,7 +57,7 @@ class AspectQueryIntegrationTest :
                 filterScopesWithQueryHandler = FilterScopesWithQueryHandler(
                     scopeRepository,
                     aspectDefinitionRepository,
-                    NoopTransactionManager(),
+                    NoOpTransactionManager(),
                     logger,
                 )
 
