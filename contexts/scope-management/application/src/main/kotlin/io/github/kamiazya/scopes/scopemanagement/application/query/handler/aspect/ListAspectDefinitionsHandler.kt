@@ -22,51 +22,52 @@ class ListAspectDefinitionsHandler(
     private val logger: Logger,
 ) : QueryHandler<ListAspectDefinitions, ScopesError, List<AspectDefinitionDto>> {
 
-    override suspend operator fun invoke(query: ListAspectDefinitions): Either<ScopesError, List<AspectDefinitionDto>> = transactionManager.inTransaction {
-        logger.debug(
-            "Listing all aspect definitions",
-            mapOf<String, Any>(),
-        )
-        either {
-            // Note: Current implementation returns all definitions
-            // TODO: Implement pagination support in repository
-            val definitions = aspectDefinitionRepository.findAll()
-                .mapLeft { error ->
-                    ScopesError.SystemError(
-                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                        service = "aspect-repository",
-                        cause = error as? Throwable,
-                        context = mapOf("operation" to "list-aspect-definitions"),
+    override suspend operator fun invoke(query: ListAspectDefinitions): Either<ScopesError, List<AspectDefinitionDto>> =
+        transactionManager.inReadOnlyTransaction {
+            logger.debug(
+                "Listing all aspect definitions",
+                mapOf<String, Any>(),
+            )
+            either {
+                // Note: Current implementation returns all definitions
+                // TODO: Implement pagination support in repository
+                val definitions = aspectDefinitionRepository.findAll()
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            cause = error as? Throwable,
+                            context = mapOf("operation" to "list-aspect-definitions"),
+                        )
+                    }
+                    .bind()
+
+                // Map to DTOs
+                val result = definitions.map { definition ->
+                    AspectDefinitionDto(
+                        key = definition.key.value,
+                        type = definition.type.toString(),
+                        description = definition.description,
+                        allowMultiple = definition.allowMultiple,
                     )
                 }
-                .bind()
 
-            // Map to DTOs
-            val result = definitions.map { definition ->
-                AspectDefinitionDto(
-                    key = definition.key.value,
-                    type = definition.type.toString(),
-                    description = definition.description,
-                    allowMultiple = definition.allowMultiple,
+                logger.info(
+                    "Successfully listed aspect definitions",
+                    mapOf(
+                        "count" to result.size,
+                    ),
                 )
-            }
 
-            logger.info(
-                "Successfully listed aspect definitions",
+                result
+            }
+        }.onLeft { error ->
+            logger.error(
+                "Failed to list aspect definitions",
                 mapOf(
-                    "count" to result.size,
+                    "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                    "message" to error.toString(),
                 ),
             )
-
-            result
         }
-    }.onLeft { error ->
-        logger.error(
-            "Failed to list aspect definitions",
-            mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                "message" to error.toString(),
-            ),
-        )
-    }
 }

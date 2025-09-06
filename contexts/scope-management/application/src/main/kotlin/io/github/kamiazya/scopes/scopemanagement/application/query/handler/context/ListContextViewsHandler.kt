@@ -22,7 +22,7 @@ class ListContextViewsHandler(
     private val logger: Logger,
 ) : QueryHandler<ListContextViews, ScopesError, List<ContextViewDto>> {
 
-    override suspend operator fun invoke(query: ListContextViews): Either<ScopesError, List<ContextViewDto>> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: ListContextViews): Either<ScopesError, List<ContextViewDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Listing all context views",
             mapOf<String, Any>(),

@@ -21,70 +21,63 @@ class ErrorMapperTest :
                     val domainError = ScopeInputError.IdError.Blank(Clock.System.now(), "")
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidId>()
-                    contractError as ScopeContractError.InputError.InvalidId
-                    contractError.id shouldBe ""
-                    contractError.expectedFormat shouldBe "Non-empty ULID format"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidId>()
+                    result.id shouldBe ""
+                    result.expectedFormat shouldBe "Non-empty ULID format"
                 }
 
                 it("should map ScopeInputError.IdError.InvalidFormat to InvalidId") {
                     val domainError = ScopeInputError.IdError.InvalidFormat(Clock.System.now(), "invalid-id", "ULID format")
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidId>()
-                    contractError as ScopeContractError.InputError.InvalidId
-                    contractError.id shouldBe "invalid-id"
-                    contractError.expectedFormat shouldBe "ULID format"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidId>()
+                    result.id shouldBe "invalid-id"
+                    result.expectedFormat shouldBe "ULID format"
                 }
 
                 it("should map ScopeInputError.TitleError.Empty to InvalidTitle") {
                     val domainError = ScopeInputError.TitleError.Empty(Clock.System.now(), "")
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe ""
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.Empty>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe ""
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.Empty>()
                 }
 
                 it("should map ScopeInputError.TitleError.TooShort to InvalidTitle") {
                     val domainError = ScopeInputError.TitleError.TooShort(Clock.System.now(), "a", 3)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "a"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooShort>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "a"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooShort>()
                 }
 
                 it("should map ScopeInputError.TitleError.TooLong to InvalidTitle") {
                     val domainError = ScopeInputError.TitleError.TooLong(Clock.System.now(), "very long title", 10)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "very long title"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooLong>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "very long title"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooLong>()
                 }
 
                 it("should map ScopeInputError.TitleError.ContainsProhibitedCharacters to InvalidTitle") {
                     val domainError = ScopeInputError.TitleError.ContainsProhibitedCharacters(Clock.System.now(), "title<>", listOf('<', '>'))
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "title<>"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.InvalidCharacters>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "title<>"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.InvalidCharacters>()
                 }
 
                 it("should map ScopeInputError.DescriptionError.TooLong to InvalidDescription") {
                     val domainError = ScopeInputError.DescriptionError.TooLong(Clock.System.now(), "very long description", 10)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidDescription>()
-                    contractError as ScopeContractError.InputError.InvalidDescription
-                    contractError.descriptionText shouldBe "very long description"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.DescriptionValidationFailure.TooLong>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidDescription>()
+                    result.descriptionText shouldBe "very long description"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.DescriptionValidationFailure.TooLong>()
                 }
             }
 
@@ -93,40 +86,36 @@ class ErrorMapperTest :
                     val domainError = ScopeInputError.AliasError.Empty(Clock.System.now(), "")
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe ""
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.Empty>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe ""
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.Empty>()
                 }
 
                 it("should map ScopeInputError.AliasError.TooShort to InvalidTitle") {
                     val domainError = ScopeInputError.AliasError.TooShort(Clock.System.now(), "a", 3)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "a"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooShort>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "a"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooShort>()
                 }
 
                 it("should map ScopeInputError.AliasError.TooLong to InvalidTitle") {
                     val domainError = ScopeInputError.AliasError.TooLong(Clock.System.now(), "very long alias", 10)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "very long alias"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooLong>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "very long alias"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooLong>()
                 }
 
                 it("should map ScopeInputError.AliasError.InvalidFormat to InvalidTitle") {
                     val domainError = ScopeInputError.AliasError.InvalidFormat(Clock.System.now(), "invalid-alias", "pattern")
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    contractError as ScopeContractError.InputError.InvalidTitle
-                    contractError.title shouldBe "invalid-alias"
-                    contractError.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.InvalidCharacters>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
+                    result.title shouldBe "invalid-alias"
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.InvalidCharacters>()
                 }
             }
 
@@ -136,9 +125,8 @@ class ErrorMapperTest :
                     val domainError = ScopeError.NotFound(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    contractError as ScopeContractError.BusinessError.NotFound
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopeError.ParentNotFound to BusinessError.NotFound") {
@@ -146,9 +134,8 @@ class ErrorMapperTest :
                     val domainError = ScopeError.ParentNotFound(parentId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    contractError as ScopeContractError.BusinessError.NotFound
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopeError.AlreadyDeleted to BusinessError.AlreadyDeleted") {
@@ -156,9 +143,8 @@ class ErrorMapperTest :
                     val domainError = ScopeError.AlreadyDeleted(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AlreadyDeleted>()
-                    contractError as ScopeContractError.BusinessError.AlreadyDeleted
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AlreadyDeleted>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopeError.AlreadyArchived to BusinessError.ArchivedScope") {
@@ -166,9 +152,8 @@ class ErrorMapperTest :
                     val domainError = ScopeError.AlreadyArchived(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.ArchivedScope>()
-                    contractError as ScopeContractError.BusinessError.ArchivedScope
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.ArchivedScope>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopeError.DuplicateTitle to BusinessError.DuplicateTitle") {
@@ -176,10 +161,9 @@ class ErrorMapperTest :
                     val domainError = ScopeError.DuplicateTitle("My Title", parentId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateTitle>()
-                    contractError as ScopeContractError.BusinessError.DuplicateTitle
-                    contractError.title shouldBe "My Title"
-                    contractError.parentId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateTitle>()
+                    result.title shouldBe "My Title"
+                    result.parentId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopeError.VersionMismatch to SystemError.ConcurrentModification") {
@@ -187,11 +171,10 @@ class ErrorMapperTest :
                     val domainError = ScopeError.VersionMismatch(scopeId, 1, 2)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ConcurrentModification>()
-                    contractError as ScopeContractError.SystemError.ConcurrentModification
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
-                    contractError.expectedVersion shouldBe 1L
-                    contractError.actualVersion shouldBe 2L
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ConcurrentModification>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.expectedVersion shouldBe 1L
+                    result.actualVersion shouldBe 2L
                 }
             }
 
@@ -204,9 +187,8 @@ class ErrorMapperTest :
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AliasNotFound>()
-                    contractError as ScopeContractError.BusinessError.AliasNotFound
-                    contractError.alias shouldBe "my-alias"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AliasNotFound>()
+                    result.alias shouldBe "my-alias"
                 }
 
                 it("should map ScopesError.NotFound with non-alias type to BusinessError.NotFound") {
@@ -217,9 +199,8 @@ class ErrorMapperTest :
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    contractError as ScopeContractError.BusinessError.NotFound
-                    contractError.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
+                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
                 }
 
                 it("should map ScopesError.AlreadyExists to BusinessError.DuplicateAlias") {
@@ -229,9 +210,8 @@ class ErrorMapperTest :
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateAlias>()
-                    contractError as ScopeContractError.BusinessError.DuplicateAlias
-                    contractError.alias shouldBe "priority"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateAlias>()
+                    result.alias shouldBe "priority"
                 }
 
                 it("should map ScopesError.SystemError to SystemError.ServiceUnavailable") {
@@ -241,9 +221,8 @@ class ErrorMapperTest :
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ServiceUnavailable>()
-                    contractError as ScopeContractError.SystemError.ServiceUnavailable
-                    contractError.service shouldBe "database"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ServiceUnavailable>()
+                    result.service shouldBe "database"
                 }
             }
 
@@ -258,9 +237,8 @@ class ErrorMapperTest :
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     // Should get the fallback ServiceUnavailable error
-                    contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ServiceUnavailable>()
-                    contractError as ScopeContractError.SystemError.ServiceUnavailable
-                    contractError.service shouldBe "scope-management"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ServiceUnavailable>()
+                    result.service shouldBe "scope-management"
                 }
             }
         }

@@ -23,7 +23,7 @@ class ListAliasesHandler(
     private val logger: Logger,
 ) : QueryHandler<ListAliases, ScopesError, List<AliasDto>> {
 
-    override suspend operator fun invoke(query: ListAliases): Either<ScopesError, List<AliasDto>> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: ListAliases): Either<ScopesError, List<AliasDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Listing aliases for scope",
             mapOf(

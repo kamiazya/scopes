@@ -23,7 +23,7 @@ class GetContextViewHandler(
     private val logger: Logger,
 ) : QueryHandler<GetContextView, ScopesError, ContextViewDto?> {
 
-    override suspend operator fun invoke(query: GetContextView): Either<ScopesError, ContextViewDto?> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetContextView): Either<ScopesError, ContextViewDto?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting context view by key",
             mapOf(

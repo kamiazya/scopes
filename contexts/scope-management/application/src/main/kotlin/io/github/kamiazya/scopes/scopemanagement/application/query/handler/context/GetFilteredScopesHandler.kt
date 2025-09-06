@@ -35,7 +35,7 @@ class GetFilteredScopesHandler(
     private val filterEvaluationService: FilterEvaluationService = FilterEvaluationService(),
 ) : QueryHandler<GetFilteredScopes, ScopesError, FilteredScopesResult> {
 
-    override suspend operator fun invoke(query: GetFilteredScopes): Either<ScopesError, FilteredScopesResult> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetFilteredScopes): Either<ScopesError, FilteredScopesResult> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting filtered scopes",
             mapOf(

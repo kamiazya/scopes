@@ -28,7 +28,7 @@ class FilterScopesWithQueryHandler(
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopesError, List<ScopeDto>> {
 
-    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Filtering scopes with query",
             mapOf(

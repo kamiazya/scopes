@@ -26,7 +26,7 @@ class GetScopeByAliasHandler(
     private val logger: Logger,
 ) : QueryHandler<GetScopeByAlias, ScopesError, ScopeDto?> {
 
-    override suspend operator fun invoke(query: GetScopeByAlias): Either<ScopesError, ScopeDto?> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetScopeByAlias): Either<ScopesError, ScopeDto?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting scope by alias",
             mapOf(

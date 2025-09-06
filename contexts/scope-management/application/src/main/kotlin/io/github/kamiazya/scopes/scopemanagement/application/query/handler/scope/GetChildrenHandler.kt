@@ -19,7 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
     QueryHandler<GetChildren, ScopesError, PagedResult<ScopeDto>> {
 
-    override suspend operator fun invoke(query: GetChildren): Either<ScopesError, PagedResult<ScopeDto>> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetChildren): Either<ScopesError, PagedResult<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting children of scope",
             mapOf(

@@ -23,7 +23,7 @@ class GetAspectDefinitionHandler(
     private val logger: Logger,
 ) : QueryHandler<GetAspectDefinition, ScopesError, AspectDefinitionDto?> {
 
-    override suspend operator fun invoke(query: GetAspectDefinition): Either<ScopesError, AspectDefinitionDto?> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetAspectDefinition): Either<ScopesError, AspectDefinitionDto?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting aspect definition by key",
             mapOf(

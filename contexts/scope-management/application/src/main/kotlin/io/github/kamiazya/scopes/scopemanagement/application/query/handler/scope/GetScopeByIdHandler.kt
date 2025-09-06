@@ -19,7 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
     QueryHandler<GetScopeById, ScopesError, ScopeDto?> {
 
-    override suspend operator fun invoke(query: GetScopeById): Either<ScopesError, ScopeDto?> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetScopeById): Either<ScopesError, ScopeDto?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting scope by ID",
             mapOf(

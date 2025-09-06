@@ -18,7 +18,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeReposito
 class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
     QueryHandler<GetRootScopes, ScopesError, PagedResult<ScopeDto>> {
 
-    override suspend operator fun invoke(query: GetRootScopes): Either<ScopesError, PagedResult<ScopeDto>> = transactionManager.inTransaction {
+    override suspend operator fun invoke(query: GetRootScopes): Either<ScopesError, PagedResult<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting root scopes",
             mapOf(
