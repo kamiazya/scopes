@@ -1,13 +1,13 @@
-# Scopes Offline Distribution Package
+# Scopes Distribution Package
 
 ## 📦 Package Contents
 
-This offline distribution package contains everything needed to install Scopes in air-gapped or restricted network environments.
+This distribution package contains everything needed to install Scopes, suitable for both online and offline environments.
 
 ### Package Structure
 
 ```
-scopes-v1.0.0-offline-{platform}-{arch}.tar.gz
+scopes-v1.0.0-dist.tar.gz
 ├── README.md                    # This file - installation guide
 ├── install.sh                   # Offline installation script (Unix)
 ├── install.ps1                  # Offline installation script (Windows)
@@ -51,8 +51,8 @@ scopes-v1.0.0-offline-{platform}-{arch}.tar.gz
 ### Linux/macOS
 ```bash
 # Extract the package
-tar -xzf scopes-v1.0.0-offline-{platform}-{arch}.tar.gz
-cd scopes-v1.0.0-offline
+tar -xzf scopes-v1.0.0-dist.tar.gz
+cd scopes-v1.0.0-dist
 
 # Run installation with verification
 ./install.sh
@@ -64,8 +64,8 @@ cd scopes-v1.0.0-offline
 ### Windows PowerShell
 ```powershell
 # Extract the package (Windows 10/11 built-in)
-Expand-Archive scopes-v1.0.0-offline-win32-x64.zip -DestinationPath .
-cd scopes-v1.0.0-offline
+Expand-Archive scopes-v1.0.0-dist.zip -DestinationPath .
+cd scopes-v1.0.0-dist
 
 # Run installation
 .\install.ps1

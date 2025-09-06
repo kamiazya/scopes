@@ -4,12 +4,12 @@ This directory contains secure, modern installation scripts for Scopes with a un
 
 ## 🎯 Unified Distribution Architecture
 
-Scopes uses a **unified offline package** as the single source of truth for all installations:
+Scopes uses a **unified distribution package** as the single source of truth for all installations:
 
 ```
 ┌─────────────────────────────────────┐
-│     Unified Offline Package         │
-│  (scopes-vX.X.X-offline.tar.gz)     │
+│   Unified Distribution Package      │
+│    (scopes-vX.X.X-dist.tar.gz)      │
 │                                     │
 │  • All platform binaries            │
 │  • Verification tools               │
@@ -36,10 +36,10 @@ iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 |
 ```
 
 ### Offline Installation
-Download the unified package from GitHub Releases and run the included installer:
+Download the distribution package from GitHub Releases and run the included installer:
 ```bash
-tar -xzf scopes-vX.X.X-offline.tar.gz
-cd scopes-vX.X.X-offline
+tar -xzf scopes-vX.X.X-dist.tar.gz
+cd scopes-vX.X.X-dist
 ./install.sh
 ```
 
@@ -56,13 +56,13 @@ All installation methods provide **integrated cryptographic verification**:
 ## 📋 Available Scripts
 
 ### Primary Installation Scripts
-- **`install.sh`** - Main installer that uses unified package (recommended)
+- **`install.sh`** - Main installer that uses unified distribution package (recommended)
 - **`install-unified.sh`** - Explicit unified package installer
 - **`install.ps1`** - PowerShell installation for Windows
 
-### Offline Installation
-- **`offline/install.sh`** - Offline installer included in unified package
-- **`offline/README.md`** - Detailed offline installation guide
+### Distribution Package Contents
+- **`offline/install.sh`** - Installer included in distribution package
+- **`offline/README.md`** - Distribution package documentation
 
 ### Verification Scripts  
 - **`verify-release.sh`** - Standalone verification for downloaded releases (Unix)
@@ -281,9 +281,9 @@ RUN curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/ins
     SCOPES_FORCE_INSTALL=true SCOPES_INSTALL_DIR=/usr/local/bin sh
 
 # Option 2: Offline installation (for reproducible builds)
-COPY scopes-v1.0.0-offline.tar.gz /tmp/
-RUN tar -xzf /tmp/scopes-v1.0.0-offline.tar.gz -C /tmp && \
-    cd /tmp/scopes-v1.0.0-offline && \
+COPY scopes-v1.0.0-dist.tar.gz /tmp/
+RUN tar -xzf /tmp/scopes-v1.0.0-dist.tar.gz -C /tmp && \
+    cd /tmp/scopes-v1.0.0-dist && \
     SCOPES_FORCE_INSTALL=true ./install.sh
 ```
 

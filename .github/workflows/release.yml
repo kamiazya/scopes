@@ -394,8 +394,8 @@ jobs:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
 
-  create-offline-package:
-    name: Create Offline Distribution Package
+  create-unified-package:
+    name: Create Unified Distribution Package
     runs-on: ubuntu-latest
     needs: [build-release, provenance]
     if: always() && needs.build-release.result == 'success'
@@ -441,9 +441,9 @@ jobs:
       # Users should install it separately if SLSA verification is needed
       # This keeps the package size reasonable and respects the independence of the slsa-verifier project
 
-      - name: Create offline package structure
+      - name: Create unified package structure
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-offline"
+          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-dist"
           mkdir -p "${PACKAGE_NAME}"
           cd "${PACKAGE_NAME}"
           
@@ -576,9 +576,9 @@ jobs:
           echo "Package contents:"
           find . -type f | sort
 
-      - name: Create offline package archives
+      - name: Create distribution package archives
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-offline"
+          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-dist"
           
           # Create tar.gz archive
           tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
@@ -593,10 +593,10 @@ jobs:
           echo "Created offline packages:"
           ls -la *.tar.gz *.zip *.sha256
 
-      - name: Upload offline package artifacts
+      - name: Upload distribution package artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: offline-packages
+          name: distribution-packages
           path: |
             scopes-*.tar.gz
             scopes-*.zip
@@ -605,7 +605,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-release, provenance, create-offline-package]
+    needs: [build-release, provenance, create-unified-package]
     if: always() && needs.build-release.result == 'success'
 
     steps:
@@ -640,11 +640,11 @@ jobs:
           path: sbom-artifacts
           merge-multiple: true
 
-      - name: Download offline packages
+      - name: Download distribution packages
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: offline-packages
-          path: offline-packages
+          name: distribution-packages
+          path: distribution-packages
 
       - name: Download SLSA provenance
         if: needs.provenance.result == 'success'
@@ -726,10 +726,10 @@ jobs:
           find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
           find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
 
-          # Upload offline packages
-          find offline-packages -name "scopes-*-offline.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          find offline-packages -name "scopes-*-offline.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          find offline-packages -name "scopes-*-offline.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          # Upload distribution packages
+          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
 
           # Upload SLSA provenance if available
           if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
@@ -763,9 +763,9 @@ jobs:
 
           ### 📦 Offline Installation
 
-          For air-gapped environments or enterprise deployments, download the unified offline package:
+          For air-gapped environments or enterprise deployments, download the unified distribution package:
 
-          1. Download `scopes-${{ steps.version.outputs.tag_version }}-offline.tar.gz` or `.zip`
+          1. Download `scopes-${{ steps.version.outputs.tag_version }}-dist.tar.gz` or `.zip`
           2. Extract the package
           3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
 

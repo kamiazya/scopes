@@ -188,7 +188,7 @@ download_unified_package() {
     print_verbose "Using temporary directory: $TEMP_DIR"
 
     # Determine package name
-    local package_name="scopes-${version}-offline.tar.gz"
+    local package_name="scopes-${version}-dist.tar.gz"
     local checksum_name="${package_name}.sha256"
 
     PACKAGE_FILE="$TEMP_DIR/$package_name"
@@ -200,7 +200,7 @@ download_unified_package() {
     print_status "Downloading unified package: $package_name"
     if ! download_file "$base_url/$package_name" "$PACKAGE_FILE"; then
         # Fallback: Try .zip for older releases or Windows preference
-        package_name="scopes-${version}-offline.zip"
+        package_name="scopes-${version}-dist.zip"
         PACKAGE_FILE="$TEMP_DIR/$package_name"
         print_status "Trying alternative format: $package_name"
         if ! download_file "$base_url/$package_name" "$PACKAGE_FILE"; then
@@ -231,7 +231,7 @@ download_unified_package() {
     fi
 
     # Find extracted directory
-    PACKAGE_DIR=$(find . -maxdepth 1 -type d -name "scopes-*-offline" | head -1)
+    PACKAGE_DIR=$(find . -maxdepth 1 -type d -name "scopes-*-dist" | head -1)
     if [[ -z "$PACKAGE_DIR" ]]; then
         print_error "Failed to find extracted package directory"
         exit 1
