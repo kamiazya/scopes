@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.EventStoreErrorMapper
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.hours
 
 /**
  * Implementation of EventSourcingRepository using the EventStore bounded context.
@@ -92,11 +93,14 @@ internal class EventStoreScopeEventSourcingRepository(private val eventRepositor
             }
 
     override suspend fun getEventsByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): Either<ScopesError, List<DomainEvent>> =
-        eventRepository.getEventsSince(from, limit = limit + offset)
+        // Since EventRepository.getEventsSince filters by stored_at, we need to fetch a larger window
+        // to ensure we don't miss events with occurredAt in our range but stored later.
+        // We'll fetch all events since 'from' minus 1 hour buffer and filter by occurredAt in memory.
+        eventRepository.getEventsSince(from - 1.hours, limit = null)
             .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
             .map { persistedEvents ->
                 persistedEvents
-                    .filter { it.metadata.occurredAt < to }
+                    .filter { it.metadata.occurredAt >= from && it.metadata.occurredAt < to }
                     .drop(offset)
                     .take(limit)
                     .map { it.event }
