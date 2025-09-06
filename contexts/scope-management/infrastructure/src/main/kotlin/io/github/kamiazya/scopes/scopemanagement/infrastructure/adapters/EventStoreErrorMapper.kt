@@ -17,7 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
  * - Provide fallback mapping for unmapped errors
  * - Log unmapped errors for monitoring and debugging
  */
-internal class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
+class EventStoreErrorMapper(logger: Logger) : BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
 
     override fun mapCrossContext(sourceError: EventStoreError): ScopesError = when (sourceError) {
         is EventStoreError.StorageError -> {

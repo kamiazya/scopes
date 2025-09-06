@@ -43,6 +43,8 @@ val contractsModule = module {
             setCanonicalAliasHandler = get(),
             renameAliasHandler = get(),
             transactionManager = get(),
+            errorMapper = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -54,6 +56,7 @@ val contractsModule = module {
             getRootScopesHandler = get(),
             listAliasesHandler = get(),
             filterScopesWithQueryHandler = get(),
+            errorMapper = get(),
             logger = get(),
         )
     }
@@ -82,6 +85,8 @@ val contractsModule = module {
             updateContextViewHandler = get(),
             deleteContextViewHandler = get(),
             activeContextService = get(),
+            errorMapper = get(),
+            applicationErrorMapper = get(),
         )
     }
 

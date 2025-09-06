@@ -1,12 +1,12 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
+import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError as AppScopeInputError
 
 /**
- * Maps domain and application errors to contract layer errors.
+ * Maps domain errors to contract layer errors.
  *
  * This mapper provides a stable error contract between bounded contexts,
  * ensuring that internal domain errors are properly translated to
@@ -19,11 +19,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
  * - Hide internal implementation details
  * - Log unmapped errors for visibility and debugging
  */
-internal object ErrorMapper {
-    /**
-     * Maps domain errors to contract errors.
-     */
-    fun mapScopesErrorToScopeContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
+class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
+    override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
             id = domainError.attemptedValue,
@@ -188,51 +185,9 @@ internal object ErrorMapper {
         )
 
         // Default fallback for unmapped errors
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
-    }
-
-    /**
-     * Maps application errors to contract errors.
-     */
-    fun mapApplicationErrorToScopeContractError(applicationError: ApplicationError): ScopeContractError = when (applicationError) {
-        is AppScopeInputError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
-            alias = applicationError.attemptedValue,
+        else -> handleUnmappedError(
+            domainError,
+            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
         )
-        is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidId(
-            id = applicationError.attemptedValue,
-            expectedFormat = "Non-empty ULID format",
-        )
-        is AppScopeInputError.IdInvalidFormat -> ScopeContractError.InputError.InvalidId(
-            id = applicationError.attemptedValue,
-            expectedFormat = applicationError.expectedFormat,
-        )
-        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
-            title = applicationError.attemptedValue,
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
-        )
-        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = applicationError.attemptedValue,
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = applicationError.minimumLength,
-                actualLength = applicationError.attemptedValue.length,
-            ),
-        )
-        is AppScopeInputError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = applicationError.attemptedValue,
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = applicationError.maximumLength,
-                actualLength = applicationError.attemptedValue.length,
-            ),
-        )
-        is AppScopeInputError.TitleContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
-            title = applicationError.attemptedValue,
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = applicationError.prohibitedCharacters,
-            ),
-        )
-        is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = applicationError.attemptedValue,
-        )
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
     }
 }

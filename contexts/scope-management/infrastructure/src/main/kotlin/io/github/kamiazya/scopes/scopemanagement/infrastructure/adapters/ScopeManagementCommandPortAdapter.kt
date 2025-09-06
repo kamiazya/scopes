@@ -24,7 +24,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.command.Set
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand as ContractCreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand as ContractDeleteScopeCommand
@@ -56,6 +55,8 @@ class ScopeManagementCommandPortAdapter(
     private val setCanonicalAliasHandler: SetCanonicalAliasHandler,
     private val renameAliasHandler: RenameAliasHandler,
     private val transactionManager: TransactionManager,
+    private val errorMapper: ErrorMapper,
+    private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger = ConsoleLogger("ScopeManagementCommandPortAdapter"),
 ) : ScopeManagementCommandPort {
 
@@ -68,7 +69,7 @@ class ScopeManagementCommandPortAdapter(
             customAlias = command.customAlias,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapScopesErrorToScopeContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { result ->
         CreateScopeResult(
             id = result.id,
@@ -88,7 +89,7 @@ class ScopeManagementCommandPortAdapter(
             description = command.description,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapScopesErrorToScopeContractError(error)
+        errorMapper.mapToContractError(error)
     }.map { scopeDto ->
         UpdateScopeResult(
             id = scopeDto.id,
@@ -106,12 +107,12 @@ class ScopeManagementCommandPortAdapter(
             id = command.id,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapScopesErrorToScopeContractError(error)
+        errorMapper.mapToContractError(error)
     }
 
     override suspend fun addAlias(command: ContractAddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val existingAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
-            { error -> return@inTransaction Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(error)) },
+            { error -> return@inTransaction Either.Left(errorMapper.mapToContractError(error)) },
             { scope -> scope?.canonicalAlias ?: scope?.id ?: command.scopeId },
         )
 
@@ -121,7 +122,7 @@ class ScopeManagementCommandPortAdapter(
                 newAlias = command.aliasName,
             ),
         ).mapLeft { error ->
-            ErrorMapper.mapApplicationErrorToScopeContractError(error)
+            applicationErrorMapper.mapToContractError(error)
         }
     }
 
@@ -130,12 +131,12 @@ class ScopeManagementCommandPortAdapter(
             aliasName = command.aliasName,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapApplicationErrorToScopeContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }
 
     override suspend fun setCanonicalAlias(command: ContractSetCanonicalAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val currentAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
-            { error -> return@inTransaction Either.Left(ErrorMapper.mapScopesErrorToScopeContractError(error)) },
+            { error -> return@inTransaction Either.Left(errorMapper.mapToContractError(error)) },
             { scope -> scope?.canonicalAlias ?: scope?.id ?: command.scopeId },
         )
 
@@ -145,7 +146,7 @@ class ScopeManagementCommandPortAdapter(
                 newCanonicalAlias = command.aliasName,
             ),
         ).mapLeft { error ->
-            ErrorMapper.mapApplicationErrorToScopeContractError(error)
+            applicationErrorMapper.mapToContractError(error)
         }
     }
 
@@ -155,6 +156,6 @@ class ScopeManagementCommandPortAdapter(
             newAliasName = command.newAliasName,
         ),
     ).mapLeft { error ->
-        ErrorMapper.mapApplicationErrorToScopeContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }
 }

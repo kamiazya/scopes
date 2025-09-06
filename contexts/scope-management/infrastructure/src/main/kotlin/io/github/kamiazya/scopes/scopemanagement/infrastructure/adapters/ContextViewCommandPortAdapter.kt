@@ -16,8 +16,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper.mapApplicationErrorToScopeContractError
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper.mapScopesErrorToScopeContractError
 
 /**
  * Command port adapter implementation for ContextView operations.
@@ -28,6 +26,8 @@ public class ContextViewCommandPortAdapter(
     private val updateContextViewHandler: UpdateContextViewHandler,
     private val deleteContextViewHandler: DeleteContextViewHandler,
     private val activeContextService: ActiveContextService,
+    private val errorMapper: ErrorMapper,
+    private val applicationErrorMapper: ApplicationErrorMapper,
 ) : ContextViewCommandPort {
 
     override suspend fun createContextView(command: CreateContextViewRequest): Either<ScopeContractError, Unit> {
@@ -41,7 +41,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -57,7 +57,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -66,7 +66,7 @@ public class ContextViewCommandPortAdapter(
         val result = deleteContextViewHandler(DeleteContextViewCommand(command.key))
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -75,7 +75,7 @@ public class ContextViewCommandPortAdapter(
         val result = activeContextService.switchToContextByKey(command.key)
 
         return result.fold(
-            ifLeft = { error -> mapApplicationErrorToScopeContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -84,7 +84,7 @@ public class ContextViewCommandPortAdapter(
         val result = activeContextService.clearActiveContext()
 
         return result.fold(
-            ifLeft = { error -> mapApplicationErrorToScopeContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
