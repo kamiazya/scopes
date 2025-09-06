@@ -165,6 +165,115 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
             }
         }
 
+    override suspend fun getEventsByType(eventType: String, limit: Int?): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val events = queries.findEventsByType(eventType, (limit ?: Int.MAX_VALUE).toLong())
+                .executeAsList()
+                .mapNotNull { row ->
+                    when (
+                        val result = deserializeEvent(
+                            eventId = row.event_id,
+                            aggregateId = row.aggregate_id,
+                            aggregateVersion = row.aggregate_version,
+                            eventType = row.event_type,
+                            eventData = row.event_data,
+                            occurredAt = row.occurred_at,
+                            storedAt = row.stored_at,
+                            sequenceNumber = row.sequence_number,
+                        )
+                    ) {
+                        is Either.Right -> result.value
+                        is Either.Left -> null // Skip failed deserialization
+                    }
+                }
+
+            Either.Right(events)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "EventsByType",
+                ),
+            )
+        }
+    }
+
+    override suspend fun getEventsByTypeSince(eventType: String, since: Instant, limit: Int?): Either<EventStoreError, List<PersistedEventRecord>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val events = queries.findEventsByTypeSince(
+                    eventType,
+                    since.toEpochMilliseconds(),
+                    (limit ?: Int.MAX_VALUE).toLong(),
+                )
+                    .executeAsList()
+                    .mapNotNull { row ->
+                        when (
+                            val result = deserializeEvent(
+                                eventId = row.event_id,
+                                aggregateId = row.aggregate_id,
+                                aggregateVersion = row.aggregate_version,
+                                eventType = row.event_type,
+                                eventData = row.event_data,
+                                occurredAt = row.occurred_at,
+                                storedAt = row.stored_at,
+                                sequenceNumber = row.sequence_number,
+                            )
+                        ) {
+                            is Either.Right -> result.value
+                            is Either.Left -> null // Skip failed deserialization
+                        }
+                    }
+
+                Either.Right(events)
+            } catch (e: Exception) {
+                Either.Left(
+                    EventStoreError.PersistenceError(
+                        operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                        dataType = "EventsByTypeSince",
+                    ),
+                )
+            }
+        }
+
+    override suspend fun getEventsByTimeRange(from: Instant, to: Instant, limit: Int?): Either<EventStoreError, List<PersistedEventRecord>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val events = queries.findEventsByTimeRange(
+                    from.toEpochMilliseconds(),
+                    to.toEpochMilliseconds(),
+                    (limit ?: Int.MAX_VALUE).toLong(),
+                )
+                    .executeAsList()
+                    .mapNotNull { row ->
+                        when (
+                            val result = deserializeEvent(
+                                eventId = row.event_id,
+                                aggregateId = row.aggregate_id,
+                                aggregateVersion = row.aggregate_version,
+                                eventType = row.event_type,
+                                eventData = row.event_data,
+                                occurredAt = row.occurred_at,
+                                storedAt = row.stored_at,
+                                sequenceNumber = row.sequence_number,
+                            )
+                        ) {
+                            is Either.Right -> result.value
+                            is Either.Left -> null // Skip failed deserialization
+                        }
+                    }
+
+                Either.Right(events)
+            } catch (e: Exception) {
+                Either.Left(
+                    EventStoreError.PersistenceError(
+                        operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                        dataType = "EventsByTimeRange",
+                    ),
+                )
+            }
+        }
+
     override fun streamEvents(): Flow<PersistedEventRecord> = flow {
         // This is a simplified implementation
         // In a real system, you might use database triggers or polling

@@ -43,6 +43,35 @@ interface EventRepository {
     suspend fun getEventsByAggregate(aggregateId: AggregateId, since: Instant? = null, limit: Int? = null): Either<EventStoreError, List<PersistedEventRecord>>
 
     /**
+     * Retrieves events by event type.
+     *
+     * @param eventType The event type to filter by
+     * @param limit Optional limit on number of events to retrieve
+     * @return Either an error or a list of stored events
+     */
+    suspend fun getEventsByType(eventType: String, limit: Int? = null): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
+     * Retrieves events by event type since a specific timestamp.
+     *
+     * @param eventType The event type to filter by
+     * @param since The timestamp to retrieve events after (based on occurredAt)
+     * @param limit Optional limit on number of events to retrieve
+     * @return Either an error or a list of stored events
+     */
+    suspend fun getEventsByTypeSince(eventType: String, since: Instant, limit: Int? = null): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
+     * Retrieves events within a time range.
+     *
+     * @param from The start timestamp (inclusive, based on occurredAt)
+     * @param to The end timestamp (exclusive, based on occurredAt)
+     * @param limit Optional limit on number of events to retrieve
+     * @return Either an error or a list of stored events
+     */
+    suspend fun getEventsByTimeRange(from: Instant, to: Instant, limit: Int? = null): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
      * Streams all events as they are stored.
      *
      * @return A Flow of stored events

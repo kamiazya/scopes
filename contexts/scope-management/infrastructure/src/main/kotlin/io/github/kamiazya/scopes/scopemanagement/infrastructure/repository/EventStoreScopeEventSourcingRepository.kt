@@ -9,7 +9,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.EventStoreErrorMapper
 import kotlinx.datetime.Instant
-import kotlin.time.Duration.Companion.hours
 
 /**
  * Implementation of EventSourcingRepository using the EventStore bounded context.
@@ -78,27 +77,22 @@ internal class EventStoreScopeEventSourcingRepository(private val eventRepositor
     }
 
     override suspend fun getEventsByType(eventType: String, limit: Int, offset: Int): Either<ScopesError, List<DomainEvent>> =
-        // Get all events and filter by type
-        // This is inefficient but EventRepository doesn't support type filtering yet
-        eventRepository.getEventsSince(Instant.DISTANT_PAST, limit = limit + offset)
+        // Use EventRepository's efficient type-based query
+        eventRepository.getEventsByType(eventType, limit = limit + offset)
             .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
             .map { persistedEvents ->
                 persistedEvents
-                    .filter { it.event::class.simpleName == eventType || it.event::class.qualifiedName == eventType }
                     .drop(offset)
                     .take(limit)
                     .map { it.event }
             }
 
     override suspend fun getEventsByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): Either<ScopesError, List<DomainEvent>> =
-        // Since EventRepository.getEventsSince filters by stored_at, we need to fetch a larger window
-        // to ensure we don't miss events with occurredAt in our range but stored later.
-        // We'll fetch all events since 'from' minus 1 hour buffer and filter by occurredAt in memory.
-        eventRepository.getEventsSince(from - 1.hours, limit = null)
+        // Use EventRepository's efficient time range query
+        eventRepository.getEventsByTimeRange(from, to, limit = limit + offset)
             .mapLeft { eventStoreErrorMapper.mapCrossContext(it) }
             .map { persistedEvents ->
                 persistedEvents
-                    .filter { it.metadata.occurredAt >= from && it.metadata.occurredAt < to }
                     .drop(offset)
                     .take(limit)
                     .map { it.event }
