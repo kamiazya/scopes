@@ -695,21 +695,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create or update release with GitHub's auto-generated notes
+          # Generate release notes using GitHub API
+          NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name='${{ steps.version.outputs.tag_version }}' \
+            --jq .body)
+          
+          # Create or update release without destructive deletion
           if ! gh release view "${{ steps.version.outputs.tag_version }}" > /dev/null 2>&1; then
-            # Create new release with auto-generated notes
             gh release create "${{ steps.version.outputs.tag_version }}" \
               --title "Release ${{ steps.version.outputs.tag_version }}" \
-              --generate-notes \
+              --notes "$NOTES" \
               --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
           else
-            # Release exists, delete and recreate to get auto-generated notes
-            echo "Release already exists, recreating with auto-generated notes"
-            gh release delete "${{ steps.version.outputs.tag_version }}" --yes
-            gh release create "${{ steps.version.outputs.tag_version }}" \
-              --title "Release ${{ steps.version.outputs.tag_version }}" \
-              --generate-notes \
-              --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
+            gh release edit "${{ steps.version.outputs.tag_version }}" --notes "$NOTES"
           fi
 
       - name: Upload release assets
@@ -717,23 +715,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Upload all binary artifacts
-          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
           # Upload hash files
-          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SBOM files
-          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
           # Upload distribution packages
-          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
-          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SLSA provenance if available
           if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
-            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" {} \;
+            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
           fi
 
       - name: Enhance release notes with custom content

@@ -15,7 +15,7 @@
 #
 # Environment variables:
 #   SCOPES_INSTALL_DIR          - Installation directory
-#   SCOPES_SKIP_VERIFICATION    - Skip SLSA verification (not recommended)
+#   SCOPES_SKIP_VERIFICATION    - Skip all verification (hash + SLSA) (not recommended)
 #   SCOPES_FORCE_INSTALL        - Skip confirmation prompts
 #   SCOPES_VERBOSE              - Enable verbose output
 
@@ -387,7 +387,7 @@ perform_verification() {
     local arch="$2"
 
     if [[ "$SKIP_VERIFICATION" == "true" ]]; then
-        print_warning "⚠️  Verification skipped by user request"
+        print_warning "⚠️  All verification (hash + SLSA) skipped by user request"
         return 0
     fi
 

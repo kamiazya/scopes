@@ -6,7 +6,7 @@ This directory contains secure, modern installation scripts for Scopes with a un
 
 Scopes uses a **unified distribution package** as the single source of truth for all installations:
 
-```
+```text
 ┌─────────────────────────────────────┐
 │   Unified Distribution Package      │
 │    (scopes-vX.X.X-dist.tar.gz)      │

@@ -6,7 +6,7 @@ This distribution package contains everything needed to install Scopes, suitable
 
 ### Package Structure
 
-```
+```text
 scopes-v1.0.0-dist.tar.gz
 ├── README.md                    # This file - installation guide
 ├── install.sh                   # Offline installation script (Unix)
@@ -232,4 +232,4 @@ For offline installation support:
 
 ---
 
-**Security Notice**: This offline package maintains the same security standards as online installation. All binaries are cryptographically verified using SLSA Level 3 provenance and SHA256 hashes.
+**Security Notice**: This offline package enables the same security standards as online installation. Binaries can be cryptographically verified via SHA256 hashes and SLSA Level 3 provenance when verification is enabled and the verifier is available.
