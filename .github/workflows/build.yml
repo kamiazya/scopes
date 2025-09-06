@@ -131,11 +131,11 @@ jobs:
       run: |
         Set-Location "C:\build-workspace\scopes"
         Write-Host "Running E2E tests on native binary..."
-        & .\gradlew.bat --no-daemon :apps-scopes:nativeSmokeTest
-        
+        & .\gradlew.bat --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
+
         # Run full E2E test suite only on primary Windows build
         if ("${{ matrix.arch }}" -eq "x64") {
-          & .\gradlew.bat --no-daemon :apps-scopes:nativeE2eTest
+          & .\gradlew.bat --no-daemon --no-configuration-cache :apps-scopes:nativeE2eTest
         }
       shell: powershell
       continue-on-error: ${{ matrix.experimental == true }}
@@ -173,11 +173,11 @@ jobs:
       if: matrix.experimental != true  # Skip for experimental builds
       run: |
         echo "Running E2E tests on native binary..."
-        ./gradlew --no-daemon :apps-scopes:nativeSmokeTest
-        
+        ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
+
         # Run full E2E test suite only on main platform builds
         if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ]; then
-          ./gradlew --no-daemon :apps-scopes:nativeE2eTest
+          ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeE2eTest
         fi
       shell: bash
       continue-on-error: ${{ matrix.experimental == true }}

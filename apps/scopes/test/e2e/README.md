@@ -19,6 +19,8 @@ This directory contains end-to-end tests for the Scopes native binary.
 ./gradlew :apps-scopes:nativeE2eTest
 ```
 
+Note: The `check` task automatically runs `nativeSmokeTest` as part of verification.
+
 ### Using Shell Scripts Directly
 
 ```bash
@@ -29,6 +31,21 @@ This directory contains end-to-end tests for the Scopes native binary.
 ./apps/scopes/test/e2e/run-native-tests.sh apps/scopes/build/native/nativeCompile/scopes
 ```
 
+Alternatively, you can set the binary path via environment variable:
+
+```bash
+export SCOPES_BINARY_PATH=apps/scopes/build/native/nativeCompile/scopes
+./apps/scopes/test/e2e/run-native-tests.sh
+```
+
+On Windows (PowerShell):
+
+```powershell
+.\gradlew.bat :apps-scopes:nativeCompile
+$env:SCOPES_BINARY_PATH="apps\scopes\build\native\nativeCompile\scopes.exe"
+.\apps\scopes\test\e2e\run-native-tests.ps1
+```
+
 ## Test Phases
 
 1. **Phase 1: Basic Execution Tests**
@@ -36,7 +53,7 @@ This directory contains end-to-end tests for the Scopes native binary.
    - Help and version flags work correctly
 
 2. **Phase 2: Command Structure Tests**
-   - Main commands (scope, context, workspace, etc.) respond to help
+   - Main commands (scope, context, workspace, focus, aspect) respond to help
 
 3. **Phase 3: Subcommand Tests**
    - Subcommands respond correctly to help flags

@@ -2,7 +2,7 @@
 # E2E Test Suite for Scopes Native Binary
 # This script performs comprehensive testing of the native binary
 
-set -e  # Exit on error
+# Don't use set -e, handle errors explicitly for better control
 
 # Color codes for output
 RED='\033[0;31m'
@@ -40,18 +40,20 @@ FAILED_TESTS=0
 run_test() {
     local test_name="$1"
     shift
-    local command_args="$@"
+    local command_args=("$@")
 
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
     echo -n "Testing: $test_name ... "
 
     # Create temp file for output
-    local output_file=$(mktemp)
-    local error_file=$(mktemp)
+    local output_file
+    output_file=$(mktemp)
+    local error_file
+    error_file=$(mktemp)
 
     # Run the command
-    if "$BINARY_PATH" $command_args > "$output_file" 2> "$error_file"; then
+    if "$BINARY_PATH" "${command_args[@]}" > "$output_file" 2> "$error_file"; then
         echo -e "${GREEN}✓ PASSED${NC}"
         PASSED_TESTS=$((PASSED_TESTS + 1))
 
@@ -63,7 +65,7 @@ run_test() {
         FAILED_TESTS=$((FAILED_TESTS + 1))
 
         # Show error details
-        echo -e "${YELLOW}  Command: $BINARY_PATH $command_args${NC}"
+        echo -e "${YELLOW}  Command: $BINARY_PATH ${command_args[*]}${NC}"
         if [ -s "$error_file" ]; then
             echo -e "${YELLOW}  Error output:${NC}"
             cat "$error_file" | sed 's/^/    /'
@@ -80,17 +82,18 @@ run_test_with_output() {
     local test_name="$1"
     local expected_pattern="$2"
     shift 2
-    local command_args="$@"
+    local command_args=("$@")
 
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
 
     echo -n "Testing: $test_name ... "
 
     # Create temp file for output
-    local output_file=$(mktemp)
+    local output_file
+    output_file=$(mktemp)
 
     # Run the command
-    if "$BINARY_PATH" $command_args > "$output_file" 2>&1; then
+    if "$BINARY_PATH" "${command_args[@]}" > "$output_file" 2>&1; then
         # Check if output contains expected pattern
         if grep -q "$expected_pattern" "$output_file"; then
             echo -e "${GREEN}✓ PASSED${NC}"
@@ -119,7 +122,7 @@ echo "=== Phase 1: Basic Execution Tests ==="
 echo ""
 
 # Test 1: Binary executes without arguments
-run_test "Execute without arguments" || true
+run_test "Execute without arguments"
 
 # Test 2: Help flag
 run_test "Help flag (--help)" --help
