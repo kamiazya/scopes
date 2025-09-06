@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
+import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
@@ -24,6 +25,7 @@ sealed class ScopeEvent : DomainEvent
 /**
  * Event fired when a new Scope is created.
  */
+@EventTypeId("scope-management.scope.created.v1")
 data class ScopeCreated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -53,6 +55,7 @@ data class ScopeCreated(
 /**
  * Event fired when a Scope's title is updated.
  */
+@EventTypeId("scope-management.scope.title-updated.v1")
 data class ScopeTitleUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -66,6 +69,7 @@ data class ScopeTitleUpdated(
 /**
  * Event fired when a Scope's description is updated.
  */
+@EventTypeId("scope-management.scope.description-updated.v1")
 data class ScopeDescriptionUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -79,6 +83,7 @@ data class ScopeDescriptionUpdated(
 /**
  * Event fired when a Scope's parent is changed.
  */
+@EventTypeId("scope-management.scope.parent-changed.v1")
 data class ScopeParentChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -92,6 +97,7 @@ data class ScopeParentChanged(
 /**
  * Event fired when a Scope is archived (soft deleted).
  */
+@EventTypeId("scope-management.scope.archived.v1")
 data class ScopeArchived(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -104,6 +110,7 @@ data class ScopeArchived(
 /**
  * Event fired when an archived Scope is restored.
  */
+@EventTypeId("scope-management.scope.restored.v1")
 data class ScopeRestored(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -115,6 +122,7 @@ data class ScopeRestored(
 /**
  * Event fired when a Scope is permanently deleted.
  */
+@EventTypeId("scope-management.scope.deleted.v1")
 data class ScopeDeleted(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -126,6 +134,7 @@ data class ScopeDeleted(
 /**
  * Event fired when an aspect is added to a scope.
  */
+@EventTypeId("scope-management.scope.aspect-added.v1")
 data class ScopeAspectAdded(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -139,6 +148,7 @@ data class ScopeAspectAdded(
 /**
  * Event fired when an aspect is removed from a scope.
  */
+@EventTypeId("scope-management.scope.aspect-removed.v1")
 data class ScopeAspectRemoved(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -151,6 +161,7 @@ data class ScopeAspectRemoved(
 /**
  * Event fired when all aspects are cleared from a scope.
  */
+@EventTypeId("scope-management.scope.aspects-cleared.v1")
 data class ScopeAspectsCleared(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -162,6 +173,7 @@ data class ScopeAspectsCleared(
 /**
  * Event fired when aspects are updated on a scope.
  */
+@EventTypeId("scope-management.scope.aspects-updated.v1")
 data class ScopeAspectsUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,

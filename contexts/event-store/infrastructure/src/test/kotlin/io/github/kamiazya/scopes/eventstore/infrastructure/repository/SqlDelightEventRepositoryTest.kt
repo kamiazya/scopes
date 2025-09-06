@@ -6,7 +6,6 @@ import arrow.core.right
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.domain.entity.PersistedEventRecord
 import io.github.kamiazya.scopes.eventstore.domain.error.EventStoreError
-import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventType
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
@@ -187,7 +186,7 @@ class SqlDelightEventRepositoryTest :
                         testData = "test data",
                     )
                     serializer.serializeError = EventStoreError.InvalidEventError(
-                        eventType = "TestEvent",
+                        eventType = "io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent",
                         validationErrors = listOf(
                             EventStoreError.ValidationIssue(
                                 field = "test",
@@ -203,7 +202,7 @@ class SqlDelightEventRepositoryTest :
                     // Then
                     result.isLeft() shouldBe true
                     val error = result.leftOrNull().shouldBeInstanceOf<EventStoreError.InvalidEventError>()
-                    error.eventType shouldBe "TestEvent"
+                    error.eventType shouldBe "io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent"
                     error.validationErrors.shouldNotBeEmpty()
                 }
 
@@ -227,7 +226,8 @@ class SqlDelightEventRepositoryTest :
                     result.isLeft() shouldBe true
                     val error = result.leftOrNull().shouldBeInstanceOf<EventStoreError.StorageError>()
                     error.aggregateId shouldBe event.aggregateId.value
-                    error.eventType shouldBe "TestEvent"
+                    // Event type will be the fully qualified name since we're using a mock serializer
+                    error.eventType shouldBe (TestEvent::class.qualifiedName ?: "TestEvent")
                     error.storageFailureType shouldNotBe null
                 }
             }
@@ -619,7 +619,8 @@ class SqlDelightEventRepositoryTest :
                     retrievedEvent.metadata.eventId shouldBe event.eventId
                     retrievedEvent.metadata.aggregateId shouldBe event.aggregateId
                     retrievedEvent.metadata.aggregateVersion shouldBe event.aggregateVersion
-                    retrievedEvent.metadata.eventType shouldBe EventType("io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent")
+                    // EventType now depends on whether @EventTypeId is present or legacy class name is used
+                    retrievedEvent.metadata.eventType.value shouldBe "io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent"
                     retrievedEvent.metadata.occurredAt shouldBe event.occurredAt
                     retrievedEvent.metadata.storedAt shouldNotBe null
                     retrievedEvent.metadata.sequenceNumber shouldNotBe null // Sequence number is auto-generated

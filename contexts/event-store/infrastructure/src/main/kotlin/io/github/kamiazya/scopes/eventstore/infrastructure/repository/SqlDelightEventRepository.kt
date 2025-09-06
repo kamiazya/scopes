@@ -27,13 +27,18 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 class SqlDelightEventRepository(private val queries: EventQueries, private val eventSerializer: EventSerializer) : EventRepository {
 
-    private fun DomainEvent.typeName(preferSimple: Boolean = false): String {
-        val k = this::class
-        return if (preferSimple) {
-            k.simpleName ?: k.qualifiedName ?: error("Event class must have a name")
-        } else {
-            k.qualifiedName ?: k.simpleName ?: error("Event class must have a name")
-        }
+    /**
+     * Get the stable event type identifier for persistence.
+     * This delegates to the serializer which uses EventTypeMapping.
+     */
+    private fun getEventType(event: DomainEvent): String {
+        // Try to use JsonEventSerializer's getEventType method if available
+        return try {
+            (eventSerializer as? io.github.kamiazya.scopes.eventstore.infrastructure.serializer.JsonEventSerializer)
+                ?.getEventType(event)
+        } catch (e: Exception) {
+            null
+        } ?: event::class.qualifiedName ?: event::class.simpleName ?: error("Event class must have a name")
     }
 
     override suspend fun store(event: DomainEvent): Either<EventStoreError, PersistedEventRecord> = withContext(Dispatchers.IO) {
@@ -50,7 +55,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         event_id = event.eventId.value,
                         aggregate_id = event.aggregateId.value,
                         aggregate_version = event.aggregateVersion.value,
-                        event_type = event.typeName(preferSimple = false),
+                        event_type = getEventType(event),
                         event_data = eventData,
                         occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
@@ -66,7 +71,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             eventId = event.eventId,
                             aggregateId = event.aggregateId,
                             aggregateVersion = event.aggregateVersion,
-                            eventType = EventType(event.typeName(preferSimple = false)),
+                            eventType = EventType(getEventType(event)),
                             occurredAt = event.occurredAt,
                             storedAt = storedAt,
                             sequenceNumber = sequenceNumber,
@@ -79,7 +84,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     Either.Left(
                         EventStoreError.StorageError(
                             aggregateId = event.aggregateId.value,
-                            eventType = event.typeName(preferSimple = true),
+                            eventType = getEventType(event),
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
                             cause = e,

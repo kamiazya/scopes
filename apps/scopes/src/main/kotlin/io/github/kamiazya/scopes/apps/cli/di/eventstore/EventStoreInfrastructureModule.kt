@@ -10,7 +10,9 @@ import io.github.kamiazya.scopes.eventstore.application.handler.query.GetEventsS
 import io.github.kamiazya.scopes.eventstore.application.port.EventPublisher
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.db.EventStoreDatabase
+import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeMapping
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
+import io.github.kamiazya.scopes.eventstore.infrastructure.mapping.DefaultEventTypeMapping
 import io.github.kamiazya.scopes.eventstore.infrastructure.publisher.NoOpEventPublisher
 import io.github.kamiazya.scopes.eventstore.infrastructure.repository.SqlDelightEventRepository
 import io.github.kamiazya.scopes.eventstore.infrastructure.serializer.JsonEventSerializer
@@ -36,10 +38,16 @@ val eventStoreInfrastructureModule = module {
         SqlDelightDatabaseProvider.createDatabase("$databasePath/event-store.db")
     }
 
+    // Event Type Mapping
+    single<EventTypeMapping> {
+        DefaultEventTypeMapping(logger = get())
+    }
+
     // Event Serializer
     single<EventSerializer> {
         val serializersModule = getOrNull<SerializersModule>() ?: SerializersModule { }
         JsonEventSerializer(
+            eventTypeMapping = get(),
             json = kotlinx.serialization.json.Json {
                 this.serializersModule = serializersModule
                 classDiscriminator = "type"
