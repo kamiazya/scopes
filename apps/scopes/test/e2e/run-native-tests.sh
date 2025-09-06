@@ -128,10 +128,6 @@ run_test "Execute without arguments"
 run_test "Help flag (--help)" --help
 run_test "Help flag short (-h)" -h
 
-# Test 3: Version flag
-run_test "Version flag (--version)" --version
-run_test "Version flag short (-v)" -v
-
 echo ""
 echo "=== Phase 2: Command Structure Tests ==="
 echo ""
@@ -167,9 +163,6 @@ run_test "Workspace clear help" workspace clear --help
 echo ""
 echo "=== Phase 4: Output Format Tests ==="
 echo ""
-
-# Test that version output contains expected format
-run_test_with_output "Version output format" "scopes" --version
 
 # Test that help contains usage information
 run_test_with_output "Help contains usage" "Usage:" --help

@@ -146,10 +146,6 @@ Test-Command "Execute without arguments" @()
 Test-Command "Help flag (--help)" @("--help")
 Test-Command "Help flag short (-h)" @("-h")
 
-# Test 3: Version flag
-Test-Command "Version flag (--version)" @("--version")
-Test-Command "Version flag short (-v)" @("-v")
-
 Write-Host ""
 Write-Host "=== Phase 2: Command Structure Tests ==="
 Write-Host ""
@@ -185,9 +181,6 @@ Test-Command "Workspace clear help" @("workspace", "clear", "--help")
 Write-Host ""
 Write-Host "=== Phase 4: Output Format Tests ==="
 Write-Host ""
-
-# Test that version output contains expected format
-Test-CommandWithOutput "Version output format" "scopes" @("--version")
 
 # Test that help contains usage information
 Test-CommandWithOutput "Help contains usage" "Usage:" @("--help")

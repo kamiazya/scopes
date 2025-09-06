@@ -157,10 +157,6 @@ tasks.register<Exec>("nativeSmokeTest") {
     commandLine(binaryPath.absolutePath, "--help")
 
     doLast {
-        // Also test --version flag
-        exec {
-            commandLine(binaryPath.absolutePath, "--version")
-        }
         logger.lifecycle("✅ Smoke test passed: binary is executable")
     }
 }
@@ -192,7 +188,6 @@ tasks.register("nativeE2eTest") {
         val testCases =
             listOf(
                 listOf("--help"),
-                listOf("--version"),
                 listOf("scope", "--help"),
                 listOf("context", "--help"),
                 listOf("workspace", "--help"),

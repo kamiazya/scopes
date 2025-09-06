@@ -50,7 +50,7 @@ $env:SCOPES_BINARY_PATH="apps\scopes\build\native\nativeCompile\scopes.exe"
 
 1. **Phase 1: Basic Execution Tests**
    - Binary executes without errors
-   - Help and version flags work correctly
+   - Help flag works correctly
 
 2. **Phase 2: Command Structure Tests**
    - Main commands (scope, context, workspace, focus, aspect) respond to help
@@ -59,7 +59,6 @@ $env:SCOPES_BINARY_PATH="apps\scopes\build\native\nativeCompile\scopes.exe"
    - Subcommands respond correctly to help flags
 
 4. **Phase 4: Output Format Tests**
-   - Version output contains expected information
    - Help output contains usage information
 
 5. **Phase 5: Error Handling Tests**
