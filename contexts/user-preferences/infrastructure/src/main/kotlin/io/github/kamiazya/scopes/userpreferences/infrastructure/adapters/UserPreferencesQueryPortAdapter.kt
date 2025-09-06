@@ -9,7 +9,6 @@ import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.application.handler.query.GetCurrentUserPreferencesHandler
 import io.github.kamiazya.scopes.userpreferences.application.query.GetCurrentUserPreferences
-import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.ErrorMapper
 
 /**
  * Adapter implementation of UserPreferencesQueryPort.
@@ -20,10 +19,9 @@ import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.ErrorMa
  */
 class UserPreferencesQueryPortAdapter(
     private val getCurrentUserPreferencesHandler: GetCurrentUserPreferencesHandler,
+    private val errorMapper: ErrorMapper,
     private val logger: Logger = ConsoleLogger("UserPreferencesQueryPortAdapter"),
 ) : UserPreferencesQueryPort {
-
-    private val errorMapper = ErrorMapper(logger.withName("ErrorMapper"))
 
     override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> =
         getCurrentUserPreferencesHandler(GetCurrentUserPreferences)

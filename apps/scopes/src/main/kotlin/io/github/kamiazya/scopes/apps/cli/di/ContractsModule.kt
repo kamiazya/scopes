@@ -64,6 +64,7 @@ val contractsModule = module {
     single<UserPreferencesQueryPort> {
         UserPreferencesQueryPortAdapter(
             getCurrentUserPreferencesHandler = get(),
+            errorMapper = get(),
             logger = get(),
         )
     }

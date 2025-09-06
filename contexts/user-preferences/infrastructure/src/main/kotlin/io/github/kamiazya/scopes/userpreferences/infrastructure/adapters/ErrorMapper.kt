@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.userpreferences.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
+import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 
@@ -14,15 +15,9 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
  * the system follows the Zero-Configuration Start principle and always
  * returns default values when preferences don't exist.
  */
-internal class ErrorMapper(private val logger: Logger) {
+class ErrorMapper(logger: Logger) : BaseErrorMapper<UserPreferencesError, UserPreferencesContractError>(logger) {
 
-    /**
-     * Maps a domain error to a contract error.
-     *
-     * @param domainError The domain error to map
-     * @return The corresponding contract error
-     */
-    fun mapToContractError(domainError: UserPreferencesError): UserPreferencesContractError = when (domainError) {
+    override fun mapToContractError(domainError: UserPreferencesError): UserPreferencesContractError = when (domainError) {
         is UserPreferencesError.InvalidPreferenceValue -> {
             val validationDetails = when (domainError.validationError) {
                 UserPreferencesError.ValidationError.INVALID_TYPE ->
