@@ -6,12 +6,12 @@ import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import kotlinx.datetime.Instant
 
 /**
- * Port for appending events to the event store.
+ * Port for reading events from the event store.
  *
- * This abstraction allows the application layer to work with events
+ * This abstraction allows the application layer to read events
  * without depending on specific event store contracts or implementations.
  */
-interface EventAppender {
+interface EventQueryPort {
     /**
      * Retrieve events from the event store since the given timestamp.
      *

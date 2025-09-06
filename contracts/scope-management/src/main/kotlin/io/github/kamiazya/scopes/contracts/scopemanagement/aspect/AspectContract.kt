@@ -8,34 +8,34 @@ import kotlinx.datetime.Instant
 public data class AspectDefinition(val key: String, val description: String, val type: String, val createdAt: Instant, val updatedAt: Instant)
 
 /**
- * Request to create a new aspect definition.
+ * Command to create a new aspect definition.
  */
-public data class CreateAspectDefinitionRequest(val key: String, val description: String, val type: String)
+public data class CreateAspectDefinitionCommand(val key: String, val description: String, val type: String)
 
 /**
- * Request to update an aspect definition.
+ * Command to update an aspect definition.
  */
-public data class UpdateAspectDefinitionRequest(val key: String, val description: String? = null)
+public data class UpdateAspectDefinitionCommand(val key: String, val description: String? = null)
 
 /**
- * Request to delete an aspect definition.
+ * Command to delete an aspect definition.
  */
-public data class DeleteAspectDefinitionRequest(val key: String)
+public data class DeleteAspectDefinitionCommand(val key: String)
 
 /**
- * Request to get an aspect definition.
+ * Query to get an aspect definition.
  */
-public data class GetAspectDefinitionRequest(val key: String)
+public data class GetAspectDefinitionQuery(val key: String)
 
 /**
- * Request to list aspect definitions.
+ * Query to list aspect definitions.
  */
-public object ListAspectDefinitionsRequest
+public object ListAspectDefinitionsQuery
 
 /**
- * Request to validate aspect value.
+ * Query to validate aspect value.
  */
-public data class ValidateAspectValueRequest(val key: String, val values: List<String>)
+public data class ValidateAspectValueQuery(val key: String, val values: List<String>)
 
 /**
  * Contract for aspect operations.

@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.apps.cli.di
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
@@ -12,7 +11,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolic
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectCommandPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectQueryPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewCommandPortAdapter
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewQueryPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementCommandPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementQueryPortAdapter
@@ -66,17 +64,6 @@ val contractsModule = module {
             getCurrentUserPreferencesHandler = get(),
             errorMapper = get(),
             logger = get(),
-        )
-    }
-
-    single<ContextViewPort> {
-        ContextViewPortAdapter(
-            createContextViewHandler = get(),
-            listContextViewsHandler = get(),
-            getContextViewHandler = get(),
-            updateContextViewHandler = get(),
-            deleteContextViewHandler = get(),
-            activeContextService = get(),
         )
     }
 

@@ -1949,7 +1949,7 @@ value class ULID(val value: String) {
     companion object {
         // Keep for backward compatibility
         @Deprecated("Use ULIDGenerator interface instead for better testability", 
-                   ReplaceWith("ULIDGenerator.generate()"))
+                    ReplaceWith("ULIDGenerator.generate()"))
         fun generate(): ULID = ULID(KULID.random())
     }
 }
@@ -2042,3 +2042,198 @@ Konsist rules enforce platform abstraction usage:
 ```
 
 This platform minimization strategy ensures domain layers remain pure and testable while providing the concrete implementations needed for production systems.
+
+## Suspend Either Guidelines
+
+### Principles
+
+Combine `suspend` functions with `Either` for robust asynchronous error handling in the application layer. This pattern provides non-blocking I/O operations with explicit error modeling.
+
+### Pattern Consistency
+
+**Application Layer Pattern:**
+```kotlin
+suspend fun processData(input: String): Either<ScopesError, Result> = either {
+    val validated = validateInput(input).bind()
+    val processed = processAsync(validated).bind()
+    Result(processed)
+}
+```
+
+**Repository Pattern:**
+```kotlin
+suspend fun findById(id: ScopeId): Either<ScopesError, Scope?> = either {
+    database.find(id.value)
+        .mapLeft { error -> 
+            ScopesError.RepositoryError(
+                repositoryName = "ScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                cause = error,
+            )
+        }
+        .bind()
+}
+```
+
+### Error Handling Strategies
+
+**1. Early Return with bind():**
+```kotlin
+suspend fun complexOperation(): Either<ScopesError, Unit> = either {
+    val step1 = performStep1().bind()
+    val step2 = performStep2(step1).bind()
+    val step3 = performStep3(step2).bind()
+}
+```
+
+**2. Error Mapping with mapLeft:**
+```kotlin
+suspend fun serviceOperation(): Either<ApplicationError, Result> = either {
+    domainService.process()
+        .mapLeft { domainError ->
+            domainError.toApplicationError()
+        }
+        .bind()
+}
+```
+
+**3. Conditional Logic with ensure/ensureNotNull:**
+```kotlin
+suspend fun validateAndProcess(id: String): Either<ScopesError, Unit> = either {
+    val entity = repository.findById(id).bind()
+    
+    ensureNotNull(entity) {
+        ScopesError.NotFound(
+            entityType = "Entity",
+            identifier = id,
+            identifierType = "id"
+        )
+    }
+    
+    ensure(entity.isValid()) {
+        ScopesError.ValidationFailed(
+            field = "entity",
+            value = id,
+            constraint = ScopesError.ValidationConstraintType.InvalidValue("Invalid entity state")
+        )
+    }
+}
+```
+
+**4. Exception Handling:**
+```kotlin
+suspend fun externalServiceCall(): Either<ScopesError, Data> = either {
+    try {
+        val result = externalService.call()
+        result
+    } catch (e: Exception) {
+        raise(ScopesError.SystemError(
+            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+            service = "external-service",
+            cause = e
+        ))
+    }
+}
+```
+
+### Retry Patterns
+
+**Retry with Loop:**
+```kotlin
+suspend fun generateUniqueAlias(maxRetries: Int = 10): Either<ScopesError, Alias> = either {
+    repeat(maxRetries) { attempt ->
+        val candidate = generateCandidate()
+        
+        when (val result = validateUniqueness(candidate)) {
+            is Either.Right -> return@either result.value
+            is Either.Left -> if (attempt == maxRetries - 1) {
+                raise(ScopeAliasError.AliasGenerationFailed(
+                    scopeId = scopeId,
+                    retryCount = maxRetries
+                ))
+            }
+        }
+    }
+}
+```
+
+### Testing Patterns
+
+**Test Success Case:**
+```kotlin
+@Test
+fun `should return success when operation completes`() = runTest {
+    val result = service.performOperation(validInput)
+    
+    result shouldBeRight { value ->
+        value.data shouldBe expectedData
+    }
+}
+```
+
+**Test Error Case:**
+```kotlin
+@Test
+fun `should return error when validation fails`() = runTest {
+    val result = service.performOperation(invalidInput)
+    
+    result shouldBeLeft { error ->
+        error shouldBeInstanceOf<ScopesError.ValidationFailed>()
+    }
+}
+```
+
+### Avoid Anti-patterns
+
+❌ **Don't mix blocking and non-blocking:**
+```kotlin
+// Wrong: mixing suspend with blocking operations
+suspend fun badPattern(): Either<Error, Result> = either {
+    val blocking = blockingCall() // Blocks the thread
+    val async = suspendCall().bind()
+    Result(blocking, async)
+}
+```
+
+❌ **Don't ignore errors:**
+```kotlin
+// Wrong: silently ignoring errors
+suspend fun ignoreErrors(): Result? {
+    return suspendOperation().fold(
+        { null }, // Error ignored
+        { it }
+    )
+}
+```
+
+❌ **Don't use exceptions for control flow:**
+```kotlin
+// Wrong: using exceptions instead of Either
+suspend fun controlFlowExceptions(): Result {
+    return try {
+        val result = suspendCall()
+        if (result.isInvalid()) throw InvalidException()
+        result
+    } catch (e: InvalidException) {
+        DefaultResult()
+    }
+}
+```
+
+### Benefits
+
+1. **Explicit Error Handling**: All error cases are visible in the type system
+2. **Composable**: Operations can be chained with `bind()`
+3. **Non-blocking**: Maintains coroutine efficiency
+4. **Railway-oriented**: Clear success/failure paths
+5. **Testable**: Both success and error cases are easy to test
+
+### Implementation Guidelines
+
+1. Use `either { }` block for suspend functions returning Either
+2. Use `bind()` for early return on error
+3. Use `mapLeft` for error type transformation
+4. Use `ensure`/`ensureNotNull` for validation
+5. Handle exceptions explicitly with try-catch
+6. Prefer domain-specific error types over generic exceptions

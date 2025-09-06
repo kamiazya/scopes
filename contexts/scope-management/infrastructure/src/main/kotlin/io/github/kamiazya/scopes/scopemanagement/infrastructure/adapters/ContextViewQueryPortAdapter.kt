@@ -3,9 +3,9 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextView
 import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsQuery
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
@@ -24,7 +24,7 @@ public class ContextViewQueryPortAdapter(
     private val activeContextService: ActiveContextService,
 ) : ContextViewQueryPort {
 
-    override suspend fun listContextViews(query: ListContextViewsRequest): ContextViewContract.ListContextViewsResponse {
+    override suspend fun listContextViews(query: ListContextViewsQuery): ContextViewContract.ListContextViewsResponse {
         val result = listContextViewsHandler(ListContextViews())
 
         return result.fold(
@@ -40,7 +40,7 @@ public class ContextViewQueryPortAdapter(
         )
     }
 
-    override suspend fun getContextView(query: GetContextViewRequest): ContextViewContract.GetContextViewResponse {
+    override suspend fun getContextView(query: GetContextViewQuery): ContextViewContract.GetContextViewResponse {
         val result = getContextViewHandler(GetContextView(query.key))
 
         return result.fold(
@@ -57,7 +57,7 @@ public class ContextViewQueryPortAdapter(
         )
     }
 
-    override suspend fun getActiveContext(query: GetActiveContextRequest): ContextViewContract.GetActiveContextResponse {
+    override suspend fun getActiveContext(query: GetActiveContextQuery): ContextViewContract.GetActiveContextResponse {
         val domainContextView = activeContextService.getCurrentContext()
 
         return ContextViewContract.GetActiveContextResponse.Success(

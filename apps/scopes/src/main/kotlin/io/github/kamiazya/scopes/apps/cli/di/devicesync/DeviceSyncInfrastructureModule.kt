@@ -3,11 +3,13 @@ package io.github.kamiazya.scopes.apps.cli.di.devicesync
 import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationCommandPort
 import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSynchronizationCommandPortAdapter
 import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
-import io.github.kamiazya.scopes.devicesync.application.port.EventAppender
+import io.github.kamiazya.scopes.devicesync.application.port.EventCommandPort
+import io.github.kamiazya.scopes.devicesync.application.port.EventQueryPort
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
 import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventStoreEventAppender
+import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventStoreEventReader
 import io.github.kamiazya.scopes.devicesync.infrastructure.repository.SqlDelightSynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.infrastructure.service.DefaultDeviceSynchronizationService
 import io.github.kamiazya.scopes.devicesync.infrastructure.sqldelight.SqlDelightDatabaseProvider
@@ -40,10 +42,19 @@ val deviceSyncInfrastructureModule = module {
         )
     }
 
-    // Event Appender (Adapter)
-    single<EventAppender> {
-        EventStoreEventAppender(
+    // Event Query (Adapter)
+    single<EventQueryPort> {
+        EventStoreEventReader(
             eventStoreQueryPort = get(),
+            logger = get(),
+            json = get(),
+        )
+    }
+
+    // Event Command (Adapter)
+    single<EventCommandPort> {
+        EventStoreEventAppender(
+            eventStoreCommandPort = get(),
             logger = get(),
             json = get(),
         )
@@ -53,7 +64,7 @@ val deviceSyncInfrastructureModule = module {
     single<DeviceSynchronizationService> {
         DefaultDeviceSynchronizationService(
             syncRepository = get(),
-            eventAppender = get<EventAppender>(),
+            eventReader = get<EventQueryPort>(),
         )
     }
 

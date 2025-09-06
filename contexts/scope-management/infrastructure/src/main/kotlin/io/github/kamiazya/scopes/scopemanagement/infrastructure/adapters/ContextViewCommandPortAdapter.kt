@@ -4,18 +4,18 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.UpdateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewCommand as ContractCreateContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewCommand as ContractDeleteContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextCommand as ContractSetActiveContextCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewCommand as ContractUpdateContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand as AppCreateContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand as AppDeleteContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.UpdateContextViewCommand as AppUpdateContextViewCommand
 
 /**
  * Command port adapter implementation for ContextView operations.
@@ -30,9 +30,9 @@ public class ContextViewCommandPortAdapter(
     private val applicationErrorMapper: ApplicationErrorMapper,
 ) : ContextViewCommandPort {
 
-    override suspend fun createContextView(command: CreateContextViewRequest): Either<ScopeContractError, Unit> {
+    override suspend fun createContextView(command: ContractCreateContextViewCommand): Either<ScopeContractError, Unit> {
         val result = createContextViewHandler(
-            CreateContextViewCommand(
+            AppCreateContextViewCommand(
                 key = command.key,
                 name = command.name,
                 filter = command.filter,
@@ -46,9 +46,9 @@ public class ContextViewCommandPortAdapter(
         )
     }
 
-    override suspend fun updateContextView(command: UpdateContextViewRequest): Either<ScopeContractError, Unit> {
+    override suspend fun updateContextView(command: ContractUpdateContextViewCommand): Either<ScopeContractError, Unit> {
         val result = updateContextViewHandler(
-            UpdateContextViewCommand(
+            AppUpdateContextViewCommand(
                 key = command.key,
                 name = command.name,
                 filter = command.filter,
@@ -62,8 +62,8 @@ public class ContextViewCommandPortAdapter(
         )
     }
 
-    override suspend fun deleteContextView(command: DeleteContextViewRequest): Either<ScopeContractError, Unit> {
-        val result = deleteContextViewHandler(DeleteContextViewCommand(command.key))
+    override suspend fun deleteContextView(command: ContractDeleteContextViewCommand): Either<ScopeContractError, Unit> {
+        val result = deleteContextViewHandler(AppDeleteContextViewCommand(command.key))
 
         return result.fold(
             ifLeft = { error -> errorMapper.mapToContractError(error).left() },
@@ -71,7 +71,7 @@ public class ContextViewCommandPortAdapter(
         )
     }
 
-    override suspend fun setActiveContext(command: SetActiveContextRequest): Either<ScopeContractError, Unit> {
+    override suspend fun setActiveContext(command: ContractSetActiveContextCommand): Either<ScopeContractError, Unit> {
         val result = activeContextService.switchToContextByKey(command.key)
 
         return result.fold(

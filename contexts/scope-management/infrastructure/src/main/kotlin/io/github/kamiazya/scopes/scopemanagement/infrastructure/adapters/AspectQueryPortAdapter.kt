@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.GetAspectDefinitionRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ListAspectDefinitionsRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ValidateAspectValueRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.GetAspectDefinitionQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ListAspectDefinitionsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ValidateAspectValueQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
@@ -22,7 +22,7 @@ public class AspectQueryPortAdapter(
     private val validateAspectValueUseCase: ValidateAspectValueUseCase,
 ) : AspectQueryPort {
 
-    override suspend fun getAspectDefinition(query: GetAspectDefinitionRequest): AspectContract.GetAspectDefinitionResponse {
+    override suspend fun getAspectDefinition(query: GetAspectDefinitionQuery): AspectContract.GetAspectDefinitionResponse {
         val result = getAspectDefinitionHandler(GetAspectDefinition(query.key))
 
         return result.fold(
@@ -35,7 +35,7 @@ public class AspectQueryPortAdapter(
         )
     }
 
-    override suspend fun listAspectDefinitions(query: ListAspectDefinitionsRequest): AspectContract.ListAspectDefinitionsResponse {
+    override suspend fun listAspectDefinitions(query: ListAspectDefinitionsQuery): AspectContract.ListAspectDefinitionsResponse {
         val result = listAspectDefinitionsHandler(ListAspectDefinitions())
 
         return result.fold(
@@ -51,7 +51,7 @@ public class AspectQueryPortAdapter(
         )
     }
 
-    override suspend fun validateAspectValue(query: ValidateAspectValueRequest): AspectContract.ValidateAspectValueResponse {
+    override suspend fun validateAspectValue(query: ValidateAspectValueQuery): AspectContract.ValidateAspectValueResponse {
         val result = if (query.values.size == 1) {
             validateAspectValueUseCase(ValidateAspectValueUseCase.Query(query.key, query.values.first()))
                 .map { listOf(it.value) }

@@ -4,17 +4,17 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.CreateAspectDefinitionRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.DeleteAspectDefinitionRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.UpdateAspectDefinitionRequest
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.CreateAspectDefinitionCommand as ContractCreateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.DeleteAspectDefinitionCommand as ContractDeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.UpdateAspectDefinitionCommand as ContractUpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
 
 /**
  * Command port adapter implementation for Aspect operations.
@@ -26,7 +26,7 @@ public class AspectCommandPortAdapter(
     private val deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler,
 ) : AspectCommandPort {
 
-    override suspend fun createAspectDefinition(command: CreateAspectDefinitionRequest): Either<ScopeContractError, Unit> {
+    override suspend fun createAspectDefinition(command: ContractCreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = defineAspectHandler(
             DefineAspectCommand(
                 key = command.key,
@@ -47,9 +47,9 @@ public class AspectCommandPortAdapter(
         )
     }
 
-    override suspend fun updateAspectDefinition(command: UpdateAspectDefinitionRequest): Either<ScopeContractError, Unit> {
+    override suspend fun updateAspectDefinition(command: ContractUpdateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = updateAspectDefinitionHandler(
-            UpdateAspectDefinitionCommand(
+            AppUpdateAspectDefinitionCommand(
                 key = command.key,
                 description = command.description,
             ),
@@ -61,8 +61,8 @@ public class AspectCommandPortAdapter(
         )
     }
 
-    override suspend fun deleteAspectDefinition(command: DeleteAspectDefinitionRequest): Either<ScopeContractError, Unit> {
-        val result = deleteAspectDefinitionHandler(DeleteAspectDefinitionCommand(command.key))
+    override suspend fun deleteAspectDefinition(command: ContractDeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+        val result = deleteAspectDefinitionHandler(AppDeleteAspectDefinitionCommand(command.key))
 
         return result.fold(
             ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
