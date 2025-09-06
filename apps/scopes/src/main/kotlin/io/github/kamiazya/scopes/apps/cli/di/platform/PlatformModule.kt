@@ -18,6 +18,7 @@ val platformModule = module {
     single<List<ApplicationBootstrapper>> {
         listOf(
             get<ApplicationBootstrapper>(named("AspectPresetBootstrap")),
+            get<ApplicationBootstrapper>(named("ActiveContextBootstrap")),
         )
     }
 

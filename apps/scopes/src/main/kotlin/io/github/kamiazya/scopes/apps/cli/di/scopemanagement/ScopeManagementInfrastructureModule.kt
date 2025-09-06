@@ -70,10 +70,11 @@ val scopeManagementInfrastructureModule = module {
     }
 
     // Active Context Repository
-    single<ActiveContextRepository> {
+    single<ActiveContextRepositoryImpl> {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
         ActiveContextRepositoryImpl(database)
     }
+    single<ActiveContextRepository> { get<ActiveContextRepositoryImpl>() }
 
     // TransactionManager for this bounded context
     single<TransactionManager> {
@@ -113,6 +114,13 @@ val scopeManagementInfrastructureModule = module {
     single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("AspectPresetBootstrap")) {
         io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap(
             aspectDefinitionRepository = get(),
+            logger = get(),
+        )
+    }
+
+    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("ActiveContextBootstrap")) {
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.ActiveContextBootstrap(
+            activeContextRepository = get(),
             logger = get(),
         )
     }
