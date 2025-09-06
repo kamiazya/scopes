@@ -8,7 +8,6 @@ dependencies {
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-observability"))
     implementation(project(":scope-management-domain"))
-    implementation(project(":event-store-domain"))
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
