@@ -1853,3 +1853,192 @@ When creating or reviewing contracts:
 - [ ] **Architecture Tests**: Konsist rules enforce slim policy
 
 This slim policy ensures contracts remain stable, evolvable, and focused on their core purpose: defining the structure of data and operations between bounded contexts.
+
+## Platform Minimize Concrete Types
+
+The platform layer should provide abstractions rather than concrete implementations to support Clean Architecture principles and testability.
+
+### Core Principle
+
+**Domain layers should depend on abstractions, not concrete implementations**
+
+Direct dependencies on concrete types like `Clock.System.now()` or `ULID.generate()` violate the Dependency Inversion Principle and make testing difficult.
+
+### Time Provider Abstraction
+
+#### Interface Definition
+
+```kotlin
+// Platform Commons
+interface TimeProvider {
+    fun now(): Instant
+}
+```
+
+#### Production Implementation
+
+```kotlin  
+// Platform Infrastructure
+class SystemTimeProvider : TimeProvider {
+    override fun now(): Instant = Clock.System.now()
+}
+```
+
+#### Test Implementation
+
+```kotlin
+// Platform Domain Commons (for testing)
+class TestTimeProvider(private var currentTime: Instant = Instant.fromEpochMilliseconds(0)) : TimeProvider {
+    override fun now(): Instant = currentTime
+    
+    fun setTime(time: Instant) {
+        currentTime = time
+    }
+    
+    fun advanceBy(milliseconds: Long) {
+        currentTime = Instant.fromEpochMilliseconds(currentTime.toEpochMilliseconds() + milliseconds)
+    }
+}
+```
+
+### ULID Generator Abstraction
+
+#### Interface Definition
+
+```kotlin
+// Platform Commons
+interface ULIDGenerator {
+    fun generate(): ULID
+}
+```
+
+#### Production Implementation
+
+```kotlin
+// Platform Infrastructure  
+class SystemULIDGenerator : ULIDGenerator {
+    override fun generate(): ULID = ULID(KULID.random())
+}
+```
+
+#### Test Implementation
+
+```kotlin
+// Platform Domain Commons (for testing)
+class TestULIDGenerator(private val predefinedIds: Iterator<String>) : ULIDGenerator {
+    override fun generate(): ULID = ULID.fromString(predefinedIds.next())
+    
+    companion object {
+        fun withSequence(vararg ids: String): TestULIDGenerator = TestULIDGenerator(ids.iterator())
+        fun withPattern(pattern: String, count: Int): TestULIDGenerator = TestULIDGenerator(
+            (1..count).map { "${pattern}${it.toString().padStart(22, '0')}" }.iterator()
+        )
+    }
+}
+```
+
+### Migration Strategy
+
+#### 1. Backward Compatibility
+
+Keep deprecated concrete implementations during transition:
+
+```kotlin
+@JvmInline
+value class ULID(val value: String) {
+    companion object {
+        // Keep for backward compatibility
+        @Deprecated("Use ULIDGenerator interface instead for better testability", 
+                   ReplaceWith("ULIDGenerator.generate()"))
+        fun generate(): ULID = ULID(KULID.random())
+    }
+}
+```
+
+#### 2. Domain Layer Injection
+
+Inject abstractions into domain services:
+
+```kotlin
+// Before: Direct concrete dependency
+class ScopeAggregate {
+    fun createScope(): ScopeCreated {
+        return ScopeCreated(
+            scopeId = ScopeId.generate(), // Direct call to ULID.generate()
+            occurredAt = Clock.System.now() // Direct call to Clock
+        )
+    }
+}
+
+// After: Abstraction dependency
+class ScopeAggregate(
+    private val ulidGenerator: ULIDGenerator,
+    private val timeProvider: TimeProvider
+) {
+    fun createScope(): ScopeCreated {
+        return ScopeCreated(
+            scopeId = ScopeId(ulidGenerator.generate().value),
+            occurredAt = timeProvider.now()
+        )
+    }
+}
+```
+
+### Platform Layer Organization
+
+#### Commons Layer
+- **Purpose**: Common abstractions and interfaces
+- **Examples**: `TimeProvider`, `ULIDGenerator`, `ULID` value class
+- **Dependencies**: Minimal (kotlinx-datetime, basic types)
+
+#### Infrastructure Layer  
+- **Purpose**: Production implementations of platform abstractions
+- **Examples**: `SystemTimeProvider`, `SystemULIDGenerator`
+- **Dependencies**: External libraries (Clock, KULID)
+
+#### Domain Commons Layer
+- **Purpose**: Test implementations and domain-specific utilities
+- **Examples**: `TestTimeProvider`, `TestULIDGenerator`
+- **Dependencies**: Platform commons only
+
+### Benefits of Platform Abstraction
+
+#### 1. **Testability**
+- Deterministic testing with controlled time and IDs
+- No flaky tests due to timing issues
+- Predictable test data generation
+
+#### 2. **Clean Architecture Compliance**
+- Domain layer depends only on abstractions
+- Infrastructure provides concrete implementations
+- Clear separation of concerns
+
+#### 3. **Flexibility**
+- Easy to swap implementations
+- Support for different environments (dev, test, prod)
+- Future-proof for different ID generation strategies
+
+#### 4. **Performance Testing**
+- Benchmarking with controlled inputs
+- Consistent test execution times
+- Reliable performance regression detection
+
+### Architecture Validation
+
+Konsist rules enforce platform abstraction usage:
+
+```kotlin
+"domain layer should not use concrete time providers" {
+    domains.assertFalse { file ->
+        file.text.contains("Clock.System.now()")
+    }
+}
+
+"domain layer should not use concrete ID generators" {
+    domains.assertFalse { file ->
+        file.text.contains("ULID.generate()")
+    }
+}
+```
+
+This platform minimization strategy ensures domain layers remain pure and testable while providing the concrete implementations needed for production systems.

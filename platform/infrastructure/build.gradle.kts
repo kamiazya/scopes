@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":platform-observability"))
 
     implementation(libs.arrow.core)
+    implementation(libs.kulid)
 
     api(libs.sqlite.jdbc)
     api(libs.sqldelight.driver.sqlite)

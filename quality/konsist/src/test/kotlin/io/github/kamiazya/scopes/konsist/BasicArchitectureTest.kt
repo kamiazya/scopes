@@ -152,6 +152,7 @@ class BasicArchitectureTest :
                 }
                 .filter { !it.name.endsWith("Test") }
                 .filter { it.packagee?.name?.contains(".domain") == true }
+                .filter { !it.resideInPackage("..platform..") } // Exclude platform utilities
                 .assertTrue { service ->
                     val packageName = service.packagee?.name ?: ""
                     packageName.contains(".service")
