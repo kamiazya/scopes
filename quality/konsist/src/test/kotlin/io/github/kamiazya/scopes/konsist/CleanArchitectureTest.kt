@@ -458,4 +458,108 @@ class CleanArchitectureTest :
                     }
             }
         }
+
+        // ========== Bootstrapper Registration ==========
+
+        "all ApplicationBootstrapper implementations should be registered in apps layer" {
+            // Find all ApplicationBootstrapper implementations
+            val bootstrappers = contexts.flatMap { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/infrastructure")
+                    .classes()
+                    .filter { clazz ->
+                        clazz.parents().any { it.name == "ApplicationBootstrapper" }
+                    }
+                    .filter { !it.hasAbstractModifier }
+                    .filter { !it.name.endsWith("Test") }
+                    .map { it.name }
+            }
+
+            // Also check bootstrappers in apps layer
+            val appBootstrappers = Konsist
+                .scopeFromDirectory("apps")
+                .classes()
+                .filter { clazz ->
+                    clazz.parents().any { it.name == "ApplicationBootstrapper" }
+                }
+                .filter { !it.hasAbstractModifier }
+                .filter { !it.name.endsWith("Test") }
+                .map { it.name }
+
+            val allBootstrappers = bootstrappers + appBootstrappers
+
+            // Check that all bootstrappers are registered in PlatformModule
+            val platformModuleFile = Konsist
+                .scopeFromFile("apps/scopes/src/main/kotlin/io/github/kamiazya/scopes/apps/cli/di/platform/PlatformModule.kt")
+                .files
+                .firstOrNull()
+
+            // Konsist assertTrue only works with collections, so we check manually
+            if (platformModuleFile != null) {
+                allBootstrappers.forEach { bootstrapperName ->
+                    if (!platformModuleFile.text.contains("""get<ApplicationBootstrapper>(named("$bootstrapperName"))""")) {
+                        throw AssertionError("Bootstrapper $bootstrapperName should be registered in PlatformModule")
+                    }
+                }
+            } else {
+                throw AssertionError("PlatformModule.kt not found")
+            }
+        }
+
+        // ========== Query Handler Transaction Patterns ==========
+
+        "query handlers should use read-only transactions" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/application")
+                    .classes()
+                    .filter { it.name.endsWith("QueryHandler") || it.resideInPackage("..handler.query..") }
+                    .filter { !it.name.endsWith("Test") }
+                    .filter { clazz ->
+                        // Check if class contains transaction usage
+                        clazz.text.contains("inTransaction")
+                    }
+                    .assertFalse { handler ->
+                        // Query handlers should not use write transactions
+                        handler.text.contains(Regex("\\.inTransaction\\s*\\{"))
+                    }
+            }
+        }
+
+        // ========== Error Mapper Inheritance ==========
+
+        "all ErrorMapper classes should extend BaseErrorMapper or BaseCrossContextErrorMapper" {
+            contexts.forEach { context ->
+                Konsist
+                    .scopeFromDirectory("contexts/$context/infrastructure")
+                    .classes()
+                    .filter { it.name.endsWith("ErrorMapper") }
+                    .filter { !it.name.equals("BaseErrorMapper") }
+                    .filter { !it.name.equals("BaseCrossContextErrorMapper") }
+                    .filter { !it.hasAbstractModifier }
+                    .filter { !it.name.endsWith("Test") }
+                    .assertTrue { mapper ->
+                        mapper.parents().any { parent ->
+                            parent.name == "BaseErrorMapper" || parent.name.startsWith("BaseErrorMapper<") ||
+                                parent.name == "BaseCrossContextErrorMapper" || parent.name.startsWith("BaseCrossContextErrorMapper<")
+                        }
+                    }
+            }
+        }
+
+        // ========== Cross-boundary Dependencies ==========
+
+        "application modules should not depend on other context's domains directly" {
+            contexts.forEach { contextA ->
+                Konsist
+                    .scopeFromDirectory("contexts/$contextA/application")
+                    .files
+                    .filter { it.path.contains("build.gradle.kts") }
+                    .assertFalse { buildFile ->
+                        contexts.filter { it != contextA }.any { contextB ->
+                            buildFile.text.contains("""implementation(project(":$contextB-domain"))""")
+                        }
+                    }
+            }
+        }
     })
