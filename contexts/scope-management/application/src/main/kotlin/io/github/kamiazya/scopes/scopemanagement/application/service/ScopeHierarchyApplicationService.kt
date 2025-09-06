@@ -12,7 +12,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 

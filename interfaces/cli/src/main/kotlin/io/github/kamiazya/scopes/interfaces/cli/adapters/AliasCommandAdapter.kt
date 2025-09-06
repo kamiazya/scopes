@@ -1,10 +1,8 @@
 package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand as ContractRemoveAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RenameAliasCommand as ContractRenameAliasCommand
@@ -16,7 +14,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonical
  * This adapter provides a focused interface for alias management operations,
  * bridging the CLI layer with the contract layer for alias-specific functionality.
  */
-class AliasCommandAdapter(private val scopeManagementPort: ScopeManagementPort) {
+class AliasCommandAdapter(private val scopeManagementCommandPort: ScopeManagementCommandPort) {
     /**
      * Adds a new alias to a scope
      */
@@ -25,15 +23,7 @@ class AliasCommandAdapter(private val scopeManagementPort: ScopeManagementPort) 
             scopeId = scopeId,
             aliasName = aliasName,
         )
-        return scopeManagementPort.addAlias(command)
-    }
-
-    /**
-     * Lists all aliases for a scope
-     */
-    suspend fun listAliases(scopeId: String): Either<ScopeContractError, AliasListResult> {
-        val query = ListAliasesQuery(scopeId = scopeId)
-        return scopeManagementPort.listAliases(query)
+        return scopeManagementCommandPort.addAlias(command)
     }
 
     /**
@@ -44,7 +34,7 @@ class AliasCommandAdapter(private val scopeManagementPort: ScopeManagementPort) 
             scopeId = scopeId,
             aliasName = aliasName,
         )
-        return scopeManagementPort.setCanonicalAlias(command)
+        return scopeManagementCommandPort.setCanonicalAlias(command)
     }
 
     /**
@@ -55,7 +45,7 @@ class AliasCommandAdapter(private val scopeManagementPort: ScopeManagementPort) 
             scopeId = scopeId,
             aliasName = aliasName,
         )
-        return scopeManagementPort.removeAlias(command)
+        return scopeManagementCommandPort.removeAlias(command)
     }
 
     /**
@@ -66,6 +56,6 @@ class AliasCommandAdapter(private val scopeManagementPort: ScopeManagementPort) 
             oldAliasName = oldAliasName,
             newAliasName = newAliasName,
         )
-        return scopeManagementPort.renameAlias(command)
+        return scopeManagementCommandPort.renameAlias(command)
     }
 }

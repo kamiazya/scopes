@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.entity
 import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -86,8 +87,13 @@ data class Scope(
      * Only allowed in Draft or Active status.
      */
     fun updateTitle(newTitle: String): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot update title in $status status"))
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "updateTitle",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         val validatedTitle = ScopeTitle.create(newTitle).bind()
         copy(title = validatedTitle, updatedAt = Clock.System.now())
@@ -99,8 +105,13 @@ data class Scope(
      * Only allowed in Draft or Active status.
      */
     fun updateDescription(newDescription: String?): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot update description in $status status"))
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "updateDescription",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         val validatedDescription = ScopeDescription.create(newDescription).bind()
         copy(description = validatedDescription, updatedAt = Clock.System.now())
@@ -112,8 +123,13 @@ data class Scope(
      * Only allowed in Draft or Active status.
      */
     fun moveToParent(newParentId: ScopeId?): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot move scope in $status status"))
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "moveScope",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }
         copy(parentId = newParentId, updatedAt = Clock.System.now())
     }
@@ -185,7 +201,12 @@ data class Scope(
      */
     fun transitionTo(newStatus: ScopeStatus): Either<ScopesError, Scope> = either {
         status.transitionTo(newStatus).mapLeft {
-            ScopesError.InvalidOperation(it.reason)
+            ScopesError.InvalidOperation(
+                operation = "updateStatus",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+            )
         }.bind()
         copy(status = newStatus, updatedAt = Clock.System.now())
     }

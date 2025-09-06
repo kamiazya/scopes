@@ -23,8 +23,8 @@ dependencies {
     implementation(project(":interfaces-cli"))
 
     // Bounded Contexts - scope-management
-    // TODO: Remove infrastructure dependency - currently needed for DI configuration
-    // This is a known architectural exception that needs to be addressed
+    // Infrastructure dependencies are required here for the Composition Root pattern.
+    // See docs/architecture/dependency-injection.md for details.
     implementation(project(":scope-management-domain"))
     implementation(project(":scope-management-application"))
     implementation(project(":scope-management-infrastructure"))

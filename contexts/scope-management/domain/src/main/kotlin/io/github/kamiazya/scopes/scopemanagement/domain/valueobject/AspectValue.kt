@@ -26,7 +26,7 @@ value class AspectValue private constructor(val value: String) {
          */
         fun create(value: String): Either<AspectValueError, AspectValue> = when {
             value.isBlank() -> AspectValueError.EmptyValue.left()
-            value.length > 1000 -> AspectValueError.TooLong(value, 1000).left()
+            value.length > 1000 -> AspectValueError.TooLong(value.length, 1000).left()
             else -> AspectValue(value).right()
         }
 

@@ -37,7 +37,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
         withContext(Dispatchers.IO) {
             try {
                 val preferences = aggregate.preferences
-                    ?: raise(UserPreferencesError.PreferencesNotInitialized())
+                    ?: raise(UserPreferencesError.PreferencesNotInitialized)
 
                 val config = UserPreferencesConfig(
                     version = UserPreferencesConfig.CURRENT_VERSION,
@@ -62,7 +62,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                     UserPreferencesError.InvalidPreferenceValue(
                         key = "save",
                         value = aggregate.id.value,
-                        reason = "Failed to write preferences: ${e.message}",
+                        validationError = UserPreferencesError.ValidationError.INVALID_FORMAT,
                     ),
                 )
             }
@@ -121,7 +121,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                     UserPreferencesError.InvalidPreferenceValue(
                         key = "load",
                         value = configFile.toString(),
-                        reason = "Failed to read preferences: ${e.message}",
+                        validationError = UserPreferencesError.ValidationError.INVALID_FORMAT,
                     ),
                 )
             }

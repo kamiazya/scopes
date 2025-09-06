@@ -4,9 +4,9 @@ import arrow.core.Either
 import arrow.core.left
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationStrategy
-import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationStrategy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 

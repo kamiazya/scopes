@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies
 
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationStrategy
-import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationStrategy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider
 import kotlin.random.Random
 
 /**

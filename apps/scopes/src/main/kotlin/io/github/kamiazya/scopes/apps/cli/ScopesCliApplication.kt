@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import io.github.kamiazya.scopes.apps.cli.di.cliAppModule
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap
+import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationLifecycleManager
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -25,25 +25,20 @@ class ScopesCliApplication : AutoCloseable {
         modules(cliAppModule)
     }
 
-    private var isInitialized = false
-
     /**
-     * Initialize aspect presets lazily.
-     * This will be called automatically when needed.
+     * Initialize application using the lifecycle manager.
+     * This will initialize all registered ApplicationBootstrapper components.
      */
-    suspend fun ensureInitialized() {
-        if (!isInitialized) {
-            val aspectPresetBootstrap = koinApp.koin.get<AspectPresetBootstrap>()
-            aspectPresetBootstrap.initialize().fold(
-                ifLeft = { error ->
-                    // Log error but don't fail application startup
-                    println("Warning: Failed to initialize aspect presets: $error")
-                },
-                ifRight = {
-                    // Success - presets initialized
-                    isInitialized = true
-                },
-            )
+    suspend fun initialize() {
+        val lifecycleManager = koinApp.koin.get<ApplicationLifecycleManager>()
+        val errors = lifecycleManager.initialize()
+
+        if (errors.isNotEmpty()) {
+            // Log initialization errors but don't fail application startup
+            errors.forEach { error ->
+                val critical = if (error.isCritical) " [CRITICAL]" else ""
+                println("Warning: Bootstrap error in ${error.component}$critical: ${error.message}")
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.mapper
 
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ContextViewDto
+import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 
 /**

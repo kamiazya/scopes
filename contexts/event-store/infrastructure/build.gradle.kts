@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-infrastructure"))
+    implementation(project(":platform-observability"))
 
     // SQLite for local persistence
     implementation(libs.sqlite.jdbc)
@@ -27,6 +28,9 @@ dependencies {
 
     // Date/Time
     implementation(libs.kotlinx.datetime)
+
+    // Reflection (for annotation processing)
+    implementation(kotlin("reflect"))
 
     // Dependency injection
     implementation(platform(libs.koin.bom))

@@ -1,16 +1,36 @@
 package io.github.kamiazya.scopes.userpreferences.domain.error
 
-sealed class UserPreferencesError(open val message: String) {
-    data class InvalidPreferenceValue(val key: String, val value: String, val reason: String) :
-        UserPreferencesError("Invalid value '$value' for preference '$key': $reason")
+sealed class UserPreferencesError {
+    data class InvalidPreferenceValue(val key: String, val value: String, val validationError: ValidationError) : UserPreferencesError()
 
-    data class PreferenceNotFound(val key: String) : UserPreferencesError("Preference with key '$key' not found")
+    data class PreferenceNotFound(val key: String) : UserPreferencesError()
 
-    data class InvalidHierarchySettings(val reason: String) : UserPreferencesError("Invalid hierarchy settings: $reason")
+    data class InvalidHierarchySettings(val settingType: HierarchySettingType) : UserPreferencesError()
 
-    data class InvalidHierarchyPreferences(val reason: String) : UserPreferencesError("Invalid hierarchy preferences: $reason")
+    data class InvalidHierarchyPreferences(val preferenceType: HierarchyPreferenceType) : UserPreferencesError()
 
-    data class PreferencesNotInitialized(override val message: String = "User preferences have not been initialized") : UserPreferencesError(message)
+    data object PreferencesNotInitialized : UserPreferencesError()
 
-    data class PreferencesAlreadyInitialized(override val message: String = "User preferences have already been initialized") : UserPreferencesError(message)
+    data object PreferencesAlreadyInitialized : UserPreferencesError()
+
+    enum class ValidationError {
+        INVALID_TYPE,
+        OUT_OF_RANGE,
+        INVALID_FORMAT,
+        UNSUPPORTED_VALUE,
+    }
+
+    enum class HierarchySettingType {
+        INVALID_DEPTH,
+        CIRCULAR_REFERENCE,
+        ORPHANED_NODE,
+        DUPLICATE_PATH,
+    }
+
+    enum class HierarchyPreferenceType {
+        INVALID_DEFAULT,
+        CONFLICTING_RULES,
+        MISSING_REQUIRED,
+        INVALID_INHERITANCE,
+    }
 }

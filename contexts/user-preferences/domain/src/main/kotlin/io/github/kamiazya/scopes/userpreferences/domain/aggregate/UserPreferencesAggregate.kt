@@ -75,7 +75,7 @@ data class UserPreferencesAggregate(
     }
 
     private fun ensureInitialized(): Either<UserPreferencesError, UserPreferences> =
-        preferences?.right() ?: UserPreferencesError.PreferencesNotInitialized().left()
+        preferences?.right() ?: UserPreferencesError.PreferencesNotInitialized.left()
 
     override fun applyEvent(event: UserPreferencesDomainEvent): UserPreferencesAggregate = when (event) {
         is UserPreferencesCreated -> copy(

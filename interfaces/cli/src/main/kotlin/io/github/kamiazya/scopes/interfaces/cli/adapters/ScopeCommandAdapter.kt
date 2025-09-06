@@ -1,41 +1,31 @@
 package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithAspectQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
 
 /**
- * Adapter for CLI commands to interact with Scope Management
+ * Adapter for CLI commands to interact with Scope Management write operations.
  *
- * This adapter acts as an interface layer between the CLI commands and the
- * Scope Management bounded context. It handles:
- * - Translating CLI parameters to contract commands/queries
- * - Coordinating between multiple contexts (future)
- * - Providing CLI-specific error handling and formatting hooks
+ * Following CQRS principles, this adapter handles only commands (write operations)
+ * that modify the state of the Scope Management bounded context.
  *
  * Key responsibilities:
- * - Adapts CLI input to contract port calls
- * - Manages cross-cutting concerns for CLI (logging, monitoring)
- * - Prepares for future multi-context coordination
+ * - Adapts CLI command input to contract command port calls
+ * - Coordinates write operations between multiple contexts (future)
+ * - Manages cross-cutting concerns for write operations (logging, monitoring)
+ * - Provides transaction boundaries for command execution
  */
 class ScopeCommandAdapter(
-    private val scopeManagementPort: ScopeManagementPort,
-    // Future: Add other context ports here
-    // private val workspaceManagementPort: WorkspaceManagementPort?,
-    // private val aiCollaborationPort: AiCollaborationPort?
+    private val scopeManagementCommandPort: ScopeManagementCommandPort,
+    // Future: Add other context command ports here
+    // private val workspaceManagementCommandPort: WorkspaceManagementCommandPort?,
+    // private val aiCollaborationCommandPort: AiCollaborationCommandPort?
 ) {
     /**
      * Creates a new scope with optional workspace initialization
@@ -55,7 +45,7 @@ class ScopeCommandAdapter(
             generateAlias = generateAlias,
             customAlias = customAlias,
         )
-        return scopeManagementPort.createScope(command).map { result ->
+        return scopeManagementCommandPort.createScope(command).map { result ->
             // Future: Step 2: Initialize workspace if configured
             // workspaceManagementPort?.initializeWorkspace(result.id)
 
@@ -69,23 +59,13 @@ class ScopeCommandAdapter(
     /**
      * Updates an existing scope
      */
-    suspend fun updateScope(id: String, title: String? = null, description: String? = null): Either<ScopeContractError, ScopeResult> {
+    suspend fun updateScope(id: String, title: String? = null, description: String? = null): Either<ScopeContractError, UpdateScopeResult> {
         val command = UpdateScopeCommand(
             id = id,
             title = title,
             description = description,
         )
-        return scopeManagementPort.updateScope(command).map { result ->
-            ScopeResult(
-                id = result.id,
-                title = result.title,
-                description = result.description,
-                parentId = result.parentId,
-                canonicalAlias = result.canonicalAlias,
-                createdAt = result.createdAt,
-                updatedAt = result.updatedAt,
-            )
-        }
+        return scopeManagementCommandPort.updateScope(command)
     }
 
     /**
@@ -96,75 +76,7 @@ class ScopeCommandAdapter(
         // workspaceManagementPort?.cleanupWorkspace(id)
 
         val command = DeleteScopeCommand(id = id)
-        return scopeManagementPort.deleteScope(command)
-    }
-
-    /**
-     * Retrieves a scope by ID
-     */
-    suspend fun getScopeById(id: String): Either<ScopeContractError, ScopeResult> {
-        val query = GetScopeQuery(id = id)
-        return scopeManagementPort.getScope(query).fold(
-            { error -> Either.Left(error) },
-            { result -> result?.let { Either.Right(it) } ?: Either.Left(ScopeContractError.BusinessError.NotFound(id)) },
-        )
-    }
-
-    /**
-     * Lists child scopes
-     */
-    suspend fun listChildren(parentId: String, offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> {
-        val query = GetChildrenQuery(parentId = parentId, offset = offset, limit = limit)
-        return scopeManagementPort.getChildren(query)
-    }
-
-    /**
-     * Lists root scopes
-     */
-    suspend fun listRootScopes(offset: Int, limit: Int): Either<ScopeContractError, ScopeListResult> =
-        scopeManagementPort.getRootScopes(GetRootScopesQuery(offset = offset, limit = limit))
-
-    /**
-     * Lists all aliases for a specific scope
-     */
-    suspend fun listAliases(scopeId: String): Either<ScopeContractError, AliasListResult> = scopeManagementPort.listAliases(ListAliasesQuery(scopeId = scopeId))
-
-    /**
-     * Lists scopes filtered by aspect
-     */
-    suspend fun listScopesWithAspect(
-        aspectKey: String,
-        aspectValue: String,
-        parentId: String? = null,
-        offset: Int = 0,
-        limit: Int = 20,
-    ): Either<ScopeContractError, List<ScopeResult>> {
-        val query = ListScopesWithAspectQuery(
-            aspectKey = aspectKey,
-            aspectValue = aspectValue,
-            parentId = parentId,
-            offset = offset,
-            limit = limit,
-        )
-        return scopeManagementPort.listScopesWithAspect(query)
-    }
-
-    /**
-     * Lists scopes filtered by advanced aspect query
-     */
-    suspend fun listScopesWithQuery(
-        aspectQuery: String,
-        parentId: String? = null,
-        offset: Int = 0,
-        limit: Int = 20,
-    ): Either<ScopeContractError, List<ScopeResult>> {
-        val query = ListScopesWithQueryQuery(
-            aspectQuery = aspectQuery,
-            parentId = parentId,
-            offset = offset,
-            limit = limit,
-        )
-        return scopeManagementPort.listScopesWithQuery(query)
+        return scopeManagementCommandPort.deleteScope(command)
     }
 
     /**
@@ -181,7 +93,7 @@ class ScopeCommandAdapter(
             description = description,
             parentId = null,
         )
-        return scopeManagementPort.createScope(command).map { result ->
+        return scopeManagementCommandPort.createScope(command).map { result ->
             // Future: Initialize project workspace
             // workspaceManagementPort?.createWorkspace(
             //     scopeId = result.id,

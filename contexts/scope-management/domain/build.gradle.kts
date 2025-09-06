@@ -8,6 +8,9 @@ dependencies {
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-domain-commons"))
 
+    // Event store (for EventTypeId annotation)
+    implementation(project(":event-store-domain"))
+
     // Core libraries
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)

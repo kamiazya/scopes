@@ -13,9 +13,12 @@ CREATE TABLE IF NOT EXISTS events (
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_events_aggregate_id_version ON events(aggregate_id, aggregate_version);
 CREATE INDEX IF NOT EXISTS idx_events_stored_at ON events(stored_at);
+CREATE INDEX IF NOT EXISTS idx_events_occurred_at ON events(occurred_at);
 -- sequence_number is PRIMARY KEY, already indexed
 -- Composite index for event_type + sequence_number queries (covers findEventsByType queries)
 CREATE INDEX IF NOT EXISTS idx_events_event_type_sequence_number ON events(event_type, sequence_number);
+-- Composite index for event_type + occurred_at queries
+CREATE INDEX IF NOT EXISTS idx_events_event_type_occurred_at ON events(event_type, occurred_at);
 
 -- Insert event (sequence_number is auto-generated)
 insertEvent:
@@ -66,11 +69,39 @@ WHERE event_type = ?
 ORDER BY sequence_number ASC
 LIMIT ?;
 
--- Find events by event type since timestamp
+-- Find events by event type since timestamp (by occurredAt)
 findEventsByTypeSince:
 SELECT *
 FROM events
 WHERE event_type = ?
-AND stored_at >= ?
+AND occurred_at >= ?
 ORDER BY sequence_number ASC
 LIMIT ?;
+
+-- Find events by time range (by occurredAt)
+findEventsByTimeRange:
+SELECT *
+FROM events
+WHERE occurred_at >= ?
+AND occurred_at < ?
+ORDER BY sequence_number ASC
+LIMIT ?;
+
+-- Find events by event type with pagination
+findEventsByTypeWithPagination:
+SELECT *
+FROM events
+WHERE event_type = ?
+ORDER BY sequence_number ASC
+LIMIT ?
+OFFSET ?;
+
+-- Find events by time range with pagination (by occurredAt)
+findEventsByTimeRangeWithPagination:
+SELECT *
+FROM events
+WHERE occurred_at >= ?
+AND occurred_at < ?
+ORDER BY sequence_number ASC
+LIMIT ?
+OFFSET ?;

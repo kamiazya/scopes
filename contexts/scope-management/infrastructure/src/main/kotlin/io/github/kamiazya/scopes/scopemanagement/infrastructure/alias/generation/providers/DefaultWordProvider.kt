@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers
 
-import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider
 
 /**
  * Default implementation of WordProvider with hardcoded word lists.

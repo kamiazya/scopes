@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextManagementE
 import io.github.kamiazya.scopes.scopemanagement.domain.error.EventIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyPolicyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
@@ -18,6 +19,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.UserPreferencesIntegrationError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ValidationError
 
 /**
  * Maps domain errors to user-friendly messages for CLI output.
@@ -90,7 +92,7 @@ object ErrorMessageMapper {
             is AggregateIdError.InvalidIdFormat -> "Invalid aggregate ID format '${error.attemptedId}', expected: ${error.expectedFormat}"
             is AggregateIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
             is AggregateIdError.EmptyValue -> "Empty value for field: ${error.field}"
-            is AggregateIdError.InvalidFormat -> "Invalid format for ${error.value}: ${error.message}"
+            is AggregateIdError.InvalidFormat -> "Invalid format for ${error.value}: ${error.formatError}"
         }
         is AggregateVersionError -> when (error) {
             is AggregateVersionError.NegativeVersion -> "Negative version not allowed: ${error.attemptedVersion}"
@@ -173,13 +175,13 @@ object ErrorMessageMapper {
         }
         is AspectKeyError -> when (error) {
             is AspectKeyError.EmptyKey -> "Aspect key cannot be empty"
-            is AspectKeyError.TooShort -> "Aspect key '${error.value}' is too short: minimum ${error.minLength} characters"
-            is AspectKeyError.TooLong -> "Aspect key '${error.value}' is too long: maximum ${error.maxLength} characters"
-            is AspectKeyError.InvalidFormat -> "Invalid aspect key format: ${error.value}"
+            is AspectKeyError.TooShort -> "Aspect key is too short: length ${error.actualLength}, minimum ${error.minLength} characters"
+            is AspectKeyError.TooLong -> "Aspect key is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
+            is AspectKeyError.InvalidFormat -> "Invalid aspect key format"
         }
         is AspectValueError -> when (error) {
             is AspectValueError.EmptyValue -> "Aspect value cannot be empty"
-            is AspectValueError.TooLong -> "Aspect value '${error.value}' is too long: maximum ${error.maxLength} characters"
+            is AspectValueError.TooLong -> "Aspect value is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
         }
         is HierarchyPolicyError -> when (error) {
             is HierarchyPolicyError.InvalidMaxDepth -> "Invalid maximum depth: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
@@ -205,12 +207,73 @@ object ErrorMessageMapper {
             is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"
             is UserPreferencesIntegrationError.PreferencesRequestTimeout -> "Preferences request timed out after ${error.timeout}"
         }
+        is QueryParseError -> when (error) {
+            is QueryParseError.EmptyQuery -> "Empty query"
+            is QueryParseError.UnexpectedCharacter -> "Unexpected character '${error.char}' at position ${error.position}"
+            is QueryParseError.UnterminatedString -> "Unterminated string at position ${error.position}"
+            is QueryParseError.UnexpectedToken -> "Unexpected token at position ${error.position}"
+            is QueryParseError.MissingClosingParen -> "Missing closing parenthesis at position ${error.position}"
+            is QueryParseError.ExpectedExpression -> "Expected expression at position ${error.position}"
+            is QueryParseError.ExpectedIdentifier -> "Expected identifier at position ${error.position}"
+            is QueryParseError.ExpectedOperator -> "Expected operator at position ${error.position}"
+            is QueryParseError.ExpectedValue -> "Expected value at position ${error.position}"
+        }
         is ContextManagementError -> "Context management error"
-        is ScopesError.InvalidOperation -> "Invalid operation: ${error.message}"
-        is ScopesError.AlreadyExists -> "Already exists: ${error.message}"
-        is ScopesError.NotFound -> "Not found: ${error.message}"
-        is ScopesError.SystemError -> "System error: ${error.message}"
-        is ScopesError.ValidationFailed -> "Validation failed: ${error.message}"
-        is ScopesError.Conflict -> "Conflict: ${error.message}"
+        is ScopesError.InvalidOperation -> "Invalid operation: ${error.operation} on ${error.entityType ?: "entity"}${error.entityId?.let {
+            " with id '$it'"
+        } ?: ""}${error.reason?.let { " (${it.name.lowercase().replace('_', ' ')})" } ?: ""}"
+        is ScopesError.AlreadyExists -> "${error.entityType} with ${error.identifierType} '${error.identifier}' already exists"
+        is ScopesError.NotFound -> when (error.identifierType) {
+            "alias" -> "Scope not found by alias: ${error.identifier}"
+            "id" -> "${error.entityType} with id '${error.identifier}' not found"
+            else -> "${error.entityType} '${error.identifier}' not found"
+        }
+        is ScopesError.SystemError -> "System error: ${error.errorType.name.lowercase().replace(
+            '_',
+            ' ',
+        )} in ${error.service ?: "unknown service"}${error.context?.get("operation")?.let {
+            " during $it"
+        } ?: ""}"
+        is ScopesError.ValidationFailed -> {
+            val constraintMessage = when (val constraint = error.constraint) {
+                is ScopesError.ValidationConstraintType.InvalidType ->
+                    "Expected ${constraint.expectedType} but got ${constraint.actualType}"
+                is ScopesError.ValidationConstraintType.NotInAllowedValues ->
+                    "Value must be one of: ${constraint.allowedValues.joinToString(", ")}"
+                is ScopesError.ValidationConstraintType.InvalidFormat ->
+                    "Invalid format. Expected: ${constraint.expectedFormat}"
+                is ScopesError.ValidationConstraintType.MissingRequired ->
+                    "Missing required fields: ${constraint.requiredFields.joinToString(", ")}"
+                is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
+                    "Multiple values not allowed for field '${constraint.field}'"
+                is ScopesError.ValidationConstraintType.InvalidValue ->
+                    constraint.reason
+            }
+            "Validation failed for '${error.field}': $constraintMessage"
+        }
+        is ScopesError.Conflict -> when (error.conflictType) {
+            ScopesError.Conflict.ConflictType.ALREADY_IN_USE ->
+                "${error.resourceType} '${error.resourceId}' is already in use"
+            ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
+                "${error.resourceType} '${error.resourceId}' has dependencies${error.details["usage_count"]?.let { " ($it usages)" } ?: ""}"
+            else -> "${error.conflictType} conflict for ${error.resourceType} '${error.resourceId}'"
+        }
+        is ScopesError.ConcurrencyError -> "Concurrent modification detected for ${error.aggregateType} '${error.aggregateId}'${error.expectedVersion?.let {
+            " (expected: $it, actual: ${error.actualVersion})"
+        } ?: ""}"
+        is ScopesError.RepositoryError -> {
+            val operation = error.operation.name.lowercase().replace('_', ' ')
+            "Repository error during $operation operation on ${error.entityType ?: "entity"}"
+        }
+        is ValidationError -> when (error) {
+            is ValidationError.InvalidNumericValue -> "Invalid numeric value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+            is ValidationError.InvalidBooleanValue -> "Invalid boolean value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+            is ValidationError.ValueNotInAllowedList ->
+                "Value '${error.value.value}' for aspect '${error.aspectKey.value}' is not in allowed list: " +
+                    error.allowedValues.joinToString { it.value }
+            is ValidationError.MultipleValuesNotAllowed -> "Multiple values not allowed for aspect '${error.aspectKey.value}'"
+            is ValidationError.RequiredAspectsMissing -> "Required aspects missing: ${error.missingKeys.joinToString { it.value }}"
+            is ValidationError.InvalidDurationValue -> "Invalid duration value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+        }
     }
 }

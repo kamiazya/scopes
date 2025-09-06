@@ -24,6 +24,8 @@ class LayerArchitectureTest :
         val contexts = listOf(
             "scope-management",
             "user-preferences",
+            "event-store",
+            "device-synchronization",
         )
 
         // ========== Apps Layer Tests ==========
@@ -192,6 +194,11 @@ class LayerArchitectureTest :
                         .filter { it.path.contains("src/main") }
                         .mapNotNull { it.packagee?.name }
                         .distinct()
+
+                    // Skip if there are no production packages (test-only modules)
+                    if (productionPackages.isEmpty()) {
+                        return@forEach
+                    }
 
                     val testPackages = Konsist
                         .scopeFromDirectory("contexts/$context/$layer")

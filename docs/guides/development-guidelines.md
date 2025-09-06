@@ -764,3 +764,1476 @@ Build Scans help diagnose:
 - Configuration cache issues
 
 Access your Build Scan URL from the console output to view detailed build insights.
+
+## DTO Naming and Placement Guidelines
+
+### DTO Naming Conventions
+
+The project uses distinct naming conventions for DTOs across different layers to maintain clear separation of concerns:
+
+#### Application Layer DTOs
+
+**Naming Convention**: Use `Dto` suffix
+- **Query Results**: `ScopeDto`, `AliasDto`, `ContextViewDto`
+- **Command Inputs**: `CreateScopeInput`, `UpdateScopeInput`
+- **Operation Results**: `CreateScopeResult`, `FilteredScopesResult`
+
+```kotlin
+// ✅ Application Layer DTO examples
+data class ScopeDto(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val parentId: String?,
+    val canonicalAlias: String?,
+    val customAliases: List<String> = emptyList(),
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val aspects: Map<String, List<String>> = emptyMap(),
+)
+
+data class CreateScopeResult(
+    val scope: ScopeDto,
+    val generatedAlias: String?
+)
+```
+
+#### Contract Layer DTOs
+
+**Naming Convention**: Use `Result` suffix for query results, `Command` suffix for commands
+
+- **Query Results**: `ScopeResult`, `AliasListResult`, `ScopeListResult`
+- **Commands**: `CreateScopeCommand`, `UpdateScopeCommand`, `AddAliasCommand`
+- **Queries**: `GetScopeQuery`, `ListAliasesQuery`
+
+```kotlin
+// ✅ Contract Layer DTO examples
+data class ScopeResult(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val parentId: String?,
+    val canonicalAlias: String,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val isArchived: Boolean = false,
+    val aspects: Map<String, List<String>> = emptyMap(),
+)
+
+data class CreateScopeCommand(
+    val title: String,
+    val description: String? = null,
+    val parentId: String? = null,
+    val generateAlias: Boolean = true,
+    val customAlias: String? = null,
+)
+```
+
+### DTO Placement Structure
+
+#### Application Layer Structure
+
+DTOs in the application layer should be organized by domain concept in subdirectories:
+
+```
+contexts/{context}/application/src/main/kotlin/.../application/dto/
+├── common/
+│   ├── DTO.kt                    # Base DTO marker interface
+│   └── PagedResult.kt            # Common pagination wrapper
+├── scope/
+│   ├── ScopeDto.kt              # Main scope data transfer object
+│   ├── CreateScopeResult.kt     # Scope creation response
+│   ├── FilteredScopesResult.kt  # Scope filtering response
+│   └── UpdateScopeInput.kt      # Scope update input
+├── alias/
+│   ├── AliasDto.kt              # Alias information
+│   ├── AliasListDto.kt          # Alias collection wrapper  
+│   └── AliasInfoDto.kt          # Detailed alias metadata
+├── context/
+│   └── ContextViewDto.kt        # Context view information
+└── aspect/
+    ├── AspectDefinitionDto.kt   # Aspect definition data
+    └── ValidateAspectValueRequest.kt # Aspect validation input
+```
+
+#### Contract Layer Structure  
+
+Contract DTOs should be organized by operation type:
+
+```
+contracts/{context}/src/main/kotlin/.../contracts/{context}/
+├── commands/
+│   ├── CreateScopeCommand.kt
+│   ├── UpdateScopeCommand.kt
+│   ├── AddAliasCommand.kt
+│   └── RemoveAliasCommand.kt
+├── queries/
+│   ├── GetScopeQuery.kt
+│   ├── ListScopesWithQueryQuery.kt
+│   └── GetChildrenQuery.kt
+├── results/
+│   ├── ScopeResult.kt
+│   ├── ScopeListResult.kt
+│   ├── AliasInfo.kt
+│   └── CreateScopeResult.kt
+└── errors/
+    └── ScopeContractError.kt
+```
+
+### DTO Design Principles
+
+#### 1. Layer-Appropriate Design
+
+**Application DTOs** should contain rich information for internal use:
+- Include all necessary fields for application logic
+- May contain computed/derived fields
+- Can include debug information in development
+- Use domain-friendly names
+
+**Contract DTOs** should be minimal and stable:
+- Only include fields required by external consumers  
+- Avoid breaking changes to existing fields
+- Use external-friendly naming conventions
+- Focus on API stability
+
+```kotlin
+// ✅ Application DTO - Rich internal representation
+data class ScopeDto(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val parentId: String?,
+    val canonicalAlias: String? = null,          // Optional for internal use
+    val customAliases: List<String> = emptyList(), // Rich alias information
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val aspects: Map<String, List<String>> = emptyMap() // Complex nested data
+)
+
+// ✅ Contract DTO - Minimal stable external representation  
+data class ScopeResult(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val parentId: String?,
+    val canonicalAlias: String,                  // Required for external consumers
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val isArchived: Boolean = false,             // Simple boolean flag
+    val aspects: Map<String, List<String>> = emptyMap()
+)
+```
+
+#### 2. Immutability and Data Classes
+
+- Always use `data class` for DTOs
+- All properties should be `val` (immutable)
+- Use default values where appropriate
+- Implement proper visibility modifiers (`public` for contracts, package-private for application)
+
+```kotlin
+// ✅ Proper DTO structure
+data class ScopeDto(
+    val id: String,
+    val title: String,
+    val description: String? = null,      // Default for optional fields
+    val customAliases: List<String> = emptyList(), // Default collections
+    val createdAt: Instant,
+    val updatedAt: Instant,
+) : DTO // Implement marker interface for application DTOs
+
+// ✅ Contract DTO with public visibility
+public data class ScopeResult(
+    public val id: String,
+    public val title: String, 
+    public val canonicalAlias: String,
+    public val createdAt: Instant,
+    public val updatedAt: Instant,
+)
+```
+
+#### 3. Primitive Types Only
+
+DTOs should contain only primitive types and collections to maintain layer separation:
+
+```kotlin
+// ✅ Good - primitive types only
+data class ScopeDto(
+    val id: String,                              // Not ScopeId
+    val title: String,                           // Not ScopeTitle  
+    val parentId: String?,                       // Not ScopeId?
+    val createdAt: Instant,                      // Instant is acceptable
+    val aspects: Map<String, List<String>>       // Collections of primitives
+)
+
+// ❌ Bad - domain types leak
+data class BadScopeDto(
+    val id: ScopeId,                             // Domain value object
+    val title: ScopeTitle,                       // Domain value object
+    val parent: Scope?                           // Domain entity
+)
+```
+
+### Mapping Between Layers
+
+#### Application to Contract Mapping
+
+Create dedicated mappers to translate between application and contract DTOs:
+
+```kotlin
+object ScopeContractMapper {
+    fun toScopeResult(scopeDto: ScopeDto): ScopeResult = ScopeResult(
+        id = scopeDto.id,
+        title = scopeDto.title,
+        description = scopeDto.description,
+        parentId = scopeDto.parentId,
+        canonicalAlias = scopeDto.canonicalAlias ?: "", // Handle optionals
+        createdAt = scopeDto.createdAt,
+        updatedAt = scopeDto.updatedAt,
+        isArchived = false, // Set contract-specific defaults
+        aspects = scopeDto.aspects
+    )
+    
+    fun fromCreateScopeCommand(command: CreateScopeCommand): CreateScopeInput =
+        CreateScopeInput(
+            title = command.title,
+            description = command.description,
+            parentId = command.parentId,
+            generateAlias = command.generateAlias,
+            customAlias = command.customAlias
+        )
+}
+```
+
+#### Domain to Application Mapping
+
+```kotlin
+object ScopeMapper {
+    fun toScopeDto(scope: Scope): ScopeDto = ScopeDto(
+        id = scope.id.value,                     // Extract primitive from value object
+        title = scope.title.value,               // Extract primitive from value object  
+        description = scope.description?.value,  // Handle optional value objects
+        parentId = scope.parentId?.value,        // Extract primitive from optional ID
+        canonicalAlias = scope.canonicalAlias?.value,
+        customAliases = scope.customAliases.map { it.value },
+        createdAt = scope.createdAt,
+        updatedAt = scope.updatedAt,
+        aspects = scope.aspects.mapValues { (_, values) -> 
+            values.map { it.toString() }        // Convert complex types to strings
+        }
+    )
+}
+```
+
+### Validation and Documentation
+
+#### DTO Documentation
+
+Document the purpose and usage context of each DTO:
+
+```kotlin
+/**
+ * Data Transfer Object for Scope entity.
+ * Contains only primitive types to maintain layer separation.
+ *
+ * Used internally within the application layer for:
+ * - Query result mapping from domain entities
+ * - Input validation before domain entity creation
+ * - Response formatting for use case handlers
+ *
+ * Includes both canonical and custom aliases to provide complete scope information
+ * without exposing internal ULID implementation details.
+ */
+data class ScopeDto(
+    /** Unique identifier as string representation of ScopeId ULID */
+    val id: String,
+    /** Human-readable scope title (validated in domain layer) */
+    val title: String,
+    /** Optional scope description */
+    val description: String?,
+    /** Parent scope ID if this is a child scope */
+    val parentId: String?,
+    /** System-generated canonical alias for this scope */
+    val canonicalAlias: String? = null,
+    /** User-defined custom aliases for this scope */
+    val customAliases: List<String> = emptyList(),
+    /** Timestamp when scope was created */
+    val createdAt: Instant,
+    /** Timestamp when scope was last updated */
+    val updatedAt: Instant,
+    /** Aspect values as string map for serialization compatibility */
+    val aspects: Map<String, List<String>> = emptyMap(),
+)
+```
+
+### Architecture Testing
+
+Add Konsist rules to enforce DTO naming conventions:
+
+```kotlin
+"application DTOs should use Dto suffix" {
+    Konsist
+        .scopeFromDirectory("contexts/*/application")
+        .classes()
+        .withPackage("..dto..")
+        .assert { 
+            it.name.endsWith("Dto") || 
+            it.name.endsWith("Result") || 
+            it.name.endsWith("Input") ||
+            it.name == "DTO"
+        }
+}
+
+"contract DTOs should use appropriate suffixes" {
+    Konsist
+        .scopeFromDirectory("contracts")
+        .classes()
+        .assert {
+            when {
+                it.resideInPackage("..commands..") -> it.name.endsWith("Command")
+                it.resideInPackage("..queries..") -> it.name.endsWith("Query")  
+                it.resideInPackage("..results..") -> it.name.endsWith("Result") || it.name.endsWith("Info")
+                else -> true
+            }
+        }
+}
+
+"DTOs should only contain primitive types" {
+    Konsist
+        .scopeFromDirectory("contexts/*/application", "contracts")
+        .classes()
+        .withNameEndingWith("Dto", "Result", "Command", "Query")
+        .properties()
+        .assert { property ->
+            val allowedTypes = setOf(
+                "String", "Int", "Long", "Boolean", "Double", "Float",
+                "Instant", "LocalDate", "LocalDateTime", "LocalTime",
+                "List", "Set", "Map", "Array"
+            )
+            property.type.sourceType in allowedTypes || 
+            property.type.isGeneric || // Allow generic collections
+            property.hasNullableType // Allow nullable primitives
+        }
+}
+```
+
+### Migration Strategy
+
+When updating DTO naming conventions:
+
+1. **Add new DTOs** with proper naming alongside existing ones
+2. **Update mappers** to support both old and new formats
+3. **Gradually migrate usage** from old to new DTOs
+4. **Deprecate old DTOs** with clear migration guidance
+5. **Remove deprecated DTOs** after grace period
+
+```kotlin
+// Phase 1: Add new DTO alongside existing
+@Deprecated("Use ScopeResult instead", ReplaceWith("ScopeResult"))
+data class ScopeDto(/* existing fields */)
+
+data class ScopeResult(/* new contract-appropriate fields */)
+
+// Phase 2: Update mappers to support both
+object ScopeMapper {
+    @Deprecated("Use toScopeResult instead")
+    fun toScopeDto(scope: Scope): ScopeDto = /* existing mapping */
+    
+    fun toScopeResult(scope: Scope): ScopeResult = /* new mapping */
+}
+```
+
+This approach ensures:
+- **Clear separation** between application and contract DTOs
+- **Consistent naming** conventions across the codebase  
+- **Maintainable structure** with domain-based organization
+- **Type safety** with primitive-only constraints
+- **Documentation** for proper usage and context
+- **Architecture enforcement** through automated testing
+
+## Error Mapping Boundaries
+
+### Error Mapping Architecture
+
+The Scopes project implements a multi-layer error mapping architecture that maintains clear separation between domain concerns, application logic, and contract requirements. Each layer has distinct error types and responsibilities for error handling.
+
+#### Layer-Specific Error Types
+
+```mermaid
+flowchart TD
+    Domain["Domain Errors<br/>• DomainError<br/>• ScopeInputError<br/>• ScopeAliasError<br/>• ContextError<br/>• PersistenceError"]
+    
+    App["Application Errors<br/>• ApplicationError<br/>• ScopeInputError<br/>• ScopeAliasError<br/>• ContextError<br/>• PersistenceError"]
+    
+    Contract["Contract Errors<br/>• ScopeContractError<br/>• InputError<br/>• BusinessError<br/>• SystemError"]
+    
+    Domain -->|Extension Functions| App
+    App -->|BaseErrorMapper| Contract
+    
+    classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+    classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
+    classDef contract fill:#fff3e0,stroke:#ff9800,stroke-width:3px
+    
+    class Domain domain
+    class App application
+    class Contract contract
+```
+
+### Mapping Boundary Principles
+
+#### 1. Fail-Fast Error Handling
+
+The system implements fail-fast error handling to prevent data corruption and ensure system reliability:
+
+```kotlin
+// ✅ Fail-fast implementation for unmapped errors
+fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
+    is DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+        AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
+            aliasName = this.aliasName,
+            scopeId = this.scopeId.toString(),
+        )
+    
+    // Fail fast for any unmapped DataInconsistencyError subtypes
+    is DomainScopeAliasError.DataInconsistencyError ->
+        error(
+            "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +
+                "Please add proper error mapping for this error type.",
+        )
+}
+```
+
+**Rationale for Fail-Fast Approach:**
+- **Data Integrity**: Using "unknown" fallbacks masks real problems
+- **Early Detection**: Issues are caught in development/testing phases  
+- **No Silent Failures**: Better to fail loudly than corrupt data silently
+- **Actionable Errors**: Error messages provide clear guidance for developers
+
+#### 2. Domain to Application Mapping
+
+Domain errors are mapped to application errors using extension functions that preserve semantic meaning:
+
+```kotlin
+// Domain → Application error mapping
+package io.github.kamiazya.scopes.scopemanagement.application.error
+
+/**
+ * Maps PersistenceError to ApplicationError.PersistenceError
+ */
+fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is DomainPersistenceError.StorageUnavailable ->
+        AppPersistenceError.StorageUnavailable(
+            operation = this.operation,
+            cause = this.cause?.toString(),
+        )
+    
+    is DomainPersistenceError.DataCorruption ->
+        AppPersistenceError.DataCorruption(
+            entityType = this.entityType,
+            entityId = this.entityId,
+            reason = this.reason,
+        )
+    
+    // ... other mappings
+}
+```
+
+**Key Principles:**
+- **Preserve Context**: Important error information is never lost
+- **Type Safety**: Exhaustive when expressions prevent missed cases
+- **Semantic Consistency**: Error categories remain consistent across layers
+- **String Conversion**: Complex types converted to strings at application boundary
+
+#### 3. Application to Contract Mapping  
+
+Application errors are mapped to contract errors using the `BaseErrorMapper` pattern:
+
+```kotlin
+// Application → Contract error mapping
+class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ApplicationError, ScopeContractError>(logger) {
+    override fun mapToContractError(domainError: ApplicationError): ScopeContractError = when (domainError) {
+        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        )
+        
+        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = domainError.minimumLength,
+                actualLength = domainError.attemptedValue.length,
+            ),
+        )
+        
+        else -> handleUnmappedError(
+            domainError,
+            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+        )
+    }
+}
+```
+
+**Key Features:**
+- **Logging Integration**: Unmapped errors are logged with full context
+- **Fallback Handling**: Graceful degradation with meaningful fallback errors
+- **Contract Stability**: External API maintains stability while internal errors evolve
+
+### Cross-Context Error Mapping
+
+For handling errors across bounded contexts, use the `CrossContextErrorMapper` interface:
+
+```kotlin
+// Cross-context error mapping example
+class EventStoreToScopeErrorMapper(logger: Logger) : 
+    BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
+    
+    override fun mapCrossContext(sourceError: EventStoreError): ScopesError = when (sourceError) {
+        is EventStoreError.ConnectionError -> PersistenceError.StorageUnavailable(
+            operation = "event-store-access",
+            cause = sourceError.cause?.message
+        )
+        
+        is EventStoreError.SerializationError -> PersistenceError.DataCorruption(
+            entityType = "event",
+            entityId = sourceError.eventId,
+            reason = "Event serialization failed: ${sourceError.details}"
+        )
+        
+        else -> handleUnmappedCrossContextError(
+            sourceError,
+            PersistenceError.StorageUnavailable(
+                operation = "cross-context-mapping",
+                cause = "Unmapped EventStore error: ${sourceError::class.simpleName}"
+            )
+        )
+    }
+}
+```
+
+### Error Boundary Implementation Patterns
+
+#### 1. Use Case Handler Pattern
+
+Error mapping typically occurs in use case handlers at transaction boundaries:
+
+```kotlin
+class CreateScopeHandler(
+    private val scopeRepository: ScopeRepository,
+    private val errorMapper: ApplicationErrorMapper
+) {
+    suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> {
+        return either {
+            // Domain operations that may fail
+            val scope = createScopeEntity(command).bind()
+            val savedScope = scopeRepository.save(scope)
+                .mapLeft { domainError -> domainError.toApplicationError() }
+                .bind()
+            
+            // Return success result  
+            CreateScopeResult(savedScope.toDto())
+        }.mapLeft { applicationError -> 
+            // Map to contract error at the boundary
+            errorMapper.mapToContractError(applicationError)
+        }
+    }
+}
+```
+
+#### 2. Infrastructure Adapter Pattern
+
+Infrastructure adapters map external system errors to domain errors:
+
+```kotlin
+class SqlDelightScopeRepository : ScopeRepository {
+    override suspend fun save(scope: Scope): Either<DomainPersistenceError, Scope> {
+        return try {
+            // Database operation
+            val result = database.scopeQueries.insertScope(/* ... */)
+            Either.Right(scope)
+        } catch (ex: SQLiteException) {
+            // Map infrastructure error to domain error
+            Either.Left(when (ex.errorCode) {
+                SQLITE_CONSTRAINT_UNIQUE -> DomainPersistenceError.ConcurrencyConflict(
+                    entityType = "Scope",
+                    entityId = scope.id.toString(),
+                    expectedVersion = "new",
+                    actualVersion = "existing"
+                )
+                else -> DomainPersistenceError.StorageUnavailable(
+                    operation = "save-scope",
+                    cause = ex
+                )
+            })
+        }
+    }
+}
+```
+
+### Error Mapping Testing
+
+#### 1. Specification Testing
+
+Test error mappings to ensure they preserve important information and fail appropriately:
+
+```kotlin
+class ErrorMappingSpecificationTest : DescribeSpec({
+    describe("Error mapping specifications") {
+        it("should preserve error context during mapping") {
+            val domainError = DomainScopeInputError.TitleError.TooShort(
+                occurredAt = Clock.System.now(),
+                attemptedValue = "ab",
+                minimumLength = 3
+            )
+            
+            val applicationError = domainError.toApplicationError() as AppScopeInputError.TitleTooShort
+            
+            applicationError.attemptedValue shouldBe "ab"
+            applicationError.minimumLength shouldBe 3
+        }
+        
+        it("should fail fast for unmapped error types") {
+            // Test that unmapped errors throw meaningful exceptions
+            // rather than returning fallback errors
+        }
+    }
+})
+```
+
+#### 2. Architecture Testing
+
+Use Konsist rules to enforce error mapping patterns:
+
+```kotlin
+"error mappers should extend BaseErrorMapper" {
+    Konsist
+        .scopeFromDirectory("contexts/*/infrastructure")
+        .classes()
+        .withNameEndingWith("ErrorMapper")
+        .assert { 
+            it.hasParent("BaseErrorMapper") || 
+            it.hasParent("BaseCrossContextErrorMapper")
+        }
+}
+
+"error mapping extensions should be in application layer" {
+    Konsist
+        .scopeFromDirectory("contexts/*/application")
+        .files()
+        .withNameEndingWith("ErrorMappingExtensions.kt")
+        .assert { it.resideInPackage("..error..") }
+}
+```
+
+### Best Practices
+
+#### 1. Error Information Preservation
+
+- **Never lose context**: Important error details must be preserved across mappings
+- **Convert complex types**: Domain value objects → strings at application boundary  
+- **Maintain error categories**: Validation errors remain validation errors across layers
+- **Include actionable information**: Error messages should guide resolution
+
+#### 2. Mapping Strategy Selection
+
+**Use Extension Functions when:**
+- Mapping domain → application errors
+- No additional context is required
+- Mappings are reusable across handlers
+
+**Use ErrorMapper Classes when:**
+- Mapping application → contract errors
+- Logging and fallback handling is needed
+- Cross-context error translation is required
+
+**Use Context-Specific Mapping when:**
+- Error requires additional context from the operation
+- Multiple domain errors map to the same application error
+- Business logic affects error interpretation
+
+#### 3. Evolution and Maintenance  
+
+**Adding New Error Types:**
+1. Add new error type to domain layer
+2. Compilation will fail at mapping points (fail-fast design)
+3. Add explicit mapping in extension functions/mappers
+4. Update tests to verify mapping behavior
+5. Never use catch-all fallbacks that mask new error types
+
+**Modifying Existing Mappings:**
+1. Ensure backward compatibility at contract boundaries
+2. Update tests to reflect new mapping behavior
+3. Consider deprecation strategy for contract changes
+4. Log mapping changes for observability
+
+### Error Mapping Checklist
+
+When implementing error mapping:
+
+- [ ] **Domain Errors**: Sealed class hierarchies with rich context
+- [ ] **Extension Functions**: Domain → Application mapping preserves context  
+- [ ] **Error Mappers**: Application → Contract mapping with fallback handling
+- [ ] **Fail-Fast**: Unmapped errors throw exceptions rather than fallback silently
+- [ ] **Testing**: Specification tests verify mapping correctness
+- [ ] **Logging**: Unmapped errors are logged with full context
+- [ ] **Documentation**: Error handling rationale is documented
+- [ ] **Architecture**: Konsist rules enforce mapping patterns
+
+This error mapping architecture ensures:
+- **Reliability**: Fail-fast prevents silent data corruption
+- **Maintainability**: Clear patterns for adding new error types
+- **Observability**: Comprehensive logging of error mapping decisions
+- **Type Safety**: Exhaustive pattern matching prevents missed cases
+- **Separation of Concerns**: Each layer handles its own error semantics
+
+## Contracts Slim Policy
+
+The contract layer serves as the public API boundary between bounded contexts and external consumers. To maintain stability, evolvability, and clear separation of concerns, contracts must remain **slim** - containing only essential structure without behavior.
+
+### Core Principles
+
+#### 1. Structure Only, No Behavior
+
+Contracts should contain only data structures and function signatures, never implementation logic:
+
+```kotlin
+// ✅ Correct: Pure data structure
+public data class CreateScopeCommand(
+    public val title: String,
+    public val description: String? = null,
+    public val parentId: String? = null,
+    public val generateAlias: Boolean = true,
+    public val customAlias: String? = null,
+)
+
+// ❌ Incorrect: Contains validation logic
+public data class CreateScopeCommand(
+    public val title: String,
+    public val description: String? = null,
+    public val parentId: String? = null,
+    public val generateAlias: Boolean = true,
+    public val customAlias: String? = null,
+) {
+    init {
+        require(title.isNotBlank()) { "Title cannot be blank" }
+        require(parentId?.matches(ULID_PATTERN) != false) { "Invalid parent ID format" }
+    }
+}
+```
+
+#### 2. Immutable Data Transfer Objects
+
+All contract DTOs must be immutable data classes with sensible defaults:
+
+```kotlin
+// ✅ Correct: Immutable with defaults
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    public val description: String?,
+    public val parentId: String?,
+    public val canonicalAlias: String,
+    public val createdAt: Instant,
+    public val updatedAt: Instant,
+    public val isArchived: Boolean = false,
+    public val aspects: Map<String, List<String>> = emptyMap(),
+)
+
+// ❌ Incorrect: Mutable properties
+public data class ScopeResult(
+    public var id: String,
+    public var title: String,
+    // ...
+)
+```
+
+#### 3. Rich Error Types Without Logic
+
+Error types should provide rich structure for clients while avoiding validation logic:
+
+```kotlin
+// ✅ Correct: Rich structure, no behavior
+public sealed interface ScopeContractError {
+    public sealed interface TitleValidationFailure {
+        public data object Empty : TitleValidationFailure
+        public data class TooShort(
+            public val minimumLength: Int, 
+            public val actualLength: Int
+        ) : TitleValidationFailure
+        public data class InvalidCharacters(
+            public val prohibitedCharacters: List<Char>
+        ) : TitleValidationFailure
+    }
+    
+    public sealed interface InputError : ScopeContractError {
+        public data class InvalidTitle(
+            public val title: String, 
+            public val validationFailure: TitleValidationFailure
+        ) : InputError
+    }
+}
+
+// ❌ Incorrect: Contains validation logic
+public data class TitleValidationFailure(val title: String) {
+    fun validate(): List<String> {
+        val errors = mutableListOf<String>()
+        if (title.isBlank()) errors.add("Title cannot be blank")
+        if (title.length < 3) errors.add("Title too short")
+        return errors
+    }
+}
+```
+
+### Contract Layer Organization
+
+#### Directory Structure
+
+Each contract module should follow a consistent organization:
+
+```
+contracts/
+├── scope-management/
+│   └── src/main/kotlin/../contracts/scopemanagement/
+│       ├── commands/           # Command DTOs
+│       ├── queries/            # Query DTOs  
+│       ├── results/            # Result DTOs
+│       ├── errors/             # Error types
+│       ├── *Port.kt           # Port interfaces
+│       └── *Contract.kt       # Grouped contracts (optional)
+├── device-synchronization/
+├── user-preferences/
+└── event-store/
+```
+
+#### Naming Conventions
+
+**Command DTOs**: End with `Command`
+```kotlin
+public data class CreateScopeCommand(...)
+public data class UpdateScopeCommand(...)
+public data class DeleteScopeCommand(...)
+```
+
+**Query DTOs**: End with `Query`  
+```kotlin
+public data class GetScopeQuery(...)
+public data class ListScopesQuery(...)
+public data class GetChildrenQuery(...)
+```
+
+**Result DTOs**: End with `Result`
+```kotlin
+public data class ScopeResult(...)
+public data class ScopeListResult(...)
+public data class CreateScopeResult(...)
+```
+
+**Error Types**: End with `ContractError`
+```kotlin
+public sealed interface ScopeContractError
+public sealed interface DeviceSynchronizationContractError
+```
+
+**Port Interfaces**: End with `Port`
+```kotlin
+public interface ScopeManagementCommandPort
+public interface ScopeManagementQueryPort
+```
+
+### Slim Policy Rules
+
+#### ✅ Allowed in Contracts
+
+1. **Data Classes**: Pure data transfer objects
+2. **Sealed Interfaces/Classes**: For error hierarchies and result types
+3. **Enums**: For well-defined value sets
+4. **Interface Definitions**: Port contracts with function signatures
+5. **Type Aliases**: For primitive type clarity
+6. **Default Parameters**: Sensible defaults for optional fields
+7. **Documentation**: Comprehensive KDoc for public APIs
+
+#### ❌ Prohibited in Contracts  
+
+1. **Validation Logic**: `require()`, `check()`, custom validation
+2. **Business Logic**: Any domain rules or calculations
+3. **Mutable State**: `var` properties, mutable collections
+4. **Implementation**: Function bodies (interfaces only)
+5. **External Dependencies**: Beyond kotlinx and Arrow basics
+6. **Database Annotations**: JPA, serialization frameworks
+7. **Platform-Specific Code**: Android, JVM-only dependencies
+8. **Constructor Logic**: `init` blocks with behavior
+9. **Extension Functions**: Business logic extensions
+10. **Companion Objects**: With behavior (constants are OK)
+
+### Error Design Patterns
+
+#### Hierarchical Error Structure
+
+```kotlin
+public sealed interface ContractError {
+    // Input validation errors
+    public sealed interface InputError : ContractError
+    
+    // Business rule violations  
+    public sealed interface BusinessError : ContractError
+    
+    // System/infrastructure issues
+    public sealed interface SystemError : ContractError
+}
+```
+
+#### Rich Error Information
+
+Provide structured data instead of plain strings:
+
+```kotlin
+// ✅ Correct: Structured error data
+public data class InvalidTitle(
+    public val title: String,
+    public val validationFailure: TitleValidationFailure
+) : InputError
+
+public sealed interface TitleValidationFailure {
+    public data class TooShort(
+        public val minimumLength: Int,
+        public val actualLength: Int
+    ) : TitleValidationFailure
+}
+
+// ❌ Incorrect: Plain string errors
+public data class ValidationError(
+    public val message: String
+) : InputError
+```
+
+### Port Interface Patterns
+
+#### CQRS Separation
+
+Separate command and query ports for clear responsibility:
+
+```kotlin
+// Command operations (write side)
+public interface ScopeManagementCommandPort {
+    public suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
+    public suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult>
+    public suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit>
+}
+
+// Query operations (read side)  
+public interface ScopeManagementQueryPort {
+    public suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
+    public suspend fun getRootScopes(query: GetRootScopesQuery): Either<ScopeContractError, ScopeListResult>
+}
+```
+
+#### Explicit Error Handling
+
+All port methods must return `Either<Error, Result>` for explicit error handling:
+
+```kotlin
+// ✅ Correct: Explicit error handling
+public suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
+
+// ❌ Incorrect: Exception-based error handling  
+public suspend fun getScope(query: GetScopeQuery): ScopeResult?
+```
+
+### Contract Evolution Strategy
+
+#### Backward Compatibility
+
+When evolving contracts:
+
+1. **Additive Changes**: Add optional fields with defaults
+2. **New Error Types**: Extend sealed hierarchies
+3. **New Methods**: Add to port interfaces
+4. **Deprecation**: Mark obsolete elements, provide migration path
+
+```kotlin
+// ✅ Correct: Backward compatible evolution
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    public val description: String?,
+    // New optional field with default
+    public val tags: List<String> = emptyList(),
+)
+
+// ❌ Incorrect: Breaking change
+public data class ScopeResult(
+    public val id: String,
+    public val title: String,
+    // Removed description field - breaking change!
+    public val tags: List<String>,
+)
+```
+
+#### Versioning Strategy
+
+For major breaking changes:
+1. Create new contract module version (e.g., `v2`)
+2. Maintain old version during transition period
+3. Provide clear migration documentation
+4. Remove old version after deprecation period
+
+### Architecture Testing
+
+Use Konsist rules to enforce slim policy:
+
+```kotlin
+"contracts should not contain business logic" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .classes()
+        .assertFalse { it.hasInitBlock() }
+}
+
+"contract data classes should be immutable" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .classes()
+        .withModifier(KoModifier.DATA)
+        .assertFalse { 
+            it.properties().any { prop -> prop.hasModifier(KoModifier.VAR) }
+        }
+}
+
+"contracts should not have validation logic" {
+    Konsist
+        .scopeFromDirectory("contracts/*/src/main")
+        .files
+        .assertFalse { file ->
+            file.text.contains("require(") || 
+            file.text.contains("check(") ||
+            file.text.contains("error(")
+        }
+}
+```
+
+### Benefits of Slim Contracts
+
+#### 1. **API Stability**
+- Contracts change only when business requirements change
+- No implementation details leak through API boundaries
+- Clear separation between what and how
+
+#### 2. **Client Simplicity** 
+- Consumers get only essential data structures
+- No accidental coupling to implementation details
+- Easy to mock and test client code
+
+#### 3. **Evolution Flexibility**
+- Internal implementation can evolve independently
+- Contract changes are explicit and intentional
+- Multiple implementations can satisfy same contract
+
+#### 4. **Clear Boundaries**
+- Enforces separation between contexts
+- Prevents business logic leakage across boundaries  
+- Makes dependencies explicit and minimal
+
+#### 5. **Multi-Platform Readiness**
+- Pure Kotlin data structures work across platforms
+- No JVM-specific dependencies in contracts
+- Easy to generate clients for other languages
+
+### Contract Slim Policy Checklist
+
+When creating or reviewing contracts:
+
+- [ ] **No Business Logic**: No validation, calculations, or domain rules
+- [ ] **Immutable DTOs**: All properties are `val`, collections are immutable
+- [ ] **Rich Error Types**: Structured error hierarchies with useful data
+- [ ] **Port Interfaces Only**: No implementation, only function signatures  
+- [ ] **Either Return Types**: Explicit error handling for all operations
+- [ ] **Consistent Naming**: Commands, Queries, Results, Errors follow conventions
+- [ ] **Backward Compatibility**: Changes are additive with defaults
+- [ ] **Minimal Dependencies**: Only kotlinx and Arrow basics
+- [ ] **Clear Documentation**: KDoc for all public APIs
+- [ ] **Architecture Tests**: Konsist rules enforce slim policy
+
+This slim policy ensures contracts remain stable, evolvable, and focused on their core purpose: defining the structure of data and operations between bounded contexts.
+
+## Platform Minimize Concrete Types
+
+The platform layer should provide abstractions rather than concrete implementations to support Clean Architecture principles and testability.
+
+### Core Principle
+
+**Domain layers should depend on abstractions, not concrete implementations**
+
+Direct dependencies on concrete types like `Clock.System.now()` or `ULID.generate()` violate the Dependency Inversion Principle and make testing difficult.
+
+### Time Provider Abstraction
+
+#### Interface Definition
+
+```kotlin
+// Platform Commons
+interface TimeProvider {
+    fun now(): Instant
+}
+```
+
+#### Production Implementation
+
+```kotlin  
+// Platform Infrastructure
+class SystemTimeProvider : TimeProvider {
+    override fun now(): Instant = Clock.System.now()
+}
+```
+
+#### Test Implementation
+
+```kotlin
+// Platform Domain Commons (for testing)
+class TestTimeProvider(private var currentTime: Instant = Instant.fromEpochMilliseconds(0)) : TimeProvider {
+    override fun now(): Instant = currentTime
+    
+    fun setTime(time: Instant) {
+        currentTime = time
+    }
+    
+    fun advanceBy(milliseconds: Long) {
+        currentTime = Instant.fromEpochMilliseconds(currentTime.toEpochMilliseconds() + milliseconds)
+    }
+}
+```
+
+### ULID Generator Abstraction
+
+#### Interface Definition
+
+```kotlin
+// Platform Commons
+interface ULIDGenerator {
+    fun generate(): ULID
+}
+```
+
+#### Production Implementation
+
+```kotlin
+// Platform Infrastructure  
+class SystemULIDGenerator : ULIDGenerator {
+    override fun generate(): ULID = ULID(KULID.random())
+}
+```
+
+#### Test Implementation
+
+```kotlin
+// Platform Domain Commons (for testing)
+class TestULIDGenerator(private val predefinedIds: Iterator<String>) : ULIDGenerator {
+    override fun generate(): ULID = ULID.fromString(predefinedIds.next())
+    
+    companion object {
+        fun withSequence(vararg ids: String): TestULIDGenerator = TestULIDGenerator(ids.iterator())
+        fun withPattern(pattern: String, count: Int): TestULIDGenerator = TestULIDGenerator(
+            (1..count).map { "${pattern}${it.toString().padStart(22, '0')}" }.iterator()
+        )
+    }
+}
+```
+
+### Migration Strategy
+
+#### 1. Backward Compatibility
+
+Keep deprecated concrete implementations during transition:
+
+```kotlin
+@JvmInline
+value class ULID(val value: String) {
+    companion object {
+        // Keep for backward compatibility
+        @Deprecated("Use ULIDGenerator interface instead for better testability", 
+                    ReplaceWith("ULIDGenerator.generate()"))
+        fun generate(): ULID = ULID(KULID.random())
+    }
+}
+```
+
+#### 2. Domain Layer Injection
+
+Inject abstractions into domain services:
+
+```kotlin
+// Before: Direct concrete dependency
+class ScopeAggregate {
+    fun createScope(): ScopeCreated {
+        return ScopeCreated(
+            scopeId = ScopeId.generate(), // Direct call to ULID.generate()
+            occurredAt = Clock.System.now() // Direct call to Clock
+        )
+    }
+}
+
+// After: Abstraction dependency
+class ScopeAggregate(
+    private val ulidGenerator: ULIDGenerator,
+    private val timeProvider: TimeProvider
+) {
+    fun createScope(): ScopeCreated {
+        return ScopeCreated(
+            scopeId = ScopeId(ulidGenerator.generate().value),
+            occurredAt = timeProvider.now()
+        )
+    }
+}
+```
+
+### Platform Layer Organization
+
+#### Commons Layer
+- **Purpose**: Common abstractions and interfaces
+- **Examples**: `TimeProvider`, `ULIDGenerator`, `ULID` value class
+- **Dependencies**: Minimal (kotlinx-datetime, basic types)
+
+#### Infrastructure Layer  
+- **Purpose**: Production implementations of platform abstractions
+- **Examples**: `SystemTimeProvider`, `SystemULIDGenerator`
+- **Dependencies**: External libraries (Clock, KULID)
+
+#### Domain Commons Layer
+- **Purpose**: Test implementations and domain-specific utilities
+- **Examples**: `TestTimeProvider`, `TestULIDGenerator`
+- **Dependencies**: Platform commons only
+
+### Benefits of Platform Abstraction
+
+#### 1. **Testability**
+- Deterministic testing with controlled time and IDs
+- No flaky tests due to timing issues
+- Predictable test data generation
+
+#### 2. **Clean Architecture Compliance**
+- Domain layer depends only on abstractions
+- Infrastructure provides concrete implementations
+- Clear separation of concerns
+
+#### 3. **Flexibility**
+- Easy to swap implementations
+- Support for different environments (dev, test, prod)
+- Future-proof for different ID generation strategies
+
+#### 4. **Performance Testing**
+- Benchmarking with controlled inputs
+- Consistent test execution times
+- Reliable performance regression detection
+
+### Architecture Validation
+
+Konsist rules enforce platform abstraction usage:
+
+```kotlin
+"domain layer should not use concrete time providers" {
+    domains.assertFalse { file ->
+        file.text.contains("Clock.System.now()")
+    }
+}
+
+"domain layer should not use concrete ID generators" {
+    domains.assertFalse { file ->
+        file.text.contains("ULID.generate()")
+    }
+}
+```
+
+This platform minimization strategy ensures domain layers remain pure and testable while providing the concrete implementations needed for production systems.
+
+## Suspend Either Guidelines
+
+### Principles
+
+Combine `suspend` functions with `Either` for robust asynchronous error handling in the application layer. This pattern provides non-blocking I/O operations with explicit error modeling.
+
+### Pattern Consistency
+
+**Application Layer Pattern:**
+```kotlin
+suspend fun processData(input: String): Either<ScopesError, Result> = either {
+    val validated = validateInput(input).bind()
+    val processed = processAsync(validated).bind()
+    Result(processed)
+}
+```
+
+**Repository Pattern:**
+```kotlin
+suspend fun findById(id: ScopeId): Either<ScopesError, Scope?> = either {
+    database.find(id.value)
+        .mapLeft { error -> 
+            ScopesError.RepositoryError(
+                repositoryName = "ScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                cause = error,
+            )
+        }
+        .bind()
+}
+```
+
+### Error Handling Strategies
+
+**1. Early Return with bind():**
+```kotlin
+suspend fun complexOperation(): Either<ScopesError, Unit> = either {
+    val step1 = performStep1().bind()
+    val step2 = performStep2(step1).bind()
+    val step3 = performStep3(step2).bind()
+}
+```
+
+**2. Error Mapping with mapLeft:**
+```kotlin
+suspend fun serviceOperation(): Either<ApplicationError, Result> = either {
+    domainService.process()
+        .mapLeft { domainError ->
+            domainError.toApplicationError()
+        }
+        .bind()
+}
+```
+
+**3. Conditional Logic with ensure/ensureNotNull:**
+```kotlin
+suspend fun validateAndProcess(id: String): Either<ScopesError, Unit> = either {
+    val entity = repository.findById(id).bind()
+    
+    ensureNotNull(entity) {
+        ScopesError.NotFound(
+            entityType = "Entity",
+            identifier = id,
+            identifierType = "id"
+        )
+    }
+    
+    ensure(entity.isValid()) {
+        ScopesError.ValidationFailed(
+            field = "entity",
+            value = id,
+            constraint = ScopesError.ValidationConstraintType.InvalidValue("Invalid entity state")
+        )
+    }
+}
+```
+
+**4. Exception Handling:**
+```kotlin
+suspend fun externalServiceCall(): Either<ScopesError, Data> = either {
+    try {
+        val result = externalService.call()
+        result
+    } catch (e: Exception) {
+        raise(ScopesError.SystemError(
+            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+            service = "external-service",
+            cause = e
+        ))
+    }
+}
+```
+
+### Retry Patterns
+
+**Retry with Loop:**
+```kotlin
+suspend fun generateUniqueAlias(maxRetries: Int = 10): Either<ScopesError, Alias> = either {
+    repeat(maxRetries) { attempt ->
+        val candidate = generateCandidate()
+        
+        when (val result = validateUniqueness(candidate)) {
+            is Either.Right -> return@either result.value
+            is Either.Left -> if (attempt == maxRetries - 1) {
+                raise(ScopeAliasError.AliasGenerationFailed(
+                    scopeId = scopeId,
+                    retryCount = maxRetries
+                ))
+            }
+        }
+    }
+}
+```
+
+### Testing Patterns
+
+**Test Success Case:**
+```kotlin
+@Test
+fun `should return success when operation completes`() = runTest {
+    val result = service.performOperation(validInput)
+    
+    result shouldBeRight { value ->
+        value.data shouldBe expectedData
+    }
+}
+```
+
+**Test Error Case:**
+```kotlin
+@Test
+fun `should return error when validation fails`() = runTest {
+    val result = service.performOperation(invalidInput)
+    
+    result shouldBeLeft { error ->
+        error shouldBeInstanceOf<ScopesError.ValidationFailed>()
+    }
+}
+```
+
+### Avoid Anti-patterns
+
+❌ **Don't mix blocking and non-blocking:**
+```kotlin
+// Wrong: mixing suspend with blocking operations
+suspend fun badPattern(): Either<Error, Result> = either {
+    val blocking = blockingCall() // Blocks the thread
+    val async = suspendCall().bind()
+    Result(blocking, async)
+}
+```
+
+❌ **Don't ignore errors:**
+```kotlin
+// Wrong: silently ignoring errors
+suspend fun ignoreErrors(): Result? {
+    return suspendOperation().fold(
+        { null }, // Error ignored
+        { it }
+    )
+}
+```
+
+❌ **Don't use exceptions for control flow:**
+```kotlin
+// Wrong: using exceptions instead of Either
+suspend fun controlFlowExceptions(): Result {
+    return try {
+        val result = suspendCall()
+        if (result.isInvalid()) throw InvalidException()
+        result
+    } catch (e: InvalidException) {
+        DefaultResult()
+    }
+}
+```
+
+### Benefits
+
+1. **Explicit Error Handling**: All error cases are visible in the type system
+2. **Composable**: Operations can be chained with `bind()`
+3. **Non-blocking**: Maintains coroutine efficiency
+4. **Railway-oriented**: Clear success/failure paths
+5. **Testable**: Both success and error cases are easy to test
+
+### Implementation Guidelines
+
+1. Use `either { }` block for suspend functions returning Either
+2. Use `bind()` for early return on error
+3. Use `mapLeft` for error type transformation
+4. Use `ensure`/`ensureNotNull` for validation
+5. Handle exceptions explicitly with try-catch
+6. Prefer domain-specific error types over generic exceptions

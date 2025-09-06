@@ -29,10 +29,11 @@ class NoDeprecatedCodeTest :
                 .assertFalse { it.hasAnnotationOf(Deprecated::class) }
         }
 
-        "no functions should be deprecated" {
+        "no functions should be deprecated except for platform migration" {
             Konsist
                 .scopeFromProduction()
                 .functions()
+                .filter { !it.resideInPackage("..platform.commons.id..") }
                 .assertFalse { it.hasAnnotationOf(Deprecated::class) }
         }
 

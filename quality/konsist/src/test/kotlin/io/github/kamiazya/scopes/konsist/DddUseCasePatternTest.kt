@@ -33,23 +33,21 @@ class DddUseCasePatternTest :
                     clazz.parents().any { parent -> parent.name == "DTO" }
                 }
                 .assertTrue { dto ->
-                    dto.hasParentWithName("DTO")
+                    dto.parents().any { it.name == "DTO" }
                 }
         }
 
-        "Commands and Queries should implement DTO marker interface" {
+        "Command and Query DTOs should be in appropriate packages" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter {
-                    it.hasParentWithName("Command") || it.hasParentWithName("Query")
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".command.dto") || pkg.contains(".query.dto")
                 }
-                .assertTrue { commandOrQuery ->
-                    // All commands and queries should inherit DTO either directly or through Command/Query interfaces
-                    // Since Command and Query now inherit from DTO, classes that implement them get DTO automatically
-                    commandOrQuery.hasParentWithName("DTO") ||
-                        commandOrQuery.hasParentWithName("Command") ||
-                        commandOrQuery.hasParentWithName("Query")
+                .assertTrue { dto ->
+                    // Command and Query DTOs should be data classes
+                    dto.hasDataModifier || dto.hasSealedModifier
                 }
         }
 
@@ -57,7 +55,7 @@ class DddUseCasePatternTest :
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .assertFalse { dto ->
                     // Check if any property uses domain types
                     dto.properties().any { property ->
@@ -176,7 +174,7 @@ class DddUseCasePatternTest :
                 .filter { it.name.contains("TransactionManager") }
                 .assertTrue { impl ->
                     // Infrastructure transaction managers should implement the port
-                    impl.hasParentWithName("TransactionManager")
+                    impl.parents().any { it.name == "TransactionManager" }
                 }
         }
 
@@ -378,11 +376,11 @@ class DddUseCasePatternTest :
                 }
         }
 
-        "Commands should follow [Action][Entity] naming convention" {
+        "Command DTOs should follow [Action][Entity] naming convention" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("Command") }
+                .filter { it.packagee?.name?.contains(".command.dto") == true }
                 .assertTrue { command ->
                     val name = command.name
                     // Commands should follow [Action][Entity] pattern
@@ -396,15 +394,20 @@ class DddUseCasePatternTest :
                 }
         }
 
-        "Queries should follow [Action][Entity]Query naming convention" {
+        "Query DTOs should follow appropriate naming convention" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("Query") }
+                .filter { it.packagee?.name?.contains(".query.dto") == true }
                 .assertTrue { query ->
                     val name = query.name
-                    // Queries should end with "Query"
-                    name.endsWith("Query") && name.length > "Query".length
+                    // Query DTOs should start with Get, List, Find, Search, etc.
+                    name.startsWith("Get") ||
+                        name.startsWith("List") ||
+                        name.startsWith("Find") ||
+                        name.startsWith("Search") ||
+                        name.startsWith("Filter") ||
+                        name.startsWith("Count")
                 }
         }
 
@@ -413,7 +416,7 @@ class DddUseCasePatternTest :
                 .scopeFromModule("application")
                 .classes()
                 .filter { it.packagee?.name?.endsWith(".dto") == true }
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .assertTrue { dto ->
                     val name = dto.name
                     // DTOs should end with Result, DTO, or be a specific DTO type
@@ -430,7 +433,7 @@ class DddUseCasePatternTest :
             val classesValid = Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .all { dto ->
                     // DTOs should be data classes or sealed classes
                     dto.hasDataModifier || dto.hasSealedModifier
@@ -440,7 +443,7 @@ class DddUseCasePatternTest :
             val objectsValid = Konsist
                 .scopeFromModule("application")
                 .objects()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .all { obj ->
                     // Objects are inherently immutable singletons
                     true
@@ -456,7 +459,7 @@ class DddUseCasePatternTest :
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .assertTrue { dto ->
                     // All properties should use val (not var)
                     dto.properties().all { property ->
@@ -469,7 +472,7 @@ class DddUseCasePatternTest :
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .assertFalse { dto ->
                     dto.properties().any { property ->
                         val typeText = property.type?.text ?: ""
@@ -491,7 +494,7 @@ class DddUseCasePatternTest :
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.hasParentWithName("DTO") }
+                .filter { it.parents().any { parent -> parent.name == "DTO" } }
                 .assertTrue { dto ->
                     // DTOs should not have any functions except:
                     // - toString, equals, hashCode (generated by data class)
@@ -529,28 +532,30 @@ class DddUseCasePatternTest :
                 }
         }
 
-        "Commands and Queries should be immutable data classes" {
+        "Command and Query DTOs should be immutable data classes" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter {
-                    it.hasParentWithName("Command") || it.hasParentWithName("Query")
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".command.dto") || pkg.contains(".query.dto")
                 }
-                .assertTrue { commandOrQuery ->
+                .assertTrue { dto ->
                     // Should be data classes or sealed classes
-                    commandOrQuery.hasDataModifier || commandOrQuery.hasSealedModifier
+                    dto.hasDataModifier || dto.hasSealedModifier
                 }
         }
 
-        "Commands and Queries should have immutable properties" {
+        "Command and Query DTOs should have immutable properties" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter {
-                    it.hasParentWithName("Command") || it.hasParentWithName("Query")
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".command.dto") || pkg.contains(".query.dto")
                 }
-                .assertTrue { commandOrQuery ->
-                    commandOrQuery.properties().all { property ->
+                .assertTrue { dto ->
+                    dto.properties().all { property ->
                         property.hasValModifier
                     }
                 }

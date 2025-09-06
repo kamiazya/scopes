@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import io.github.kamiazya.scopes.scopemanagement.domain.service.FilterEvaluationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter

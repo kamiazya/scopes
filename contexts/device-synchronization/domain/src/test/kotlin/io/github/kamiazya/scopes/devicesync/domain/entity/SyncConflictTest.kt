@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.devicesync.domain.entity
 
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictType
-import io.github.kamiazya.scopes.devicesync.domain.service.ResolutionAction
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -167,7 +167,7 @@ class SyncConflictTest :
             }
 
             describe("suggestResolution") {
-                it("should suggest KEPT_REMOTE when local happened before remote") {
+                it("should suggest ACCEPTED_REMOTE when local happened before remote") {
                     val localBefore = VectorClock.single(deviceA, 3)
                     val remoteAfter = VectorClock(mapOf("device-a" to 5L, "device-b" to 2L))
 
@@ -182,7 +182,7 @@ class SyncConflictTest :
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
                     )
 
-                    conflict.suggestResolution() shouldBe ResolutionAction.KEPT_REMOTE
+                    conflict.suggestResolution() shouldBe ResolutionAction.ACCEPTED_REMOTE
                 }
 
                 it("should suggest KEPT_LOCAL when remote happened before local") {
@@ -271,7 +271,7 @@ class SyncConflictTest :
                     )
 
                     shouldThrow<IllegalArgumentException> {
-                        conflict.resolve(ResolutionAction.KEPT_REMOTE)
+                        conflict.resolve(ResolutionAction.ACCEPTED_REMOTE)
                     }
                 }
             }

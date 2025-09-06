@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
@@ -22,6 +23,7 @@ sealed class ContextViewEvent : DomainEvent
 /**
  * Event fired when a new ContextView is created.
  */
+@EventTypeId("scope-management.context-view.created.v1")
 data class ContextViewCreated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -53,6 +55,7 @@ data class ContextViewCreated(
 /**
  * Event fired when a ContextView is updated.
  */
+@EventTypeId("scope-management.context-view.updated.v1")
 data class ContextViewUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -65,6 +68,7 @@ data class ContextViewUpdated(
 /**
  * Event fired when a ContextView's name is changed.
  */
+@EventTypeId("scope-management.context-view.name-changed.v1")
 data class ContextViewNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -78,6 +82,7 @@ data class ContextViewNameChanged(
 /**
  * Event fired when a ContextView's filter is updated.
  */
+@EventTypeId("scope-management.context-view.filter-updated.v1")
 data class ContextViewFilterUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -91,6 +96,7 @@ data class ContextViewFilterUpdated(
 /**
  * Event fired when a ContextView's description is updated.
  */
+@EventTypeId("scope-management.context-view.description-updated.v1")
 data class ContextViewDescriptionUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -104,6 +110,7 @@ data class ContextViewDescriptionUpdated(
 /**
  * Event fired when a ContextView is deleted.
  */
+@EventTypeId("scope-management.context-view.deleted.v1")
 data class ContextViewDeleted(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -132,6 +139,7 @@ data class ContextViewChanges(
  * Event fired when a ContextView is activated (becomes the active context).
  * This event is critical for audit logging of context switches.
  */
+@EventTypeId("scope-management.context-view.activated.v1")
 data class ContextViewActivated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -148,6 +156,7 @@ data class ContextViewActivated(
  * Event fired when the active context is cleared (no context is active).
  * This event is important for tracking when users work without an active filter.
  */
+@EventTypeId("scope-management.active-context.cleared.v1")
 data class ActiveContextCleared(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -162,6 +171,7 @@ data class ActiveContextCleared(
  * Event fired when scopes are filtered using a context view.
  * This provides audit trail for context usage without switching active context.
  */
+@EventTypeId("scope-management.context-view.applied.v1")
 data class ContextViewApplied(
     override val aggregateId: AggregateId,
     override val eventId: EventId,

@@ -82,7 +82,8 @@ class EventStoreArchitectureTest :
                             functionText.contains("event::class.qualifiedName") ||
                                 functionText.contains("event::class.simpleName") ||
                                 functionText.contains("event.typeName(") ||
-                                functionText.contains(".typeName(")
+                                functionText.contains(".typeName(") ||
+                                functionText.contains("getEventType(") // New helper method pattern
                             ) &&
                             // Should fail fast on missing event type
                             (
@@ -91,7 +92,8 @@ class EventStoreArchitectureTest :
                                     functionText.contains("?: error(") ||
                                     functionText.contains("?: require(") ||
                                     // Helper method should handle error cases
-                                    functionText.contains("typeName(")
+                                    functionText.contains("typeName(") ||
+                                    functionText.contains("getEventType(") // Helper handles errors internally
                                 )
                     }
             }

@@ -16,7 +16,14 @@ sealed class EventStoreDomainError {
     /**
      * Error when event ordering rules are violated.
      */
-    data class EventOrderingViolation(val aggregateId: AggregateId, val message: String) : EventStoreDomainError()
+    data class EventOrderingViolation(val aggregateId: AggregateId, val violationType: OrderingViolationType) : EventStoreDomainError()
+
+    enum class OrderingViolationType {
+        GAPS_IN_VERSION,
+        DUPLICATE_VERSION,
+        FUTURE_VERSION,
+        RETROACTIVE_EVENT,
+    }
 
     /**
      * Error when attempting to store a duplicate event.
@@ -26,7 +33,14 @@ sealed class EventStoreDomainError {
     /**
      * Error when event type is not recognized or invalid.
      */
-    data class InvalidEventType(val eventType: String, val message: String) : EventStoreDomainError()
+    data class InvalidEventType(val eventType: String, val reason: InvalidReason) : EventStoreDomainError()
+
+    enum class InvalidReason {
+        NOT_REGISTERED,
+        MALFORMED_TYPE_NAME,
+        MISSING_HANDLER,
+        DEPRECATED_TYPE,
+    }
 
     /**
      * Error when event cannot be applied to an aggregate.

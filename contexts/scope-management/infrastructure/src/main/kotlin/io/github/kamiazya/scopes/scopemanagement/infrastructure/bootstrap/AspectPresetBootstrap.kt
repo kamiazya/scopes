@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper
+import io.github.kamiazya.scopes.platform.application.lifecycle.BootstrapError
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -14,13 +16,30 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
  *
  * This class is responsible for creating the standard aspect definitions
  * (priority, status, type) on first application startup.
+ *
+ * Implements ApplicationBootstrapper to participate in the application
+ * lifecycle management system.
  */
-class AspectPresetBootstrap(private val aspectDefinitionRepository: AspectDefinitionRepository, private val logger: Logger) {
+class AspectPresetBootstrap(private val aspectDefinitionRepository: AspectDefinitionRepository, private val logger: Logger) : ApplicationBootstrapper {
+
+    override val name: String = "AspectPresetBootstrap"
+
+    override val priority: Int = 100 // Feature initialization priority
+
+    override suspend fun initialize(): Either<BootstrapError, Unit> = performInitialization().mapLeft { error ->
+        BootstrapError(
+            component = name,
+            message = "Failed to initialize aspect presets: $error",
+            cause = null,
+            isCritical = false, // Aspect presets are not critical for app functionality
+        )
+    }
+
     /**
-     * Initialize standard aspect presets if they don't already exist.
+     * Internal initialization logic.
      * This operation is idempotent - existing definitions will not be overwritten.
      */
-    suspend fun initialize(): Either<ScopesError, Unit> = either {
+    private suspend fun performInitialization(): Either<ScopesError, Unit> = either {
         logger.info("Initializing standard aspect presets")
 
         // Define standard presets

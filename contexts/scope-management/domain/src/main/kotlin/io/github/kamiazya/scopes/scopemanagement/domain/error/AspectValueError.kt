@@ -10,5 +10,5 @@ sealed class AspectValueError : ScopesError() {
     override val occurredAt: Instant = Clock.System.now()
 
     data object EmptyValue : AspectValueError()
-    data class TooLong(val value: String, val maxLength: Int) : AspectValueError()
+    data class TooLong(val actualLength: Int, val maxLength: Int) : AspectValueError()
 }

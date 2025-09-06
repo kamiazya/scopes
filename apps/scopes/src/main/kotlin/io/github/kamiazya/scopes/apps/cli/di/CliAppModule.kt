@@ -3,12 +3,16 @@ package io.github.kamiazya.scopes.apps.cli.di
 import io.github.kamiazya.scopes.apps.cli.di.devicesync.deviceSyncInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.eventstore.eventStoreInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
+import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
@@ -39,6 +43,7 @@ val cliAppModule = module {
         // Platform
         observabilityModule,
         databaseModule,
+        platformModule, // Lifecycle management
 
         // Bounded Contexts
         scopeManagementModule,
@@ -63,33 +68,43 @@ val cliAppModule = module {
     // CLI Adapters
     single {
         ScopeCommandAdapter(
-            scopeManagementPort = get(),
+            scopeManagementCommandPort = get(),
             // Future: Add other context ports here
         )
     }
     single {
         AliasCommandAdapter(
-            scopeManagementPort = get(),
+            scopeManagementCommandPort = get(),
+        )
+    }
+    single {
+        AliasQueryAdapter(
+            scopeManagementQueryPort = get(),
+        )
+    }
+    single {
+        io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter(
+            scopeManagementQueryPort = get(),
         )
     }
     single {
         AspectCommandAdapter(
-            defineAspectUseCase = get(),
-            getAspectDefinitionUseCase = get(),
-            updateAspectDefinitionUseCase = get(),
-            deleteAspectDefinitionUseCase = get(),
-            listAspectDefinitionsUseCase = get(),
-            validateAspectValueUseCase = get(),
+            aspectCommandPort = get(),
         )
     }
     single {
         ContextCommandAdapter(
-            createContextViewUseCase = get(),
-            listContextViewsUseCase = get(),
-            getContextViewUseCase = get(),
-            updateContextViewUseCase = get(),
-            deleteContextViewUseCase = get(),
-            activeContextService = get(),
+            contextViewCommandPort = get(),
+        )
+    }
+    single {
+        ContextQueryAdapter(
+            contextViewQueryPort = get(),
+        )
+    }
+    single {
+        AspectQueryAdapter(
+            aspectQueryPort = get(),
         )
     }
 

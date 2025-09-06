@@ -15,5 +15,13 @@ sealed class AggregateIdError : ScopesError() {
 
     data class EmptyValue(override val occurredAt: Instant, val field: String) : AggregateIdError()
 
-    data class InvalidFormat(override val occurredAt: Instant, val value: String, val message: String) : AggregateIdError()
+    data class InvalidFormat(override val occurredAt: Instant, val value: String, val formatError: FormatError) : AggregateIdError()
+
+    enum class FormatError {
+        INVALID_SCHEME,
+        MISSING_TYPE,
+        MISSING_ID,
+        MALFORMED_URI,
+        UNSUPPORTED_CHARACTERS,
+    }
 }

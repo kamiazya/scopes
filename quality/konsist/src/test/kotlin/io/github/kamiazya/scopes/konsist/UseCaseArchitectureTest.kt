@@ -56,43 +56,35 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "commands in command package should implement Command interface" {
+        "command DTOs should be in command.dto package" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.packagee?.name?.endsWith(".usecase.command") == true }
-                .filter { it.name != "Command" } // Exclude the Command interface itself
-                .filter { clazz ->
-                    // Include only top-level classes that directly implement Command
-                    // Exclude sealed class children (like Text, Numeric, Ordered in SaveAspectDefinition)
-                    clazz.parents().any { parent -> parent.name == "Command" }
-                }
-                .assertTrue { clazz ->
-                    // For sealed classes, check if the base class implements Command
-                    if (clazz.hasSealedModifier) {
-                        clazz.hasParentWithName("Command")
-                    } else {
-                        clazz.hasParentWithName("Command")
-                    }
+                .filter { it.packagee?.name?.contains(".command.dto") == true }
+                .assertTrue { dto ->
+                    // Command DTOs should be data classes
+                    dto.hasDataModifier || dto.hasSealedModifier
                 }
         }
 
-        "queries in query package should implement Query interface" {
+        "query DTOs should be in query.dto package" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.packagee?.name?.endsWith(".usecase.query") == true }
-                .filter { it.name != "Query" } // Exclude the Query interface itself
-                .assertTrue { it.hasParentWithName("Query") }
+                .filter { it.packagee?.name?.contains(".query.dto") == true }
+                .assertTrue { dto ->
+                    // Query DTOs should be data classes
+                    dto.hasDataModifier || dto.hasSealedModifier
+                }
         }
 
-        "UseCase interface should be functional interface" {
+        "CommandHandler and QueryHandler interfaces should be functional interfaces" {
             Konsist
                 .scopeFromModule("application")
                 .interfaces()
-                .filter { it.name == "UseCase" }
-                .assertTrue { useCase ->
-                    useCase.hasFunModifier
+                .filter { it.name == "CommandHandler" || it.name == "QueryHandler" }
+                .assertTrue { handler ->
+                    handler.hasFunModifier
                 }
         }
 
@@ -125,9 +117,12 @@ class UseCaseArchitectureTest :
                 .classes()
                 .filter { it.name.endsWith("Handler") }
                 .assertTrue { handler ->
-                    // Handlers should be in the .usecase.handler package
+                    // Handlers should be in the .handler.command or .handler.query package
                     val packageName = handler.packagee?.name ?: ""
-                    packageName.endsWith(".usecase.handler")
+                    packageName.contains(".handler.command") ||
+                        packageName.contains(".handler.query") ||
+                        packageName.contains(".query.handler") ||
+                        packageName.contains(".command.handler")
                 }
         }
 
@@ -135,7 +130,13 @@ class UseCaseArchitectureTest :
             Konsist
                 .scopeFromProduction("application") // Only production code, not test
                 .classes()
-                .filter { it.resideInPackage("..usecase.handler") }
+                .filter {
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".handler.command") ||
+                        pkg.contains(".handler.query") ||
+                        pkg.contains(".query.handler") ||
+                        pkg.contains(".command.handler")
+                }
                 .assertTrue { handler ->
                     // All classes in handler package should end with "Handler"
                     handler.name.endsWith("Handler")
@@ -146,16 +147,16 @@ class UseCaseArchitectureTest :
             Konsist
                 .scopeFromProduction("application") // Only production code, not test
                 .classes()
-                .filter { it.resideInPackage("..usecase.handler") }
+                .filter {
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".handler.command") ||
+                        pkg.contains(".handler.query") ||
+                        pkg.contains(".query.handler") ||
+                        pkg.contains(".command.handler")
+                }
                 .assertTrue { handler ->
-                    // Handlers should either have handle methods OR implement UseCase interface
-                    val hasHandleMethods = handler.functions().any { function ->
-                        function.name.startsWith("handle")
-                    }
-                    val implementsUseCase = handler.hasParentWithName("UseCase") ||
-                        handler.parents().any { it.name.startsWith("UseCase") }
-
-                    hasHandleMethods || implementsUseCase
+                    // Handlers should implement CommandHandler or QueryHandler interface
+                    handler.parents().any { it.name == "CommandHandler" } || handler.parents().any { it.name == "QueryHandler" }
                 }
         }
 
@@ -219,27 +220,24 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "UseCase interface should have generic parameters I, E, and T" {
+        "CommandHandler and QueryHandler interfaces should have generic parameters" {
             Konsist
                 .scopeFromModule("application")
                 .interfaces()
-                .filter { it.name == "UseCase" }
-                .assertTrue { useCase ->
-                    val typeParameters = useCase.typeParameters
-                    typeParameters.size == 3 &&
-                        typeParameters.any { it.name == "I" } &&
-                        typeParameters.any { it.name == "E" } &&
-                        typeParameters.any { it.name == "T" }
+                .filter { it.name == "CommandHandler" || it.name == "QueryHandler" }
+                .assertTrue { handler ->
+                    val typeParameters = handler.typeParameters
+                    typeParameters.size == 2 // C/Q and R (Command/Query and Result)
                 }
         }
 
-        "UseCase interface should have suspend operator invoke function" {
+        "CommandHandler and QueryHandler interfaces should have suspend operator invoke function" {
             Konsist
                 .scopeFromModule("application")
                 .interfaces()
-                .filter { it.name == "UseCase" }
-                .assertTrue { useCase ->
-                    useCase.functions().any { function ->
+                .filter { it.name == "CommandHandler" || it.name == "QueryHandler" }
+                .assertTrue { handler ->
+                    handler.functions().any { function ->
                         function.name == "invoke" &&
                             function.hasOperatorModifier &&
                             function.hasSuspendModifier
@@ -247,15 +245,15 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "UseCase interface should enforce Either return type at type level" {
+        "CommandHandler and QueryHandler interfaces should enforce Either return type" {
             Konsist
                 .scopeFromModule("application")
                 .interfaces()
-                .filter { it.name == "UseCase" }
-                .assertTrue { useCase ->
-                    useCase.functions().any { function ->
+                .filter { it.name == "CommandHandler" || it.name == "QueryHandler" }
+                .assertTrue { handler ->
+                    handler.functions().any { function ->
                         function.name == "invoke" &&
-                            function.returnType?.text?.startsWith("Either<E,") == true
+                            function.returnType?.text?.contains("Either<ScopesError,") == true
                     }
                 }
         }
@@ -285,51 +283,41 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "command and query classes should be data classes or sealed classes with data class children" {
+        "command and query DTOs should be data classes" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter {
-                    it.hasParentWithName("Command") || it.hasParentWithName("Query")
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".command.dto") || pkg.contains(".query.dto")
                 }
-                .assertTrue { commandOrQuery ->
-                    when {
-                        // Sealed classes are allowed as they provide type safety
-                        commandOrQuery.hasSealedModifier -> true
-                        // Regular classes should be data classes
-                        else -> commandOrQuery.hasDataModifier
-                    }
+                .assertTrue { dto ->
+                    dto.hasDataModifier || dto.hasSealedModifier
                 }
         }
 
-        "command and query properties should be immutable" {
+        "command and query DTO properties should be immutable" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter {
-                    it.hasParentWithName("Command") || it.hasParentWithName("Query")
+                    val pkg = it.packagee?.name ?: ""
+                    pkg.contains(".command.dto") || pkg.contains(".query.dto")
                 }
-                .assertTrue { commandOrQuery ->
-                    commandOrQuery.properties().all { property ->
+                .assertTrue { dto ->
+                    dto.properties().all { property ->
                         property.hasValModifier || !property.hasVarModifier
                     }
                 }
         }
 
-        "handler classes should have handle methods" {
+        "handler classes should implement CommandHandler or QueryHandler" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
                 .filter { it.name.endsWith("Handler") }
                 .assertTrue { handler ->
-                    // Handlers should either have handle methods OR implement UseCase interface
-                    val hasHandleMethods = handler.functions().any { function ->
-                        function.name.startsWith("handle")
-                    }
-                    val implementsUseCase = handler.hasParentWithName("UseCase") ||
-                        handler.parents().any { it.name.startsWith("UseCase") }
-
-                    hasHandleMethods || implementsUseCase
+                    handler.parents().any { it.name == "CommandHandler" } || handler.parents().any { it.name == "QueryHandler" }
                 }
         }
 
@@ -345,12 +333,13 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "UseCase error classes should be sealed and end with Error" {
+        "application error classes should be sealed and end with Error" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter { it.packagee?.name?.endsWith(".usecase.error") == true }
+                .filter { it.packagee?.name?.endsWith(".error") == true }
                 .filter { it.name.endsWith("Error") } // Only check classes that end with "Error" (top-level error classes)
+                .filter { !it.name.startsWith("Domain") } // Exclude domain error references
                 .forEach { errorClass ->
                     // Check if class is sealed
                     if (!errorClass.hasSealedModifier) {
@@ -359,25 +348,16 @@ class UseCaseArchitectureTest :
                 }
         }
 
-        "UseCase error classes should be in usecase.error package" {
+        "application errors should use domain ScopesError" {
             Konsist
                 .scopeFromModule("application")
                 .classes()
-                .filter {
-                    it.name.endsWith("Error") &&
-                        !it.name.startsWith("Application") &&
-                        // Only check error classes that are actually in usecase packages
-                        // or that should be UseCase-related error classes
-                        (
-                            it.packagee?.name?.contains(".usecase") == true ||
-                                it.name.contains("UseCase") ||
-                                it.name.contains("Command") ||
-                                it.name.contains("Query")
-                            )
-                }
-                .assertTrue { errorClass ->
-                    val packageName = errorClass.packagee?.name ?: ""
-                    packageName.endsWith(".usecase.error")
+                .filter { it.name.endsWith("Handler") }
+                .assertTrue { handler ->
+                    // Handlers should return Either<ScopesError, R>
+                    handler.functions().any { function ->
+                        function.returnType?.text?.contains("Either<ScopesError,") == true
+                    }
                 }
         }
     })

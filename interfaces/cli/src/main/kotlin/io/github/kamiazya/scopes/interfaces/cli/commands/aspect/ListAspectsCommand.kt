@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
@@ -25,7 +25,7 @@ class ListAspectsCommand :
         help = "List all aspects for a scope",
     ),
     KoinComponent {
-    private val scopeCommandAdapter: ScopeCommandAdapter by inject()
+    private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 
     private val scope by argument("scope", help = "The scope (alias) to list aspects for")
@@ -48,7 +48,7 @@ class ListAspectsCommand :
             )
 
             // Get scope information
-            scopeCommandAdapter.getScopeById(scopeId).fold(
+            scopeQueryAdapter.getScopeById(scopeId).fold(
                 { error ->
                     throw CliktError("Error getting scope: ${ContractErrorMessageMapper.getMessage(error)}")
                 },

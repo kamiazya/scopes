@@ -28,12 +28,12 @@ data class HierarchyPreferences private constructor(
             // Only validate that values are positive if provided
             if (maxDepth != null && maxDepth <= 0) {
                 return UserPreferencesError.InvalidHierarchyPreferences(
-                    "Maximum depth must be positive if specified",
+                    UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT,
                 ).left()
             }
             if (maxChildrenPerScope != null && maxChildrenPerScope <= 0) {
                 return UserPreferencesError.InvalidHierarchyPreferences(
-                    "Maximum children per scope must be positive if specified",
+                    UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT,
                 ).left()
             }
             return HierarchyPreferences(maxDepth, maxChildrenPerScope).right()

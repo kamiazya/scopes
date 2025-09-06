@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     alias(libs.plugins.sqldelight)
 }
 
@@ -11,6 +12,7 @@ dependencies {
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-infrastructure"))
+    implementation(project(":platform-observability"))
 
     // Database
     implementation(libs.sqlite.jdbc)
@@ -21,6 +23,9 @@ dependencies {
 
     // Functional programming
     implementation(libs.arrow.core)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
 
     // Date/Time
     implementation(libs.kotlinx.datetime)

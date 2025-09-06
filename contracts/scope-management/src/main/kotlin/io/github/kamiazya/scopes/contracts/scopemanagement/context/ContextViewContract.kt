@@ -55,18 +55,21 @@ public interface ContextViewContract {
 public data class ContextView(val key: String, val name: String, val filter: String, val description: String?, val createdAt: Instant, val updatedAt: Instant)
 
 /**
- * Request types for context view operations.
+ * Command types for context view write operations.
  */
-public data class CreateContextViewRequest(val key: String, val name: String, val filter: String, val description: String?)
+public data class CreateContextViewCommand(val key: String, val name: String, val filter: String, val description: String?)
 
-public object ListContextViewsRequest
+public data class UpdateContextViewCommand(val key: String, val name: String?, val filter: String?, val description: String?)
 
-public data class GetContextViewRequest(val key: String)
+public data class DeleteContextViewCommand(val key: String)
 
-public data class UpdateContextViewRequest(val key: String, val name: String?, val filter: String?, val description: String?)
+public data class SetActiveContextCommand(val key: String)
 
-public data class DeleteContextViewRequest(val key: String)
+/**
+ * Query types for context view read operations.
+ */
+public object ListContextViewsQuery
 
-public object GetActiveContextRequest
+public data class GetContextViewQuery(val key: String)
 
-public data class SetActiveContextRequest(val key: String)
+public object GetActiveContextQuery

@@ -21,9 +21,9 @@ value class AspectKey private constructor(val value: String) {
          */
         fun create(value: String): Either<AspectKeyError, AspectKey> = when {
             value.isBlank() -> AspectKeyError.EmptyKey.left()
-            value.length < MIN_LENGTH -> AspectKeyError.TooShort(value, MIN_LENGTH).left()
-            value.length > MAX_LENGTH -> AspectKeyError.TooLong(value, MAX_LENGTH).left()
-            !VALID_PATTERN.matches(value) -> AspectKeyError.InvalidFormat(value).left()
+            value.length < MIN_LENGTH -> AspectKeyError.TooShort(value.length, MIN_LENGTH).left()
+            value.length > MAX_LENGTH -> AspectKeyError.TooLong(value.length, MAX_LENGTH).left()
+            !VALID_PATTERN.matches(value) -> AspectKeyError.InvalidFormat.left()
             else -> AspectKey(value).right()
         }
     }
