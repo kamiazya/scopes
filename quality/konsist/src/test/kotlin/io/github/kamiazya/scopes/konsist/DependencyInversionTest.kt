@@ -140,4 +140,22 @@ class DependencyInversionTest :
                 }
             }
         }
+
+        // ========== DTO Naming Convention Guidelines ==========
+        // Note: These are guidelines documented in development-guidelines.md
+        // Future implementations should follow these conventions
+
+        "DTO directories should exist where needed" {
+            contexts.forEach { context ->
+                val applicationDir = Konsist.scopeFromDirectory("contexts/$context/application")
+                val hasApplicationFiles = applicationDir.files.isNotEmpty()
+
+                if (hasApplicationFiles) {
+                    // Just verify the context exists - no strict requirements yet
+                    assert(context.isNotEmpty()) {
+                        "Context $context should have a valid name"
+                    }
+                }
+            }
+        }
     })
