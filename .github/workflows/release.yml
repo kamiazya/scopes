@@ -702,11 +702,14 @@ jobs:
           
           # Create or update release without destructive deletion
           if ! gh release view "${{ steps.version.outputs.tag_version }}" > /dev/null 2>&1; then
+            # Create new release with auto-generated notes
             gh release create "${{ steps.version.outputs.tag_version }}" \
               --title "Release ${{ steps.version.outputs.tag_version }}" \
               --notes "$NOTES" \
               --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
           else
+            # Release exists, update it with auto-generated notes
+            echo "Release already exists, updating with auto-generated notes"
             gh release edit "${{ steps.version.outputs.tag_version }}" --notes "$NOTES"
           fi
 
