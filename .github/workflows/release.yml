@@ -437,35 +437,9 @@ jobs:
           name: "${{ needs.provenance.outputs.provenance-name }}"
           path: provenance
 
-      - name: Download slsa-verifier binaries
-        run: |
-          mkdir -p offline-tools
-          cd offline-tools
-          
-          # Download slsa-verifier for all platforms
-          SLSA_VERIFIER_VERSION="v2.6.0"
-          
-          # Linux x64
-          curl -sSL -o slsa-verifier-linux-x64 "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-linux-amd64"
-          chmod +x slsa-verifier-linux-x64
-          
-          # Linux ARM64
-          curl -sSL -o slsa-verifier-linux-arm64 "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-linux-arm64"
-          chmod +x slsa-verifier-linux-arm64
-          
-          # macOS x64
-          curl -sSL -o slsa-verifier-darwin-x64 "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-darwin-amd64"
-          chmod +x slsa-verifier-darwin-x64
-          
-          # macOS ARM64 (Apple Silicon)
-          curl -sSL -o slsa-verifier-darwin-arm64 "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-darwin-arm64"
-          chmod +x slsa-verifier-darwin-arm64
-          
-          # Windows x64
-          curl -sSL -o slsa-verifier-win32-x64.exe "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-windows-amd64.exe"
-          
-          # Windows ARM64
-          curl -sSL -o slsa-verifier-win32-arm64.exe "https://github.com/slsa-framework/slsa-verifier/releases/download/${SLSA_VERIFIER_VERSION}/slsa-verifier-windows-arm64.exe"
+      # Note: slsa-verifier is not included in the package
+      # Users should install it separately if SLSA verification is needed
+      # This keeps the package size reasonable and respects the independence of the slsa-verifier project
 
       - name: Create offline package structure
         run: |
@@ -474,7 +448,7 @@ jobs:
           cd "${PACKAGE_NAME}"
           
           # Create directory structure
-          mkdir -p binaries verification sbom docs tools
+          mkdir -p binaries verification sbom docs
           
           # Copy binaries
           find ../artifacts -name "scopes-*" -type f -not -name "*.txt" -exec cp {} binaries/ \;
@@ -490,9 +464,6 @@ jobs:
           # Copy SBOM files
           find ../sbom-artifacts -name "sbom-*.json" -type f -exec cp {} sbom/ \;
           find ../sbom-artifacts -name "sbom-*.xml" -type f -exec cp {} sbom/ \;
-          
-          # Copy offline tools
-          cp -r ../offline-tools/* tools/
           
           # Copy installation scripts and documentation
           cp ../install/offline/README.md .

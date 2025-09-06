@@ -40,17 +40,10 @@ scopes-v1.0.0-offline-{platform}-{arch}.tar.gz
 │   ├── sbom-win32-x64.xml
 │   ├── sbom-win32-arm64.json
 │   └── sbom-win32-arm64.xml
-├── docs/
-│   ├── SECURITY.md                      # Security verification guide
-│   ├── INSTALL.md                       # Detailed installation guide
-│   └── ENTERPRISE.md                    # Enterprise deployment guide
-└── tools/
-    ├── slsa-verifier-linux-x64          # Offline SLSA verifier binaries
-    ├── slsa-verifier-linux-arm64
-    ├── slsa-verifier-darwin-x64
-    ├── slsa-verifier-darwin-arm64
-    ├── slsa-verifier-win32-x64.exe
-    └── slsa-verifier-win32-arm64.exe
+└── docs/
+    ├── SECURITY.md                      # Security verification guide
+    ├── INSTALL.md                       # Detailed installation guide
+    └── ENTERPRISE.md                    # Enterprise deployment guide
 ```
 
 ## 🚀 Quick Installation
@@ -83,13 +76,27 @@ cd scopes-v1.0.0-offline
 
 ## 🔒 Security Verification
 
-The offline installation automatically performs the same security verification as online installation:
+The offline installation performs security verification:
 
 - **SHA256 Hash Verification**: Ensures binary integrity
-- **SLSA Level 3 Provenance**: Verifies supply chain security
+- **SLSA Level 3 Provenance**: Optional verification if `slsa-verifier` is installed
 - **SBOM Validation**: Software Bill of Materials for compliance
 
-All verification is performed using tools included in the package - no network access required.
+### SLSA Verification (Optional)
+
+For SLSA provenance verification, you need to install `slsa-verifier` separately:
+
+```bash
+# Install slsa-verifier (requires Go)
+go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
+
+# Or download pre-built binary
+wget https://github.com/slsa-framework/slsa-verifier/releases/latest/download/slsa-verifier-linux-amd64
+chmod +x slsa-verifier-linux-amd64
+sudo mv slsa-verifier-linux-amd64 /usr/local/bin/slsa-verifier
+```
+
+The installer will automatically use `slsa-verifier` if available in your PATH.
 
 ## ⚙️ Installation Options
 
