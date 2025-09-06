@@ -69,13 +69,7 @@ val scopeManagementInfrastructureModule = module {
     // Active Context Repository
     single<ActiveContextRepository> {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
-        val repo = ActiveContextRepositoryImpl(database)
-        // Initialize the active context table
-        repo.also {
-            kotlinx.coroutines.runBlocking {
-                it.initialize()
-            }
-        }
+        ActiveContextRepositoryImpl(database)
     }
 
     // TransactionManager for this bounded context

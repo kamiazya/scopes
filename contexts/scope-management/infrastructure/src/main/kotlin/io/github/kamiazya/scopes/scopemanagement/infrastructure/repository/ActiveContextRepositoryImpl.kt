@@ -15,6 +15,8 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewI
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -24,6 +26,10 @@ import kotlinx.datetime.Instant
  * Manages the persistence of the currently active context view.
  */
 class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase) : ActiveContextRepository {
+
+    @Volatile
+    private var initialized = false
+    private val initMutex = Mutex()
 
     /**
      * Initialize the active context table on first use.
@@ -46,8 +52,28 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
         }
     }
 
+    /**
+     * Ensures the active context table is initialized before any operation.
+     */
+    private suspend fun ensureInitialized(): Either<ScopesError, Unit> = withContext(Dispatchers.IO) {
+        if (initialized) {
+            Either.Right(Unit)
+        } else {
+            initMutex.withLock {
+                if (initialized) {
+                    Either.Right(Unit)
+                } else {
+                    initialize().onRight {
+                        initialized = true
+                    }
+                }
+            }
+        }
+    }
+
     override suspend fun getActiveContext(): Either<ScopesError, ContextView?> = withContext(Dispatchers.IO) {
         either {
+            ensureInitialized().bind()
             try {
                 val result = database.activeContextQueries.getActiveContext().executeAsOneOrNull()
                 result?.let { activeContextToContextView(it) }
@@ -65,6 +91,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
 
     override suspend fun setActiveContext(contextView: ContextView): Either<ScopesError, Unit> = withContext(Dispatchers.IO) {
         either {
+            ensureInitialized().bind()
             try {
                 database.activeContextQueries.setActiveContext(
                     context_view_id = contextView.id.value,
@@ -84,6 +111,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
 
     override suspend fun clearActiveContext(): Either<ScopesError, Unit> = withContext(Dispatchers.IO) {
         either {
+            ensureInitialized().bind()
             try {
                 database.activeContextQueries.clearActiveContext(
                     updated_at = Clock.System.now().toEpochMilliseconds(),
@@ -102,6 +130,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
 
     override suspend fun hasActiveContext(): Either<ScopesError, Boolean> = withContext(Dispatchers.IO) {
         either {
+            ensureInitialized().bind()
             try {
                 database.activeContextQueries.hasActiveContext().executeAsOne()
             } catch (e: Exception) {
