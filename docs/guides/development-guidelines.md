@@ -1150,3 +1150,337 @@ This approach ensures:
 - **Type safety** with primitive-only constraints
 - **Documentation** for proper usage and context
 - **Architecture enforcement** through automated testing
+
+## Error Mapping Boundaries
+
+### Error Mapping Architecture
+
+The Scopes project implements a multi-layer error mapping architecture that maintains clear separation between domain concerns, application logic, and contract requirements. Each layer has distinct error types and responsibilities for error handling.
+
+#### Layer-Specific Error Types
+
+```mermaid
+flowchart TD
+    Domain["Domain Errors<br/>• DomainError<br/>• ScopeInputError<br/>• ScopeAliasError<br/>• ContextError<br/>• PersistenceError"]
+    
+    App["Application Errors<br/>• ApplicationError<br/>• ScopeInputError<br/>• ScopeAliasError<br/>• ContextError<br/>• PersistenceError"]
+    
+    Contract["Contract Errors<br/>• ScopeContractError<br/>• InputError<br/>• BusinessError<br/>• SystemError"]
+    
+    Domain -->|Extension Functions| App
+    App -->|BaseErrorMapper| Contract
+    
+    classDef domain fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+    classDef application fill:#e3f2fd,stroke:#2196f3,stroke-width:3px
+    classDef contract fill:#fff3e0,stroke:#ff9800,stroke-width:3px
+    
+    class Domain domain
+    class App application
+    class Contract contract
+```
+
+### Mapping Boundary Principles
+
+#### 1. Fail-Fast Error Handling
+
+The system implements fail-fast error handling to prevent data corruption and ensure system reliability:
+
+```kotlin
+// ✅ Fail-fast implementation for unmapped errors
+fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
+    is DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+        AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
+            aliasName = this.aliasName,
+            scopeId = this.scopeId.toString(),
+        )
+    
+    // Fail fast for any unmapped DataInconsistencyError subtypes
+    is DomainScopeAliasError.DataInconsistencyError ->
+        error(
+            "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +
+                "Please add proper error mapping for this error type.",
+        )
+}
+```
+
+**Rationale for Fail-Fast Approach:**
+- **Data Integrity**: Using "unknown" fallbacks masks real problems
+- **Early Detection**: Issues are caught in development/testing phases  
+- **No Silent Failures**: Better to fail loudly than corrupt data silently
+- **Actionable Errors**: Error messages provide clear guidance for developers
+
+#### 2. Domain to Application Mapping
+
+Domain errors are mapped to application errors using extension functions that preserve semantic meaning:
+
+```kotlin
+// Domain → Application error mapping
+package io.github.kamiazya.scopes.scopemanagement.application.error
+
+/**
+ * Maps PersistenceError to ApplicationError.PersistenceError
+ */
+fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) {
+    is DomainPersistenceError.StorageUnavailable ->
+        AppPersistenceError.StorageUnavailable(
+            operation = this.operation,
+            cause = this.cause?.toString(),
+        )
+    
+    is DomainPersistenceError.DataCorruption ->
+        AppPersistenceError.DataCorruption(
+            entityType = this.entityType,
+            entityId = this.entityId,
+            reason = this.reason,
+        )
+    
+    // ... other mappings
+}
+```
+
+**Key Principles:**
+- **Preserve Context**: Important error information is never lost
+- **Type Safety**: Exhaustive when expressions prevent missed cases
+- **Semantic Consistency**: Error categories remain consistent across layers
+- **String Conversion**: Complex types converted to strings at application boundary
+
+#### 3. Application to Contract Mapping  
+
+Application errors are mapped to contract errors using the `BaseErrorMapper` pattern:
+
+```kotlin
+// Application → Contract error mapping
+class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ApplicationError, ScopeContractError>(logger) {
+    override fun mapToContractError(domainError: ApplicationError): ScopeContractError = when (domainError) {
+        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        )
+        
+        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = domainError.minimumLength,
+                actualLength = domainError.attemptedValue.length,
+            ),
+        )
+        
+        else -> handleUnmappedError(
+            domainError,
+            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+        )
+    }
+}
+```
+
+**Key Features:**
+- **Logging Integration**: Unmapped errors are logged with full context
+- **Fallback Handling**: Graceful degradation with meaningful fallback errors
+- **Contract Stability**: External API maintains stability while internal errors evolve
+
+### Cross-Context Error Mapping
+
+For handling errors across bounded contexts, use the `CrossContextErrorMapper` interface:
+
+```kotlin
+// Cross-context error mapping example
+class EventStoreToScopeErrorMapper(logger: Logger) : 
+    BaseCrossContextErrorMapper<EventStoreError, ScopesError>(logger) {
+    
+    override fun mapCrossContext(sourceError: EventStoreError): ScopesError = when (sourceError) {
+        is EventStoreError.ConnectionError -> PersistenceError.StorageUnavailable(
+            operation = "event-store-access",
+            cause = sourceError.cause?.message
+        )
+        
+        is EventStoreError.SerializationError -> PersistenceError.DataCorruption(
+            entityType = "event",
+            entityId = sourceError.eventId,
+            reason = "Event serialization failed: ${sourceError.details}"
+        )
+        
+        else -> handleUnmappedCrossContextError(
+            sourceError,
+            PersistenceError.StorageUnavailable(
+                operation = "cross-context-mapping",
+                cause = "Unmapped EventStore error: ${sourceError::class.simpleName}"
+            )
+        )
+    }
+}
+```
+
+### Error Boundary Implementation Patterns
+
+#### 1. Use Case Handler Pattern
+
+Error mapping typically occurs in use case handlers at transaction boundaries:
+
+```kotlin
+class CreateScopeHandler(
+    private val scopeRepository: ScopeRepository,
+    private val errorMapper: ApplicationErrorMapper
+) {
+    suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> {
+        return either {
+            // Domain operations that may fail
+            val scope = createScopeEntity(command).bind()
+            val savedScope = scopeRepository.save(scope)
+                .mapLeft { domainError -> domainError.toApplicationError() }
+                .bind()
+            
+            // Return success result  
+            CreateScopeResult(savedScope.toDto())
+        }.mapLeft { applicationError -> 
+            // Map to contract error at the boundary
+            errorMapper.mapToContractError(applicationError)
+        }
+    }
+}
+```
+
+#### 2. Infrastructure Adapter Pattern
+
+Infrastructure adapters map external system errors to domain errors:
+
+```kotlin
+class SqlDelightScopeRepository : ScopeRepository {
+    override suspend fun save(scope: Scope): Either<DomainPersistenceError, Scope> {
+        return try {
+            // Database operation
+            val result = database.scopeQueries.insertScope(/* ... */)
+            Either.Right(scope)
+        } catch (ex: SQLiteException) {
+            // Map infrastructure error to domain error
+            Either.Left(when (ex.errorCode) {
+                SQLITE_CONSTRAINT_UNIQUE -> DomainPersistenceError.ConcurrencyConflict(
+                    entityType = "Scope",
+                    entityId = scope.id.toString(),
+                    expectedVersion = "new",
+                    actualVersion = "existing"
+                )
+                else -> DomainPersistenceError.StorageUnavailable(
+                    operation = "save-scope",
+                    cause = ex
+                )
+            })
+        }
+    }
+}
+```
+
+### Error Mapping Testing
+
+#### 1. Specification Testing
+
+Test error mappings to ensure they preserve important information and fail appropriately:
+
+```kotlin
+class ErrorMappingSpecificationTest : DescribeSpec({
+    describe("Error mapping specifications") {
+        it("should preserve error context during mapping") {
+            val domainError = DomainScopeInputError.TitleError.TooShort(
+                occurredAt = Clock.System.now(),
+                attemptedValue = "ab",
+                minimumLength = 3
+            )
+            
+            val applicationError = domainError.toApplicationError() as AppScopeInputError.TitleTooShort
+            
+            applicationError.attemptedValue shouldBe "ab"
+            applicationError.minimumLength shouldBe 3
+        }
+        
+        it("should fail fast for unmapped error types") {
+            // Test that unmapped errors throw meaningful exceptions
+            // rather than returning fallback errors
+        }
+    }
+})
+```
+
+#### 2. Architecture Testing
+
+Use Konsist rules to enforce error mapping patterns:
+
+```kotlin
+"error mappers should extend BaseErrorMapper" {
+    Konsist
+        .scopeFromDirectory("contexts/*/infrastructure")
+        .classes()
+        .withNameEndingWith("ErrorMapper")
+        .assert { 
+            it.hasParent("BaseErrorMapper") || 
+            it.hasParent("BaseCrossContextErrorMapper")
+        }
+}
+
+"error mapping extensions should be in application layer" {
+    Konsist
+        .scopeFromDirectory("contexts/*/application")
+        .files()
+        .withNameEndingWith("ErrorMappingExtensions.kt")
+        .assert { it.resideInPackage("..error..") }
+}
+```
+
+### Best Practices
+
+#### 1. Error Information Preservation
+
+- **Never lose context**: Important error details must be preserved across mappings
+- **Convert complex types**: Domain value objects → strings at application boundary  
+- **Maintain error categories**: Validation errors remain validation errors across layers
+- **Include actionable information**: Error messages should guide resolution
+
+#### 2. Mapping Strategy Selection
+
+**Use Extension Functions when:**
+- Mapping domain → application errors
+- No additional context is required
+- Mappings are reusable across handlers
+
+**Use ErrorMapper Classes when:**
+- Mapping application → contract errors
+- Logging and fallback handling is needed
+- Cross-context error translation is required
+
+**Use Context-Specific Mapping when:**
+- Error requires additional context from the operation
+- Multiple domain errors map to the same application error
+- Business logic affects error interpretation
+
+#### 3. Evolution and Maintenance  
+
+**Adding New Error Types:**
+1. Add new error type to domain layer
+2. Compilation will fail at mapping points (fail-fast design)
+3. Add explicit mapping in extension functions/mappers
+4. Update tests to verify mapping behavior
+5. Never use catch-all fallbacks that mask new error types
+
+**Modifying Existing Mappings:**
+1. Ensure backward compatibility at contract boundaries
+2. Update tests to reflect new mapping behavior
+3. Consider deprecation strategy for contract changes
+4. Log mapping changes for observability
+
+### Error Mapping Checklist
+
+When implementing error mapping:
+
+- [ ] **Domain Errors**: Sealed class hierarchies with rich context
+- [ ] **Extension Functions**: Domain → Application mapping preserves context  
+- [ ] **Error Mappers**: Application → Contract mapping with fallback handling
+- [ ] **Fail-Fast**: Unmapped errors throw exceptions rather than fallback silently
+- [ ] **Testing**: Specification tests verify mapping correctness
+- [ ] **Logging**: Unmapped errors are logged with full context
+- [ ] **Documentation**: Error handling rationale is documented
+- [ ] **Architecture**: Konsist rules enforce mapping patterns
+
+This error mapping architecture ensures:
+- **Reliability**: Fail-fast prevents silent data corruption
+- **Maintainability**: Clear patterns for adding new error types
+- **Observability**: Comprehensive logging of error mapping decisions
+- **Type Safety**: Exhaustive pattern matching prevents missed cases
+- **Separation of Concerns**: Each layer handles its own error semantics

@@ -158,4 +158,72 @@ class DependencyInversionTest :
                 }
             }
         }
+
+        // ========== Error Mapping Boundary Rules ==========
+        // These rules enforce the error mapping patterns documented in development-guidelines.md
+
+        "error mapping extensions should be in application error package" {
+            contexts.forEach { context ->
+                val errorExtensions = Konsist
+                    .scopeFromDirectory("contexts/$context/application")
+                    .files
+                    .filter {
+                        it.name.contains("ErrorMappingExtensions") ||
+                            it.name.contains("ErrorMapping")
+                    }
+
+                errorExtensions.forEach { file ->
+                    assert(file.packagee?.name?.contains("application.error") == true) {
+                        "Error mapping extensions in $context should be in application.error package: ${file.path}"
+                    }
+                }
+            }
+        }
+
+        "error mappers should follow naming conventions" {
+            contexts.forEach { context ->
+                val errorMappers = Konsist
+                    .scopeFromDirectory("contexts/$context/infrastructure")
+                    .classes()
+                    .filter { it.path.contains("src/main") } // Only production code
+                    .filter { it.name.contains("ErrorMapper") }
+
+                errorMappers.forEach { mapper ->
+                    assert(
+                        mapper.name.endsWith("ErrorMapper") &&
+                            (mapper.resideInPackage("..adapter..") || mapper.resideInPackage("..infrastructure..")),
+                    ) {
+                        "Error mapper ${mapper.name} in $context should follow naming conventions and be in adapter/infrastructure package"
+                    }
+                }
+            }
+        }
+
+        "base error mappers should be used for contract mapping" {
+            contexts.forEach { context ->
+                val errorMappers = Konsist
+                    .scopeFromDirectory("contexts/$context/infrastructure")
+                    .classes()
+                    .filter { it.path.contains("src/main") } // Only production code
+                    .filter { it.name.contains("ErrorMapper") }
+
+                errorMappers.forEach { mapper ->
+                    // Check if it extends BaseErrorMapper from platform
+                    val extendsBaseErrorMapper = mapper.parents().any { parent ->
+                        parent.name == "BaseErrorMapper"
+                    }
+
+                    if (extendsBaseErrorMapper) {
+                        // Verify it has logger dependency for proper logging
+                        val hasLoggerConstructorParam = mapper.primaryConstructor?.parameters?.any { param ->
+                            param.type.name == "Logger"
+                        } ?: false
+
+                        assert(hasLoggerConstructorParam) {
+                            "Error mapper ${mapper.name} in $context extending BaseErrorMapper should have Logger constructor parameter"
+                        }
+                    }
+                }
+            }
+        }
     })
