@@ -1,13 +1,17 @@
 package io.github.kamiazya.scopes.apps.cli
 
+import com.github.ajalt.clikt.core.CliktError
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
+import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import kotlinx.coroutines.runBlocking
+import kotlin.system.exitProcess
 
 /**
  * Main entry point for the Scopes CLI application.
  *
  * This is a minimal launcher that initializes the DI container
  * and delegates to the ScopesCommand from the interfaces layer.
+ * Handles exit codes according to UNIX conventions.
  */
 fun main(args: Array<String>) {
     // Set log directory based on OS standards if not already set
@@ -21,10 +25,24 @@ fun main(args: Array<String>) {
         System.setProperty("logback.configurationFile", "logback-native.xml")
     }
 
-    ScopesCliApplication().use {
-        // Initialize application lifecycle before running commands
-        runBlocking { it.initialize() }
-        it.container.get<ScopesCommand>().main(args)
+    try {
+        ScopesCliApplication().use {
+            // Initialize application lifecycle before running commands
+            runBlocking { it.initialize() }
+            it.container.get<ScopesCommand>().main(args)
+        }
+        // Successful execution
+        exitProcess(ExitCode.SUCCESS.code)
+    } catch (e: CliktError) {
+        // Check if a specific exit code was set
+        val exitCode = System.getProperty("scopes.cli.exit.code")?.toIntOrNull() ?: ExitCode.GENERAL_ERROR.code
+        System.clearProperty("scopes.cli.exit.code") // Clean up
+        exitProcess(exitCode)
+    } catch (e: Exception) {
+        // Unexpected error
+        System.err.println("Fatal error: ${e.message}")
+        e.printStackTrace(System.err)
+        exitProcess(ExitCode.SOFTWARE_ERROR.code)
     }
 }
 

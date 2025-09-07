@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.completion.CompletionCandidates
-import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
@@ -13,8 +12,9 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveCont
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
+import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,7 +23,7 @@ import org.koin.core.component.inject
  * List command for retrieving multiple scopes.
  */
 class ListCommand :
-    CliktCommand(
+    ScopesCliktCommand(
         name = "list",
         help = "List scopes",
     ),
@@ -53,12 +53,10 @@ class ListCommand :
         runBlocking {
             // Validate pagination inputs
             if (offset < 0) {
-                echo("Error: offset must be >= 0", err = true)
-                return@runBlocking
+                fail("offset must be >= 0", ExitCode.USAGE_ERROR)
             }
             if (limit !in 1..1000) {
-                echo("Error: limit must be in 1..1000", err = true)
-                return@runBlocking
+                fail("limit must be in 1..1000", ExitCode.USAGE_ERROR)
             }
 
             // Parse aspect filters (supports key:value and key=value)
@@ -105,7 +103,7 @@ class ListCommand :
                         limit = limit,
                     ).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            handleContractError(error)
                         },
                         { scopes ->
                             val filteredScopes = if (aspectFilters.isNotEmpty()) {
@@ -125,7 +123,7 @@ class ListCommand :
                 root -> {
                     scopeQueryAdapter.listRootScopes(offset, limit).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            handleContractError(error)
                         },
                         { page ->
                             val scopes = page.scopes
@@ -150,7 +148,7 @@ class ListCommand :
                 parentId != null -> {
                     scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            handleContractError(error)
                         },
                         { page ->
                             val scopes = page.scopes
@@ -175,7 +173,7 @@ class ListCommand :
                     // Default: list root scopes
                     scopeQueryAdapter.listRootScopes(offset, limit).fold(
                         { error ->
-                            echo("Error: ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                            handleContractError(error)
                         },
                         { page ->
                             val scopes = page.scopes

@@ -218,7 +218,11 @@ class ErrorMessageSeparationTest :
                             import.name.contains("ContractErrorMessageMapper")
                     } ||
                         // Or at least throw CliktError (which formats messages)
-                        command.text.contains("CliktError")
+                        command.text.contains("CliktError") ||
+                        // Or extend ScopesCliktCommand which handles error messages
+                        command.parents().any { parent ->
+                            parent.name == "ScopesCliktCommand"
+                        }
                 }
         }
 

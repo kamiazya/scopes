@@ -1,12 +1,10 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -16,7 +14,7 @@ import org.koin.core.component.inject
  * Get command for retrieving scopes.
  */
 class GetCommand :
-    CliktCommand(
+    ScopesCliktCommand(
         name = "get",
         help = "Get a scope by ID or alias",
     ),
@@ -36,13 +34,13 @@ class GetCommand :
             // Resolve the identifier to a scope ID
             parameterResolver.resolve(identifier).fold(
                 { error ->
-                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                    handleContractError(error)
                 },
                 { resolvedId ->
                     // Fetch the scope using the resolved ID
                     scopeQueryAdapter.getScopeById(resolvedId).fold(
                         { error ->
-                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                            handleContractError(error)
                         },
                         { scope ->
                             // Fetch all aliases for the scope
