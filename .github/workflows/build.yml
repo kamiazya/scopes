@@ -127,7 +127,7 @@ jobs:
         GRADLE_USER_HOME: C:\gradle-cache
 
     - name: Run E2E tests on native binary (Windows)
-      if: matrix.platform == 'win32' && matrix.experimental != true
+      if: matrix.platform == 'win32'
       run: |
         Set-Location "C:\build-workspace\scopes"
         Write-Host "Running E2E tests on native binary..."
@@ -170,7 +170,7 @@ jobs:
         ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
 
     - name: Run E2E tests on native binary
-      if: matrix.experimental != true  # Skip for experimental builds
+      if: matrix.platform != 'win32'  # Unix/Linux/macOS
       run: |
         echo "Running E2E tests on native binary..."
         ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest

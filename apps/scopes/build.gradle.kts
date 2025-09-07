@@ -140,10 +140,10 @@ fun getNativeBinaryPath(): File {
 }
 
 // Smoke test - quick verification that binary can run
+// NOTE: Does not depend on nativeCompile to avoid rebuilding with different flags
 tasks.register<Exec>("nativeSmokeTest") {
     group = "verification"
     description = "Run basic smoke test on native binary"
-    dependsOn("nativeCompile")
 
     val binaryPath = getNativeBinaryPath()
 
