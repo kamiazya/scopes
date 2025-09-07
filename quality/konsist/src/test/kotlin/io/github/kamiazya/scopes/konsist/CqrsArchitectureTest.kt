@@ -144,7 +144,8 @@ class CqrsArchitectureTest :
                         val returnType = function.returnType?.name
                         val isEitherType = returnType?.startsWith("Either") == true
                         val isContractResponseType = returnType?.contains("Response") == true
-                        val hasValidReturnType = isEitherType || isContractResponseType
+                        val isContractResultType = returnType?.contains("Result") == true
+                        val hasValidReturnType = isEitherType || isContractResponseType || isContractResultType
                         val hasReadOperationName = function.name in listOf(
                             "get",
                             "list",

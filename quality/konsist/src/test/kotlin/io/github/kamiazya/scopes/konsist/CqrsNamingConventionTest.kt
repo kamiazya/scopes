@@ -27,6 +27,7 @@ class CqrsNamingConventionTest :
                             "Create", "Update", "Delete", "Add", "Remove",
                             "Set", "Rename", "Move", "Copy", "Merge", "Split",
                             "Synchronize", "Store", "Register", "Execute",
+                            "Define", // For DefineAspectHandler
                         )
                         validCommandPrefixes.any { prefix ->
                             handler.name.startsWith(prefix)
