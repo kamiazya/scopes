@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectKeyError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing an aspect key.
@@ -20,10 +21,10 @@ value class AspectKey private constructor(val value: String) {
          * Creates an AspectKey with validation.
          */
         fun create(value: String): Either<AspectKeyError, AspectKey> = when {
-            value.isBlank() -> AspectKeyError.EmptyKey.left()
-            value.length < MIN_LENGTH -> AspectKeyError.TooShort(value.length, MIN_LENGTH).left()
-            value.length > MAX_LENGTH -> AspectKeyError.TooLong(value.length, MAX_LENGTH).left()
-            !VALID_PATTERN.matches(value) -> AspectKeyError.InvalidFormat.left()
+            value.isBlank() -> AspectKeyError.EmptyKey(occurredAt = currentTimestamp()).left()
+            value.length < MIN_LENGTH -> AspectKeyError.TooShort(actualLength = value.length, minLength = MIN_LENGTH, occurredAt = currentTimestamp()).left()
+            value.length > MAX_LENGTH -> AspectKeyError.TooLong(actualLength = value.length, maxLength = MAX_LENGTH, occurredAt = currentTimestamp()).left()
+            !VALID_PATTERN.matches(value) -> AspectKeyError.InvalidFormat(occurredAt = currentTimestamp()).left()
             else -> AspectKey(value).right()
         }
     }

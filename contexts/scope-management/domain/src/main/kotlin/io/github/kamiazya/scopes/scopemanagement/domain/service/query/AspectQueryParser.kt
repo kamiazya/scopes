@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.query
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.QueryParseError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.AspectQueryAST
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.ComparisonOperator
@@ -38,7 +39,7 @@ class AspectQueryParser {
             ifLeft = { it.left() },
             ifRight = { tokens ->
                 if (tokens.isEmpty()) {
-                    QueryParseError.EmptyQuery.left()
+                    QueryParseError.EmptyQuery(currentTimestamp()).left()
                 } else {
                     val parser = Parser(tokens)
                     val parseResult = parser.parseQuery()
@@ -46,7 +47,7 @@ class AspectQueryParser {
                         ifLeft = { it.left() },
                         ifRight = { ast ->
                             if (parser.hasMore()) {
-                                QueryParseError.UnexpectedToken(parser.currentToken(), parser.position).left()
+                                QueryParseError.UnexpectedToken(parser.currentToken(), parser.position, currentTimestamp()).left()
                             } else {
                                 ast.right()
                             }
@@ -56,7 +57,7 @@ class AspectQueryParser {
             },
         )
     } catch (e: Exception) {
-        QueryParseError.EmptyQuery.left() // Fallback for any unexpected errors
+        QueryParseError.EmptyQuery(currentTimestamp()).left() // Fallback for any unexpected errors
     }
 
     private fun tokenizeEither(query: String): Either<QueryParseError, List<Token>> {
@@ -86,7 +87,7 @@ class AspectQueryParser {
                         i++
                     }
                     if (i >= query.length) {
-                        return QueryParseError.UnterminatedString(start).left()
+                        return QueryParseError.UnterminatedString(start, currentTimestamp()).left()
                     }
                     tokens.add(Token.Value(query.substring(start, i)))
                     i++ // Skip closing quote
@@ -149,7 +150,7 @@ class AspectQueryParser {
                     if (i > start) {
                         tokens.add(Token.Value(query.substring(start, i)))
                     } else {
-                        return QueryParseError.UnexpectedCharacter(query[i], i).left()
+                        return QueryParseError.UnexpectedCharacter(query[i], i, currentTimestamp()).left()
                     }
                 }
             }
@@ -246,7 +247,7 @@ class AspectQueryParser {
                     ifLeft = { it.left() },
                     ifRight = { expr ->
                         if (currentToken() != Token.RightParen) {
-                            QueryParseError.MissingClosingParen(position).left()
+                            QueryParseError.MissingClosingParen(position, currentTimestamp()).left()
                         } else {
                             position++ // consume )
                             AspectQueryAST.Parentheses(expr).right()
@@ -255,22 +256,22 @@ class AspectQueryParser {
                 )
             }
             is Token.Identifier -> parseComparison()
-            else -> QueryParseError.ExpectedExpression(position).left()
+            else -> QueryParseError.ExpectedExpression(position, currentTimestamp()).left()
         }
 
         private fun parseComparison(): Either<QueryParseError, AspectQueryAST> {
             val identifier = currentToken() as? Token.Identifier
-                ?: return QueryParseError.ExpectedIdentifier(position).left()
+                ?: return QueryParseError.ExpectedIdentifier(position, currentTimestamp()).left()
             position++ // consume identifier
 
             val operator = currentToken() as? Token.Operator
-                ?: return QueryParseError.ExpectedOperator(position).left()
+                ?: return QueryParseError.ExpectedOperator(position, currentTimestamp()).left()
             position++ // consume operator
 
             val value = when (val token = currentToken()) {
                 is Token.Value -> token.value
                 is Token.Identifier -> token.name // Allow identifiers as values
-                else -> return QueryParseError.ExpectedValue(position).left()
+                else -> return QueryParseError.ExpectedValue(position, currentTimestamp()).left()
             }
             position++ // consume value
 

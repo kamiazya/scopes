@@ -35,7 +35,7 @@ value class ScopeId private constructor(val value: String) {
                 ScopeInputError.IdError.InvalidFormat(
                     currentTimestamp(),
                     value,
-                    "ULID",
+                    ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
                 )
             }
             ScopeId(value)

@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ComparisonOperator
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.FilterExpressionAST
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Token
+import kotlinx.datetime.Clock
 
 /**
  * Parser for filter expressions.
@@ -29,6 +30,7 @@ class FilterExpressionParser {
             return ContextError.InvalidFilterSyntax(
                 expression = expression,
                 errorType = ContextError.FilterSyntaxErrorType.EmptyExpression,
+                occurredAt = Clock.System.now(),
             ).left()
         }
 
@@ -40,6 +42,7 @@ class FilterExpressionParser {
                 ContextError.InvalidFilterSyntax(
                     expression = expression,
                     errorType = ContextError.FilterSyntaxErrorType.UnexpectedToken(parser.currentPosition()),
+                    occurredAt = Clock.System.now(),
                 ).left()
             } else {
                 ast.right()
@@ -48,6 +51,7 @@ class FilterExpressionParser {
             ContextError.InvalidFilterSyntax(
                 expression = expression,
                 errorType = ContextError.FilterSyntaxErrorType.InvalidSyntax,
+                occurredAt = Clock.System.now(),
             ).left()
         }
     }
@@ -82,6 +86,7 @@ class FilterExpressionParser {
                         return ContextError.InvalidFilterSyntax(
                             expression = expression,
                             errorType = ContextError.FilterSyntaxErrorType.UnterminatedString(start),
+                            occurredAt = Clock.System.now(),
                         ).left()
                     }
 
@@ -167,6 +172,7 @@ class FilterExpressionParser {
                     return ContextError.InvalidFilterSyntax(
                         expression = expression,
                         errorType = ContextError.FilterSyntaxErrorType.UnexpectedCharacter(expression[position], position),
+                        occurredAt = Clock.System.now(),
                     ).left()
                 }
             }

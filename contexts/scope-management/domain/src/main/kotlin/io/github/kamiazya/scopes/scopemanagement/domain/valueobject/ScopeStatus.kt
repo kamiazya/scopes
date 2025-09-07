@@ -3,6 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import kotlinx.datetime.Clock
 
 /**
  * Represents the status/state of a scope in its lifecycle.
@@ -78,13 +80,14 @@ sealed class ScopeStatus {
     /**
      * Attempts to transition to a new status.
      */
-    fun transitionTo(target: ScopeStatus): Either<ScopeStatusTransitionError, ScopeStatus> = if (canTransitionTo(target)) {
+    fun transitionTo(target: ScopeStatus): Either<ScopesError.ScopeStatusTransitionError, ScopeStatus> = if (canTransitionTo(target)) {
         target.right()
     } else {
-        ScopeStatusTransitionError(
-            from = this,
-            to = target,
+        ScopesError.ScopeStatusTransitionError(
+            from = this.toString(),
+            to = target.toString(),
             reason = "Invalid state transition from $this to $target",
+            occurredAt = Clock.System.now(),
         ).left()
     }
 
@@ -128,8 +131,3 @@ sealed class ScopeStatus {
         is Archived -> "ARCHIVED"
     }
 }
-
-/**
- * Error for invalid scope status transitions.
- */
-data class ScopeStatusTransitionError(val from: ScopeStatus, val to: ScopeStatus, val reason: String)

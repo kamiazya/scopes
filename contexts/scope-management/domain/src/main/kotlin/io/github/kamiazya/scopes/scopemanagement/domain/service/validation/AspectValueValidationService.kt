@@ -38,7 +38,9 @@ class AspectValueValidationService {
                             expectedType = "number",
                             actualType = "text",
                         ),
-                        details = mapOf("error" to ValidationError.InvalidNumericValue(definition.key, value)),
+                        details = mapOf(
+                            "error" to ValidationError.InvalidNumericValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                        ),
                     ).left()
                 } else {
                     value.right()
@@ -53,7 +55,9 @@ class AspectValueValidationService {
                             expectedType = "boolean",
                             actualType = "text",
                         ),
-                        details = mapOf("error" to ValidationError.InvalidBooleanValue(definition.key, value)),
+                        details = mapOf(
+                            "error" to ValidationError.InvalidBooleanValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                        ),
                     ).left()
                 } else {
                     value.right()
@@ -73,6 +77,7 @@ class AspectValueValidationService {
                                 definition.key,
                                 value,
                                 orderedType.allowedValues,
+                                occurredAt = kotlinx.datetime.Clock.System.now(),
                             ),
                         ),
                     ).left()
@@ -88,7 +93,9 @@ class AspectValueValidationService {
                         constraint = ScopesError.ValidationConstraintType.InvalidFormat(
                             expectedFormat = "ISO 8601 duration (e.g., 'P1D', 'PT2H30M')",
                         ),
-                        details = mapOf("error" to ValidationError.InvalidDurationValue(definition.key, value)),
+                        details = mapOf(
+                            "error" to ValidationError.InvalidDurationValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                        ),
                     ).left()
                 } else {
                     value.right()
@@ -111,7 +118,7 @@ class AspectValueValidationService {
                 constraint = ScopesError.ValidationConstraintType.MultipleValuesNotAllowed(
                     field = definition.key.value,
                 ),
-                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key)),
+                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key, occurredAt = kotlinx.datetime.Clock.System.now())),
             ).left()
         } else {
             Unit.right()
@@ -138,7 +145,7 @@ class AspectValueValidationService {
                 constraint = ScopesError.ValidationConstraintType.MissingRequired(
                     requiredFields = missingKeys.toList(),
                 ),
-                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys)),
+                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys, occurredAt = kotlinx.datetime.Clock.System.now())),
             ).left()
         } else {
             Unit.right()

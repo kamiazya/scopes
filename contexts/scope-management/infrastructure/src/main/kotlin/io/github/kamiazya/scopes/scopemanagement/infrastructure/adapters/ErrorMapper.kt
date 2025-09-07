@@ -20,6 +20,13 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Log unmapped errors for visibility and debugging
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
+    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
+        ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
+        ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
+        ScopeInputError.IdError.InvalidFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
+        ScopeInputError.IdError.InvalidFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
+    }
+
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
@@ -28,7 +35,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeInputError.IdError.InvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = domainError.attemptedValue,
-            expectedFormat = domainError.expectedFormat,
+            expectedFormat = presentIdFormat(domainError.formatType),
         )
         is ScopeInputError.TitleError.Empty -> ScopeContractError.InputError.InvalidTitle(
             title = domainError.attemptedValue,

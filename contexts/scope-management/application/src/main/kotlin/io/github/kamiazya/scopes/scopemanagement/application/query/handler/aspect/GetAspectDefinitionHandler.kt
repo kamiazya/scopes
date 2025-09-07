@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspect
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import kotlinx.datetime.Clock
 
 /**
  * Handler for retrieving an aspect definition by key.
@@ -42,6 +43,7 @@ class GetAspectDefinitionHandler(
                         service = "aspect-repository",
                         cause = error as? Throwable,
                         context = mapOf("operation" to "find-aspect-definition", "key" to query.key),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

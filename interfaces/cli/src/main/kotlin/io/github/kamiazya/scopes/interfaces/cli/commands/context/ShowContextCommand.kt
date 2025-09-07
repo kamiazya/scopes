@@ -3,9 +3,10 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.context
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
@@ -50,7 +51,7 @@ class ShowContextCommand :
             val contextKey = if (key == "current") {
                 // Get the current context key
                 when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
-                    is ContextViewContract.GetActiveContextResponse.Success -> {
+                    is GetActiveContextResult.Success -> {
                         val activeContext = result.contextView
                         if (activeContext == null) {
                             echo("No context is currently active.", err = true)
@@ -68,10 +69,10 @@ class ShowContextCommand :
             }
 
             when (val result = contextQueryAdapter.getContext(GetContextViewQuery(contextKey))) {
-                is ContextViewContract.GetContextViewResponse.Success -> {
+                is GetContextViewResult.Success -> {
                     echo(contextOutputFormatter.formatContextViewDetailed(result.contextView, debugContext.debug))
                 }
-                is ContextViewContract.GetContextViewResponse.NotFound -> {
+                is GetContextViewResult.NotFound -> {
                     echo("Context view '${result.key}' not found.", err = true)
                 }
             }

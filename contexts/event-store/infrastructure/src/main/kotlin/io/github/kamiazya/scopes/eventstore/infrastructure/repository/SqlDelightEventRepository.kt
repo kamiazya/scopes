@@ -88,6 +88,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             eventVersion = event.aggregateVersion.value,
                             storageFailureType = EventStoreError.StorageFailureType.VALIDATION_FAILED,
                             cause = e,
+                            occurredAt = Clock.System.now(),
                         ),
                     )
                 }
@@ -123,6 +124,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 EventStoreError.PersistenceError(
                     operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
                     dataType = "Event",
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -165,6 +167,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     EventStoreError.PersistenceError(
                         operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
                         dataType = "AggregateEvents",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
             }
@@ -198,6 +201,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 EventStoreError.PersistenceError(
                     operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
                     dataType = "EventsByType",
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -236,6 +240,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     EventStoreError.PersistenceError(
                         operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
                         dataType = "EventsByTypeSince",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
             }
@@ -274,6 +279,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     EventStoreError.PersistenceError(
                         operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
                         dataType = "EventsByTimeRange",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
             }

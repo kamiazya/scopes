@@ -155,4 +155,13 @@ sealed class ScopesError {
             COUNT,
         }
     }
+
+    /**
+     * Error for invalid scope status transitions.
+     *
+     * This error is raised when attempting to transition a scope
+     * from one status to another that is not allowed by the domain rules.
+     */
+    data class ScopeStatusTransitionError(val from: String, val to: String, val reason: String, override val occurredAt: Instant = Clock.System.now()) :
+        ScopesError()
 }

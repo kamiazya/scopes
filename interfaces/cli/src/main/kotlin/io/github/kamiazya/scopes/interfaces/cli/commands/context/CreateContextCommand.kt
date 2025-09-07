@@ -5,7 +5,7 @@ import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateContextViewCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter

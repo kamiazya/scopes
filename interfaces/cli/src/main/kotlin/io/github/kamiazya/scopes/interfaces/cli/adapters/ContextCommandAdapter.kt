@@ -2,10 +2,10 @@ package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.UpdateContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateContextViewCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 
 /**

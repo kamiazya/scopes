@@ -5,6 +5,8 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ValidateAspectValueResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.ValidationFailure
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -30,26 +32,26 @@ class ValidateCommand :
     override fun run() {
         runBlocking {
             when (val result = aspectQueryAdapter.validateAspectValue(key, values)) {
-                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidateAspectValueResponse.Success -> {
+                is ValidateAspectValueResult.Success -> {
                     echo("✓ All values are valid for aspect '$key'")
                     result.validatedValues.forEach { value ->
                         echo("  - $value")
                     }
                 }
-                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidateAspectValueResponse.ValidationFailed -> {
+                is ValidateAspectValueResult.ValidationFailed -> {
                     val failureMessage = when (val failure = result.validationFailure) {
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.Empty -> "Value cannot be empty"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.TooShort ->
+                        is ValidationFailure.Empty -> "Value cannot be empty"
+                        is ValidationFailure.TooShort ->
                             "Value is too short (minimum length: ${failure.minimumLength})"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.TooLong ->
+                        is ValidationFailure.TooLong ->
                             "Value is too long (maximum length: ${failure.maximumLength})"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.InvalidFormat ->
+                        is ValidationFailure.InvalidFormat ->
                             "Invalid format (expected: ${failure.expectedFormat})"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.InvalidType ->
+                        is ValidationFailure.InvalidType ->
                             "Invalid type (expected: ${failure.expectedType})"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.NotInAllowedValues ->
+                        is ValidationFailure.NotInAllowedValues ->
                             "Value not in allowed values: ${failure.allowedValues.joinToString(", ")}"
-                        is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ValidationFailure.MultipleValuesNotAllowed ->
+                        is ValidationFailure.MultipleValuesNotAllowed ->
                             "Multiple values not allowed"
                     }
                     echo("Validation failed for aspect '${result.key}': $failureMessage", err = true)

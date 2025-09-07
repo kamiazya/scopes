@@ -34,12 +34,13 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                         SynchronizationError.InvalidDeviceError(
                             deviceId = remoteDeviceId.value,
                             configurationIssue = SynchronizationError.ConfigurationIssue.MISSING_SYNC_CAPABILITY,
+                            occurredAt = Clock.System.now(),
                         ),
                     )
                 }
 
                 // Start sync using domain logic
-                val syncingState = syncState.startSync()
+                val syncingState = syncState.startSync(now = Clock.System.now())
                 syncRepository.updateSyncState(syncingState)
                     .flatMap {
                         // Get events to push
@@ -54,6 +55,7 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                     deviceId = remoteDeviceId.value,
                                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                                     cause = null,
+                                    occurredAt = Clock.System.now(),
                                 )
                             }
                             .flatMap { events ->
@@ -88,6 +90,7 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                                     eventsPushed = events.size,
                                                     eventsPulled = 0, // TODO: Implement pull logic
                                                     newRemoteVectorClock = newClock,
+                                                    now = Clock.System.now(),
                                                 )
 
                                                 syncRepository.updateSyncState(successState)

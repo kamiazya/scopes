@@ -72,7 +72,7 @@ class UpdateScopeHandler(
                         },
                     ).bind()
 
-                    updatedScope = updatedScope.updateTitle(command.title).bind()
+                    updatedScope = updatedScope.updateTitle(command.title, Clock.System.now()).bind()
                     logger.debug(
                         "Title updated",
                         mapOf(
@@ -84,7 +84,7 @@ class UpdateScopeHandler(
 
                 // Update description if provided
                 if (command.description != null) {
-                    updatedScope = updatedScope.updateDescription(command.description).bind()
+                    updatedScope = updatedScope.updateDescription(command.description, Clock.System.now()).bind()
                     logger.debug(
                         "Description updated",
                         mapOf(
@@ -107,7 +107,7 @@ class UpdateScopeHandler(
                         }
                     }.toMap()
 
-                    updatedScope = updatedScope.updateAspects(Aspects.from(aspects))
+                    updatedScope = updatedScope.updateAspects(Aspects.from(aspects), Clock.System.now())
                     logger.debug(
                         "Aspects updated",
                         mapOf(

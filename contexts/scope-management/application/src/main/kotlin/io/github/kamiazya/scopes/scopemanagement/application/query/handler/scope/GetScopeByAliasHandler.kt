@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+import kotlinx.datetime.Clock
 
 /**
  * Handler for retrieving a scope by its alias name.
@@ -48,6 +49,7 @@ class GetScopeByAliasHandler(
                             "operation" to "findByAliasName",
                             "aliasName" to aliasName.value,
                         ),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -64,6 +66,7 @@ class GetScopeByAliasHandler(
                                 "operation" to "findById",
                                 "scopeId" to alias.scopeId.value.toString(),
                             ),
+                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()

@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -27,7 +26,7 @@ sealed class ScopeHierarchyError : ScopesError() {
 
     data class ScopeInHierarchyNotFound(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 
-    data class HasChildren(val scopeId: ScopeId, override val occurredAt: Instant = Clock.System.now()) : ScopeHierarchyError()
+    data class HasChildren(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
 
     /**
      * Represents a failure in hierarchy operations due to availability issues.

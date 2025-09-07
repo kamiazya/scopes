@@ -205,8 +205,8 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         } else {
             // Create ScopeId from string for the error
             ScopeId.create(scopeId).fold(
-                { ScopeInputError.IdError.InvalidFormat(currentTimestamp(), scopeId, "ULID").left() },
-                { validScopeId -> ScopeError.NotFound(validScopeId).left() },
+                { ScopeInputError.IdError.InvalidFormat(currentTimestamp(), scopeId, ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID).left() },
+                { validScopeId -> ScopeError.NotFound(validScopeId, Clock.System.now()).left() },
             )
         }
     }

@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Clock
 
 /**
  * Domain service for validating scope hierarchy constraints.
@@ -26,24 +27,28 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
     suspend fun validateHierarchyConsistency(parentId: ScopeId, childIds: List<ScopeId>): Either<ContextError, Unit> = either {
         // Business rule: Parent must exist
         val parentExists = scopeRepository.existsById(parentId)
-            .mapLeft { ContextError.InvalidScope(parentId.value, "Failed to check parent existence") }
+            .mapLeft { ContextError.InvalidScope(parentId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND, occurredAt = Clock.System.now()) }
             .bind()
         ensure(parentExists) {
             ContextError.InvalidScope(
                 scopeId = parentId.value,
-                reason = "Parent scope does not exist",
+                errorType = ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
+                occurredAt = Clock.System.now(),
             )
         }
 
         // Business rule: All children must exist
         childIds.forEach { childId ->
             val childExists = scopeRepository.existsById(childId)
-                .mapLeft { ContextError.InvalidScope(childId.value, "Failed to check child existence") }
+                .mapLeft {
+                    ContextError.InvalidScope(childId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND, occurredAt = Clock.System.now())
+                }
                 .bind()
             ensure(childExists) {
                 ContextError.InvalidScope(
                     scopeId = childId.value,
-                    reason = "Child scope does not exist",
+                    errorType = ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
+                    occurredAt = Clock.System.now(),
                 )
             }
         }
@@ -65,7 +70,8 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
             ContextError.InvalidHierarchy(
                 scopeId = scopeId.value,
                 parentId = newParentId.value,
-                reason = "Scope cannot be its own parent",
+                errorType = ContextError.InvalidHierarchy.InvalidHierarchyType.CIRCULAR_REFERENCE,
+                occurredAt = Clock.System.now(),
             )
         }
 
@@ -75,7 +81,8 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
             ContextError.InvalidHierarchy(
                 scopeId = scopeId.value,
                 parentId = newParentId.value,
-                reason = "Would create circular reference in hierarchy",
+                errorType = ContextError.InvalidHierarchy.InvalidHierarchyType.CIRCULAR_REFERENCE,
+                occurredAt = Clock.System.now(),
             )
         }
     }
@@ -102,7 +109,13 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
 
             // Get the next parent in the chain
             val scope = scopeRepository.findById(currentParentId)
-                .mapLeft { ContextError.InvalidScope(currentParentId.value, "Failed to traverse hierarchy") }
+                .mapLeft {
+                    ContextError.InvalidScope(
+                        currentParentId.value,
+                        ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
+                        occurredAt = Clock.System.now(),
+                    )
+                }
                 .bind()
             currentParentId = scope?.parentId
         }

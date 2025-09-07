@@ -27,7 +27,11 @@ class ErrorMapperTest :
                 }
 
                 it("should map ScopeInputError.IdError.InvalidFormat to InvalidId") {
-                    val domainError = ScopeInputError.IdError.InvalidFormat(Clock.System.now(), "invalid-id", "ULID format")
+                    val domainError = ScopeInputError.IdError.InvalidFormat(
+                        Clock.System.now(),
+                        "invalid-id",
+                        ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
+                    )
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidId>()
@@ -110,7 +114,11 @@ class ErrorMapperTest :
                 }
 
                 it("should map ScopeInputError.AliasError.InvalidFormat to InvalidTitle") {
-                    val domainError = ScopeInputError.AliasError.InvalidFormat(Clock.System.now(), "invalid-alias", "pattern")
+                    val domainError = ScopeInputError.AliasError.InvalidFormat(
+                        Clock.System.now(),
+                        "invalid-alias",
+                        ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
+                    )
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
@@ -122,7 +130,7 @@ class ErrorMapperTest :
             context("Business rule violations") {
                 it("should map ScopeError.NotFound to BusinessError.NotFound") {
                     val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
-                    val domainError = ScopeError.NotFound(scopeId)
+                    val domainError = ScopeError.NotFound(scopeId, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
@@ -131,7 +139,7 @@ class ErrorMapperTest :
 
                 it("should map ScopeError.ParentNotFound to BusinessError.NotFound") {
                     val parentId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
-                    val domainError = ScopeError.ParentNotFound(parentId)
+                    val domainError = ScopeError.ParentNotFound(parentId, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
@@ -140,7 +148,7 @@ class ErrorMapperTest :
 
                 it("should map ScopeError.AlreadyDeleted to BusinessError.AlreadyDeleted") {
                     val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
-                    val domainError = ScopeError.AlreadyDeleted(scopeId)
+                    val domainError = ScopeError.AlreadyDeleted(scopeId, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AlreadyDeleted>()
@@ -149,7 +157,7 @@ class ErrorMapperTest :
 
                 it("should map ScopeError.AlreadyArchived to BusinessError.ArchivedScope") {
                     val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
-                    val domainError = ScopeError.AlreadyArchived(scopeId)
+                    val domainError = ScopeError.AlreadyArchived(scopeId, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.ArchivedScope>()
@@ -158,7 +166,7 @@ class ErrorMapperTest :
 
                 it("should map ScopeError.DuplicateTitle to BusinessError.DuplicateTitle") {
                     val parentId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()
-                    val domainError = ScopeError.DuplicateTitle("My Title", parentId)
+                    val domainError = ScopeError.DuplicateTitle("My Title", parentId, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateTitle>()
@@ -168,7 +176,7 @@ class ErrorMapperTest :
 
                 it("should map ScopeError.VersionMismatch to SystemError.ConcurrentModification") {
                     val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
-                    val domainError = ScopeError.VersionMismatch(scopeId, 1, 2)
+                    val domainError = ScopeError.VersionMismatch(scopeId, 1, 2, occurredAt = kotlinx.datetime.Clock.System.now())
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ConcurrentModification>()

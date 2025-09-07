@@ -139,7 +139,7 @@ class CreateScopeHandler(
                     }
 
                     // Create and save the canonical alias
-                    val scopeAlias = ScopeAlias.createCanonical(savedScope.id, aliasName)
+                    val scopeAlias = ScopeAlias.createCanonical(savedScope.id, aliasName, Clock.System.now())
                     scopeAliasRepository.save(scopeAlias).bind()
 
                     logger.info("Canonical alias created successfully", mapOf("alias" to aliasName.value, "scopeId" to savedScope.id.value))

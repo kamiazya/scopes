@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValueError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -25,8 +26,8 @@ value class AspectValue private constructor(val value: String) {
          * Returns Either.Left with error if validation fails.
          */
         fun create(value: String): Either<AspectValueError, AspectValue> = when {
-            value.isBlank() -> AspectValueError.EmptyValue.left()
-            value.length > 1000 -> AspectValueError.TooLong(value.length, 1000).left()
+            value.isBlank() -> AspectValueError.EmptyValue(occurredAt = currentTimestamp()).left()
+            value.length > 1000 -> AspectValueError.TooLong(actualLength = value.length, maxLength = 1000, occurredAt = currentTimestamp()).left()
             else -> AspectValue(value).right()
         }
 

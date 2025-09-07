@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.devicesync.domain.entity
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -21,7 +20,7 @@ data class SyncConflict(
     val localVectorClock: VectorClock,
     val remoteVectorClock: VectorClock,
     val conflictType: ConflictType,
-    val detectedAt: Instant = Clock.System.now(),
+    val detectedAt: Instant,
     val resolvedAt: Instant? = null,
     val resolution: ResolutionAction? = null,
 ) {
@@ -113,23 +112,23 @@ data class SyncConflict(
     /**
      * Resolve the conflict with a specific action.
      */
-    fun resolve(action: ResolutionAction): SyncConflict {
+    fun resolve(action: ResolutionAction, now: Instant): SyncConflict {
         require(isPending()) { "Cannot resolve an already resolved conflict" }
         return copy(
             resolution = action,
-            resolvedAt = Clock.System.now(),
+            resolvedAt = now,
         )
     }
 
     /**
      * Mark conflict as deferred (needs manual resolution).
      */
-    fun defer(): SyncConflict = resolve(ResolutionAction.DEFERRED)
+    fun defer(now: Instant): SyncConflict = resolve(ResolutionAction.DEFERRED, now)
 
     /**
      * Create a merge resolution if both versions can be combined.
      */
-    fun merge(): SyncConflict = resolve(ResolutionAction.MERGED)
+    fun merge(now: Instant): SyncConflict = resolve(ResolutionAction.MERGED, now)
 
     companion object {
         /**
@@ -143,6 +142,7 @@ data class SyncConflict(
             remoteVersion: Long,
             localVectorClock: VectorClock,
             remoteVectorClock: VectorClock,
+            detectedAt: Instant,
         ): SyncConflict? {
             // No conflict if vector clocks show clear causality
             if (localVectorClock.happenedBefore(remoteVectorClock) ||
@@ -173,6 +173,7 @@ data class SyncConflict(
                 localVectorClock = localVectorClock,
                 remoteVectorClock = remoteVectorClock,
                 conflictType = conflictType,
+                detectedAt = detectedAt,
             )
         }
     }

@@ -5,6 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 
 /**
  * Aggregate identifier for domain entities.
@@ -28,13 +29,18 @@ sealed interface AggregateId {
 
             fun generate(): Simple = Simple(ULID.generate().value)
 
-            fun from(value: String): Either<DomainError.InvalidId, Simple> = if (ULID_PATTERN.matches(value)) {
-                Simple(value).right()
-            } else {
-                DomainError.InvalidId(
+            fun from(value: String): Either<DomainError.InvalidId, Simple> = when {
+                value.isEmpty() -> DomainError.InvalidId(
                     value = value,
-                    reason = "Invalid ULID format",
+                    errorType = DomainError.InvalidId.InvalidIdType.EMPTY,
+                    occurredAt = currentTimestamp(),
                 ).left()
+                !ULID_PATTERN.matches(value) -> DomainError.InvalidId(
+                    value = value,
+                    errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
+                    occurredAt = currentTimestamp(),
+                ).left()
+                else -> Simple(value).right()
             }
 
             fun fromUnsafe(value: String): Simple = Simple(value)
@@ -83,13 +89,18 @@ sealed interface AggregateId {
                 return from(uri)
             }
 
-            fun from(value: String): Either<DomainError.InvalidId, Uri> = if (URI_PATTERN.matches(value)) {
-                Uri(value).right()
-            } else {
-                DomainError.InvalidId(
+            fun from(value: String): Either<DomainError.InvalidId, Uri> = when {
+                value.isEmpty() -> DomainError.InvalidId(
                     value = value,
-                    reason = "Invalid URI format for Global ID",
+                    errorType = DomainError.InvalidId.InvalidIdType.EMPTY,
+                    occurredAt = currentTimestamp(),
                 ).left()
+                !URI_PATTERN.matches(value) -> DomainError.InvalidId(
+                    value = value,
+                    errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
+                    occurredAt = currentTimestamp(),
+                ).left()
+                else -> Uri(value).right()
             }
 
             fun fromUnsafe(value: String): Uri = Uri(value)

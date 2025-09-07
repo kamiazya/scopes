@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveConte
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
+import kotlinx.datetime.Clock
 
 /**
  * Handler for deleting a context view.
@@ -34,6 +35,7 @@ class DeleteContextViewHandler(
                         entityType = "ContextView",
                         identifier = command.key,
                         identifierType = "key",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
 
@@ -45,6 +47,7 @@ class DeleteContextViewHandler(
                         field = "context",
                         value = command.key,
                         constraint = ScopesError.ValidationConstraintType.InvalidValue("Cannot delete an active context"),
+                        occurredAt = Clock.System.now(),
                     ),
                 )
             }

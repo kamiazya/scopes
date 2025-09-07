@@ -8,7 +8,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 class SyncConflictTest :
     DescribeSpec({
@@ -17,6 +17,9 @@ class SyncConflictTest :
             val deviceB = DeviceId("device-b")
             val localClock = VectorClock.single(deviceA, 5)
             val remoteClock = VectorClock.single(deviceB, 3)
+            val testTime = Instant.parse("2024-01-01T12:00:00Z")
+            val earlierTime = Instant.parse("2024-01-01T10:00:00Z")
+            val laterTime = Instant.parse("2024-01-01T14:00:00Z")
 
             describe("isResolved and isPending") {
                 it("should be pending when not resolved") {
@@ -29,6 +32,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.isResolved() shouldBe false
@@ -45,8 +49,9 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                         resolution = ResolutionAction.KEPT_LOCAL,
-                        resolvedAt = Clock.System.now(),
+                        resolvedAt = testTime,
                     )
 
                     conflict.isResolved() shouldBe true
@@ -68,6 +73,7 @@ class SyncConflictTest :
                         localVectorClock = concurrentLocal,
                         remoteVectorClock = concurrentRemote,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.isTrueConflict() shouldBe true
@@ -83,6 +89,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.VERSION_MISMATCH,
+                        detectedAt = testTime,
                     )
 
                     conflict.isTrueConflict() shouldBe true
@@ -98,6 +105,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.MISSING_DEPENDENCY,
+                        detectedAt = testTime,
                     )
 
                     conflict.isTrueConflict() shouldBe true
@@ -115,6 +123,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.MISSING_DEPENDENCY,
+                        detectedAt = testTime,
                     )
 
                     conflict.severity() shouldBe ConflictSeverity.CRITICAL
@@ -130,6 +139,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.VERSION_MISMATCH,
+                        detectedAt = testTime,
                     )
 
                     conflict.severity() shouldBe ConflictSeverity.HIGH
@@ -145,6 +155,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.severity() shouldBe ConflictSeverity.MEDIUM
@@ -160,6 +171,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.VERSION_MISMATCH,
+                        detectedAt = testTime,
                     )
 
                     conflict.severity() shouldBe ConflictSeverity.LOW
@@ -180,6 +192,7 @@ class SyncConflictTest :
                         localVectorClock = localBefore,
                         remoteVectorClock = remoteAfter,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.suggestResolution() shouldBe ResolutionAction.ACCEPTED_REMOTE
@@ -198,6 +211,7 @@ class SyncConflictTest :
                         localVectorClock = localAfter,
                         remoteVectorClock = remoteBefore,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.suggestResolution() shouldBe ResolutionAction.KEPT_LOCAL
@@ -216,6 +230,7 @@ class SyncConflictTest :
                         localVectorClock = concurrentLocal,
                         remoteVectorClock = concurrentRemote,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
                     conflict.suggestResolution() shouldBe ResolutionAction.DEFERRED
@@ -231,6 +246,7 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.MISSING_DEPENDENCY,
+                        detectedAt = testTime,
                     )
 
                     conflict.suggestResolution() shouldBe ResolutionAction.DEFERRED
@@ -248,11 +264,12 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
-                    val resolved = conflict.resolve(ResolutionAction.KEPT_LOCAL)
+                    val resolved = conflict.resolve(ResolutionAction.KEPT_LOCAL, laterTime)
                     resolved.resolution shouldBe ResolutionAction.KEPT_LOCAL
-                    resolved.resolvedAt shouldNotBe null
+                    resolved.resolvedAt shouldBe laterTime
                     resolved.isResolved() shouldBe true
                 }
 
@@ -266,12 +283,13 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                         resolution = ResolutionAction.KEPT_LOCAL,
-                        resolvedAt = Clock.System.now(),
+                        resolvedAt = testTime,
                     )
 
                     shouldThrow<IllegalArgumentException> {
-                        conflict.resolve(ResolutionAction.ACCEPTED_REMOTE)
+                        conflict.resolve(ResolutionAction.ACCEPTED_REMOTE, testTime)
                     }
                 }
             }
@@ -287,9 +305,10 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
-                    val deferred = conflict.defer()
+                    val deferred = conflict.defer(laterTime)
                     deferred.resolution shouldBe ResolutionAction.DEFERRED
                     deferred.isResolved() shouldBe true
                 }
@@ -306,9 +325,10 @@ class SyncConflictTest :
                         localVectorClock = localClock,
                         remoteVectorClock = remoteClock,
                         conflictType = ConflictType.CONCURRENT_MODIFICATION,
+                        detectedAt = testTime,
                     )
 
-                    val merged = conflict.merge()
+                    val merged = conflict.merge(laterTime)
                     merged.resolution shouldBe ResolutionAction.MERGED
                     merged.isResolved() shouldBe true
                 }
@@ -327,6 +347,7 @@ class SyncConflictTest :
                         remoteVersion = 3,
                         localVectorClock = localBefore,
                         remoteVectorClock = remoteAfter,
+                        detectedAt = testTime,
                     )
 
                     conflict shouldBe null
@@ -344,6 +365,7 @@ class SyncConflictTest :
                         remoteVersion = 3,
                         localVectorClock = localAfter,
                         remoteVectorClock = remoteBefore,
+                        detectedAt = testTime,
                     )
 
                     conflict shouldBe null
@@ -361,6 +383,7 @@ class SyncConflictTest :
                         remoteVersion = 3,
                         localVectorClock = concurrentLocal,
                         remoteVectorClock = concurrentRemote,
+                        detectedAt = testTime,
                     )
 
                     conflict shouldNotBe null
@@ -378,6 +401,7 @@ class SyncConflictTest :
                         remoteVersion = 2,
                         localVectorClock = clock,
                         remoteVectorClock = clock,
+                        detectedAt = testTime,
                     )
 
                     conflict shouldBe null

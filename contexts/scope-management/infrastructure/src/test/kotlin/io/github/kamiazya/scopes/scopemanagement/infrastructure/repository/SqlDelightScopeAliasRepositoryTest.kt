@@ -14,6 +14,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 
 class SqlDelightScopeAliasRepositoryTest :
     DescribeSpec({
@@ -37,7 +38,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val scopeId = ScopeId.generate()
                     val aliasName = AliasName.create("test-alias").getOrNull()!!
-                    val alias = ScopeAlias.createCanonical(scopeId, aliasName)
+                    val alias = ScopeAlias.createCanonical(scopeId, aliasName, Clock.System.now())
 
                     // When
                     val result = runBlocking { repository.save(alias) }
@@ -50,10 +51,10 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val scopeId = ScopeId.generate()
                     val aliasName = AliasName.create("initial-alias").getOrNull()!!
-                    val alias = ScopeAlias.createCanonical(scopeId, aliasName)
+                    val alias = ScopeAlias.createCanonical(scopeId, aliasName, Clock.System.now())
                     runBlocking { repository.save(alias) }
 
-                    val updatedAlias = alias.withNewName(AliasName.create("updated-alias").getOrNull()!!)
+                    val updatedAlias = alias.withNewName(AliasName.create("updated-alias").getOrNull()!!, Clock.System.now())
 
                     // When
                     val result = runBlocking { repository.save(updatedAlias) }
@@ -69,6 +70,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCanonical(
                         ScopeId.generate(),
                         AliasName.create("test").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     database.close()
 
@@ -88,7 +90,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val scopeId = ScopeId.generate()
                     val aliasName = AliasName.create("find-me").getOrNull()!!
-                    val alias = ScopeAlias.createCanonical(scopeId, aliasName)
+                    val alias = ScopeAlias.createCanonical(scopeId, aliasName, Clock.System.now())
                     runBlocking { repository.save(alias) }
 
                     // When
@@ -116,7 +118,7 @@ class SqlDelightScopeAliasRepositoryTest :
                 it("should handle case-insensitive alias names (SQLite default behavior)") {
                     // Given
                     val aliasName = AliasName.create("TestAlias").getOrNull()!!
-                    val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
+                    val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName, Clock.System.now())
                     runBlocking { repository.save(alias) }
 
                     val lowerCaseName = AliasName.create("testalias").getOrNull()!!
@@ -140,6 +142,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCustom(
                         ScopeId.generate(),
                         AliasName.create("custom-alias").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(alias) }
 
@@ -172,14 +175,17 @@ class SqlDelightScopeAliasRepositoryTest :
                     val canonicalAlias = ScopeAlias.createCanonical(
                         scopeId,
                         AliasName.create("canonical-alias").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     val customAlias1 = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("custom-1").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     val customAlias2 = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("custom-2").getOrNull()!!,
+                        Clock.System.now(),
                     )
 
                     runBlocking {
@@ -218,10 +224,12 @@ class SqlDelightScopeAliasRepositoryTest :
                     val canonicalAlias = ScopeAlias.createCanonical(
                         scopeId,
                         AliasName.create("main-alias").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     val customAlias = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("secondary-alias").getOrNull()!!,
+                        Clock.System.now(),
                     )
 
                     runBlocking {
@@ -245,6 +253,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val customAlias = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("only-custom").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(customAlias) }
 
@@ -263,14 +272,17 @@ class SqlDelightScopeAliasRepositoryTest :
                     val canonicalAlias = ScopeAlias.createCanonical(
                         scopeId,
                         AliasName.create("canonical").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     val customAlias1 = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("custom-1").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     val customAlias2 = ScopeAlias.createCustom(
                         scopeId,
                         AliasName.create("custom-2").getOrNull()!!,
+                        Clock.System.now(),
                     )
 
                     runBlocking {
@@ -293,9 +305,9 @@ class SqlDelightScopeAliasRepositoryTest :
                 it("should find aliases matching prefix") {
                     // Given
                     val aliases = listOf(
-                        ScopeAlias.createCanonical(ScopeId.generate(), AliasName.create("test-one").getOrNull()!!),
-                        ScopeAlias.createCustom(ScopeId.generate(), AliasName.create("test-two").getOrNull()!!),
-                        ScopeAlias.createCanonical(ScopeId.generate(), AliasName.create("other-alias").getOrNull()!!),
+                        ScopeAlias.createCanonical(ScopeId.generate(), AliasName.create("test-one").getOrNull()!!, Clock.System.now()),
+                        ScopeAlias.createCustom(ScopeId.generate(), AliasName.create("test-two").getOrNull()!!, Clock.System.now()),
+                        ScopeAlias.createCanonical(ScopeId.generate(), AliasName.create("other-alias").getOrNull()!!, Clock.System.now()),
                     )
 
                     runBlocking {
@@ -318,6 +330,7 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeAlias.createCustom(
                             ScopeId.generate(),
                             AliasName.create("prefix-$i").getOrNull()!!,
+                            Clock.System.now(),
                         )
                     }
 
@@ -345,7 +358,7 @@ class SqlDelightScopeAliasRepositoryTest :
                 it("should return true for existing alias name") {
                     // Given
                     val aliasName = AliasName.create("exists").getOrNull()!!
-                    val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
+                    val alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName, Clock.System.now())
                     runBlocking { repository.save(alias) }
 
                     // When
@@ -373,6 +386,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCustom(
                         ScopeId.generate(),
                         AliasName.create("to-remove").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(alias) }
 
@@ -401,7 +415,7 @@ class SqlDelightScopeAliasRepositoryTest :
                 it("should remove alias by name") {
                     // Given
                     val aliasName = AliasName.create("remove-by-name").getOrNull()!!
-                    val alias = ScopeAlias.createCustom(ScopeId.generate(), aliasName)
+                    val alias = ScopeAlias.createCustom(ScopeId.generate(), aliasName, Clock.System.now())
                     runBlocking { repository.save(alias) }
 
                     // When
@@ -419,9 +433,9 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val scopeId = ScopeId.generate()
                     val aliases = listOf(
-                        ScopeAlias.createCanonical(scopeId, AliasName.create("canonical").getOrNull()!!),
-                        ScopeAlias.createCustom(scopeId, AliasName.create("custom-1").getOrNull()!!),
-                        ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!),
+                        ScopeAlias.createCanonical(scopeId, AliasName.create("canonical").getOrNull()!!, Clock.System.now()),
+                        ScopeAlias.createCustom(scopeId, AliasName.create("custom-1").getOrNull()!!, Clock.System.now()),
+                        ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!, Clock.System.now()),
                     )
 
                     runBlocking {
@@ -444,10 +458,11 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCanonical(
                         ScopeId.generate(),
                         AliasName.create("original").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(alias) }
 
-                    val updatedAlias = alias.withNewName(AliasName.create("updated").getOrNull()!!)
+                    val updatedAlias = alias.withNewName(AliasName.create("updated").getOrNull()!!, Clock.System.now())
 
                     // When
                     val updateResult = runBlocking { repository.update(updatedAlias) }
@@ -463,10 +478,11 @@ class SqlDelightScopeAliasRepositoryTest :
                     val customAlias = ScopeAlias.createCustom(
                         ScopeId.generate(),
                         AliasName.create("promotable").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(customAlias) }
 
-                    val promotedAlias = customAlias.promoteToCanonical()
+                    val promotedAlias = customAlias.promoteToCanonical(Clock.System.now())
 
                     // When
                     val updateResult = runBlocking { repository.update(promotedAlias) }
@@ -485,6 +501,7 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeAlias.createCustom(
                             ScopeId.generate(),
                             AliasName.create("alias-$i").getOrNull()!!,
+                            Clock.System.now(),
                         )
                     }
 
@@ -515,6 +532,7 @@ class SqlDelightScopeAliasRepositoryTest :
                         ScopeAlias.createCustom(
                             ScopeId.generate(),
                             AliasName.create("alias-$i").getOrNull()!!,
+                            Clock.System.now(),
                         )
                     }
 
@@ -544,6 +562,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val alias = ScopeAlias.createCanonical(
                         ScopeId.generate(),
                         AliasName.create("single").getOrNull()!!,
+                        Clock.System.now(),
                     )
                     runBlocking { repository.save(alias) }
 
@@ -562,7 +581,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     val aliasId = AliasId.generate()
                     val aliasName = AliasName.create("test").getOrNull()!!
                     val scopeId = ScopeId.generate()
-                    val alias = ScopeAlias.createCanonical(scopeId, aliasName)
+                    val alias = ScopeAlias.createCanonical(scopeId, aliasName, Clock.System.now())
 
                     // When/Then - Test all operations return proper errors
                     val operations = listOf(
@@ -597,22 +616,22 @@ class SqlDelightScopeAliasRepositoryTest :
                     // Given
                     val scopeId = ScopeId.generate()
                     val initialName = AliasName.create("initial-canonical").getOrNull()!!
-                    val canonicalAlias = ScopeAlias.createCanonical(scopeId, initialName)
+                    val canonicalAlias = ScopeAlias.createCanonical(scopeId, initialName, Clock.System.now())
 
                     // Phase 1: Create canonical alias
                     runBlocking { repository.save(canonicalAlias) }
 
                     // Phase 2: Add custom aliases
-                    val customAlias1 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-1").getOrNull()!!)
-                    val customAlias2 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!)
+                    val customAlias1 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-1").getOrNull()!!, Clock.System.now())
+                    val customAlias2 = ScopeAlias.createCustom(scopeId, AliasName.create("custom-2").getOrNull()!!, Clock.System.now())
                     runBlocking {
                         repository.save(customAlias1)
                         repository.save(customAlias2)
                     }
 
                     // Phase 3: Demote canonical to custom and promote a custom to canonical
-                    val demotedCanonical = canonicalAlias.demoteToCustom()
-                    val promotedCustom = customAlias1.promoteToCanonical()
+                    val demotedCanonical = canonicalAlias.demoteToCustom(Clock.System.now())
+                    val promotedCustom = customAlias1.promoteToCanonical(Clock.System.now())
                     runBlocking {
                         repository.update(demotedCanonical)
                         repository.update(promotedCustom)
@@ -630,7 +649,7 @@ class SqlDelightScopeAliasRepositoryTest :
                 it("should maintain uniqueness of alias names across different scopes") {
                     // Given
                     val aliasName = AliasName.create("unique-name").getOrNull()!!
-                    val scope1Alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName)
+                    val scope1Alias = ScopeAlias.createCanonical(ScopeId.generate(), aliasName, Clock.System.now())
                     runBlocking { repository.save(scope1Alias) }
 
                     // When trying to use the same alias name for a different scope

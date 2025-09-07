@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateContextViewCommand
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.coEvery

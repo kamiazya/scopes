@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.CreateAspectDefinitionCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.DeleteAspectDefinitionCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.UpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 
 /**

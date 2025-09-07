@@ -1,9 +1,11 @@
 package io.github.kamiazya.scopes.contracts.scopemanagement
 
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextViewsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListContextViewsResult
 
 /**
  * Public contract for context view query operations.
@@ -13,15 +15,15 @@ public interface ContextViewQueryPort {
     /**
      * Lists all context views.
      */
-    public suspend fun listContextViews(query: ListContextViewsQuery): ContextViewContract.ListContextViewsResponse
+    public suspend fun listContextViews(query: ListContextViewsQuery): ListContextViewsResult
 
     /**
      * Gets a specific context view by key.
      */
-    public suspend fun getContextView(query: GetContextViewQuery): ContextViewContract.GetContextViewResponse
+    public suspend fun getContextView(query: GetContextViewQuery): GetContextViewResult
 
     /**
      * Gets the currently active context.
      */
-    public suspend fun getActiveContext(query: GetActiveContextQuery): ContextViewContract.GetActiveContextResponse
+    public suspend fun getActiveContext(query: GetActiveContextQuery): GetActiveContextResult
 }

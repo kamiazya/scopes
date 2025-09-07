@@ -1,11 +1,13 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewQueryPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextView
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ListContextViewsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextViewsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListContextViewsResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
@@ -24,43 +26,43 @@ public class ContextViewQueryPortAdapter(
     private val activeContextService: ActiveContextService,
 ) : ContextViewQueryPort {
 
-    override suspend fun listContextViews(query: ListContextViewsQuery): ContextViewContract.ListContextViewsResponse {
+    override suspend fun listContextViews(query: ListContextViewsQuery): ListContextViewsResult {
         val result = listContextViewsHandler(ListContextViews())
 
         return result.fold(
             ifLeft = { _ ->
                 // List errors are rare, but handle if needed
-                ContextViewContract.ListContextViewsResponse.Success(emptyList())
+                ListContextViewsResult.Success(emptyList())
             },
             ifRight = { contextViewDtos ->
-                ContextViewContract.ListContextViewsResponse.Success(
+                ListContextViewsResult.Success(
                     contextViewDtos.map { it.toContractContextView() },
                 )
             },
         )
     }
 
-    override suspend fun getContextView(query: GetContextViewQuery): ContextViewContract.GetContextViewResponse {
+    override suspend fun getContextView(query: GetContextViewQuery): GetContextViewResult {
         val result = getContextViewHandler(GetContextView(query.key))
 
         return result.fold(
             ifLeft = { error -> mapScopesErrorToGetResponse(error, query.key) },
             ifRight = { contextViewDto ->
                 if (contextViewDto != null) {
-                    ContextViewContract.GetContextViewResponse.Success(
+                    GetContextViewResult.Success(
                         contextViewDto.toContractContextView(),
                     )
                 } else {
-                    ContextViewContract.GetContextViewResponse.NotFound(query.key)
+                    GetContextViewResult.NotFound(query.key)
                 }
             },
         )
     }
 
-    override suspend fun getActiveContext(query: GetActiveContextQuery): ContextViewContract.GetActiveContextResponse {
+    override suspend fun getActiveContext(query: GetActiveContextQuery): GetActiveContextResult {
         val domainContextView = activeContextService.getCurrentContext()
 
-        return ContextViewContract.GetActiveContextResponse.Success(
+        return GetActiveContextResult.Success(
             domainContextView?.let {
                 ContextView(
                     key = it.key.value,
@@ -74,9 +76,9 @@ public class ContextViewQueryPortAdapter(
         )
     }
 
-    private fun mapScopesErrorToGetResponse(error: ScopesError, key: String): ContextViewContract.GetContextViewResponse = when (error) {
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound -> ContextViewContract.GetContextViewResponse.NotFound(key)
-        else -> ContextViewContract.GetContextViewResponse.NotFound(key)
+    private fun mapScopesErrorToGetResponse(error: ScopesError, key: String): GetContextViewResult = when (error) {
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound -> GetContextViewResult.NotFound(key)
+        else -> GetContextViewResult.NotFound(key)
     }
 
     private fun ContextViewDto.toContractContextView(): ContextView = ContextView(

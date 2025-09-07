@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
@@ -21,6 +22,8 @@ class RemoveAliasHandler(
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : CommandHandler<RemoveAliasCommand, ScopesError, Unit> {
+
+    private val errorPresenter = ScopeInputErrorPresenter()
 
     override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
@@ -47,7 +50,7 @@ class RemoveAliasHandler(
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
                             ScopeInputError.AliasTooLong(command.aliasName, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.aliasName, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(command.aliasName, errorPresenter.presentAliasPattern(error.patternType))
                     }
                 }
                 .bind()

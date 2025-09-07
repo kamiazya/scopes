@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a unique identifier for a context view.
@@ -33,13 +33,13 @@ value class ContextViewId private constructor(val value: String) {
         fun create(value: String): Either<ContextError, ContextViewId> = either {
             ensure(value.isNotBlank()) {
                 ContextError.BlankId(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                 )
             }
             ensure(ULID.isValid(value)) {
                 ContextError.InvalidIdFormat(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                     expectedFormat = "ULID",
                 )
@@ -59,7 +59,7 @@ value class ContextViewId private constructor(val value: String) {
         id = value,
     ).mapLeft {
         AggregateIdError.InvalidFormat(
-            occurredAt = Clock.System.now(),
+            occurredAt = currentTimestamp(),
             value = value,
             formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )

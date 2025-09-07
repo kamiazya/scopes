@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetAspectDefinitionResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -26,7 +27,7 @@ class ShowCommand :
     override fun run() {
         runBlocking {
             when (val result = aspectQueryAdapter.getAspectDefinition(key)) {
-                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.GetAspectDefinitionResponse.Success -> {
+                is GetAspectDefinitionResult.Success -> {
                     val definition = result.aspectDefinition
                     if (definition == null) {
                         echo("Aspect '$key' not found", err = true)
@@ -36,7 +37,7 @@ class ShowCommand :
                         echo("Type: ${definition.type}")
                     }
                 }
-                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.GetAspectDefinitionResponse.NotFound -> {
+                is GetAspectDefinitionResult.NotFound -> {
                     echo("Aspect '${result.key}' not found", err = true)
                 }
             }

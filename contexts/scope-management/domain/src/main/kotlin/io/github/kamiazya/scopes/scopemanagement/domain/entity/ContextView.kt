@@ -11,7 +11,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewF
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -39,7 +38,13 @@ data class ContextView(
         /**
          * Create a new context view with validation.
          */
-        fun create(key: ContextViewKey, name: ContextViewName, filter: ContextViewFilter, description: String? = null): Either<ContextError, ContextView> {
+        fun create(
+            key: ContextViewKey,
+            name: ContextViewName,
+            filter: ContextViewFilter,
+            description: String? = null,
+            now: Instant,
+        ): Either<ContextError, ContextView> {
             // Create optional ContextViewDescription
             val contextDescription = if (description.isNullOrBlank()) {
                 null
@@ -49,8 +54,6 @@ data class ContextView(
                     is Either.Right -> result.value
                 }
             }
-
-            val now = Clock.System.now()
             return ContextView(
                 id = ContextViewId.generate(),
                 key = key,
@@ -67,16 +70,16 @@ data class ContextView(
      * Update the filter for this context view.
      * Returns a new instance with updated filter and timestamp.
      */
-    fun updateFilter(newFilter: ContextViewFilter): ContextView = copy(
+    fun updateFilter(newFilter: ContextViewFilter, now: Instant): ContextView = copy(
         filter = newFilter,
-        updatedAt = Clock.System.now(),
+        updatedAt = now,
     )
 
     /**
      * Update the description for this context view.
      * Returns Either.Left if description is too long.
      */
-    fun updateDescription(newDescription: String?): Either<ContextError, ContextView> {
+    fun updateDescription(newDescription: String?, now: Instant): Either<ContextError, ContextView> {
         // Create optional ContextViewDescription
         val contextDescription = if (newDescription.isNullOrBlank()) {
             null
@@ -89,7 +92,7 @@ data class ContextView(
 
         return copy(
             description = contextDescription,
-            updatedAt = Clock.System.now(),
+            updatedAt = now,
         ).right()
     }
 
@@ -97,9 +100,9 @@ data class ContextView(
      * Update the name for this context view.
      * Returns a new instance with updated name and timestamp.
      */
-    fun updateName(newName: ContextViewName): ContextView = copy(
+    fun updateName(newName: ContextViewName, now: Instant): ContextView = copy(
         name = newName,
-        updatedAt = Clock.System.now(),
+        updatedAt = now,
     )
 
     /**

@@ -13,7 +13,6 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
 import io.github.kamiazya.scopes.userpreferences.domain.event.PreferencesReset
 import io.github.kamiazya.scopes.userpreferences.domain.event.UserPreferencesCreated
 import io.github.kamiazya.scopes.userpreferences.domain.event.UserPreferencesDomainEvent
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 data class UserPreferencesAggregate(
@@ -27,8 +26,8 @@ data class UserPreferencesAggregate(
     companion object {
         fun create(
             aggregateId: AggregateId = AggregateId.Simple.generate(),
+            now: Instant,
         ): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> {
-            val now = Clock.System.now()
             val preferences = UserPreferences.createDefault(now)
 
             val initialVersion = AggregateVersion.initial()
@@ -52,15 +51,15 @@ data class UserPreferencesAggregate(
         }
     }
 
-    fun resetToDefaults(clock: Clock = Clock.System): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> = either {
+    fun resetToDefaults(now: Instant): Either<UserPreferencesError, Pair<UserPreferencesAggregate, UserPreferencesDomainEvent>> = either {
         val currentPreferences = ensureInitialized().bind()
-        val newPreferences = UserPreferences.createDefault(clock.now())
+        val newPreferences = UserPreferences.createDefault(now)
 
         val event = PreferencesReset(
             eventId = EventId.generate(),
             aggregateId = id,
             aggregateVersion = version.increment(),
-            occurredAt = clock.now(),
+            occurredAt = now,
             oldPreferences = currentPreferences,
             newPreferences = newPreferences,
         )
@@ -68,7 +67,7 @@ data class UserPreferencesAggregate(
         val updated = copy(
             preferences = newPreferences,
             version = version.increment(),
-            updatedAt = clock.now(),
+            updatedAt = now,
         )
 
         updated to event

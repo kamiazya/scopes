@@ -4,15 +4,15 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.CreateAspectDefinitionCommand as ContractCreateAspectDefinitionCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.DeleteAspectDefinitionCommand as ContractDeleteAspectDefinitionCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.UpdateAspectDefinitionCommand as ContractUpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
 
@@ -26,7 +26,7 @@ public class AspectCommandPortAdapter(
     private val deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler,
 ) : AspectCommandPort {
 
-    override suspend fun createAspectDefinition(command: ContractCreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+    override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = defineAspectHandler(
             DefineAspectCommand(
                 key = command.key,
@@ -47,7 +47,7 @@ public class AspectCommandPortAdapter(
         )
     }
 
-    override suspend fun updateAspectDefinition(command: ContractUpdateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+    override suspend fun updateAspectDefinition(command: UpdateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = updateAspectDefinitionHandler(
             AppUpdateAspectDefinitionCommand(
                 key = command.key,
@@ -61,7 +61,7 @@ public class AspectCommandPortAdapter(
         )
     }
 
-    override suspend fun deleteAspectDefinition(command: ContractDeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+    override suspend fun deleteAspectDefinition(command: DeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = deleteAspectDefinitionHandler(AppDeleteAspectDefinitionCommand(command.key))
 
         return result.fold(

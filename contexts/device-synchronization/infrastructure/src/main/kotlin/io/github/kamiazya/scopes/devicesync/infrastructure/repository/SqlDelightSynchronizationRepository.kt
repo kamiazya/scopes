@@ -27,6 +27,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     SynchronizationError.InvalidDeviceError(
                         deviceId = deviceId.value,
                         configurationIssue = SynchronizationError.ConfigurationIssue.INVALID_DEVICE_ID,
+                        occurredAt = Clock.System.now(),
                     ),
                 )
 
@@ -49,6 +50,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     deviceId = deviceId.value,
                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                     cause = e,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -76,6 +78,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     deviceId = syncState.deviceId.value,
                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                     cause = e,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -93,6 +96,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     deviceId = "LOCAL",
                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                     cause = e,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -108,6 +112,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     deviceId = "LOCAL",
                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                     cause = e,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -125,6 +130,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                     deviceId = "LOCAL",
                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                     cause = e,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -149,6 +155,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                 SynchronizationError.InvalidDeviceError(
                     deviceId = deviceId.value,
                     configurationIssue = SynchronizationError.ConfigurationIssue.INVALID_DEVICE_ID,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }
@@ -168,6 +175,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                 SynchronizationError.InvalidDeviceError(
                     deviceId = deviceId.value,
                     configurationIssue = SynchronizationError.ConfigurationIssue.INVALID_DEVICE_ID,
+                    occurredAt = Clock.System.now(),
                 ),
             )
         }

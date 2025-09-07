@@ -5,9 +5,9 @@ import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteContextViewCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
@@ -56,7 +56,7 @@ class DeleteContextCommand :
         runBlocking {
             // Check if this is the current context
             val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)
-            if (currentContextResult is ContextViewContract.GetActiveContextResponse.Success) {
+            if (currentContextResult is GetActiveContextResult.Success) {
                 val currentContext = currentContextResult.contextView
                 if (currentContext?.key == key && !force) {
                     echo("Error: Cannot delete the currently active context '$key'.", err = true)

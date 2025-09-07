@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import kotlinx.datetime.Clock
 
 /**
  * Service for validating aspect usage in scopes.
@@ -27,6 +28,7 @@ class AspectUsageValidationService(private val scopeRepository: ScopeRepository)
                 resourceId = aspectKey.value,
                 conflictType = ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES,
                 details = mapOf("usage_count" to count),
+                occurredAt = Clock.System.now(),
             )
         }
     }

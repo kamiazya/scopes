@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.platform.domain.error
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -12,50 +11,52 @@ import kotlinx.datetime.Instant
  */
 sealed class DomainError {
     abstract val occurredAt: Instant
-    abstract val message: String
 
     /**
      * Invalid aggregate ID format or value.
      */
-    data class InvalidId(val value: String, val reason: String, override val occurredAt: Instant = Clock.System.now()) : DomainError() {
-        override val message: String = "Invalid ID '$value': $reason"
+    data class InvalidId(val value: String, val errorType: InvalidIdType, override val occurredAt: Instant) : DomainError() {
+        enum class InvalidIdType {
+            EMPTY,
+            INVALID_FORMAT,
+            INVALID_CHARACTERS,
+            TOO_LONG,
+            TOO_SHORT,
+        }
     }
 
     /**
      * Invalid aggregate version.
      */
-    data class InvalidVersion(val value: Long, val reason: String, override val occurredAt: Instant = Clock.System.now()) : DomainError() {
-        override val message: String = "Invalid version $value: $reason"
+    data class InvalidVersion(val value: Long, val errorType: InvalidVersionType, override val occurredAt: Instant) : DomainError() {
+        enum class InvalidVersionType {
+            NEGATIVE,
+            TOO_LARGE,
+            INVALID_INCREMENT,
+        }
     }
 
     /**
      * Invalid event ID format or value.
      */
-    data class InvalidEventId(val value: String, val reason: String, override val occurredAt: Instant = Clock.System.now()) : DomainError() {
-        override val message: String = "Invalid event ID '$value': $reason"
+    data class InvalidEventId(val value: String, val errorType: InvalidEventIdType, override val occurredAt: Instant) : DomainError() {
+        enum class InvalidEventIdType {
+            EMPTY,
+            INVALID_FORMAT,
+            INVALID_UUID,
+        }
     }
 
     /**
      * Optimistic concurrency conflict.
      */
-    data class ConcurrencyConflict(
-        val aggregateId: String,
-        val expectedVersion: Long,
-        val actualVersion: Long,
-        override val occurredAt: Instant = Clock.System.now(),
-    ) : DomainError() {
-        override val message: String =
-            "Concurrency conflict for aggregate $aggregateId: expected version $expectedVersion but was $actualVersion"
-    }
+    data class ConcurrencyConflict(val aggregateId: String, val expectedVersion: Long, val actualVersion: Long, override val occurredAt: Instant) :
+        DomainError()
 
     /**
      * Aggregate not found.
      */
-    data class AggregateNotFound(val aggregateId: String, val aggregateType: String? = null, override val occurredAt: Instant = Clock.System.now()) :
-        DomainError() {
-        override val message: String =
-            "Aggregate ${aggregateType ?: ""} with ID $aggregateId not found"
-    }
+    data class AggregateNotFound(val aggregateId: String, val aggregateType: String? = null, override val occurredAt: Instant) : DomainError()
 
     /**
      * Invalid state transition.
@@ -64,10 +65,14 @@ sealed class DomainError {
         val aggregateId: String,
         val currentState: String,
         val attemptedTransition: String,
-        val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        val errorType: InvalidStateTransitionType,
+        override val occurredAt: Instant,
     ) : DomainError() {
-        override val message: String =
-            "Invalid state transition for aggregate $aggregateId from $currentState: $attemptedTransition - $reason"
+        enum class InvalidStateTransitionType {
+            INVALID_SOURCE_STATE,
+            INVALID_TARGET_STATE,
+            TRANSITION_NOT_ALLOWED,
+            PRECONDITION_NOT_MET,
+        }
     }
 }

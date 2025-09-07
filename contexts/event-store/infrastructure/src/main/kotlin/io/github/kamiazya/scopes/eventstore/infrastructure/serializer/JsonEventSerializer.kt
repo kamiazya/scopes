@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.domain.error.EventStoreError
 import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeMapping
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -52,6 +53,7 @@ class JsonEventSerializer(
                         actualValue = e.message,
                     ),
                 ),
+                occurredAt = Clock.System.now(),
             ),
         )
     }
@@ -70,6 +72,7 @@ class JsonEventSerializer(
                         actualValue = e.message,
                     ),
                 ),
+                occurredAt = Clock.System.now(),
             ),
         )
     }

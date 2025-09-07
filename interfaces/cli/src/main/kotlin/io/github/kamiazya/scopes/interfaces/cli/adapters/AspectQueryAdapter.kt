@@ -1,10 +1,12 @@
 package io.github.kamiazya.scopes.interfaces.cli.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.GetAspectDefinitionQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ListAspectDefinitionsQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ValidateAspectValueQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefinitionQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetAspectDefinitionResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListAspectDefinitionsResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ValidateAspectValueResult
 
 /**
  * Query adapter for aspect-related CLI queries.
@@ -14,17 +16,16 @@ class AspectQueryAdapter(private val aspectQueryPort: AspectQueryPort) {
     /**
      * Get an aspect definition by key.
      */
-    suspend fun getAspectDefinition(key: String): AspectContract.GetAspectDefinitionResponse =
-        aspectQueryPort.getAspectDefinition(GetAspectDefinitionQuery(key))
+    suspend fun getAspectDefinition(key: String): GetAspectDefinitionResult = aspectQueryPort.getAspectDefinition(GetAspectDefinitionQuery(key))
 
     /**
      * List all aspect definitions.
      */
-    suspend fun listAspectDefinitions(): AspectContract.ListAspectDefinitionsResponse = aspectQueryPort.listAspectDefinitions(ListAspectDefinitionsQuery)
+    suspend fun listAspectDefinitions(): ListAspectDefinitionsResult = aspectQueryPort.listAspectDefinitions(ListAspectDefinitionsQuery)
 
     /**
      * Validate aspect values against their definitions.
      */
-    suspend fun validateAspectValue(key: String, values: List<String>): AspectContract.ValidateAspectValueResponse =
+    suspend fun validateAspectValue(key: String, values: List<String>): ValidateAspectValueResult =
         aspectQueryPort.validateAspectValue(ValidateAspectValueQuery(key, values))
 }

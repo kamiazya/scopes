@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListAspectDefinitionsResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -23,7 +24,7 @@ class ListDefinitionsCommand :
     override fun run() {
         runBlocking {
             when (val result = aspectQueryAdapter.listAspectDefinitions()) {
-                is io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract.ListAspectDefinitionsResponse.Success -> {
+                is ListAspectDefinitionsResult.Success -> {
                     val definitions = result.aspectDefinitions
                     if (definitions.isEmpty()) {
                         echo("No aspect definitions found")

@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRe
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
+import kotlinx.datetime.Clock
 
 /**
  * Handler for creating a new context view.
@@ -35,6 +36,7 @@ class CreateContextViewHandler(private val contextViewRepository: ContextViewRep
                 name = name,
                 filter = filter,
                 description = command.description,
+                now = Clock.System.now(),
             ).bind()
 
             // Save to repository

@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.userpreferences.domain.entity
 
 import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val createdAt: Instant, val updatedAt: Instant) {
@@ -10,7 +9,7 @@ data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val c
      * Updates the hierarchy preferences with a new value.
      * This method ensures the updatedAt timestamp is updated accordingly.
      */
-    fun updateHierarchyPreferences(newPreferences: HierarchyPreferences, now: Instant = Clock.System.now()): UserPreferences = copy(
+    fun updateHierarchyPreferences(newPreferences: HierarchyPreferences, now: Instant): UserPreferences = copy(
         hierarchyPreferences = newPreferences,
         updatedAt = now,
     )
@@ -19,7 +18,7 @@ data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val c
      * Returns a new instance with updated timestamp.
      * Useful for marking the preferences as recently accessed or validated.
      */
-    fun withUpdatedTimestamp(now: Instant = Clock.System.now()): UserPreferences = copy(updatedAt = now)
+    fun withUpdatedTimestamp(now: Instant): UserPreferences = copy(updatedAt = now)
 
     /**
      * Checks if the preferences are using default values.
@@ -35,13 +34,12 @@ data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val c
      * Merges these preferences with another set, with the other set taking precedence.
      * Useful for applying updates or overlays.
      */
-    fun mergeWith(other: UserPreferences, now: Instant = Clock.System.now()): UserPreferences =
-        copy(hierarchyPreferences = other.hierarchyPreferences, updatedAt = now)
+    fun mergeWith(other: UserPreferences, now: Instant): UserPreferences = copy(hierarchyPreferences = other.hierarchyPreferences, updatedAt = now)
 
     /**
      * Resets preferences to default values while preserving creation timestamp.
      */
-    fun resetToDefaults(now: Instant = Clock.System.now()): UserPreferences = copy(hierarchyPreferences = HierarchyPreferences.DEFAULT, updatedAt = now)
+    fun resetToDefaults(now: Instant): UserPreferences = copy(hierarchyPreferences = HierarchyPreferences.DEFAULT, updatedAt = now)
 
     /**
      * Validates that the preferences are in a consistent state.
@@ -63,7 +61,7 @@ data class UserPreferences(val hierarchyPreferences: HierarchyPreferences, val c
         /**
          * Creates preferences with custom hierarchy settings.
          */
-        fun createWithHierarchy(hierarchyPreferences: HierarchyPreferences, now: Instant = Clock.System.now()): UserPreferences = UserPreferences(
+        fun createWithHierarchy(hierarchyPreferences: HierarchyPreferences, now: Instant): UserPreferences = UserPreferences(
             hierarchyPreferences = hierarchyPreferences,
             createdAt = now,
             updatedAt = now,

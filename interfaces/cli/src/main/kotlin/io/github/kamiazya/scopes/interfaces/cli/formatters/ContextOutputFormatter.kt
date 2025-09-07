@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.formatters
 
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextView
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

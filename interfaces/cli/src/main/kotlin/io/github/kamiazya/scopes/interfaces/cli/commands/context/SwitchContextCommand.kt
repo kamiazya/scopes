@@ -3,9 +3,9 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.context
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
@@ -59,10 +59,10 @@ class SwitchContextCommand :
 
                     // Show the active filter
                     when (val contextResult = contextQueryAdapter.getContext(GetContextViewQuery(key))) {
-                        is ContextViewContract.GetContextViewResponse.Success -> {
+                        is GetContextViewResult.Success -> {
                             echo("Active filter: ${contextResult.contextView.filter}")
                         }
-                        is ContextViewContract.GetContextViewResponse.NotFound -> {
+                        is GetContextViewResult.NotFound -> {
                             // Ignore, context was switched successfully but details not available
                         }
                     }

@@ -1,10 +1,14 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.GetAspectDefinitionQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ListAspectDefinitionsQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.aspect.ValidateAspectValueQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefinitionQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetAspectDefinitionResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListAspectDefinitionsResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ValidateAspectValueResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.ValidationFailure
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
@@ -22,36 +26,36 @@ public class AspectQueryPortAdapter(
     private val validateAspectValueUseCase: ValidateAspectValueUseCase,
 ) : AspectQueryPort {
 
-    override suspend fun getAspectDefinition(query: GetAspectDefinitionQuery): AspectContract.GetAspectDefinitionResponse {
+    override suspend fun getAspectDefinition(query: GetAspectDefinitionQuery): GetAspectDefinitionResult {
         val result = getAspectDefinitionHandler(GetAspectDefinition(query.key))
 
         return result.fold(
             ifLeft = { error -> mapScopesErrorToGetResponse(error, query.key) },
             ifRight = { aspectDefinitionDto ->
-                AspectContract.GetAspectDefinitionResponse.Success(
+                GetAspectDefinitionResult.Success(
                     aspectDefinitionDto?.toContractAspectDefinition(),
                 )
             },
         )
     }
 
-    override suspend fun listAspectDefinitions(query: ListAspectDefinitionsQuery): AspectContract.ListAspectDefinitionsResponse {
+    override suspend fun listAspectDefinitions(query: ListAspectDefinitionsQuery): ListAspectDefinitionsResult {
         val result = listAspectDefinitionsHandler(ListAspectDefinitions())
 
         return result.fold(
             ifLeft = { _ ->
                 // List errors are rare, return empty list
-                AspectContract.ListAspectDefinitionsResponse.Success(emptyList())
+                ListAspectDefinitionsResult.Success(emptyList())
             },
             ifRight = { aspectDefinitionDtos ->
-                AspectContract.ListAspectDefinitionsResponse.Success(
+                ListAspectDefinitionsResult.Success(
                     aspectDefinitionDtos.map { it.toContractAspectDefinition() },
                 )
             },
         )
     }
 
-    override suspend fun validateAspectValue(query: ValidateAspectValueQuery): AspectContract.ValidateAspectValueResponse {
+    override suspend fun validateAspectValue(query: ValidateAspectValueQuery): ValidateAspectValueResult {
         val result = if (query.values.size == 1) {
             validateAspectValueUseCase(ValidateAspectValueUseCase.Query(query.key, query.values.first()))
                 .map { listOf(it.value) }
@@ -65,63 +69,62 @@ public class AspectQueryPortAdapter(
         return result.fold(
             ifLeft = { error -> mapScopesErrorToValidateResponse(error, query.key) },
             ifRight = { validatedValues ->
-                AspectContract.ValidateAspectValueResponse.Success(validatedValues)
+                ValidateAspectValueResult.Success(validatedValues)
             },
         )
     }
 
-    private fun mapScopesErrorToGetResponse(error: ScopesError, key: String): AspectContract.GetAspectDefinitionResponse = when (error) {
+    private fun mapScopesErrorToGetResponse(error: ScopesError, key: String): GetAspectDefinitionResult = when (error) {
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
-            AspectContract.GetAspectDefinitionResponse.NotFound(key)
-        else -> AspectContract.GetAspectDefinitionResponse.NotFound(key)
+            GetAspectDefinitionResult.NotFound(key)
+        else -> GetAspectDefinitionResult.NotFound(key)
     }
 
-    private fun mapScopesErrorToValidateResponse(error: ScopesError, key: String): AspectContract.ValidateAspectValueResponse = when (error) {
+    private fun mapScopesErrorToValidateResponse(error: ScopesError, key: String): ValidateAspectValueResult = when (error) {
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
             when (val constraint = error.constraint) {
                 is ScopesError.ValidationConstraintType.InvalidType ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.InvalidType(constraint.expectedType),
+                        ValidationFailure.InvalidType(constraint.expectedType),
                     )
                 is ScopesError.ValidationConstraintType.MissingRequired ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.Empty,
+                        ValidationFailure.Empty,
                     )
                 is ScopesError.ValidationConstraintType.InvalidFormat ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.InvalidFormat(constraint.expectedFormat),
+                        ValidationFailure.InvalidFormat(constraint.expectedFormat),
                     )
                 is ScopesError.ValidationConstraintType.NotInAllowedValues ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.NotInAllowedValues(constraint.allowedValues),
+                        ValidationFailure.NotInAllowedValues(constraint.allowedValues),
                     )
                 is ScopesError.ValidationConstraintType.InvalidValue ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.InvalidFormat(constraint.reason),
+                        ValidationFailure.InvalidFormat(constraint.reason),
                     )
                 is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
-                    AspectContract.ValidateAspectValueResponse.ValidationFailed(
+                    ValidateAspectValueResult.ValidationFailed(
                         key,
-                        AspectContract.ValidationFailure.MultipleValuesNotAllowed,
+                        ValidationFailure.MultipleValuesNotAllowed,
                     )
             }
-        else -> AspectContract.ValidateAspectValueResponse.ValidationFailed(
+        else -> ValidateAspectValueResult.ValidationFailed(
             key,
-            AspectContract.ValidationFailure.InvalidType("validation error"),
+            ValidationFailure.InvalidType("validation error"),
         )
     }
 
-    private fun io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto.toContractAspectDefinition() =
-        io.github.kamiazya.scopes.contracts.scopemanagement.aspect.AspectDefinition(
-            key = this.key,
-            description = this.description ?: "",
-            type = this.type.toString(),
-            createdAt = kotlinx.datetime.Clock.System.now(),
-            updatedAt = kotlinx.datetime.Clock.System.now(),
-        )
+    private fun io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto.toContractAspectDefinition() = AspectDefinition(
+        key = this.key,
+        description = this.description ?: "",
+        type = this.type.toString(),
+        createdAt = kotlinx.datetime.Clock.System.now(),
+        updatedAt = kotlinx.datetime.Clock.System.now(),
+    )
 }

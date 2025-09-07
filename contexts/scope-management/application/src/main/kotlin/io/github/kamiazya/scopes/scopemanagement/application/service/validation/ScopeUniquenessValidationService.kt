@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Clock
 
 /**
  * Domain service for validating scope uniqueness constraints.
@@ -29,14 +30,22 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
         // Business rule: Title must be unique across all specified contexts
         contextIds.forEach { contextId ->
             val existsInContext = scopeRepository.existsByParentIdAndTitle(contextId, title)
-                .mapLeft { ContextError.DuplicateScope(title, contextId.value, "Failed to check uniqueness") }
+                .mapLeft {
+                    ContextError.DuplicateScope(
+                        title,
+                        contextId.value,
+                        ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                        occurredAt = Clock.System.now(),
+                    )
+                }
                 .bind()
 
             ensure(!existsInContext) {
                 ContextError.DuplicateScope(
                     title = title,
                     contextId = contextId.value,
-                    reason = "Scope title already exists in this context",
+                    errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                    occurredAt = Clock.System.now(),
                 )
             }
         }
@@ -52,7 +61,14 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
      */
     suspend fun validateTitleUniquenessInContext(title: String, parentId: ScopeId?, excludeId: ScopeId? = null): Either<ContextError, Unit> = either {
         val existingScopes = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
-            .mapLeft { ContextError.DuplicateScope(title, parentId?.value, "Failed to check existing scopes") }
+            .mapLeft {
+                ContextError.DuplicateScope(
+                    title,
+                    parentId?.value,
+                    ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                    occurredAt = Clock.System.now(),
+                )
+            }
             .bind()
 
         // Check if any existing scope has the same title (excluding the scope being updated)
@@ -64,7 +80,8 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
             ContextError.DuplicateScope(
                 title = title,
                 contextId = parentId?.value,
-                reason = "Scope with this title already exists in the same context",
+                errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                occurredAt = Clock.System.now(),
             )
         }
     }
@@ -83,7 +100,14 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
      */
     suspend fun validateGlobalUniqueness(title: String, excludeId: ScopeId? = null): Either<ContextError, Unit> = either {
         val allScopes = scopeRepository.findAll()
-            .mapLeft { ContextError.DuplicateScope(title, null, "Failed to check global uniqueness") }
+            .mapLeft {
+                ContextError.DuplicateScope(
+                    title,
+                    null,
+                    ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                    occurredAt = Clock.System.now(),
+                )
+            }
             .bind()
 
         val exists = allScopes.any { scope ->
@@ -94,7 +118,8 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
             ContextError.DuplicateScope(
                 title = title,
                 contextId = null,
-                reason = "Scope title must be globally unique",
+                errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
+                occurredAt = Clock.System.now(),
             )
         }
     }

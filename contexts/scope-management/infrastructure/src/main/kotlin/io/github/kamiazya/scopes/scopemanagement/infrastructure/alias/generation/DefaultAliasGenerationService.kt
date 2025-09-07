@@ -42,7 +42,7 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
         ScopeInputError.AliasError.InvalidFormat(
             occurredAt = currentTimestamp(),
             attemptedValue = e.message ?: "generation failed",
-            expectedPattern = "[a-z][a-z0-9-_]{1,63}",
+            patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
         ).left()
     }
 
@@ -63,7 +63,7 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
         ScopeInputError.AliasError.InvalidFormat(
             occurredAt = currentTimestamp(),
             attemptedValue = e.message ?: "generation failed",
-            expectedPattern = "[a-z][a-z0-9-_]{1,63}",
+            patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
         ).left()
     }
 }

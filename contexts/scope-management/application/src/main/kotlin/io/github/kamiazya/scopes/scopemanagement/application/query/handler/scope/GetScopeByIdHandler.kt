@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeB
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Clock
 
 /**
  * Handler for GetScopeById query.
@@ -42,6 +43,7 @@ class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private 
                             "operation" to "findById",
                             "scopeId" to scopeId.value.toString(),
                         ),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

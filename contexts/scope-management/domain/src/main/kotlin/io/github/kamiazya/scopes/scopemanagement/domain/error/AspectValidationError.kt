@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -8,20 +7,18 @@ import kotlinx.datetime.Instant
  * These errors represent validation failures for aspect-related value objects.
  */
 sealed class AspectValidationError : ScopesError() {
-    override val occurredAt: Instant = Clock.System.now()
-
     // AspectKey validation errors
-    data object EmptyAspectKey : AspectValidationError()
-    data object AspectKeyTooShort : AspectValidationError()
-    data class AspectKeyTooLong(val maxLength: Int, val actualLength: Int) : AspectValidationError()
-    data object InvalidAspectKeyFormat : AspectValidationError()
+    data class EmptyAspectKey(override val occurredAt: Instant) : AspectValidationError()
+    data class AspectKeyTooShort(override val occurredAt: Instant) : AspectValidationError()
+    data class AspectKeyTooLong(val maxLength: Int, val actualLength: Int, override val occurredAt: Instant) : AspectValidationError()
+    data class InvalidAspectKeyFormat(override val occurredAt: Instant) : AspectValidationError()
 
     // AspectValue validation errors
-    data object EmptyAspectValue : AspectValidationError()
-    data object AspectValueTooShort : AspectValidationError()
-    data class AspectValueTooLong(val maxLength: Int, val actualLength: Int) : AspectValidationError()
+    data class EmptyAspectValue(override val occurredAt: Instant) : AspectValidationError()
+    data class AspectValueTooShort(override val occurredAt: Instant) : AspectValidationError()
+    data class AspectValueTooLong(val maxLength: Int, val actualLength: Int, override val occurredAt: Instant) : AspectValidationError()
 
     // AspectDefinition validation errors
-    data object EmptyAspectAllowedValues : AspectValidationError()
-    data object DuplicateAspectAllowedValues : AspectValidationError()
+    data class EmptyAspectAllowedValues(override val occurredAt: Instant) : AspectValidationError()
+    data class DuplicateAspectAllowedValues(override val occurredAt: Instant) : AspectValidationError()
 }

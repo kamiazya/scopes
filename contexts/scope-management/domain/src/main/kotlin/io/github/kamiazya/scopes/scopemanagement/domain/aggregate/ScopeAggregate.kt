@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
@@ -22,7 +23,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -53,38 +53,42 @@ data class ScopeAggregate(
          * Creates a new scope aggregate for a create command.
          * Generates a ScopeCreated event after validation.
          */
-        fun create(title: String, description: String? = null, parentId: ScopeId? = null, scopeId: ScopeId? = null): Either<ScopesError, ScopeAggregate> =
-            either {
-                val validatedTitle = ScopeTitle.create(title).bind()
-                val validatedDescription = ScopeDescription.create(description).bind()
-                val scopeId = scopeId ?: ScopeId.generate()
-                val aggregateId = scopeId.toAggregateId().bind()
-                val eventId = EventId.generate()
-                val now = Clock.System.now()
+        fun create(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            scopeId: ScopeId? = null,
+            now: Instant = currentTimestamp(),
+        ): Either<ScopesError, ScopeAggregate> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+            val scopeId = scopeId ?: ScopeId.generate()
+            val aggregateId = scopeId.toAggregateId().bind()
+            val eventId = EventId.generate()
 
-                val event = ScopeCreated(
-                    aggregateId = aggregateId,
-                    eventId = eventId,
-                    occurredAt = now,
-                    aggregateVersion = AggregateVersion.initial().increment(),
-                    scopeId = scopeId,
-                    title = validatedTitle,
-                    description = validatedDescription,
-                    parentId = parentId,
-                )
+            val event = ScopeCreated(
+                aggregateId = aggregateId,
+                eventId = eventId,
+                occurredAt = now,
+                aggregateVersion = AggregateVersion.initial().increment(),
+                scopeId = scopeId,
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+            )
 
-                val initialAggregate = ScopeAggregate(
-                    id = aggregateId,
-                    version = AggregateVersion.initial(),
-                    createdAt = now,
-                    updatedAt = now,
-                    scope = null,
-                    isDeleted = false,
-                    isArchived = false,
-                )
+            val initialAggregate = ScopeAggregate(
+                id = aggregateId,
+                version = AggregateVersion.initial(),
+                createdAt = now,
+                updatedAt = now,
+                scope = null,
+                isDeleted = false,
+                isArchived = false,
+            )
 
-                initialAggregate.applyEvent(event)
-            }
+            initialAggregate.applyEvent(event)
+        }
 
         /**
          * Creates an empty aggregate for event replay.
@@ -105,12 +109,12 @@ data class ScopeAggregate(
      * Updates the scope title after validation.
      * Ensures the scope exists and is not deleted.
      */
-    fun updateTitle(title: String): Either<ScopesError, ScopeAggregate> = either {
+    fun updateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
@@ -121,7 +125,7 @@ data class ScopeAggregate(
         val event = ScopeTitleUpdated(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldTitle = scope!!.title,
@@ -134,12 +138,12 @@ data class ScopeAggregate(
     /**
      * Updates the scope description after validation.
      */
-    fun updateDescription(description: String?): Either<ScopesError, ScopeAggregate> = either {
+    fun updateDescription(description: String?, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
 
         val newDescription = ScopeDescription.create(description).bind()
@@ -150,7 +154,7 @@ data class ScopeAggregate(
         val event = ScopeDescriptionUpdated(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldDescription = scope!!.description,
@@ -164,12 +168,12 @@ data class ScopeAggregate(
      * Changes the parent of the scope.
      * Validates hierarchy constraints before applying the change.
      */
-    fun changeParent(newParentId: ScopeId?): Either<ScopesError, ScopeAggregate> = either {
+    fun changeParent(newParentId: ScopeId?, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
 
         if (scope!!.parentId == newParentId) {
@@ -179,7 +183,7 @@ data class ScopeAggregate(
         val event = ScopeParentChanged(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             oldParentId = scope!!.parentId,
@@ -193,18 +197,18 @@ data class ScopeAggregate(
      * Deletes the scope.
      * Soft delete that marks the scope as deleted.
      */
-    fun delete(): Either<ScopesError, ScopeAggregate> = either {
+    fun delete(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
 
         val event = ScopeDeleted(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
         )
@@ -216,21 +220,21 @@ data class ScopeAggregate(
      * Archives the scope.
      * Archived scopes are hidden but can be restored.
      */
-    fun archive(): Either<ScopesError, ScopeAggregate> = either {
+    fun archive(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
         ensure(!isArchived) {
-            ScopeError.AlreadyArchived(scope!!.id)
+            ScopeError.AlreadyArchived(scope!!.id, occurredAt = now)
         }
 
         val event = ScopeArchived(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
             reason = null,
@@ -242,21 +246,21 @@ data class ScopeAggregate(
     /**
      * Restores an archived scope.
      */
-    fun restore(): Either<ScopesError, ScopeAggregate> = either {
+    fun restore(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
         }
         ensure(isArchived) {
-            ScopeError.NotArchived(scope!!.id)
+            ScopeError.NotArchived(scope!!.id, occurredAt = now)
         }
 
         val event = ScopeRestored(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = Clock.System.now(),
+            occurredAt = now,
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
         )
@@ -331,7 +335,7 @@ data class ScopeAggregate(
         else -> this@ScopeAggregate
     }
 
-    fun validateVersion(expectedVersion: Long): Either<ScopesError, Unit> = either {
+    fun validateVersion(expectedVersion: Long, now: Instant = currentTimestamp()): Either<ScopesError, Unit> = either {
         val versionValue = version.value
         if (versionValue.toLong() != expectedVersion) {
             raise(
@@ -339,6 +343,7 @@ data class ScopeAggregate(
                     scopeId = scope?.id ?: ScopeId.create(id.value.substringAfterLast("/")).bind(),
                     expectedVersion = expectedVersion,
                     actualVersion = versionValue.toLong(),
+                    occurredAt = now,
                 ),
             )
         }

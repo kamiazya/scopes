@@ -4,8 +4,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
@@ -57,7 +57,7 @@ class CurrentContextCommand :
             } else {
                 // Show the current context
                 when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
-                    is ContextViewContract.GetActiveContextResponse.Success -> {
+                    is GetActiveContextResult.Success -> {
                         val context = result.contextView
                         if (context == null) {
                             echo("No context is currently active.")

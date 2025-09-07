@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.dto.context.Context
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
+import kotlinx.datetime.Clock
 
 /**
  * Handler for listing all context views.
@@ -36,6 +37,7 @@ class ListContextViewsHandler(
                         service = "context-repository",
                         cause = error as? Throwable,
                         context = mapOf("operation" to "findAll"),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

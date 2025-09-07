@@ -4,7 +4,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -37,7 +36,7 @@ data class ScopeAlias(
          * Creates a new canonical alias for a scope.
          * Generates a new unique ID for the alias.
          */
-        fun createCanonical(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = ScopeAlias(
+        fun createCanonical(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
             id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
@@ -50,7 +49,7 @@ data class ScopeAlias(
          * Creates a new custom alias for a scope.
          * Generates a new unique ID for the alias.
          */
-        fun createCustom(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = ScopeAlias(
+        fun createCustom(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
             id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
@@ -63,7 +62,7 @@ data class ScopeAlias(
          * Creates a new canonical alias with a specific ID.
          * Used when generating deterministic aliases.
          */
-        fun createCanonicalWithId(id: AliasId, scopeId: ScopeId, aliasName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = ScopeAlias(
+        fun createCanonicalWithId(id: AliasId, scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
             id = id,
             scopeId = scopeId,
             aliasName = aliasName,
@@ -86,13 +85,13 @@ data class ScopeAlias(
     /**
      * Creates a copy of this alias with updated timestamp.
      */
-    fun withUpdatedTimestamp(timestamp: Instant = Clock.System.now()): ScopeAlias = copy(updatedAt = timestamp)
+    fun withUpdatedTimestamp(timestamp: Instant): ScopeAlias = copy(updatedAt = timestamp)
 
     /**
      * Changes the alias name while preserving the ID and other properties.
      * This allows tracking the same alias entity even when renamed.
      */
-    fun withNewName(newName: AliasName, timestamp: Instant = Clock.System.now()): ScopeAlias = copy(aliasName = newName, updatedAt = timestamp)
+    fun withNewName(newName: AliasName, timestamp: Instant): ScopeAlias = copy(aliasName = newName, updatedAt = timestamp)
 
     /**
      * Demotes a canonical alias to custom.
@@ -103,7 +102,7 @@ data class ScopeAlias(
      * @return A new ScopeAlias instance with CUSTOM type
      * @throws IllegalStateException if the alias is not canonical
      */
-    fun demoteToCustom(timestamp: Instant = Clock.System.now()): ScopeAlias {
+    fun demoteToCustom(timestamp: Instant): ScopeAlias {
         require(isCanonical()) { "Cannot demote non-canonical alias to custom" }
         return copy(
             aliasType = AliasType.CUSTOM,
@@ -119,7 +118,7 @@ data class ScopeAlias(
      * @return A new ScopeAlias instance with CANONICAL type
      * @throws IllegalStateException if the alias is not custom
      */
-    fun promoteToCanonical(timestamp: Instant = Clock.System.now()): ScopeAlias {
+    fun promoteToCanonical(timestamp: Instant): ScopeAlias {
         require(isCustom()) { "Cannot promote non-custom alias to canonical" }
         return copy(
             aliasType = AliasType.CANONICAL,

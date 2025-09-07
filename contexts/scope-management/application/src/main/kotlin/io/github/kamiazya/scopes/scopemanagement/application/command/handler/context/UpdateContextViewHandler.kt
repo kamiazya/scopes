@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRe
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
+import kotlinx.datetime.Clock
 
 /**
  * Handler for updating an existing context view.
@@ -33,6 +34,7 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
                         entityType = "ContextView",
                         identifier = command.key,
                         identifierType = "key",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
 
@@ -52,19 +54,19 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
             var updatedContextView = existingContextView
 
             if (command.name != null) {
-                updatedContextView = updatedContextView.updateName(updatedName)
+                updatedContextView = updatedContextView.updateName(updatedName, Clock.System.now())
             }
 
             if (command.filter != null) {
-                updatedContextView = updatedContextView.updateFilter(updatedFilter)
+                updatedContextView = updatedContextView.updateFilter(updatedFilter, Clock.System.now())
             }
 
             if (shouldUpdateDescription) {
                 updatedContextView = if (command.description.isNullOrEmpty()) {
                     // Clear description by passing empty string
-                    updatedContextView.updateDescription("").mapLeft { it as ScopesError }.bind()
+                    updatedContextView.updateDescription("", Clock.System.now()).mapLeft { it as ScopesError }.bind()
                 } else {
-                    updatedContextView.updateDescription(command.description).mapLeft { it as ScopesError }.bind()
+                    updatedContextView.updateDescription(command.description, Clock.System.now()).mapLeft { it as ScopesError }.bind()
                 }
             }
 

@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.AddAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
@@ -21,6 +22,7 @@ class AddAliasHandler(
     private val transactionManager: TransactionManager,
     private val logger: Logger,
 ) : CommandHandler<AddAliasCommand, ScopesError, Unit> {
+    private val errorPresenter = ScopeInputErrorPresenter()
 
     override suspend operator fun invoke(command: AddAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
@@ -50,7 +52,7 @@ class AddAliasHandler(
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
                             ScopeInputError.AliasTooLong(command.existingAlias, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.existingAlias, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(command.existingAlias, errorPresenter.presentAliasPattern(error.patternType))
                     }
                 }
                 .bind()
@@ -97,7 +99,7 @@ class AddAliasHandler(
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
                             ScopeInputError.AliasTooLong(command.newAlias, error.maximumLength)
                         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.newAlias, error.expectedPattern)
+                            ScopeInputError.AliasInvalidFormat(command.newAlias, errorPresenter.presentAliasPattern(error.patternType))
                     }
                 }
                 .bind()

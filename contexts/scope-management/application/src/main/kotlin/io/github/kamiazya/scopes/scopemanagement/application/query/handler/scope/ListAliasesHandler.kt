@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Clock
 
 /**
  * Handler for listing all aliases for a specific scope.
@@ -45,6 +46,7 @@ class ListAliasesHandler(
                             "operation" to "findById",
                             "scopeId" to scopeId.value.toString(),
                         ),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -53,6 +55,7 @@ class ListAliasesHandler(
                         entityType = "Scope",
                         identifier = query.scopeId,
                         identifierType = "id",
+                        occurredAt = Clock.System.now(),
                     ),
                 )
 
@@ -67,6 +70,7 @@ class ListAliasesHandler(
                             "operation" to "findByScopeId",
                             "scopeId" to scopeId.value.toString(),
                         ),
+                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
