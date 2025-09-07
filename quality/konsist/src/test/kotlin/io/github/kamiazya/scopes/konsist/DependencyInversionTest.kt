@@ -230,22 +230,68 @@ class DependencyInversionTest :
         // ========== Platform Abstraction Rules ==========
         // These rules enforce the platform minimize concrete types documented in development-guidelines.md
 
-        // TODO: Temporarily disabled during large-scale platform abstraction migration
-        // These rules will be re-enabled once all domain layers use TimeProvider and ULIDGenerator interfaces
-
-        "domain layer should not use concrete time providers - DISABLED during migration" {
-            // Will be re-enabled after migration is complete
-            assert(true) { "Platform abstraction migration in progress" }
+        // Platform abstraction migration: Allow some infrastructure time usage while domain is clean
+        "domain layer should minimize direct Clock.System usage" {
+            Konsist
+                .scopeFromProject()
+                .files
+                .filter { it.path.contains("/domain/") && !it.path.contains("/test/") }
+                .flatMap { it.text.split('\n').withIndex() }
+                .filter { (_, line) -> line.contains("Clock.System.now()") }
+                .also { violations ->
+                    if (violations.isNotEmpty()) {
+                        violations.forEach { (lineNum, line) ->
+                            println("Domain Clock.System usage: line ${lineNum + 1}: ${line.trim()}")
+                        }
+                    }
+                }
+                // Allow some usage during migration, but track progress
+                .let { violations ->
+                    violations.size < 30 // Allow up to 30 violations during migration
+                }
+                .let { withinLimit ->
+                    assert(withinLimit) { "Too many Clock.System violations in domain layer. Migration incomplete." }
+                }
         }
 
-        "domain layer should not use concrete ID generators - DISABLED during migration" {
-            // Will be re-enabled after migration is complete
-            assert(true) { "Platform abstraction migration in progress" }
+        "domain layer should minimize direct ID generation dependencies" {
+            Konsist
+                .scopeFromProject()
+                .files
+                .filter { it.path.contains("/domain/") && !it.path.contains("/test/") }
+                .flatMap { it.text.split('\n').withIndex() }
+                .filter { (_, line) -> line.contains("ULID.randomULID()") || line.contains("UUID.randomUUID()") }
+                .also { violations ->
+                    if (violations.isNotEmpty()) {
+                        violations.forEach { (lineNum, line) ->
+                            println("Domain ID generation usage: line ${lineNum + 1}: ${line.trim()}")
+                        }
+                    }
+                }
+                // Allow some usage during migration, but track progress
+                .let { violations ->
+                    violations.size < 10 // Allow up to 10 violations during migration
+                }
+                .let { withinLimit ->
+                    assert(withinLimit) { "Too many direct ID generation violations in domain layer. Migration incomplete." }
+                }
         }
 
-        "platform domain commons should not use concrete implementations - DISABLED during migration" {
-            // Will be re-enabled after migration is complete
-            assert(true) { "Platform abstraction migration in progress" }
+        "platform domain commons should use minimal concrete implementations" {
+            // Allow some concrete implementations in platform layer during migration
+            Konsist
+                .scopeFromProject()
+                .files
+                .filter { it.path.contains("/platform/domain-commons/") }
+                .flatMap { it.text.split('\n').withIndex() }
+                .filter { (_, line) -> line.contains("Clock.System") }
+                // Platform commons can use concrete implementations for providing abstractions
+                .let { violations ->
+                    violations.size < 5 // Allow minimal concrete usage in platform layer
+                }
+                .let { withinLimit ->
+                    assert(withinLimit) { "Platform domain commons should minimize concrete implementation usage." }
+                }
         }
 
         // ========== Contracts Slim Policy Rules ==========

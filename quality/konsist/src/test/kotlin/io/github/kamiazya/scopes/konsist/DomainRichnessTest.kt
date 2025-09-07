@@ -282,8 +282,7 @@ class DomainRichnessTest :
         }
 
         // Test 9: Domain services should contain business logic, not just orchestration
-        // TODO: Re-enable after addressing domain services that don't meet the business logic criteria
-        "domain services should have business logic methods".config(enabled = false) {
+        "domain services should have business logic methods" {
             contexts.forEach { context ->
                 val services = Konsist
                     .scopeFromDirectory("contexts/$context/domain")

@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.application.projection
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 
 /**
  * Base interface for read-only projections/view models in the scope management context.
@@ -17,6 +18,7 @@ interface ScopeProjection
  * Lightweight scope summary projection for list views and navigation.
  * Optimized for displaying scope hierarchies and basic information.
  */
+@Serializable
 data class ScopeSummaryProjection(
     val id: String,
     val title: String,
@@ -32,6 +34,7 @@ data class ScopeSummaryProjection(
  * Detailed scope projection for full scope views with rich metadata.
  * Includes all scope information, aliases, aspects, and related data.
  */
+@Serializable
 data class ScopeDetailProjection(
     val id: String,
     val title: String,
@@ -51,12 +54,14 @@ data class ScopeDetailProjection(
 /**
  * Alias information projection for efficient alias management.
  */
+@Serializable
 data class AliasProjection(val aliasName: String, val aliasType: String, val isCanonical: Boolean, val createdAt: Instant)
 
 /**
  * Hierarchical scope tree projection for navigation and organizational views.
  * Optimized for displaying scope trees with lazy loading support.
  */
+@Serializable
 data class ScopeTreeProjection(
     val id: String,
     val title: String,
@@ -71,6 +76,7 @@ data class ScopeTreeProjection(
  * Search-optimized scope projection with highlighted matches.
  * Designed for full-text search results with relevance scoring.
  */
+@Serializable
 data class ScopeSearchProjection(
     val id: String,
     val title: String,
@@ -83,6 +89,7 @@ data class ScopeSearchProjection(
     val path: List<String>,
 ) : ScopeProjection
 
+@Serializable
 enum class SearchMatchType {
     TITLE_EXACT,
     TITLE_PARTIAL,
@@ -95,6 +102,7 @@ enum class SearchMatchType {
  * Activity timeline projection for scope history and audit trails.
  * Shows chronological changes and activities related to scopes.
  */
+@Serializable
 data class ScopeActivityProjection(
     val scopeId: String,
     val scopeTitle: String,
@@ -105,6 +113,7 @@ data class ScopeActivityProjection(
     val metadata: Map<String, String> = emptyMap(),
 ) : ScopeProjection
 
+@Serializable
 enum class ActivityType {
     CREATED,
     UPDATED,
@@ -124,6 +133,7 @@ enum class ActivityType {
  * Metrics projection for dashboard and analytics views.
  * Aggregated statistics about scope usage and distribution.
  */
+@Serializable
 data class ScopeMetricsProjection(
     val totalScopes: Long,
     val rootScopes: Long,

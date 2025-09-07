@@ -30,8 +30,8 @@ class CqrsProjectionTest :
                     }
             }
 
-            xit("Projections should be serializable for caching and storage - disabled until serialization is configured") {
-                // This test is disabled because kotlinx-serialization is not currently configured in the project
+            it("Projections should be serializable for caching and storage") {
+                // Projections should be serializable to support caching and cross-service communication
                 scope
                     .classes()
                     .withNameEndingWith("Projection")

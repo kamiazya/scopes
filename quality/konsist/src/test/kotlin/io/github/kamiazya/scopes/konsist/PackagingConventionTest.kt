@@ -119,8 +119,8 @@ class PackagingConventionTest :
 
         // ========== Infrastructure Layer Package Structure ==========
 
-        "infrastructure repositories should be in repository package".config(enabled = false) {
-            // TODO: Move repositories to repository package
+        "infrastructure repositories should be in repository package" {
+            // Repositories should be properly organized in repository packages
             Konsist
                 .scopeFromProduction()
                 .classes()
@@ -133,8 +133,8 @@ class PackagingConventionTest :
                 }
         }
 
-        "infrastructure adapters should be in adapter or adapters package".config(enabled = false) {
-            // TODO: Move adapters to proper package
+        "infrastructure adapters should be in adapter or adapters package" {
+            // Adapters should be properly organized in adapter packages
             Konsist
                 .scopeFromProduction()
                 .classes()
