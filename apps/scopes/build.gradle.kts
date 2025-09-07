@@ -127,26 +127,33 @@ tasks.named("nativeCompile") {
 
 // E2E Test Tasks for Native Binary
 
+// Common function to get native binary path
+fun getNativeBinaryPath(): File {
+    val os =
+        org.gradle.internal.os.OperatingSystem
+            .current()
+    val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
+    return layout.buildDirectory
+        .file("native/nativeCompile/$binaryName")
+        .get()
+        .asFile
+}
+
 // Smoke test - quick verification that binary can run
 tasks.register<Exec>("nativeSmokeTest") {
     group = "verification"
     description = "Run basic smoke test on native binary"
     dependsOn("nativeCompile")
 
-    val os =
-        org.gradle.internal.os.OperatingSystem
-            .current()
-    val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
-    val binaryPath =
-        layout.buildDirectory
-            .file("native/nativeCompile/$binaryName")
-            .get()
-            .asFile
+    val binaryPath = getNativeBinaryPath()
 
     doFirst {
         if (!binaryPath.exists()) {
             throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
         }
+        val os =
+            org.gradle.internal.os.OperatingSystem
+                .current()
         if (!os.isWindows && !binaryPath.canExecute()) {
             binaryPath.setExecutable(true)
         }
@@ -168,15 +175,7 @@ tasks.register("nativeE2eTest") {
     dependsOn("nativeSmokeTest")
 
     doLast {
-        val os =
-            org.gradle.internal.os.OperatingSystem
-                .current()
-        val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
-        val binaryPath =
-            layout.buildDirectory
-                .file("native/nativeCompile/$binaryName")
-                .get()
-                .asFile
+        val binaryPath = getNativeBinaryPath()
 
         if (!binaryPath.exists()) {
             throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
@@ -195,7 +194,7 @@ tasks.register("nativeE2eTest") {
 
         testCases.forEach { args ->
             try {
-                exec {
+                project.exec {
                     commandLine(listOf(binaryPath.absolutePath) + args)
                     standardOutput = System.out
                     errorOutput = System.err

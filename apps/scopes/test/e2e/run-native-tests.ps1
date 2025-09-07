@@ -103,8 +103,8 @@ function Test-CommandWithOutput {
     }
 }
 
-# Function to test invalid commands (should fail)
-function Test-InvalidCommand {
+# Function to test commands that are expected to fail
+function Test-CommandExpectFail {
     param(
         [string]$TestName,
         [string[]]$Arguments
@@ -190,10 +190,10 @@ Write-Host "=== Phase 5: Error Handling Tests ==="
 Write-Host ""
 
 # Test invalid commands (should fail gracefully)
-Test-InvalidCommand "Invalid command handling" @("invalid-command")
+Test-CommandExpectFail "Invalid command handling" @("invalid-command")
 
 # Test invalid flags
-Test-InvalidCommand "Invalid flag handling" @("--invalid-flag")
+Test-CommandExpectFail "Invalid flag handling" @("--invalid-flag")
 
 Write-Host ""
 Write-Host "========================================="

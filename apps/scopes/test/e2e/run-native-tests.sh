@@ -77,6 +77,27 @@ run_test() {
     fi
 }
 
+# Function to run test expecting failure
+run_test_expect_fail() {
+    local test_name="$1"
+    shift
+    local command_args=("$@")
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+
+    echo -n "Testing: $test_name ... "
+
+    if "$BINARY_PATH" "${command_args[@]}" 2>/dev/null; then
+        echo -e "${RED}✗ FAILED (should have failed)${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    else
+        echo -e "${GREEN}✓ PASSED (failed as expected)${NC}"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    fi
+}
+
 # Function to run test expecting specific output
 run_test_with_output() {
     local test_name="$1"
@@ -172,26 +193,10 @@ echo "=== Phase 5: Error Handling Tests ==="
 echo ""
 
 # Test invalid commands (should fail gracefully)
-echo -n "Testing: Invalid command handling ... "
-if "$BINARY_PATH" invalid-command 2>/dev/null; then
-    echo -e "${RED}✗ FAILED (should have failed)${NC}"
-    FAILED_TESTS=$((FAILED_TESTS + 1))
-else
-    echo -e "${GREEN}✓ PASSED (failed as expected)${NC}"
-    PASSED_TESTS=$((PASSED_TESTS + 1))
-fi
-TOTAL_TESTS=$((TOTAL_TESTS + 1))
+run_test_expect_fail "Invalid command handling" invalid-command
 
 # Test invalid flags
-echo -n "Testing: Invalid flag handling ... "
-if "$BINARY_PATH" --invalid-flag 2>/dev/null; then
-    echo -e "${RED}✗ FAILED (should have failed)${NC}"
-    FAILED_TESTS=$((FAILED_TESTS + 1))
-else
-    echo -e "${GREEN}✓ PASSED (failed as expected)${NC}"
-    PASSED_TESTS=$((PASSED_TESTS + 1))
-fi
-TOTAL_TESTS=$((TOTAL_TESTS + 1))
+run_test_expect_fail "Invalid flag handling" --invalid-flag
 
 echo ""
 echo "========================================="
