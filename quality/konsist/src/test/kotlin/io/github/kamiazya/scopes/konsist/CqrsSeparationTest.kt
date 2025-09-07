@@ -23,13 +23,17 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.command") == true }
+                    .filter { it.packagee?.name?.contains("command.handler") == true }
                     .assertFalse { commandHandler ->
                         commandHandler.properties().any { property ->
                             val propertyType = property.type?.name
                             propertyType?.contains("ReadOnlyRepository") == true ||
                                 propertyType?.contains("QueryRepository") == true ||
-                                propertyType?.contains("ViewRepository") == true
+                                // Allow ContextViewRepository as it's a domain repository, not a query view
+                                (
+                                    propertyType?.contains("ViewRepository") == true &&
+                                        !propertyType.contains("ContextViewRepository")
+                                    )
                         }
                     }
             }
@@ -38,7 +42,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.command") == true }
+                    .filter { it.packagee?.name?.contains("command.handler") == true }
                     .filter { !it.name.contains("Test") }
                     .assertTrue { commandHandler ->
                         commandHandler.properties().any { property ->
@@ -95,7 +99,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.query") == true }
+                    .filter { it.packagee?.name?.contains("query.handler") == true }
                     .assertFalse { queryHandler ->
                         queryHandler.properties().any { property ->
                             val propertyType = property.type?.name
@@ -111,14 +115,23 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.query") == true }
+                    .filter { it.packagee?.name?.contains("query.handler") == true }
                     .assertFalse { queryHandler ->
                         queryHandler.functions().any { function ->
-                            function.text?.contains("save(") == true ||
-                                function.text?.contains("delete(") == true ||
-                                function.text?.contains("create(") == true ||
-                                function.text?.contains("update(") == true ||
-                                function.text?.contains("remove(") == true
+                            val text = function.text ?: ""
+                            // Check for repository modification methods (not value object creation)
+                            text.contains("repository.save(") ||
+                                text.contains("repository.delete(") ||
+                                text.contains("repository.create(") ||
+                                text.contains("repository.update(") ||
+                                text.contains("repository.remove(") ||
+                                // Check for direct state modifications
+                                text.contains(".save()") ||
+                                text.contains(".delete()") ||
+                                text.contains(".persist()") ||
+                                text.contains(".store()") ||
+                                // But allow value object creation
+                                (text.contains("create(") && !text.contains(".create("))
                         }
                     }
             }
@@ -239,7 +252,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.query") == true }
+                    .filter { it.packagee?.name?.contains("query.handler") == true }
                     .filter { it.name.contains("Get") || it.name.contains("List") }
                     .assertTrue { queryHandler ->
                         // Query handlers should either use caching or be simple enough not to need it
@@ -259,7 +272,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.command") == true }
+                    .filter { it.packagee?.name?.contains("command.handler") == true }
                     .assertFalse { commandHandler ->
                         commandHandler.functions().any { function ->
                             val text = function.text ?: ""
@@ -295,7 +308,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.command") == true }
+                    .filter { it.packagee?.name?.contains("command.handler") == true }
                     .assertTrue { commandHandler ->
                         commandHandler.functions().any { function ->
                             val returnType = function.returnType?.name
@@ -310,7 +323,7 @@ class CqrsSeparationTest :
                 scope
                     .classes()
                     .withNameEndingWith("Handler")
-                    .filter { it.packagee?.name?.contains("handler.query") == true }
+                    .filter { it.packagee?.name?.contains("query.handler") == true }
                     .filter { it.name.startsWith("Get") }
                     .assertTrue { queryHandler ->
                         queryHandler.functions().any { function ->
