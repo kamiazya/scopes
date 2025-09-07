@@ -209,7 +209,6 @@ class BasicArchitectureTest :
                 .flatMap { it.classes() }
                 .filter { it.name.endsWith("Dto") || it.name.endsWith("Result") }
                 .filter { !it.name.endsWith("Test") }
-                .filter { !it.name.contains("ValidationResult") } // Domain concept, not a DTO
                 .filter { clazz ->
                     val packageName = clazz.packagee?.name ?: ""
                     // Only apply this rule to non-contracts packages
