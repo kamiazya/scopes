@@ -160,20 +160,30 @@ class CqrsSeparationTest :
                     .withNameEndingWith("QueryPort")
                     .assertTrue { port ->
                         port.functions().all { function ->
-                            val returnType = function.returnType?.name
+                            val returnType = function.returnType?.name ?: ""
+                            val returnTypeText = function.returnType?.text ?: ""
+
                             // Queries should return Either<Error, RichResult> or contract response types
-                            (
-                                returnType?.contains("Either") == true &&
-                                    (
-                                        returnType.contains("Result") ||
-                                            returnType.contains("List") ||
-                                            returnType.contains("Projection") ||
-                                            returnType.contains("Dto")
-                                        )
-                                ) ||
-                                // Allow contract response and result patterns
-                                returnType?.contains("Response") == true ||
-                                returnType?.contains("Result") == true
+                            when {
+                                // Check for Either types with rich data models
+                                returnType.contains("Either") -> {
+                                    // Either should contain rich result types in the Right side
+                                    returnTypeText.contains("Result") ||
+                                        returnTypeText.contains("List<") ||
+                                        returnTypeText.contains("Projection") ||
+                                        returnTypeText.contains("Dto") ||
+                                        returnTypeText.contains("AspectDefinition") ||
+                                        returnTypeText.contains("ContextView") ||
+                                        returnTypeText.contains("String>") ||
+                                        // For List<String>
+                                        returnTypeText.contains("?>") // For nullable types like AspectDefinition?
+                                }
+                                // Legacy patterns still allowed
+                                else -> {
+                                    returnType.contains("Response") ||
+                                        returnType.contains("Result")
+                                }
+                            }
                         }
                     }
             }

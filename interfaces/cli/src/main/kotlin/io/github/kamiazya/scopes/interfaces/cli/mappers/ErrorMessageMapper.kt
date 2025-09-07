@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.mappers
 
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateVersionError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectKeyError
@@ -22,7 +23,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.UserPreferencesInt
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ValidationError
 
 /**
- * Maps domain errors to user-friendly messages for CLI output.
+ * Maps domain and contract errors to user-friendly messages for CLI output.
  */
 object ErrorMessageMapper {
     private fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidFormat.AliasPatternType): String = when (patternType) {
@@ -325,5 +326,64 @@ object ErrorMessageMapper {
             is ValidationError.InvalidDurationValue -> "Invalid duration value '${error.value.value}' for aspect '${error.aspectKey.value}'"
         }
         is ScopesError.ScopeStatusTransitionError -> "Invalid status transition from ${error.from} to ${error.to}: ${error.reason}"
+    }
+
+    /**
+     * Maps contract errors to user-friendly messages.
+     */
+    fun getMessage(error: ScopeContractError): String = when (error) {
+        is ScopeContractError.InputError -> when (error) {
+            is ScopeContractError.InputError.InvalidId ->
+                "Invalid ID format: ${error.id}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
+            is ScopeContractError.InputError.InvalidTitle -> when (val failure = error.validationFailure) {
+                is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
+                is ScopeContractError.TitleValidationFailure.TooShort ->
+                    "Title too short: minimum ${failure.minimumLength} characters"
+                is ScopeContractError.TitleValidationFailure.TooLong ->
+                    "Title too long: maximum ${failure.maximumLength} characters"
+                is ScopeContractError.TitleValidationFailure.InvalidCharacters ->
+                    "Title contains invalid characters: ${failure.prohibitedCharacters.joinToString()}"
+            }
+            is ScopeContractError.InputError.InvalidDescription -> when (val failure = error.validationFailure) {
+                is ScopeContractError.DescriptionValidationFailure.TooLong ->
+                    "Description too long: maximum ${failure.maximumLength} characters"
+            }
+            is ScopeContractError.InputError.InvalidParentId ->
+                "Invalid parent ID: ${error.parentId}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
+        }
+        is ScopeContractError.BusinessError -> when (error) {
+            is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
+            is ScopeContractError.BusinessError.DuplicateTitle ->
+                "Duplicate title '${error.title}'${error.parentId?.let { " under parent $it" } ?: " at root level"}"
+            is ScopeContractError.BusinessError.HierarchyViolation -> when (val violation = error.violation) {
+                is ScopeContractError.HierarchyViolationType.CircularReference ->
+                    "Circular reference detected: ${violation.scopeId} -> ${violation.parentId}"
+                is ScopeContractError.HierarchyViolationType.MaxDepthExceeded ->
+                    "Maximum depth exceeded: ${violation.attemptedDepth} (max: ${violation.maximumDepth})"
+                is ScopeContractError.HierarchyViolationType.MaxChildrenExceeded ->
+                    "Maximum children exceeded for ${violation.parentId}: ${violation.currentChildrenCount} (max: ${violation.maximumChildren})"
+                is ScopeContractError.HierarchyViolationType.SelfParenting ->
+                    "Cannot set scope ${violation.scopeId} as its own parent"
+                is ScopeContractError.HierarchyViolationType.ParentNotFound ->
+                    "Parent ${violation.parentId} not found for scope ${violation.scopeId}"
+            }
+            is ScopeContractError.BusinessError.AlreadyDeleted -> "Already deleted: ${error.scopeId}"
+            is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
+            is ScopeContractError.BusinessError.NotArchived -> "Scope is not archived: ${error.scopeId}"
+            is ScopeContractError.BusinessError.HasChildren ->
+                "Cannot delete scope with children: ${error.scopeId}${error.childrenCount?.let { " ($it children)" } ?: ""}"
+            is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
+            is ScopeContractError.BusinessError.DuplicateAlias -> "Alias already exists: ${error.alias}"
+            is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias ->
+                "Cannot remove canonical alias: ${error.alias}"
+        }
+        is ScopeContractError.SystemError -> when (error) {
+            is ScopeContractError.SystemError.ServiceUnavailable ->
+                "Service unavailable: ${error.service}"
+            is ScopeContractError.SystemError.Timeout ->
+                "Operation timeout: ${error.operation} (${error.timeout})"
+            is ScopeContractError.SystemError.ConcurrentModification ->
+                "Concurrent modification detected for ${error.scopeId} (expected: ${error.expectedVersion}, actual: ${error.actualVersion})"
+        }
     }
 }

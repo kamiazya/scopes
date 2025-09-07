@@ -9,7 +9,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateContex
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -76,7 +76,7 @@ class CreateContextCommand :
             val result = contextCommandAdapter.createContext(request)
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to create context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    echo("Error: Failed to create context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 ifRight = {
                     echo("Context view '$key' created successfully")

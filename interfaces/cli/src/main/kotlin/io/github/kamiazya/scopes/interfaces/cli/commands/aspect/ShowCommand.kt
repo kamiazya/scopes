@@ -1,9 +1,10 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetAspectDefinitionResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -26,9 +27,11 @@ class ShowCommand :
 
     override fun run() {
         runBlocking {
-            when (val result = aspectQueryAdapter.getAspectDefinition(key)) {
-                is GetAspectDefinitionResult.Success -> {
-                    val definition = result.aspectDefinition
+            aspectQueryAdapter.getAspectDefinition(key).fold(
+                ifLeft = { error ->
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                },
+                ifRight = { definition ->
                     if (definition == null) {
                         echo("Aspect '$key' not found", err = true)
                     } else {
@@ -36,11 +39,8 @@ class ShowCommand :
                         echo("Description: ${definition.description}")
                         echo("Type: ${definition.type}")
                     }
-                }
-                is GetAspectDefinitionResult.NotFound -> {
-                    echo("Aspect '${result.key}' not found", err = true)
-                }
-            }
+                },
+            )
         }
     }
 }

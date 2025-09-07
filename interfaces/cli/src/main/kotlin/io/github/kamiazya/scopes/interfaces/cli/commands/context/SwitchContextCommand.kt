@@ -4,12 +4,10 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -52,20 +50,20 @@ class SwitchContextCommand :
             val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to switch to context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 {
                     echo("Switched to context '$key'")
 
                     // Show the active filter
-                    when (val contextResult = contextQueryAdapter.getContext(GetContextViewQuery(key))) {
-                        is GetContextViewResult.Success -> {
-                            echo("Active filter: ${contextResult.contextView.filter}")
-                        }
-                        is GetContextViewResult.NotFound -> {
-                            // Ignore, context was switched successfully but details not available
-                        }
-                    }
+                    contextQueryAdapter.getContextView(key).fold(
+                        { /* Ignore errors - context was switched successfully but details not available */ },
+                        { contextView ->
+                            contextView?.let {
+                                echo("Active filter: ${it.filter}")
+                            }
+                        },
+                    )
                 },
             )
         }

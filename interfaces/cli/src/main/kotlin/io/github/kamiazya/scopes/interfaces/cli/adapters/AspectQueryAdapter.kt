@@ -1,12 +1,12 @@
 package io.github.kamiazya.scopes.interfaces.cli.adapters
 
+import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefinitionQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetAspectDefinitionResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListAspectDefinitionsResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ValidateAspectValueResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
 
 /**
  * Query adapter for aspect-related CLI queries.
@@ -16,16 +16,17 @@ class AspectQueryAdapter(private val aspectQueryPort: AspectQueryPort) {
     /**
      * Get an aspect definition by key.
      */
-    suspend fun getAspectDefinition(key: String): GetAspectDefinitionResult = aspectQueryPort.getAspectDefinition(GetAspectDefinitionQuery(key))
+    suspend fun getAspectDefinition(key: String): Either<ScopeContractError, AspectDefinition?> =
+        aspectQueryPort.getAspectDefinition(GetAspectDefinitionQuery(key))
 
     /**
      * List all aspect definitions.
      */
-    suspend fun listAspectDefinitions(): ListAspectDefinitionsResult = aspectQueryPort.listAspectDefinitions(ListAspectDefinitionsQuery)
+    suspend fun listAspectDefinitions(): Either<ScopeContractError, List<AspectDefinition>> = aspectQueryPort.listAspectDefinitions(ListAspectDefinitionsQuery)
 
     /**
      * Validate aspect values against their definitions.
      */
-    suspend fun validateAspectValue(key: String, values: List<String>): ValidateAspectValueResult =
+    suspend fun validateAspectValue(key: String, values: List<String>): Either<ScopeContractError, List<String>> =
         aspectQueryPort.validateAspectValue(ValidateAspectValueQuery(key, values))
 }

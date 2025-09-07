@@ -1,15 +1,13 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextViewQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetContextViewResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -50,32 +48,35 @@ class ShowContextCommand :
         runBlocking {
             val contextKey = if (key == "current") {
                 // Get the current context key
-                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
-                    is GetActiveContextResult.Success -> {
-                        val activeContext = result.contextView
+                contextQueryAdapter.getCurrentContext().fold(
+                    { error ->
+                        echo("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}", err = true)
+                        return@runBlocking
+                    },
+                    { activeContext ->
                         if (activeContext == null) {
                             echo("No context is currently active.", err = true)
                             return@runBlocking
                         }
                         activeContext.key
-                    }
-                    else -> {
-                        echo("Failed to get current context.", err = true)
-                        return@runBlocking
-                    }
-                }
+                    },
+                )
             } else {
                 key
             }
 
-            when (val result = contextQueryAdapter.getContext(GetContextViewQuery(contextKey))) {
-                is GetContextViewResult.Success -> {
-                    echo(contextOutputFormatter.formatContextViewDetailed(result.contextView, debugContext.debug))
-                }
-                is GetContextViewResult.NotFound -> {
-                    echo("Context view '${result.key}' not found.", err = true)
-                }
-            }
+            contextQueryAdapter.getContextView(contextKey).fold(
+                { error ->
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                },
+                { contextView ->
+                    if (contextView == null) {
+                        echo("Context view '$contextKey' not found.", err = true)
+                    } else {
+                        echo(contextOutputFormatter.formatContextViewDetailed(contextView, debugContext.debug))
+                    }
+                },
+            )
         }
     }
 }

@@ -1,8 +1,9 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListAspectDefinitionsResult
+import com.github.ajalt.clikt.core.CliktError
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,9 +24,11 @@ class ListDefinitionsCommand :
 
     override fun run() {
         runBlocking {
-            when (val result = aspectQueryAdapter.listAspectDefinitions()) {
-                is ListAspectDefinitionsResult.Success -> {
-                    val definitions = result.aspectDefinitions
+            aspectQueryAdapter.listAspectDefinitions().fold(
+                ifLeft = { error ->
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                },
+                ifRight = { definitions ->
                     if (definitions.isEmpty()) {
                         echo("No aspect definitions found")
                     } else {
@@ -36,8 +39,8 @@ class ListDefinitionsCommand :
                             echo("  Type: ${definition.type}")
                         }
                     }
-                }
-            }
+                },
+            )
         }
     }
 }

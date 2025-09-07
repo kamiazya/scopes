@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateContex
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -82,7 +82,7 @@ class EditContextCommand :
             val result = contextCommandAdapter.updateContext(request)
             result.fold(
                 { error ->
-                    echo("Error: Failed to update context '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    echo("Error: Failed to update context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 {
                     echo("Context view '$key' updated successfully")

@@ -1,14 +1,12 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextViewsQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ListContextViewsResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -39,22 +37,21 @@ class ListContextsCommand :
 
     override fun run() {
         runBlocking {
-            when (val result = contextQueryAdapter.listContexts(ListContextViewsQuery)) {
-                is ListContextViewsResult.Success -> {
-                    if (result.contextViews.isEmpty()) {
+            contextQueryAdapter.listContextViews().fold(
+                { error ->
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                },
+                { contextViews ->
+                    if (contextViews.isEmpty()) {
                         echo("No context views defined.")
                         echo("Create one with: scopes context create <key> <name> --filter <expression>")
                     } else {
                         // Get current active context to highlight it
-                        val currentContextResult = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)
-                        val currentContextKey = when (currentContextResult) {
-                            is GetActiveContextResult.Success -> currentContextResult.contextView?.key
-                            else -> null
-                        }
-                        echo(contextOutputFormatter.formatContextList(result.contextViews, currentContextKey, debugContext.debug))
+                        val currentContextKey = contextQueryAdapter.getCurrentContext().getOrNull()?.key
+                        echo(contextOutputFormatter.formatContextList(contextViews, currentContextKey, debugContext.debug))
                     }
-                }
-            }
+                },
+            )
         }
     }
 }

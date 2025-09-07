@@ -1,15 +1,15 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetActiveContextQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.GetActiveContextResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -56,9 +56,11 @@ class CurrentContextCommand :
                 echo("Use 'scopes context switch <key>' to switch to a different context.")
             } else {
                 // Show the current context
-                when (val result = contextQueryAdapter.getCurrentContext(GetActiveContextQuery)) {
-                    is GetActiveContextResult.Success -> {
-                        val context = result.contextView
+                contextQueryAdapter.getCurrentContext().fold(
+                    { error ->
+                        throw CliktError(ErrorMessageMapper.getMessage(error))
+                    },
+                    { context ->
                         if (context == null) {
                             echo("No context is currently active.")
                             echo("All scopes are visible.")
@@ -66,8 +68,8 @@ class CurrentContextCommand :
                             echo("Current context: ${context.key}")
                             echo(contextOutputFormatter.formatContextView(context, debugContext.debug))
                         }
-                    }
-                }
+                    },
+                )
             }
         }
     }
