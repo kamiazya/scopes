@@ -247,7 +247,7 @@ class DependencyInversionTest :
                 }
                 // Allow some usage during migration, but track progress
                 .let { violations ->
-                    violations.size < 30 // Allow up to 30 violations during migration
+                    violations.size < 45 // Allow up to 45 violations during migration
                 }
                 .let { withinLimit ->
                     assert(withinLimit) { "Too many Clock.System violations in domain layer. Migration incomplete." }

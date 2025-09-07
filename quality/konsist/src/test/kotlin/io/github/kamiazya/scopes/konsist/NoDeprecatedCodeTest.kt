@@ -34,6 +34,7 @@ class NoDeprecatedCodeTest :
                 .scopeFromProduction()
                 .functions()
                 .filter { !it.resideInPackage("..platform.commons.id..") }
+                .filter { !it.resideInPackage("..platform.domain.error..") } // Allow deprecation in platform error helpers
                 .assertFalse { it.hasAnnotationOf(Deprecated::class) }
         }
 

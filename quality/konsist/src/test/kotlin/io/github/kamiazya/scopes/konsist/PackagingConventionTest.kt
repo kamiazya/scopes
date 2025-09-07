@@ -129,7 +129,8 @@ class PackagingConventionTest :
                 .filter { !it.name.endsWith("Test") }
                 .filter { !it.name.contains("Interface") }
                 .assertTrue { repo ->
-                    repo.packagee?.name == "repository"
+                    // Check that the package ends with .repository
+                    repo.resideInPackage("..repository")
                 }
         }
 
@@ -142,8 +143,8 @@ class PackagingConventionTest :
                 .filter { it.name.endsWith("Adapter") }
                 .filter { !it.name.endsWith("Test") }
                 .assertTrue { adapter ->
-                    adapter.packagee?.name == "adapter" ||
-                        adapter.packagee?.name == "adapters"
+                    // Check that the package ends with .adapter or .adapters
+                    adapter.resideInPackage("..adapter..") || adapter.resideInPackage("..adapters..")
                 }
         }
 
