@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a scope title with embedded validation.

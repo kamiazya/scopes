@@ -4,10 +4,10 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.commons.id.ULID
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a unique identifier for a context view.

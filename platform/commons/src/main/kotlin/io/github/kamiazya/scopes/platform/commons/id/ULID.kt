@@ -33,14 +33,18 @@ value class ULID private constructor(val value: String) {
                 up.length == 26 &&
                     up.all { it in VALID_CHARS } &&
                     // Maximum valid timestamp is "7ZZZZZZZZZ" (48-bit max in Base32)
-                    up.substring(0, 10) <= "7ZZZZZZZZZ"
+                    up.take(10) <= "7ZZZZZZZZZ"
             }
         } catch (e: Exception) {
             false
         }
 
-        // Keep concrete implementation for backward compatibility temporarily
-        @Deprecated("Use ULIDGenerator interface instead for better testability", ReplaceWith("ULIDGenerator.generate()"))
+        // Temporary bridge method to SystemULIDGenerator
+        // This will be removed once all consumers use dependency injection
+        @Deprecated(
+            "Use ULIDGenerator interface with dependency injection for better testability",
+            ReplaceWith("ulidGenerator.generate()", "io.github.kamiazya.scopes.platform.commons.id.ULIDGenerator"),
+        )
         fun generate(): ULID = fromString(KULID.random())
     }
 

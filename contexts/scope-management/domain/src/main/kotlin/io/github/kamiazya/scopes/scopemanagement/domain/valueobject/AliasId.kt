@@ -4,10 +4,10 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a unique identifier for scope aliases.
