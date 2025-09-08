@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.platform.commons.time
 
-import kotlinx.datetime.Instant
+import kotlinx.datetime.Instant as KotlinxInstant
 
-typealias Instant = Instant
+typealias Instant = KotlinxInstant
 
 /**
  * Abstraction for time providers to support testability and dependency inversion.
