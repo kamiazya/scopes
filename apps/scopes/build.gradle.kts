@@ -101,6 +101,11 @@ graalvmNative {
                     "-H:+UnlockExperimentalVMOptions",
                     "-H:+ReportExceptionStackTraces",
                     "-H:+InstallExitHandlers",
+                    // GraalVM 24 optimizations
+                    "-H:+TrackPrimitiveValues", // SkipFlow: track primitive values for better optimization
+                    "-H:+UsePredicates", // SkipFlow: evaluate branching conditions for size reduction
+                    "-march=compatibility", // CPU architecture optimization (compatibility for portability)
+                    // Build-time initialization
                     "--initialize-at-build-time=kotlin",
                     "--initialize-at-build-time=kotlinx.coroutines",
                     "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
