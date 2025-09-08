@@ -1,0 +1,85 @@
+package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
+
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
+
+/**
+ * Command port adapter implementation for Aspect operations.
+ * Handles command operations that modify aspect definitions.
+ */
+public class AspectCommandPortAdapter(
+    private val defineAspectHandler: DefineAspectHandler,
+    private val updateAspectDefinitionHandler: UpdateAspectDefinitionHandler,
+    private val deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler,
+) : AspectCommandPort {
+
+    override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+        val result = defineAspectHandler(
+            DefineAspectCommand(
+                key = command.key,
+                description = command.description,
+                type = when (command.type.lowercase()) {
+                    "text" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
+                    "numeric" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Numeric
+                    "boolean" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.BooleanType
+                    "duration" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Duration
+                    else -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
+                },
+            ),
+        )
+
+        return result.fold(
+            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifRight = { Unit.right() },
+        )
+    }
+
+    override suspend fun updateAspectDefinition(command: UpdateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+        val result = updateAspectDefinitionHandler(
+            AppUpdateAspectDefinitionCommand(
+                key = command.key,
+                description = command.description,
+            ),
+        )
+
+        return result.fold(
+            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifRight = { Unit.right() },
+        )
+    }
+
+    override suspend fun deleteAspectDefinition(command: DeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+        val result = deleteAspectDefinitionHandler(AppDeleteAspectDefinitionCommand(command.key))
+
+        return result.fold(
+            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifRight = { Unit.right() },
+        )
+    }
+
+    /**
+     * Maps domain errors to contract layer errors following CQRS principles.
+     */
+    private fun mapScopesErrorToScopeContractError(error: ScopesError): ScopeContractError = when (error) {
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
+            ScopeContractError.BusinessError.NotFound(error.identifier)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.AlreadyExists ->
+            ScopeContractError.BusinessError.DuplicateAlias(error.identifier)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
+            ScopeContractError.InputError.InvalidTitle(error.field, ScopeContractError.TitleValidationFailure.Empty)
+        else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")
+    }
+}

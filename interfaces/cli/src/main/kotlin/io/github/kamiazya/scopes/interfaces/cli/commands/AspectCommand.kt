@@ -17,6 +17,8 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.aspect.ValidateCommand
  *
  * This command serves as a group for all aspect-related subcommands,
  * providing a unified interface for managing scope aspects.
+ *
+ * Note: Subcommands handle errors using CliktError framework.
  */
 class AspectCommand :
     CliktCommand(

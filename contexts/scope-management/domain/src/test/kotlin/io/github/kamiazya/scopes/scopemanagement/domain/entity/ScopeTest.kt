@@ -4,6 +4,7 @@ import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.datetime.Instant
 
 /**
  * Tests for Scope entity focusing on business behavior and user scenarios.
@@ -13,6 +14,8 @@ import io.kotest.matchers.shouldBe
  */
 class ScopeTest :
     StringSpec({
+        val testTime = Instant.parse("2024-01-01T12:00:00Z")
+        val laterTime = Instant.parse("2024-01-01T14:00:00Z")
 
         "user can organize work by creating new scopes for projects and tasks" {
             // When a user wants to create a new project or task to organize their work
@@ -20,6 +23,7 @@ class ScopeTest :
                 title = "Website Redesign Project",
                 description = "Complete overhaul of company website with modern design",
                 parentId = null,
+                now = testTime,
             )
 
             // Then the scope is created successfully with their specifications
@@ -35,6 +39,7 @@ class ScopeTest :
                 title = "",
                 description = "Some work to be done",
                 parentId = null,
+                now = testTime,
             )
 
             // Then the system prevents this to ensure all work items have clear identification
@@ -48,6 +53,7 @@ class ScopeTest :
                 title = excessiveTitle,
                 description = "Project description",
                 parentId = null,
+                now = testTime,
             )
 
             // Then the system prevents this to maintain clean, readable project hierarchies
@@ -60,6 +66,7 @@ class ScopeTest :
                 title = "  Mobile App Development  ",
                 description = "Native iOS and Android app",
                 parentId = null,
+                now = testTime,
             )
 
             // Then the system normalizes the input for consistency
@@ -73,10 +80,11 @@ class ScopeTest :
                 title = "Q4 Planning",
                 description = "Planning for Q4 2024",
                 parentId = null,
+                now = testTime,
             ).shouldBeRight()
 
             // When requirements change and the user updates the title
-            val updatedScope = initialScope.updateTitle("Q4 Planning - Extended to Q1 2025")
+            val updatedScope = initialScope.updateTitle("Q4 Planning - Extended to Q1 2025", laterTime)
 
             // Then the scope reflects the new title while maintaining its identity
             val result = updatedScope.shouldBeRight()
@@ -91,11 +99,12 @@ class ScopeTest :
                 title = "API Integration",
                 description = "Basic integration",
                 parentId = null,
+                now = testTime,
             ).shouldBeRight()
 
             // When the user adds more detailed information
             val detailedDescription = "Integration with payment gateway API including Stripe, PayPal, and Square"
-            val updatedScope = initialScope.updateDescription(detailedDescription)
+            val updatedScope = initialScope.updateDescription(detailedDescription, laterTime)
 
             // Then team members have better context about the work
             val result = updatedScope.shouldBeRight()
@@ -109,10 +118,11 @@ class ScopeTest :
                 title = "Research Task",
                 description = "Initial research notes that are now outdated",
                 parentId = null,
+                now = testTime,
             ).shouldBeRight()
 
             // When the user clears the outdated information
-            val clearedScope = scopeWithDescription.updateDescription(null)
+            val clearedScope = scopeWithDescription.updateDescription(null, laterTime)
 
             // Then the scope has no description
             val result = clearedScope.shouldBeRight()

@@ -14,7 +14,14 @@ sealed class ScopeInputError : ScopesError() {
 
         data class Blank(override val occurredAt: Instant, val attemptedValue: String) : IdError()
 
-        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val expectedFormat: String = "ULID") : IdError()
+        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val formatType: IdFormatType = IdFormatType.ULID) : IdError() {
+            enum class IdFormatType {
+                ULID,
+                UUID,
+                NUMERIC_ID,
+                CUSTOM_FORMAT,
+            }
+        }
     }
 
     /**
@@ -51,6 +58,13 @@ sealed class ScopeInputError : ScopesError() {
 
         data class TooLong(override val occurredAt: Instant, val attemptedValue: String, val maximumLength: Int) : AliasError()
 
-        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val expectedPattern: String) : AliasError()
+        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val patternType: AliasPatternType) : AliasError() {
+            enum class AliasPatternType {
+                LOWERCASE_WITH_HYPHENS,
+                ALPHANUMERIC,
+                ULID_LIKE,
+                CUSTOM_PATTERN,
+            }
+        }
     }
 }

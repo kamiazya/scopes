@@ -1,12 +1,11 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
+import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -16,7 +15,7 @@ import org.koin.core.component.inject
  * Update command for modifying existing scopes.
  */
 class UpdateCommand :
-    CliktCommand(
+    ScopesCliktCommand(
         name = "update",
         help = "Update an existing scope",
     ),
@@ -37,11 +36,11 @@ class UpdateCommand :
             // Resolve the identifier to a scope ID
             parameterResolver.resolve(identifier).fold(
                 { error ->
-                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                    handleContractError(error)
                 },
                 { resolvedId ->
                     if (title == null && description == null) {
-                        throw CliktError("No changes specified. Provide --title and/or --description.")
+                        fail("No changes specified. Provide --title and/or --description.", ExitCode.USAGE_ERROR)
                     }
                     scopeCommandAdapter.updateScope(
                         id = resolvedId,
@@ -49,7 +48,7 @@ class UpdateCommand :
                         description = description,
                     ).fold(
                         { error ->
-                            throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error)}")
+                            handleContractError(error)
                         },
                         { scope ->
                             echo(scopeOutputFormatter.formatContractUpdateResult(scope))

@@ -1,17 +1,20 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AliasGenerationStrategy
-import io.github.kamiazya.scopes.scopemanagement.domain.service.FilterExpressionValidator
-import io.github.kamiazya.scopes.scopemanagement.domain.service.WordProvider
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationStrategy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.FilterExpressionValidator
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
@@ -22,10 +25,8 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDe
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.service.AspectQueryFilterValidator
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.TransactionManagerAdapter
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import io.github.kamiazya.scopes.platform.application.port.TransactionManager as PlatformTransactionManager
 
 /**
  * Koin module for Scope Management infrastructure
@@ -69,27 +70,16 @@ val scopeManagementInfrastructureModule = module {
     }
 
     // Active Context Repository
-    single<ActiveContextRepository> {
+    single<ActiveContextRepositoryImpl> {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
-        val repo = ActiveContextRepositoryImpl(database)
-        // Initialize the active context table
-        repo.also {
-            kotlinx.coroutines.runBlocking {
-                it.initialize()
-            }
-        }
+        ActiveContextRepositoryImpl(database)
     }
+    single<ActiveContextRepository> { get<ActiveContextRepositoryImpl>() }
 
-    // Platform TransactionManager for this bounded context
-    single<PlatformTransactionManager>(named("scopeManagement")) {
+    // TransactionManager for this bounded context
+    single<TransactionManager> {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
         SqlDelightTransactionManager(database)
-    }
-
-    // Transaction Manager Adapter
-    single<TransactionManager> {
-        val platformTxManager: PlatformTransactionManager = get(named("scopeManagement"))
-        TransactionManagerAdapter(platformTxManager)
     }
 
     // Alias Generation
@@ -104,13 +94,42 @@ val scopeManagementInfrastructureModule = module {
         AspectQueryFilterValidator(aspectQueryParser = get())
     }
 
+    // Error mappers
+    single<ErrorMapper> {
+        ErrorMapper(logger = get())
+    }
+
+    single<ApplicationErrorMapper> {
+        ApplicationErrorMapper(logger = get())
+    }
+
+    // Event Sourcing Repository using contracts
+    single<EventSourcingRepository<io.github.kamiazya.scopes.platform.domain.event.DomainEvent>> {
+        val eventStoreCommandPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort = get()
+        val eventStoreQueryPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort = get()
+        val logger: io.github.kamiazya.scopes.platform.observability.logging.Logger = get()
+
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.factory.EventSourcingRepositoryFactory.createContractBased(
+            eventStoreCommandPort = eventStoreCommandPort,
+            eventStoreQueryPort = eventStoreQueryPort,
+            logger = logger,
+        )
+    }
+
     // External Services are now provided by their own modules
     // UserPreferencesService is provided by UserPreferencesModule
 
-    // Bootstrap services
-    single {
+    // Bootstrap services - registered as ApplicationBootstrapper for lifecycle management
+    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("AspectPresetBootstrap")) {
         io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap(
             aspectDefinitionRepository = get(),
+            logger = get(),
+        )
+    }
+
+    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("ActiveContextBootstrap")) {
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.ActiveContextBootstrap(
+            activeContextRepository = get(),
             logger = get(),
         )
     }

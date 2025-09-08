@@ -31,7 +31,7 @@ interface EventValidationService {
      * @param currentVersion The current version of the aggregate (null for new aggregates)
      * @return Either an [EventStoreDomainError.InvalidAggregateVersion] or Unit on success
      */
-    suspend fun validateEventAppend(
+    fun validateEventAppend(
         eventId: EventId,
         aggregateId: AggregateId,
         expectedVersion: AggregateVersion,
@@ -49,18 +49,19 @@ interface EventValidationService {
      * @param events List of persisted events to validate (can be from multiple aggregates)
      * @return Either an [EventStoreDomainError.EventOrderingViolation] or Unit on success
      */
-    suspend fun validateEventOrdering(events: List<PersistedEventRecord>): Either<EventStoreDomainError, Unit>
+    fun validateEventOrdering(events: List<PersistedEventRecord>): Either<EventStoreDomainError, Unit>
 
     /**
-     * Checks for duplicate events based on event ID.
+     * Validates if an event ID would be a duplicate.
      *
-     * Note: In the default implementation, this delegates to the infrastructure layer
-     * which will throw an exception on duplicate key violation.
+     * Note: This is pure validation logic. The actual duplicate check against
+     * the database should be performed by the application/infrastructure layer.
      *
-     * @param eventId The event ID to check for duplicates
-     * @return Either an [EventStoreDomainError.DuplicateEvent] or Unit if no duplicate exists
+     * @param eventId The event ID to validate
+     * @param existingEventIds Set of existing event IDs (provided by app layer)
+     * @return Either an [EventStoreDomainError.DuplicateEvent] or Unit if valid
      */
-    suspend fun checkDuplicateEvent(eventId: EventId): Either<EventStoreDomainError, Unit>
+    fun validateEventNotDuplicate(eventId: EventId, existingEventIds: Set<EventId>): Either<EventStoreDomainError, Unit>
 }
 
 /**
@@ -75,7 +76,7 @@ interface EventValidationService {
  */
 class DefaultEventValidationService : EventValidationService {
 
-    override suspend fun validateEventAppend(
+    override fun validateEventAppend(
         eventId: EventId,
         aggregateId: AggregateId,
         expectedVersion: AggregateVersion,
@@ -107,7 +108,7 @@ class DefaultEventValidationService : EventValidationService {
         }
     }
 
-    override suspend fun validateEventOrdering(events: List<PersistedEventRecord>): Either<EventStoreDomainError, Unit> {
+    override fun validateEventOrdering(events: List<PersistedEventRecord>): Either<EventStoreDomainError, Unit> {
         if (events.isEmpty()) return Unit.right()
 
         // Group events by aggregate
@@ -124,7 +125,7 @@ class DefaultEventValidationService : EventValidationService {
                 if (actualVersion != expectedVersion) {
                     return EventStoreDomainError.EventOrderingViolation(
                         aggregateId = aggregateId,
-                        message = "Expected version $expectedVersion but got $actualVersion",
+                        violationType = EventStoreDomainError.OrderingViolationType.GAPS_IN_VERSION,
                     ).left()
                 }
                 expectedVersion++
@@ -137,7 +138,7 @@ class DefaultEventValidationService : EventValidationService {
                 if (curr.metadata.occurredAt < prev.metadata.occurredAt) {
                     return EventStoreDomainError.EventOrderingViolation(
                         aggregateId = aggregateId,
-                        message = "Event ${curr.metadata.eventId.value} occurred before ${prev.metadata.eventId.value} but has higher version",
+                        violationType = EventStoreDomainError.OrderingViolationType.RETROACTIVE_EVENT,
                     ).left()
                 }
             }
@@ -146,12 +147,14 @@ class DefaultEventValidationService : EventValidationService {
         return Unit.right()
     }
 
-    override suspend fun checkDuplicateEvent(eventId: EventId): Either<EventStoreDomainError, Unit> {
-        // This would typically check against a repository
-        // For now, we'll assume the check is delegated to the infrastructure layer
-        // which will throw an exception on duplicate key violation
-        return Unit.right()
-    }
+    override fun validateEventNotDuplicate(eventId: EventId, existingEventIds: Set<EventId>): Either<EventStoreDomainError, Unit> =
+        if (eventId in existingEventIds) {
+            EventStoreDomainError.DuplicateEvent(
+                eventId = eventId,
+            ).left()
+        } else {
+            Unit.right()
+        }
 }
 
 /**
@@ -170,9 +173,10 @@ interface EventTypeValidationService {
      * cause deserialization issues when replaying events.
      *
      * @param eventType The fully qualified class name of the event
+     * @param registeredTypes Set of registered event types (provided by app layer)
      * @return Either an [EventStoreDomainError.InvalidEventType] or Unit on success
      */
-    suspend fun validateEventType(eventType: String): Either<EventStoreDomainError, Unit>
+    fun validateEventType(eventType: String, registeredTypes: Set<String>): Either<EventStoreDomainError, Unit>
 
     /**
      * Validates that an event can be applied to an aggregate of a specific type.
@@ -183,7 +187,12 @@ interface EventTypeValidationService {
      *
      * @param eventType The fully qualified class name of the event
      * @param aggregateType The type of aggregate this event will be applied to
+     * @param compatibilityRules Map of aggregate types to their compatible event types
      * @return Either an [EventStoreDomainError.IncompatibleEventType] or Unit on success
      */
-    suspend fun validateEventForAggregateType(eventType: String, aggregateType: String): Either<EventStoreDomainError, Unit>
+    fun validateEventForAggregateType(
+        eventType: String,
+        aggregateType: String,
+        compatibilityRules: Map<String, Set<String>>,
+    ): Either<EventStoreDomainError, Unit>
 }

@@ -1,12 +1,15 @@
 package io.github.kamiazya.scopes.apps.cli.di.devicesync
 
-import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationPort
-import io.github.kamiazya.scopes.contracts.eventstore.EventStorePort
-import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSyncPortAdapter
-import io.github.kamiazya.scopes.devicesync.application.handler.SynchronizeDeviceHandler
+import io.github.kamiazya.scopes.contracts.devicesync.DeviceSynchronizationCommandPort
+import io.github.kamiazya.scopes.devicesync.application.adapter.DeviceSynchronizationCommandPortAdapter
+import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
+import io.github.kamiazya.scopes.devicesync.application.port.EventCommandPort
+import io.github.kamiazya.scopes.devicesync.application.port.EventQueryPort
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.service.DeviceSynchronizationService
+import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventCommandPortAdapter
+import io.github.kamiazya.scopes.devicesync.infrastructure.adapters.EventQueryPortAdapter
 import io.github.kamiazya.scopes.devicesync.infrastructure.repository.SqlDelightSynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.infrastructure.service.DefaultDeviceSynchronizationService
 import io.github.kamiazya.scopes.devicesync.infrastructure.sqldelight.SqlDelightDatabaseProvider
@@ -39,11 +42,29 @@ val deviceSyncInfrastructureModule = module {
         )
     }
 
+    // Event Query (Adapter)
+    single<EventQueryPort> {
+        EventQueryPortAdapter(
+            eventStoreQueryPort = get(),
+            logger = get(),
+            json = get(),
+        )
+    }
+
+    // Event Command (Adapter)
+    single<EventCommandPort> {
+        EventCommandPortAdapter(
+            eventStoreCommandPort = get(),
+            logger = get(),
+            json = get(),
+        )
+    }
+
     // Domain Service
     single<DeviceSynchronizationService> {
         DefaultDeviceSynchronizationService(
             syncRepository = get(),
-            eventStore = get<EventStorePort>(),
+            eventReader = get<EventQueryPort>(),
         )
     }
 
@@ -51,8 +72,8 @@ val deviceSyncInfrastructureModule = module {
     single { SynchronizeDeviceHandler(get(), get()) }
 
     // Port Adapter
-    single<DeviceSynchronizationPort> {
-        DeviceSyncPortAdapter(
+    single<DeviceSynchronizationCommandPort> {
+        DeviceSynchronizationCommandPortAdapter(
             synchronizeHandler = get(),
             syncRepository = get(),
         )

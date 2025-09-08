@@ -5,6 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 
 /**
  * Maps a Crockford Base32 character to its corresponding value.
@@ -98,13 +99,18 @@ value class EventId private constructor(val value: String) : Comparable<EventId>
         /**
          * Create an event ID from an existing ULID string.
          */
-        fun from(value: String): Either<DomainError.InvalidEventId, EventId> = if (ULID_PATTERN.matches(value)) {
-            EventId(value).right()
-        } else {
-            DomainError.InvalidEventId(
+        fun from(value: String): Either<DomainError.InvalidEventId, EventId> = when {
+            value.isEmpty() -> DomainError.InvalidEventId(
                 value = value,
-                reason = "Invalid ULID format for event ID",
+                errorType = DomainError.InvalidEventId.InvalidEventIdType.EMPTY,
+                occurredAt = currentTimestamp(),
             ).left()
+            !ULID_PATTERN.matches(value) -> DomainError.InvalidEventId(
+                value = value,
+                errorType = DomainError.InvalidEventId.InvalidEventIdType.INVALID_UUID,
+                occurredAt = currentTimestamp(),
+            ).left()
+            else -> EventId(value).right()
         }
 
         /**

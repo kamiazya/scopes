@@ -2,9 +2,11 @@ package io.github.kamiazya.scopes.scopemanagement.application.service.validation
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import kotlinx.datetime.Clock
 
 /**
  * Service for validating aspect usage in scopes.
@@ -20,11 +22,13 @@ class AspectUsageValidationService(private val scopeRepository: ScopeRepository)
         // Check if any scopes are using this aspect
         val count = scopeRepository.countByAspectKey(aspectKey).bind()
 
-        if (count > 0) {
-            raise(
-                ScopesError.Conflict(
-                    "Cannot delete aspect '${aspectKey.value}' because it is in use by $count scope(s)",
-                ),
+        ensure(count == 0) {
+            ScopesError.Conflict(
+                resourceType = "AspectDefinition",
+                resourceId = aspectKey.value,
+                conflictType = ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES,
+                details = mapOf("usage_count" to count),
+                occurredAt = Clock.System.now(),
             )
         }
     }

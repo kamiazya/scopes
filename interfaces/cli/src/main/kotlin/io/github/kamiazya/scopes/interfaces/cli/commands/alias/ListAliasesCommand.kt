@@ -6,7 +6,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.choice
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
@@ -23,7 +23,7 @@ class ListAliasesCommand :
         help = "List all aliases for a scope",
     ),
     KoinComponent {
-    private val aliasCommandAdapter: AliasCommandAdapter by inject()
+    private val aliasQueryAdapter: AliasQueryAdapter by inject()
     private val aliasOutputFormatter: AliasOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 
@@ -41,7 +41,7 @@ class ListAliasesCommand :
             )
 
             // List aliases
-            aliasCommandAdapter.listAliases(scopeId).fold(
+            aliasQueryAdapter.listAliases(scopeId).fold(
                 { error ->
                     throw CliktError("Error listing aliases: ${ContractErrorMessageMapper.getMessage(error)}")
                 },

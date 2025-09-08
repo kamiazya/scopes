@@ -4,6 +4,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -31,16 +32,18 @@ class EditCommand :
                 return@runBlocking
             }
 
-            aspectCommandAdapter.updateAspectDefinition(
+            val result = aspectCommandAdapter.updateAspectDefinition(
                 key = key,
                 description = description,
-            ).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+            )
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to update aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
-                { definition ->
-                    echo("Aspect '${definition.key.value}' updated successfully")
-                    echo("Description: ${definition.description}")
+                ifRight = {
+                    echo("Aspect '$key' updated successfully")
+                    description?.let { echo("Description: $it") }
                 },
             )
         }

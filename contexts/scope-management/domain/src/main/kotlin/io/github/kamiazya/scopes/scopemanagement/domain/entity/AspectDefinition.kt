@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValidationError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -59,9 +60,9 @@ data class AspectDefinition private constructor(
             description: String? = null,
             allowMultiple: Boolean = false,
         ): Either<AspectValidationError, AspectDefinition> = either {
-            ensure(allowedValues.isNotEmpty()) { AspectValidationError.EmptyAspectAllowedValues }
+            ensure(allowedValues.isNotEmpty()) { AspectValidationError.EmptyAspectAllowedValues(occurredAt = currentTimestamp()) }
             ensure(allowedValues.size == allowedValues.distinct().size) {
-                AspectValidationError.DuplicateAspectAllowedValues
+                AspectValidationError.DuplicateAspectAllowedValues(occurredAt = currentTimestamp())
             }
 
             AspectDefinition(

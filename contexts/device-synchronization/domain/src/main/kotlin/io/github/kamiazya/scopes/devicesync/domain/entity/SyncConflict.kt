@@ -1,9 +1,8 @@
 package io.github.kamiazya.scopes.devicesync.domain.entity
 
-import io.github.kamiazya.scopes.devicesync.domain.service.ConflictType
-import io.github.kamiazya.scopes.devicesync.domain.service.ResolutionAction
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -21,7 +20,7 @@ data class SyncConflict(
     val localVectorClock: VectorClock,
     val remoteVectorClock: VectorClock,
     val conflictType: ConflictType,
-    val detectedAt: Instant = Clock.System.now(),
+    val detectedAt: Instant,
     val resolvedAt: Instant? = null,
     val resolution: ResolutionAction? = null,
 ) {
@@ -67,6 +66,14 @@ data class SyncConflict(
             // Missing dependencies are always conflicts
             true
         }
+        ConflictType.DELETED_MODIFIED -> {
+            // Deleted/modified conflicts are always true conflicts
+            true
+        }
+        ConflictType.SCHEMA_MISMATCH -> {
+            // Schema mismatches are always conflicts
+            true
+        }
     }
 
     /**
@@ -84,7 +91,7 @@ data class SyncConflict(
      */
     fun suggestResolution(): ResolutionAction = when {
         // If local happened before remote, keep remote
-        localVectorClock.happenedBefore(remoteVectorClock) -> ResolutionAction.KEPT_REMOTE
+        localVectorClock.happenedBefore(remoteVectorClock) -> ResolutionAction.ACCEPTED_REMOTE
 
         // If remote happened before local, keep local
         remoteVectorClock.happenedBefore(localVectorClock) -> ResolutionAction.KEPT_LOCAL
@@ -105,23 +112,23 @@ data class SyncConflict(
     /**
      * Resolve the conflict with a specific action.
      */
-    fun resolve(action: ResolutionAction): SyncConflict {
+    fun resolve(action: ResolutionAction, now: Instant): SyncConflict {
         require(isPending()) { "Cannot resolve an already resolved conflict" }
         return copy(
             resolution = action,
-            resolvedAt = Clock.System.now(),
+            resolvedAt = now,
         )
     }
 
     /**
      * Mark conflict as deferred (needs manual resolution).
      */
-    fun defer(): SyncConflict = resolve(ResolutionAction.DEFERRED)
+    fun defer(now: Instant): SyncConflict = resolve(ResolutionAction.DEFERRED, now)
 
     /**
      * Create a merge resolution if both versions can be combined.
      */
-    fun merge(): SyncConflict = resolve(ResolutionAction.MERGED)
+    fun merge(now: Instant): SyncConflict = resolve(ResolutionAction.MERGED, now)
 
     companion object {
         /**
@@ -135,6 +142,7 @@ data class SyncConflict(
             remoteVersion: Long,
             localVectorClock: VectorClock,
             remoteVectorClock: VectorClock,
+            detectedAt: Instant,
         ): SyncConflict? {
             // No conflict if vector clocks show clear causality
             if (localVectorClock.happenedBefore(remoteVectorClock) ||
@@ -165,6 +173,7 @@ data class SyncConflict(
                 localVectorClock = localVectorClock,
                 remoteVectorClock = remoteVectorClock,
                 conflictType = conflictType,
+                detectedAt = detectedAt,
             )
         }
     }

@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.scopemanagement.application.mapper
 
-import io.github.kamiazya.scopes.scopemanagement.application.dto.AliasInfoDto
-import io.github.kamiazya.scopes.scopemanagement.application.dto.CreateScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasInfoDto
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 

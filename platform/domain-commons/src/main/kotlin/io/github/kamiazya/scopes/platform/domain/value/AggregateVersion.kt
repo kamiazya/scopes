@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 
 /**
  * Version for optimistic concurrency control in aggregates.
@@ -60,7 +61,8 @@ value class AggregateVersion private constructor(val value: Long) : Comparable<A
         } else {
             DomainError.InvalidVersion(
                 value = value,
-                reason = "Version must be non-negative",
+                errorType = DomainError.InvalidVersion.InvalidVersionType.NEGATIVE,
+                occurredAt = currentTimestamp(),
             ).left()
         }
 

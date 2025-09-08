@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a unique identifier for scope aliases.
@@ -28,7 +28,7 @@ value class AliasId private constructor(val value: String) {
 
             if (trimmed.isBlank()) {
                 return ScopeInputError.IdError.Blank(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                 ).left()
             }
@@ -37,9 +37,9 @@ value class AliasId private constructor(val value: String) {
                 AliasId(trimmed).right()
             } else {
                 ScopeInputError.IdError.InvalidFormat(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = trimmed,
-                    expectedFormat = "ULID",
+                    formatType = ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
                 ).left()
             }
         }
@@ -58,9 +58,9 @@ value class AliasId private constructor(val value: String) {
         id = value,
     ).mapLeft {
         AggregateIdError.InvalidFormat(
-            occurredAt = Clock.System.now(),
+            occurredAt = currentTimestamp(),
             value = value,
-            message = "Failed to create AggregateId from AliasId",
+            formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )
     }
 }

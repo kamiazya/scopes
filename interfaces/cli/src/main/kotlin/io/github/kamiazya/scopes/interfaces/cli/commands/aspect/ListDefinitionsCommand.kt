@@ -1,8 +1,9 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
+import com.github.ajalt.clikt.core.CliktError
+import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -10,6 +11,8 @@ import org.koin.core.component.inject
 /**
  * Command for listing all aspect definitions.
  * Usage: scopes aspect definitions
+ *
+ * Note: Uses CliktError for error handling.
  */
 class ListDefinitionsCommand :
     CliktCommand(
@@ -17,35 +20,27 @@ class ListDefinitionsCommand :
         help = "List all aspect definitions",
     ),
     KoinComponent {
-    private val aspectCommandAdapter: AspectCommandAdapter by inject()
+    private val aspectQueryAdapter: AspectQueryAdapter by inject()
 
     override fun run() {
         runBlocking {
-            aspectCommandAdapter.listAspectDefinitions().fold(
-                { error ->
-                    echo("Error: $error", err = true)
+            aspectQueryAdapter.listAspectDefinitions().fold(
+                ifLeft = { error ->
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
                 },
-                { definitions ->
+                ifRight = { definitions ->
                     if (definitions.isEmpty()) {
                         echo("No aspect definitions found")
                     } else {
                         echo("Aspect Definitions:")
                         echo("")
                         definitions.forEach { definition ->
-                            echo("• ${definition.key.value} - ${definition.description}")
-                            echo("  Type: ${formatType(definition.type)}")
+                            echo("• ${definition.key} - ${definition.description}")
+                            echo("  Type: ${definition.type}")
                         }
                     }
                 },
             )
         }
-    }
-
-    private fun formatType(type: AspectType): String = when (type) {
-        is AspectType.Text -> "Text"
-        is AspectType.Numeric -> "Numeric"
-        is AspectType.BooleanType -> "Boolean"
-        is AspectType.Ordered -> "Ordered (${type.allowedValues.size} values)"
-        is AspectType.Duration -> "Duration (ISO 8601)"
     }
 }

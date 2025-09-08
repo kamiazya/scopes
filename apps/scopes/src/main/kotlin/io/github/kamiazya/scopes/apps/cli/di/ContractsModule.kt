@@ -1,11 +1,21 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementPort
-import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewQueryPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
+import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
+import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesQueryPort
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectCommandPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectQueryPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewCommandPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewQueryPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementCommandPortAdapter
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementQueryPortAdapter
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.UserPreferencesToHierarchyPolicyAdapter
-import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.UserPreferencesPortAdapter
+import io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.UserPreferencesQueryPortAdapter
 import org.koin.dsl.module
 
 /**
@@ -20,30 +30,75 @@ val contractsModule = module {
     // Error Mappers - Removed as they are now created inside adapters
 
     // Contract Port Implementations
-    single<ScopeManagementPort> {
-        ScopeManagementPortAdapter(
+    single<ScopeManagementCommandPort> {
+        ScopeManagementCommandPortAdapter(
             createScopeHandler = get(),
             updateScopeHandler = get(),
             deleteScopeHandler = get(),
+            getScopeByIdHandler = get(),
+            addAliasHandler = get(),
+            removeAliasHandler = get(),
+            setCanonicalAliasHandler = get(),
+            renameAliasHandler = get(),
+            transactionManager = get(),
+            errorMapper = get(),
+            applicationErrorMapper = get(),
+            logger = get(),
+        )
+    }
+    single<ScopeManagementQueryPort> {
+        ScopeManagementQueryPortAdapter(
             getScopeByIdHandler = get(),
             getScopeByAliasHandler = get(),
             getChildrenHandler = get(),
             getRootScopesHandler = get(),
             listAliasesHandler = get(),
-            addAliasHandler = get(),
-            removeAliasHandler = get(),
-            setCanonicalAliasHandler = get(),
-            renameAliasHandler = get(),
             filterScopesWithQueryHandler = get(),
-            transactionManager = get(),
+            errorMapper = get(),
             logger = get(),
         )
     }
 
-    single<UserPreferencesPort> {
-        UserPreferencesPortAdapter(
+    single<UserPreferencesQueryPort> {
+        UserPreferencesQueryPortAdapter(
             getCurrentUserPreferencesHandler = get(),
+            errorMapper = get(),
             logger = get(),
+        )
+    }
+
+    single<ContextViewCommandPort> {
+        ContextViewCommandPortAdapter(
+            createContextViewHandler = get(),
+            updateContextViewHandler = get(),
+            deleteContextViewHandler = get(),
+            activeContextService = get(),
+            errorMapper = get(),
+            applicationErrorMapper = get(),
+        )
+    }
+
+    single<ContextViewQueryPort> {
+        ContextViewQueryPortAdapter(
+            listContextViewsHandler = get(),
+            getContextViewHandler = get(),
+            activeContextService = get(),
+        )
+    }
+
+    single<AspectCommandPort> {
+        AspectCommandPortAdapter(
+            defineAspectHandler = get(),
+            updateAspectDefinitionHandler = get(),
+            deleteAspectDefinitionHandler = get(),
+        )
+    }
+
+    single<AspectQueryPort> {
+        AspectQueryPortAdapter(
+            getAspectDefinitionHandler = get(),
+            listAspectDefinitionsHandler = get(),
+            validateAspectValueUseCase = get(),
         )
     }
 

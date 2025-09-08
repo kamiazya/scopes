@@ -5,11 +5,11 @@ import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.CreateContextViewRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateContextViewCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -66,26 +66,22 @@ class CreateContextCommand :
 
     override fun run() {
         runBlocking {
-            val request = CreateContextViewRequest(
+            val request = CreateContextViewCommand(
                 key = key,
                 name = name,
                 filter = filter,
                 description = description,
             )
 
-            when (val result = contextCommandAdapter.createContext(request)) {
-                is ContextViewContract.CreateContextViewResponse.Success -> {
-                    echo("Context view '${result.contextView.key}' created successfully")
-                    echo(contextOutputFormatter.formatContextView(result.contextView, debugContext.debug))
-                }
-                is ContextViewContract.CreateContextViewResponse.InvalidFilter -> {
-                    echo("Error: Invalid filter syntax: ${result.reason}", err = true)
-                    echo("Filter: '${result.filter}'", err = true)
-                }
-                is ContextViewContract.CreateContextViewResponse.DuplicateKey -> {
-                    echo("Error: Context with key '${result.key}' already exists", err = true)
-                }
-            }
+            val result = contextCommandAdapter.createContext(request)
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to create context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                },
+                ifRight = {
+                    echo("Context view '$key' created successfully")
+                },
+            )
         }
     }
 }

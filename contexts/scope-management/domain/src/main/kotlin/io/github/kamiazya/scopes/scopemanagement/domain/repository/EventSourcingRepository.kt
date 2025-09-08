@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.repository
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import kotlinx.datetime.Instant
@@ -39,6 +40,24 @@ interface EventSourcingRepository<T> {
      * @return Either an error or Unit on successful save
      */
     suspend fun saveEvents(aggregateId: AggregateId, events: List<DomainEvent>, expectedVersion: Int): Either<ScopesError, Unit>
+
+    /**
+     * Saves a list of pending events for an aggregate with version assignment.
+     *
+     * This operation assigns versions to the pending events based on the expected version,
+     * performs optimistic concurrency control, and persists the events atomically.
+     * The returned persisted events will have their correct version numbers assigned.
+     *
+     * @param aggregateId The ID of the aggregate these events belong to
+     * @param events The list of pending events to persist
+     * @param expectedVersion The expected current version of the aggregate (for optimistic locking)
+     * @return Either an error or the list of persisted events with assigned versions
+     */
+    suspend fun saveEventsWithVersioning(
+        aggregateId: AggregateId,
+        events: List<EventEnvelope.Pending<DomainEvent>>,
+        expectedVersion: Int,
+    ): Either<ScopesError, List<EventEnvelope.Persisted<DomainEvent>>>
 
     /**
      * Retrieves all events for an aggregate in chronological order.

@@ -14,9 +14,8 @@ class TestQualityArchitectureTest :
         describe("Test Quality Architecture Rules") {
 
             it("test classes should properly import coroutine test utilities") {
-                // Note: Currently using runBlocking as kotlinx-coroutines-test is not in dependencies
-                // This test is disabled until the project adds kotlinx-coroutines-test dependency
-                // Then we can enforce using runTest instead of runBlocking
+                // Note: kotlinx-coroutines-test dependency has been added
+                // Currently allowing runBlocking but encouraging runTest usage
                 Konsist
                     .scopeFromProject()
                     .files
@@ -26,7 +25,7 @@ class TestQualityArchitectureTest :
                         import.name.contains("kotlinx.coroutines")
                     }
                     .assertTrue { import ->
-                        // Currently allowing runBlocking
+                        // Allow both runBlocking and runTest for gradual migration
                         true
                     }
             }

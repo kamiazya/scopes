@@ -12,6 +12,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError a
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
 
+// Create singleton presenter instances
+private val contextErrorPresenter = ContextErrorPresenter()
+private val scopeInputErrorPresenter = ScopeInputErrorPresenter()
+
 /**
  * Extension functions for mapping common domain errors to application errors.
  * These provide reusable mappings for errors that don't require special context.
@@ -91,7 +95,7 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
     is ContextError.InvalidFilter ->
         AppContextError.InvalidFilter(
             filter = this.filter,
-            reason = this.reason,
+            reason = contextErrorPresenter.presentInvalidFilter(this.errorType),
         )
 
     is ContextError.KeyTooShort ->
@@ -106,7 +110,7 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
 
     is ContextError.InvalidKeyFormat ->
         AppContextError.KeyInvalidFormat(
-            attemptedKey = this.reason,
+            attemptedKey = contextErrorPresenter.presentInvalidKeyFormat(this.errorType),
         )
 
     is ContextError.DescriptionTooShort ->
@@ -164,17 +168,17 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
             },
         )
 
-    ContextError.EmptyKey ->
+    is ContextError.EmptyKey ->
         AppContextError.KeyInvalidFormat(
             attemptedKey = "empty key",
         )
 
-    ContextError.EmptyDescription ->
+    is ContextError.EmptyDescription ->
         AppContextError.KeyInvalidFormat(
             attemptedKey = "empty description",
         )
 
-    ContextError.EmptyFilter ->
+    is ContextError.EmptyFilter ->
         AppContextError.InvalidFilter(
             filter = "",
             reason = "Empty filter",
@@ -188,7 +192,7 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
 
     is ContextError.InvalidHierarchy ->
         AppContextError.KeyInvalidFormat(
-            attemptedKey = "Invalid hierarchy: ${this.reason}",
+            attemptedKey = contextErrorPresenter.presentInvalidHierarchy(this.errorType),
         )
 
     is ContextError.DuplicateScope ->
@@ -207,7 +211,7 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeInputError.IdError.InvalidFormat ->
         AppScopeInputError.IdInvalidFormat(
             attemptedValue = this.attemptedValue,
-            expectedFormat = this.expectedFormat,
+            expectedFormat = scopeInputErrorPresenter.presentIdFormat(this.formatType),
         )
 
     is DomainScopeInputError.TitleError.Empty ->
@@ -255,7 +259,7 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeInputError.AliasError.InvalidFormat ->
         AppScopeInputError.AliasInvalidFormat(
             attemptedValue = this.attemptedValue,
-            expectedPattern = this.expectedPattern,
+            expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.patternType),
         )
 }
 

@@ -5,11 +5,11 @@ import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.DeleteContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetActiveContextRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteContextViewCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -36,6 +36,7 @@ class DeleteContextCommand :
     ),
     KoinComponent {
     private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()
 
     private val key by argument(
@@ -52,31 +53,27 @@ class DeleteContextCommand :
     override fun run() {
         runBlocking {
             // Check if this is the current context
-            val currentContextResult = contextCommandAdapter.getCurrentContext(GetActiveContextRequest)
-            when (currentContextResult) {
-                is ContextViewContract.GetActiveContextResponse.Success -> {
-                    val currentContext = currentContextResult.contextView
-                    if (currentContext?.key == key && !force) {
-                        echo("Error: Cannot delete the currently active context '$key'.", err = true)
-                        echo("Use --force to delete it anyway, or switch to a different context first.", err = true)
-                        return@runBlocking
-                    }
-
-                    // If forcing deletion of current context, clear it first
-                    if (currentContext?.key == key && force) {
-                        echo("Clearing current context before deletion...")
-                    }
-                }
+            val currentContext = contextQueryAdapter.getCurrentContext().getOrNull()
+            if (currentContext?.key == key && !force) {
+                echo("Error: Cannot delete the currently active context '$key'.", err = true)
+                echo("Use --force to delete it anyway, or switch to a different context first.", err = true)
+                return@runBlocking
             }
 
-            when (val result = contextCommandAdapter.deleteContext(DeleteContextViewRequest(key))) {
-                is ContextViewContract.DeleteContextViewResponse.Success -> {
+            // If forcing deletion of current context, clear it first
+            if (currentContext?.key == key && force) {
+                echo("Clearing current context before deletion...")
+            }
+
+            val result = contextCommandAdapter.deleteContext(DeleteContextViewCommand(key))
+            result.fold(
+                { error ->
+                    echo("Error: Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                },
+                {
                     echo("Context view '$key' deleted successfully")
-                }
-                is ContextViewContract.DeleteContextViewResponse.NotFound -> {
-                    echo("Error: Context view '${result.key}' not found.", err = true)
-                }
-            }
+                },
+            )
         }
     }
 }

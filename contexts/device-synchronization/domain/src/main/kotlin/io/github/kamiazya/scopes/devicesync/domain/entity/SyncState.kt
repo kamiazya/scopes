@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.devicesync.domain.entity
 
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration
 
@@ -59,20 +58,19 @@ data class SyncState(
     /**
      * Start synchronization process.
      */
-    fun startSync(): SyncState {
+    fun startSync(now: Instant): SyncState {
         require(canSync()) { "Cannot start sync when status is $syncStatus" }
         return copy(
             syncStatus = SyncStatus.IN_PROGRESS,
-            lastSyncAt = Clock.System.now(),
+            lastSyncAt = now,
         )
     }
 
     /**
      * Mark synchronization as successful.
      */
-    fun markSyncSuccess(eventsPushed: Int, eventsPulled: Int, newRemoteVectorClock: VectorClock): SyncState {
+    fun markSyncSuccess(eventsPushed: Int, eventsPulled: Int, newRemoteVectorClock: VectorClock, now: Instant): SyncState {
         require(syncStatus == SyncStatus.IN_PROGRESS) { "Can only mark success when sync is in progress" }
-        val now = Clock.System.now()
         return copy(
             syncStatus = SyncStatus.SUCCESS,
             lastSuccessfulPush = if (eventsPushed > 0) now else lastSuccessfulPush,
@@ -122,12 +120,12 @@ data class SyncState(
     /**
      * Calculate time since last successful sync.
      */
-    fun timeSinceLastSync(now: Instant = Clock.System.now()): Duration? = lastSyncAt?.let { now - it }
+    fun timeSinceLastSync(now: Instant): Duration? = lastSyncAt?.let { now - it }
 
     /**
      * Check if this sync state is stale (hasn't synced in a while).
      */
-    fun isStale(threshold: Duration, now: Instant = Clock.System.now()): Boolean = timeSinceLastSync(now)?.let { it > threshold } ?: true
+    fun isStale(threshold: Duration, now: Instant): Boolean = timeSinceLastSync(now)?.let { it > threshold } ?: true
 }
 
 /**

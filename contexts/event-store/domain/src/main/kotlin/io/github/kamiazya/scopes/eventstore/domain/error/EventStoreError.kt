@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.eventstore.domain.error
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -17,7 +16,7 @@ sealed class EventStoreError {
         val eventType: String,
         val eventVersion: Long? = null,
         val storageFailureType: StorageFailureType,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -36,7 +35,7 @@ sealed class EventStoreError {
         val query: EventQuery,
         val failureReason: RetrievalFailureReason,
         val attemptedSources: List<String> = emptyList(),
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -63,7 +62,7 @@ sealed class EventStoreError {
         val operation: DatabaseOperation,
         val databaseType: String = "SQLite",
         val connectionState: ConnectionState,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -94,7 +93,7 @@ sealed class EventStoreError {
         val eventType: String?,
         val validationErrors: List<ValidationIssue>,
         val eventData: Map<String, Any?> = emptyMap(),
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant,
     ) : EventStoreError()
 
     data class ValidationIssue(val field: String, val rule: ValidationRule, val actualValue: Any? = null)
@@ -115,7 +114,7 @@ sealed class EventStoreError {
         val dataType: String,
         val dataSize: Long? = null,
         val retryCount: Int = 0,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant,
     ) : EventStoreError()
 
     enum class PersistenceOperation {

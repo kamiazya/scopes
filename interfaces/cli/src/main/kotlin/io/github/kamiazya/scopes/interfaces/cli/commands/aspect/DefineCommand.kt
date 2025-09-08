@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import kotlinx.coroutines.runBlocking
@@ -104,18 +105,20 @@ class DefineCommand :
             }
 
             // Define the aspect
-            aspectCommandAdapter.defineAspect(
+            val result = aspectCommandAdapter.defineAspect(
                 key = trimmedKey,
                 description = trimmedDescription,
-                type = aspectType,
-            ).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+                type = aspectType.toString(),
+            )
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to define aspect '$trimmedKey': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
-                { definition ->
-                    echo("Aspect '${definition.key.value}' defined successfully")
-                    echo("Type: ${formatType(definition.type)}")
-                    echo("Description: ${definition.description}")
+                ifRight = {
+                    echo("Aspect '$trimmedKey' defined successfully")
+                    echo("Type: $aspectType")
+                    echo("Description: $trimmedDescription")
                 },
             )
         }

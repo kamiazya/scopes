@@ -96,10 +96,10 @@ public sealed interface ScopeContractError {
 
         /**
          * Invalid scope description.
-         * @property description The invalid description value
+         * @property descriptionText The invalid description value
          * @property validationFailure Specific reason for validation failure
          */
-        public data class InvalidDescription(public val description: String, public val validationFailure: DescriptionValidationFailure) : InputError
+        public data class InvalidDescription(public val descriptionText: String, public val validationFailure: DescriptionValidationFailure) : InputError
 
         /**
          * Invalid parent scope ID.

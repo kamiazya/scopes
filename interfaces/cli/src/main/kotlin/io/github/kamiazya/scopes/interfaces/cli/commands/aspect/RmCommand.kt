@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -37,11 +38,13 @@ class RmCommand :
                 }
             }
 
-            aspectCommandAdapter.deleteAspectDefinition(key).fold(
-                { error ->
-                    echo("Error: $error", err = true)
+            val result = aspectCommandAdapter.deleteAspectDefinition(key)
+
+            result.fold(
+                ifLeft = { error ->
+                    echo("Error: Failed to delete aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
                 },
-                {
+                ifRight = {
                     echo("Aspect '$key' removed successfully")
                 },
             )

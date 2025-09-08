@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import kotlinx.datetime.Clock
 /**
  * Value object representing an optional context view description.
  * Provides additional information about the purpose and usage of a context view.
@@ -22,9 +23,9 @@ value class ContextViewDescription private constructor(val value: String) {
         fun create(value: String): Either<ContextError, ContextViewDescription> = either {
             val trimmedValue = value.trim()
 
-            ensure(trimmedValue.isNotBlank()) { ContextError.EmptyDescription }
-            ensure(trimmedValue.length >= MIN_LENGTH) { ContextError.DescriptionTooShort(MIN_LENGTH) }
-            ensure(trimmedValue.length <= MAX_LENGTH) { ContextError.DescriptionTooLong(MAX_LENGTH) }
+            ensure(trimmedValue.isNotBlank()) { ContextError.EmptyDescription(occurredAt = Clock.System.now()) }
+            ensure(trimmedValue.length >= MIN_LENGTH) { ContextError.DescriptionTooShort(minimumLength = MIN_LENGTH, occurredAt = Clock.System.now()) }
+            ensure(trimmedValue.length <= MAX_LENGTH) { ContextError.DescriptionTooLong(maximumLength = MAX_LENGTH, occurredAt = Clock.System.now()) }
 
             ContextViewDescription(trimmedValue)
         }

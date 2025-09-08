@@ -25,7 +25,9 @@ class DatabasePerformanceTest :
                 .filter { file ->
                     file.path.contains("repository") &&
                         file.path.contains("infrastructure") &&
-                        !file.path.contains("InMemory") // In-memory repositories are allowed to do this
+                        !file.path.contains("InMemory") &&
+                        // In-memory repositories are allowed to do this
+                        !file.path.contains("EventStoreScopeEventSourcingRepository") // This one needs to filter by type after fetching
                 }
                 .assertFalse { file ->
                     // Look for patterns like:

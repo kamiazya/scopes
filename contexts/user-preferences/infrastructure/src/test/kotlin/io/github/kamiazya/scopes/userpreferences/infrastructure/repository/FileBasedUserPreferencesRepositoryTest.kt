@@ -195,7 +195,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                     // Then
                     val error = result.shouldBeLeft()
-                    error shouldBe UserPreferencesError.PreferencesNotInitialized()
+                    error shouldBe UserPreferencesError.PreferencesNotInitialized
                 }
 
                 it("should update cache after successful save") {
@@ -322,7 +322,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "load"
                     invalidError.value shouldBe configFile.toString()
-                    invalidError.reason shouldContain "Failed to read preferences"
+                    invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
 
                     verify { mockLogger.error(match<String> { it.contains("Failed to load user preferences") }) }
                 }
@@ -467,7 +467,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val error = result.shouldBeLeft()
                     val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "save"
-                    invalidError.reason shouldContain "Failed to write preferences"
+                    invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
 
                     verify { mockLogger.error(match<String> { it.contains("Failed to save user preferences") }) }
                 }
@@ -484,7 +484,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     // Then
                     val error = result.shouldBeLeft()
                     val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
-                    invalidError.reason shouldContain "Failed to read preferences"
+                    invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
                 }
 
                 it("should handle JSON with missing required fields") {

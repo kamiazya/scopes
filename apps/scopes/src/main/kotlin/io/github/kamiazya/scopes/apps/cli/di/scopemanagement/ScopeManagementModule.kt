@@ -1,33 +1,32 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
-import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.context.CreateContextViewUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.context.DeleteContextViewUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.context.UpdateContextViewUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
-import io.github.kamiazya.scopes.scopemanagement.application.handler.AddAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.CreateScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.DeleteScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.FilterScopesWithQueryHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.GetChildrenHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.GetRootScopesHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.GetScopeByIdHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.ListAliasesHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.RemoveAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.RenameAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.SetCanonicalAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.AddAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.DeleteScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.RemoveAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.RenameAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.SetCanonicalAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
-import io.github.kamiazya.scopes.scopemanagement.application.query.AspectQueryParser
-import io.github.kamiazya.scopes.scopemanagement.application.query.FilterScopesWithQueryUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.context.GetContextViewUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.context.ListContextViewsUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetFilteredScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.ListContextViewsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetChildrenHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.application.service.CrossAggregateValidationService
@@ -37,9 +36,12 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.validation.
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeAliasPolicy
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ScopeHierarchyService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.ScopeAliasPolicy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.ContextViewValidationService
 import org.koin.dsl.module
 
 /**
@@ -54,6 +56,8 @@ val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
     single { AspectValueValidationService() }
+    single { ContextViewValidationService() }
+    single { FilterEvaluationService() }
     single { ScopeHierarchyValidationService(scopeRepository = get()) }
     single { ScopeUniquenessValidationService(scopeRepository = get()) }
     single { AspectUsageValidationService(scopeRepository = get()) }
@@ -80,6 +84,7 @@ val scopeManagementModule = module {
         CrossAggregateValidationService(
             hierarchyValidationService = get(),
             uniquenessValidationService = get(),
+            scopeHierarchyService = get(),
         )
     }
 
@@ -146,6 +151,7 @@ val scopeManagementModule = module {
     single {
         GetScopeByIdHandler(
             scopeRepository = get(),
+            transactionManager = get(),
             logger = get(),
         )
     }
@@ -153,6 +159,7 @@ val scopeManagementModule = module {
     single {
         GetChildrenHandler(
             scopeRepository = get(),
+            transactionManager = get(),
             logger = get(),
         )
     }
@@ -160,13 +167,14 @@ val scopeManagementModule = module {
     single {
         GetRootScopesHandler(
             scopeRepository = get(),
+            transactionManager = get(),
             logger = get(),
         )
     }
 
     single {
         GetScopeByAliasHandler(
-            scopeAliasService = get(),
+            scopeAliasRepository = get(),
             scopeRepository = get(),
             transactionManager = get(),
             logger = get(),
@@ -192,7 +200,8 @@ val scopeManagementModule = module {
 
     single {
         ListAliasesHandler(
-            scopeAliasService = get(),
+            scopeAliasRepository = get(),
+            scopeRepository = get(),
             transactionManager = get(),
             logger = get(),
         )
@@ -214,29 +223,31 @@ val scopeManagementModule = module {
         )
     }
 
-    // Aspect Definition Use Cases
+    // Aspect Definition Handlers
     single {
-        DefineAspectUseCase(
+        DefineAspectHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
         )
     }
 
     single {
-        GetAspectDefinitionUseCase(
+        GetAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
+            transactionManager = get(),
+            logger = get(),
         )
     }
 
     single {
-        UpdateAspectDefinitionUseCase(
+        UpdateAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
         )
     }
 
     single {
-        DeleteAspectDefinitionUseCase(
+        DeleteAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
             aspectUsageValidationService = get(),
             transactionManager = get(),
@@ -244,8 +255,10 @@ val scopeManagementModule = module {
     }
 
     single {
-        ListAspectDefinitionsUseCase(
+        ListAspectDefinitionsHandler(
             aspectDefinitionRepository = get(),
+            transactionManager = get(),
+            logger = get(),
         )
     }
 
@@ -256,56 +269,67 @@ val scopeManagementModule = module {
         )
     }
 
-    // Query Use Case
-    single {
-        FilterScopesWithQueryUseCase(
-            scopeRepository = get(),
-            aspectDefinitionRepository = get(),
-        )
-    }
-
     // Query Handler
     single {
         FilterScopesWithQueryHandler(
-            filterScopesWithQueryUseCase = get(),
+            scopeRepository = get(),
+            aspectDefinitionRepository = get(),
+            transactionManager = get(),
             logger = get(),
         )
     }
 
-    // Context View Use Cases
+    // Context View Handlers
     single {
-        CreateContextViewUseCase(
+        CreateContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
         )
     }
 
     single {
-        ListContextViewsUseCase(
+        ListContextViewsHandler(
+            contextViewRepository = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        GetContextViewHandler(
+            contextViewRepository = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        GetFilteredScopesHandler(
+            scopeRepository = get(),
+            contextViewRepository = get(),
+            activeContextRepository = get(),
+            aspectDefinitionRepository = get(),
+            contextAuditService = get(),
+            transactionManager = get(),
+            logger = get(),
+        )
+    }
+
+    single {
+        UpdateContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
         )
     }
 
     single {
-        GetContextViewUseCase(
-            contextViewRepository = get(),
-            transactionManager = get(),
-        )
-    }
-
-    single {
-        UpdateContextViewUseCase(
-            contextViewRepository = get(),
-            transactionManager = get(),
-        )
-    }
-
-    single {
-        DeleteContextViewUseCase(
+        DeleteContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
             activeContextService = get(),
         )
     }
+
+    // Error Mappers
+    // EventStoreErrorMapper is now created internally in infrastructure layer
 }

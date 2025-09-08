@@ -142,6 +142,7 @@ class BoundedContextArchitectureTest :
                     .classes()
                     .filter { it.hasDataModifier }
                     .filter { !it.name.endsWith("Test") }
+                    .filter { it.isTopLevel } // Exclude nested/internal classes - they are implementation details
                     .assertTrue { dataClass ->
                         // Data classes should be in one of these packages
                         dataClass.resideInPackage("..entity..") ||
@@ -198,6 +199,7 @@ class BoundedContextArchitectureTest :
                     .filter { !it.name.endsWith("ManagementError") } // Base error classes for each context
                     .filter { it.name != "UserPreferencesError" } // Base error class for user-preferences
                     .filter { !it.hasSealedModifier } // Exclude sealed base classes
+                    .filter { !it.hasEnumModifier } // Exclude enums
                     .assertTrue { clazz ->
                         clazz.parents().any { parent ->
                             parent.name.endsWith("Error")

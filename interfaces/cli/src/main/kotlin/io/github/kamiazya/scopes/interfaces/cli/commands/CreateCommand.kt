@@ -1,14 +1,12 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
@@ -19,7 +17,7 @@ import kotlin.system.measureTimeMillis
  * Create command for creating new scopes.
  */
 class CreateCommand :
-    CliktCommand(
+    ScopesCliktCommand(
         name = "create",
         help = "Create a new scope",
     ),
@@ -46,7 +44,7 @@ class CreateCommand :
                 val duration = measureTimeMillis {
                     parameterResolver.resolve(parent).fold(
                         { error ->
-                            throw CliktError("Error resolving parent: ${ContractErrorMessageMapper.getMessage(error, debug)}")
+                            handleContractError(error)
                         },
                         { id ->
                             resolvedId = id
@@ -70,7 +68,7 @@ class CreateCommand :
                 customAlias = customAlias,
             ).fold(
                 { error ->
-                    throw CliktError("Error: ${ContractErrorMessageMapper.getMessage(error, debug)}")
+                    handleContractError(error)
                 },
                 { result ->
                     echo(scopeOutputFormatter.formatContractCreateResult(result, debug))

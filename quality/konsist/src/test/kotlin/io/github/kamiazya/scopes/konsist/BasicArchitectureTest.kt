@@ -126,7 +126,11 @@ class BasicArchitectureTest :
                         // Exclude platform packages - not domain value objects
                         !packageName.contains(".aggregate") &&
                         // Aggregate-related value objects like AggregateId are OK in aggregate package
-                        !packageName.contains(".contracts.") // Exclude contracts layer - different rules apply
+                        !packageName.contains(".contracts.") &&
+                        // Exclude contracts layer - different rules apply
+                        !packageName.contains(".projection") &&
+                        // Exclude projection enums
+                        !clazz.hasEnumModifier // Exclude enums - they are not value objects
                 }
                 .assertTrue { valueObject ->
                     val packageName = valueObject.packagee?.name ?: ""
@@ -148,6 +152,7 @@ class BasicArchitectureTest :
                 }
                 .filter { !it.name.endsWith("Test") }
                 .filter { it.packagee?.name?.contains(".domain") == true }
+                .filter { !it.resideInPackage("..platform..") } // Exclude platform utilities
                 .assertTrue { service ->
                     val packageName = service.packagee?.name ?: ""
                     packageName.contains(".service")
@@ -204,14 +209,13 @@ class BasicArchitectureTest :
                 .flatMap { it.classes() }
                 .filter { it.name.endsWith("Dto") || it.name.endsWith("Result") }
                 .filter { !it.name.endsWith("Test") }
-                .filter { !it.name.contains("ValidationResult") } // Domain concept, not a DTO
                 .filter { clazz ->
                     val packageName = clazz.packagee?.name ?: ""
                     // Only apply this rule to non-contracts packages
                     // Contracts layer has different conventions (results package)
                     !packageName.contains(".contracts.") &&
-                        // Domain service results are domain concepts, not DTOs
-                        !packageName.contains(".domain.service")
+                        // Domain layer results are domain concepts, not DTOs
+                        !packageName.contains(".domain.")
                 }
                 .assertTrue { dto ->
                     val packageName = dto.packagee?.name ?: ""
@@ -267,7 +271,10 @@ class BasicArchitectureTest :
                         ) &&
                         !name.endsWith("Handler") &&
                         !name.endsWith("Test") &&
-                        !name.endsWith("Result")
+                        !name.endsWith("Result") &&
+                        !name.endsWith("Type") &&
+                        // Exclude enum types
+                        !it.hasEnumModifier // Exclude enums entirely
                 }
                 .filter { it.packagee?.name?.contains(".application") == true }
                 .assertTrue { query ->

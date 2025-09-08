@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 
 /**
  * Value object representing a context view name.
@@ -33,11 +33,11 @@ value class ContextViewName private constructor(val value: String) {
 
             return when {
                 trimmed.isEmpty() -> ContextError.EmptyName(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                 ).left()
                 trimmed.length > MAX_LENGTH -> ContextError.NameTooLong(
-                    occurredAt = Clock.System.now(),
+                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                     maximumLength = MAX_LENGTH,
                 ).left()

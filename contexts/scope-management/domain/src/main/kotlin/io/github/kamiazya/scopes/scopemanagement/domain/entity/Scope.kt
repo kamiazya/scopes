@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.entity
 import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -11,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescrip
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -36,23 +36,26 @@ data class Scope(
          * Create a new scope with generated timestamps.
          * This is the safe factory method that validates input.
          */
-        fun create(title: String, description: String? = null, parentId: ScopeId? = null, aspects: Aspects = Aspects.empty()): Either<ScopesError, Scope> =
-            either {
-                val validatedTitle = ScopeTitle.create(title).bind()
-                val validatedDescription = ScopeDescription.create(description).bind()
-
-                val now = Clock.System.now()
-                Scope(
-                    id = ScopeId.generate(),
-                    title = validatedTitle,
-                    description = validatedDescription,
-                    parentId = parentId,
-                    createdAt = now,
-                    status = ScopeStatus.default(),
-                    updatedAt = now,
-                    aspects = aspects,
-                )
-            }
+        fun create(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            aspects: Aspects = Aspects.empty(),
+            now: Instant,
+        ): Either<ScopesError, Scope> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+            Scope(
+                id = ScopeId.generate(),
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+                createdAt = now,
+                status = ScopeStatus.default(),
+                updatedAt = now,
+                aspects = aspects,
+            )
+        }
 
         /**
          * Create a new scope with explicit ID and generated timestamps.
@@ -65,19 +68,17 @@ data class Scope(
             description: ScopeDescription? = null,
             parentId: ScopeId? = null,
             aspects: Aspects = Aspects.empty(),
-        ): Scope {
-            val now = Clock.System.now()
-            return Scope(
-                id = id,
-                title = title,
-                description = description,
-                parentId = parentId,
-                createdAt = now,
-                status = ScopeStatus.default(),
-                updatedAt = now,
-                aspects = aspects,
-            )
-        }
+            now: Instant,
+        ): Scope = Scope(
+            id = id,
+            title = title,
+            description = description,
+            parentId = parentId,
+            createdAt = now,
+            status = ScopeStatus.default(),
+            updatedAt = now,
+            aspects = aspects,
+        )
     }
 
     /**
@@ -85,12 +86,18 @@ data class Scope(
      * Pure function that returns a new instance.
      * Only allowed in Draft or Active status.
      */
-    fun updateTitle(newTitle: String): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot update title in $status status"))
+    fun updateTitle(newTitle: String, now: Instant): Either<ScopesError, Scope> = either {
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "updateTitle",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+                occurredAt = now,
+            )
         }
         val validatedTitle = ScopeTitle.create(newTitle).bind()
-        copy(title = validatedTitle, updatedAt = Clock.System.now())
+        copy(title = validatedTitle, updatedAt = now)
     }
 
     /**
@@ -98,12 +105,18 @@ data class Scope(
      * Pure function that returns a new instance.
      * Only allowed in Draft or Active status.
      */
-    fun updateDescription(newDescription: String?): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot update description in $status status"))
+    fun updateDescription(newDescription: String?, now: Instant): Either<ScopesError, Scope> = either {
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "updateDescription",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+                occurredAt = now,
+            )
         }
         val validatedDescription = ScopeDescription.create(newDescription).bind()
-        copy(description = validatedDescription, updatedAt = Clock.System.now())
+        copy(description = validatedDescription, updatedAt = now)
     }
 
     /**
@@ -111,11 +124,17 @@ data class Scope(
      * Pure function that returns a new instance.
      * Only allowed in Draft or Active status.
      */
-    fun moveToParent(newParentId: ScopeId?): Either<ScopesError, Scope> = either {
-        if (!status.canBeEdited()) {
-            raise(ScopesError.InvalidOperation("Cannot move scope in $status status"))
+    fun moveToParent(newParentId: ScopeId?, now: Instant): Either<ScopesError, Scope> = either {
+        ensure(status.canBeEdited()) {
+            ScopesError.InvalidOperation(
+                operation = "moveScope",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+                occurredAt = now,
+            )
         }
-        copy(parentId = newParentId, updatedAt = Clock.System.now())
+        copy(parentId = newParentId, updatedAt = now)
     }
 
     // ===== BUSINESS RULES =====
@@ -141,72 +160,78 @@ data class Scope(
      * Update aspects for this scope.
      * Pure function that returns a new instance with updated timestamp.
      */
-    fun updateAspects(newAspects: Aspects): Scope = copy(aspects = newAspects, updatedAt = Clock.System.now())
+    fun updateAspects(newAspects: Aspects, now: Instant): Scope = copy(aspects = newAspects, updatedAt = now)
 
     /**
      * Add or update a single aspect.
      * Pure function that returns a new instance.
      */
-    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>): Scope = copy(aspects = aspects.set(key, values), updatedAt = Clock.System.now())
+    fun setAspect(key: AspectKey, values: NonEmptyList<AspectValue>, now: Instant): Scope = copy(aspects = aspects.set(key, values), updatedAt = now)
 
     /**
      * Add or update a single aspect with a single value.
      * Convenience method.
      */
-    fun setAspect(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.set(key, value), updatedAt = Clock.System.now())
+    fun setAspect(key: AspectKey, value: AspectValue, now: Instant): Scope = copy(aspects = aspects.set(key, value), updatedAt = now)
 
     /**
      * Add a value to an existing aspect key.
      * If the key doesn't exist, creates a new aspect with the single value.
      */
-    fun addAspectValue(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.add(key, value), updatedAt = Clock.System.now())
+    fun addAspectValue(key: AspectKey, value: AspectValue, now: Instant): Scope = copy(aspects = aspects.add(key, value), updatedAt = now)
 
     /**
      * Remove an aspect by key.
      * Pure function that returns a new instance.
      */
-    fun removeAspect(key: AspectKey): Scope = copy(aspects = aspects.remove(key), updatedAt = Clock.System.now())
+    fun removeAspect(key: AspectKey, now: Instant): Scope = copy(aspects = aspects.remove(key), updatedAt = now)
 
     /**
      * Remove a specific value from an aspect key.
      * If this was the last value, the key is removed entirely.
      */
-    fun removeAspectValue(key: AspectKey, value: AspectValue): Scope = copy(aspects = aspects.remove(key, value), updatedAt = Clock.System.now())
+    fun removeAspectValue(key: AspectKey, value: AspectValue, now: Instant): Scope = copy(aspects = aspects.remove(key, value), updatedAt = now)
 
     /**
      * Clear all aspects.
      * Pure function that returns a new instance.
      */
-    fun clearAspects(): Scope = copy(aspects = Aspects.empty(), updatedAt = Clock.System.now())
+    fun clearAspects(now: Instant): Scope = copy(aspects = Aspects.empty(), updatedAt = now)
 
     /**
      * Transition to a new status.
      * Enforces valid state transitions at the domain level.
      */
-    fun transitionTo(newStatus: ScopeStatus): Either<ScopesError, Scope> = either {
+    fun transitionTo(newStatus: ScopeStatus, now: Instant): Either<ScopesError, Scope> = either {
         status.transitionTo(newStatus).mapLeft {
-            ScopesError.InvalidOperation(it.reason)
+            ScopesError.InvalidOperation(
+                operation = "updateStatus",
+                entityType = "Scope",
+                entityId = id.value,
+                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
+                occurredAt = now,
+            )
         }.bind()
-        copy(status = newStatus, updatedAt = Clock.System.now())
+        copy(status = newStatus, updatedAt = now)
     }
 
     /**
      * Activate the scope (transition from Draft to Active).
      */
-    fun activate(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active)
+    fun activate(now: Instant): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active, now)
 
     /**
      * Complete the scope (transition from Active to Completed).
      */
-    fun complete(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Completed)
+    fun complete(now: Instant): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Completed, now)
 
     /**
      * Archive the scope.
      */
-    fun archive(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Archived)
+    fun archive(now: Instant): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Archived, now)
 
     /**
      * Reactivate an archived scope.
      */
-    fun reactivate(): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active)
+    fun reactivate(now: Instant): Either<ScopesError, Scope> = transitionTo(ScopeStatus.Active, now)
 }

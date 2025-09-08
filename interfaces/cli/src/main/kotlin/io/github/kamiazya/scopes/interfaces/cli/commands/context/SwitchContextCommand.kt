@@ -3,11 +3,11 @@ package io.github.kamiazya.scopes.interfaces.cli.commands.context
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.ContextViewContract
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.GetContextViewRequest
-import io.github.kamiazya.scopes.contracts.scopemanagement.context.SetActiveContextRequest
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
+import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.commands.DebugContext
+import io.github.kamiazya.scopes.interfaces.cli.mappers.ErrorMessageMapper
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -37,6 +37,7 @@ class SwitchContextCommand :
     ),
     KoinComponent {
     private val contextCommandAdapter: ContextCommandAdapter by inject()
+    private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()
 
     private val key by argument(
@@ -46,24 +47,25 @@ class SwitchContextCommand :
 
     override fun run() {
         runBlocking {
-            when (val result = contextCommandAdapter.setCurrentContext(SetActiveContextRequest(key))) {
-                is ContextViewContract.SetActiveContextResponse.Success -> {
+            val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
+            result.fold(
+                { error ->
+                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                },
+                {
                     echo("Switched to context '$key'")
 
                     // Show the active filter
-                    when (val contextResult = contextCommandAdapter.getContext(GetContextViewRequest(key))) {
-                        is ContextViewContract.GetContextViewResponse.Success -> {
-                            echo("Active filter: ${contextResult.contextView.filter}")
-                        }
-                        is ContextViewContract.GetContextViewResponse.NotFound -> {
-                            // Ignore, context was switched successfully but details not available
-                        }
-                    }
-                }
-                is ContextViewContract.SetActiveContextResponse.NotFound -> {
-                    echo("Error: Context view '${result.key}' not found.", err = true)
-                }
-            }
+                    contextQueryAdapter.getContextView(key).fold(
+                        { /* Ignore errors - context was switched successfully but details not available */ },
+                        { contextView ->
+                            contextView?.let {
+                                echo("Active filter: ${it.filter}")
+                            }
+                        },
+                    )
+                },
+            )
         }
     }
 }

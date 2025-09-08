@@ -26,50 +26,46 @@ sealed class ContextError : ContextManagementError() {
 
     data class ContextNotFound(override val occurredAt: Instant, val contextId: String? = null, val contextName: String? = null) : ContextError()
 
-    data class InvalidFilter(override val occurredAt: Instant, val filter: String, val reason: String) : ContextError()
+    data class InvalidFilter(override val occurredAt: Instant, val filter: String, val errorType: InvalidFilterType) : ContextError() {
+        enum class InvalidFilterType {
+            SYNTAX_ERROR,
+            UNKNOWN_OPERATOR,
+            INVALID_VALUE,
+            MALFORMED_EXPRESSION,
+            UNSUPPORTED_FILTER,
+        }
+    }
 
     // New error cases for ContextViewKey
-    data object EmptyKey : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class EmptyKey(override val occurredAt: Instant) : ContextError()
 
-    data class KeyTooShort(val minimumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class KeyTooShort(val minimumLength: Int, override val occurredAt: Instant) : ContextError()
 
-    data class KeyTooLong(val maximumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class KeyTooLong(val maximumLength: Int, override val occurredAt: Instant) : ContextError()
 
-    data class InvalidKeyFormat(val reason: String) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
+    data class InvalidKeyFormat(val errorType: InvalidKeyFormatType, override val occurredAt: Instant) : ContextError() {
+        enum class InvalidKeyFormatType {
+            INVALID_CHARACTERS,
+            RESERVED_KEYWORD,
+            STARTS_WITH_NUMBER,
+            CONTAINS_SPACES,
+            INVALID_PATTERN,
+        }
     }
 
     // New error cases for ContextViewDescription
-    data object EmptyDescription : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class EmptyDescription(override val occurredAt: Instant) : ContextError()
 
-    data class DescriptionTooShort(val minimumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class DescriptionTooShort(val minimumLength: Int, override val occurredAt: Instant) : ContextError()
 
-    data class DescriptionTooLong(val maximumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class DescriptionTooLong(val maximumLength: Int, override val occurredAt: Instant) : ContextError()
 
     // New error cases for ContextViewFilter
-    data object EmptyFilter : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class EmptyFilter(override val occurredAt: Instant) : ContextError()
 
-    data class FilterTooShort(val minimumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class FilterTooShort(val minimumLength: Int, override val occurredAt: Instant) : ContextError()
 
-    data class FilterTooLong(val maximumLength: Int) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class FilterTooLong(val maximumLength: Int, override val occurredAt: Instant) : ContextError()
 
     /**
      * Represents a filter syntax validation error.
@@ -77,9 +73,7 @@ sealed class ContextError : ContextManagementError() {
      * @property expression The filter expression that failed validation
      * @property errorType The specific type of parsing error
      */
-    data class InvalidFilterSyntax(val expression: String, val errorType: FilterSyntaxErrorType) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
-    }
+    data class InvalidFilterSyntax(val expression: String, val errorType: FilterSyntaxErrorType, override val occurredAt: Instant) : ContextError()
 
     /**
      * Types of filter syntax errors.
@@ -104,15 +98,32 @@ sealed class ContextError : ContextManagementError() {
     }
 
     // Scope hierarchy validation errors
-    data class InvalidScope(val scopeId: String, val reason: String) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
+    data class InvalidScope(val scopeId: String, val errorType: InvalidScopeType, override val occurredAt: Instant) : ContextError() {
+        enum class InvalidScopeType {
+            SCOPE_NOT_FOUND,
+            SCOPE_ARCHIVED,
+            SCOPE_DELETED,
+            INSUFFICIENT_PERMISSIONS,
+            INVALID_STATE,
+        }
     }
 
-    data class InvalidHierarchy(val scopeId: String, val parentId: String, val reason: String) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
+    data class InvalidHierarchy(val scopeId: String, val parentId: String, val errorType: InvalidHierarchyType, override val occurredAt: Instant) :
+        ContextError() {
+        enum class InvalidHierarchyType {
+            CIRCULAR_REFERENCE,
+            DEPTH_LIMIT_EXCEEDED,
+            PARENT_NOT_FOUND,
+            INVALID_PARENT_TYPE,
+            CROSS_CONTEXT_HIERARCHY,
+        }
     }
 
-    data class DuplicateScope(val title: String, val contextId: String?, val reason: String) : ContextError() {
-        override val occurredAt: Instant = kotlinx.datetime.Clock.System.now()
+    data class DuplicateScope(val title: String, val contextId: String?, val errorType: DuplicateScopeType, override val occurredAt: Instant) : ContextError() {
+        enum class DuplicateScopeType {
+            TITLE_EXISTS_IN_CONTEXT,
+            ALIAS_ALREADY_TAKEN,
+            IDENTIFIER_CONFLICT,
+        }
     }
 }

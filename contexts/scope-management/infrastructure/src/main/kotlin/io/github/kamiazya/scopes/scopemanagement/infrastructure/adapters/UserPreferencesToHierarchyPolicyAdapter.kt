@@ -3,9 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesPort
+import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesQueryPort
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
-import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -17,7 +16,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPol
  * Translates between the User Preferences context and the Scope Management context
  * for hierarchy-related settings only.
  */
-class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: UserPreferencesPort, private val logger: Logger) : HierarchyPolicyProvider {
+class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: UserPreferencesQueryPort, private val logger: Logger) : HierarchyPolicyProvider {
 
     override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
         logger.debug("Fetching hierarchy policy from user preferences")
@@ -40,25 +39,21 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: U
                 HierarchyPolicy.default()
             },
             // On success, translate to domain model
-            ifRight = { preferenceResult ->
-                when (preferenceResult) {
-                    is PreferenceResult.HierarchyPreferences -> {
-                        // Use user preferences if set, otherwise use system defaults
-                        HierarchyPolicy.create(
-                            maxDepth = preferenceResult.maxDepth,
-                            maxChildrenPerScope = preferenceResult.maxChildrenPerScope,
-                        ).getOrElse { error ->
-                            logger.error(
-                                "Invalid hierarchy preferences from user preferences, using defaults",
-                                mapOf(
-                                    "maxDepth" to (preferenceResult.maxDepth?.toString() ?: "not set"),
-                                    "maxChildrenPerScope" to (preferenceResult.maxChildrenPerScope?.toString() ?: "not set"),
-                                    "error" to error.toString(),
-                                ),
-                            )
-                            HierarchyPolicy.default()
-                        }
-                    }
+            ifRight = { hierarchyPreferences ->
+                // Use user preferences if set, otherwise use system defaults
+                HierarchyPolicy.create(
+                    maxDepth = hierarchyPreferences.maxDepth,
+                    maxChildrenPerScope = hierarchyPreferences.maxChildrenPerScope,
+                ).getOrElse { error ->
+                    logger.error(
+                        "Invalid hierarchy preferences from user preferences, using defaults",
+                        mapOf(
+                            "maxDepth" to (hierarchyPreferences.maxDepth?.toString() ?: "not set"),
+                            "maxChildrenPerScope" to (hierarchyPreferences.maxChildrenPerScope?.toString() ?: "not set"),
+                            "error" to error.toString(),
+                        ),
+                    )
+                    HierarchyPolicy.default()
                 }
             },
         )

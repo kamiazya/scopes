@@ -1,22 +1,29 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
-import io.github.kamiazya.scopes.scopemanagement.application.command.DefineAspectUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinitionUseCase
-import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitionsUseCase
+import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
+import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.NoopTransactionManager
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
@@ -30,14 +37,15 @@ class AspectManagementIntegrationTest :
         describe("Aspect Management Integration") {
             lateinit var aspectDefinitionRepository: AspectDefinitionRepository
             lateinit var scopeRepository: ScopeRepository
-            lateinit var transactionManager: NoopTransactionManager
+            lateinit var transactionManager: NoOpTransactionManager
+            lateinit var logger: Logger
 
-            // Use cases
-            lateinit var defineAspectUseCase: DefineAspectUseCase
-            lateinit var getAspectDefinitionUseCase: GetAspectDefinitionUseCase
-            lateinit var updateAspectDefinitionUseCase: UpdateAspectDefinitionUseCase
-            lateinit var deleteAspectDefinitionUseCase: DeleteAspectDefinitionUseCase
-            lateinit var listAspectDefinitionsUseCase: ListAspectDefinitionsUseCase
+            // Handlers
+            lateinit var defineAspectHandler: DefineAspectHandler
+            lateinit var getAspectDefinitionHandler: GetAspectDefinitionHandler
+            lateinit var updateAspectDefinitionHandler: UpdateAspectDefinitionHandler
+            lateinit var deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler
+            lateinit var listAspectDefinitionsHandler: ListAspectDefinitionsHandler
             lateinit var validateAspectValueUseCase: ValidateAspectValueUseCase
             lateinit var validationService: AspectValueValidationService
 
@@ -45,15 +53,24 @@ class AspectManagementIntegrationTest :
                 // Initialize repositories
                 aspectDefinitionRepository = InMemoryAspectDefinitionRepository()
                 scopeRepository = InMemoryScopeRepository()
-                transactionManager = NoopTransactionManager()
+                transactionManager = NoOpTransactionManager()
+                logger = object : Logger {
+                    override fun debug(message: String, context: Map<String, Any>) {}
+                    override fun info(message: String, context: Map<String, Any>) {}
+                    override fun warn(message: String, context: Map<String, Any>) {}
+                    override fun error(message: String, context: Map<String, Any>, throwable: Throwable?) {}
+                    override fun isEnabledFor(level: LogLevel): Boolean = true
+                    override fun withContext(context: Map<String, Any>): Logger = this
+                    override fun withName(name: String): Logger = this
+                }
 
-                // Initialize use cases
-                defineAspectUseCase = DefineAspectUseCase(aspectDefinitionRepository, transactionManager)
-                getAspectDefinitionUseCase = GetAspectDefinitionUseCase(aspectDefinitionRepository)
-                updateAspectDefinitionUseCase = UpdateAspectDefinitionUseCase(aspectDefinitionRepository, transactionManager)
-                deleteAspectDefinitionUseCase =
-                    DeleteAspectDefinitionUseCase(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
-                listAspectDefinitionsUseCase = ListAspectDefinitionsUseCase(aspectDefinitionRepository)
+                // Initialize handlers
+                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager)
+                getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
+                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager)
+                deleteAspectDefinitionHandler =
+                    DeleteAspectDefinitionHandler(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
+                listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager, logger)
                 validationService = AspectValueValidationService()
                 validateAspectValueUseCase = ValidateAspectValueUseCase(aspectDefinitionRepository, validationService)
             }
@@ -62,12 +79,12 @@ class AspectManagementIntegrationTest :
                 it("should define a text aspect") {
                     runTest {
                         // Act
-                        val command = DefineAspectUseCase.Command(
+                        val command = DefineAspectCommand(
                             key = "description",
                             description = "Task description",
                             type = AspectType.Text,
                         )
-                        val result = defineAspectUseCase(command)
+                        val result = defineAspectHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -82,12 +99,12 @@ class AspectManagementIntegrationTest :
                 it("should define a numeric aspect") {
                     runTest {
                         // Act
-                        val command = DefineAspectUseCase.Command(
+                        val command = DefineAspectCommand(
                             key = "estimatedHours",
                             description = "Estimated hours",
                             type = AspectType.Numeric,
                         )
-                        val result = defineAspectUseCase(command)
+                        val result = defineAspectHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -101,12 +118,12 @@ class AspectManagementIntegrationTest :
                 it("should define a boolean aspect") {
                     runTest {
                         // Act
-                        val command = DefineAspectUseCase.Command(
+                        val command = DefineAspectCommand(
                             key = "isCompleted",
                             description = "Completion status",
                             type = AspectType.BooleanType,
                         )
-                        val result = defineAspectUseCase(command)
+                        val result = defineAspectHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -125,12 +142,12 @@ class AspectManagementIntegrationTest :
                         }
 
                         // Act
-                        val command = DefineAspectUseCase.Command(
+                        val command = DefineAspectCommand(
                             key = "priority",
                             description = "Task priority",
                             type = AspectType.Ordered(values),
                         )
-                        val result = defineAspectUseCase(command)
+                        val result = defineAspectHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -145,12 +162,12 @@ class AspectManagementIntegrationTest :
                 it("should define a duration aspect") {
                     runTest {
                         // Act
-                        val command = DefineAspectUseCase.Command(
+                        val command = DefineAspectCommand(
                             key = "timeSpent",
                             description = "Time spent on task",
                             type = AspectType.Duration,
                         )
-                        val result = defineAspectUseCase(command)
+                        val result = defineAspectHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -164,10 +181,10 @@ class AspectManagementIntegrationTest :
                 it("should prevent duplicate aspect definitions") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("status", "Task status", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("status", "Task status", AspectType.Text))
 
                         // Act
-                        val result = defineAspectUseCase(DefineAspectUseCase.Command("status", "Another status", AspectType.Numeric))
+                        val result = defineAspectHandler(DefineAspectCommand("status", "Another status", AspectType.Numeric))
 
                         // Assert
                         result.shouldBeLeft()
@@ -177,31 +194,31 @@ class AspectManagementIntegrationTest :
                 it("should retrieve an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("category", "Task category", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("category", "Task category", AspectType.Text))
 
                         // Act
-                        val query = GetAspectDefinitionUseCase.Query("category")
-                        val result = getAspectDefinitionUseCase(query)
+                        val query = GetAspectDefinition("category")
+                        val result = getAspectDefinitionHandler(query)
 
                         // Assert
                         result.shouldBeRight()
                         val definition = result.getOrNull()
                         definition shouldNotBe null
-                        definition?.key?.value shouldBe "category"
+                        definition?.key shouldBe "category"
                     }
                 }
 
                 it("should update an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("label", "Task label", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("label", "Task label", AspectType.Text))
 
                         // Act
-                        val command = UpdateAspectDefinitionUseCase.Command(
+                        val command = UpdateAspectDefinitionCommand(
                             key = "label",
                             description = "Updated task label",
                         )
-                        val result = updateAspectDefinitionUseCase(command)
+                        val result = updateAspectDefinitionHandler(command)
 
                         // Assert
                         result.shouldBeRight()
@@ -214,17 +231,17 @@ class AspectManagementIntegrationTest :
                 it("should delete an aspect definition") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("temp", "Temporary aspect", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("temp", "Temporary aspect", AspectType.Text))
 
                         // Act
-                        val command = DeleteAspectDefinitionUseCase.Command("temp")
-                        val result = deleteAspectDefinitionUseCase(command)
+                        val command = DeleteAspectDefinitionCommand("temp")
+                        val result = deleteAspectDefinitionHandler(command)
 
                         // Assert
                         result.shouldBeRight()
 
                         // Verify deletion
-                        val getResult = getAspectDefinitionUseCase(GetAspectDefinitionUseCase.Query("temp"))
+                        val getResult = getAspectDefinitionHandler(GetAspectDefinition("temp"))
                         getResult.shouldBeRight()
                         getResult.getOrNull() shouldBe null
                     }
@@ -233,19 +250,19 @@ class AspectManagementIntegrationTest :
                 it("should list all aspect definitions") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("aspect1", "First aspect", AspectType.Text))
-                        defineAspectUseCase(DefineAspectUseCase.Command("aspect2", "Second aspect", AspectType.Numeric))
-                        defineAspectUseCase(DefineAspectUseCase.Command("aspect3", "Third aspect", AspectType.BooleanType))
+                        defineAspectHandler(DefineAspectCommand("aspect1", "First aspect", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("aspect2", "Second aspect", AspectType.Numeric))
+                        defineAspectHandler(DefineAspectCommand("aspect3", "Third aspect", AspectType.BooleanType))
 
                         // Act
-                        val query = ListAspectDefinitionsUseCase.Query()
-                        val result = listAspectDefinitionsUseCase(query)
+                        val query = ListAspectDefinitions()
+                        val result = listAspectDefinitionsHandler(query)
 
                         // Assert
                         result.shouldBeRight()
                         result.getOrNull()?.let { definitions ->
                             definitions.size shouldBe 3
-                            definitions.map { it.key.value } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
+                            definitions.map { it.key } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
                         }
                     }
                 }
@@ -255,7 +272,7 @@ class AspectManagementIntegrationTest :
                 it("should validate text values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("note", "Task note", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("note", "Task note", AspectType.Text))
 
                         // Act
                         val query = ValidateAspectValueUseCase.Query("note", "This is a valid note")
@@ -270,7 +287,7 @@ class AspectManagementIntegrationTest :
                 it("should validate numeric values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("score", "Task score", AspectType.Numeric))
+                        defineAspectHandler(DefineAspectCommand("score", "Task score", AspectType.Numeric))
 
                         // Act
                         val validResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("score", "42.5"))
@@ -285,7 +302,7 @@ class AspectManagementIntegrationTest :
                 it("should validate boolean values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("active", "Is active", AspectType.BooleanType))
+                        defineAspectHandler(DefineAspectCommand("active", "Is active", AspectType.BooleanType))
 
                         // Act
                         val trueResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("active", "true"))
@@ -307,7 +324,7 @@ class AspectManagementIntegrationTest :
                         val sizes = listOf("small", "medium", "large").map {
                             AspectValue.create(it).getOrNull()!!
                         }
-                        defineAspectUseCase(DefineAspectUseCase.Command("size", "Task size", AspectType.Ordered(sizes)))
+                        defineAspectHandler(DefineAspectCommand("size", "Task size", AspectType.Ordered(sizes)))
 
                         // Act
                         val validResult = validateAspectValueUseCase(ValidateAspectValueUseCase.Query("size", "medium"))
@@ -322,7 +339,7 @@ class AspectManagementIntegrationTest :
                 it("should validate duration values") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("duration", "Task duration", AspectType.Duration))
+                        defineAspectHandler(DefineAspectCommand("duration", "Task duration", AspectType.Duration))
 
                         // Act
                         val validResults = listOf(
@@ -368,7 +385,7 @@ class AspectManagementIntegrationTest :
                 it("should reject multiple values when not allowed") {
                     runTest {
                         // Arrange
-                        defineAspectUseCase(DefineAspectUseCase.Command("status", "Task status", AspectType.Text))
+                        defineAspectHandler(DefineAspectCommand("status", "Task status", AspectType.Text))
 
                         // Act
                         val query = ValidateAspectValueUseCase.MultipleQuery(

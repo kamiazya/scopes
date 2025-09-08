@@ -6,7 +6,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -15,12 +15,15 @@ class SyncStateTest :
         describe("SyncState") {
             val deviceId = DeviceId.generate()
             val vectorClock = VectorClock.empty()
+            val testTime = Instant.parse("2024-01-01T12:00:00Z")
+            val earlierTime = Instant.parse("2024-01-01T10:00:00Z")
+            val laterTime = Instant.parse("2024-01-01T14:00:00Z")
 
             describe("needsSync") {
                 it("should not need sync when in progress") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -33,7 +36,7 @@ class SyncStateTest :
                 it("should not need sync when offline") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -46,7 +49,7 @@ class SyncStateTest :
                 it("should need sync when there are pending changes") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -59,7 +62,7 @@ class SyncStateTest :
                 it("should need sync when last sync failed") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -74,7 +77,7 @@ class SyncStateTest :
                 it("should be able to sync when status is SUCCESS") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -86,7 +89,7 @@ class SyncStateTest :
                 it("should not be able to sync when already in progress") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -119,15 +122,15 @@ class SyncStateTest :
                         syncStatus = SyncStatus.NEVER_SYNCED,
                     )
 
-                    val newState = state.startSync()
+                    val newState = state.startSync(testTime)
                     newState.syncStatus shouldBe SyncStatus.IN_PROGRESS
-                    newState.lastSyncAt shouldNotBe null
+                    newState.lastSyncAt shouldBe testTime
                 }
 
                 it("should throw exception when cannot sync") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -135,7 +138,7 @@ class SyncStateTest :
                     )
 
                     shouldThrow<IllegalArgumentException> {
-                        state.startSync()
+                        state.startSync(testTime)
                     }
                 }
             }
@@ -144,7 +147,7 @@ class SyncStateTest :
                 it("should mark sync as successful with proper state updates") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = laterTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -157,6 +160,7 @@ class SyncStateTest :
                         eventsPushed = 10,
                         eventsPulled = 5,
                         newRemoteVectorClock = newClock,
+                        now = laterTime,
                     )
 
                     newState.syncStatus shouldBe SyncStatus.SUCCESS
@@ -167,20 +171,22 @@ class SyncStateTest :
                 }
 
                 it("should not update push timestamp when no events pushed") {
-                    val lastPush = Clock.System.now()
+                    val lastPush = earlierTime
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = laterTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = lastPush,
                         lastSuccessfulPull = null,
                         syncStatus = SyncStatus.IN_PROGRESS,
+                        pendingChanges = 0,
                     )
 
                     val newState = state.markSyncSuccess(
                         eventsPushed = 0,
                         eventsPulled = 5,
                         newRemoteVectorClock = vectorClock,
+                        now = testTime,
                     )
 
                     newState.lastSuccessfulPush shouldBe lastPush
@@ -190,7 +196,7 @@ class SyncStateTest :
                 it("should throw exception when not in progress") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -202,6 +208,7 @@ class SyncStateTest :
                             eventsPushed = 10,
                             eventsPulled = 5,
                             newRemoteVectorClock = vectorClock,
+                            now = testTime,
                         )
                     }
                 }
@@ -211,7 +218,7 @@ class SyncStateTest :
                 it("should mark sync as failed") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -225,7 +232,7 @@ class SyncStateTest :
                 it("should throw exception when not in progress") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -242,7 +249,7 @@ class SyncStateTest :
                 it("should mark device as offline") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -270,7 +277,7 @@ class SyncStateTest :
                 it("should mark device as online with SUCCESS if previously synced") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -286,7 +293,7 @@ class SyncStateTest :
                 it("should increment pending changes by specified count") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -301,7 +308,7 @@ class SyncStateTest :
                 it("should increment by 1 by default") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -316,7 +323,7 @@ class SyncStateTest :
                 it("should throw exception for non-positive count") {
                     val state = SyncState(
                         deviceId = deviceId,
-                        lastSyncAt = Clock.System.now(),
+                        lastSyncAt = testTime,
                         remoteVectorClock = vectorClock,
                         lastSuccessfulPush = null,
                         lastSuccessfulPull = null,
@@ -335,7 +342,7 @@ class SyncStateTest :
 
             describe("timeSinceLastSync") {
                 it("should calculate time since last sync") {
-                    val lastSync = Clock.System.now() - 2.hours
+                    val lastSync = testTime - 2.hours
                     val state = SyncState(
                         deviceId = deviceId,
                         lastSyncAt = lastSync,
@@ -345,9 +352,9 @@ class SyncStateTest :
                         syncStatus = SyncStatus.SUCCESS,
                     )
 
-                    val duration = state.timeSinceLastSync()
-                    duration shouldNotBe null
-                    // Allow for some time variance in test execution
+                    val currentTime = lastSync + 2.hours
+                    val duration = state.timeSinceLastSync(currentTime)
+                    duration shouldBe 2.hours
                     (duration!! >= (2.hours - 1.minutes)) shouldBe true
                 }
 
@@ -361,7 +368,7 @@ class SyncStateTest :
                         syncStatus = SyncStatus.NEVER_SYNCED,
                     )
 
-                    state.timeSinceLastSync() shouldBe null
+                    state.timeSinceLastSync(testTime) shouldBe null
                 }
             }
 
@@ -376,11 +383,11 @@ class SyncStateTest :
                         syncStatus = SyncStatus.NEVER_SYNCED,
                     )
 
-                    state.isStale(1.hours) shouldBe true
+                    state.isStale(1.hours, testTime) shouldBe true
                 }
 
                 it("should be stale if threshold exceeded") {
-                    val lastSync = Clock.System.now() - 2.hours
+                    val lastSync = testTime - 2.hours
                     val state = SyncState(
                         deviceId = deviceId,
                         lastSyncAt = lastSync,
@@ -390,11 +397,11 @@ class SyncStateTest :
                         syncStatus = SyncStatus.SUCCESS,
                     )
 
-                    state.isStale(1.hours) shouldBe true
+                    state.isStale(1.hours, testTime) shouldBe true
                 }
 
                 it("should not be stale if within threshold") {
-                    val lastSync = Clock.System.now() - 30.minutes
+                    val lastSync = testTime - 30.minutes
                     val state = SyncState(
                         deviceId = deviceId,
                         lastSyncAt = lastSync,
@@ -404,7 +411,7 @@ class SyncStateTest :
                         syncStatus = SyncStatus.SUCCESS,
                     )
 
-                    state.isStale(1.hours) shouldBe false
+                    state.isStale(1.hours, testTime) shouldBe false
                 }
             }
         }

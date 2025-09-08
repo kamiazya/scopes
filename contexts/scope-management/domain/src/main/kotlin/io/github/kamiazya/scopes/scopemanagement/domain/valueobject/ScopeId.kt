@@ -35,7 +35,7 @@ value class ScopeId private constructor(val value: String) {
                 ScopeInputError.IdError.InvalidFormat(
                     currentTimestamp(),
                     value,
-                    "ULID",
+                    ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
                 )
             }
             ScopeId(value)
@@ -54,7 +54,7 @@ value class ScopeId private constructor(val value: String) {
         AggregateIdError.InvalidFormat(
             occurredAt = currentTimestamp(),
             value = value,
-            message = "Failed to create AggregateId from ScopeId",
+            formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )
     }
 
