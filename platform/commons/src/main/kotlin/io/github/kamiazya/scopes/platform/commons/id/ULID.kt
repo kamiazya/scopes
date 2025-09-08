@@ -11,24 +11,37 @@ interface ULIDGenerator {
 }
 
 @JvmInline
-value class ULID(val value: String) {
-    init {
-        require(isValid(value)) { "Invalid ULID format: $value" }
-    }
-
+value class ULID private constructor(val value: String) {
     companion object {
-        fun fromString(value: String): ULID = ULID(value)
+        // Valid ULID characters according to Crockford's Base32 (excludes I, L, O, U)
+        private const val VALID_CHARS = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+        /**
+         * Creates a ULID from string, normalizing to uppercase.
+         * This is the only public way to create a ULID instance.
+         */
+        fun fromString(value: String): ULID {
+            val normalized = value.uppercase()
+            require(isValid(normalized)) { "Invalid ULID format: $value" }
+            return ULID(normalized)
+        }
 
         fun isValid(value: String): Boolean = try {
-            // KULID doesn't have a validation method, so we check the format
-            value.length == 26 && value.all { it in '0'..'9' || it in 'A'..'Z' || it in 'a'..'z' }
+            // ULID must be exactly 26 characters using Crockford's Base32
+            run {
+                val up = value.uppercase()
+                up.length == 26 &&
+                    up.all { it in VALID_CHARS } &&
+                    // Maximum valid timestamp is "7ZZZZZZZZZ" (48-bit max in Base32)
+                    up.substring(0, 10) <= "7ZZZZZZZZZ"
+            }
         } catch (e: Exception) {
             false
         }
 
         // Keep concrete implementation for backward compatibility temporarily
         @Deprecated("Use ULIDGenerator interface instead for better testability", ReplaceWith("ULIDGenerator.generate()"))
-        fun generate(): ULID = ULID(KULID.random())
+        fun generate(): ULID = fromString(KULID.random())
     }
 
     override fun toString(): String = value

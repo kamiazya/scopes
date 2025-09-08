@@ -540,8 +540,10 @@ class CleanArchitectureTest :
                     .filter { !it.name.endsWith("Test") }
                     .assertTrue { mapper ->
                         mapper.parents().any { parent ->
-                            parent.name == "BaseErrorMapper" || parent.name.startsWith("BaseErrorMapper<") ||
-                                parent.name == "BaseCrossContextErrorMapper" || parent.name.startsWith("BaseCrossContextErrorMapper<")
+                            parent.name == "BaseErrorMapper" ||
+                                parent.name.startsWith("BaseErrorMapper<") ||
+                                parent.name == "BaseCrossContextErrorMapper" ||
+                                parent.name.startsWith("BaseCrossContextErrorMapper<")
                         }
                     }
             }

@@ -9,5 +9,5 @@ import com.github.guepardoapps.kulid.ULID as KULID
  * This is the production implementation of ULIDGenerator.
  */
 class SystemULIDGenerator : ULIDGenerator {
-    override fun generate(): ULID = ULID(KULID.random())
+    override fun generate(): ULID = ULID.fromString(KULID.random())
 }
