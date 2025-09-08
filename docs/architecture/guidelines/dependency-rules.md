@@ -8,31 +8,37 @@ The following diagram illustrates the expected dependency flow:
 
 ```mermaid
 graph TD
-    %% Interface Layer
-    interfaces[interfaces/*]
+    %% Group definitions
+    subgraph "Interface Layer"
+        interfaces[interfaces/*]
+    end
     
-    %% Contract Layer
-    contracts[contracts-*]
+    subgraph "Contract Layer"
+        contracts[contracts-*]
+    end
     
-    %% Application Layer
-    contexts_app[contexts/*/app]
-    platform_app[platform-app-commons]
+    subgraph "Application Layer"
+        contexts_app[contexts/*/application]
+        platform_app[platform-application-commons]
+    end
     
-    %% Domain Layer
-    contexts_domain[contexts/*/domain]
-    platform_domain[platform-domain-commons]
+    subgraph "Domain Layer"
+        contexts_domain[contexts/*/domain]
+        platform_domain[platform-domain-commons]
+    end
     
-    %% Infrastructure Layer
-    contexts_infra[contexts/*/infra]
-    platform_infra[platform-infra]
+    subgraph "Infrastructure Layer"
+        contexts_infra[contexts/*/infrastructure]
+        platform_infra[platform-infrastructure]
+    end
     
-    %% Commons
-    platform_commons[platform-commons]
+    subgraph "Platform Commons"
+        platform_commons[platform-commons]
+    end
     
     %% Dependencies
     interfaces --> contracts
     interfaces --> contexts_app
-    interfaces --> platform_app
     
     contexts_app --> contracts
     contexts_app --> contexts_domain
@@ -51,12 +57,12 @@ graph TD
     platform_infra --> platform_commons
     
     %% Styling
-    classDef interfaceClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef contractClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef appClass fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef domainClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef infraClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef commonsClass fill:#f5f5f5,stroke:#424242,stroke-width:2px
+    classDef interfaceClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef contractClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef appClass fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef domainClass fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef infraClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    classDef commonsClass fill:#f5f5f5,stroke:#424242,stroke-width:2px,color:#000
     
     class interfaces interfaceClass
     class contracts contractClass
