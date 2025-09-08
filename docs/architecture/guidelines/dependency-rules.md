@@ -49,8 +49,10 @@ graph TD
     platform_domain --> platform_commons
     
     contexts_infra --> contexts_domain
+    contexts_infra --> contexts_app
     contexts_infra --> platform_commons
     contexts_infra --> platform_infra
+    contexts_infra -.->|implements ports| contexts_app
     
     platform_infra --> platform_commons
     
@@ -76,13 +78,14 @@ graph TD
 - **Interfaces Layer** → Can depend on: Contracts, Application layer
 - **Application Layer** → Can depend on: Domain layer, Platform Application Commons
 - **Domain Layer** → Can depend on: Platform Domain Commons
-- **Infrastructure Layer** → Can depend on: Domain layer, Platform Infrastructure, Platform Commons
+- **Infrastructure Layer** → Can depend on: Domain layer, Application ports/DTOs (DIP), Platform Infrastructure, Platform Commons
 - **Platform Modules** → Self-contained, minimal cross-dependencies
 
 ### 2. Bounded Context Rules
 - **Inter-context communication**: Only through `contracts-*` modules
-- **Direct dependencies between contexts**: Forbidden
+- **Direct dependencies between contexts**: Forbidden (Exception: event-store value objects for event sourcing)
 - **Infrastructure isolation**: `contexts/*/infrastructure` cannot depend on other contexts
+- **Event Sourcing Exception**: Contexts using event sourcing may import `eventstore.domain.valueobject` types
 
 ### 3. Platform Module Rules
 - **commons**: Pure abstractions and primitive types
@@ -91,11 +94,31 @@ graph TD
 - **infrastructure**: System resource implementations (DB, Time, ID generation)
 
 ### 4. Forbidden Dependencies
-- ❌ `infrastructure` → `application` (reverse dependency)
+- ❌ `infrastructure` → other context's `application` layer (can only import from own context)
 - ❌ `application-commons` → `platform-infrastructure`
 - ❌ `domain-commons` → `platform-infrastructure`
-- ❌ Direct context-to-context dependencies (must use contracts)
+- ❌ Direct context-to-context dependencies (must use contracts, except event-store value objects)
 - ❌ `interfaces` → `domain` or `infrastructure` layers
+
+### 5. Architectural Patterns Exceptions
+
+#### CQRS Pattern
+In this CQRS implementation, infrastructure adapters inject and wrap application components:
+- ✅ Infrastructure can import Application **handlers** (for CQRS adapter pattern)
+- ✅ Infrastructure can import Application **use cases** (for shared business logic)
+- ✅ Infrastructure can import Application **command/query DTOs**
+- The adapters act as thin wrappers implementing the contract interfaces
+- Infrastructure must only import from its own context's application layer
+
+#### Dependency Inversion Principle (DIP)
+Infrastructure implements ports defined in the Application layer:
+- ✅ Infrastructure can import Application **ports** (interfaces)
+- ✅ Infrastructure can import Application **DTOs**
+
+#### Event Sourcing Pattern
+Contexts using event sourcing can share fundamental event types:
+- ✅ Contexts can import `eventstore.domain.valueobject` types (e.g., EventTypeId)
+- This is a shared kernel pattern for event sourcing infrastructure
 
 ## Verification
 
@@ -116,16 +139,27 @@ implementation(project(":contracts-scope-management"))
 
 // infrastructure depends on platform-infrastructure
 implementation(project(":platform-infrastructure"))
+
+// ✅ Infrastructure implementing CQRS adapters
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.dto.CreateScopeCommand
+
+// ✅ Infrastructure implementing application ports (DIP)
+import io.github.kamiazya.scopes.scopemanagement.application.port.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.application.dto.ScopeDTO
+
+// ✅ Event sourcing contexts importing event-store value objects
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 ```
 
 ### Invalid Dependencies
 ```kotlin
-// ❌ Infrastructure depending on application
-implementation(project(":scope-management-application"))
+// ❌ Infrastructure importing application use cases (if they exist)
+import io.github.kamiazya.scopes.scopemanagement.application.usecase.CreateScopeUseCase
 
-// ❌ Direct context dependency
-implementation(project(":user-preferences-domain"))
+// ❌ Direct context dependency (non-event-store, non-contracts)
+import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreference
 
 // ❌ Domain depending on infrastructure
-implementation(project(":platform-infrastructure"))
+import io.github.kamiazya.scopes.platform.infrastructure.database.DatabaseConfig
 ```
