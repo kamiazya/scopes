@@ -4,8 +4,10 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
-import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
+import io.github.kamiazya.scopes.platform.domain.event.evolveWithPending
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
@@ -14,9 +16,14 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
@@ -46,7 +53,7 @@ data class ScopeAggregate(
     val scope: Scope?,
     val isDeleted: Boolean = false,
     val isArchived: Boolean = false,
-) : AggregateRoot<ScopeAggregate, DomainEvent>() {
+) : AggregateRoot<ScopeAggregate, ScopeEvent>() {
 
     companion object {
         /**
@@ -87,7 +94,57 @@ data class ScopeAggregate(
                 isArchived = false,
             )
 
-            initialAggregate.applyEvent(event)
+            initialAggregate.raiseEvent(event)
+        }
+
+        /**
+         * Creates a scope using decide/evolve pattern.
+         * Returns an AggregateResult with the new aggregate and pending events.
+         */
+        fun handleCreate(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            scopeId: ScopeId? = null,
+            now: Instant = currentTimestamp(),
+        ): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+            val scopeId = scopeId ?: ScopeId.generate()
+            val aggregateId = scopeId.toAggregateId().bind()
+
+            val initialAggregate = ScopeAggregate(
+                id = aggregateId,
+                version = AggregateVersion.initial(),
+                createdAt = now,
+                updatedAt = now,
+                scope = null,
+                isDeleted = false,
+                isArchived = false,
+            )
+
+            // Decide phase - create events with dummy version
+            val event = ScopeCreated(
+                aggregateId = aggregateId,
+                eventId = EventId.generate(),
+                occurredAt = now,
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
+                scopeId = scopeId,
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+            )
+
+            val pendingEvents = listOf(EventEnvelope.Pending(event))
+
+            // Evolve phase - apply events to aggregate
+            val evolvedAggregate = initialAggregate.evolveWithPending(pendingEvents)
+
+            AggregateResult(
+                aggregate = evolvedAggregate,
+                events = pendingEvents,
+                baseVersion = AggregateVersion.initial(),
+            )
         }
 
         /**
@@ -132,7 +189,64 @@ data class ScopeAggregate(
             newTitle = newTitle,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Decides whether to update the title (decide phase).
+     * Returns pending events or empty list if no change needed.
+     */
+    fun decideUpdateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
+        ensureNotNull(scope) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind(), occurredAt = now)
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scope!!.id, occurredAt = now)
+        }
+
+        val newTitle = ScopeTitle.create(title).bind()
+        if (scope!!.title == newTitle) {
+            return@either emptyList()
+        }
+
+        val event = ScopeTitleUpdated(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = AggregateVersion.initial(), // Dummy version
+            scopeId = scope!!.id,
+            oldTitle = scope!!.title,
+            newTitle = newTitle,
+        )
+
+        listOf(EventEnvelope.Pending(event))
+    }
+
+    /**
+     * Handles update title command using decide/evolve pattern.
+     * Returns an AggregateResult with the updated aggregate and pending events.
+     */
+    fun handleUpdateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
+        val pendingEvents = decideUpdateTitle(title, now).bind()
+
+        if (pendingEvents.isEmpty()) {
+            return@either AggregateResult(
+                aggregate = this@ScopeAggregate,
+                events = emptyList(),
+                baseVersion = version,
+            )
+        }
+
+        // Evolve phase - apply events to aggregate
+        val evolvedAggregate = pendingEvents.fold(this@ScopeAggregate) { agg, envelope ->
+            agg.applyEvent(envelope.event)
+        }
+
+        AggregateResult(
+            aggregate = evolvedAggregate,
+            events = pendingEvents,
+            baseVersion = version,
+        )
     }
 
     /**
@@ -161,7 +275,7 @@ data class ScopeAggregate(
             newDescription = newDescription,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
     }
 
     /**
@@ -190,7 +304,7 @@ data class ScopeAggregate(
             newParentId = newParentId,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
     }
 
     /**
@@ -213,7 +327,7 @@ data class ScopeAggregate(
             scopeId = scope!!.id,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
     }
 
     /**
@@ -240,7 +354,7 @@ data class ScopeAggregate(
             reason = null,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
     }
 
     /**
@@ -265,16 +379,20 @@ data class ScopeAggregate(
             scopeId = scope!!.id,
         )
 
-        this@ScopeAggregate.copy(version = version.increment()).applyEvent(event)
+        this@ScopeAggregate.raiseEvent(event)
     }
 
     /**
      * Applies an event to update the aggregate state.
      * This is the core of the event sourcing pattern.
+     *
+     * Note: Each event application increments the version by 1.
+     * We don't use event.aggregateVersion directly, but instead
+     * increment based on the number of events applied.
      */
-    override fun applyEvent(event: DomainEvent): ScopeAggregate = when (event) {
+    override fun applyEvent(event: ScopeEvent): ScopeAggregate = when (event) {
         is ScopeCreated -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
             scope = Scope(
@@ -288,7 +406,7 @@ data class ScopeAggregate(
         )
 
         is ScopeTitleUpdated -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 title = event.newTitle,
@@ -297,7 +415,7 @@ data class ScopeAggregate(
         )
 
         is ScopeDescriptionUpdated -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 description = event.newDescription,
@@ -306,7 +424,7 @@ data class ScopeAggregate(
         )
 
         is ScopeParentChanged -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             scope = scope?.copy(
                 parentId = event.newParentId,
@@ -315,24 +433,28 @@ data class ScopeAggregate(
         )
 
         is ScopeDeleted -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             isDeleted = true,
         )
 
         is ScopeArchived -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             isArchived = true,
         )
 
         is ScopeRestored -> copy(
-            version = event.aggregateVersion,
+            version = version.increment(),
             updatedAt = event.occurredAt,
             isArchived = false,
         )
 
-        else -> this@ScopeAggregate
+        is ScopeAspectAdded,
+        is ScopeAspectRemoved,
+        is ScopeAspectsCleared,
+        is ScopeAspectsUpdated,
+        -> this@ScopeAggregate // Not implemented yet
     }
 
     fun validateVersion(expectedVersion: Long, now: Instant = currentTimestamp()): Either<ScopesError, Unit> = either {

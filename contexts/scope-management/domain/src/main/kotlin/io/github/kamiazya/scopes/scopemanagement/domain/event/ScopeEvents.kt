@@ -4,6 +4,9 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
+import io.github.kamiazya.scopes.platform.domain.event.MetadataSupport
+import io.github.kamiazya.scopes.platform.domain.event.VersionSupport
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
@@ -20,7 +23,9 @@ import kotlinx.datetime.Instant
 /**
  * Events related to Scope aggregate.
  */
-sealed class ScopeEvent : DomainEvent
+sealed class ScopeEvent : DomainEvent {
+    abstract override val metadata: EventMetadata?
+}
 
 /**
  * Event fired when a new Scope is created.
@@ -31,11 +36,17 @@ data class ScopeCreated(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val title: ScopeTitle,
     val description: ScopeDescription?,
     val parentId: ScopeId?,
-) : ScopeEvent() {
+) : ScopeEvent(),
+    MetadataSupport<ScopeCreated>,
+    VersionSupport<ScopeCreated> {
+    override fun withMetadata(metadata: EventMetadata): ScopeCreated = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeCreated = copy(aggregateVersion = version)
+
     companion object {
         fun from(scope: Scope, eventId: EventId): Either<AggregateIdError, ScopeCreated> = scope.id.toAggregateId().map { aggregateId ->
             ScopeCreated(
@@ -61,10 +72,16 @@ data class ScopeTitleUpdated(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val oldTitle: ScopeTitle,
     val newTitle: ScopeTitle,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeTitleUpdated>,
+    VersionSupport<ScopeTitleUpdated> {
+    override fun withMetadata(metadata: EventMetadata): ScopeTitleUpdated = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeTitleUpdated = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when a Scope's description is updated.
@@ -75,10 +92,16 @@ data class ScopeDescriptionUpdated(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val oldDescription: ScopeDescription?,
     val newDescription: ScopeDescription?,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeDescriptionUpdated>,
+    VersionSupport<ScopeDescriptionUpdated> {
+    override fun withMetadata(metadata: EventMetadata): ScopeDescriptionUpdated = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeDescriptionUpdated = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when a Scope's parent is changed.
@@ -89,10 +112,16 @@ data class ScopeParentChanged(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val oldParentId: ScopeId?,
     val newParentId: ScopeId?,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeParentChanged>,
+    VersionSupport<ScopeParentChanged> {
+    override fun withMetadata(metadata: EventMetadata): ScopeParentChanged = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeParentChanged = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when a Scope is archived (soft deleted).
@@ -103,9 +132,15 @@ data class ScopeArchived(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val reason: String?,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeArchived>,
+    VersionSupport<ScopeArchived> {
+    override fun withMetadata(metadata: EventMetadata): ScopeArchived = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeArchived = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when an archived Scope is restored.
@@ -116,8 +151,14 @@ data class ScopeRestored(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeRestored>,
+    VersionSupport<ScopeRestored> {
+    override fun withMetadata(metadata: EventMetadata): ScopeRestored = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeRestored = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when a Scope is permanently deleted.
@@ -128,8 +169,14 @@ data class ScopeDeleted(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeDeleted>,
+    VersionSupport<ScopeDeleted> {
+    override fun withMetadata(metadata: EventMetadata): ScopeDeleted = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeDeleted = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when an aspect is added to a scope.
@@ -140,10 +187,16 @@ data class ScopeAspectAdded(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
     val aspectValues: NonEmptyList<AspectValue>,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeAspectAdded>,
+    VersionSupport<ScopeAspectAdded> {
+    override fun withMetadata(metadata: EventMetadata): ScopeAspectAdded = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeAspectAdded = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when an aspect is removed from a scope.
@@ -154,9 +207,15 @@ data class ScopeAspectRemoved(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val aspectKey: AspectKey,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeAspectRemoved>,
+    VersionSupport<ScopeAspectRemoved> {
+    override fun withMetadata(metadata: EventMetadata): ScopeAspectRemoved = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeAspectRemoved = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when all aspects are cleared from a scope.
@@ -167,8 +226,14 @@ data class ScopeAspectsCleared(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeAspectsCleared>,
+    VersionSupport<ScopeAspectsCleared> {
+    override fun withMetadata(metadata: EventMetadata): ScopeAspectsCleared = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeAspectsCleared = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when aspects are updated on a scope.
@@ -179,7 +244,13 @@ data class ScopeAspectsUpdated(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val oldAspects: Aspects,
     val newAspects: Aspects,
-) : ScopeEvent()
+) : ScopeEvent(),
+    MetadataSupport<ScopeAspectsUpdated>,
+    VersionSupport<ScopeAspectsUpdated> {
+    override fun withMetadata(metadata: EventMetadata): ScopeAspectsUpdated = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): ScopeAspectsUpdated = copy(aggregateVersion = version)
+}

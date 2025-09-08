@@ -32,8 +32,8 @@ abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
      * Events that have been raised but not yet persisted.
      * These should be cleared after successful persistence.
      */
-    private val _uncommittedEvents = mutableListOf<E>()
-    val uncommittedEvents: List<E> get() = _uncommittedEvents.toList()
+    private val uncommittedEventsList = mutableListOf<E>()
+    val uncommittedEvents: List<E> get() = uncommittedEventsList.toList()
 
     /**
      * Apply an event to update the aggregate state.
@@ -56,9 +56,14 @@ abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
      * 3. Returns the updated aggregate
      */
     protected fun raiseEvent(event: E): T {
-        _uncommittedEvents.add(event)
+        uncommittedEventsList.add(event)
         @Suppress("UNCHECKED_CAST")
-        return applyEvent(event) as T
+        val updated = applyEvent(event) as T
+        if (updated !== this) {
+            val updatedRoot = updated as AggregateRoot<T, E>
+            updatedRoot.uncommittedEventsList.addAll(this.uncommittedEventsList)
+        }
+        return updated
     }
 
     /**
@@ -66,7 +71,7 @@ abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
      * Called after successful persistence.
      */
     fun markEventsAsCommitted() {
-        _uncommittedEvents.clear()
+        uncommittedEventsList.clear()
     }
 
     /**
@@ -74,20 +79,20 @@ abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
      * Useful for event store implementations.
      */
     fun getAndClearUncommittedEvents(): List<E> {
-        val events = _uncommittedEvents.toList()
-        _uncommittedEvents.clear()
+        val events = uncommittedEventsList.toList()
+        uncommittedEventsList.clear()
         return events
     }
 
     /**
      * Check if there are any uncommitted changes.
      */
-    fun hasUncommittedChanges(): Boolean = _uncommittedEvents.isNotEmpty()
+    fun hasUncommittedChanges(): Boolean = uncommittedEventsList.isNotEmpty()
 
     /**
      * Get the number of uncommitted events.
      */
-    fun uncommittedEventCount(): Int = _uncommittedEvents.size
+    fun uncommittedEventCount(): Int = uncommittedEventsList.size
 
     /**
      * Replay events to rebuild aggregate state.

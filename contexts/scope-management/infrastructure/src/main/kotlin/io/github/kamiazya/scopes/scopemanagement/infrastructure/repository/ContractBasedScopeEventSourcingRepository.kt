@@ -10,7 +10,10 @@ import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTimeRan
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.results.EventResult
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
+import io.github.kamiazya.scopes.platform.domain.event.VersionSupport
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
+import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.EventStoreContractErrorMapper
@@ -59,7 +62,7 @@ internal class ContractBasedScopeEventSourcingRepository(
             val command = StoreEventCommand(
                 aggregateId = event.aggregateId.value,
                 aggregateVersion = event.aggregateVersion.value,
-                eventType = event::class.simpleName ?: error("Event class must have a simple name"),
+                eventType = eventTypeId(event),
                 eventData = json.encodeToString(event),
                 occurredAt = event.occurredAt,
                 metadata = mapOf(
@@ -71,6 +74,66 @@ internal class ContractBasedScopeEventSourcingRepository(
                 .mapLeft { eventStoreContractErrorMapper.mapCrossContext(it) }
                 .bind()
         }
+    }
+
+    override suspend fun saveEventsWithVersioning(
+        aggregateId: AggregateId,
+        events: List<EventEnvelope.Pending<DomainEvent>>,
+        expectedVersion: Int,
+    ): Either<ScopesError, List<EventEnvelope.Persisted<DomainEvent>>> = either {
+        // Validate expected version matches current version
+        val currentVersion = getCurrentVersion(aggregateId).bind()
+        if (currentVersion != expectedVersion) {
+            raise(
+                ScopesError.ConcurrencyError(
+                    aggregateId = aggregateId.value,
+                    aggregateType = "Scope",
+                    expectedVersion = expectedVersion,
+                    actualVersion = currentVersion,
+                    operation = "saveEvents",
+                ),
+            )
+        }
+
+        // Store events sequentially and assign versions
+        val persistedEvents = events.mapIndexed { index, pendingEnvelope ->
+            val newVersion = AggregateVersion.fromUnsafe((expectedVersion + index + 1).toLong())
+            val event = pendingEnvelope.event
+
+            // Create a new event with the correct version using type-safe VersionSupport
+            val eventWithVersion = (event as? VersionSupport<DomainEvent>)?.withVersion(newVersion)
+                ?: raise(
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.SERIALIZATION_FAILED,
+                        service = "EventSourcingRepository",
+                        cause = IllegalStateException("Event ${event::class.simpleName} does not implement VersionSupport"),
+                        context = mapOf(
+                            "aggregateId" to aggregateId.value,
+                            "eventType" to (event::class.simpleName ?: event::class.java.name),
+                            "eventId" to event.eventId.value,
+                        ),
+                    ),
+                )
+
+            val command = StoreEventCommand(
+                aggregateId = eventWithVersion.aggregateId.value,
+                aggregateVersion = eventWithVersion.aggregateVersion.value,
+                eventType = eventTypeId(eventWithVersion),
+                eventData = json.encodeToString(eventWithVersion),
+                occurredAt = eventWithVersion.occurredAt,
+                metadata = mapOf(
+                    "eventId" to eventWithVersion.eventId.value,
+                ),
+            )
+
+            eventStoreCommandPort.createEvent(command)
+                .mapLeft { eventStoreContractErrorMapper.mapCrossContext(it) }
+                .bind()
+
+            EventEnvelope.Persisted(eventWithVersion, newVersion)
+        }
+
+        persistedEvents
     }
 
     override suspend fun getEvents(aggregateId: AggregateId): Either<ScopesError, List<DomainEvent>> {
@@ -153,5 +216,36 @@ internal class ContractBasedScopeEventSourcingRepository(
         // Log the error and skip this event
         // In production, this should be handled more gracefully
         null
+    }
+
+    private fun eventTypeId(event: DomainEvent): String {
+        val fqcn = "io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId"
+        val annClass = try {
+            @Suppress("UNCHECKED_CAST")
+            Class.forName(fqcn) as Class<out Annotation>
+        } catch (_: ClassNotFoundException) {
+            null
+        }
+
+        if (annClass != null) {
+            val ann = event::class.java.getAnnotation(annClass)
+            if (ann != null) {
+                return try {
+                    val m = annClass.getMethod("value")
+                    m.invoke(ann) as? String
+                } catch (_: Exception) {
+                    null
+                } ?: (
+                    event::class.qualifiedName ?: (
+                        event::class.simpleName
+                            ?: error("Event class must have a name")
+                        )
+                    )
+            }
+        }
+        return event::class.qualifiedName ?: (
+            event::class.simpleName
+                ?: error("Event class must have a name")
+            )
     }
 }
