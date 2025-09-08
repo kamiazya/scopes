@@ -81,6 +81,30 @@ users          User management
 ### Reference
 - [CLI Alias Commands](docs/reference/cli-alias-commands.md) - Complete alias command reference
 
+## 🏗️ Architecture
+
+### Module Structure
+
+The project follows Clean Architecture with clear separation of concerns:
+
+#### Platform Modules
+- **platform-commons**: Pure abstractions and primitive types (interfaces, type aliases)
+- **platform-domain-commons**: Domain-specific helpers shared across bounded contexts
+- **platform-application-commons**: Application layer utilities and common use case patterns
+- **platform-infrastructure**: System resource implementations (DB, Time providers, ID generators)
+
+#### Bounded Contexts
+Each context follows DDD with three layers:
+- **domain**: Business logic, entities, value objects, domain services
+- **application**: Use cases, DTOs, application services
+- **infrastructure**: Repositories, external service adapters
+
+#### Cross-Cutting Concerns
+- **contracts-***: Inter-context communication interfaces
+- **interfaces-***: User-facing adapters (CLI, API)
+
+For detailed dependency rules, see [Architecture Guidelines](docs/architecture/guidelines/dependency-rules.md).
+
 ## 🤝 Contributing
 
 This is a greenfield project inheriting the best ideas from Project Manager while introducing the revolutionary unified Scope concept for true AI-developer symbiosis.
@@ -91,6 +115,7 @@ This is a greenfield project inheriting the best ideas from Project Manager whil
 2. Write property-based tests for value objects and events
 3. Run `./gradlew konsistTest` to verify architectural compliance
 4. Document architectural decisions in ADRs
+5. Respect module dependency rules - see [dependency-rules.md](docs/architecture/guidelines/dependency-rules.md)
 
 ## 📄 License
 
