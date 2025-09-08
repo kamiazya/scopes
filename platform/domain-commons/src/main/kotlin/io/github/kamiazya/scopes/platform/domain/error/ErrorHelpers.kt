@@ -14,5 +14,11 @@ fun createErrorWithTimestamp(timeProvider: TimeProvider): Instant = timeProvider
  * Legacy helper function for backward compatibility.
  * @deprecated Use TimeProvider injection pattern for clean architecture
  */
-@Deprecated("Use TimeProvider injection", ReplaceWith("SystemTimeProvider().now()"))
+@Deprecated(
+    message = "Use TimeProvider injection",
+    replaceWith = ReplaceWith(
+        expression = "SystemTimeProvider().now()",
+        imports = ["io.github.kamiazya.scopes.platform.commons.time.SystemTimeProvider"],
+    ),
+)
 fun currentTimestamp(): Instant = Clock.System.now()

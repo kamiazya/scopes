@@ -88,10 +88,10 @@ users          User management
 The project follows Clean Architecture with clear separation of concerns:
 
 #### Platform Modules
-- **platform-commons**: Pure abstractions and primitive types (interfaces, type aliases)
-- **platform-domain-commons**: Domain-specific helpers shared across bounded contexts
-- **platform-application-commons**: Application layer utilities and common use case patterns
-- **platform-infrastructure**: System resource implementations (DB, Time providers, ID generators)
+- **:platform:commons**: Pure abstractions and primitive types (interfaces, type aliases)
+- **:platform:domain-commons**: Domain-specific helpers shared across bounded contexts
+- **:platform:application-commons**: Application layer utilities and common use case patterns
+- **:platform:infrastructure**: System resource implementations (DB, time providers, ID generators)
 
 #### Bounded Contexts
 Each context follows DDD with three layers:
@@ -116,6 +116,7 @@ This is a greenfield project inheriting the best ideas from Project Manager whil
 3. Run `./gradlew konsistTest` to verify architectural compliance
 4. Document architectural decisions in ADRs
 5. Respect module dependency rules - see [dependency-rules.md](docs/architecture/guidelines/dependency-rules.md)
+6. Run static checks: `./gradlew detekt ktlintFormat`
 
 ## 📄 License
 

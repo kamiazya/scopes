@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.konsist
 
 import com.lemonappdev.konsist.api.Konsist
-import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import io.kotest.core.spec.style.StringSpec
@@ -16,7 +15,7 @@ class DependencyRulesTest :
         "infrastructure modules should not depend on application modules" {
             Konsist.scopeFromProject()
                 .files
-                .withNameEndingWith("infrastructure", "Infrastructure")
+                .filter { it.path.contains("/infrastructure/") && !it.path.contains("/test/") }
                 .assertFalse(
                     additionalMessage = "Infrastructure modules must not depend on application modules",
                 ) { file ->
@@ -55,18 +54,25 @@ class DependencyRulesTest :
         }
 
         "contexts should not have direct dependencies between each other" {
-            val contextNames = listOf("scopemanagement", "userpreferences", "eventstore", "devicesynchronization")
+            val contextMapping = mapOf(
+                "scopemanagement" to "scope-management",
+                "userpreferences" to "user-preferences",
+                "eventstore" to "event-store",
+                "devicesynchronization" to "device-synchronization",
+            )
 
             Konsist.scopeFromProject()
                 .files
                 .filter { file ->
-                    contextNames.any { context -> file.path.contains("/contexts/$context") }
+                    contextMapping.values.any { folderName -> file.path.contains("/contexts/$folderName/") }
                 }
                 .assertFalse(
                     additionalMessage = "Contexts must communicate only through contracts modules",
                 ) { file ->
-                    val currentContext = contextNames.find { file.path.contains("/contexts/$it") }
-                    val otherContexts = contextNames.filter { it != currentContext }
+                    val currentContext = contextMapping.entries.find { (_, folderName) ->
+                        file.path.contains("/contexts/$folderName/")
+                    }?.key
+                    val otherContexts = contextMapping.keys.filter { it != currentContext }
 
                     file.imports.any { import ->
                         otherContexts.any { otherContext ->

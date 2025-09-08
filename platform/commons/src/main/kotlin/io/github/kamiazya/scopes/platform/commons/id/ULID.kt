@@ -17,20 +17,20 @@ value class ULID(val value: String) {
     }
 
     companion object {
+        // Valid ULID characters according to Crockford's Base32 (excludes I, L, O, U)
+        private const val VALID_CHARS = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
         fun fromString(value: String): ULID = ULID(value)
 
         fun isValid(value: String): Boolean = try {
             // ULID must be exactly 26 characters using Crockford's Base32
-            // Valid characters: 0-9 and A-Z excluding I, L, O, U (to avoid confusion)
-            val validChars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-
-            value.length == 26 &&
-                value.uppercase().all { it in validChars } &&
-                // Additional validation: timestamp (first 10 chars) should not overflow
-                value.take(10).uppercase().let { timestamp ->
-                    // Maximum valid timestamp is "7ZZZZZZZZZ" (max 48-bit value in base32)
-                    timestamp <= "7ZZZZZZZZZ"
-                }
+            run {
+                val up = value.uppercase()
+                up.length == 26 &&
+                    up.all { it in VALID_CHARS } &&
+                    // Maximum valid timestamp is "7ZZZZZZZZZ" (48-bit max in Base32)
+                    up.substring(0, 10) <= "7ZZZZZZZZZ"
+            }
         } catch (e: Exception) {
             false
         }

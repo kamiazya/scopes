@@ -44,8 +44,6 @@ graph TD
     contexts_app --> contexts_domain
     contexts_app --> platform_app
     
-    platform_app --> contexts_domain
-    
     contexts_domain --> platform_domain
     
     platform_domain --> platform_commons
@@ -84,7 +82,7 @@ graph TD
 ### 2. Bounded Context Rules
 - **Inter-context communication**: Only through `contracts-*` modules
 - **Direct dependencies between contexts**: Forbidden
-- **Infrastructure isolation**: `contexts/*-infrastructure` cannot depend on other contexts
+- **Infrastructure isolation**: `contexts/*/infrastructure` cannot depend on other contexts
 
 ### 3. Platform Module Rules
 - **commons**: Pure abstractions and primitive types
