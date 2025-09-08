@@ -222,7 +222,6 @@ scopes ai collaborate --type consensus \
 - [AI Agent System](../ai-agent/) - Single-agent foundation
 - [User Stories](../../explanation/user-stories/) - US-011, US-012 for detailed scenarios  
 - [ADR-016](../../explanation/adr/0016-a2a-collaboration-architecture.md) - Architectural decisions
-- [Implementation Guide](../../../../tmp/a2a-collaboration-implementation.md) - Step-by-step implementation
 
 ## Next Steps
 

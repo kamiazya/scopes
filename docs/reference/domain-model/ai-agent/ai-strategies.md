@@ -750,4 +750,3 @@ class ScopeAIStrategyTest {
 
 - [Proposal Lifecycle](./proposal-lifecycle.md) - How proposals flow through the system
 - [Entity Lifecycle](../entity-lifecycle/) - Foundation for AI strategies
-- [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) - Implement your own strategy

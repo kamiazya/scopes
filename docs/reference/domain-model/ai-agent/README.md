@@ -32,7 +32,6 @@ The AI Agent System enables artificial intelligence to collaborate with users on
 ### Related Documentation
 
 - **[Entity Lifecycle](../entity-lifecycle/)** - Foundation for AI to work with entities
-- **[Adding New Entity Types](../../../../tmp/adding-new-entity-types.md)** - Includes AI strategy implementation
 - **[Integration Patterns](../integration-patterns/)** - How AI integrates with contexts
 
 ## Architecture Overview
@@ -225,5 +224,4 @@ Benefits:
 
 1. Read [Proposal Lifecycle](./proposal-lifecycle.md) to understand the full workflow
 2. Explore [AI Strategies](./ai-strategies.md) for implementation patterns
-3. See [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) for complete examples
-4. Review [Entity Lifecycle](../entity-lifecycle/) for the foundation
+3. Review [Entity Lifecycle](../entity-lifecycle/) for the foundation

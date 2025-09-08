@@ -308,4 +308,3 @@ See related documentation:
 - [Implementation Guide](./implementation.md) - Detailed implementation patterns and strategies
 - [AI Agent System](../ai-agent/) - AI integration patterns
 - [Shared Kernel Usage](../integration-patterns/shared-kernel-usage.md) - Context integration patterns
-- [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) - Step-by-step guide

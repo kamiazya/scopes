@@ -610,4 +610,3 @@ class SecureProposalService(
 
 - [AI Strategies](./ai-strategies.md) - How to implement entity-specific AI
 - [Entity Lifecycle](../entity-lifecycle/) - Foundation for proposals
-- [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) - Complete implementation guide

@@ -778,5 +778,4 @@ data class Scope(
 ## Next Steps
 
 - [Entity Lifecycle Core Concepts](../entity-lifecycle/core-concepts.md)
-- [Implementation Guide: Adding New Entity Types](../../../../tmp/adding-new-entity-types.md)
 - [AI Agent System](../ai-agent/)

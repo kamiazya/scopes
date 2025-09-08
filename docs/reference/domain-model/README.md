@@ -195,8 +195,6 @@ interface DomainEvent {
 3. Create AI strategies (optional)
 4. Test thoroughly
 
-See [Adding New Entity Types](../../../tmp/adding-new-entity-types.md) for detailed instructions.
-
 ## Quality Attributes
 
 The domain model prioritizes:

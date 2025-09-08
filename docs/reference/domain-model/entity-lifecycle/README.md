@@ -31,7 +31,6 @@ The Entity Lifecycle system provides universal change management, versioning, an
 
 - **[AI Agent System](../ai-agent/)** - AI proposal and strategy system
 - **[Integration Patterns](../integration-patterns/)** - Shared kernel usage patterns
-- **[Adding New Entity Types](../../../../tmp/adding-new-entity-types.md)** - Step-by-step guide
 
 ## Quick Start
 
@@ -155,5 +154,4 @@ Let AI agents suggest improvements:
 
 1. Read [Core Concepts](./core-concepts.md) to understand the fundamentals
 2. Follow the [Implementation Guide](./implementation.md) for detailed patterns
-3. See [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) for a complete example
-4. Explore [AI Integration](../ai-agent/) for advanced capabilities
+3. Explore [AI Integration](../ai-agent/) for advanced capabilities

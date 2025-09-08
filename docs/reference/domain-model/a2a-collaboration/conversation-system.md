@@ -499,4 +499,3 @@ scopes ai conversations merge conv-001 \
 - [Conflict Resolution](./conflict-resolution.md) - Handling agent disagreements
 - [Agent Coordination](./agent-coordination.md) - Multi-agent task management  
 - [Performance Architecture](./performance-architecture.md) - Optimization techniques
-- [A2A Implementation Guide](../../../guides/a2a-collaboration-implementation.md) - Building the system

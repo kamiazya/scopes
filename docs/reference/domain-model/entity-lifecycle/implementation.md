@@ -727,4 +727,3 @@ CREATE TABLE entity_snapshots (
 - [Core Concepts](./core-concepts.md) - Understand the fundamental concepts
 - [AI Agent System](../ai-agent/) - Integrate AI capabilities
 - [Shared Kernel Usage](../integration-patterns/shared-kernel-usage.md) - Context integration patterns
-- [Adding New Entity Types](../../../../tmp/adding-new-entity-types.md) - Step-by-step implementation guide
