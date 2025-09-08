@@ -37,9 +37,11 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.validation.
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.ScopeAliasPolicy
+import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.ContextViewValidationService
 import org.koin.dsl.module
 
 /**
@@ -54,6 +56,8 @@ val scopeManagementModule = module {
     // Domain Services
     single { ScopeHierarchyService() }
     single { AspectValueValidationService() }
+    single { ContextViewValidationService() }
+    single { FilterEvaluationService() }
     single { ScopeHierarchyValidationService(scopeRepository = get()) }
     single { ScopeUniquenessValidationService(scopeRepository = get()) }
     single { AspectUsageValidationService(scopeRepository = get()) }
@@ -80,6 +84,7 @@ val scopeManagementModule = module {
         CrossAggregateValidationService(
             hierarchyValidationService = get(),
             uniquenessValidationService = get(),
+            scopeHierarchyService = get(),
         )
     }
 

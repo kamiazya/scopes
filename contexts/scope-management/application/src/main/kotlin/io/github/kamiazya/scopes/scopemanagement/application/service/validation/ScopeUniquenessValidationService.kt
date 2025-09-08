@@ -9,10 +9,11 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Domain service for validating scope uniqueness constraints.
+ * Application service for validating scope uniqueness constraints.
  *
- * This service encapsulates business rules related to scope title uniqueness
- * across different contexts and hierarchies.
+ * This service coordinates between domain services and repositories to
+ * enforce business rules related to scope title uniqueness across different
+ * contexts and hierarchies.
  */
 class ScopeUniquenessValidationService(private val scopeRepository: ScopeRepository) {
 

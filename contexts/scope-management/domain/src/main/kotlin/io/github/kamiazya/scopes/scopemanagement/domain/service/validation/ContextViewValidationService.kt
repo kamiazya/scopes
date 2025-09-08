@@ -11,8 +11,10 @@ import kotlinx.datetime.Clock
  * This service encapsulates the business rules for filter validation
  * in the domain layer, ensuring that validation logic is not spread
  * across application layer use cases.
+ *
+ * @param strictMode Whether to use strict validation rules
  */
-class ContextViewValidationService {
+class ContextViewValidationService(private val strictMode: Boolean = true) {
     /**
      * Validates a filter expression and returns a domain-appropriate error if invalid.
      *

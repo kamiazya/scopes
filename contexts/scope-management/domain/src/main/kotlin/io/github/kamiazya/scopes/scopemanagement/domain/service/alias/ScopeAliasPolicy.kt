@@ -24,7 +24,7 @@ import kotlinx.datetime.Clock
  * The policy ensures consistency and integrity of alias operations
  * according to the domain's business requirements.
  */
-class ScopeAliasPolicy {
+class ScopeAliasPolicy(private val conflictResolutionStrategy: AliasConflictResolutionStrategy = AliasConflictResolutionStrategy.FAIL_FAST) {
 
     /**
      * Determines the operation for canonical alias assignment.

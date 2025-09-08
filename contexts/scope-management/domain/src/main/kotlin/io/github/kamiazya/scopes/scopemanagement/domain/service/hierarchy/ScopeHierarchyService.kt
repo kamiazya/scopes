@@ -16,8 +16,11 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  *
  * All I/O operations (repository access) should be handled by the
  * application layer, which then calls these pure validation functions.
+ *
+ * @param maxDepthLimit Optional global limit on hierarchy depth (null means unlimited)
+ * @param maxChildrenLimit Optional global limit on number of children per parent (null means unlimited)
  */
-class ScopeHierarchyService {
+class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val maxChildrenLimit: Int? = null) {
 
     /**
      * Calculates the depth of a hierarchy path.
@@ -83,15 +86,17 @@ class ScopeHierarchyService {
      * @param maxChildren Maximum allowed children (null means unlimited)
      * @return Either an error or Unit if valid
      */
-    fun validateChildrenLimit(parentId: ScopeId, currentChildCount: Int, maxChildren: Int?): Either<ScopeHierarchyError, Unit> = either {
-        // If maxChildren is null (unlimited), always valid
-        if (maxChildren != null) {
-            ensure(currentChildCount < maxChildren) {
+    fun validateChildrenLimit(parentId: ScopeId, currentChildCount: Int, maxChildren: Int? = maxChildrenLimit): Either<ScopeHierarchyError, Unit> = either {
+        // Use service-level limit if no specific limit provided
+        val effectiveLimit = maxChildren ?: maxChildrenLimit
+        // If effectiveLimit is null (unlimited), always valid
+        if (effectiveLimit != null) {
+            ensure(currentChildCount < effectiveLimit) {
                 ScopeHierarchyError.MaxChildrenExceeded(
                     occurredAt = currentTimestamp(),
                     parentScopeId = parentId,
                     currentChildrenCount = currentChildCount,
-                    maximumChildren = maxChildren,
+                    maximumChildren = effectiveLimit,
                 )
             }
         }
@@ -105,16 +110,18 @@ class ScopeHierarchyService {
      * @param maxDepth Maximum allowed depth (null means unlimited)
      * @return Either an error or Unit if valid
      */
-    fun validateHierarchyDepth(scopeId: ScopeId, currentDepth: Int, maxDepth: Int?): Either<ScopeHierarchyError, Unit> = either {
-        // If maxDepth is null (unlimited), always valid
-        if (maxDepth != null) {
+    fun validateHierarchyDepth(scopeId: ScopeId, currentDepth: Int, maxDepth: Int? = maxDepthLimit): Either<ScopeHierarchyError, Unit> = either {
+        // Use service-level limit if no specific limit provided
+        val effectiveLimit = maxDepth ?: maxDepthLimit
+        // If effectiveLimit is null (unlimited), always valid
+        if (effectiveLimit != null) {
             val attemptedDepth = currentDepth + 1
-            ensure(attemptedDepth <= maxDepth) {
+            ensure(attemptedDepth <= effectiveLimit) {
                 ScopeHierarchyError.MaxDepthExceeded(
                     occurredAt = currentTimestamp(),
                     scopeId = scopeId,
                     attemptedDepth = attemptedDepth,
-                    maximumDepth = maxDepth,
+                    maximumDepth = effectiveLimit,
                 )
             }
         }

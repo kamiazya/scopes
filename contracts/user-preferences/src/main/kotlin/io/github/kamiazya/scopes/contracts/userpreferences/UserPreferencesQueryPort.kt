@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.contracts.userpreferences
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
-import io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult
+import io.github.kamiazya.scopes.contracts.userpreferences.results.HierarchyPreferencesResult
 
 /**
  * Public contract for user preferences read operations (Queries).
@@ -29,5 +29,5 @@ public interface UserPreferencesQueryPort {
      * @param query The query specifying which preferences to retrieve
      * @return Either an error or the preference result (never null - defaults if not set)
      */
-    public suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
+    public suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, HierarchyPreferencesResult>
 }

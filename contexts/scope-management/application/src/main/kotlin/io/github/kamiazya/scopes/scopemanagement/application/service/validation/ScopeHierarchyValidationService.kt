@@ -9,10 +9,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
 /**
- * Domain service for validating scope hierarchy constraints.
+ * Application service for validating scope hierarchy constraints.
  *
- * This service encapsulates business rules related to scope hierarchy validation,
- * maintaining domain invariants while being agnostic to application concerns.
+ * This service coordinates between the domain layer and infrastructure,
+ * using domain services for business logic and repositories for data access.
  */
 class ScopeHierarchyValidationService(private val scopeRepository: ScopeRepository) {
 

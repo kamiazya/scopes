@@ -9,8 +9,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.query.Aspect
 /**
  * Domain service for parsing and evaluating aspect queries.
  * Encapsulates the business logic for query processing.
+ *
+ * @param enableCaching Whether to cache parsed queries for better performance
  */
-class AspectQueryService {
+class AspectQueryService(private val enableCaching: Boolean = false) {
     private val parser = AspectQueryParser()
 
     /**

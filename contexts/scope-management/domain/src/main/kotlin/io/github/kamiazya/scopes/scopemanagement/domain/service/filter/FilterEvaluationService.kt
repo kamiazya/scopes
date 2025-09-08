@@ -20,8 +20,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.FilterExpres
  * within the domain layer while maintaining separation of concerns.
  *
  * The service requires aspect definitions to perform type-aware comparisons.
+ *
+ * @param caseSensitiveComparisons Whether string comparisons should be case sensitive by default
  */
-class FilterEvaluationService {
+class FilterEvaluationService(private val caseSensitiveComparisons: Boolean = false) {
 
     private val parser = FilterExpressionParser()
 
@@ -106,14 +108,14 @@ class FilterEvaluationService {
     }
 
     private fun evaluateStringComparison(actual: String, operator: ComparisonOperator, expected: String): Boolean = when (operator) {
-        ComparisonOperator.EQUALS -> actual.equals(expected, ignoreCase = true)
-        ComparisonOperator.NOT_EQUALS -> !actual.equals(expected, ignoreCase = true)
+        ComparisonOperator.EQUALS -> actual.equals(expected, ignoreCase = !caseSensitiveComparisons)
+        ComparisonOperator.NOT_EQUALS -> !actual.equals(expected, ignoreCase = !caseSensitiveComparisons)
         ComparisonOperator.GREATER_THAN -> actual > expected
         ComparisonOperator.GREATER_THAN_OR_EQUAL -> actual >= expected
         ComparisonOperator.LESS_THAN -> actual < expected
         ComparisonOperator.LESS_THAN_OR_EQUAL -> actual <= expected
-        ComparisonOperator.CONTAINS -> actual.contains(expected, ignoreCase = true)
-        ComparisonOperator.NOT_CONTAINS -> !actual.contains(expected, ignoreCase = true)
+        ComparisonOperator.CONTAINS -> actual.contains(expected, ignoreCase = !caseSensitiveComparisons)
+        ComparisonOperator.NOT_CONTAINS -> !actual.contains(expected, ignoreCase = !caseSensitiveComparisons)
     }
 
     private fun evaluateNumericComparison(actualValue: AspectValue, operator: ComparisonOperator, expectedValue: String): Boolean {

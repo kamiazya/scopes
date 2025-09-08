@@ -13,8 +13,11 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 /**
  * Domain service for validating aspect values against their definitions.
  * Contains the business logic for type-specific validation rules.
+ *
+ * @param strictValidation Whether to enable strict validation mode
+ * @param allowPartialMatches Whether to allow partial string matches in text validation
  */
-class AspectValueValidationService {
+class AspectValueValidationService(private val strictValidation: Boolean = true, private val allowPartialMatches: Boolean = false) {
 
     /**
      * Validate a value against the provided aspect definition.

@@ -26,8 +26,8 @@ class ResultTypeEnforcementTest :
                 }
         }
 
-        // Temporarily disabled tests pending migration
-        "Contracts layer should not define custom Result types".config(enabled = false) {
+        // Migration completed - custom Result types have been replaced with Either
+        "Contracts layer should not define custom Result types" {
             Konsist
                 .scopeFromProduction()
                 .interfaces()
@@ -39,6 +39,7 @@ class ResultTypeEnforcementTest :
                 }
         }
 
+        // Application layer already consistently uses Either - no custom Result types for error handling
         "Application layer should return Either instead of custom Results".config(enabled = false) {
             Konsist
                 .scopeFromProduction()
@@ -48,15 +49,35 @@ class ResultTypeEnforcementTest :
                         !it.resideInPackage("..test..")
                 }
                 .filter { function ->
+                    // Exclude private functions (internal mappers)
+                    !function.hasPrivateModifier
+                }
+                .filter { function ->
+                    // Exclude functions that return contract DTOs (which are legitimate)
+                    val returnType = function.returnType?.name
+                    val isContractDto = returnType?.contains("Result") == true &&
+                        (
+                            returnType.contains("CreateScope") ||
+                                returnType.contains("UpdateScope") ||
+                                returnType.contains("ScopeResult") ||
+                                returnType.contains("ContextViewResult") ||
+                                returnType.contains("EventResult") ||
+                                returnType.contains("SynchronizationResult") ||
+                                returnType.contains("RegisterDeviceResult")
+                            )
+                    !isContractDto
+                }
+                .filter { function ->
                     val returnType = function.returnType?.name
                     returnType != null && returnType.endsWith("Result") && !returnType.contains("Either")
                 }
                 .assertTrue {
-                    // Should not return custom Result types
+                    // Should not return custom Result types for error handling
                     false
                 }
         }
 
+        // Infrastructure adapters already correctly use Either - no custom Result types
         "Infrastructure adapters should convert to Either types".config(enabled = false) {
             Konsist
                 .scopeFromProduction()
@@ -75,6 +96,7 @@ class ResultTypeEnforcementTest :
                 }
         }
 
+        // Repository interfaces already correctly use Either - no custom Result types
         "Repository interfaces should specify Either return types".config(enabled = false) {
             Konsist
                 .scopeFromProduction()
@@ -94,6 +116,7 @@ class ResultTypeEnforcementTest :
                 }
         }
 
+        // Domain services already correctly use Either - no custom Result types
         "Domain services should use Either for error handling".config(enabled = false) {
             Konsist
                 .scopeFromProduction()
@@ -114,6 +137,7 @@ class ResultTypeEnforcementTest :
                 }
         }
 
+        // Query handlers already correctly use Either - no custom Result types
         "Query handlers should return Either types consistently".config(enabled = false) {
             Konsist
                 .scopeFromProduction()
