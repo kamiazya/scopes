@@ -12,6 +12,9 @@ import io.kotest.core.spec.style.StringSpec
 class DependencyRulesTest :
     StringSpec({
 
+        // Helper function to normalize paths for cross-platform compatibility
+        fun String.normalizePath() = replace('\\', '/')
+
         "infrastructure can import from application layer for CQRS and DIP" {
             // In this architecture, infrastructure can depend on application for:
             // 1. Implementing ports (Dependency Inversion Principle)
@@ -27,13 +30,13 @@ class DependencyRulesTest :
 
             Konsist.scopeFromProject()
                 .files
-                .filter { it.path.contains("/infrastructure/") && !it.path.contains("/test/") }
+                .filter { it.path.normalizePath().contains("/infrastructure/") && !it.path.normalizePath().contains("/test/") }
                 .assertFalse(
                     additionalMessage = "Infrastructure should only import from its own context's application layer",
                 ) { file ->
                     // Find which context this infrastructure file belongs to
                     val currentContext = contexts.entries.find { (_, folderName) ->
-                        file.path.contains("/contexts/$folderName/infrastructure/")
+                        file.path.normalizePath().contains("/contexts/$folderName/infrastructure/")
                     }?.key
 
                     file.imports.any { import ->
@@ -51,7 +54,7 @@ class DependencyRulesTest :
         "domain modules should not depend on infrastructure modules" {
             Konsist.scopeFromProject()
                 .files
-                .filter { it.path.contains("/domain/") && !it.path.contains("/test/") }
+                .filter { it.path.normalizePath().contains("/domain/") && !it.path.normalizePath().contains("/test/") }
                 .assertFalse(
                     additionalMessage = "Domain modules must not depend on infrastructure modules",
                 ) { file ->
@@ -64,7 +67,7 @@ class DependencyRulesTest :
         "application modules should not depend on infrastructure modules" {
             Konsist.scopeFromProject()
                 .files
-                .filter { it.path.contains("/application/") && !it.path.contains("/test/") }
+                .filter { it.path.normalizePath().contains("/application/") && !it.path.normalizePath().contains("/test/") }
                 .assertFalse(
                     additionalMessage = "Application modules must not depend on infrastructure modules",
                 ) { file ->
@@ -88,13 +91,13 @@ class DependencyRulesTest :
             Konsist.scopeFromProject()
                 .files
                 .filter { file ->
-                    contextMapping.values.any { folderName -> file.path.contains("/contexts/$folderName/") }
+                    contextMapping.values.any { folderName -> file.path.normalizePath().contains("/contexts/$folderName/") }
                 }
                 .assertFalse(
                     additionalMessage = "Contexts must communicate through contracts (exception: event-store valueobjects for event sourcing)",
                 ) { file ->
                     val currentContext = contextMapping.entries.find { (_, folderName) ->
-                        file.path.contains("/contexts/$folderName/")
+                        file.path.normalizePath().contains("/contexts/$folderName/")
                     }?.key
                     val otherContexts = contextMapping.keys.filter { it != currentContext }
 
@@ -113,7 +116,7 @@ class DependencyRulesTest :
             // Interfaces layer should only depend on contracts and application layers
             Konsist.scopeFromProject()
                 .files
-                .filter { it.path.contains("/interfaces/") }
+                .filter { it.path.normalizePath().contains("/interfaces/") }
                 .assertFalse(
                     additionalMessage = "Interfaces layer must not depend on infrastructure layers",
                 ) { file ->
@@ -127,9 +130,9 @@ class DependencyRulesTest :
             Konsist.scopeFromProject()
                 .files
                 .filter {
-                    it.path.contains("/platform/commons/") ||
-                        it.path.contains("/platform/domain-commons/") ||
-                        it.path.contains("/platform/application-commons/")
+                    it.path.normalizePath().contains("/platform/commons/") ||
+                        it.path.normalizePath().contains("/platform/domain-commons/") ||
+                        it.path.normalizePath().contains("/platform/application-commons/")
                 }
                 .assertFalse(
                     additionalMessage = "Platform commons modules must not depend on infrastructure",
@@ -148,11 +151,11 @@ class DependencyRulesTest :
                 .files
                 .filter { file ->
                     // Files that are allowed to import from other contexts
-                    !file.path.contains("/contracts/") &&
-                        !file.path.contains("/apps/") &&
-                        !file.path.contains("/test/") &&
+                    !file.path.normalizePath().contains("/contracts/") &&
+                        !file.path.normalizePath().contains("/apps/") &&
+                        !file.path.normalizePath().contains("/test/") &&
                         // Interfaces layer can coordinate between contexts
-                        !file.path.contains("/interfaces/")
+                        !file.path.normalizePath().contains("/interfaces/")
                 }
                 .assertTrue(
                     additionalMessage = "Inter-context dependencies must go through contracts (exception: event-store valueobjects)",
@@ -165,7 +168,7 @@ class DependencyRulesTest :
                             "eventstore" to "event-store",
                             "devicesynchronization" to "device-synchronization",
                         )
-                        file.path.contains("/contexts/${contextPaths[context]}/")
+                        file.path.normalizePath().contains("/contexts/${contextPaths[context]}/")
                     }
 
                     // Get imports from other contexts
@@ -195,7 +198,7 @@ class DependencyRulesTest :
             contexts.forEach { (packageName, folderName) ->
                 Konsist.scopeFromProject()
                     .files
-                    .filter { it.path.contains("/contexts/$folderName/infrastructure/") }
+                    .filter { it.path.normalizePath().contains("/contexts/$folderName/infrastructure/") }
                     .assertFalse(
                         additionalMessage = "$folderName infrastructure should only depend on its own domain",
                     ) { file ->
