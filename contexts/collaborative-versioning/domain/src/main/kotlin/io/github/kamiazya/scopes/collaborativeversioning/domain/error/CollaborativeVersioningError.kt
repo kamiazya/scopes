@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.collaborativeversioning.domain.error
 
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangesetId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalState
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
@@ -151,4 +153,63 @@ sealed class TrackedResourceServiceError : CollaborativeVersioningError() {
         TrackedResourceServiceError()
 
     data class InvalidContent(val reason: String, override val occurredAt: Instant = Clock.System.now()) : TrackedResourceServiceError()
+}
+
+/**
+ * Errors related to Proposal ID validation.
+ */
+sealed class ProposalIdError : CollaborativeVersioningError() {
+    data class InvalidFormat(val providedValue: String, val expectedFormat: String, override val occurredAt: Instant = Clock.System.now()) : ProposalIdError()
+}
+
+/**
+ * Errors related to Author validation.
+ */
+sealed class AuthorError : CollaborativeVersioningError() {
+    data object EmptyId : AuthorError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data object EmptyDisplayName : AuthorError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data class InvalidUserId(val providedValue: String, override val occurredAt: Instant = Clock.System.now()) : AuthorError()
+
+    data class InvalidAgentId(val providedValue: String, override val occurredAt: Instant = Clock.System.now()) : AuthorError()
+}
+
+/**
+ * Errors related to ChangeProposal operations.
+ */
+sealed class ChangeProposalError : CollaborativeVersioningError() {
+    data object EmptyTitle : ChangeProposalError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data object EmptyDescription : ChangeProposalError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data object EmptyRejectionReason : ChangeProposalError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data object NoProposedChanges : ChangeProposalError() {
+        override val occurredAt: Instant = Clock.System.now()
+    }
+
+    data class InvalidStateTransition(val currentState: ProposalState, val attemptedAction: String, override val occurredAt: Instant = Clock.System.now()) :
+        ChangeProposalError()
+
+    data class ResourceMismatch(val expected: ResourceId, val actual: ResourceId, override val occurredAt: Instant = Clock.System.now()) :
+        ChangeProposalError()
+
+    data class ProposedChangeNotFound(val proposedChangeId: String, override val occurredAt: Instant = Clock.System.now()) : ChangeProposalError()
+
+    data class ParentCommentNotFound(val parentCommentId: String, override val occurredAt: Instant = Clock.System.now()) : ChangeProposalError()
+
+    data class ProposalNotFound(val proposalId: ProposalId, override val occurredAt: Instant = Clock.System.now()) : ChangeProposalError()
+
+    data class ConflictDetected(val conflicts: List<String>, override val occurredAt: Instant = Clock.System.now()) : ChangeProposalError()
 }

@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.error
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangesetId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionId
 import kotlinx.datetime.Clock
@@ -95,4 +96,57 @@ sealed class DeleteTrackedResourceError : CollaborativeVersioningError() {
 sealed class ExistsTrackedResourceError : CollaborativeVersioningError() {
     data class QueryTimeout(val operation: String, val timeoutMs: Long, override val occurredAt: Instant = Clock.System.now()) : ExistsTrackedResourceError()
     data class NetworkError(val message: String, val cause: Throwable?, override val occurredAt: Instant = Clock.System.now()) : ExistsTrackedResourceError()
+}
+
+/**
+ * Error types for ChangeProposal find operations.
+ */
+sealed class FindChangeProposalError : CollaborativeVersioningError() {
+    data class QueryTimeout(val operation: String, val timeoutMs: Long, override val occurredAt: Instant = Clock.System.now()) : FindChangeProposalError()
+    data class IndexCorruption(val proposalId: ProposalId, val message: String, override val occurredAt: Instant = Clock.System.now()) :
+        FindChangeProposalError()
+    data class NetworkError(val message: String, val cause: Throwable?, override val occurredAt: Instant = Clock.System.now()) : FindChangeProposalError()
+    data class DataCorruption(val proposalId: ProposalId, val reason: String, override val occurredAt: Instant = Clock.System.now()) : FindChangeProposalError()
+}
+
+/**
+ * Error types for ChangeProposal save operations.
+ */
+sealed class SaveChangeProposalError : CollaborativeVersioningError() {
+    data class ConcurrentModification(
+        val proposalId: ProposalId,
+        val expectedVersion: Int,
+        val actualVersion: Int,
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : SaveChangeProposalError()
+    data class ValidationFailed(val violations: List<String>, override val occurredAt: Instant = Clock.System.now()) : SaveChangeProposalError()
+    data class StorageQuotaExceeded(val currentSize: Long, val maxSize: Long, override val occurredAt: Instant = Clock.System.now()) :
+        SaveChangeProposalError()
+    data class NetworkError(val message: String, val cause: Throwable?, override val occurredAt: Instant = Clock.System.now()) : SaveChangeProposalError()
+    data class StateTransitionConflict(
+        val proposalId: ProposalId,
+        val currentState: String,
+        val attemptedState: String,
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : SaveChangeProposalError()
+}
+
+/**
+ * Error types for ChangeProposal delete operations.
+ */
+sealed class DeleteChangeProposalError : CollaborativeVersioningError() {
+    data class ProposalInUse(val proposalId: ProposalId, val reason: String, override val occurredAt: Instant = Clock.System.now()) :
+        DeleteChangeProposalError()
+    data class NetworkError(val message: String, val cause: Throwable?, override val occurredAt: Instant = Clock.System.now()) : DeleteChangeProposalError()
+    data class PermissionDenied(val proposalId: ProposalId, val reason: String, override val occurredAt: Instant = Clock.System.now()) :
+        DeleteChangeProposalError()
+    data class ProposalNotFound(val proposalId: ProposalId, override val occurredAt: Instant = Clock.System.now()) : DeleteChangeProposalError()
+}
+
+/**
+ * Error types for ChangeProposal exists operations.
+ */
+sealed class ExistsChangeProposalError : CollaborativeVersioningError() {
+    data class QueryTimeout(val operation: String, val timeoutMs: Long, override val occurredAt: Instant = Clock.System.now()) : ExistsChangeProposalError()
+    data class NetworkError(val message: String, val cause: Throwable?, override val occurredAt: Instant = Clock.System.now()) : ExistsChangeProposalError()
 }
