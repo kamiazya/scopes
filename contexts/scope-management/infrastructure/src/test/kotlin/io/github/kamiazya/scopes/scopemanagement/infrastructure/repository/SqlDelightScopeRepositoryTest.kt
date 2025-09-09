@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
+import arrow.core.Either
 import arrow.core.nonEmptyListOf
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
@@ -91,17 +92,23 @@ class SqlDelightScopeRepositoryTest :
                     savedScope?.description shouldBe scope.description
                     savedScope?.parentId shouldBe scope.parentId
                     savedScope?.aspects?.toMap() shouldBe scope.aspects.toMap()
-                    // Debug findResult 
-                    println("DEBUG: findResult = $findResult")
-                    println("DEBUG: findResult.isLeft() = ${findResult.isLeft()}")
-                    println("DEBUG: findResult.isRight() = ${findResult.isRight()}")
-                    if (findResult.isLeft()) {
-                        println("DEBUG: findResult error: ${findResult.leftOrNull()}")
+                    // Check findResult with proper type casting
+                    when (val result = findResult) {
+                        is Either.Left -> {
+                            println("ERROR: findById returned error: ${result.value}")
+                            result.isRight() shouldBe true // This will fail and show the error
+                        }
+                        is Either.Right -> {
+                            val foundScope = result.value
+                            if (foundScope == null) {
+                                println("ERROR: findById returned null (scope not found)")
+                                foundScope shouldNotBe null // This will fail with clear message
+                            } else {
+                                // Verify the found scope
+                                foundScope.aspects.toMap()[aspectKey] shouldBe nonEmptyListOf(aspectValue)
+                            }
+                        }
                     }
-                    findResult.isRight() shouldBe true
-                    val foundScope = findResult.getOrNull()
-                    foundScope shouldNotBe null
-                    foundScope?.aspects?.toMap()?.get(aspectKey) shouldBe listOf(aspectValue)
                 }
 
                 it("should update an existing scope") {
