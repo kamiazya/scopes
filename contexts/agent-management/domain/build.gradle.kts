@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kulid)
 
     // Test dependencies

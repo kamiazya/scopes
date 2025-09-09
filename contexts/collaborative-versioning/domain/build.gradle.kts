@@ -11,10 +11,14 @@ dependencies {
     // Event store (for EventTypeId annotation)
     implementation(project(":event-store-domain"))
 
+    // Cross-context dependency for AgentId
+    implementation(project(":agent-management-domain"))
+
     // Core libraries
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kulid)
 
     // Test dependencies
