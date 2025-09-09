@@ -185,12 +185,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 database.scopeQueries.findScopeIdByTitleRoot(title).executeAsOneOrNull()
             }
 
-            id?.let {
-                ScopeId.create(it).fold(
-                    ifLeft = { error("Invalid scope id in database: $it") },
-                    ifRight = { it },
-                )
-            }.right()
+            either {
+                id?.let { raw ->
+                    ScopeId.create(raw).mapLeft { validationError ->
+                        PersistenceError.DataCorruption(
+                            occurredAt = Clock.System.now(),
+                            entityType = "Scope",
+                            entityId = raw,
+                            reason = "Invalid scope id in database: $validationError",
+                        )
+                    }.bind()
+                }
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
