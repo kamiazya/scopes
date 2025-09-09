@@ -40,7 +40,7 @@ class DeleteContextViewHandler(
                 )
 
             // Check if this context is currently active
-            val currentContext = activeContextService.getCurrentContext()
+            val currentContext = activeContextService.getCurrentContext().mapLeft { it as ScopesError }.bind()
             if (currentContext != null && currentContext.key.value == command.key) {
                 raise(
                     ScopesError.ValidationFailed(

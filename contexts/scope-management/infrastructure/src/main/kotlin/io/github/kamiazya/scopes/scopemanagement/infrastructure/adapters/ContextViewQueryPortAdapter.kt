@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListConte
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.ListContextViewsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
+import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 
 /**
@@ -50,18 +51,21 @@ public class ContextViewQueryPortAdapter(
     }
 
     override suspend fun getActiveContext(query: GetActiveContextQuery): Either<ScopeContractError, ContextView?> {
-        val domainContextView = activeContextService.getCurrentContext()
-
-        return domainContextView?.let {
-            ContextView(
-                key = it.key.value,
-                name = it.name.value,
-                filter = it.filter.expression,
-                description = it.description?.value,
-                createdAt = it.createdAt,
-                updatedAt = it.updatedAt,
-            )
-        }.right()
+        return activeContextService.getCurrentContext().fold(
+            ifLeft = { error -> mapApplicationErrorToContractError(error).left() },
+            ifRight = { domainContextView ->
+                domainContextView?.let {
+                    ContextView(
+                        key = it.key.value,
+                        name = it.name.value,
+                        filter = it.filter.expression,
+                        description = it.description?.value,
+                        createdAt = it.createdAt,
+                        updatedAt = it.updatedAt,
+                    )
+                }.right()
+            }
+        )
     }
 
     /**
@@ -71,6 +75,15 @@ public class ContextViewQueryPortAdapter(
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
             ScopeContractError.BusinessError.NotFound(error.identifier)
         else -> ScopeContractError.SystemError.ServiceUnavailable("ContextViewService")
+    }
+
+    /**
+     * Maps application errors to contract layer errors for query operations.
+     */
+    private fun mapApplicationErrorToContractError(error: ApplicationError): ScopeContractError = when (error) {
+        is io.github.kamiazya.scopes.scopemanagement.application.error.ContextError.StateNotFound ->
+            ScopeContractError.BusinessError.NotFound(error.contextId)
+        else -> ScopeContractError.SystemError.ServiceUnavailable("ActiveContextService")
     }
 
     private fun ContextViewDto.toContractContextView(): ContextView = ContextView(
