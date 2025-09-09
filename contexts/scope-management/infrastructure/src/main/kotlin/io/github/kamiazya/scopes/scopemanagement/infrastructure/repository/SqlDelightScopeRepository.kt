@@ -299,8 +299,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         val scopeId = ScopeId.create(row.id).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
-                operation = "rowToScope",
-                cause = RuntimeException("Invalid scope id in database: $validationError"),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid scope id in database: $validationError",
             )
         }.bind()
 
@@ -312,8 +313,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 val key = AspectKey.create(keyStr).mapLeft { validationError ->
                     PersistenceError.DataCorruption(
                         occurredAt = Clock.System.now(),
-                        operation = "rowToScope",
-                        cause = RuntimeException("Invalid aspect key in database: $validationError"),
+                        entityType = "ScopeAspect",
+                        entityId = scopeId.value,
+                        reason = "Invalid aspect key in database: $validationError",
                     )
                 }.bind()
 
@@ -321,8 +323,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     AspectValue.create(aspectRow.aspect_value).mapLeft { validationError ->
                         PersistenceError.DataCorruption(
                             occurredAt = Clock.System.now(),
-                            operation = "rowToScope",
-                            cause = RuntimeException("Invalid aspect value in database: $validationError"),
+                            entityType = "ScopeAspect",
+                            entityId = scopeId.value,
+                            reason = "Invalid aspect value in database: $validationError",
                         )
                     }.bind()
                 }
@@ -332,8 +335,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 } ?: raise(
                     PersistenceError.DataCorruption(
                         occurredAt = Clock.System.now(),
-                        operation = "rowToScope",
-                        cause = RuntimeException("Aspect key exists without values in database - data integrity violation"),
+                        entityType = "ScopeAspect",
+                        entityId = scopeId.value,
+                        reason = "Aspect key exists without values in database - data integrity violation",
                     )
                 )
             }
@@ -342,8 +346,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         val title = ScopeTitle.create(row.title).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
-                operation = "rowToScope",
-                cause = RuntimeException("Invalid title in database: $validationError"),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid title in database: $validationError",
             )
         }.bind()
 
@@ -351,8 +356,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             ScopeDescription.create(desc).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
                     occurredAt = Clock.System.now(),
-                    operation = "rowToScope",
-                    cause = RuntimeException("Invalid description in database: $validationError"),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $validationError",
                 )
             }.bind()
         }
@@ -361,8 +367,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             ScopeId.create(pid).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
                     occurredAt = Clock.System.now(),
-                    operation = "rowToScope",
-                    cause = RuntimeException("Invalid parent id in database: $validationError"),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid parent id in database: $validationError",
                 )
             }.bind()
         }
@@ -401,8 +408,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         val scopeId = ScopeId.create(row.id).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
-                operation = "rowToScopeWithAspects",
-                cause = RuntimeException("Invalid scope id in database: $validationError"),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid scope id in database: $validationError",
             )
         }.bind()
 
@@ -411,8 +419,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 val key = AspectKey.create(keyStr).mapLeft { validationError ->
                     PersistenceError.DataCorruption(
                         occurredAt = Clock.System.now(),
-                        operation = "rowToScopeWithAspects",
-                        cause = RuntimeException("Invalid aspect key in database: $validationError"),
+                        entityType = "ScopeAspect",
+                        entityId = scopeId.value,
+                        reason = "Invalid aspect key in database: $validationError",
                     )
                 }.bind()
 
@@ -420,8 +429,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     AspectValue.create(aspectRow.aspect_value).mapLeft { validationError ->
                         PersistenceError.DataCorruption(
                             occurredAt = Clock.System.now(),
-                            operation = "rowToScopeWithAspects",
-                            cause = RuntimeException("Invalid aspect value in database: $validationError"),
+                            entityType = "ScopeAspect",
+                            entityId = scopeId.value,
+                            reason = "Invalid aspect value in database: $validationError",
                         )
                     }.bind()
                 }
@@ -431,8 +441,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 } ?: raise(
                     PersistenceError.DataCorruption(
                         occurredAt = Clock.System.now(),
-                        operation = "rowToScopeWithAspects",
-                        cause = RuntimeException("Aspect key exists without values in database - data integrity violation"),
+                        entityType = "ScopeAspect",
+                        entityId = scopeId.value,
+                        reason = "Aspect key exists without values in database - data integrity violation",
                     )
                 )
             }
@@ -441,8 +452,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         val title = ScopeTitle.create(row.title).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
-                operation = "rowToScopeWithAspects",
-                cause = RuntimeException("Invalid title in database: $validationError"),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid title in database: $validationError",
             )
         }.bind()
 
@@ -450,8 +462,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             ScopeDescription.create(desc).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
                     occurredAt = Clock.System.now(),
-                    operation = "rowToScopeWithAspects",
-                    cause = RuntimeException("Invalid description in database: $validationError"),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $validationError",
                 )
             }.bind()
         }
@@ -460,8 +473,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             ScopeId.create(pid).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
                     occurredAt = Clock.System.now(),
-                    operation = "rowToScopeWithAspects",
-                    cause = RuntimeException("Invalid parent id in database: $validationError"),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid parent id in database: $validationError",
                 )
             }.bind()
         }
