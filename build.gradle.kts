@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.spotless)
     id("org.cyclonedx.bom") version "2.3.1"
     id("org.spdx.sbom") version "0.9.0"
+    jacoco
 }
 
 group = "io.github.kamiazya"
@@ -29,9 +30,26 @@ subprojects {
 
     // Configure Kotlin compilation when plugin is applied
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        apply(plugin = "jacoco")
+
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            }
+        }
+
+        // Configure JaCoCo for projects with tests
+        tasks.withType<Test> {
+            useJUnitPlatform()
+            finalizedBy("jacocoTestReport")
+        }
+
+        tasks.named<JacocoReport>("jacocoTestReport") {
+            mustRunAfter("test")
+            reports {
+                xml.required.set(true)
+                html.required.set(false)
+                csv.required.set(false)
             }
         }
     }
@@ -125,6 +143,35 @@ tasks.register("konsistTest") {
     description = "Run Konsist architecture tests"
     group = "verification"
     dependsOn(":quality-konsist:test")
+}
+
+// Combined JaCoCo report
+tasks.register<JacocoReport>("jacocoRootReport") {
+    description = "Generate aggregate JaCoCo coverage report"
+    group = "verification"
+
+    // Depend on individual jacoco test report tasks, not test tasks directly
+    dependsOn(
+        subprojects.mapNotNull {
+            try {
+                it.tasks.named("jacocoTestReport")
+            } catch (e: Exception) {
+                null
+            }
+        },
+    )
+
+    val kotlinSubprojects = subprojects.filter { it.plugins.hasPlugin("org.jetbrains.kotlin.jvm") }
+
+    sourceDirectories.setFrom(kotlinSubprojects.map { it.fileTree("src/main/kotlin") })
+    classDirectories.setFrom(kotlinSubprojects.map { it.fileTree("build/classes/kotlin/main") })
+    executionData.setFrom(kotlinSubprojects.map { it.file("build/jacoco/test.exec") }.filter { it.exists() })
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
 }
 
 // Spotless configuration

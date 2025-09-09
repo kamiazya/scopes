@@ -52,3 +52,40 @@ jobs:
           build/reports/detekt/
           */build/reports/detekt/
         if-no-files-found: warn
+
+  sonar:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.fork == false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@7a1da54cb7fdef4ea19f6ecdfa9ecf59dc5a48fe # v1.3.6
+      with:
+        java-version: '21'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      with:
+        validate-wrappers: true
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+    - name: Run tests with coverage
+      run: ./gradlew --no-daemon --scan test jacocoRootReport
+
+    - name: Run Detekt analysis
+      run: ./gradlew --no-daemon --scan detekt
+      continue-on-error: true
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@383f7e52eae3ab0510c3cb0e7d9d150bbaeab838 # v3.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
