@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kulid)
 
     // Test dependencies

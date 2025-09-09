@@ -4,6 +4,7 @@ import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangesetId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -97,3 +98,57 @@ sealed class MergeError : CollaborativeVersioningError() {
  * Detail about a specific conflict.
  */
 data class ConflictDetail(val path: String, val sourceValue: String?, val targetValue: String?, val description: String)
+
+/**
+ * Errors related to VersionNumber validation.
+ */
+sealed class VersionNumberError : CollaborativeVersioningError() {
+    data class InvalidValue(val providedValue: Int, val reason: String, override val occurredAt: Instant = Clock.System.now()) : VersionNumberError()
+}
+
+/**
+ * Errors related to ResourceContent validation.
+ */
+sealed class ResourceContentError : CollaborativeVersioningError() {
+    data class EmptyContent(override val occurredAt: Instant = Clock.System.now()) : ResourceContentError()
+
+    data class ContentTooLarge(val actualSize: Int, val maxSize: Int, override val occurredAt: Instant = Clock.System.now()) : ResourceContentError()
+
+    data class InvalidJson(val reason: String, val cause: Throwable? = null, override val occurredAt: Instant = Clock.System.now()) : ResourceContentError()
+}
+
+/**
+ * Errors related to Snapshot ID validation.
+ */
+sealed class SnapshotIdError : CollaborativeVersioningError() {
+    data class InvalidFormat(val providedValue: String, val expectedFormat: String, override val occurredAt: Instant = Clock.System.now()) : SnapshotIdError()
+}
+
+/**
+ * Errors related to TrackedResource operations.
+ */
+sealed class TrackedResourceError : CollaborativeVersioningError() {
+    data class NoSnapshots(val resourceId: ResourceId, override val occurredAt: Instant = Clock.System.now()) : TrackedResourceError()
+
+    data class NoChangeHistory(val resourceId: ResourceId, override val occurredAt: Instant = Clock.System.now()) : TrackedResourceError()
+
+    data class VersionNotFound(val resourceId: ResourceId, val versionNumber: VersionNumber, override val occurredAt: Instant = Clock.System.now()) :
+        TrackedResourceError()
+
+    data class InvalidRestore(
+        val resourceId: ResourceId,
+        val currentVersion: VersionNumber,
+        val targetVersion: VersionNumber,
+        override val occurredAt: Instant = Clock.System.now(),
+    ) : TrackedResourceError()
+}
+
+/**
+ * Errors related to TrackedResourceService operations.
+ */
+sealed class TrackedResourceServiceError : CollaborativeVersioningError() {
+    data class ResourceMismatch(val expected: ResourceId, val actual: ResourceId, override val occurredAt: Instant = Clock.System.now()) :
+        TrackedResourceServiceError()
+
+    data class InvalidContent(val reason: String, override val occurredAt: Instant = Clock.System.now()) : TrackedResourceServiceError()
+}
