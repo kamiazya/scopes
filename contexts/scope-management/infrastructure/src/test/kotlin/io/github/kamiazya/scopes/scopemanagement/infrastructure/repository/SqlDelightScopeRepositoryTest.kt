@@ -91,6 +91,10 @@ class SqlDelightScopeRepositoryTest :
                     savedScope?.description shouldBe scope.description
                     savedScope?.parentId shouldBe scope.parentId
                     savedScope?.aspects?.toMap() shouldBe scope.aspects.toMap()
+                    // Debug findResult 
+                    println("DEBUG: findResult = $findResult")
+                    println("DEBUG: findResult.isLeft() = ${findResult.isLeft()}")
+                    println("DEBUG: findResult.isRight() = ${findResult.isRight()}")
                     if (findResult.isLeft()) {
                         println("DEBUG: findResult error: ${findResult.leftOrNull()}")
                     }
