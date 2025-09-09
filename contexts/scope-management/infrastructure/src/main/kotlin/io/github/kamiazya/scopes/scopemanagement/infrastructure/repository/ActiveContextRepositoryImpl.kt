@@ -154,7 +154,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid id in database: $validationError",
             )
         }.bind()
-        
+
         val key = ContextViewKey.create(row.key).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
@@ -163,7 +163,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid key in database: $validationError",
             )
         }.bind()
-        
+
         val name = ContextViewName.create(row.name).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
@@ -172,7 +172,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid name in database: $validationError",
             )
         }.bind()
-        
+
         val description = row.description?.let { desc ->
             ContextViewDescription.create(desc).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
@@ -183,7 +183,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             }.bind()
         }
-        
+
         val filter = ContextViewFilter.create(row.filter).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
@@ -223,7 +223,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid id in database: $validationError",
             )
         }.bind()
-        
+
         val key = ContextViewKey.create(row.key).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
@@ -232,7 +232,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid key in database: $validationError",
             )
         }.bind()
-        
+
         val name = ContextViewName.create(row.name).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),
@@ -241,7 +241,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 reason = "Invalid name in database: $validationError",
             )
         }.bind()
-        
+
         val description = row.description?.let { desc ->
             ContextViewDescription.create(desc).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
@@ -252,7 +252,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             }.bind()
         }
-        
+
         val filter = ContextViewFilter.create(row.filter).mapLeft { validationError ->
             PersistenceError.DataCorruption(
                 occurredAt = Clock.System.now(),

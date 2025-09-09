@@ -10,12 +10,12 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextVie
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextViewsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.ListContextViewsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
-import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 
 /**
@@ -50,8 +50,8 @@ public class ContextViewQueryPortAdapter(
         )
     }
 
-    override suspend fun getActiveContext(query: GetActiveContextQuery): Either<ScopeContractError, ContextView?> {
-        return activeContextService.getCurrentContext().fold(
+    override suspend fun getActiveContext(query: GetActiveContextQuery): Either<ScopeContractError, ContextView?> =
+        activeContextService.getCurrentContext().fold(
             ifLeft = { error -> mapApplicationErrorToContractError(error).left() },
             ifRight = { domainContextView ->
                 domainContextView?.let {
@@ -64,9 +64,8 @@ public class ContextViewQueryPortAdapter(
                         updatedAt = it.updatedAt,
                     )
                 }.right()
-            }
+            },
         )
-    }
 
     /**
      * Maps domain errors to contract layer errors for query operations.

@@ -6,14 +6,11 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
-import kotlinx.datetime.Clock
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 
 /**
  * Service for managing the currently active context view.
@@ -38,16 +35,15 @@ class ActiveContextService(
      * Returns Either with ContextView if active, or null if no context is active.
      * Propagates errors from the repository.
      */
-    suspend fun getCurrentContext(): Either<ApplicationError, ContextView?> = 
-        activeContextRepository.getActiveContext().mapLeft { error ->
-            when (error) {
-                is DomainPersistenceError -> error.toApplicationError()
-                else -> AppPersistenceError.StorageUnavailable(
-                    operation = "getActiveContext",
-                    cause = error.toString()
-                )
-            }
+    suspend fun getCurrentContext(): Either<ApplicationError, ContextView?> = activeContextRepository.getActiveContext().mapLeft { error ->
+        when (error) {
+            is DomainPersistenceError -> error.toApplicationError()
+            else -> AppPersistenceError.StorageUnavailable(
+                operation = "getActiveContext",
+                cause = error.toString(),
+            )
         }
+    }
 
     /**
      * Set the active context and publish audit event.
@@ -64,7 +60,7 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> AppPersistenceError.StorageUnavailable(
                         operation = "setActiveContext",
-                        cause = error.toString()
+                        cause = error.toString(),
                     )
                 }
             }
@@ -99,7 +95,7 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> AppPersistenceError.StorageUnavailable(
                         operation = "clearActiveContext",
-                        cause = error.toString()
+                        cause = error.toString(),
                     )
                 }
             }
@@ -139,7 +135,7 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> AppPersistenceError.StorageUnavailable(
                         operation = "findByKey",
-                        cause = error.toString()
+                        cause = error.toString(),
                     )
                 }
             }

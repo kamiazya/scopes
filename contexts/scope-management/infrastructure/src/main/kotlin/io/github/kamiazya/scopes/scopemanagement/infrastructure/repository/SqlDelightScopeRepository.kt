@@ -2,10 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.left
+import arrow.core.raise.either
 import arrow.core.right
 import arrow.core.toNonEmptyListOrNull
-import arrow.core.raise.either
-import arrow.core.flatMap
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
@@ -69,24 +68,23 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
-    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = 
-        try {
-            withContext(Dispatchers.IO) {
-                val scopeRow = database.scopeQueries.findScopeById(id.value).executeAsOneOrNull()
-                if (scopeRow == null) {
-                    null.right()
-                } else {
-                    val aspectRows = database.scopeAspectQueries.findByScopeIds(listOf(scopeRow.id)).executeAsList()
-                    rowToScopeWithAspects(scopeRow, aspectRows)
-                }
+    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = try {
+        withContext(Dispatchers.IO) {
+            val scopeRow = database.scopeQueries.findScopeById(id.value).executeAsOneOrNull()
+            if (scopeRow == null) {
+                null.right()
+            } else {
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(listOf(scopeRow.id)).executeAsList()
+                rowToScopeWithAspects(scopeRow, aspectRows)
             }
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findById",
-                cause = e,
-            ).left()
         }
+    } catch (e: Exception) {
+        PersistenceError.StorageUnavailable(
+            occurredAt = Clock.System.now(),
+            operation = "findById",
+            cause = e,
+        ).left()
+    }
 
     override suspend fun findAll(): Either<PersistenceError, List<Scope>> = either {
         try {
@@ -101,7 +99,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     Pair(rows, aspects)
                 }
             }
-            
+
             scopeRows.map { row ->
                 rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
             }
@@ -111,7 +109,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     occurredAt = Clock.System.now(),
                     operation = "findAll",
                     cause = e,
-                )
+                ),
             )
         }
     }
@@ -133,8 +131,8 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     Pair(scopeRows, aspects)
                 }
             }
-            
-            rows.map { row -> 
+
+            rows.map { row ->
                 rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
             }
         } catch (e: Exception) {
@@ -143,7 +141,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     occurredAt = Clock.System.now(),
                     operation = "findByParentId(offset,limit)",
                     cause = e,
-                )
+                ),
             )
         }
     }
@@ -268,8 +266,8 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     Pair(scopeRows, aspects)
                 }
             }
-            
-            rows.map { row -> 
+
+            rows.map { row ->
                 rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
             }
         } catch (e: Exception) {
@@ -278,7 +276,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     occurredAt = Clock.System.now(),
                     operation = "findAll",
                     cause = e,
-                )
+                ),
             )
         }
     }
@@ -296,9 +294,9 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     Pair(scopeRows, aspects)
                 }
             }
-            
-            rows.map { row -> 
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind() 
+
+            rows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
             }
         } catch (e: Exception) {
             raise(
@@ -306,7 +304,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                     occurredAt = Clock.System.now(),
                     operation = "findAllRoot",
                     cause = e,
-                )
+                ),
             )
         }
     }

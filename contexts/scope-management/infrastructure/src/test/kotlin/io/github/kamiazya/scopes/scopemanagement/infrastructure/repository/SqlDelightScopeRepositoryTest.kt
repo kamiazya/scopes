@@ -85,7 +85,7 @@ class SqlDelightScopeRepositoryTest :
                     saveResult.isRight() shouldBe true
                     val savedScope = saveResult.getOrNull()
                     savedScope shouldNotBe null
-                    
+
                     // Verify the saved scope has the expected values
                     savedScope?.id shouldBe scope.id
                     savedScope?.title shouldBe scope.title
