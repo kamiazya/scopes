@@ -1,0 +1,9 @@
+-- Agent Management Schema
+-- Placeholder for future implementation
+
+CREATE TABLE IF NOT EXISTS agents (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);

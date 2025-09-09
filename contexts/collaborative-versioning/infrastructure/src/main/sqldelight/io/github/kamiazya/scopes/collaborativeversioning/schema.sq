@@ -1,0 +1,7 @@
+-- Collaborative Versioning Schema
+-- Placeholder for future implementation
+
+CREATE TABLE IF NOT EXISTS versions (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL
+);

@@ -21,6 +21,8 @@ class BoundedContextArchitectureTest :
         val contexts = listOf(
             "scope-management",
             "user-preferences",
+            "collaborative-versioning",
+            "agent-management",
         )
 
         // Test that domain layers don't depend on application or infrastructure

@@ -25,6 +25,8 @@ include(
     ":contracts-user-preferences",
     ":contracts-event-store",
     ":contracts-device-synchronization",
+    ":contracts-collaborative-versioning",
+    ":contracts-agent-management",
     // Bounded Context - Unified Scope Management
     ":scope-management-domain",
     ":scope-management-application",
@@ -41,6 +43,14 @@ include(
     ":device-synchronization-domain",
     ":device-synchronization-application",
     ":device-synchronization-infrastructure",
+    // Bounded Context - Collaborative Versioning
+    ":collaborative-versioning-domain",
+    ":collaborative-versioning-application",
+    ":collaborative-versioning-infrastructure",
+    // Bounded Context - Agent Management
+    ":agent-management-domain",
+    ":agent-management-application",
+    ":agent-management-infrastructure",
     // Apps layer - Application logic & Entry points
     ":apps-scopes",
     ":apps-scopesd",
@@ -108,6 +118,8 @@ project(":contracts-scope-management").projectDir = file("contracts/scope-manage
 project(":contracts-user-preferences").projectDir = file("contracts/user-preferences")
 project(":contracts-event-store").projectDir = file("contracts/event-store")
 project(":contracts-device-synchronization").projectDir = file("contracts/device-synchronization")
+project(":contracts-collaborative-versioning").projectDir = file("contracts/collaborative-versioning")
+project(":contracts-agent-management").projectDir = file("contracts/agent-management")
 
 // Bounded Context - Scope Management
 project(":scope-management-domain").projectDir = file("contexts/scope-management/domain")
@@ -128,6 +140,16 @@ project(":event-store-infrastructure").projectDir = file("contexts/event-store/i
 project(":device-synchronization-domain").projectDir = file("contexts/device-synchronization/domain")
 project(":device-synchronization-application").projectDir = file("contexts/device-synchronization/application")
 project(":device-synchronization-infrastructure").projectDir = file("contexts/device-synchronization/infrastructure")
+
+// Bounded Context - Collaborative Versioning
+project(":collaborative-versioning-domain").projectDir = file("contexts/collaborative-versioning/domain")
+project(":collaborative-versioning-application").projectDir = file("contexts/collaborative-versioning/application")
+project(":collaborative-versioning-infrastructure").projectDir = file("contexts/collaborative-versioning/infrastructure")
+
+// Bounded Context - Agent Management
+project(":agent-management-domain").projectDir = file("contexts/agent-management/domain")
+project(":agent-management-application").projectDir = file("contexts/agent-management/application")
+project(":agent-management-infrastructure").projectDir = file("contexts/agent-management/infrastructure")
 
 // Apps layer
 project(":apps-scopes").projectDir = file("apps/scopes")
