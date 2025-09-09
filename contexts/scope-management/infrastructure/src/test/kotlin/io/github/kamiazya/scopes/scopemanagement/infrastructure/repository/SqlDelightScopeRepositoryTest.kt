@@ -80,22 +80,17 @@ class SqlDelightScopeRepositoryTest :
                     val findResult = runBlocking { repository.findById(scope.id) }
 
                     // Then
-                    // Debug output to understand the failure
-                    if (saveResult != scope.right()) {
-                        println("DEBUG: Expected: ${scope.right()}")
-                        println("DEBUG: Actual: $saveResult")
-                        println("DEBUG: Are they Right? Expected: ${scope.right().isRight()}, Actual: ${saveResult.isRight()}")
-                        if (saveResult.isRight()) {
-                            val savedScope = saveResult.getOrNull()
-                            println("DEBUG: Saved scope: $savedScope")
-                            println("DEBUG: Original scope: $scope")
-                            println("DEBUG: Are equal? ${savedScope == scope}")
-                            if (savedScope != scope) {
-                                println("DEBUG: Differences found in comparison")
-                            }
-                        }
-                    }
-                    saveResult shouldBe scope.right()
+                    // Verify save was successful
+                    saveResult.isRight() shouldBe true
+                    val savedScope = saveResult.getOrNull()
+                    savedScope shouldNotBe null
+                    
+                    // Verify the saved scope has the expected values
+                    savedScope?.id shouldBe scope.id
+                    savedScope?.title shouldBe scope.title
+                    savedScope?.description shouldBe scope.description
+                    savedScope?.parentId shouldBe scope.parentId
+                    savedScope?.aspects?.toMap() shouldBe scope.aspects.toMap()
                     if (findResult.isLeft()) {
                         println("DEBUG: findResult error: ${findResult.leftOrNull()}")
                     }
