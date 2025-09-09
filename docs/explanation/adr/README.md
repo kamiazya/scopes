@@ -155,7 +155,11 @@ graph TD
   ADR_008[ADR-0008: Clean Architecture Adoption<br/>🏗️ Architectural Structure]
   ADR_0010[ADR-0010: Adopt ULID for Distributed Identifiers<br/>🔢 Distributed Systems]
   ADR_0011[ADR-0011: Functional DDD Adoption<br/>⚡ Functional Programming]
-  ADR_0012[ADR-0012: Unified Bounded Context<br/>🔄 Context Consolidation]
+  ADR_0012[ADR-0012: Generic Entity Lifecycle Context<br/>🔄 Universal Change Management]
+  ADR_0013[ADR-0013: Shared Kernel Change Management<br/>🔗 Cross-Context Integration]
+  ADR_0014[ADR-0014: Pluggable AI Strategy Pattern<br/>🧩 AI Integration Strategy]
+  ADR_0015[ADR-0015: Unified Event Sourcing Approach<br/>📜 Event-Driven Architecture]
+  ADR_0016[ADR-0016: A2A Collaboration Architecture<br/>🤝 AI-to-AI Collaboration]
 
   %% Dependencies
   ADR_003 --> ADR_004
@@ -172,9 +176,21 @@ graph TD
   ADR_003 --> ADR_0010
   ADR_007 --> ADR_0011
   ADR_008 --> ADR_0011
+  
+  %% Entity Lifecycle Dependencies
   ADR_007 --> ADR_0012
   ADR_008 --> ADR_0012
   ADR_0011 --> ADR_0012
+  ADR_002 --> ADR_0012
+  ADR_0012 --> ADR_0013
+  ADR_007 --> ADR_0013
+  ADR_0012 --> ADR_0014
+  ADR_002 --> ADR_0014
+  ADR_0012 --> ADR_0015
+  ADR_0013 --> ADR_0015
+  ADR_0014 --> ADR_0016
+  ADR_0015 --> ADR_0016
+  ADR_002 --> ADR_0016
 
 
   %% Influences (dotted lines)
@@ -182,6 +198,9 @@ graph TD
   ADR_001 -.-> ADR_005
   ADR_002 -.-> ADR_007
   ADR_008 -.-> ADR_0010
+  ADR_0010 -.-> ADR_0012
+  ADR_001 -.-> ADR_0013
+  ADR_0011 -.-> ADR_0014
 
   %% Styling
   classDef foundation fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
@@ -205,6 +224,9 @@ graph TD
   class ADR_0010 distributed
   class ADR_0011 functional
   class ADR_0012 architecture
+  class ADR_0013 architecture
+  class ADR_0014 implementation
+  class ADR_0015 structural
 ```
 
 ### ADR Index
@@ -222,7 +244,11 @@ graph TD
 | [0009](./0009-adopt-apache-license-2.0.md) | Accepted | Adopt Apache License 2.0 | Change project license to Apache 2.0 for better legal protection |
 | [0010](./0010-adopt-ulid-for-distributed-identifiers.md) | Accepted | Adopt ULID for Distributed Identifiers | Replace hex IDs with ULID for multi-device synchronization support |
 | [0011](./0011-functional-ddd-adoption.md) | Accepted | Functional Domain-Driven Design Adoption | Adopt functional programming paradigms within DDD for improved code quality |
-| [0012](./0012-unified-bounded-context.md) | Accepted | Unified Bounded Context for Scope Management | Consolidate all scope-related functionality into single bounded context |
+| [0012](./0012-generic-entity-lifecycle-context.md) | Accepted | Generic Entity Lifecycle Context | Generic change management for any entity type with version control |
+| [0013](./0013-shared-kernel-change-management.md) | Accepted | Shared Kernel Change Management | Cross-context integration pattern for entity lifecycle capabilities |
+| [0014](./0014-pluggable-ai-strategy-pattern.md) | Accepted | Pluggable AI Strategy Pattern | Entity-agnostic AI integration with type-specific strategies |
+| [0015](./0015-unified-event-sourcing-approach.md) | Accepted | Unified Event Sourcing Approach | Complete audit trail and event-driven architecture for all changes |
+| [0016](./0016-a2a-collaboration-architecture.md) | Accepted | A2A Collaboration Architecture | AI-to-AI collaboration with conversation branching and conflict resolution |
 
 #### Legend
 
@@ -237,7 +263,11 @@ graph TD
 - ⚖️ Governance and legal decisions
 - 🔢 Distributed systems and data consistency
 - ⚡ Functional programming and domain modeling
-- 🔄 Context boundaries and consolidation
+- 🔄 Universal change management and lifecycle
+- 🔗 Cross-context integration patterns
+- 🧩 AI integration strategies
+- 📜 Event-driven architecture
+- 🤝 AI-to-AI collaboration and coordination
 
 ## Tools and Resources
 
