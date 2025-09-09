@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -379,6 +380,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             title = title,
             description = description,
             parentId = parentId,
+            status = ScopeStatus.default(),
             aspects = if (aspectMap.isEmpty()) Aspects.empty() else Aspects.from(aspectMap),
             createdAt = Instant.fromEpochMilliseconds(row.created_at),
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
@@ -485,6 +487,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             title = title,
             description = description,
             parentId = parentId,
+            status = ScopeStatus.default(),
             aspects = if (aspectMap.isEmpty()) Aspects.empty() else Aspects.from(aspectMap),
             createdAt = Instant.fromEpochMilliseconds(row.created_at),
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),

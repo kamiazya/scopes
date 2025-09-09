@@ -45,6 +45,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Test Scope").getOrNull()!!,
                         description = ScopeDescription.create("Test Description").getOrNull(),
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -68,6 +69,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Scope with Aspects").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = aspects,
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -78,7 +80,25 @@ class SqlDelightScopeRepositoryTest :
                     val findResult = runBlocking { repository.findById(scope.id) }
 
                     // Then
+                    // Debug output to understand the failure
+                    if (saveResult != scope.right()) {
+                        println("DEBUG: Expected: ${scope.right()}")
+                        println("DEBUG: Actual: $saveResult")
+                        println("DEBUG: Are they Right? Expected: ${scope.right().isRight()}, Actual: ${saveResult.isRight()}")
+                        if (saveResult.isRight()) {
+                            val savedScope = saveResult.getOrNull()
+                            println("DEBUG: Saved scope: $savedScope")
+                            println("DEBUG: Original scope: $scope")
+                            println("DEBUG: Are equal? ${savedScope == scope}")
+                            if (savedScope != scope) {
+                                println("DEBUG: Differences found in comparison")
+                            }
+                        }
+                    }
                     saveResult shouldBe scope.right()
+                    if (findResult.isLeft()) {
+                        println("DEBUG: findResult error: ${findResult.leftOrNull()}")
+                    }
                     findResult.isRight() shouldBe true
                     val foundScope = findResult.getOrNull()
                     foundScope shouldNotBe null
@@ -92,6 +112,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Initial Title").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -124,6 +145,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Test").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -151,6 +173,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Find Me").getOrNull()!!,
                         description = ScopeDescription.create("Test Description").getOrNull(),
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -205,6 +228,7 @@ class SqlDelightScopeRepositoryTest :
                             title = ScopeTitle.create("Scope 1").getOrNull()!!,
                             description = null,
                             parentId = null,
+                            status = ScopeStatus.default(),
                             aspects = Aspects.empty(),
                             createdAt = Clock.System.now(),
                             updatedAt = Clock.System.now(),
@@ -214,6 +238,7 @@ class SqlDelightScopeRepositoryTest :
                             title = ScopeTitle.create("Scope 2").getOrNull()!!,
                             description = null,
                             parentId = null,
+                            status = ScopeStatus.default(),
                             aspects = Aspects.empty(),
                             createdAt = Clock.System.now(),
                             updatedAt = Clock.System.now(),
@@ -251,6 +276,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Root Scope").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -261,6 +287,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Child Scope").getOrNull()!!,
                         description = null,
                         parentId = ScopeId.generate(),
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -289,6 +316,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Parent").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -339,6 +367,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Exists").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -374,6 +403,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = parentId,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -403,6 +433,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -429,6 +460,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("To Delete").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = aspects,
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -465,6 +497,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create("Parent").getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -515,6 +548,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = parentId,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
@@ -544,6 +578,7 @@ class SqlDelightScopeRepositoryTest :
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = null,
+                        status = ScopeStatus.default(),
                         aspects = Aspects.empty(),
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
