@@ -3,10 +3,10 @@ package io.github.kamiazya.scopes.scopemanagement.application.projection
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

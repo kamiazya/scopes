@@ -26,6 +26,17 @@ value class ULID private constructor(val value: String) {
             return ULID(normalized)
         }
 
+        /**
+         * Validates whether a string is a well-formed ULID.
+         *
+         * Performs case-insensitive validation against Crockford Base32:
+         * - exactly 26 characters,
+         * - all characters are in the allowed alphabet,
+         * - the 10-character timestamp prefix is <= "7ZZZZZZZZZ" (enforces the 48-bit timestamp max).
+         *
+         * @param value the candidate ULID (case-insensitive; will be normalized to uppercase)
+         * @return true if the input is a valid ULID, false otherwise
+         */
         fun isValid(value: String): Boolean = try {
             // ULID must be exactly 26 characters using Crockford's Base32
             run {
@@ -33,14 +44,26 @@ value class ULID private constructor(val value: String) {
                 up.length == 26 &&
                     up.all { it in VALID_CHARS } &&
                     // Maximum valid timestamp is "7ZZZZZZZZZ" (48-bit max in Base32)
-                    up.substring(0, 10) <= "7ZZZZZZZZZ"
+                    up.take(10) <= "7ZZZZZZZZZ"
             }
         } catch (e: Exception) {
             false
         }
 
-        // Keep concrete implementation for backward compatibility temporarily
-        @Deprecated("Use ULIDGenerator interface instead for better testability", ReplaceWith("ULIDGenerator.generate()"))
+        // Temporary bridge method to SystemULIDGenerator
+        /**
+         * Generates a new ULID using the system ULID provider and returns it as a validated ULID instance.
+         *
+         * This is a temporary bridge to the global/system ULID generator. Prefer injecting an implementation of
+         * ULIDGenerator and calling its `generate()` method for better testability; this bridge will be removed once
+         * dependency injection is adopted by all consumers.
+         *
+         * @return A ULID created from a randomly generated ULID string.
+         */
+        @Deprecated(
+            "Use ULIDGenerator interface with dependency injection for better testability",
+            ReplaceWith("ulidGenerator.generate()", "io.github.kamiazya.scopes.platform.commons.id.ULIDGenerator"),
+        )
         fun generate(): ULID = fromString(KULID.random())
     }
 

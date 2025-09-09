@@ -6,6 +6,7 @@ import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
 import io.github.kamiazya.scopes.platform.domain.event.evolveWithPending
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -14,7 +15,6 @@ import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved

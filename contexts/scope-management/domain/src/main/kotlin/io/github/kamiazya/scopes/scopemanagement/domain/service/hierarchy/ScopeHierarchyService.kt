@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**

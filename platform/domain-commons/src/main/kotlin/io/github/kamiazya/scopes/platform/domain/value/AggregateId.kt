@@ -25,8 +25,6 @@ sealed interface AggregateId {
     @JvmInline
     value class Simple private constructor(override val value: String) : AggregateId {
         companion object {
-            private val ULID_PATTERN = Regex("^[0-9A-HJKMNP-TV-Z]{26}$")
-
             fun generate(): Simple = Simple(ULID.generate().value)
 
             fun from(value: String): Either<DomainError.InvalidId, Simple> = when {
@@ -35,12 +33,12 @@ sealed interface AggregateId {
                     errorType = DomainError.InvalidId.InvalidIdType.EMPTY,
                     occurredAt = currentTimestamp(),
                 ).left()
-                !ULID_PATTERN.matches(value) -> DomainError.InvalidId(
+                !ULID.isValid(value) -> DomainError.InvalidId(
                     value = value,
                     errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
                     occurredAt = currentTimestamp(),
                 ).left()
-                else -> Simple(value).right()
+                else -> Simple(value.uppercase()).right() // Normalize to uppercase like ULID
             }
 
             fun fromUnsafe(value: String): Simple = Simple(value)
@@ -69,6 +67,8 @@ sealed interface AggregateId {
         companion object {
             private const val DEFAULT_SCHEMA = "gid"
             private const val DEFAULT_NAMESPACE = "scopes"
+
+            // Pattern for URI format, but we'll separately validate the ULID part
             private val URI_PATTERN = Regex("^[a-z]+://[a-z]+/[A-Z][A-Za-z]+/[0-9A-HJKMNP-TV-Z]{26}$")
 
             fun generate(aggregateType: String, schema: String = DEFAULT_SCHEMA, namespace: String = DEFAULT_NAMESPACE): Either<DomainError.InvalidId, Uri> =
@@ -85,7 +85,16 @@ sealed interface AggregateId {
                 schema: String = DEFAULT_SCHEMA,
                 namespace: String = DEFAULT_NAMESPACE,
             ): Either<DomainError.InvalidId, Uri> {
-                val uri = "$schema://$namespace/$aggregateType/$id"
+                // Validate the ULID part using common validation
+                if (!ULID.isValid(id)) {
+                    return DomainError.InvalidId(
+                        value = id,
+                        errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
+                        occurredAt = currentTimestamp(),
+                    ).left()
+                }
+                val normalizedId = id.uppercase() // Normalize ULID to uppercase
+                val uri = "$schema://$namespace/$aggregateType/$normalizedId"
                 return from(uri)
             }
 
