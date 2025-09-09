@@ -1,9 +1,97 @@
 -- Agent Management Schema
--- Placeholder for future implementation
+-- This module manages agents (users and AI assistants) in the system
 
+-- Agents table
+-- Stores information about agents that interact with the system
 CREATE TABLE IF NOT EXISTS agents (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    id TEXT PRIMARY KEY NOT NULL,                 -- AgentId (ULID)
+    name TEXT NOT NULL,                           -- AgentName
+    type TEXT NOT NULL,                           -- AgentType (HUMAN or AI)
+    capabilities TEXT NOT NULL,                   -- JSON array of capabilities
+    metadata TEXT,                                -- JSON metadata
+    created_at INTEGER NOT NULL,                  -- Unix timestamp (milliseconds)
+    updated_at INTEGER NOT NULL,                  -- Unix timestamp (milliseconds)
+
+    -- Type validation
+    CHECK (type IN ('HUMAN', 'AI')),
+
+    -- Ensure JSON fields are valid
+    CHECK (json_valid(capabilities)),
+    CHECK (metadata IS NULL OR json_valid(metadata))
 );
+
+-- Indexes for agents
+CREATE INDEX IF NOT EXISTS idx_agents_type ON agents(type);
+CREATE INDEX IF NOT EXISTS idx_agents_created ON agents(created_at);
+CREATE INDEX IF NOT EXISTS idx_agents_updated ON agents(updated_at);
+CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);
+
+-- ================================================================
+-- SQLDELIGHT QUERIES
+-- ================================================================
+
+-- Insert agent
+insertAgent:
+INSERT INTO agents (id, name, type, capabilities, metadata, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Update agent
+updateAgent:
+UPDATE agents
+SET name = ?, capabilities = ?, metadata = ?, updated_at = ?
+WHERE id = ?;
+
+-- Find agent by ID
+findAgentById:
+SELECT *
+FROM agents
+WHERE id = ?;
+
+-- Find agents by type
+findAgentsByType:
+SELECT *
+FROM agents
+WHERE type = ?
+ORDER BY created_at DESC;
+
+-- Find agents by name pattern
+findAgentsByNamePattern:
+SELECT *
+FROM agents
+WHERE name LIKE ?
+ORDER BY name ASC;
+
+-- Check if agent exists
+existsById:
+SELECT COUNT(*) > 0 AS result
+FROM agents
+WHERE id = ?;
+
+-- Delete agent
+deleteAgent:
+DELETE FROM agents
+WHERE id = ?;
+
+-- Get all agents
+getAllAgents:
+SELECT *
+FROM agents
+ORDER BY created_at DESC;
+
+-- Get agents with pagination
+getAgentsPaged:
+SELECT *
+FROM agents
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?;
+
+-- Count agents
+countAgents:
+SELECT COUNT(*) AS count
+FROM agents;
+
+-- Count agents by type
+countAgentsByType:
+SELECT COUNT(*) AS count
+FROM agents
+WHERE type = ?;

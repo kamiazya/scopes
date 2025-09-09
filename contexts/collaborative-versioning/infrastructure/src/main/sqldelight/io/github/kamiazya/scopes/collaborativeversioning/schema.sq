@@ -1,7 +1,476 @@
 -- Collaborative Versioning Schema
--- Placeholder for future implementation
+-- This module manages version snapshots, change proposals, and tracked resources
 
-CREATE TABLE IF NOT EXISTS versions (
-    id TEXT PRIMARY KEY,
-    created_at TEXT NOT NULL
+-- ================================================================
+-- CORE VERSIONING TABLES
+-- ================================================================
+
+-- Version snapshots table
+-- Stores immutable snapshots of resources at specific versions
+CREATE TABLE IF NOT EXISTS version_snapshots (
+    id TEXT PRIMARY KEY NOT NULL,                 -- SnapshotId (ULID)
+    resource_id TEXT NOT NULL,                    -- ResourceId being versioned
+    version_id TEXT NOT NULL,                     -- VersionId this snapshot belongs to
+    version_number INTEGER NOT NULL,              -- Sequential version number
+    content BLOB NOT NULL,                        -- ResourceContent (JSONB)
+    content_hash TEXT NOT NULL,                   -- SHA-256 hash of content
+    author_id TEXT NOT NULL,                      -- AgentId who created this version
+    message TEXT NOT NULL,                        -- Commit message
+    metadata TEXT,                                -- JSON metadata
+    created_at INTEGER NOT NULL,                  -- Unix timestamp (milliseconds)
+
+    -- Ensure content is valid JSONB
+    CHECK (json_valid(content, 8)),
+    CHECK (metadata IS NULL OR json_valid(metadata)),
+
+    -- Foreign key constraints
+    FOREIGN KEY (author_id) REFERENCES agents(id),
+    FOREIGN KEY (version_id) REFERENCES versions(id)
 );
+
+-- Versions table
+-- Represents a specific version with references to changesets
+CREATE TABLE IF NOT EXISTS versions (
+    id TEXT PRIMARY KEY NOT NULL,                 -- VersionId (ULID)
+    resource_id TEXT NOT NULL,                    -- ResourceId being versioned
+    version_number INTEGER NOT NULL,              -- Sequential version number
+    parent_version_id TEXT,                       -- Parent version (NULL for initial)
+    changeset_ids TEXT NOT NULL,                  -- JSON array of ChangesetIds
+    author_id TEXT NOT NULL,                      -- AgentId who created this version
+    message TEXT NOT NULL,                        -- Commit message
+    metadata TEXT,                                -- JSON metadata
+    created_at INTEGER NOT NULL,                  -- Unix timestamp (milliseconds)
+
+    -- Ensure JSON fields are valid
+    CHECK (json_valid(changeset_ids)),
+    CHECK (metadata IS NULL OR json_valid(metadata)),
+
+    -- Foreign key constraints
+    FOREIGN KEY (author_id) REFERENCES agents(id),
+    FOREIGN KEY (parent_version_id) REFERENCES versions(id)
+);
+
+-- ================================================================
+-- CHANGE PROPOSAL TABLES
+-- ================================================================
+
+-- Change proposals table (branch-like feature)
+-- Stores proposals for changes that can be reviewed before merging
+CREATE TABLE IF NOT EXISTS change_proposals (
+    id TEXT PRIMARY KEY NOT NULL,                 -- ProposalId (ULID)
+    author_id TEXT NOT NULL,                      -- Author (AgentId)
+    author_name TEXT NOT NULL,                    -- Author name at creation
+    state TEXT NOT NULL,                          -- ProposalState enum
+    target_resource_id TEXT NOT NULL,             -- Target ResourceId
+    title TEXT NOT NULL,                          -- Proposal title
+    description TEXT NOT NULL,                    -- Proposal description
+    rejection_reason TEXT,                        -- Reason if rejected
+    created_at INTEGER NOT NULL,                  -- Unix timestamp
+    updated_at INTEGER NOT NULL,                  -- Unix timestamp
+    submitted_at INTEGER,                         -- When submitted for review
+    review_started_at INTEGER,                    -- When review started
+    resolved_at INTEGER,                          -- When approved/rejected
+    applied_at INTEGER,                           -- When changes applied
+
+    -- State validation
+    CHECK (state IN ('DRAFT', 'SUBMITTED', 'REVIEWING', 'APPROVED', 'REJECTED', 'APPLIED')),
+
+    -- Foreign key constraints
+    FOREIGN KEY (author_id) REFERENCES agents(id)
+);
+
+-- Proposed changes within a proposal
+CREATE TABLE IF NOT EXISTS proposed_changes (
+    id TEXT PRIMARY KEY NOT NULL,                 -- Unique ID
+    proposal_id TEXT NOT NULL,                    -- Parent proposal
+    resource_id TEXT NOT NULL,                    -- ResourceId being changed
+    change_type TEXT NOT NULL,                    -- Type of change
+    change_details TEXT NOT NULL,                 -- JSON details of the change
+    sequence_number INTEGER NOT NULL,             -- Order within proposal
+    created_at INTEGER NOT NULL,                  -- Unix timestamp
+
+    -- Ensure JSON is valid
+    CHECK (json_valid(change_details)),
+
+    -- Foreign key constraints
+    FOREIGN KEY (proposal_id) REFERENCES change_proposals(id) ON DELETE CASCADE
+);
+
+-- Review comments on proposals
+CREATE TABLE IF NOT EXISTS review_comments (
+    id TEXT PRIMARY KEY NOT NULL,                 -- Comment ID
+    proposal_id TEXT NOT NULL,                    -- Parent proposal
+    proposed_change_id TEXT,                      -- Specific change (optional)
+    parent_comment_id TEXT,                       -- For threaded comments
+    author_id TEXT NOT NULL,                      -- AgentId
+    author_name TEXT NOT NULL,                    -- Author name at creation
+    content TEXT NOT NULL,                        -- Comment content
+    comment_type TEXT NOT NULL,                   -- Type of comment
+    resolved BOOLEAN NOT NULL DEFAULT 0,          -- Is resolved?
+    resolved_by_id TEXT,                          -- Who resolved it
+    resolved_by_name TEXT,                        -- Resolver name
+    resolved_at INTEGER,                          -- When resolved
+    created_at INTEGER NOT NULL,                  -- Unix timestamp
+    updated_at INTEGER NOT NULL,                  -- Unix timestamp
+
+    -- Type validation
+    CHECK (comment_type IN ('COMMENT', 'ISSUE', 'APPROVAL', 'REQUEST_CHANGES')),
+
+    -- Foreign key constraints
+    FOREIGN KEY (proposal_id) REFERENCES change_proposals(id) ON DELETE CASCADE,
+    FOREIGN KEY (proposed_change_id) REFERENCES proposed_changes(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_comment_id) REFERENCES review_comments(id),
+    FOREIGN KEY (author_id) REFERENCES agents(id),
+    FOREIGN KEY (resolved_by_id) REFERENCES agents(id)
+);
+
+-- ================================================================
+-- TRACKED RESOURCES TABLE
+-- ================================================================
+
+-- Tracked resources table
+-- Resources that are under version control
+CREATE TABLE IF NOT EXISTS tracked_resources (
+    id TEXT PRIMARY KEY NOT NULL,                 -- ResourceId
+    resource_type TEXT NOT NULL,                  -- Type of resource
+    current_version_id TEXT,                      -- Current version
+    current_snapshot_id TEXT,                     -- Current snapshot
+    tracking_started_at INTEGER NOT NULL,         -- When tracking began
+    last_modified_at INTEGER NOT NULL,            -- Last modification
+    metadata TEXT,                                -- JSON metadata
+
+    -- Ensure JSON is valid
+    CHECK (metadata IS NULL OR json_valid(metadata)),
+
+    -- Foreign key constraints
+    FOREIGN KEY (current_version_id) REFERENCES versions(id),
+    FOREIGN KEY (current_snapshot_id) REFERENCES version_snapshots(id)
+);
+
+-- ================================================================
+-- MERGE HISTORY TABLE
+-- ================================================================
+
+-- Merge history table
+-- Records when proposals are merged into main versions
+CREATE TABLE IF NOT EXISTS merge_history (
+    id TEXT PRIMARY KEY NOT NULL,                 -- Merge ID
+    proposal_id TEXT NOT NULL,                    -- Source proposal
+    target_version_id TEXT NOT NULL,              -- Target version
+    result_version_id TEXT NOT NULL,              -- Resulting version
+    merged_by_id TEXT NOT NULL,                   -- Who performed merge
+    merged_at INTEGER NOT NULL,                   -- When merged
+    merge_metadata TEXT,                          -- JSON metadata
+
+    -- Ensure JSON is valid
+    CHECK (merge_metadata IS NULL OR json_valid(merge_metadata)),
+
+    -- Foreign key constraints
+    FOREIGN KEY (proposal_id) REFERENCES change_proposals(id),
+    FOREIGN KEY (target_version_id) REFERENCES versions(id),
+    FOREIGN KEY (result_version_id) REFERENCES versions(id),
+    FOREIGN KEY (merged_by_id) REFERENCES agents(id)
+);
+
+-- ================================================================
+-- INDEXES FOR PERFORMANCE
+-- ================================================================
+
+-- Version snapshots indexes
+CREATE INDEX IF NOT EXISTS idx_snapshots_resource ON version_snapshots(resource_id);
+CREATE INDEX IF NOT EXISTS idx_snapshots_version ON version_snapshots(version_id);
+CREATE INDEX IF NOT EXISTS idx_snapshots_created ON version_snapshots(created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshots_resource_version ON version_snapshots(resource_id, version_number);
+
+-- Versions indexes
+CREATE INDEX IF NOT EXISTS idx_versions_resource ON versions(resource_id);
+CREATE INDEX IF NOT EXISTS idx_versions_parent ON versions(parent_version_id);
+CREATE INDEX IF NOT EXISTS idx_versions_created ON versions(created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_versions_resource_number ON versions(resource_id, version_number);
+
+-- Change proposals indexes
+CREATE INDEX IF NOT EXISTS idx_proposals_author ON change_proposals(author_id);
+CREATE INDEX IF NOT EXISTS idx_proposals_target ON change_proposals(target_resource_id);
+CREATE INDEX IF NOT EXISTS idx_proposals_state ON change_proposals(state);
+CREATE INDEX IF NOT EXISTS idx_proposals_created ON change_proposals(created_at);
+CREATE INDEX IF NOT EXISTS idx_proposals_updated ON change_proposals(updated_at);
+
+-- Proposed changes indexes
+CREATE INDEX IF NOT EXISTS idx_proposed_changes_proposal ON proposed_changes(proposal_id);
+CREATE INDEX IF NOT EXISTS idx_proposed_changes_resource ON proposed_changes(resource_id);
+
+-- Review comments indexes
+CREATE INDEX IF NOT EXISTS idx_comments_proposal ON review_comments(proposal_id);
+CREATE INDEX IF NOT EXISTS idx_comments_change ON review_comments(proposed_change_id);
+CREATE INDEX IF NOT EXISTS idx_comments_author ON review_comments(author_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent ON review_comments(parent_comment_id);
+CREATE INDEX IF NOT EXISTS idx_comments_type ON review_comments(comment_type);
+
+-- Tracked resources indexes
+CREATE INDEX IF NOT EXISTS idx_tracked_type ON tracked_resources(resource_type);
+CREATE INDEX IF NOT EXISTS idx_tracked_modified ON tracked_resources(last_modified_at);
+
+-- Merge history indexes
+CREATE INDEX IF NOT EXISTS idx_merge_proposal ON merge_history(proposal_id);
+CREATE INDEX IF NOT EXISTS idx_merge_target ON merge_history(target_version_id);
+CREATE INDEX IF NOT EXISTS idx_merge_result ON merge_history(result_version_id);
+CREATE INDEX IF NOT EXISTS idx_merge_date ON merge_history(merged_at);
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - VERSION SNAPSHOTS
+-- ================================================================
+
+-- Insert version snapshot
+insertSnapshot:
+INSERT INTO version_snapshots (id, resource_id, version_id, version_number, content, content_hash, author_id, message, metadata, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Find snapshot by ID
+findSnapshotById:
+SELECT *
+FROM version_snapshots
+WHERE id = ?;
+
+-- Find snapshots by resource
+findSnapshotsByResourceId:
+SELECT *
+FROM version_snapshots
+WHERE resource_id = ?
+ORDER BY version_number DESC;
+
+-- Find snapshot by resource and version number
+findSnapshotByResourceAndVersion:
+SELECT *
+FROM version_snapshots
+WHERE resource_id = ? AND version_number = ?;
+
+-- Get latest snapshot for resource
+getLatestSnapshot:
+SELECT *
+FROM version_snapshots
+WHERE resource_id = ?
+ORDER BY version_number DESC
+LIMIT 1;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - VERSIONS
+-- ================================================================
+
+-- Insert version
+insertVersion:
+INSERT INTO versions (id, resource_id, version_number, parent_version_id, changeset_ids, author_id, message, metadata, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Find version by ID
+findVersionById:
+SELECT *
+FROM versions
+WHERE id = ?;
+
+-- Find versions by resource
+findVersionsByResourceId:
+SELECT *
+FROM versions
+WHERE resource_id = ?
+ORDER BY version_number DESC;
+
+-- Find version by resource and number
+findVersionByResourceAndNumber:
+SELECT *
+FROM versions
+WHERE resource_id = ? AND version_number = ?;
+
+-- Get latest version for resource
+getLatestVersion:
+SELECT *
+FROM versions
+WHERE resource_id = ?
+ORDER BY version_number DESC
+LIMIT 1;
+
+-- Get version history
+getVersionHistory:
+SELECT *
+FROM versions
+WHERE resource_id = ?
+ORDER BY version_number ASC;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - CHANGE PROPOSALS
+-- ================================================================
+
+-- Insert change proposal
+insertProposal:
+INSERT INTO change_proposals (id, author_id, author_name, state, target_resource_id, title, description, rejection_reason, created_at, updated_at, submitted_at, review_started_at, resolved_at, applied_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update proposal state
+updateProposalState:
+UPDATE change_proposals
+SET state = ?, updated_at = ?
+WHERE id = ?;
+
+-- Update proposal timestamps
+updateProposalTimestamps:
+UPDATE change_proposals
+SET updated_at = ?, submitted_at = ?, review_started_at = ?, resolved_at = ?, applied_at = ?
+WHERE id = ?;
+
+-- Update proposal rejection
+updateProposalRejection:
+UPDATE change_proposals
+SET state = 'REJECTED', rejection_reason = ?, resolved_at = ?, updated_at = ?
+WHERE id = ?;
+
+-- Find proposal by ID
+findProposalById:
+SELECT *
+FROM change_proposals
+WHERE id = ?;
+
+-- Find proposals by state
+findProposalsByState:
+SELECT *
+FROM change_proposals
+WHERE state = ?
+ORDER BY created_at DESC;
+
+-- Find proposals by author
+findProposalsByAuthor:
+SELECT *
+FROM change_proposals
+WHERE author_id = ?
+ORDER BY created_at DESC;
+
+-- Find proposals by target resource
+findProposalsByTargetResource:
+SELECT *
+FROM change_proposals
+WHERE target_resource_id = ?
+ORDER BY created_at DESC;
+
+-- Get active proposals (not applied/rejected)
+getActiveProposals:
+SELECT *
+FROM change_proposals
+WHERE state NOT IN ('APPLIED', 'REJECTED')
+ORDER BY created_at DESC;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - PROPOSED CHANGES
+-- ================================================================
+
+-- Insert proposed change
+insertProposedChange:
+INSERT INTO proposed_changes (id, proposal_id, resource_id, change_type, change_details, sequence_number, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Find proposed changes by proposal
+findProposedChangesByProposal:
+SELECT *
+FROM proposed_changes
+WHERE proposal_id = ?
+ORDER BY sequence_number ASC;
+
+-- Delete proposed change
+deleteProposedChange:
+DELETE FROM proposed_changes
+WHERE id = ?;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - REVIEW COMMENTS
+-- ================================================================
+
+-- Insert review comment
+insertReviewComment:
+INSERT INTO review_comments (id, proposal_id, proposed_change_id, parent_comment_id, author_id, author_name, content, comment_type, resolved, resolved_by_id, resolved_by_name, resolved_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update comment resolution
+updateCommentResolution:
+UPDATE review_comments
+SET resolved = 1, resolved_by_id = ?, resolved_by_name = ?, resolved_at = ?, updated_at = ?
+WHERE id = ?;
+
+-- Find comments by proposal
+findCommentsByProposal:
+SELECT *
+FROM review_comments
+WHERE proposal_id = ?
+ORDER BY created_at ASC;
+
+-- Find comments by proposed change
+findCommentsByProposedChange:
+SELECT *
+FROM review_comments
+WHERE proposed_change_id = ?
+ORDER BY created_at ASC;
+
+-- Find child comments
+findChildComments:
+SELECT *
+FROM review_comments
+WHERE parent_comment_id = ?
+ORDER BY created_at ASC;
+
+-- Count unresolved issues
+countUnresolvedIssues:
+SELECT COUNT(*) AS count
+FROM review_comments
+WHERE proposal_id = ? AND comment_type = 'ISSUE' AND resolved = 0;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - TRACKED RESOURCES
+-- ================================================================
+
+-- Insert tracked resource
+insertTrackedResource:
+INSERT INTO tracked_resources (id, resource_type, current_version_id, current_snapshot_id, tracking_started_at, last_modified_at, metadata)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Update tracked resource version
+updateTrackedResourceVersion:
+UPDATE tracked_resources
+SET current_version_id = ?, current_snapshot_id = ?, last_modified_at = ?
+WHERE id = ?;
+
+-- Find tracked resource by ID
+findTrackedResourceById:
+SELECT *
+FROM tracked_resources
+WHERE id = ?;
+
+-- Find tracked resources by type
+findTrackedResourcesByType:
+SELECT *
+FROM tracked_resources
+WHERE resource_type = ?
+ORDER BY last_modified_at DESC;
+
+-- Check if resource is tracked
+isResourceTracked:
+SELECT COUNT(*) > 0 AS result
+FROM tracked_resources
+WHERE id = ?;
+
+-- ================================================================
+-- SQLDELIGHT QUERIES - MERGE HISTORY
+-- ================================================================
+
+-- Insert merge record
+insertMergeRecord:
+INSERT INTO merge_history (id, proposal_id, target_version_id, result_version_id, merged_by_id, merged_at, merge_metadata)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Find merges by proposal
+findMergesByProposal:
+SELECT *
+FROM merge_history
+WHERE proposal_id = ?
+ORDER BY merged_at DESC;
+
+-- Find merges by result version
+findMergesByResultVersion:
+SELECT *
+FROM merge_history
+WHERE result_version_id = ?;
