@@ -23,18 +23,18 @@ class CreateSnapshotHandler(
     private val logger: Logger,
 ) : CommandHandler<CreateSnapshotCommand, SnapshotApplicationError, SnapshotDto> {
 
-    override suspend fun handle(command: CreateSnapshotCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
+    override suspend operator fun invoke(input: CreateSnapshotCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
         logger.info(
             "Processing create snapshot command",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
-                "authorId" to command.authorId.toString(),
-                "contentSize" to command.content.sizeInBytes(),
+                "resourceId" to input.resourceId.toString(),
+                "authorId" to input.authorId.toString(),
+                "contentSize" to input.content.sizeInBytes(),
             ),
         )
 
         // Load the tracked resource
-        val resource = trackedResourceRepository.findById(command.resourceId)
+        val resource = trackedResourceRepository.findById(input.resourceId)
             .mapLeft { error ->
                 SnapshotApplicationError.RepositoryOperationFailed(
                     operation = "findById",
@@ -43,20 +43,20 @@ class CreateSnapshotHandler(
             }.bind()
 
         ensureNotNull(resource) {
-            SnapshotApplicationError.TrackedResourceNotFound(command.resourceId)
+            SnapshotApplicationError.TrackedResourceNotFound(input.resourceId)
         }
 
         // Create the snapshot through the service
         val snapshot = snapshotService.createSnapshot(
             resource = resource,
-            content = command.content,
-            authorId = command.authorId,
-            message = command.message,
-            metadata = command.metadata,
-            timestamp = command.timestamp,
+            content = input.content,
+            authorId = input.authorId,
+            message = input.message,
+            metadata = input.metadata,
+            timestamp = input.timestamp,
         ).mapLeft { domainError ->
             SnapshotApplicationError.SnapshotCreationFailed(
-                resourceId = command.resourceId,
+                resourceId = input.resourceId,
                 reason = "Failed to create snapshot: $domainError",
                 domainError = domainError,
             )
@@ -65,7 +65,7 @@ class CreateSnapshotHandler(
         logger.info(
             "Snapshot created successfully",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
+                "resourceId" to input.resourceId.toString(),
                 "snapshotId" to snapshot.id.toString(),
                 "versionNumber" to snapshot.versionNumber.toString(),
             ),

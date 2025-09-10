@@ -23,18 +23,18 @@ class RestoreToVersionHandler(
     private val logger: Logger,
 ) : CommandHandler<RestoreToVersionCommand, SnapshotApplicationError, SnapshotDto> {
 
-    override suspend fun handle(command: RestoreToVersionCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
+    override suspend operator fun invoke(input: RestoreToVersionCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
         logger.info(
             "Processing restore to version command",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
-                "targetVersion" to command.targetVersion.toString(),
-                "authorId" to command.authorId.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "targetVersion" to input.targetVersion.toString(),
+                "authorId" to input.authorId.toString(),
             ),
         )
 
         // Load the tracked resource
-        val resource = trackedResourceRepository.findById(command.resourceId)
+        val resource = trackedResourceRepository.findById(input.resourceId)
             .mapLeft { error ->
                 SnapshotApplicationError.RepositoryOperationFailed(
                     operation = "findById",
@@ -43,21 +43,21 @@ class RestoreToVersionHandler(
             }.bind()
 
         ensureNotNull(resource) {
-            SnapshotApplicationError.TrackedResourceNotFound(command.resourceId)
+            SnapshotApplicationError.TrackedResourceNotFound(input.resourceId)
         }
 
         // Restore to the specific version
         val restoredSnapshot = snapshotService.restoreToVersion(
             resource = resource,
-            targetVersion = command.targetVersion,
-            authorId = command.authorId,
-            message = command.message,
-            timestamp = command.timestamp,
+            targetVersion = input.targetVersion,
+            authorId = input.authorId,
+            message = input.message,
+            timestamp = input.timestamp,
         ).mapLeft { domainError ->
             SnapshotApplicationError.SnapshotRestorationFailed(
-                resourceId = command.resourceId,
+                resourceId = input.resourceId,
                 targetSnapshotId = null,
-                targetVersion = command.targetVersion,
+                targetVersion = input.targetVersion,
                 reason = "Failed to restore to version: $domainError",
                 domainError = domainError,
             )
@@ -66,8 +66,8 @@ class RestoreToVersionHandler(
         logger.info(
             "Resource restored to version successfully",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
-                "targetVersion" to command.targetVersion.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "targetVersion" to input.targetVersion.toString(),
                 "newSnapshotId" to restoredSnapshot.id.toString(),
                 "newVersionNumber" to restoredSnapshot.versionNumber.toString(),
             ),

@@ -1,7 +1,8 @@
-package io.github.kamiazya.scopes.collaborativeversioning.application.example
+package io.github.kamiazya.scopes.collaborativeversioning.application.usecase
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.domain.event.ProposalCreated
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
@@ -12,16 +13,16 @@ import io.github.kamiazya.scopes.platform.domain.value.EventId
 import kotlinx.datetime.Clock
 
 /**
- * Example of how to integrate domain event publishing into a use case.
+ * Use case for creating change proposals.
  *
- * This example shows the pattern for publishing events after successful
- * business operations in the collaborative versioning context.
+ * This use case handles the creation of new proposals and publishes
+ * the appropriate domain events.
  */
-class CreateProposalUseCaseExample(
+class CreateProposalUseCase(
     private val eventPublisher: DomainEventPublisher,
     // Other dependencies like repositories would go here
 ) {
-    
+
     suspend fun execute(
         title: String,
         description: String,
@@ -33,21 +34,21 @@ class CreateProposalUseCaseExample(
         // 1. Validate inputs (simplified for example)
         ensure(title.isNotBlank()) { CreateProposalError.InvalidTitle }
         ensure(description.isNotBlank()) { CreateProposalError.InvalidDescription }
-        
+
         // 2. Create the proposal (normally would involve repository operations)
         val proposalId = ProposalId.generate()
-        val aggregateId = AggregateId.from(proposalId.toString())
-        
+        val aggregateId = AggregateId.from(proposalId.toString()).getOrNull() ?: AggregateId.generate()
+
         // In real implementation:
         // - Create proposal entity
         // - Save to repository
         // - Check business rules
-        
+
         // 3. Create the domain event
         val event = ProposalCreated(
             eventId = EventId.generate(),
             aggregateId = aggregateId,
-            aggregateVersion = AggregateVersion.from(1L), // First version
+            aggregateVersion = AggregateVersion.from(1L).getOrNull() ?: AggregateVersion.initial(), // First version
             occurredAt = Clock.System.now(),
             metadata = EventMetadata(
                 userId = userId,
@@ -62,7 +63,7 @@ class CreateProposalUseCaseExample(
             createdBy = userId,
             tags = extractTags(title, description),
         )
-        
+
         // 4. Publish the event
         eventPublisher.publish(event)
             .mapLeft { publishError ->
@@ -71,14 +72,13 @@ class CreateProposalUseCaseExample(
                 logEventPublishingError(publishError)
                 // Continue with success - the proposal was created
             }
-        
+
         // 5. Return the result
         proposalId
     }
-    
-    private fun generateCorrelationId(): String = 
-        "proposal-${System.currentTimeMillis()}"
-    
+
+    private fun generateCorrelationId(): String = "proposal-${System.currentTimeMillis()}"
+
     private fun extractTags(title: String, description: String): List<String> {
         // Example: extract hashtags or keywords
         val text = "$title $description"
@@ -87,7 +87,7 @@ class CreateProposalUseCaseExample(
             .map { it.removePrefix("#") }
             .distinct()
     }
-    
+
     private fun logEventPublishingError(error: Any) {
         // In real implementation, use proper logging
         println("Warning: Failed to publish event: $error")
@@ -105,29 +105,23 @@ sealed class CreateProposalError {
 }
 
 /**
- * Example of handling multiple events in a transaction.
+ * Use case for approving change proposals.
  */
-class ApproveProposalUseCaseExample(
-    private val eventPublisher: DomainEventPublisher,
-) {
-    
-    suspend fun execute(
-        proposalId: ProposalId,
-        approverId: String,
-        comment: String?,
-    ): Either<ApproveProposalError, Unit> = either {
+class ApproveProposalUseCase(private val eventPublisher: DomainEventPublisher) {
+
+    suspend fun execute(proposalId: ProposalId, approverId: String, comment: String?): Either<ApproveProposalError, Unit> = either {
         // In a real implementation:
         // 1. Load proposal from repository
         // 2. Validate it can be approved
         // 3. Update proposal state
         // 4. Save changes
-        
+
         // 5. Publish multiple related events
         val events = listOf(
             createProposalReviewedEvent(proposalId, approverId, comment),
             createProposalApprovedEvent(proposalId, approverId, comment),
         )
-        
+
         // Publish all events in order
         eventPublisher.publishAll(events)
             .mapLeft { publishError ->
@@ -135,7 +129,7 @@ class ApproveProposalUseCaseExample(
                 logEventPublishingError(publishError)
             }
     }
-    
+
     private fun createProposalReviewedEvent(
         proposalId: ProposalId,
         reviewerId: String,
@@ -144,7 +138,7 @@ class ApproveProposalUseCaseExample(
         // Implementation would create the actual event
         TODO("Create ProposalReviewed event")
     }
-    
+
     private fun createProposalApprovedEvent(
         proposalId: ProposalId,
         approverId: String,
@@ -153,7 +147,7 @@ class ApproveProposalUseCaseExample(
         // Implementation would create the actual event
         TODO("Create ProposalApproved event")
     }
-    
+
     private fun logEventPublishingError(error: Any) {
         println("Warning: Failed to publish events: $error")
     }

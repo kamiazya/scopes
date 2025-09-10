@@ -6,9 +6,14 @@ dependencies {
     // Domain layer
     implementation(project(":collaborative-versioning-domain"))
 
+    // Cross-context dependencies
+    implementation(project(":agent-management-domain")) // For AgentId
+
     // Platform layer
     implementation(project(":platform-commons"))
+    implementation(project(":platform-domain-commons"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":platform-observability"))
 
     // Contracts
     implementation(project(":contracts-collaborative-versioning"))

@@ -18,19 +18,19 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 class GetSnapshotHandler(private val snapshotService: VersionSnapshotService, private val logger: Logger) :
     QueryHandler<GetSnapshotQuery, SnapshotApplicationError, SnapshotDto?> {
 
-    override suspend fun handle(query: GetSnapshotQuery): Either<SnapshotApplicationError, SnapshotDto?> = either {
+    override suspend operator fun invoke(input: GetSnapshotQuery): Either<SnapshotApplicationError, SnapshotDto?> = either {
         logger.debug(
             "Processing get snapshot query",
             mapOf(
-                "resourceId" to query.resourceId.toString(),
-                "snapshotId" to query.snapshotId.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "snapshotId" to input.snapshotId.toString(),
             ),
         )
 
         // Get the snapshot
         val snapshot = snapshotService.getSnapshot(
-            resourceId = query.resourceId,
-            snapshotId = query.snapshotId,
+            resourceId = input.resourceId,
+            snapshotId = input.snapshotId,
         ).mapLeft { domainError ->
             SnapshotApplicationError.RepositoryOperationFailed(
                 operation = "getSnapshot",

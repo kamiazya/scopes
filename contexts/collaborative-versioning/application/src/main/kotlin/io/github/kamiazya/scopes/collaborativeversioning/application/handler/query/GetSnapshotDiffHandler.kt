@@ -21,20 +21,20 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService, private val snapshotDiffer: SnapshotDiffer, private val logger: Logger) :
     QueryHandler<GetSnapshotDiffQuery, SnapshotApplicationError, SnapshotDiffDto> {
 
-    override suspend fun handle(query: GetSnapshotDiffQuery): Either<SnapshotApplicationError, SnapshotDiffDto> = either {
+    override suspend operator fun invoke(input: GetSnapshotDiffQuery): Either<SnapshotApplicationError, SnapshotDiffDto> = either {
         logger.debug(
             "Processing get snapshot diff query",
             mapOf(
-                "resourceId" to query.resourceId.toString(),
-                "fromSnapshotId" to query.fromSnapshotId.toString(),
-                "toSnapshotId" to query.toSnapshotId.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "fromSnapshotId" to input.fromSnapshotId.toString(),
+                "toSnapshotId" to input.toSnapshotId.toString(),
             ),
         )
 
         // Get the "from" snapshot
         val fromSnapshot = snapshotService.getSnapshot(
-            resourceId = query.resourceId,
-            snapshotId = query.fromSnapshotId,
+            resourceId = input.resourceId,
+            snapshotId = input.fromSnapshotId,
         ).mapLeft { domainError ->
             SnapshotApplicationError.RepositoryOperationFailed(
                 operation = "getSnapshot",
@@ -44,21 +44,21 @@ class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService
 
         ensureNotNull(fromSnapshot) {
             SnapshotApplicationError.SnapshotRestorationFailed(
-                resourceId = query.resourceId,
-                targetSnapshotId = query.fromSnapshotId,
+                resourceId = input.resourceId,
+                targetSnapshotId = input.fromSnapshotId,
                 targetVersion = null,
                 reason = "From snapshot not found",
                 domainError = SnapshotServiceError.SnapshotNotFound(
-                    resourceId = query.resourceId,
-                    snapshotId = query.fromSnapshotId,
+                    resourceId = input.resourceId,
+                    snapshotId = input.fromSnapshotId,
                 ),
             )
         }
 
         // Get the "to" snapshot
         val toSnapshot = snapshotService.getSnapshot(
-            resourceId = query.resourceId,
-            snapshotId = query.toSnapshotId,
+            resourceId = input.resourceId,
+            snapshotId = input.toSnapshotId,
         ).mapLeft { domainError ->
             SnapshotApplicationError.RepositoryOperationFailed(
                 operation = "getSnapshot",
@@ -68,13 +68,13 @@ class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService
 
         ensureNotNull(toSnapshot) {
             SnapshotApplicationError.SnapshotRestorationFailed(
-                resourceId = query.resourceId,
-                targetSnapshotId = query.toSnapshotId,
+                resourceId = input.resourceId,
+                targetSnapshotId = input.toSnapshotId,
                 targetVersion = null,
                 reason = "To snapshot not found",
                 domainError = SnapshotServiceError.SnapshotNotFound(
-                    resourceId = query.resourceId,
-                    snapshotId = query.toSnapshotId,
+                    resourceId = input.resourceId,
+                    snapshotId = input.toSnapshotId,
                 ),
             )
         }
@@ -93,7 +93,7 @@ class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService
         logger.debug(
             "Calculated snapshot diff",
             mapOf(
-                "resourceId" to query.resourceId.toString(),
+                "resourceId" to input.resourceId.toString(),
                 "hasChanges" to diff.hasChanges(),
                 "changeCount" to diff.contentDiff.changeCount(),
             ),

@@ -17,4 +17,5 @@ data class ProposeChangeCommand(
     val title: String,
     val description: String,
     val proposedChanges: List<ProposedChange> = emptyList(),
+    val correlationId: String? = null,
 )

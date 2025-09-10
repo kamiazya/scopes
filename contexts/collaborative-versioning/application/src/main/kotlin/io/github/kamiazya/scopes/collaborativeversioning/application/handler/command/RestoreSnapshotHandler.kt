@@ -23,18 +23,18 @@ class RestoreSnapshotHandler(
     private val logger: Logger,
 ) : CommandHandler<RestoreSnapshotCommand, SnapshotApplicationError, SnapshotDto> {
 
-    override suspend fun handle(command: RestoreSnapshotCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
+    override suspend operator fun invoke(input: RestoreSnapshotCommand): Either<SnapshotApplicationError, SnapshotDto> = either {
         logger.info(
             "Processing restore snapshot command",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
-                "targetSnapshotId" to command.targetSnapshotId.toString(),
-                "authorId" to command.authorId.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "targetSnapshotId" to input.targetSnapshotId.toString(),
+                "authorId" to input.authorId.toString(),
             ),
         )
 
         // Load the tracked resource
-        val resource = trackedResourceRepository.findById(command.resourceId)
+        val resource = trackedResourceRepository.findById(input.resourceId)
             .mapLeft { error ->
                 SnapshotApplicationError.RepositoryOperationFailed(
                     operation = "findById",
@@ -43,20 +43,20 @@ class RestoreSnapshotHandler(
             }.bind()
 
         ensureNotNull(resource) {
-            SnapshotApplicationError.TrackedResourceNotFound(command.resourceId)
+            SnapshotApplicationError.TrackedResourceNotFound(input.resourceId)
         }
 
         // Restore from the snapshot
         val restoredSnapshot = snapshotService.restoreSnapshot(
             resource = resource,
-            targetSnapshotId = command.targetSnapshotId,
-            authorId = command.authorId,
-            message = command.message,
-            timestamp = command.timestamp,
+            targetSnapshotId = input.targetSnapshotId,
+            authorId = input.authorId,
+            message = input.message,
+            timestamp = input.timestamp,
         ).mapLeft { domainError ->
             SnapshotApplicationError.SnapshotRestorationFailed(
-                resourceId = command.resourceId,
-                targetSnapshotId = command.targetSnapshotId,
+                resourceId = input.resourceId,
+                targetSnapshotId = input.targetSnapshotId,
                 targetVersion = null,
                 reason = "Failed to restore snapshot: $domainError",
                 domainError = domainError,
@@ -66,8 +66,8 @@ class RestoreSnapshotHandler(
         logger.info(
             "Snapshot restored successfully",
             mapOf(
-                "resourceId" to command.resourceId.toString(),
-                "targetSnapshotId" to command.targetSnapshotId.toString(),
+                "resourceId" to input.resourceId.toString(),
+                "targetSnapshotId" to input.targetSnapshotId.toString(),
                 "newSnapshotId" to restoredSnapshot.id.toString(),
                 "newVersionNumber" to restoredSnapshot.versionNumber.toString(),
             ),

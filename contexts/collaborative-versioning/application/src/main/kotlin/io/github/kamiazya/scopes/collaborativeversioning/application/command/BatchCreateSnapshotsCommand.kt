@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.command
 
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
-import io.github.kamiazya.scopes.collaborativeversioning.domain.service.BatchProcessingOptions
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingOptions
 import kotlinx.datetime.Instant
 
 /**

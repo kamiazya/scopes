@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.dto
 
-import io.github.kamiazya.scopes.collaborativeversioning.domain.service.BatchProcessingResult
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingResult
 import kotlinx.datetime.Instant
 import kotlin.time.Duration
 

@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.collaborativeversioning.application.handler.co
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.collaborativeversioning.application.command.BatchCreateSnapshotsCommand
 import io.github.kamiazya.scopes.collaborativeversioning.application.dto.BatchProcessingResultDto
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.SnapshotApplicationError
@@ -18,35 +19,33 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 class BatchCreateSnapshotsHandler(private val batchProcessor: BatchSnapshotProcessor, private val logger: Logger) :
     CommandHandler<BatchCreateSnapshotsCommand, SnapshotApplicationError, BatchProcessingResultDto> {
 
-    override suspend fun handle(command: BatchCreateSnapshotsCommand): Either<SnapshotApplicationError, BatchProcessingResultDto> = either {
+    override suspend operator fun invoke(input: BatchCreateSnapshotsCommand): Either<SnapshotApplicationError, BatchProcessingResultDto> = either {
         logger.info(
             "Processing batch create snapshots command",
             mapOf(
-                "resourceType" to command.resourceType.toString(),
-                "authorId" to command.authorId.toString(),
+                "resourceType" to input.resourceType.toString(),
+                "authorId" to input.authorId.toString(),
                 "processingOptions" to mapOf(
-                    "chunkSize" to command.processingOptions.chunkSize,
-                    "parallelism" to command.processingOptions.parallelism,
+                    "chunkSize" to input.processingOptions.chunkSize,
+                    "parallelism" to input.processingOptions.parallelism,
                 ),
             ),
         )
 
         // Process all resources of the specified type
         val result = batchProcessor.snapshotAllByType(
-            resourceType = command.resourceType,
-            authorId = command.authorId,
-            message = command.message,
-            options = command.processingOptions,
+            resourceType = input.resourceType,
+            authorId = input.authorId,
+            message = input.message,
+            options = input.processingOptions,
         )
 
         // Check if there were any failures
-        if (result.failureCount > 0 && !command.processingOptions.continueOnError) {
-            raise(
-                SnapshotApplicationError.BatchProcessingFailed(
-                    processedCount = result.successCount,
-                    failedCount = result.failureCount,
-                    reason = "Batch processing failed with ${result.failureCount} failures",
-                ),
+        ensure(result.failureCount == 0 || input.processingOptions.continueOnError) {
+            SnapshotApplicationError.BatchProcessingFailed(
+                processedCount = result.successCount,
+                failedCount = result.failureCount,
+                reason = "Batch processing failed with ${result.failureCount} failures",
             )
         }
 
