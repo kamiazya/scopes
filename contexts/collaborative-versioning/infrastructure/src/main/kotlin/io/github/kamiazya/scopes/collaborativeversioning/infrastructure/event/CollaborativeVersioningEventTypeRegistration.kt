@@ -12,29 +12,40 @@ import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeMapping
 object CollaborativeVersioningEventTypeRegistration {
 
     /**
+     * List of all collaborative versioning event types.
+     */
+    private val EVENT_CLASSES = listOf(
+        ProposalCreated::class,
+        ProposalUpdated::class,
+        ProposalReviewed::class,
+        ProposalApproved::class,
+        ChangeMerged::class,
+        ConflictDetected::class,
+    )
+
+    /**
      * Register all collaborative versioning events with the provided mapping.
+     * The mapping will automatically use @EventTypeId annotations on each event class.
      */
     fun registerAll(mapping: EventTypeMapping) {
-        mapping.apply {
-            // Register each event type with its stable identifier
-            register(ProposalCreated::class, ProposalCreated.TYPE_ID)
-            register(ProposalUpdated::class, ProposalUpdated.TYPE_ID)
-            register(ProposalReviewed::class, ProposalReviewed.TYPE_ID)
-            register(ProposalApproved::class, ProposalApproved.TYPE_ID)
-            register(ChangeMerged::class, ChangeMerged.TYPE_ID)
-            register(ConflictDetected::class, ConflictDetected.TYPE_ID)
+        EVENT_CLASSES.forEach { eventClass ->
+            // The mapping will automatically detect and use @EventTypeId annotation
+            val typeId = mapping.getTypeId(eventClass)
+            // This ensures the event is cached in the mapping
         }
     }
 
     /**
      * List of all event type IDs for verification and documentation.
+     * This is dynamically generated from the event classes.
      */
-    val ALL_TYPE_IDS = listOf(
-        ProposalCreated.TYPE_ID,
-        ProposalUpdated.TYPE_ID,
-        ProposalReviewed.TYPE_ID,
-        ProposalApproved.TYPE_ID,
-        ChangeMerged.TYPE_ID,
-        ConflictDetected.TYPE_ID,
-    )
+    val ALL_TYPE_IDS: List<String> by lazy {
+        EVENT_CLASSES.map { eventClass ->
+            // Extract the EventTypeId annotation value
+            eventClass.annotations
+                .filterIsInstance<io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId>()
+                .firstOrNull()?.value
+                ?: error("Event class ${eventClass.simpleName} must have @EventTypeId annotation")
+        }
+    }
 }

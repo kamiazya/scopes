@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -15,6 +16,7 @@ import kotlinx.datetime.Instant
  * automatically merged due to conflicts with the current state of the
  * target resource.
  */
+@EventTypeId("collaborative-versioning.conflict.detected.v1")
 data class ConflictDetected(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -56,15 +58,7 @@ data class ConflictDetected(
      * Suggested resolution strategies for the conflicts.
      */
     val suggestedResolutions: List<ResolutionSuggestion> = emptyList(),
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         */
-        const val TYPE_ID = "collaborative-versioning.conflict.detected.v1"
-    }
-}
+) : DomainEvent
 
 /**
  * Represents a single conflict between proposed and current state.

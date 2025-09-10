@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -14,6 +15,7 @@ import kotlinx.datetime.Instant
  * This event captures feedback and review decisions during the
  * REVIEWING state of a proposal.
  */
+@EventTypeId("collaborative-versioning.proposal.reviewed.v1")
 data class ProposalReviewed(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -50,15 +52,7 @@ data class ProposalReviewed(
      * Optional line numbers or sections referenced in the review.
      */
     val references: List<String> = emptyList(),
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         */
-        const val TYPE_ID = "collaborative-versioning.proposal.reviewed.v1"
-    }
-}
+) : DomainEvent
 
 /**
  * Types of reviews that can be performed on a proposal.

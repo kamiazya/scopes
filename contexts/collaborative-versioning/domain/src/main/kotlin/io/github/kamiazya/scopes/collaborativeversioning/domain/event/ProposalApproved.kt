@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -15,6 +16,7 @@ import kotlinx.datetime.Instant
  * indicating that the proposal has passed all reviews and is ready
  * to be merged/applied to the target resource.
  */
+@EventTypeId("collaborative-versioning.proposal.approved.v1")
 data class ProposalApproved(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -51,12 +53,4 @@ data class ProposalApproved(
      * Scheduled time for automatic application (if set).
      */
     val scheduledApplicationTime: Instant? = null,
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         */
-        const val TYPE_ID = "collaborative-versioning.proposal.approved.v1"
-    }
-}
+) : DomainEvent

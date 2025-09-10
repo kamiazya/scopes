@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -14,6 +15,7 @@ import kotlinx.datetime.Instant
  * This event captures modifications to a proposal's properties
  * before it has been submitted for review.
  */
+@EventTypeId("collaborative-versioning.proposal.updated.v1")
 data class ProposalUpdated(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -47,12 +49,4 @@ data class ProposalUpdated(
      * Optional reason for the update.
      */
     val updateReason: String? = null,
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         */
-        const val TYPE_ID = "collaborative-versioning.proposal.updated.v1"
-    }
-}
+) : DomainEvent

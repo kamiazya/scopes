@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -15,6 +16,7 @@ import kotlinx.datetime.Instant
  * indicating that the proposed changes have been successfully integrated
  * into the target resource.
  */
+@EventTypeId("collaborative-versioning.change.merged.v1")
 data class ChangeMerged(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -72,15 +74,7 @@ data class ChangeMerged(
      * Any conflicts that were resolved during the merge.
      */
     val resolvedConflicts: List<ConflictResolution> = emptyList(),
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         */
-        const val TYPE_ID = "collaborative-versioning.change.merged.v1"
-    }
-}
+) : DomainEvent
 
 /**
  * Represents how a conflict was resolved during merge.

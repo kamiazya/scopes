@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -14,6 +15,7 @@ import kotlinx.datetime.Instant
  * This event captures the creation of a proposal in the DRAFT state,
  * including all initial properties and metadata about the creation context.
  */
+@EventTypeId("collaborative-versioning.proposal.created.v1")
 data class ProposalCreated(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -61,13 +63,4 @@ data class ProposalCreated(
      * Optional tags for categorizing the proposal.
      */
     val tags: List<String> = emptyList(),
-) : DomainEvent {
-
-    companion object {
-        /**
-         * The stable type identifier for this event.
-         * Used for event store persistence and deserialization.
-         */
-        const val TYPE_ID = "collaborative-versioning.proposal.created.v1"
-    }
-}
+) : DomainEvent
