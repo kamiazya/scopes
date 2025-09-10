@@ -11,9 +11,13 @@ import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.domain.model.EventTypeMapping
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import kotlinx.coroutines.CoroutineScope
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+
+private val logger: Logger = ConsoleLogger("EventIntegrationConfiguration")
 
 /**
  * Configuration for event integration in the collaborative versioning context.
@@ -50,7 +54,7 @@ class EventIntegrationConfiguration(
         return RetryingDomainEventPublisher(
             delegate = basePublisher,
             maxAttempts = 3,
-            baseDelay = Duration.milliseconds(100),
+            baseDelay = 100.milliseconds,
             maxDelay = 5.seconds,
             backoffFactor = 2.0,
         )
@@ -63,7 +67,7 @@ class EventIntegrationConfiguration(
         val registry = DomainEventHandlerRegistry()
 
         // Register all event handlers
-        registry.register(ProposalCreatedHandler())
+        registry.register(ProposalCreatedHandler(logger))
         // Add more handlers as they are implemented:
         // registry.register(ProposalUpdatedHandler())
         // registry.register(ProposalReviewedHandler())

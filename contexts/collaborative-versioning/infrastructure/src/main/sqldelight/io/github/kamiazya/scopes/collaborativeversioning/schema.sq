@@ -2,6 +2,21 @@
 -- This module manages version snapshots, change proposals, and tracked resources
 
 -- ================================================================
+-- AGENT TABLE (Referenced by versioning tables)
+-- ================================================================
+
+-- Agents table
+-- Stores agents (humans and AI) that interact with the versioning system
+CREATE TABLE IF NOT EXISTS agents (
+    id TEXT PRIMARY KEY NOT NULL,                 -- AgentId (ULID)
+    name TEXT NOT NULL,                          -- Agent display name
+    type TEXT NOT NULL,                          -- HUMAN or AI
+    created_at INTEGER NOT NULL,                  -- Unix timestamp (milliseconds)
+
+    CHECK (type IN ('HUMAN', 'AI'))
+);
+
+-- ================================================================
 -- CORE VERSIONING TABLES
 -- ================================================================
 
@@ -106,7 +121,7 @@ CREATE TABLE IF NOT EXISTS review_comments (
     author_name TEXT NOT NULL,                    -- Author name at creation
     content TEXT NOT NULL,                        -- Comment content
     comment_type TEXT NOT NULL,                   -- Type of comment
-    resolved BOOLEAN NOT NULL DEFAULT 0,          -- Is resolved?
+    resolved INTEGER NOT NULL DEFAULT 0,          -- Is resolved? (0=false, 1=true)
     resolved_by_id TEXT,                          -- Who resolved it
     resolved_by_name TEXT,                        -- Resolver name
     resolved_at INTEGER,                          -- When resolved

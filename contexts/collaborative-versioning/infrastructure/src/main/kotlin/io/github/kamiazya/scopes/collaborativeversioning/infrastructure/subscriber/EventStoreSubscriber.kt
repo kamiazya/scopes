@@ -5,17 +5,16 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.EventHandlingError
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.DomainEventHandlerRegistry
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
-import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Instant
-import mu.KotlinLogging
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private val logger = KotlinLogging.logger {}
+private val logger = ConsoleLogger("EventStoreSubscriber")
 
 /**
  * Subscribes to events from the event store and dispatches them to handlers.
@@ -40,7 +39,7 @@ class EventStoreSubscriber(
      * @param fromTimestamp Start processing events from this timestamp
      */
     fun start(eventTypes: List<String>, fromTimestamp: Instant? = null) {
-        logger.info { "Starting event store subscriber for types: $eventTypes" }
+        logger.info("Starting event store subscriber for types: $eventTypes")
 
         lastProcessedTimestamp = fromTimestamp
 
@@ -49,7 +48,7 @@ class EventStoreSubscriber(
                 try {
                     pollAndProcessEvents(eventTypes)
                 } catch (e: Exception) {
-                    logger.error(e) { "Error polling events" }
+                    logger.error("Error polling events", throwable = e)
                 }
 
                 delay(pollingInterval)
@@ -61,37 +60,44 @@ class EventStoreSubscriber(
      * Stop subscribing to events.
      */
     fun stop() {
-        logger.info { "Stopping event store subscriber" }
+        logger.info("Stopping event store subscriber")
         pollingJob?.cancel()
         pollingJob = null
     }
 
     private suspend fun pollAndProcessEvents(eventTypes: List<String>) {
-        val query = lastProcessedTimestamp?.let {
-            GetEventsSinceQuery(
-                since = it,
-                eventTypes = eventTypes,
+        // For now, we'll poll all events since last processed timestamp
+        // In a real system, you might want to filter by event types
+        val eventsFlow = if (lastProcessedTimestamp != null) {
+            val query = GetEventsSinceQuery(
+                since = lastProcessedTimestamp!!,
                 limit = 100,
             )
-        } ?: GetEventsByTypeQuery(
-            eventTypes = eventTypes,
-            limit = 100,
-        )
+            eventStoreQueryPort.getEventsSince(query)
+        } else {
+            // If no last processed timestamp, start from the beginning
+            // This would need proper implementation based on your needs
+            val query = GetEventsSinceQuery(
+                since = Instant.DISTANT_PAST,
+                limit = 100,
+            )
+            eventStoreQueryPort.getEventsSince(query)
+        }
 
-        eventStoreQueryPort.getEventsSince(query)
+        eventsFlow
             .onRight { events ->
-                events.collect { eventResult ->
+                events.forEach { eventResult ->
                     processEvent(eventResult)
                         .onRight {
                             lastProcessedTimestamp = eventResult.occurredAt
                         }
                         .onLeft { error ->
-                            logger.error { "Failed to process event ${eventResult.eventId}: $error" }
+                            logger.error("Failed to process event ${eventResult.eventId}: $error")
                         }
                 }
             }
             .onLeft { error ->
-                logger.error { "Failed to query events: $error" }
+                logger.error("Failed to query events: $error")
             }
     }
 
@@ -102,18 +108,23 @@ class EventStoreSubscriber(
                 eventType = eventResult.eventType,
                 eventData = eventResult.eventData,
             ).mapLeft { deserializationError ->
+                val eventIdOrError = io.github.kamiazya.scopes.platform.domain.value.EventId.from(eventResult.eventId)
+                val eventId = eventIdOrError.fold(
+                    ifLeft = { io.github.kamiazya.scopes.platform.domain.value.EventId.generate() },
+                    ifRight = { it },
+                )
                 EventHandlingError.InvalidEventData(
-                    eventId = io.github.kamiazya.scopes.platform.domain.value.EventId.from(eventResult.eventId),
+                    eventId = eventId,
                     eventType = eventResult.eventType,
-                    details = "Failed to deserialize: ${deserializationError.message}",
+                    details = "Failed to deserialize: $deserializationError",
                 )
             }.bind()
 
             // Dispatch to handlers
             handlerRegistry.dispatch(domainEvent).bind()
 
-            logger.debug {
-                "Successfully processed event ${eventResult.eventId} of type ${eventResult.eventType}"
-            }
+            logger.debug(
+                "Successfully processed event ${eventResult.eventId} of type ${eventResult.eventType}",
+            )
         }
 }

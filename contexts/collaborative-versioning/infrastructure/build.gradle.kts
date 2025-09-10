@@ -10,16 +10,29 @@ dependencies {
 
     // Platform layer
     implementation(project(":platform-commons"))
+    implementation(project(":platform-domain-commons"))
+    implementation(project(":platform-application-commons"))
     implementation(project(":platform-infrastructure"))
+    implementation(project(":platform-observability"))
 
     // Contracts
     implementation(project(":contracts-collaborative-versioning"))
+    implementation(project(":contracts-event-store"))
+
+    // Event Store integration
+    implementation(project(":event-store-domain"))
+    implementation(project(":event-store-application"))
+
+    // Agent management integration
+    implementation(project(":agent-management-domain"))
 
     // Core libraries
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kulid)
+    implementation(libs.kotlinx.serialization.json)
+    // Logging is provided by platform-observability
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

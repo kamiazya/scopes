@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.collaborativeversioning.infrastructure.adapter
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.EventPublishingError
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort
@@ -36,7 +37,7 @@ class EventStoreDomainEventPublisher(
                 EventPublishingError.SerializationFailed(
                     eventId = event.eventId,
                     eventType = typeId,
-                    reason = serializationError.message,
+                    reason = serializationError.toString(),
                 )
             }
             .bind()
@@ -59,7 +60,7 @@ class EventStoreDomainEventPublisher(
                         EventPublishingError.StorageFailed(
                             eventId = event.eventId,
                             eventType = typeId,
-                            reason = "Event store error: ${contractError.message}",
+                            reason = "Event store error: $contractError",
                         )
                     }
                     .bind()

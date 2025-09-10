@@ -5,14 +5,14 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.EventPublishingError
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import kotlinx.coroutines.delay
-import mu.KotlinLogging
 import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-private val logger = KotlinLogging.logger {}
+private val logger = ConsoleLogger("RetryingDomainEventPublisher")
 
 /**
  * Decorator that adds retry logic to a DomainEventPublisher.
@@ -38,28 +38,28 @@ class RetryingDomainEventPublisher(
         var lastError: EventPublishingError? = null
 
         repeat(maxAttempts) { attempt ->
-            logger.debug {
-                "Publishing event ${event.eventId} (attempt ${attempt + 1}/$maxAttempts)"
-            }
+            logger.debug(
+                "Publishing event ${event.eventId} (attempt ${attempt + 1}/$maxAttempts)",
+            )
 
             delegate.publish(event)
                 .onRight {
-                    logger.debug {
-                        "Successfully published event ${event.eventId} on attempt ${attempt + 1}"
-                    }
+                    logger.debug(
+                        "Successfully published event ${event.eventId} on attempt ${attempt + 1}",
+                    )
                     return@either
                 }
                 .onLeft { error ->
                     lastError = error
-                    logger.warn {
-                        "Failed to publish event ${event.eventId} on attempt ${attempt + 1}: $error"
-                    }
+                    logger.warn(
+                        "Failed to publish event ${event.eventId} on attempt ${attempt + 1}: $error",
+                    )
 
                     if (attempt < maxAttempts - 1 && shouldRetry(error)) {
                         val delayMs = calculateBackoffDelay(attempt)
-                        logger.debug {
-                            "Retrying event ${event.eventId} after ${delayMs}ms"
-                        }
+                        logger.debug(
+                            "Retrying event ${event.eventId} after ${delayMs}ms",
+                        )
                         delay(delayMs)
                     }
                 }
