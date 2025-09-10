@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotMetadataCategories
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import kotlinx.datetime.Clock
@@ -63,16 +64,6 @@ interface SnapshotMetadataManager {
      */
     fun filterSensitiveMetadata(metadata: Map<String, String>): Map<String, String>
 }
-
-/**
- * Categorized snapshot metadata.
- */
-data class SnapshotMetadataCategories(
-    val system: Map<String, String>,
-    val user: Map<String, String>,
-    val performance: Map<String, String>,
-    val audit: Map<String, String>,
-)
 
 /**
  * Default implementation of SnapshotMetadataManager.

@@ -7,9 +7,11 @@ import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
-import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceContent
-import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingOptions
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingResult
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.SnapshotRequest
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.SnapshotResult
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import kotlinx.coroutines.*
@@ -17,9 +19,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Service for batch processing of snapshots.
@@ -62,74 +61,6 @@ interface BatchSnapshotProcessor {
         message: String,
         options: BatchProcessingOptions = BatchProcessingOptions(),
     ): BatchProcessingResult
-}
-
-/**
- * Request for creating a snapshot.
- */
-data class SnapshotRequest(
-    val resourceId: ResourceId,
-    val content: ResourceContent,
-    val authorId: AgentId,
-    val message: String,
-    val metadata: Map<String, String> = emptyMap(),
-)
-
-/**
- * Result of a snapshot operation.
- */
-sealed class SnapshotResult {
-    abstract val resourceId: ResourceId
-    abstract val requestTime: Instant
-    abstract val completionTime: Instant
-
-    data class Success(override val resourceId: ResourceId, val snapshot: Snapshot, override val requestTime: Instant, override val completionTime: Instant) :
-        SnapshotResult()
-
-    data class Failure(
-        override val resourceId: ResourceId,
-        val error: SnapshotServiceError,
-        override val requestTime: Instant,
-        override val completionTime: Instant,
-    ) : SnapshotResult()
-
-    fun processingDuration(): Duration = completionTime - requestTime
-}
-
-/**
- * Options for batch processing.
- */
-data class BatchProcessingOptions(
-    val chunkSize: Int = 100,
-    val parallelism: Int = 4,
-    val maxRetries: Int = 3,
-    val retryDelay: Duration = 1.seconds,
-    val continueOnError: Boolean = true,
-    val timeout: Duration? = null,
-)
-
-/**
- * Result of batch processing.
- */
-data class BatchProcessingResult(
-    val totalRequests: Int,
-    val successCount: Int,
-    val failureCount: Int,
-    val results: List<SnapshotResult>,
-    val startTime: Instant,
-    val endTime: Instant,
-) {
-    val successRate: Double = if (totalRequests > 0) {
-        successCount.toDouble() / totalRequests
-    } else {
-        0.0
-    }
-
-    val totalDuration: Duration = endTime - startTime
-
-    fun getSuccesses(): List<SnapshotResult.Success> = results.filterIsInstance<SnapshotResult.Success>()
-
-    fun getFailures(): List<SnapshotResult.Failure> = results.filterIsInstance<SnapshotResult.Failure>()
 }
 
 /**

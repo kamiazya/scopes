@@ -5,6 +5,7 @@ import arrow.core.flatten
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SnapshotSerializer
+import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.dto.SnapshotSerializationDto
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

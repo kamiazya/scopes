@@ -4,8 +4,12 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ContentDiff
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.DiffOperation
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.MetadataChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceContent
-import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SizeChange
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotDiff
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import kotlinx.serialization.json.*
@@ -44,68 +48,6 @@ interface SnapshotDiffer {
      * @return true if contents are identical, false otherwise
      */
     fun areContentsIdentical(snapshot1: Snapshot, snapshot2: Snapshot): Boolean
-}
-
-/**
- * Represents the difference between two snapshots.
- */
-data class SnapshotDiff(
-    val fromSnapshotId: SnapshotId,
-    val toSnapshotId: SnapshotId,
-    val contentDiff: ContentDiff,
-    val metadataChanges: Map<String, MetadataChange>,
-    val sizeChange: SizeChange,
-) {
-    /**
-     * Check if there are any changes between the snapshots.
-     */
-    fun hasChanges(): Boolean = contentDiff.hasChanges() || metadataChanges.isNotEmpty()
-}
-
-/**
- * Represents the difference between two resource contents.
- */
-data class ContentDiff(val operations: List<DiffOperation>, val addedPaths: Set<String>, val removedPaths: Set<String>, val modifiedPaths: Set<String>) {
-    /**
-     * Check if there are any content changes.
-     */
-    fun hasChanges(): Boolean = operations.isNotEmpty()
-
-    /**
-     * Get the total number of changes.
-     */
-    fun changeCount(): Int = addedPaths.size + removedPaths.size + modifiedPaths.size
-}
-
-/**
- * Represents a single diff operation.
- */
-sealed class DiffOperation {
-    data class Add(val path: String, val value: JsonElement) : DiffOperation()
-    data class Remove(val path: String, val oldValue: JsonElement) : DiffOperation()
-    data class Replace(val path: String, val oldValue: JsonElement, val newValue: JsonElement) : DiffOperation()
-    data class Move(val fromPath: String, val toPath: String, val value: JsonElement) : DiffOperation()
-}
-
-/**
- * Represents a change in metadata.
- */
-sealed class MetadataChange {
-    data class Added(val value: String) : MetadataChange()
-    data class Removed(val oldValue: String) : MetadataChange()
-    data class Modified(val oldValue: String, val newValue: String) : MetadataChange()
-}
-
-/**
- * Represents a change in size.
- */
-data class SizeChange(val fromSize: Long, val toSize: Long) {
-    val difference: Long = toSize - fromSize
-    val percentageChange: Double = if (fromSize > 0) {
-        (difference.toDouble() / fromSize) * 100
-    } else {
-        100.0
-    }
 }
 
 /**

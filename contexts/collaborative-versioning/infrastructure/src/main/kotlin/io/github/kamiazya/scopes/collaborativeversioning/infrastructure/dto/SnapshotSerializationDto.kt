@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.collaborativeversioning.infrastructure.serialization
+package io.github.kamiazya.scopes.collaborativeversioning.infrastructure.dto
 
 import arrow.core.Either
 import arrow.core.getOrElse

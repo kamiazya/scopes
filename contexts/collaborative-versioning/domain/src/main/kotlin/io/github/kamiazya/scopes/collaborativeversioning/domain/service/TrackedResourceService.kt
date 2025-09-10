@@ -6,8 +6,10 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.TrackedResourceServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.TrackedResource
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.DiffChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceContent
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionDiff
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -189,18 +191,4 @@ object TrackedResourceService {
             TrackedResourceServiceError.InvalidContent("Alias must have a targetId")
         }
     }
-}
-
-/**
- * Represents the difference between two versions.
- */
-data class VersionDiff(val fromVersion: VersionNumber, val toVersion: VersionNumber, val changes: List<DiffChange>)
-
-/**
- * Types of changes in a diff.
- */
-sealed class DiffChange {
-    data class Added(val path: String, val value: JsonElement) : DiffChange()
-    data class Modified(val path: String, val oldValue: JsonElement, val newValue: JsonElement) : DiffChange()
-    data class Deleted(val path: String, val value: JsonElement) : DiffChange()
 }
