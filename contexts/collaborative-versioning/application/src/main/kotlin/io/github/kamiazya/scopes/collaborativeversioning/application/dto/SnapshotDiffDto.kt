@@ -1,7 +1,8 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.dto
 
-import io.github.kamiazya.scopes.collaborativeversioning.domain.service.MetadataChange
-import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SnapshotDiff
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.MetadataChange
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SizeChange
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotDiff
 
 /**
  * Data transfer object for snapshot diff information.
@@ -59,7 +60,7 @@ sealed class MetadataChangeDto {
  */
 data class SizeChangeDto(val fromSize: Long, val toSize: Long, val difference: Long, val percentageChange: Double) {
     companion object {
-        fun fromDomain(sizeChange: io.github.kamiazya.scopes.collaborativeversioning.domain.service.SizeChange): SizeChangeDto = SizeChangeDto(
+        fun fromDomain(sizeChange: SizeChange): SizeChangeDto = SizeChangeDto(
             fromSize = sizeChange.fromSize,
             toSize = sizeChange.toSize,
             difference = sizeChange.difference,
