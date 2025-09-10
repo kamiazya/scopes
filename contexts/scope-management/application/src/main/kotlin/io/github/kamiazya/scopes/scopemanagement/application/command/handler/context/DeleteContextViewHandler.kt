@@ -5,6 +5,8 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
@@ -26,10 +28,10 @@ class DeleteContextViewHandler(
     override suspend operator fun invoke(command: DeleteContextViewCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
         either {
             // Validate and create key value object
-            val contextKey = ContextViewKey.create(command.key).mapLeft { it as ScopesError }.bind()
+            val contextKey = ContextViewKey.create(command.key).mapLeft { it.toScopesError() }.bind()
 
             // Check if context view exists
-            val existingContext = contextViewRepository.findByKey(contextKey).mapLeft { it as ScopesError }.bind()
+            val existingContext = contextViewRepository.findByKey(contextKey).bind()
                 ?: raise(
                     ScopesError.NotFound(
                         entityType = "ContextView",
@@ -40,7 +42,7 @@ class DeleteContextViewHandler(
                 )
 
             // Check if this context is currently active
-            val currentContext = activeContextService.getCurrentContext().mapLeft { it as ScopesError }.bind()
+            val currentContext = activeContextService.getCurrentContext().mapLeft { it.toScopesError() }.bind()
             if (currentContext != null && currentContext.key.value == command.key) {
                 raise(
                     ScopesError.ValidationFailed(
@@ -53,7 +55,7 @@ class DeleteContextViewHandler(
             }
 
             // Delete the context view by its ID
-            contextViewRepository.deleteById(existingContext.id).mapLeft { it as ScopesError }.bind()
+            contextViewRepository.deleteById(existingContext.id).bind()
         }
     }
 }

@@ -25,10 +25,10 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
     override suspend operator fun invoke(command: UpdateContextViewCommand): Either<ScopesError, ContextViewDto> = transactionManager.inTransaction {
         either {
             // Validate and create key value object
-            val key = ContextViewKey.create(command.key).mapLeft { it as ScopesError }.bind()
+            val key = ContextViewKey.create(command.key).bind()
 
             // Retrieve existing context view
-            val existingContextView = contextViewRepository.findByKey(key).mapLeft { it as ScopesError }.bind()
+            val existingContextView = contextViewRepository.findByKey(key).bind()
                 ?: raise(
                     ScopesError.NotFound(
                         entityType = "ContextView",
@@ -40,11 +40,11 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
 
             // Prepare updated values
             val updatedName = command.name?.let { newName ->
-                ContextViewName.create(newName).mapLeft { it as ScopesError }.bind()
+                ContextViewName.create(newName).bind()
             } ?: existingContextView.name
 
             val updatedFilter = command.filter?.let { newFilter ->
-                ContextViewFilter.create(newFilter).mapLeft { it as ScopesError }.bind()
+                ContextViewFilter.create(newFilter).bind()
             } ?: existingContextView.filter
 
             // Handle description update logic
@@ -64,14 +64,14 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
             if (shouldUpdateDescription) {
                 updatedContextView = if (command.description.isNullOrEmpty()) {
                     // Clear description by passing empty string
-                    updatedContextView.updateDescription("", Clock.System.now()).mapLeft { it as ScopesError }.bind()
+                    updatedContextView.updateDescription("", Clock.System.now()).bind()
                 } else {
-                    updatedContextView.updateDescription(command.description, Clock.System.now()).mapLeft { it as ScopesError }.bind()
+                    updatedContextView.updateDescription(command.description, Clock.System.now()).bind()
                 }
             }
 
             // Save to repository (using save method for updates)
-            val saved = contextViewRepository.save(updatedContextView).mapLeft { it as ScopesError }.bind()
+            val saved = contextViewRepository.save(updatedContextView).bind()
 
             // Map to DTO
             ContextViewDto(
