@@ -14,7 +14,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescrip
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import kotlinx.datetime.Clock
 
 /**
  * Factory for creating Scope domain objects from persistence data.
@@ -37,40 +36,52 @@ class ScopeFactory {
     ): Either<PersistenceError, Scope> = either {
         val scopeId = ScopeId.create(id).mapLeft { validationError ->
             PersistenceError.DataCorruption(
-                occurredAt = Clock.System.now(),
-                entityType = "Scope",
+                entityType = PersistenceError.EntityType.SCOPE,
                 entityId = id,
-                reason = "Invalid scope id: $validationError",
+                corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_ID_FORMAT,
+                details = mapOf("validation_error" to validationError)
             )
         }.bind()
         
         val parentScopeId = parentId?.let {
             ScopeId.create(it).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
-                    occurredAt = Clock.System.now(),
-                    entityType = "Scope",
+                    entityType = PersistenceError.EntityType.SCOPE,
                     entityId = id,
-                    reason = "Invalid parent scope id: $validationError",
+                    corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_REFERENCE,
+                    details = mapOf(
+                        "field" to "parent_id",
+                        "value" to it,
+                        "validation_error" to validationError
+                    )
                 )
             }.bind()
         }
         
         val scopeTitle = ScopeTitle.create(title).mapLeft { validationError ->
             PersistenceError.DataCorruption(
-                occurredAt = Clock.System.now(),
-                entityType = "Scope",
+                entityType = PersistenceError.EntityType.SCOPE,
                 entityId = id,
-                reason = "Invalid scope title: $validationError",
+                corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_FIELD_VALUE,
+                details = mapOf(
+                    "field" to "title",
+                    "value" to title,
+                    "validation_error" to validationError
+                )
             )
         }.bind()
         
         val scopeDescription = description?.let {
             ScopeDescription.create(it).mapLeft { validationError ->
                 PersistenceError.DataCorruption(
-                    occurredAt = Clock.System.now(),
-                    entityType = "Scope",
+                    entityType = PersistenceError.EntityType.SCOPE,
                     entityId = id,
-                    reason = "Invalid scope description: $validationError",
+                    corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_FIELD_VALUE,
+                    details = mapOf(
+                        "field" to "description",
+                        "value" to it,
+                        "validation_error" to validationError
+                    )
                 )
             }.bind()
         }
@@ -106,20 +117,29 @@ class ScopeFactory {
             } else {
                 val aspectKey = AspectKey.create(key).mapLeft { validationError ->
                     PersistenceError.DataCorruption(
-                        occurredAt = Clock.System.now(),
-                        entityType = "Scope",
+                        entityType = PersistenceError.EntityType.SCOPE,
                         entityId = scopeId,
-                        reason = "Invalid aspect key: $validationError",
+                        corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_FIELD_VALUE,
+                        details = mapOf(
+                            "field" to "aspect_key",
+                            "value" to key,
+                            "validation_error" to validationError
+                        )
                     )
                 }.bind()
                 
                 val aspectValues = nonEmptyValues.map { value ->
                     AspectValue.create(value).mapLeft { validationError ->
                         PersistenceError.DataCorruption(
-                            occurredAt = Clock.System.now(),
-                            entityType = "Scope",
+                            entityType = PersistenceError.EntityType.SCOPE,
                             entityId = scopeId,
-                            reason = "Invalid aspect value: $validationError",
+                            corruptionType = PersistenceError.DataCorruption.CorruptionType.INVALID_FIELD_VALUE,
+                            details = mapOf(
+                                "field" to "aspect_value",
+                                "key" to key,
+                                "value" to value,
+                                "validation_error" to validationError
+                            )
                         )
                     }.bind()
                 }
@@ -130,10 +150,13 @@ class ScopeFactory {
         
         Aspects.create(aspectEntries).mapLeft { validationError ->
             PersistenceError.DataCorruption(
-                occurredAt = Clock.System.now(),
-                entityType = "Scope",
+                entityType = PersistenceError.EntityType.SCOPE,
                 entityId = scopeId,
-                reason = "Invalid aspects: $validationError",
+                corruptionType = PersistenceError.DataCorruption.CorruptionType.INCONSISTENT_STATE,
+                details = mapOf(
+                    "field" to "aspects",
+                    "validation_error" to validationError
+                )
             )
         }.bind()
     }
