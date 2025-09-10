@@ -4,34 +4,33 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
-import arrow.core.toNonEmptyListOrNull
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.mapper.PersistenceErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.mapper.ScopeDataMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * SQLDelight implementation of ScopeRepository.
+ * Refactored to use dedicated mappers and eliminate code duplication.
  */
-class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) : ScopeRepository {
+class SqlDelightScopeRepository(
+    private val database: ScopeManagementDatabase,
+    private val errorMapper: PersistenceErrorMapper = PersistenceErrorMapper(),
+    private val dataMapper: ScopeDataMapper = ScopeDataMapper()
+) : ScopeRepository {
     companion object {
         // SQLite has a default limit of 999 variables in a single query
         private const val SQLITE_VARIABLE_LIMIT = 999
     }
 
     override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
-        try {
+        errorMapper.executeWithErrorMapping("save") {
             database.transaction {
                 // Use UPSERT for atomic operation
                 database.scopeQueries.upsertScope(
@@ -58,91 +57,61 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 }
             }
 
-            scope.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "save",
-                cause = e,
-            ).left()
+            scope
         }
     }
 
-    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = try {
-        withContext(Dispatchers.IO) {
+    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = withContext(Dispatchers.IO) {
+        errorMapper.executeWithErrorMapping("findById") {
             val scopeRow = database.scopeQueries.findScopeById(id.value).executeAsOneOrNull()
             if (scopeRow == null) {
-                null.right()
+                null
             } else {
                 val aspectRows = database.scopeAspectQueries.findByScopeIds(listOf(scopeRow.id)).executeAsList()
-                rowToScopeWithAspects(scopeRow, aspectRows)
+                dataMapper.mapRow(scopeRow, aspectRows).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
             }
-        }
-    } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findById",
-            cause = e,
-        ).left()
-    }
-
-    override suspend fun findAll(): Either<PersistenceError, List<Scope>> = either {
-        try {
-            val (scopeRows, aspectsMap) = withContext(Dispatchers.IO) {
-                val rows = database.scopeQueries.selectAll().executeAsList()
-                if (rows.isEmpty()) {
-                    Pair(emptyList(), emptyMap())
-                } else {
-                    // Batch load all aspects to avoid N+1 queries
-                    val scopeIds = rows.map { it.id }
-                    val aspects = loadAspectsForScopes(scopeIds)
-                    Pair(rows, aspects)
-                }
-            }
-
-            scopeRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
-            }
-        } catch (e: Exception) {
-            raise(
-                PersistenceError.StorageUnavailable(
-                    occurredAt = Clock.System.now(),
-                    operation = "findAll",
-                    cause = e,
-                ),
-            )
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
-        try {
-            val (rows, aspectsMap) = withContext(Dispatchers.IO) {
-                val scopeRows = if (parentId != null) {
-                    database.scopeQueries.findScopesByParentIdPaged(parentId.value, limit.toLong(), offset.toLong()).executeAsList()
-                } else {
-                    database.scopeQueries.findRootScopesPaged(limit.toLong(), offset.toLong()).executeAsList()
-                }
+    override suspend fun findAll(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+        errorMapper.executeSuspendingWithErrorMapping("findAll") {
+            val rows = database.scopeQueries.selectAll().executeAsList()
+            if (rows.isEmpty()) {
+                emptyList()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(scopeIds).executeAsList()
+                val aspectsMap = dataMapper.groupAspectsForScopes(aspectRows)
+                dataMapper.mapRows(rows, aspectsMap).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
+            }
+        }
+    }
 
-                if (scopeRows.isEmpty()) {
-                    Pair(emptyList(), emptyMap())
-                } else {
-                    val scopeIds = scopeRows.map { it.id }
-                    val aspects = loadAspectsForScopes(scopeIds)
-                    Pair(scopeRows, aspects)
-                }
+    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+        errorMapper.executeSuspendingWithErrorMapping("findByParentId(offset,limit)") {
+            val scopeRows = if (parentId != null) {
+                database.scopeQueries.findScopesByParentIdPaged(parentId.value, limit.toLong(), offset.toLong()).executeAsList()
+            } else {
+                database.scopeQueries.findRootScopesPaged(limit.toLong(), offset.toLong()).executeAsList()
             }
 
-            rows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
+            if (scopeRows.isEmpty()) {
+                emptyList()
+            } else {
+                val scopeIds = scopeRows.map { it.id }
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(scopeIds).executeAsList()
+                val aspectsMap = dataMapper.groupAspectsForScopes(aspectRows)
+                dataMapper.mapRows(scopeRows, aspectsMap).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
             }
-        } catch (e: Exception) {
-            raise(
-                PersistenceError.StorageUnavailable(
-                    occurredAt = Clock.System.now(),
-                    operation = "findByParentId(offset,limit)",
-                    cause = e,
-                ),
-            )
         }
     }
 
