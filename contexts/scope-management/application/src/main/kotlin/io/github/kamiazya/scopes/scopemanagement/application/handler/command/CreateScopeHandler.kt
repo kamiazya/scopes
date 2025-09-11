@@ -6,7 +6,7 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.CreateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper

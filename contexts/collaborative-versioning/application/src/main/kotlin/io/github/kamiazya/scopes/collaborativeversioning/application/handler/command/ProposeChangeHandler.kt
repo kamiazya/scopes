@@ -7,18 +7,18 @@ import io.github.kamiazya.scopes.collaborativeversioning.application.command.Pro
 import io.github.kamiazya.scopes.collaborativeversioning.application.dto.ProposeChangeResultDto
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.ProposeChangeError
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
-import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ProposedChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.event.ProposalCreated
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposedChange
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import kotlinx.datetime.Clock
 
 /**
  * Handler for creating new change proposals.
@@ -39,14 +39,14 @@ class ProposeChangeHandler(
 ) : CommandHandler<ProposeChangeCommand, ProposeChangeError, ProposeChangeResultDto> {
 
     override suspend operator fun invoke(input: ProposeChangeCommand): Either<ProposeChangeError, ProposeChangeResultDto> = either {
-        val timestamp = Clock.System.now()
+        val timestamp = SystemTimeProvider().now()
 
         // Step 1: Validate target resource exists
         val targetResourceExists = trackedResourceRepository.existsById(input.targetResourceId)
-            .mapLeft { repositoryError ->
-                ProposeChangeError.ResourceNotFound(input.targetResourceId)
-            }
-            .bind()
+            .fold(
+                { _ -> raise(ProposeChangeError.ResourceNotFound(input.targetResourceId)) },
+                { exists -> exists },
+            )
 
         ensure(targetResourceExists) {
             ProposeChangeError.ResourceNotFound(input.targetResourceId)
@@ -60,25 +60,26 @@ class ProposeChangeHandler(
             description = input.description,
             proposedChanges = input.proposedChanges,
             timestamp = timestamp,
-        ).mapLeft { domainError ->
-            ProposeChangeError.DomainRuleViolation(domainError)
-        }.bind()
+        ).fold(
+            { domainError -> raise(ProposeChangeError.DomainRuleViolation(domainError)) },
+            { it },
+        )
 
         // Step 3: Add any initial proposed changes if provided
         val proposalWithChanges = input.proposedChanges.fold(proposal) { currentProposal, proposedChange ->
             currentProposal.addProposedChange(proposedChange, timestamp)
-                .mapLeft { domainError ->
-                    ProposeChangeError.DomainRuleViolation(domainError)
-                }
-                .bind()
+                .fold(
+                    { domainError -> raise(ProposeChangeError.DomainRuleViolation(domainError)) },
+                    { it },
+                )
         }
 
         // Step 4: Persist the proposal
         val savedProposal = changeProposalRepository.save(proposalWithChanges)
-            .mapLeft { saveError ->
-                ProposeChangeError.SaveFailure(saveError)
-            }
-            .bind()
+            .fold(
+                { saveError -> raise(ProposeChangeError.SaveFailure(saveError)) },
+                { it },
+            )
 
         // Step 5: Publish domain event
         publishProposalCreatedEvent(savedProposal, input)
@@ -107,14 +108,16 @@ class ProposeChangeHandler(
             tags = extractTags(proposal),
         )
 
-        eventPublisher.publish(event)
-            .onLeft { error ->
+        eventPublisher.publish(event).fold(
+            { error ->
                 logger.warn(
                     "Failed to publish ProposalCreated event",
                     mapOf("error" to error.toString()),
                 )
                 // Don't fail the operation - the proposal was created successfully
-            }
+            },
+            { /* Success - nothing to do */ },
+        )
     }
 
     private fun determineChangeType(changes: List<ProposedChange>): String = when {

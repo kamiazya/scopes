@@ -3,8 +3,8 @@ package io.github.kamiazya.scopes.collaborativeversioning.infrastructure.config
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.DomainEventHandlerRegistry
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.ProposalCreatedHandler
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
-import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.adapter.EventStoreDomainEventPublisher
-import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.adapter.RetryingDomainEventPublisher
+import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.adapters.EventStoreDomainEventPublisher
+import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.adapters.RetryingDomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.event.CollaborativeVersioningEventTypeRegistration
 import io.github.kamiazya.scopes.collaborativeversioning.infrastructure.subscriber.EventStoreSubscriber
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort

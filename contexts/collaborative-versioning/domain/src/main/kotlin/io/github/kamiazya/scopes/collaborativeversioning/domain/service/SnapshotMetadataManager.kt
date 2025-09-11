@@ -6,11 +6,11 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotMetadataCategories
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import kotlinx.datetime.Clock
 
 /**
  * Service for managing snapshot metadata.
@@ -118,7 +118,7 @@ class DefaultSnapshotMetadataManager(
         enrichedMetadata.putAll(snapshot.metadata)
 
         // Add system metadata
-        enrichedMetadata[KEY_CREATED_AT] = Clock.System.now().toString()
+        enrichedMetadata[KEY_CREATED_AT] = SystemTimeProvider().now().toString()
         enrichedMetadata[KEY_CREATED_BY_SERVICE] = "VersionSnapshotService"
         enrichedMetadata[KEY_VERSION] = snapshot.versionNumber.toString()
         enrichedMetadata[KEY_RESOURCE_TYPE] = resourceType.toString()
@@ -137,7 +137,7 @@ class DefaultSnapshotMetadataManager(
         if (snapshot.hasMetadata("creation_start_time")) {
             val startTime = snapshot.getMetadata("creation_start_time")?.toLongOrNull()
             if (startTime != null) {
-                val duration = Clock.System.now().toEpochMilliseconds() - startTime
+                val duration = SystemTimeProvider().now().toEpochMilliseconds() - startTime
                 enrichedMetadata[KEY_CREATION_DURATION_MS] = duration.toString()
             }
         }

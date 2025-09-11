@@ -32,9 +32,11 @@ class ProposalWorkflowIntegrationTest :
                 val mockResourceState = mockk<ResourceState>()
 
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
-                val reviewHandler = ReviewProposalHandler(mockChangeProposalRepository)
-                val approveHandler = ApproveProposalHandler(mockChangeProposalRepository)
-                val mergeHandler = MergeProposalHandler(mockChangeProposalRepository)
+                val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
+                val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
+                val approveHandler = ApproveProposalCommandHandler(mockChangeProposalRepository)
+                val mergeHandler = MergeApprovedProposalHandler(mockChangeProposalRepository)
+                val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
                 val author = Author.agent(AgentId.from("author-agent"))
@@ -72,7 +74,7 @@ class ProposalWorkflowIntegrationTest :
 
                 // Step 2: Submit proposal for review
                 val submitCommand = SubmitProposalCommand(proposalId)
-                val submitResult = mergeHandler.submit(submitCommand)
+                val submitResult = submitHandler(submitCommand)
 
                 submitResult.isRight() shouldBe true
                 val submittedDto = submitResult.getOrNull()!!
@@ -81,7 +83,7 @@ class ProposalWorkflowIntegrationTest :
 
                 // Step 3: Start review process
                 val startReviewCommand = StartReviewCommand(proposalId)
-                val startReviewResult = reviewHandler.startReview(startReviewCommand)
+                val startReviewResult = startReviewHandler(startReviewCommand)
 
                 startReviewResult.isRight() shouldBe true
                 val reviewingDto = startReviewResult.getOrNull()!!
@@ -96,7 +98,7 @@ class ProposalWorkflowIntegrationTest :
                 )
 
                 val addCommentCommand = ReviewProposalCommand(proposalId, reviewer, comment)
-                val commentResult = reviewHandler.addComment(addCommentCommand)
+                val commentResult = addCommentHandler(addCommentCommand)
 
                 commentResult.isRight() shouldBe true
                 val commentedDto = commentResult.getOrNull()!!
@@ -110,7 +112,7 @@ class ProposalWorkflowIntegrationTest :
                     approvalMessage = "Approved for merge",
                 )
 
-                val approveResult = approveHandler.approve(approveCommand)
+                val approveResult = approveHandler(approveCommand)
                 approveResult.isRight() shouldBe true
 
                 val approvedDto = approveResult.getOrNull()!!
@@ -124,7 +126,7 @@ class ProposalWorkflowIntegrationTest :
                     currentResourceState = mockResourceState,
                 )
 
-                val mergeResult = mergeHandler.merge(mergeCommand)
+                val mergeResult = mergeHandler(mergeCommand)
                 mergeResult.isRight() shouldBe true
 
                 val mergedDto = mergeResult.getOrNull()!!
@@ -140,9 +142,10 @@ class ProposalWorkflowIntegrationTest :
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
 
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
-                val reviewHandler = ReviewProposalHandler(mockChangeProposalRepository)
-                val approveHandler = ApproveProposalHandler(mockChangeProposalRepository)
-                val mergeHandler = MergeProposalHandler(mockChangeProposalRepository)
+                val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
+                val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
+                val rejectHandler = RejectProposalHandler(mockChangeProposalRepository)
+                val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
                 val author = Author.agent(AgentId.from("author-agent"))
@@ -169,11 +172,11 @@ class ProposalWorkflowIntegrationTest :
                 val proposalId = createResult.getOrNull()!!.proposalId
 
                 // Submit for review
-                val submitResult = mergeHandler.submit(SubmitProposalCommand(proposalId))
+                val submitResult = submitHandler(SubmitProposalCommand(proposalId))
                 submitResult.isRight() shouldBe true
 
                 // Start review
-                val startReviewResult = reviewHandler.startReview(StartReviewCommand(proposalId))
+                val startReviewResult = startReviewHandler(StartReviewCommand(proposalId))
                 startReviewResult.isRight() shouldBe true
 
                 // Step 2: Reject proposal
@@ -183,7 +186,7 @@ class ProposalWorkflowIntegrationTest :
                     rejectionReason = "This proposal violates security guidelines",
                 )
 
-                val rejectResult = approveHandler.reject(rejectCommand)
+                val rejectResult = rejectHandler(rejectCommand)
                 rejectResult.isRight() shouldBe true
 
                 val rejectedDto = rejectResult.getOrNull()!!
@@ -198,9 +201,11 @@ class ProposalWorkflowIntegrationTest :
                 val mockResourceState = mockk<ResourceState>()
 
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
-                val reviewHandler = ReviewProposalHandler(mockChangeProposalRepository)
-                val approveHandler = ApproveProposalHandler(mockChangeProposalRepository)
-                val mergeHandler = MergeProposalHandler(mockChangeProposalRepository)
+                val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
+                val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
+                val approveHandler = ApproveProposalCommandHandler(mockChangeProposalRepository)
+                val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
+                val mergeHandler = MergeApprovedProposalHandler(mockChangeProposalRepository)
 
                 // Test data
                 val author = Author.agent(AgentId.from("author-agent"))
@@ -229,9 +234,9 @@ class ProposalWorkflowIntegrationTest :
                 proposeHandler(createCommand)
                 val proposalId = proposalSlot.captured.id
 
-                mergeHandler.submit(SubmitProposalCommand(proposalId))
-                reviewHandler.startReview(StartReviewCommand(proposalId))
-                approveHandler.approve(ApproveProposalCommand(proposalId, approver))
+                submitHandler(SubmitProposalCommand(proposalId))
+                startReviewHandler(StartReviewCommand(proposalId))
+                approveHandler(ApproveProposalCommand(proposalId, approver))
 
                 // Step: Try to merge with conflicts
                 val mergeCommand = MergeProposalCommand(
@@ -240,7 +245,7 @@ class ProposalWorkflowIntegrationTest :
                     currentResourceState = mockResourceState,
                 )
 
-                val mergeResult = mergeHandler.merge(mergeCommand)
+                val mergeResult = mergeHandler(mergeCommand)
 
                 // Should fail due to conflicts
                 mergeResult.isLeft() shouldBe true

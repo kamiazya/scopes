@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.entity
 
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Change
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangeType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangesetId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
@@ -44,25 +45,4 @@ data class Changeset(
      * Update the message of this changeset.
      */
     fun updateMessage(newMessage: String): Changeset = copy(message = newMessage)
-}
-
-/**
- * Represents a single change within a changeset.
- */
-data class Change(
-    val path: String,
-    val operation: ChangeOperation,
-    val previousValue: String?,
-    val newValue: String?,
-    val metadata: Map<String, String> = emptyMap(),
-)
-
-/**
- * Types of operations that can be performed on a resource.
- */
-enum class ChangeOperation {
-    ADD,
-    MODIFY,
-    DELETE,
-    RENAME,
 }

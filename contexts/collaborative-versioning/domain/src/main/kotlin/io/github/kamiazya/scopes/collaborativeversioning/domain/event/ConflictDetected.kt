@@ -1,5 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ConflictResolutionStrategy
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.EventConflictType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
@@ -67,7 +69,7 @@ data class Conflict(
     /**
      * Type of conflict (e.g., "concurrent_update", "deleted_field").
      */
-    val type: ConflictType,
+    val type: EventConflictType,
 
     /**
      * The field or property with the conflict.
@@ -96,36 +98,6 @@ data class Conflict(
 )
 
 /**
- * Types of conflicts that can occur.
- */
-enum class ConflictType {
-    /**
-     * Both proposal and target modified the same field.
-     */
-    CONCURRENT_UPDATE,
-
-    /**
-     * Proposal modifies a field that was deleted.
-     */
-    DELETED_FIELD,
-
-    /**
-     * Proposal deletes a field that was modified.
-     */
-    MODIFIED_DELETED,
-
-    /**
-     * Structural conflict that prevents merge.
-     */
-    STRUCTURAL,
-
-    /**
-     * Semantic conflict based on business rules.
-     */
-    SEMANTIC,
-}
-
-/**
  * Suggestion for resolving a conflict.
  */
 data class ResolutionSuggestion(
@@ -137,40 +109,10 @@ data class ResolutionSuggestion(
     /**
      * Suggested resolution strategy.
      */
-    val strategy: ResolutionStrategy,
+    val strategy: ConflictResolutionStrategy,
 
     /**
      * Explanation of the suggestion.
      */
     val rationale: String,
 )
-
-/**
- * Strategies for resolving conflicts.
- */
-enum class ResolutionStrategy {
-    /**
-     * Use the value from the proposal.
-     */
-    USE_PROPOSED,
-
-    /**
-     * Keep the current value.
-     */
-    KEEP_CURRENT,
-
-    /**
-     * Merge both values (if applicable).
-     */
-    MERGE_VALUES,
-
-    /**
-     * Requires manual resolution.
-     */
-    MANUAL,
-
-    /**
-     * Rebase the proposal on current state.
-     */
-    REBASE,
-}

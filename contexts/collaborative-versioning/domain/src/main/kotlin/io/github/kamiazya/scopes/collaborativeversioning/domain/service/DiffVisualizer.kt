@@ -2,9 +2,9 @@ package io.github.kamiazya.scopes.collaborativeversioning.domain.service
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.collaborativeversioning.domain.dto.*
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.JsonDiffError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
 /**
@@ -256,8 +256,8 @@ class DefaultDiffVisualizer : DiffVisualizer {
                 resolution = conflict.resolution?.let { resolution ->
                     VisualResolution(
                         type = when (resolution) {
-                            is ConflictResolution.Automatic -> ResolutionType.Automatic
-                            is ConflictResolution.Manual -> ResolutionType.Manual
+                            is ConflictResolution.Automatic -> VisualizationResolutionType.Automatic
+                            is ConflictResolution.Manual -> VisualizationResolutionType.Manual
                         },
                         description = when (resolution) {
                             is ConflictResolution.Automatic -> resolution.description
@@ -281,21 +281,21 @@ class DefaultDiffVisualizer : DiffVisualizer {
 
     private fun visualizeChange(change: JsonChange, options: VisualizationOptions): VisualChange = when (change) {
         is JsonChange.Add -> VisualChange(
-            type = ChangeType.Add,
+            type = DiffChangeType.Add,
             path = change.path.toString(),
             value = if (options.showValues) formatValue(change.value) else null,
             displayText = "Added ${describePath(change.path)}",
             color = options.colors.added,
         )
         is JsonChange.Remove -> VisualChange(
-            type = ChangeType.Remove,
+            type = DiffChangeType.Remove,
             path = change.path.toString(),
             oldValue = if (options.showValues) formatValue(change.oldValue) else null,
             displayText = "Removed ${describePath(change.path)}",
             color = options.colors.removed,
         )
         is JsonChange.Replace -> VisualChange(
-            type = ChangeType.Modify,
+            type = DiffChangeType.Modify,
             path = change.path.toString(),
             oldValue = if (options.showValues) formatValue(change.oldValue) else null,
             value = if (options.showValues) formatValue(change.newValue) else null,
@@ -303,7 +303,7 @@ class DefaultDiffVisualizer : DiffVisualizer {
             color = options.colors.modified,
         )
         is JsonChange.Move -> VisualChange(
-            type = ChangeType.Move,
+            type = DiffChangeType.Move,
             path = change.from.toString(),
             targetPath = change.to.toString(),
             value = if (options.showValues) formatValue(change.value) else null,
@@ -423,202 +423,3 @@ class DefaultDiffVisualizer : DiffVisualizer {
         return hunks
     }
 }
-
-/**
- * Options for visualization.
- */
-@Serializable
-data class VisualizationOptions(
-    val showValues: Boolean = true,
-    val colors: DiffColors = DiffColors.default(),
-    val maxValueLength: Int = 100,
-    val contextLines: Int = 3,
-) {
-    companion object {
-        fun default() = VisualizationOptions()
-
-        fun forConflicts() = VisualizationOptions(
-            showValues = true,
-            colors = DiffColors.conflict(),
-        )
-
-        fun minimal() = VisualizationOptions(
-            showValues = false,
-            contextLines = 1,
-        )
-    }
-}
-
-/**
- * Color scheme for diff visualization.
- */
-@Serializable
-data class DiffColors(
-    val added: String = "#28a745",
-    val removed: String = "#dc3545",
-    val modified: String = "#ffc107",
-    val moved: String = "#17a2b8",
-    val unchanged: String = "#6c757d",
-) {
-    companion object {
-        fun default() = DiffColors()
-
-        fun conflict() = DiffColors(
-            added = "#ff6b6b",
-            removed = "#ff6b6b",
-            modified = "#ff9f40",
-        )
-
-        fun monochrome() = DiffColors(
-            added = "#000000",
-            removed = "#666666",
-            modified = "#333333",
-            moved = "#999999",
-            unchanged = "#cccccc",
-        )
-    }
-}
-
-/**
- * Visual representation of a diff.
- */
-@Serializable
-data class VisualDiff(
-    val changes: List<VisualChange>,
-    val statistics: DiffStatistics,
-    val affectedPaths: List<String>,
-    val structuralChanges: List<VisualStructuralChange>,
-)
-
-/**
- * Visual representation of a single change.
- */
-@Serializable
-data class VisualChange(
-    val type: ChangeType,
-    val path: String,
-    val oldValue: String? = null,
-    val value: String? = null,
-    val targetPath: String? = null,
-    val displayText: String,
-    val color: String,
-)
-
-/**
- * Types of changes for visualization.
- */
-@Serializable
-enum class ChangeType {
-    Add,
-    Remove,
-    Modify,
-    Move,
-}
-
-/**
- * Statistics about a diff.
- */
-@Serializable
-data class DiffStatistics(val totalChanges: Int, val additions: Int, val deletions: Int, val modifications: Int, val moves: Int)
-
-/**
- * Visual representation of structural changes.
- */
-@Serializable
-data class VisualStructuralChange(val type: String, val description: String, val details: Map<String, String>)
-
-/**
- * Side-by-side diff view.
- */
-@Serializable
-data class SideBySideDiff(val lines: List<SideBySideLine>, val metadata: Map<String, String> = emptyMap())
-
-/**
- * A line in side-by-side diff.
- */
-@Serializable
-data class SideBySideLine(val leftLine: LineInfo?, val rightLine: LineInfo?)
-
-/**
- * Information about a line in diff.
- */
-@Serializable
-data class LineInfo(val number: Int, val content: String, val type: LineType, val highlights: List<TextHighlight> = emptyList())
-
-/**
- * Type of line in diff.
- */
-@Serializable
-enum class LineType {
-    Added,
-    Removed,
-    Modified,
-    Unchanged,
-    Context,
-}
-
-/**
- * Text highlight range.
- */
-@Serializable
-data class TextHighlight(val start: Int, val end: Int)
-
-/**
- * Unified diff view.
- */
-@Serializable
-data class UnifiedDiff(val lines: List<UnifiedLine>, val hunks: List<DiffHunk>)
-
-/**
- * A line in unified diff.
- */
-@Serializable
-data class UnifiedLine(val type: LineType, val content: String, val path: String)
-
-/**
- * A hunk in unified diff.
- */
-@Serializable
-data class DiffHunk(val lines: List<UnifiedLine>)
-
-/**
- * Visual representation of conflicts.
- */
-@Serializable
-data class ConflictVisualization(val conflicts: List<VisualConflict>, val summary: ConflictSummary)
-
-/**
- * Visual representation of a single conflict.
- */
-@Serializable
-data class VisualConflict(
-    val id: String,
-    val type: ConflictType,
-    val severity: ConflictSeverity,
-    val path: String,
-    val description: String,
-    val leftChange: VisualChange,
-    val rightChange: VisualChange,
-    val resolution: VisualResolution? = null,
-)
-
-/**
- * Visual representation of conflict resolution.
- */
-@Serializable
-data class VisualResolution(val type: ResolutionType, val description: String)
-
-/**
- * Types of resolution.
- */
-@Serializable
-enum class ResolutionType {
-    Automatic,
-    Manual,
-}
-
-/**
- * Summary of conflicts.
- */
-@Serializable
-data class ConflictSummary(val total: Int, val bySeverity: Map<ConflictSeverity, Int>, val byType: Map<ConflictType, Int>, val resolvable: Int)

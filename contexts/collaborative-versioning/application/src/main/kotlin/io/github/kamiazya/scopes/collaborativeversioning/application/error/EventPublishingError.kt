@@ -1,14 +1,16 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.error
 
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.platform.application.error.ApplicationError
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
  * Errors that can occur when publishing domain events.
  */
 sealed class EventPublishingError : ApplicationError {
+    abstract override val occurredAt: Instant
+    abstract override val cause: Throwable?
 
     /**
      * Failed to serialize the event for storage.
@@ -17,7 +19,7 @@ sealed class EventPublishingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventPublishingError()
 
@@ -28,7 +30,7 @@ sealed class EventPublishingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventPublishingError()
 
@@ -40,7 +42,7 @@ sealed class EventPublishingError : ApplicationError {
         val eventType: String,
         val reason: String,
         val failedSubscribers: List<String> = emptyList(),
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventPublishingError()
 
@@ -50,7 +52,7 @@ sealed class EventPublishingError : ApplicationError {
     data class UnregisteredEventType(
         val eventType: String,
         val eventClass: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventPublishingError()
 
@@ -61,13 +63,13 @@ sealed class EventPublishingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val timeoutMs: Long,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventPublishingError()
 
     /**
      * Infrastructure error during event publishing.
      */
-    data class InfrastructureError(val message: String, override val occurredAt: Instant = Clock.System.now(), override val cause: Throwable? = null) :
+    data class InfrastructureError(val message: String, override val occurredAt: Instant = SystemTimeProvider().now(), override val cause: Throwable? = null) :
         EventPublishingError()
 }

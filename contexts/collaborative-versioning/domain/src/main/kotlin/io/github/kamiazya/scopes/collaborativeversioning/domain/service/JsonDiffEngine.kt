@@ -5,6 +5,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.JsonDiffError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ChangeSet
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.DiffEngineConfig
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.JsonChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.JsonDiff
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.JsonPath
@@ -129,7 +130,7 @@ class DefaultJsonDiffEngine(private val logger: Logger = ConsoleLogger("JsonDiff
             structuralChanges = structuralChanges,
             metadata = mapOf(
                 "engineVersion" to "1.0.0",
-                "calculatedAt" to kotlinx.datetime.Clock.System.now().toString(),
+                "calculatedAt" to SystemTimeProvider().now().toString(),
             ),
         )
     }
@@ -143,7 +144,7 @@ class DefaultJsonDiffEngine(private val logger: Logger = ConsoleLogger("JsonDiff
             target = target,
             metadata = metadata + mapOf(
                 "generatedBy" to "DefaultJsonDiffEngine",
-                "generatedAt" to kotlinx.datetime.Clock.System.now().toString(),
+                "generatedAt" to SystemTimeProvider().now().toString(),
             ),
         ).mapLeft { error ->
             JsonDiffError.ChangeSetGenerationFailed(
@@ -439,29 +440,4 @@ class DefaultJsonDiffEngine(private val logger: Logger = ConsoleLogger("JsonDiff
     private data class LcsMatch(val sourceIndex: Int, val targetIndex: Int, val value: JsonElement)
 
     private data class MoveOperation(val fromIndex: Int, val toIndex: Int, val value: JsonElement)
-}
-
-/**
- * Configuration for the diff engine.
- */
-data class DiffEngineConfig(
-    val maxDocumentSize: Long = 10 * 1024 * 1024, // 10MB
-    val detectArrayMoves: Boolean = true,
-    val optimizeChanges: Boolean = true,
-    val maxDiffDepth: Int = 100,
-) {
-    companion object {
-        fun default() = DiffEngineConfig()
-
-        fun performance() = DiffEngineConfig(
-            detectArrayMoves = false,
-            optimizeChanges = false,
-        )
-
-        fun quality() = DiffEngineConfig(
-            detectArrayMoves = true,
-            optimizeChanges = true,
-            maxDiffDepth = 200,
-        )
-    }
 }

@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.event
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewSeverity
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewType
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
@@ -53,53 +55,3 @@ data class ProposalReviewed(
      */
     val references: List<String> = emptyList(),
 ) : DomainEvent
-
-/**
- * Types of reviews that can be performed on a proposal.
- */
-enum class ReviewType {
-    /**
-     * General comment without explicit approval/rejection.
-     */
-    COMMENT,
-
-    /**
-     * Explicit approval of the proposal.
-     */
-    APPROVAL,
-
-    /**
-     * Request for changes before approval.
-     */
-    REQUEST_CHANGES,
-
-    /**
-     * Question needing clarification.
-     */
-    QUESTION,
-}
-
-/**
- * Severity levels for review feedback.
- */
-enum class ReviewSeverity {
-    /**
-     * Information only, no action required.
-     */
-    INFO,
-
-    /**
-     * Minor issue or suggestion.
-     */
-    MINOR,
-
-    /**
-     * Major issue that should be addressed.
-     */
-    MAJOR,
-
-    /**
-     * Critical issue that must be resolved.
-     */
-    CRITICAL,
-}

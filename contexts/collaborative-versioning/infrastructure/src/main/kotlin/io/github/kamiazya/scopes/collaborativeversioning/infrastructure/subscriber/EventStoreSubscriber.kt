@@ -84,21 +84,23 @@ class EventStoreSubscriber(
             eventStoreQueryPort.getEventsSince(query)
         }
 
-        eventsFlow
-            .onRight { events ->
-                events.forEach { eventResult ->
-                    processEvent(eventResult)
-                        .onRight {
-                            lastProcessedTimestamp = eventResult.occurredAt
-                        }
-                        .onLeft { error ->
-                            logger.error("Failed to process event ${eventResult.eventId}: $error")
-                        }
-                }
-            }
-            .onLeft { error ->
+        eventsFlow.fold(
+            { error ->
                 logger.error("Failed to query events: $error")
-            }
+            },
+            { events ->
+                events.forEach { eventResult ->
+                    processEvent(eventResult).fold(
+                        { error ->
+                            logger.error("Failed to process event ${eventResult.eventId}: $error")
+                        },
+                        {
+                            lastProcessedTimestamp = eventResult.occurredAt
+                        },
+                    )
+                }
+            },
+        )
     }
 
     private suspend fun processEvent(eventResult: io.github.kamiazya.scopes.contracts.eventstore.results.EventResult): Either<EventHandlingError, Unit> =
@@ -107,18 +109,23 @@ class EventStoreSubscriber(
             val domainEvent = eventSerializer.deserialize(
                 eventType = eventResult.eventType,
                 eventData = eventResult.eventData,
-            ).mapLeft { deserializationError ->
-                val eventIdOrError = io.github.kamiazya.scopes.platform.domain.value.EventId.from(eventResult.eventId)
-                val eventId = eventIdOrError.fold(
-                    ifLeft = { io.github.kamiazya.scopes.platform.domain.value.EventId.generate() },
-                    ifRight = { it },
-                )
-                EventHandlingError.InvalidEventData(
-                    eventId = eventId,
-                    eventType = eventResult.eventType,
-                    details = "Failed to deserialize: $deserializationError",
-                )
-            }.bind()
+            ).fold(
+                { deserializationError ->
+                    val eventIdOrError = io.github.kamiazya.scopes.platform.domain.value.EventId.from(eventResult.eventId)
+                    val eventId = eventIdOrError.fold(
+                        ifLeft = { io.github.kamiazya.scopes.platform.domain.value.EventId.generate() },
+                        ifRight = { it },
+                    )
+                    raise(
+                        EventHandlingError.InvalidEventData(
+                            eventId = eventId,
+                            eventType = eventResult.eventType,
+                            details = "Failed to deserialize: $deserializationError",
+                        ),
+                    )
+                },
+                { it },
+            )
 
             // Dispatch to handlers
             handlerRegistry.dispatch(domainEvent).bind()

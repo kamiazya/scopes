@@ -35,12 +35,17 @@ class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService
         val fromSnapshot = snapshotService.getSnapshot(
             resourceId = input.resourceId,
             snapshotId = input.fromSnapshotId,
-        ).mapLeft { domainError ->
-            SnapshotApplicationError.RepositoryOperationFailed(
-                operation = "getSnapshot",
-                reason = "Failed to retrieve from snapshot: $domainError",
-            )
-        }.bind()
+        ).fold(
+            { domainError ->
+                raise(
+                    SnapshotApplicationError.RepositoryOperationFailed(
+                        operation = "getSnapshot",
+                        reason = "Failed to retrieve from snapshot: $domainError",
+                    ),
+                )
+            },
+            { it },
+        )
 
         ensureNotNull(fromSnapshot) {
             SnapshotApplicationError.SnapshotRestorationFailed(
@@ -59,12 +64,17 @@ class GetSnapshotDiffHandler(private val snapshotService: VersionSnapshotService
         val toSnapshot = snapshotService.getSnapshot(
             resourceId = input.resourceId,
             snapshotId = input.toSnapshotId,
-        ).mapLeft { domainError ->
-            SnapshotApplicationError.RepositoryOperationFailed(
-                operation = "getSnapshot",
-                reason = "Failed to retrieve to snapshot: $domainError",
-            )
-        }.bind()
+        ).fold(
+            { domainError ->
+                raise(
+                    SnapshotApplicationError.RepositoryOperationFailed(
+                        operation = "getSnapshot",
+                        reason = "Failed to retrieve to snapshot: $domainError",
+                    ),
+                )
+            },
+            { it },
+        )
 
         ensureNotNull(toSnapshot) {
             SnapshotApplicationError.SnapshotRestorationFailed(

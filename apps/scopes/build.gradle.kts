@@ -209,7 +209,10 @@ tasks.register("nativeE2eTest") {
     }
 }
 
-// Add smoke test to check task
-tasks.named("check") {
-    dependsOn("nativeSmokeTest")
+// Add smoke test to check task (CI-only to optimize local development)
+// Reference: https://github.com/kamiazya/scopes/issues/196
+if (System.getenv("CI") == "true") {
+    tasks.named("check") {
+        dependsOn("nativeSmokeTest")
+    }
 }

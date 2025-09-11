@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.entity
 
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceChangeType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
@@ -44,34 +45,4 @@ data class ResourceChange(
      * A major change is one that increments the version by more than 1.
      */
     fun isMajorChange(): Boolean = versionIncrement() > 1
-}
-
-/**
- * Types of changes that can be made to a tracked resource.
- */
-enum class ResourceChangeType {
-    /**
-     * Initial creation of the resource.
-     */
-    CREATE,
-
-    /**
-     * Regular update to the resource content.
-     */
-    UPDATE,
-
-    /**
-     * Merge of multiple versions.
-     */
-    MERGE,
-
-    /**
-     * Restoration to a previous version.
-     */
-    RESTORE,
-
-    /**
-     * Import from external system.
-     */
-    IMPORT,
 }

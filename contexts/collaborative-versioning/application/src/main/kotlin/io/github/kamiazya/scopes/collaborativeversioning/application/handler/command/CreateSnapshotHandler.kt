@@ -35,12 +35,17 @@ class CreateSnapshotHandler(
 
         // Load the tracked resource
         val resource = trackedResourceRepository.findById(input.resourceId)
-            .mapLeft { error ->
-                SnapshotApplicationError.RepositoryOperationFailed(
-                    operation = "findById",
-                    reason = "Failed to load tracked resource: $error",
-                )
-            }.bind()
+            .fold(
+                { error ->
+                    raise(
+                        SnapshotApplicationError.RepositoryOperationFailed(
+                            operation = "findById",
+                            reason = "Failed to load tracked resource: $error",
+                        ),
+                    )
+                },
+                { it },
+            )
 
         ensureNotNull(resource) {
             SnapshotApplicationError.TrackedResourceNotFound(input.resourceId)
@@ -54,13 +59,18 @@ class CreateSnapshotHandler(
             message = input.message,
             metadata = input.metadata,
             timestamp = input.timestamp,
-        ).mapLeft { domainError ->
-            SnapshotApplicationError.SnapshotCreationFailed(
-                resourceId = input.resourceId,
-                reason = "Failed to create snapshot: $domainError",
-                domainError = domainError,
-            )
-        }.bind()
+        ).fold(
+            { domainError ->
+                raise(
+                    SnapshotApplicationError.SnapshotCreationFailed(
+                        resourceId = input.resourceId,
+                        reason = "Failed to create snapshot: $domainError",
+                        domainError = domainError,
+                    ),
+                )
+            },
+            { it },
+        )
 
         logger.info(
             "Snapshot created successfully",

@@ -5,13 +5,11 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.JsonDiffError
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /**
  * Represents a comprehensive JSON diff between two documents.
  */
-@Serializable
 data class JsonDiff(val changes: List<JsonChange>, val structuralChanges: List<StructuralChange>, val metadata: Map<String, String> = emptyMap()) {
     /**
      * Get total number of changes.
@@ -124,7 +122,6 @@ data class JsonDiff(val changes: List<JsonChange>, val structuralChanges: List<S
 /**
  * Represents a JSON path in a document.
  */
-@Serializable
 data class JsonPath(val segments: List<PathSegment>) {
     override fun toString(): String = if (segments.isEmpty()) {
         "$"
@@ -206,12 +203,9 @@ data class JsonPath(val segments: List<PathSegment>) {
         }
     }
 
-    @Serializable
     sealed class PathSegment {
-        @Serializable
         data class Field(val name: String) : PathSegment()
 
-        @Serializable
         data class Index(val value: Int) : PathSegment()
     }
 }
@@ -219,35 +213,25 @@ data class JsonPath(val segments: List<PathSegment>) {
 /**
  * Represents a change in a JSON document.
  */
-@Serializable
 sealed class JsonChange {
-    @Serializable
     data class Add(val path: JsonPath, val value: JsonElement) : JsonChange()
 
-    @Serializable
     data class Remove(val path: JsonPath, val oldValue: JsonElement) : JsonChange()
 
-    @Serializable
     data class Replace(val path: JsonPath, val oldValue: JsonElement, val newValue: JsonElement) : JsonChange()
 
-    @Serializable
     data class Move(val from: JsonPath, val to: JsonPath, val value: JsonElement) : JsonChange()
 }
 
 /**
  * Represents structural changes in the document.
  */
-@Serializable
 sealed class StructuralChange {
-    @Serializable
     data class FieldAdded(val path: String) : StructuralChange()
 
-    @Serializable
     data class FieldRemoved(val path: String) : StructuralChange()
 
-    @Serializable
     data class TypeChanged(val path: String, val fromType: String, val toType: String) : StructuralChange()
 
-    @Serializable
     data class ArraySizeChanged(val path: String, val fromSize: Int, val toSize: Int) : StructuralChange()
 }

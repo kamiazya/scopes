@@ -58,9 +58,12 @@ class CreateSnapshotHandlerTest :
                 it("should create snapshot and return DTO") {
                     // Given
                     val trackedResource = TrackedResource.create(
-                        id = resourceId,
+                        resourceId = resourceId,
                         resourceType = ResourceType.from("TestResource").getOrNull()!!,
-                        createdAt = timestamp,
+                        initialContent = content,
+                        authorId = authorId,
+                        message = "Initial commit",
+                        timestamp = timestamp,
                     )
 
                     val snapshot = Snapshot(
@@ -88,7 +91,7 @@ class CreateSnapshotHandlerTest :
                     } returns snapshot.right()
 
                     // When
-                    val result = handler.handle(command)
+                    val result = handler.invoke(command)
 
                     // Then
                     result.shouldBeRight()
@@ -108,7 +111,7 @@ class CreateSnapshotHandlerTest :
                     coEvery { mockRepository.findById(resourceId) } returns null.right()
 
                     // When
-                    val result = handler.handle(command)
+                    val result = handler.invoke(command)
 
                     // Then
                     result.shouldBeLeft()
@@ -124,15 +127,14 @@ class CreateSnapshotHandlerTest :
             context("repository operation failure") {
                 it("should return RepositoryOperationFailed error") {
                     // Given
-                    val repositoryError = io.github.kamiazya.scopes.collaborativeversioning.domain.error.CollaborativeVersioningRepositoryError.FindError(
+                    val repositoryError = io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindTrackedResourceError.ResourceNotFound(
                         resourceId = resourceId,
-                        reason = "Database connection failed",
                     )
 
                     coEvery { mockRepository.findById(resourceId) } returns repositoryError.left()
 
                     // When
-                    val result = handler.handle(command)
+                    val result = handler.invoke(command)
 
                     // Then
                     result.shouldBeLeft()
@@ -149,9 +151,12 @@ class CreateSnapshotHandlerTest :
                 it("should return SnapshotCreationFailed error") {
                     // Given
                     val trackedResource = TrackedResource.create(
-                        id = resourceId,
+                        resourceId = resourceId,
                         resourceType = ResourceType.from("TestResource").getOrNull()!!,
-                        createdAt = timestamp,
+                        initialContent = content,
+                        authorId = authorId,
+                        message = "Initial commit",
+                        timestamp = timestamp,
                     )
 
                     val domainError = SnapshotServiceError.StorageLimitExceeded(
@@ -165,7 +170,7 @@ class CreateSnapshotHandlerTest :
                     } returns domainError.left()
 
                     // When
-                    val result = handler.handle(command)
+                    val result = handler.invoke(command)
 
                     // Then
                     result.shouldBeLeft()

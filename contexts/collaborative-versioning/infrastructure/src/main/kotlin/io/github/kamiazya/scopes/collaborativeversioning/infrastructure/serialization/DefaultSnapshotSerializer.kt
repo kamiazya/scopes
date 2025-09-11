@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.collaborativeversioning.infrastructure.serialization
 
 import arrow.core.Either
-import arrow.core.flatten
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SnapshotSerializer
@@ -28,40 +27,60 @@ class DefaultSnapshotSerializer : SnapshotSerializer {
     override fun serialize(snapshot: Snapshot): Either<SnapshotServiceError, String> = Either.catch {
         val dto = SnapshotSerializationDto.fromDomain(snapshot)
         json.encodeToString(dto)
-    }.mapLeft { throwable ->
-        SnapshotServiceError.SerializationError(
-            reason = "Failed to serialize snapshot: ${throwable.message}",
-            cause = throwable,
-        )
-    }
+    }.fold(
+        { throwable ->
+            Either.Left(
+                SnapshotServiceError.SerializationError(
+                    reason = "Failed to serialize snapshot: ${throwable.message}",
+                    cause = throwable,
+                ),
+            )
+        },
+        { Either.Right(it) },
+    )
 
     override fun deserialize(json: String): Either<SnapshotServiceError, Snapshot> = Either.catch {
         val dto = this.json.decodeFromString<SnapshotSerializationDto>(json)
         dto.toDomain()
-    }.mapLeft { throwable ->
-        SnapshotServiceError.DeserializationError(
-            reason = "Failed to deserialize snapshot: ${throwable.message}",
-            cause = throwable,
-        )
-    }.flatten()
+    }.fold(
+        { throwable ->
+            Either.Left(
+                SnapshotServiceError.DeserializationError(
+                    reason = "Failed to deserialize snapshot: ${throwable.message}",
+                    cause = throwable,
+                ),
+            )
+        },
+        { result -> result },
+    )
 
     override fun serializeToElement(snapshot: Snapshot): Either<SnapshotServiceError, JsonElement> = Either.catch {
         val dto = SnapshotSerializationDto.fromDomain(snapshot)
         json.encodeToJsonElement(dto)
-    }.mapLeft { throwable ->
-        SnapshotServiceError.SerializationError(
-            reason = "Failed to serialize snapshot to element: ${throwable.message}",
-            cause = throwable,
-        )
-    }
+    }.fold(
+        { throwable ->
+            Either.Left(
+                SnapshotServiceError.SerializationError(
+                    reason = "Failed to serialize snapshot to element: ${throwable.message}",
+                    cause = throwable,
+                ),
+            )
+        },
+        { Either.Right(it) },
+    )
 
     override fun deserializeFromElement(element: JsonElement): Either<SnapshotServiceError, Snapshot> = Either.catch {
         val dto = json.decodeFromJsonElement<SnapshotSerializationDto>(element)
         dto.toDomain()
-    }.mapLeft { throwable ->
-        SnapshotServiceError.DeserializationError(
-            reason = "Failed to deserialize snapshot from element: ${throwable.message}",
-            cause = throwable,
-        )
-    }.flatten()
+    }.fold(
+        { throwable ->
+            Either.Left(
+                SnapshotServiceError.DeserializationError(
+                    reason = "Failed to deserialize snapshot from element: ${throwable.message}",
+                    cause = throwable,
+                ),
+            )
+        },
+        { result -> result },
+    )
 }

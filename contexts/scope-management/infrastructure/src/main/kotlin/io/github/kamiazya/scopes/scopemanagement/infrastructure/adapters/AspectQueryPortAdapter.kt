@@ -9,10 +9,10 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefi
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.aspect.GetAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.aspect.ListAspectDefinitionsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.GetAspectDefinition
+import io.github.kamiazya.scopes.scopemanagement.application.query.aspect.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 

@@ -2,11 +2,11 @@ package io.github.kamiazya.scopes.collaborativeversioning.application.error
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.TrackedResourceError
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
 import io.github.kamiazya.scopes.platform.application.error.ApplicationError
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -16,13 +16,15 @@ import kotlinx.datetime.Instant
  * failures in the application layer.
  */
 sealed class SnapshotApplicationError : ApplicationError {
+    abstract override val occurredAt: Instant
+    abstract override val cause: Throwable?
 
     /**
      * Error when a tracked resource cannot be found.
      */
     data class TrackedResourceNotFound(
         val resourceId: ResourceId,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -33,7 +35,7 @@ sealed class SnapshotApplicationError : ApplicationError {
         val resourceId: ResourceId,
         val reason: String,
         val domainError: SnapshotServiceError,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -46,7 +48,7 @@ sealed class SnapshotApplicationError : ApplicationError {
         val targetVersion: VersionNumber?,
         val reason: String,
         val domainError: SnapshotServiceError,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -57,7 +59,7 @@ sealed class SnapshotApplicationError : ApplicationError {
         val processedCount: Int,
         val failedCount: Int,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -67,7 +69,7 @@ sealed class SnapshotApplicationError : ApplicationError {
     data class ValidationFailed(
         val field: String,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -77,7 +79,7 @@ sealed class SnapshotApplicationError : ApplicationError {
     data class RepositoryOperationFailed(
         val operation: String,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
@@ -87,7 +89,7 @@ sealed class SnapshotApplicationError : ApplicationError {
     data class DomainRuleViolation(
         val rule: String,
         val domainError: TrackedResourceError,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 }

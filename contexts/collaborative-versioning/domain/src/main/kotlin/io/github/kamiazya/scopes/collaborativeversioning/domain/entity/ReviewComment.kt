@@ -1,7 +1,8 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.entity
 
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewCommentType
 import kotlinx.datetime.Instant
 
 /**
@@ -26,7 +27,7 @@ data class ReviewComment(
     /**
      * Mark this comment as resolved.
      */
-    fun resolve(resolver: Author, timestamp: Instant = Clock.System.now()): ReviewComment = copy(
+    fun resolve(resolver: Author, timestamp: Instant = SystemTimeProvider().now()): ReviewComment = copy(
         resolved = true,
         resolvedBy = resolver,
         resolvedAt = timestamp,
@@ -36,7 +37,7 @@ data class ReviewComment(
     /**
      * Update the comment content.
      */
-    fun updateContent(newContent: String, timestamp: Instant = Clock.System.now()): ReviewComment = copy(
+    fun updateContent(newContent: String, timestamp: Instant = SystemTimeProvider().now()): ReviewComment = copy(
         content = newContent,
         updatedAt = timestamp,
     )
@@ -66,7 +67,7 @@ data class ReviewComment(
             commentType: ReviewCommentType,
             proposedChangeId: String? = null,
             parentCommentId: String? = null,
-            timestamp: Instant = Clock.System.now(),
+            timestamp: Instant = SystemTimeProvider().now(),
         ): ReviewComment = ReviewComment(
             id = generateId(),
             author = author,
@@ -78,39 +79,4 @@ data class ReviewComment(
             parentCommentId = parentCommentId,
         )
     }
-}
-
-/**
- * Types of review comments.
- */
-enum class ReviewCommentType {
-    /**
-     * General comment or feedback.
-     */
-    COMMENT,
-
-    /**
-     * Suggestion for improvement.
-     */
-    SUGGESTION,
-
-    /**
-     * Issue that must be addressed before approval.
-     */
-    ISSUE,
-
-    /**
-     * Question requiring clarification.
-     */
-    QUESTION,
-
-    /**
-     * Approval of the proposal or specific change.
-     */
-    APPROVAL,
-
-    /**
-     * Request for changes.
-     */
-    REQUEST_CHANGES,
 }

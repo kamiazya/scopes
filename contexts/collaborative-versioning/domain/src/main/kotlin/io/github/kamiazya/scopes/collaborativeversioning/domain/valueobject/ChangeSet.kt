@@ -5,16 +5,14 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.ChangesetError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.CollaborativeVersioningError
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /**
  * Represents a set of changes between versions.
  * This is a structured representation of a JsonDiff that can be persisted and applied.
  */
-@Serializable
 data class ChangeSet private constructor(
     val id: ChangesetId,
     val diff: JsonDiff,
@@ -104,7 +102,7 @@ data class ChangeSet private constructor(
             },
             metadata = metadata + mapOf(
                 "inverseOf" to id.toString(),
-                "inversedAt" to Clock.System.now().toString(),
+                "inversedAt" to SystemTimeProvider().now().toString(),
             ),
         )
 
@@ -113,7 +111,7 @@ data class ChangeSet private constructor(
             diff = inverseDiff,
             sourceHash = targetHash,
             targetHash = sourceHash,
-            createdAt = Clock.System.now(),
+            createdAt = SystemTimeProvider().now(),
             metadata = metadata + mapOf(
                 "inverseOf" to id.toString(),
             ),
@@ -138,7 +136,7 @@ data class ChangeSet private constructor(
                 diff = diff,
                 sourceHash = sourceHash,
                 targetHash = targetHash,
-                createdAt = Clock.System.now(),
+                createdAt = SystemTimeProvider().now(),
                 metadata = metadata,
             )
         }
@@ -151,7 +149,7 @@ data class ChangeSet private constructor(
             diff = JsonDiff.empty(),
             sourceHash = sourceHash,
             targetHash = sourceHash,
-            createdAt = Clock.System.now(),
+            createdAt = SystemTimeProvider().now(),
             metadata = metadata,
         )
 
@@ -168,7 +166,6 @@ data class ChangeSet private constructor(
 /**
  * Value object for DiffPath used in change tracking.
  */
-@Serializable
 data class DiffPath(val value: String) {
     init {
         require(value.isNotBlank()) { "DiffPath cannot be blank" }

@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingOptions
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.batch.BatchProcessingResult
@@ -18,7 +19,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.datetime.Clock
 
 /**
  * Service for batch processing of snapshots.
@@ -73,7 +73,7 @@ class DefaultBatchSnapshotProcessor(
 ) : BatchSnapshotProcessor {
 
     override suspend fun processBatch(requests: List<SnapshotRequest>, options: BatchProcessingOptions): BatchProcessingResult = coroutineScope {
-        val startTime = Clock.System.now()
+        val startTime = SystemTimeProvider().now()
         logger.info(
             "Starting batch processing",
             mapOf(
@@ -110,7 +110,7 @@ class DefaultBatchSnapshotProcessor(
             )
         }
 
-        val endTime = Clock.System.now()
+        val endTime = SystemTimeProvider().now()
         val successCount = results.count { it is SnapshotResult.Success }
         val failureCount = results.count { it is SnapshotResult.Failure }
 
@@ -153,7 +153,7 @@ class DefaultBatchSnapshotProcessor(
         message: String,
         options: BatchProcessingOptions,
     ): BatchProcessingResult {
-        val startTime = Clock.System.now()
+        val startTime = SystemTimeProvider().now()
 
         return either<SnapshotServiceError, BatchProcessingResult> {
             logger.info(
@@ -201,7 +201,7 @@ class DefaultBatchSnapshotProcessor(
                     failureCount = 1,
                     results = emptyList(),
                     startTime = startTime,
-                    endTime = Clock.System.now(),
+                    endTime = SystemTimeProvider().now(),
                 )
             },
             ifRight = { it },
@@ -209,7 +209,7 @@ class DefaultBatchSnapshotProcessor(
     }
 
     private suspend fun processWithRetry(request: SnapshotRequest, options: BatchProcessingOptions): SnapshotResult {
-        val requestTime = Clock.System.now()
+        val requestTime = SystemTimeProvider().now()
         var lastError: SnapshotServiceError? = null
         var attempt = 0
 
@@ -222,7 +222,7 @@ class DefaultBatchSnapshotProcessor(
                         resourceId = request.resourceId,
                         snapshot = result.value,
                         requestTime = requestTime,
-                        completionTime = Clock.System.now(),
+                        completionTime = SystemTimeProvider().now(),
                     )
                 }
                 is Either.Left -> {
@@ -251,7 +251,7 @@ class DefaultBatchSnapshotProcessor(
                 reason = "Failed after ${options.maxRetries} attempts",
             ),
             requestTime = requestTime,
-            completionTime = Clock.System.now(),
+            completionTime = SystemTimeProvider().now(),
         )
     }
 
@@ -279,7 +279,7 @@ class DefaultBatchSnapshotProcessor(
             authorId = request.authorId,
             message = request.message,
             metadata = request.metadata,
-            timestamp = Clock.System.now(),
+            timestamp = SystemTimeProvider().now(),
         ).bind()
     }
 }

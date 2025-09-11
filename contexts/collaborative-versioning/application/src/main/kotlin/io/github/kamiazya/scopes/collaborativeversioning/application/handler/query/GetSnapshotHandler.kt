@@ -31,12 +31,17 @@ class GetSnapshotHandler(private val snapshotService: VersionSnapshotService, pr
         val snapshot = snapshotService.getSnapshot(
             resourceId = input.resourceId,
             snapshotId = input.snapshotId,
-        ).mapLeft { domainError ->
-            SnapshotApplicationError.RepositoryOperationFailed(
-                operation = "getSnapshot",
-                reason = "Failed to retrieve snapshot: $domainError",
-            )
-        }.bind()
+        ).fold(
+            { domainError ->
+                raise(
+                    SnapshotApplicationError.RepositoryOperationFailed(
+                        operation = "getSnapshot",
+                        reason = "Failed to retrieve snapshot: $domainError",
+                    ),
+                )
+            },
+            { it },
+        )
 
         // Convert to DTO if found
         snapshot?.let { SnapshotDto.fromDomain(it) }

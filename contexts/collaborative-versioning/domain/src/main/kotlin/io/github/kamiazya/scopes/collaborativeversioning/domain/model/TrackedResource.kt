@@ -6,11 +6,10 @@ import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ResourceChange
-import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ResourceChangeType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.TrackedResourceError
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -40,7 +39,7 @@ class TrackedResource private constructor(
             initialContent: ResourceContent,
             authorId: AgentId,
             message: String,
-            timestamp: Instant = Clock.System.now(),
+            timestamp: Instant = SystemTimeProvider().now(),
         ): TrackedResource {
             val resourceId = ResourceId.generate()
             val versionId = VersionId.generate()
@@ -125,7 +124,7 @@ class TrackedResource private constructor(
         content: ResourceContent,
         authorId: AgentId,
         message: String,
-        timestamp: Instant = Clock.System.now(),
+        timestamp: Instant = SystemTimeProvider().now(),
     ): Either<TrackedResourceError, Snapshot> = either {
         val newVersionNumber = currentVersion.increment()
         val newVersionId = VersionId.generate()
@@ -165,7 +164,7 @@ class TrackedResource private constructor(
         targetVersionNumber: VersionNumber,
         authorId: AgentId,
         message: String,
-        timestamp: Instant = Clock.System.now(),
+        timestamp: Instant = SystemTimeProvider().now(),
     ): Either<TrackedResourceError, Snapshot> = either {
         val targetSnapshot = getSnapshot(targetVersionNumber)
         ensureNotNull(targetSnapshot) {

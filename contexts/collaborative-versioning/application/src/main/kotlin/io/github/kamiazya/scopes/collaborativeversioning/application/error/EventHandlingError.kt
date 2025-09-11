@@ -1,14 +1,16 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.error
 
+import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.platform.application.error.ApplicationError
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
  * Errors that can occur when handling domain events.
  */
 sealed class EventHandlingError : ApplicationError {
+    abstract override val occurredAt: Instant
+    abstract override val cause: Throwable?
 
     /**
      * Handler is not configured to process this event type.
@@ -16,7 +18,7 @@ sealed class EventHandlingError : ApplicationError {
     data class UnsupportedEventType(
         val eventType: String,
         val handlerName: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
@@ -27,7 +29,7 @@ sealed class EventHandlingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val reason: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
@@ -38,7 +40,7 @@ sealed class EventHandlingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val details: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
@@ -49,7 +51,7 @@ sealed class EventHandlingError : ApplicationError {
         val eventId: EventId,
         val resourceType: String,
         val resourceId: String,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
@@ -58,7 +60,7 @@ sealed class EventHandlingError : ApplicationError {
      */
     data class MultipleHandlersFailed(
         val errors: List<EventHandlingError>,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
@@ -69,19 +71,19 @@ sealed class EventHandlingError : ApplicationError {
         val eventId: EventId,
         val eventType: String,
         val timeoutMs: Long,
-        override val occurredAt: Instant = Clock.System.now(),
+        override val occurredAt: Instant = SystemTimeProvider().now(),
         override val cause: Throwable? = null,
     ) : EventHandlingError()
 
     /**
      * Infrastructure error during event handling.
      */
-    data class InfrastructureError(val message: String, override val occurredAt: Instant = Clock.System.now(), override val cause: Throwable? = null) :
+    data class InfrastructureError(val message: String, override val occurredAt: Instant = SystemTimeProvider().now(), override val cause: Throwable? = null) :
         EventHandlingError()
 
     /**
      * Unexpected error during event handling.
      */
-    data class UnexpectedError(val message: String, override val occurredAt: Instant = Clock.System.now(), override val cause: Throwable? = null) :
+    data class UnexpectedError(val message: String, override val occurredAt: Instant = SystemTimeProvider().now(), override val cause: Throwable? = null) :
         EventHandlingError()
 }

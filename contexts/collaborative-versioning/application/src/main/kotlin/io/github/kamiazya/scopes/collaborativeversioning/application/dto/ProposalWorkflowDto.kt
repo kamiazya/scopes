@@ -1,12 +1,12 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.dto
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewComment
-import io.github.kamiazya.scopes.collaborativeversioning.domain.model.AppliedChanges
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
-import io.github.kamiazya.scopes.collaborativeversioning.domain.model.Conflict
-import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ProposalStatistics
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.AppliedChanges
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalConflict
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalState
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalStatistics
 import kotlinx.datetime.Instant
 
 /**
@@ -81,12 +81,12 @@ data class MergeProposalResultDto(
     val proposalId: ProposalId,
     val state: ProposalState,
     val appliedChanges: AppliedChanges,
-    val conflicts: List<Conflict>,
+    val conflicts: List<ProposalConflict>,
     val appliedAt: Instant?,
     val updatedAt: Instant,
 ) {
     companion object {
-        fun from(proposal: ChangeProposal, appliedChanges: AppliedChanges, conflicts: List<Conflict> = emptyList()): MergeProposalResultDto =
+        fun from(proposal: ChangeProposal, appliedChanges: AppliedChanges, conflicts: List<ProposalConflict> = emptyList()): MergeProposalResultDto =
             MergeProposalResultDto(
                 proposalId = proposal.id,
                 state = proposal.state,

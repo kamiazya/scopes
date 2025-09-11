@@ -11,17 +11,3 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Prop
  * to a change proposal during the review process.
  */
 data class ReviewProposalCommand(val proposalId: ProposalId, val reviewer: Author, val comment: ReviewComment)
-
-/**
- * Command to start the review process for a change proposal.
- *
- * This transitions the proposal from SUBMITTED to REVIEWING state.
- */
-data class StartReviewCommand(val proposalId: ProposalId)
-
-/**
- * Command to resolve a review comment.
- *
- * This marks a specific review comment as resolved.
- */
-data class ResolveCommentCommand(val proposalId: ProposalId, val commentId: String, val resolver: Author)

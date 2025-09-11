@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.collaborativeversioning.application.command
 
-import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ProposedChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposedChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 
 /**

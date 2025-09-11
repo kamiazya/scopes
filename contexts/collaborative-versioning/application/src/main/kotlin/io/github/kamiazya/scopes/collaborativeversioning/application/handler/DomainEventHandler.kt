@@ -75,25 +75,31 @@ class DomainEventHandlerRegistry {
         val errors = mutableListOf<EventHandlingError>()
 
         eventHandlers.forEach { handler ->
-            handler.handle(event).onLeft { error ->
-                errors.add(error)
-            }
+            handler.handle(event).fold(
+                { error -> errors.add(error) },
+                { /* Success - continue */ },
+            )
         }
 
         if (errors.isNotEmpty()) {
-            throw EventHandlingException(errors)
+            error("Failed to handle events: ${errors.joinToString("; ")}")
         }
-    }.mapLeft { throwable ->
-        when (throwable) {
-            is EventHandlingException ->
-                EventHandlingError.MultipleHandlersFailed(throwable.errors)
-            else ->
-                EventHandlingError.UnexpectedError(
-                    message = "Unexpected error during event dispatch",
-                    cause = throwable,
-                )
-        }
-    }
+    }.fold(
+        { throwable ->
+            when (throwable) {
+                is EventHandlingException ->
+                    Either.Left(EventHandlingError.MultipleHandlersFailed(throwable.errors))
+                else ->
+                    Either.Left(
+                        EventHandlingError.UnexpectedError(
+                            message = "Unexpected error during event dispatch",
+                            cause = throwable,
+                        ),
+                    )
+            }
+        },
+        { Either.Right(it) },
+    )
 }
 
 /**

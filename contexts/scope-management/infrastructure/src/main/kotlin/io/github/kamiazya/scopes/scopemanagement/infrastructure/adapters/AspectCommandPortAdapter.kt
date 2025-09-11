@@ -8,13 +8,13 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspect
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DefineAspectCommand
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.aspect.DefineAspectHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.aspect.DeleteAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.aspect.UpdateAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
 
 /**
  * Command port adapter implementation for Aspect operations.

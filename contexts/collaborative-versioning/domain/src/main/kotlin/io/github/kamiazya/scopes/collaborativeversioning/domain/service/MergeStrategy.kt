@@ -7,7 +7,6 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.error.JsonDiffEr
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -136,7 +135,7 @@ abstract class BaseMergeStrategy(override val name: String, override val descrip
             ),
             metadata = mapOf(
                 "mergeStrategy" to name,
-                "mergedAt" to kotlinx.datetime.Clock.System.now().toString(),
+                "mergedAt" to SystemTimeProvider().now().toString(),
             ),
         )
 
@@ -362,54 +361,6 @@ class CustomStrategy(private val rules: List<ResolutionRule>, name: String = "cu
 }
 
 /**
- * Context for merge operations.
- */
-@Serializable
-data class MergeContext(val base: JsonElement, val changeSet1: ChangeSet, val changeSet2: ChangeSet)
-
-/**
- * Result of a merge operation.
- */
-@Serializable
-data class MergeResult(
-    val mergedDocument: JsonElement,
-    val mergedChangeSet: ChangeSet,
-    val resolvedConflicts: List<Conflict>,
-    val unresolvedConflicts: List<Conflict>,
-    val metadata: Map<String, String> = emptyMap(),
-) {
-    fun isSuccessful(): Boolean = unresolvedConflicts.isEmpty()
-
-    fun hasUnresolvedConflicts(): Boolean = unresolvedConflicts.isNotEmpty()
-
-    fun resolutionRate(): Double {
-        val total = resolvedConflicts.size + unresolvedConflicts.size
-        return if (total > 0) {
-            resolvedConflicts.size.toDouble() / total
-        } else {
-            1.0
-        }
-    }
-}
-
-/**
- * Rule for custom merge strategy.
- */
-@Serializable
-data class ResolutionRule(val conflictType: ConflictType, val resolution: ResolutionAction, val condition: String? = null)
-
-/**
- * Actions for resolving conflicts.
- */
-@Serializable
-enum class ResolutionAction {
-    TakeFirst, // Use change from first change set
-    TakeSecond, // Use change from second change set
-    Skip, // Skip both changes
-    Fail, // Fail and require manual resolution
-}
-
-/**
  * Factory for creating merge strategies.
  */
 object MergeStrategyFactory {
@@ -421,14 +372,4 @@ object MergeStrategyFactory {
     }
 
     fun createCustom(rules: List<ResolutionRule>): MergeStrategy = CustomStrategy(rules)
-}
-
-/**
- * Types of built-in merge strategies.
- */
-enum class MergeStrategyType {
-    Ours,
-    Theirs,
-    Automatic,
-    Manual,
 }

@@ -3,14 +3,10 @@ package io.github.kamiazya.scopes.collaborativeversioning.domain.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.JsonDiffError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 
 /**
  * Service for detecting conflicts between concurrent changes.
@@ -63,6 +59,7 @@ interface ConflictDetector {
 class DefaultConflictDetector(
     private val logger: Logger = ConsoleLogger("ConflictDetector"),
     private val config: ConflictDetectorConfig = ConflictDetectorConfig.default(),
+    private val timeProvider: TimeProvider = SystemTimeProvider(),
 ) : ConflictDetector {
 
     override suspend fun detectConflicts(
@@ -104,7 +101,7 @@ class DefaultConflictDetector(
                                 change1,
                                 change2,
                             ),
-                            detectedAt = Clock.System.now(),
+                            detectedAt = timeProvider.now(),
                             severity = determineConflictSeverity(conflictType),
                             resolution = suggestResolution(conflictType, change1, change2),
                         ),
@@ -136,7 +133,7 @@ class DefaultConflictDetector(
             metadata = mapOf(
                 "detectionEngine" to "DefaultConflictDetector",
                 "detectionVersion" to "1.0.0",
-                "detectedAt" to Clock.System.now().toString(),
+                "detectedAt" to timeProvider.now().toString(),
             ),
         )
     }
@@ -353,118 +350,3 @@ class DefaultConflictDetector(
         return conflicts.distinctBy { "${it.path}_${it.type}" }
     }
 }
-
-/**
- * Configuration for conflict detection.
- */
-data class ConflictDetectorConfig(
-    val detectSemanticConflicts: Boolean = true,
-    val detectStructuralConflicts: Boolean = true,
-    val strictMode: Boolean = false,
-) {
-    companion object {
-        fun default() = ConflictDetectorConfig()
-
-        fun strict() = ConflictDetectorConfig(
-            detectSemanticConflicts = true,
-            detectStructuralConflicts = true,
-            strictMode = true,
-        )
-
-        fun lenient() = ConflictDetectorConfig(
-            detectSemanticConflicts = false,
-            detectStructuralConflicts = true,
-            strictMode = false,
-        )
-    }
-}
-
-/**
- * Types of conflicts that can be detected.
- */
-@Serializable
-enum class ConflictType {
-    UpdateConflict, // Same field updated differently
-    DeleteUpdateConflict, // One deletes, other updates
-    StructuralConflict, // Hierarchical structure conflicts
-    MoveConflict, // Conflicting move operations
-    AddConflict, // Both add to same location
-    DoubleDelete, // Both delete same field
-    SemanticConflict, // Business rule violations
-    Unknown, // Unclassified conflict
-}
-
-/**
- * Severity levels for conflicts.
- */
-@Serializable
-enum class ConflictSeverity {
-    Low, // Can likely be auto-resolved
-    Medium, // Requires review but has clear resolution
-    High, // Requires manual intervention
-}
-
-/**
- * Represents a detected conflict.
- */
-@Serializable
-data class Conflict(
-    val id: ConflictId,
-    val type: ConflictType,
-    val path: JsonPath,
-    val change1: JsonChange,
-    val change2: JsonChange,
-    val description: String,
-    val detectedAt: Instant,
-    val severity: ConflictSeverity,
-    val resolution: ConflictResolution? = null,
-)
-
-/**
- * Conflict ID value object.
- */
-@Serializable
-@JvmInline
-value class ConflictId private constructor(private val value: String) {
-    override fun toString(): String = value
-
-    companion object {
-        fun generate(): ConflictId = ConflictId(ULID.random())
-        fun from(value: String): ConflictId = ConflictId(value)
-    }
-}
-
-/**
- * Suggested resolution for a conflict.
- */
-@Serializable
-sealed class ConflictResolution {
-    @Serializable
-    data class Automatic(val strategy: String, val description: String) : ConflictResolution()
-
-    @Serializable
-    data class Manual(val suggestion: String) : ConflictResolution()
-}
-
-/**
- * Result of conflict detection.
- */
-@Serializable
-data class ConflictDetectionResult(val conflicts: List<Conflict>, val canAutoMerge: Boolean, val metadata: Map<String, String> = emptyMap()) {
-    fun hasConflicts(): Boolean = conflicts.isNotEmpty()
-
-    fun conflictsByType(): Map<ConflictType, List<Conflict>> = conflicts.groupBy { it.type }
-
-    fun highSeverityConflicts(): List<Conflict> = conflicts.filter { it.severity == ConflictSeverity.High }
-}
-
-/**
- * Result of multi-way conflict detection.
- */
-@Serializable
-data class MultiWayConflictResult(
-    val conflicts: List<Conflict>,
-    val changeSetCount: Int,
-    val pairwiseResults: List<ConflictDetectionResult>,
-    val canAutoMerge: Boolean,
-)
