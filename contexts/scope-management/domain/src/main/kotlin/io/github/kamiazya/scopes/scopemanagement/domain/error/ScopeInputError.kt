@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
-import kotlinx.datetime.Instant
-
 /**
  * Errors related to input values when creating or editing Scopes.
  */
@@ -12,9 +10,9 @@ sealed class ScopeInputError : ScopesError() {
      */
     sealed class IdError : ScopeInputError() {
 
-        data class Blank(override val occurredAt: Instant, val attemptedValue: String) : IdError()
+        data class Blank(val attemptedValue: String) : IdError()
 
-        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val formatType: IdFormatType = IdFormatType.ULID) : IdError() {
+        data class InvalidFormat(val attemptedValue: String, val formatType: IdFormatType = IdFormatType.ULID) : IdError() {
             enum class IdFormatType {
                 ULID,
                 UUID,
@@ -29,14 +27,13 @@ sealed class ScopeInputError : ScopesError() {
      */
     sealed class TitleError : ScopeInputError() {
 
-        data class Empty(override val occurredAt: Instant, val attemptedValue: String) : TitleError()
+        data class Empty(val attemptedValue: String) : TitleError()
 
-        data class TooShort(override val occurredAt: Instant, val attemptedValue: String, val minimumLength: Int) : TitleError()
+        data class TooShort(val attemptedValue: String, val minimumLength: Int) : TitleError()
 
-        data class TooLong(override val occurredAt: Instant, val attemptedValue: String, val maximumLength: Int) : TitleError()
+        data class TooLong(val attemptedValue: String, val maximumLength: Int) : TitleError()
 
-        data class ContainsProhibitedCharacters(override val occurredAt: Instant, val attemptedValue: String, val prohibitedCharacters: List<Char>) :
-            TitleError()
+        data class ContainsProhibitedCharacters(val attemptedValue: String, val prohibitedCharacters: List<Char>) : TitleError()
     }
 
     /**
@@ -44,7 +41,7 @@ sealed class ScopeInputError : ScopesError() {
      */
     sealed class DescriptionError : ScopeInputError() {
 
-        data class TooLong(override val occurredAt: Instant, val attemptedValue: String, val maximumLength: Int) : DescriptionError()
+        data class TooLong(val attemptedValue: String, val maximumLength: Int) : DescriptionError()
     }
 
     /**
@@ -52,13 +49,13 @@ sealed class ScopeInputError : ScopesError() {
      */
     sealed class AliasError : ScopeInputError() {
 
-        data class Empty(override val occurredAt: Instant, val attemptedValue: String) : AliasError()
+        data class Empty(val attemptedValue: String) : AliasError()
 
-        data class TooShort(override val occurredAt: Instant, val attemptedValue: String, val minimumLength: Int) : AliasError()
+        data class TooShort(val attemptedValue: String, val minimumLength: Int) : AliasError()
 
-        data class TooLong(override val occurredAt: Instant, val attemptedValue: String, val maximumLength: Int) : AliasError()
+        data class TooLong(val attemptedValue: String, val maximumLength: Int) : AliasError()
 
-        data class InvalidFormat(override val occurredAt: Instant, val attemptedValue: String, val patternType: AliasPatternType) : AliasError() {
+        data class InvalidFormat(val attemptedValue: String, val patternType: AliasPatternType) : AliasError() {
             enum class AliasPatternType {
                 LOWERCASE_WITH_HYPHENS,
                 ALPHANUMERIC,
