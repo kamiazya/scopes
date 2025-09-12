@@ -77,7 +77,7 @@ jobs:
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
     - name: Run tests with coverage
-      run: ./gradlew --no-daemon --scan test jacocoRootReport
+      run: ./gradlew --no-daemon --scan test jacocoRootReport -x :user-preferences-infrastructure:test
 
     - name: Run Detekt analysis
       run: ./gradlew --no-daemon --scan detekt

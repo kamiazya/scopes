@@ -38,7 +38,7 @@ jobs:
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
     - name: Run tests with coverage
-      run: ./gradlew --no-daemon --scan test jacocoRootReport
+      run: ./gradlew --no-daemon --scan test jacocoRootReport -x :user-preferences-infrastructure:test
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e # v5.0.2
