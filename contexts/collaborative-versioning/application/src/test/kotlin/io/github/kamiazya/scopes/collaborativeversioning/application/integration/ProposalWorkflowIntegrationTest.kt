@@ -19,7 +19,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.datetime.Clock
 
 class ProposalWorkflowIntegrationTest :
@@ -33,7 +32,8 @@ class ProposalWorkflowIntegrationTest :
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
                 val mockResourceState = mockk<ResourceState>()
 
-                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockEventPublisher = mockk<DomainEventPublisher>()
+                coEvery { mockEventPublisher.publish(any()) } returns Unit.right()
                 val mockLogger = mockk<Logger>(relaxed = true)
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
@@ -48,12 +48,19 @@ class ProposalWorkflowIntegrationTest :
                 val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
-                val proposalSlot = slot<ChangeProposal>()
+                // Track latest saved proposal
+                var savedProposal: ChangeProposal? = null
 
                 // Mock repository behavior
                 coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
-                coEvery { mockChangeProposalRepository.save(capture(proposalSlot)) } answers { proposalSlot.captured.right() }
-                coEvery { mockChangeProposalRepository.findById(any()) } answers { proposalSlot.captured.right() }
+                coEvery { mockChangeProposalRepository.save(any()) } answers {
+                    val proposal = it.invocation.args[0] as ChangeProposal
+                    savedProposal = proposal
+                    proposal.right()
+                }
+                coEvery { mockChangeProposalRepository.findById(any()) } answers {
+                    savedProposal?.right() ?: null.right()
+                }
 
                 // Mock resource state for conflict detection
                 coEvery { mockResourceState.getValueAtPath(any()) } returns null
@@ -80,6 +87,10 @@ class ProposalWorkflowIntegrationTest :
                 val submitCommand = SubmitProposalCommand(proposalId)
                 val submitResult = submitHandler(submitCommand)
 
+                if (submitResult.isLeft()) {
+                    println("Submit failed with error: ${submitResult.leftOrNull()}")
+                    println("Current savedProposal: $savedProposal")
+                }
                 submitResult.isRight() shouldBe true
                 val submittedDto = submitResult.getOrNull()!!
                 submittedDto.state shouldBe ProposalState.SUBMITTED
@@ -145,7 +156,8 @@ class ProposalWorkflowIntegrationTest :
                 val mockChangeProposalRepository = mockk<ChangeProposalRepository>()
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
 
-                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockEventPublisher = mockk<DomainEventPublisher>()
+                coEvery { mockEventPublisher.publish(any()) } returns Unit.right()
                 val mockLogger = mockk<Logger>(relaxed = true)
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
@@ -158,12 +170,19 @@ class ProposalWorkflowIntegrationTest :
                 val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
-                val proposalSlot = slot<ChangeProposal>()
+                // Track latest saved proposal
+                var savedProposal: ChangeProposal? = null
 
                 // Mock repository behavior
                 coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
-                coEvery { mockChangeProposalRepository.save(capture(proposalSlot)) } answers { proposalSlot.captured.right() }
-                coEvery { mockChangeProposalRepository.findById(any()) } answers { proposalSlot.captured.right() }
+                coEvery { mockChangeProposalRepository.save(any()) } answers {
+                    val proposal = it.invocation.args[0] as ChangeProposal
+                    savedProposal = proposal
+                    proposal.right()
+                }
+                coEvery { mockChangeProposalRepository.findById(any()) } answers {
+                    savedProposal?.right() ?: null.right()
+                }
 
                 // Step 1: Create and submit proposal
                 val createCommand = ProposeChangeCommand(
@@ -206,7 +225,8 @@ class ProposalWorkflowIntegrationTest :
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
                 val mockResourceState = mockk<ResourceState>()
 
-                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockEventPublisher = mockk<DomainEventPublisher>()
+                coEvery { mockEventPublisher.publish(any()) } returns Unit.right()
                 val mockLogger = mockk<Logger>(relaxed = true)
                 val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
@@ -220,12 +240,19 @@ class ProposalWorkflowIntegrationTest :
                 val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
-                val proposalSlot = slot<ChangeProposal>()
+                // Track latest saved proposal
+                var savedProposal: ChangeProposal? = null
 
                 // Mock repository behavior
                 coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
-                coEvery { mockChangeProposalRepository.save(capture(proposalSlot)) } answers { proposalSlot.captured.right() }
-                coEvery { mockChangeProposalRepository.findById(any()) } answers { proposalSlot.captured.right() }
+                coEvery { mockChangeProposalRepository.save(any()) } answers {
+                    val proposal = it.invocation.args[0] as ChangeProposal
+                    savedProposal = proposal
+                    proposal.right()
+                }
+                coEvery { mockChangeProposalRepository.findById(any()) } answers {
+                    savedProposal?.right() ?: null.right()
+                }
 
                 // Mock resource state to simulate conflicts
                 coEvery { mockResourceState.getValueAtPath("conflict.path") } returns "different_value"
@@ -239,8 +266,8 @@ class ProposalWorkflowIntegrationTest :
                     description = "This change will conflict with current state",
                 )
 
-                proposeHandler(createCommand)
-                val proposalId = proposalSlot.captured.id
+                val proposeResult = proposeHandler(createCommand)
+                val proposalId = proposeResult.getOrNull()!!.proposalId
 
                 submitHandler(SubmitProposalCommand(proposalId))
                 startReviewHandler(StartReviewCommand(proposalId))

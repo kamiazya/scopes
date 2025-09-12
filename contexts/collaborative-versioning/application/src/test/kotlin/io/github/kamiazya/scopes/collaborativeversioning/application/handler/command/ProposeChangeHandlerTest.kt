@@ -13,6 +13,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProp
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalState
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
@@ -25,18 +26,20 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 
 class ProposeChangeHandlerTest :
     DescribeSpec({
 
         val mockChangeProposalRepository = mockk<ChangeProposalRepository>()
         val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
-        val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+        val mockEventPublisher = mockk<DomainEventPublisher>()
         val mockLogger = mockk<Logger>(relaxed = true)
         val handler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
 
         beforeEach {
             clearMocks(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
+            coEvery { mockEventPublisher.publish(any()) } returns Unit.right()
         }
 
         describe("ProposeChangeHandler") {
@@ -55,14 +58,18 @@ class ProposeChangeHandlerTest :
                     )
 
                     // Mock repository responses
+                    val proposalId = ProposalId.generate()
+                    val timestamp = Clock.System.now()
                     coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
                     coEvery { mockChangeProposalRepository.save(any()) } returns mockk<ChangeProposal> {
-                        every { id } returns mockk()
+                        every { id } returns proposalId
                         every { state } returns ProposalState.DRAFT
                         every { title } returns command.title
                         every { description } returns command.description
-                        every { createdAt } returns mockk()
-                        every { updatedAt } returns mockk()
+                        every { createdAt } returns timestamp
+                        every { updatedAt } returns timestamp
+                        every { targetResourceId } returns resourceId
+                        every { proposedChanges } returns emptyList()
                     }.right()
 
                     // When
