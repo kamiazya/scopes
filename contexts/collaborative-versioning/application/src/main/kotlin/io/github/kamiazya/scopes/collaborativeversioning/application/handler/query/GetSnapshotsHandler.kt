@@ -30,10 +30,18 @@ class GetSnapshotsHandler(private val snapshotService: VersionSnapshotService, p
         val snapshots = snapshotService.getSnapshots(input.resourceId)
             .fold(
                 { domainError ->
+                    logger.error(
+                        "Failed to retrieve snapshots",
+                        mapOf(
+                            "resourceId" to input.resourceId.toString(),
+                            "error" to domainError.toString(),
+                        ),
+                    )
                     raise(
-                        SnapshotApplicationError.RepositoryOperationFailed(
-                            operation = "getSnapshots",
+                        SnapshotApplicationError.SnapshotCreationFailed(
+                            resourceId = input.resourceId,
                             reason = "Failed to retrieve snapshots: $domainError",
+                            domainError = domainError,
                         ),
                     )
                 },

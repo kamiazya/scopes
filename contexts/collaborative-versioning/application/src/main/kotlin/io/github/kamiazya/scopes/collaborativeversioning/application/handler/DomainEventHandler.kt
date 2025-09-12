@@ -92,8 +92,7 @@ class DomainEventHandlerRegistry {
                 else ->
                     Either.Left(
                         EventHandlingError.UnexpectedError(
-                            message = "Unexpected error during event dispatch",
-                            cause = throwable,
+                            message = "Unexpected error during event dispatch: ${throwable.message}",
                         ),
                     )
             }

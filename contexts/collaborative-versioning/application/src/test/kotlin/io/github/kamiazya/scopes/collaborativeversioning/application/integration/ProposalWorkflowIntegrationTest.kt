@@ -43,9 +43,9 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
-                val reviewer = Author.fromAgent(AgentId.from("reviewer-agent").getOrNull()!!, "Reviewer Agent").getOrNull()!!
-                val approver = Author.fromAgent(AgentId.from("approver-agent").getOrNull()!!, "Approver Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
+                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()!!
+                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()
@@ -154,8 +154,8 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
-                val reviewer = Author.fromAgent(AgentId.from("reviewer-agent").getOrNull()!!, "Reviewer Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
+                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()
@@ -216,8 +216,8 @@ class ProposalWorkflowIntegrationTest :
                 val mergeHandler = MergeApprovedProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
-                val approver = Author.fromAgent(AgentId.from("approver-agent").getOrNull()!!, "Approver Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
+                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()

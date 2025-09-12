@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 
 /**
@@ -30,14 +29,12 @@ value class AliasName private constructor(val value: String) {
 
             if (trimmed.isBlank()) {
                 return ScopeInputError.AliasError.Empty(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                 ).left()
             }
 
             if (trimmed.length < MIN_LENGTH) {
                 return ScopeInputError.AliasError.TooShort(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = trimmed,
                     minimumLength = MIN_LENGTH,
                 ).left()
@@ -45,7 +42,6 @@ value class AliasName private constructor(val value: String) {
 
             if (trimmed.length > MAX_LENGTH) {
                 return ScopeInputError.AliasError.TooLong(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = trimmed,
                     maximumLength = MAX_LENGTH,
                 ).left()
@@ -53,7 +49,6 @@ value class AliasName private constructor(val value: String) {
 
             if (!VALID_PATTERN.matches(trimmed)) {
                 return ScopeInputError.AliasError.InvalidFormat(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = trimmed,
                     patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
                 ).left()
@@ -61,7 +56,6 @@ value class AliasName private constructor(val value: String) {
 
             if (CONSECUTIVE_SPECIAL_CHARS.containsMatchIn(trimmed)) {
                 return ScopeInputError.AliasError.InvalidFormat(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = trimmed,
                     patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
                 ).left()

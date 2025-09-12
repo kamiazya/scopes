@@ -68,7 +68,6 @@ class CreateScopeHandler(
                     ScopeId.create(parentIdString).mapLeft { idError ->
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
                         ScopeHierarchyError.InvalidParentId(
-                            occurredAt = Clock.System.now(),
                             invalidId = parentIdString,
                         )
                     }.bind()
@@ -122,7 +121,6 @@ class CreateScopeHandler(
                     val existingAlias = scopeAliasRepository.findByAliasName(aliasName).bind()
                     ensure(existingAlias == null) {
                         val duplicateError = ScopeAliasError.DuplicateAlias(
-                            occurredAt = Clock.System.now(),
                             aliasName = aliasName.value,
                             existingScopeId = existingAlias!!.scopeId, // The actual scope that owns this alias
                             attemptedScopeId = savedScope.id, // The new scope that tried to use it

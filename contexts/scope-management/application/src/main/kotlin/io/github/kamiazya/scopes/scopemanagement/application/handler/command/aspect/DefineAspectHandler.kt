@@ -10,7 +10,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
-import kotlinx.datetime.Clock
 
 /**
  * Handler for defining a new aspect.
@@ -33,7 +32,6 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "check-existing-aspect", "key" to command.key),
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },
@@ -44,7 +42,6 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
                                 entityType = "AspectDefinition",
                                 identifier = command.key,
                                 identifierType = "key",
-                                occurredAt = Clock.System.now(),
                             ),
                         )
                     }
@@ -85,7 +82,6 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "save-aspect-definition", "key" to command.key),
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },

@@ -51,7 +51,7 @@ class ApproveProposalService(private val changeProposalRepository: ChangeProposa
             )
 
         ensureNotNull(proposal) { ApproveProposalError.ProposalNotFound(command.proposalId) }
-        ensure(command.rejectionReason.isNotBlank()) { ApproveProposalError.EmptyRejectionReason() }
+        ensure(command.rejectionReason.isNotBlank()) { ApproveProposalError.EmptyRejectionReason }
 
         val rejectedProposal = proposal.reject(command.reviewer, command.rejectionReason, timestamp)
             .fold(

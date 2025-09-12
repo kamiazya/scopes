@@ -19,7 +19,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRe
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
-import kotlinx.datetime.Clock
 
 /**
  * Handler for filtering scopes based on a context view.
@@ -60,7 +59,6 @@ class GetFilteredScopesHandler(
                                 service = "context-repository",
                                 cause = error as? Throwable,
                                 context = mapOf("operation" to "find-context-view", "key" to query.contextKey),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -74,7 +72,6 @@ class GetFilteredScopesHandler(
                                 service = "active-context-repository",
                                 cause = error as? Throwable,
                                 context = mapOf("operation" to "get-active-context"),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -89,7 +86,6 @@ class GetFilteredScopesHandler(
                         service = "scope-repository",
                         cause = error as? Throwable,
                         context = mapOf("operation" to "find-all-scopes", "offset" to query.offset, "limit" to query.limit),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -107,7 +103,6 @@ class GetFilteredScopesHandler(
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "load-aspect-definitions"),
-                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()
@@ -121,7 +116,6 @@ class GetFilteredScopesHandler(
                             service = "filter-evaluation",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "apply-filter", "filter" to contextView.filter.expression),
-                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()

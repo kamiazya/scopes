@@ -3,9 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.application.projection
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.coroutines.sync.Mutex
@@ -205,8 +204,10 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         } else {
             // Create ScopeId from string for the error
             ScopeId.create(scopeId).fold(
-                { ScopeInputError.IdError.InvalidFormat(currentTimestamp(), scopeId, ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID).left() },
-                { validScopeId -> ScopeError.NotFound(validScopeId, Clock.System.now()).left() },
+                {
+                    ScopeInputError.IdError.InvalidFormat(attemptedValue = scopeId, formatType = ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID).left()
+                },
+                { validScopeId -> ScopeNotFoundError(scopeId = validScopeId).left() },
             )
         }
     }

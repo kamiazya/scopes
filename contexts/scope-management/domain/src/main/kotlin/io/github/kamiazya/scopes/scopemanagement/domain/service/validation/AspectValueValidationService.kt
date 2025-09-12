@@ -42,7 +42,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                             actualType = "text",
                         ),
                         details = mapOf(
-                            "error" to ValidationError.InvalidNumericValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                            "error" to ValidationError.InvalidNumericValue(definition.key, value),
                         ),
                     ).left()
                 } else {
@@ -59,7 +59,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                             actualType = "text",
                         ),
                         details = mapOf(
-                            "error" to ValidationError.InvalidBooleanValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                            "error" to ValidationError.InvalidBooleanValue(definition.key, value),
                         ),
                     ).left()
                 } else {
@@ -80,7 +80,6 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                                 definition.key,
                                 value,
                                 orderedType.allowedValues,
-                                occurredAt = kotlinx.datetime.Clock.System.now(),
                             ),
                         ),
                     ).left()
@@ -97,7 +96,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                             expectedFormat = "ISO 8601 duration (e.g., 'P1D', 'PT2H30M')",
                         ),
                         details = mapOf(
-                            "error" to ValidationError.InvalidDurationValue(definition.key, value, occurredAt = kotlinx.datetime.Clock.System.now()),
+                            "error" to ValidationError.InvalidDurationValue(definition.key, value),
                         ),
                     ).left()
                 } else {
@@ -121,7 +120,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                 constraint = ScopesError.ValidationConstraintType.MultipleValuesNotAllowed(
                     field = definition.key.value,
                 ),
-                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key, occurredAt = kotlinx.datetime.Clock.System.now())),
+                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key)),
             ).left()
         } else {
             Unit.right()
@@ -148,7 +147,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                 constraint = ScopesError.ValidationConstraintType.MissingRequired(
                     requiredFields = missingKeys.toList(),
                 ),
-                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys, occurredAt = kotlinx.datetime.Clock.System.now())),
+                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys)),
             ).left()
         } else {
             Unit.right()

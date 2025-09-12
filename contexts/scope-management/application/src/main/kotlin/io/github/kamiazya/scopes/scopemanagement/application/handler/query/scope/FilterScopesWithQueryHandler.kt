@@ -15,7 +15,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeReposito
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryEvaluator
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Handler for filtering scopes using advanced aspect queries.
@@ -47,7 +46,6 @@ class FilterScopesWithQueryHandler(
                         ScopesError.InvalidOperation(
                             operation = "filter-scopes-with-query",
                             reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },
@@ -62,7 +60,6 @@ class FilterScopesWithQueryHandler(
                         service = "aspect-repository",
                         cause = error as? Throwable,
                         context = mapOf("operation" to "findAll"),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -85,7 +82,6 @@ class FilterScopesWithQueryHandler(
                                     "operation" to "findByParentId",
                                     "parentId" to parentScopeId.value.toString(),
                                 ),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -103,7 +99,6 @@ class FilterScopesWithQueryHandler(
                                     "offset" to query.offset,
                                     "limit" to query.limit,
                                 ),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -117,7 +112,6 @@ class FilterScopesWithQueryHandler(
                                 service = "scope-repository",
                                 cause = error as? Throwable,
                                 context = mapOf("operation" to "findAllRoot"),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()

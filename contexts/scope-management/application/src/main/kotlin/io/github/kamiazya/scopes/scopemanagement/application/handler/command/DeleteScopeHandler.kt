@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Handler for deleting a scope.
@@ -40,7 +39,6 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                     logger.warn("Scope not found for deletion", mapOf("scopeId" to command.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
-                        occurredAt = Clock.System.now(),
                     )
                 }
 
@@ -74,7 +72,6 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                         raise(
                             ScopeHierarchyError.HasChildren(
                                 scopeId = scopeId,
-                                occurredAt = Clock.System.now(),
                             ),
                         )
                     }

@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import kotlinx.datetime.Clock
 /**
  * Value object representing a filter definition for context views.
  * Filters determine which scopes are visible when a context view is active.
@@ -34,9 +33,9 @@ value class ContextViewFilter private constructor(val expression: String) {
         fun create(expression: String): Either<ContextError, ContextViewFilter> = either {
             val trimmedExpression = expression.trim()
 
-            ensure(trimmedExpression.isNotBlank()) { ContextError.EmptyFilter(occurredAt = Clock.System.now()) }
-            ensure(trimmedExpression.length >= MIN_LENGTH) { ContextError.FilterTooShort(minimumLength = MIN_LENGTH, occurredAt = Clock.System.now()) }
-            ensure(trimmedExpression.length <= MAX_LENGTH) { ContextError.FilterTooLong(maximumLength = MAX_LENGTH, occurredAt = Clock.System.now()) }
+            ensure(trimmedExpression.isNotBlank()) { ContextError.EmptyFilter }
+            ensure(trimmedExpression.length >= MIN_LENGTH) { ContextError.FilterTooShort(minimumLength = MIN_LENGTH) }
+            ensure(trimmedExpression.length <= MAX_LENGTH) { ContextError.FilterTooLong(maximumLength = MAX_LENGTH) }
 
             // Basic syntax validation - only check for obvious issues
             // Advanced validation is done by FilterExpressionValidator
@@ -45,7 +44,6 @@ value class ContextViewFilter private constructor(val expression: String) {
                 ContextError.InvalidFilterSyntax(
                     expression = trimmedExpression,
                     errorType = validationError ?: ContextError.FilterSyntaxErrorType.InvalidSyntax,
-                    occurredAt = Clock.System.now(),
                 )
             }
 

@@ -20,6 +20,7 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -52,6 +53,10 @@ class CreateSnapshotHandlerTest :
             metadata = mapOf("test" to "metadata"),
             timestamp = timestamp,
         )
+
+        beforeEach {
+            clearMocks(mockRepository, mockSnapshotService)
+        }
 
         describe("CreateSnapshotHandler") {
 
@@ -137,7 +142,7 @@ class CreateSnapshotHandlerTest :
             }
 
             context("repository operation failure") {
-                it("should return RepositoryOperationFailed error") {
+                it("should return TrackedResourceNotFound error") {
                     // Given
                     val repositoryError = FindTrackedResourceError.DataCorruption(
                         resourceId = resourceId,
@@ -152,8 +157,8 @@ class CreateSnapshotHandlerTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    error.shouldBeInstanceOf<SnapshotApplicationError.RepositoryOperationFailed>()
-                    error.operation shouldBe "findById"
+                    error.shouldBeInstanceOf<SnapshotApplicationError.TrackedResourceNotFound>()
+                    error.resourceId shouldBe resourceId
 
                     coVerify(exactly = 1) { mockRepository.findById(resourceId) }
                     coVerify(exactly = 0) { mockSnapshotService.createSnapshot(any(), any(), any(), any(), any(), any()) }
@@ -212,9 +217,6 @@ class CreateSnapshotHandlerTest :
 
             context("command validation") {
                 it("should reject command with blank message") {
-                    // Given
-                    val invalidCommand = command.copy(message = "")
-
                     // When/Then - Command creation should throw
                     runCatching {
                         CreateSnapshotCommand(

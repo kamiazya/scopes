@@ -43,9 +43,12 @@ class BatchCreateSnapshotsHandler(private val batchProcessor: BatchSnapshotProce
         // Check if there were any failures
         ensure(result.failureCount == 0 || input.processingOptions.continueOnError) {
             SnapshotApplicationError.BatchProcessingFailed(
-                processedCount = result.successCount,
+                totalResources = result.totalRequests,
+                successfulCount = result.successCount,
                 failedCount = result.failureCount,
-                reason = "Batch processing failed with ${result.failureCount} failures",
+                failures = result.getFailures().map { failure ->
+                    failure.resourceId to failure.error
+                },
             )
         }
 

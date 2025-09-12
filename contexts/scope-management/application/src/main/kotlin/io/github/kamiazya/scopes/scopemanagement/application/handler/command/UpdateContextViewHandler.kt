@@ -34,7 +34,6 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
                         entityType = "ContextView",
                         identifier = command.key,
                         identifierType = "key",
-                        occurredAt = Clock.System.now(),
                     ),
                 )
 

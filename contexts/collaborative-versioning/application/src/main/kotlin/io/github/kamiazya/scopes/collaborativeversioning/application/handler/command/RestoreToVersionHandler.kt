@@ -35,12 +35,19 @@ class RestoreToVersionHandler(
 
         // Load the tracked resource
         val resource = trackedResourceRepository.findById(input.resourceId)
-            .mapLeft { error ->
-                SnapshotApplicationError.RepositoryOperationFailed(
-                    operation = "findById",
-                    reason = "Failed to load tracked resource: $error",
-                )
-            }.bind()
+            .fold(
+                { error ->
+                    logger.error(
+                        "Failed to load tracked resource",
+                        mapOf(
+                            "resourceId" to input.resourceId.toString(),
+                            "error" to error.toString(),
+                        ),
+                    )
+                    raise(SnapshotApplicationError.TrackedResourceNotFound(input.resourceId))
+                },
+                { it },
+            )
 
         ensureNotNull(resource) {
             SnapshotApplicationError.TrackedResourceNotFound(input.resourceId)

@@ -21,14 +21,12 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                 expectedVersion = sourceError.eventVersion?.toInt(),
                 actualVersion = sourceError.conflictingVersion?.toInt(),
                 operation = "event_storage",
-                occurredAt = sourceError.occurredAt,
             )
             else -> ScopesError.RepositoryError(
                 repositoryName = "EventStore",
                 operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
                 entityType = "Event",
                 cause = sourceError.cause,
-                occurredAt = sourceError.occurredAt,
             )
         }
 
@@ -41,20 +39,17 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                         entityType = "Event",
                         identifier = aggregateId,
                         identifierType = "aggregateId",
-                        occurredAt = sourceError.occurredAt,
                     )
                     eventType != null -> ScopesError.NotFound(
                         entityType = "Event",
                         identifier = eventType,
                         identifierType = "eventType",
-                        occurredAt = sourceError.occurredAt,
                     )
                     else -> ScopesError.RepositoryError(
                         repositoryName = "EventStore",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Event",
                         cause = null,
-                        occurredAt = sourceError.occurredAt,
                     )
                 }
             }
@@ -63,14 +58,12 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                 service = "event-store",
                 cause = sourceError.cause,
                 context = mapOf("operation" to "event_retrieval"),
-                occurredAt = sourceError.occurredAt,
             )
             else -> ScopesError.RepositoryError(
                 repositoryName = "EventStore",
                 operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                 entityType = "Event",
                 cause = sourceError.cause,
-                occurredAt = sourceError.occurredAt,
             )
         }
 
@@ -99,7 +92,6 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                     "Unsupported value",
                 )
             },
-            occurredAt = sourceError.occurredAt,
         )
     }
 }

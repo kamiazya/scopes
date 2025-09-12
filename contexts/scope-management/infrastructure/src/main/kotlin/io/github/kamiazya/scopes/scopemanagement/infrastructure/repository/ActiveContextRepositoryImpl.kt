@@ -43,7 +43,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
                         operation = "initializeActiveContext",
                         cause = e,
                     ),
@@ -80,7 +79,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
                         operation = "getActiveContext",
                         cause = e,
                     ),
@@ -100,7 +98,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
                         operation = "setActiveContext",
                         cause = e,
                     ),
@@ -119,7 +116,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
                         operation = "clearActiveContext",
                         cause = e,
                     ),
@@ -136,7 +132,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
                         operation = "hasActiveContext",
                         cause = e,
                     ),

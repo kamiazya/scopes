@@ -10,7 +10,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetCont
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
-import kotlinx.datetime.Clock
 
 /**
  * Handler for retrieving a specific context view by key.
@@ -43,7 +42,6 @@ class GetContextViewHandler(
                         service = "context-repository",
                         cause = error as? Throwable,
                         context = mapOf("operation" to "find-context-view", "key" to query.key),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

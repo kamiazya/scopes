@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 
 /**
@@ -33,11 +32,9 @@ value class ContextViewName private constructor(val value: String) {
 
             return when {
                 trimmed.isEmpty() -> ContextError.EmptyName(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                 ).left()
                 trimmed.length > MAX_LENGTH -> ContextError.NameTooLong(
-                    occurredAt = currentTimestamp(),
                     attemptedValue = value,
                     maximumLength = MAX_LENGTH,
                 ).left()

@@ -37,12 +37,14 @@ class CreateSnapshotHandler(
         val resource = trackedResourceRepository.findById(input.resourceId)
             .fold(
                 { error ->
-                    raise(
-                        SnapshotApplicationError.RepositoryOperationFailed(
-                            operation = "findById",
-                            reason = "Failed to load tracked resource: $error",
+                    logger.error(
+                        "Failed to load tracked resource",
+                        mapOf(
+                            "resourceId" to input.resourceId.toString(),
+                            "error" to error.toString(),
                         ),
                     )
+                    raise(SnapshotApplicationError.TrackedResourceNotFound(input.resourceId))
                 },
                 { it },
             )

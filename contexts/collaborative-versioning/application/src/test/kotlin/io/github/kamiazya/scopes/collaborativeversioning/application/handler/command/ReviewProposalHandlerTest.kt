@@ -19,6 +19,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Revi
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -31,6 +32,10 @@ class ReviewProposalHandlerTest :
         val mockChangeProposalRepository = mockk<ChangeProposalRepository>()
         val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
         val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
+
+        beforeEach {
+            clearMocks(mockChangeProposalRepository)
+        }
 
         describe("ReviewProposalHandler") {
 
@@ -115,7 +120,7 @@ class ReviewProposalHandlerTest :
                 it("should add review comment successfully") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
+                    val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good, but needs minor changes",
@@ -157,7 +162,7 @@ class ReviewProposalHandlerTest :
                 it("should fail when proposal is not found") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
+                    val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good",
@@ -184,7 +189,7 @@ class ReviewProposalHandlerTest :
                 it("should fail when proposal is in wrong state for comments") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
+                    val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good",

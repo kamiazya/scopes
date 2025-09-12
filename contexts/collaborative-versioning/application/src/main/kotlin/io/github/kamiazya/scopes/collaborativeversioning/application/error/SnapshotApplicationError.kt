@@ -2,12 +2,9 @@ package io.github.kamiazya.scopes.collaborativeversioning.application.error
 
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.TrackedResourceError
-import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
-import io.github.kamiazya.scopes.platform.application.error.ApplicationError
-import kotlinx.datetime.Instant
 
 /**
  * Application-level errors for snapshot operations.
@@ -15,29 +12,16 @@ import kotlinx.datetime.Instant
  * These errors provide context-specific information for snapshot-related
  * failures in the application layer.
  */
-sealed class SnapshotApplicationError : ApplicationError {
-    abstract override val occurredAt: Instant
-    abstract override val cause: Throwable?
-
+sealed class SnapshotApplicationError(recoverable: Boolean = true) : ApplicationError(recoverable) {
     /**
      * Error when a tracked resource cannot be found.
      */
-    data class TrackedResourceNotFound(
-        val resourceId: ResourceId,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
-    ) : SnapshotApplicationError()
+    data class TrackedResourceNotFound(val resourceId: ResourceId) : SnapshotApplicationError()
 
     /**
      * Error when snapshot creation fails.
      */
-    data class SnapshotCreationFailed(
-        val resourceId: ResourceId,
-        val reason: String,
-        val domainError: SnapshotServiceError,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
-    ) : SnapshotApplicationError()
+    data class SnapshotCreationFailed(val resourceId: ResourceId, val reason: String, val domainError: SnapshotServiceError) : SnapshotApplicationError()
 
     /**
      * Error when snapshot restoration fails.
@@ -48,48 +32,25 @@ sealed class SnapshotApplicationError : ApplicationError {
         val targetVersion: VersionNumber?,
         val reason: String,
         val domainError: SnapshotServiceError,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
     ) : SnapshotApplicationError()
 
     /**
-     * Error when batch processing fails.
+     * Error when a batch operation partially fails.
      */
     data class BatchProcessingFailed(
-        val processedCount: Int,
+        val totalResources: Int,
+        val successfulCount: Int,
         val failedCount: Int,
-        val reason: String,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
+        val failures: List<Pair<ResourceId, SnapshotServiceError>>,
     ) : SnapshotApplicationError()
 
     /**
      * Error when validation fails.
      */
-    data class ValidationFailed(
-        val field: String,
-        val reason: String,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
-    ) : SnapshotApplicationError()
-
-    /**
-     * Error when repository operation fails.
-     */
-    data class RepositoryOperationFailed(
-        val operation: String,
-        val reason: String,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
-    ) : SnapshotApplicationError()
+    data class ValidationFailed(val field: String, val reason: String) : SnapshotApplicationError()
 
     /**
      * Error when a domain rule is violated.
      */
-    data class DomainRuleViolation(
-        val rule: String,
-        val domainError: TrackedResourceError,
-        override val occurredAt: Instant = SystemTimeProvider().now(),
-        override val cause: Throwable? = null,
-    ) : SnapshotApplicationError()
+    data class DomainRuleViolation(val domainError: TrackedResourceError) : SnapshotApplicationError()
 }

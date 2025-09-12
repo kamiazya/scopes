@@ -51,7 +51,6 @@ class UpdateScopeHandler(
                     logger.warn("Scope not found for update", mapOf("scopeId" to command.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
-                        occurredAt = Clock.System.now(),
                     )
                 }
 

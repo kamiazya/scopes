@@ -14,7 +14,7 @@ import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 class RejectProposalHandler(private val changeProposalRepository: ChangeProposalRepository) :
     CommandHandler<RejectProposalCommand, ApproveProposalError, ApproveProposalResultDto> {
 
-    override suspend fun invoke(input: RejectProposalCommand): Either<ApproveProposalError, ApproveProposalResultDto> = either {
+    override suspend operator fun invoke(input: RejectProposalCommand): Either<ApproveProposalError, ApproveProposalResultDto> = either {
         val timestamp = SystemTimeProvider().now()
 
         val proposal = changeProposalRepository.findById(input.proposalId)
@@ -25,7 +25,7 @@ class RejectProposalHandler(private val changeProposalRepository: ChangeProposal
 
         ensureNotNull(proposal) { ApproveProposalError.ProposalNotFound(input.proposalId) }
 
-        ensure(input.rejectionReason.isNotBlank()) { ApproveProposalError.EmptyRejectionReason() }
+        ensure(input.rejectionReason.isNotBlank()) { ApproveProposalError.EmptyRejectionReason }
 
         val rejectedProposal = proposal.reject(input.reviewer, input.rejectionReason, timestamp)
             .fold(

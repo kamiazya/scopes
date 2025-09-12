@@ -19,10 +19,12 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 
 class ProposeChangeHandlerTest :
     DescribeSpec({
@@ -33,12 +35,16 @@ class ProposeChangeHandlerTest :
         val mockLogger = mockk<Logger>(relaxed = true)
         val handler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
 
+        beforeEach {
+            clearMocks(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
+        }
+
         describe("ProposeChangeHandler") {
 
             describe("successful proposal creation") {
                 it("should create a new change proposal successfully") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -60,7 +66,7 @@ class ProposeChangeHandlerTest :
                     }.right()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isRight() shouldBe true
@@ -77,7 +83,7 @@ class ProposeChangeHandlerTest :
             describe("resource validation failures") {
                 it("should fail when target resource does not exist") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -89,7 +95,7 @@ class ProposeChangeHandlerTest :
                     coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns false.right()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -103,7 +109,7 @@ class ProposeChangeHandlerTest :
 
                 it("should handle repository errors when checking resource existence") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -116,7 +122,7 @@ class ProposeChangeHandlerTest :
                         ExistsTrackedResourceError.NetworkError("Resource not found", null).left()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -131,7 +137,7 @@ class ProposeChangeHandlerTest :
             describe("domain validation failures") {
                 it("should fail when proposal title is empty") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -143,7 +149,7 @@ class ProposeChangeHandlerTest :
                     coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -157,7 +163,7 @@ class ProposeChangeHandlerTest :
 
                 it("should fail when proposal description is empty") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -169,7 +175,7 @@ class ProposeChangeHandlerTest :
                     coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isLeft() shouldBe true
@@ -185,7 +191,7 @@ class ProposeChangeHandlerTest :
             describe("persistence failures") {
                 it("should handle save failures gracefully") {
                     // Given
-                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
+                    val author = Author.fromAgent(AgentId.generate(), "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -199,7 +205,7 @@ class ProposeChangeHandlerTest :
                     coEvery { mockChangeProposalRepository.save(any()) } returns saveError.left()
 
                     // When
-                    val result = handler(command)
+                    val result = runBlocking { handler(command) }
 
                     // Then
                     result.isLeft() shouldBe true

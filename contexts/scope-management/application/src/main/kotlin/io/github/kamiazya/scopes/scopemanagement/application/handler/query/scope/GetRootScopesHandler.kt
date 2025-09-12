@@ -11,7 +11,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetRootScopes
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import kotlinx.datetime.Clock
 
 /**
  * Handler for getting root scopes (scopes without parent).
@@ -41,7 +40,6 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
                             "offset" to query.offset,
                             "limit" to query.limit,
                         ),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -55,7 +53,6 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
                             "operation" to "countByParentId",
                             "parentId" to "null",
                         ),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

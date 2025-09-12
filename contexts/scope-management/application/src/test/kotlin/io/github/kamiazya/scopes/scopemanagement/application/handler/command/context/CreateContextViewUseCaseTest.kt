@@ -167,7 +167,6 @@ class CreateContextViewUseCaseTest :
 
                     val errorMessage = "Database connection failed"
                     val persistenceError = PersistenceError.StorageUnavailable(
-                        occurredAt = kotlinx.datetime.Clock.System.now(),
                         operation = "save-context-view",
                         cause = RuntimeException(errorMessage),
                     )
