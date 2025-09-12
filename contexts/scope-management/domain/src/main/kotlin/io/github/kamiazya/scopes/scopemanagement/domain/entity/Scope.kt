@@ -93,7 +93,6 @@ data class Scope(
                 entityType = "Scope",
                 entityId = id.value,
                 reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
-                occurredAt = now,
             )
         }
         val validatedTitle = ScopeTitle.create(newTitle).bind()
@@ -112,7 +111,6 @@ data class Scope(
                 entityType = "Scope",
                 entityId = id.value,
                 reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
-                occurredAt = now,
             )
         }
         val validatedDescription = ScopeDescription.create(newDescription).bind()
@@ -131,7 +129,6 @@ data class Scope(
                 entityType = "Scope",
                 entityId = id.value,
                 reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
-                occurredAt = now,
             )
         }
         copy(parentId = newParentId, updatedAt = now)
@@ -209,7 +206,6 @@ data class Scope(
                 entityType = "Scope",
                 entityId = id.value,
                 reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
-                occurredAt = now,
             )
         }.bind()
         copy(status = newStatus, updatedAt = now)

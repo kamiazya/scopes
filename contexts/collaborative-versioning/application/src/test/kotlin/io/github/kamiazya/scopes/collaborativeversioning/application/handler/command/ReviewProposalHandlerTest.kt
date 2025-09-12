@@ -7,15 +7,15 @@ import io.github.kamiazya.scopes.collaborativeversioning.application.command.Rev
 import io.github.kamiazya.scopes.collaborativeversioning.application.command.StartReviewCommand
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.ReviewProposalError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewComment
-import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewCommentType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.ChangeProposalError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindChangeProposalError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
-import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ProposalStatistics
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalState
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalStatistics
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewCommentType
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -94,7 +94,7 @@ class ReviewProposalHandlerTest :
                     val proposalId = ProposalId.generate()
                     val command = StartReviewCommand(proposalId)
 
-                    val findError = FindChangeProposalError.DatabaseError("Connection failed")
+                    val findError = FindChangeProposalError.NetworkError("Connection failed", null)
                     coEvery { mockChangeProposalRepository.findById(proposalId) } returns findError.left()
 
                     // When
@@ -115,11 +115,11 @@ class ReviewProposalHandlerTest :
                 it("should add review comment successfully") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.agent(AgentId.from("reviewer-123"))
+                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good, but needs minor changes",
-                        commentType = ReviewCommentType.GENERAL,
+                        commentType = ReviewCommentType.COMMENT,
                         timestamp = Clock.System.now(),
                     )
                     val command = ReviewProposalCommand(proposalId, reviewer, comment)
@@ -157,11 +157,11 @@ class ReviewProposalHandlerTest :
                 it("should fail when proposal is not found") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.agent(AgentId.from("reviewer-123"))
+                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good",
-                        commentType = ReviewCommentType.GENERAL,
+                        commentType = ReviewCommentType.COMMENT,
                         timestamp = Clock.System.now(),
                     )
                     val command = ReviewProposalCommand(proposalId, reviewer, comment)
@@ -184,11 +184,11 @@ class ReviewProposalHandlerTest :
                 it("should fail when proposal is in wrong state for comments") {
                     // Given
                     val proposalId = ProposalId.generate()
-                    val reviewer = Author.agent(AgentId.from("reviewer-123"))
+                    val reviewer = Author.fromAgent(AgentId.from("reviewer-123").getOrNull()!!, "Reviewer").getOrNull()!!
                     val comment = ReviewComment.create(
                         author = reviewer,
                         content = "This looks good",
-                        commentType = ReviewCommentType.GENERAL,
+                        commentType = ReviewCommentType.COMMENT,
                         timestamp = Clock.System.now(),
                     )
                     val command = ReviewProposalCommand(proposalId, reviewer, comment)

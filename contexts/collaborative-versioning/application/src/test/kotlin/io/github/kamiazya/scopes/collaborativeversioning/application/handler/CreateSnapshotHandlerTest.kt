@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.application.dto.Snapsho
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.SnapshotApplicationError
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.command.CreateSnapshotHandler
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
+import io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindTrackedResourceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SnapshotServiceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.TrackedResource
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
@@ -57,14 +58,25 @@ class CreateSnapshotHandlerTest :
             context("successful snapshot creation") {
                 it("should create snapshot and return DTO") {
                     // Given
-                    val trackedResource = TrackedResource.create(
-                        resourceId = resourceId,
-                        resourceType = ResourceType.from("TestResource").getOrNull()!!,
+                    // Create tracked resource and then use restore to set specific resourceId
+                    val dummyResource = TrackedResource.create(
+                        resourceType = ResourceType.SCOPE,
                         initialContent = content,
                         authorId = authorId,
                         message = "Initial commit",
                         timestamp = timestamp,
                     )
+
+                    val trackedResource = TrackedResource.restore(
+                        id = resourceId,
+                        resourceType = ResourceType.SCOPE,
+                        currentVersion = VersionNumber.INITIAL,
+                        currentVersionId = dummyResource.currentVersionId,
+                        snapshots = dummyResource.getAllSnapshots(),
+                        changeHistory = dummyResource.getAllChanges(),
+                        createdAt = timestamp,
+                        updatedAt = timestamp,
+                    ).getOrNull()!!
 
                     val snapshot = Snapshot(
                         id = SnapshotId.generate(),
@@ -127,8 +139,9 @@ class CreateSnapshotHandlerTest :
             context("repository operation failure") {
                 it("should return RepositoryOperationFailed error") {
                     // Given
-                    val repositoryError = io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindTrackedResourceError.ResourceNotFound(
+                    val repositoryError = FindTrackedResourceError.DataCorruption(
                         resourceId = resourceId,
+                        reason = "Resource not found",
                     )
 
                     coEvery { mockRepository.findById(resourceId) } returns repositoryError.left()
@@ -150,14 +163,25 @@ class CreateSnapshotHandlerTest :
             context("snapshot service failure") {
                 it("should return SnapshotCreationFailed error") {
                     // Given
-                    val trackedResource = TrackedResource.create(
-                        resourceId = resourceId,
-                        resourceType = ResourceType.from("TestResource").getOrNull()!!,
+                    // Create tracked resource and then use restore to set specific resourceId
+                    val dummyResource = TrackedResource.create(
+                        resourceType = ResourceType.SCOPE,
                         initialContent = content,
                         authorId = authorId,
                         message = "Initial commit",
                         timestamp = timestamp,
                     )
+
+                    val trackedResource = TrackedResource.restore(
+                        id = resourceId,
+                        resourceType = ResourceType.SCOPE,
+                        currentVersion = VersionNumber.INITIAL,
+                        currentVersionId = dummyResource.currentVersionId,
+                        snapshots = dummyResource.getAllSnapshots(),
+                        changeHistory = dummyResource.getAllChanges(),
+                        createdAt = timestamp,
+                        updatedAt = timestamp,
+                    ).getOrNull()!!
 
                     val domainError = SnapshotServiceError.StorageLimitExceeded(
                         currentSize = 10_000_000L,

@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.contracts.eventstore.commands.StoreEventCommand
 import io.github.kamiazya.scopes.contracts.eventstore.errors.EventStoreContractError
 import io.github.kamiazya.scopes.eventstore.application.handler.command.StoreEventHandler
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
-import io.github.kamiazya.scopes.eventstore.application.command.StoreEventCommand as AppStoreEventCommand
 import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.eventstore.application.command.StoreEventCommand as AppStoreEventCommand
 
 /**
  * Adapter that implements the Event Store command contract port.

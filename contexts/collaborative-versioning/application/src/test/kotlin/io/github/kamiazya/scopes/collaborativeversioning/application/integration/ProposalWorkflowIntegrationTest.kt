@@ -6,12 +6,12 @@ import io.github.kamiazya.scopes.collaborativeversioning.application.command.*
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.command.*
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewComment
-import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewCommentType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ResourceState
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
+import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewCommentType
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -43,9 +43,9 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.agent(AgentId.from("author-agent"))
-                val reviewer = Author.agent(AgentId.from("reviewer-agent"))
-                val approver = Author.agent(AgentId.from("approver-agent"))
+                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
+                val reviewer = Author.fromAgent(AgentId.from("reviewer-agent").getOrNull()!!, "Reviewer Agent").getOrNull()!!
+                val approver = Author.fromAgent(AgentId.from("approver-agent").getOrNull()!!, "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()
@@ -97,7 +97,7 @@ class ProposalWorkflowIntegrationTest :
                 val comment = ReviewComment.create(
                     author = reviewer,
                     content = "This looks good, please make a minor change in line 10",
-                    commentType = ReviewCommentType.GENERAL,
+                    commentType = ReviewCommentType.COMMENT,
                     timestamp = Clock.System.now(),
                 )
 
@@ -154,8 +154,8 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.agent(AgentId.from("author-agent"))
-                val reviewer = Author.agent(AgentId.from("reviewer-agent"))
+                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
+                val reviewer = Author.fromAgent(AgentId.from("reviewer-agent").getOrNull()!!, "Reviewer Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()
@@ -216,8 +216,8 @@ class ProposalWorkflowIntegrationTest :
                 val mergeHandler = MergeApprovedProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.agent(AgentId.from("author-agent"))
-                val approver = Author.agent(AgentId.from("approver-agent"))
+                val author = Author.fromAgent(AgentId.from("author-agent").getOrNull()!!, "Author Agent").getOrNull()!!
+                val approver = Author.fromAgent(AgentId.from("approver-agent").getOrNull()!!, "Approver Agent").getOrNull()!!
                 val resourceId = ResourceId.generate()
 
                 val proposalSlot = slot<ChangeProposal>()

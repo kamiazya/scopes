@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.application.command.Pro
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.ProposeChangeError
 import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.ChangeProposalError
-import io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindTrackedResourceError
+import io.github.kamiazya.scopes.collaborativeversioning.domain.error.ExistsTrackedResourceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SaveChangeProposalError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
@@ -38,7 +38,7 @@ class ProposeChangeHandlerTest :
             describe("successful proposal creation") {
                 it("should create a new change proposal successfully") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -57,7 +57,7 @@ class ProposeChangeHandlerTest :
                         every { description } returns command.description
                         every { createdAt } returns mockk()
                         every { updatedAt } returns mockk()
-                    }
+                    }.right()
 
                     // When
                     val result = handler(command)
@@ -77,7 +77,7 @@ class ProposeChangeHandlerTest :
             describe("resource validation failures") {
                 it("should fail when target resource does not exist") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -103,7 +103,7 @@ class ProposeChangeHandlerTest :
 
                 it("should handle repository errors when checking resource existence") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -112,8 +112,8 @@ class ProposeChangeHandlerTest :
                         description = "This proposal adds a new feature to the system",
                     )
 
-                    val repositoryError = FindTrackedResourceError.DatabaseError("Connection failed")
-                    coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns repositoryError.left()
+                    coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns
+                        ExistsTrackedResourceError.NetworkError("Resource not found", null).left()
 
                     // When
                     val result = handler(command)
@@ -131,7 +131,7 @@ class ProposeChangeHandlerTest :
             describe("domain validation failures") {
                 it("should fail when proposal title is empty") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -157,7 +157,7 @@ class ProposeChangeHandlerTest :
 
                 it("should fail when proposal description is empty") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -185,7 +185,7 @@ class ProposeChangeHandlerTest :
             describe("persistence failures") {
                 it("should handle save failures gracefully") {
                     // Given
-                    val author = Author.agent(AgentId.from("agent-123"))
+                    val author = Author.fromAgent(AgentId.from("agent-123").getOrNull()!!, "Test Agent").getOrNull()!!
                     val resourceId = ResourceId.generate()
                     val command = ProposeChangeCommand(
                         author = author,
@@ -194,7 +194,7 @@ class ProposeChangeHandlerTest :
                         description = "This proposal adds a new feature to the system",
                     )
 
-                    val saveError = SaveChangeProposalError.DatabaseError("Database connection failed")
+                    val saveError = SaveChangeProposalError.NetworkError("Database connection failed", null)
                     coEvery { mockTrackedResourceRepository.existsById(resourceId) } returns true.right()
                     coEvery { mockChangeProposalRepository.save(any()) } returns saveError.left()
 
