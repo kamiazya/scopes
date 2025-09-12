@@ -1,0 +1,235 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../kotest-runner-junit5/6.0.3/kotest-runner-junit5-6.0.3.module",
+    "group": "io.kotest",
+    "module": "kotest-runner-junit5",
+    "version": "6.0.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.kotest",
+          "module": "kotest-common",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-framework-engine",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-assertions-core",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-extensions",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-engine",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-suite-api",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-launcher",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.13.4"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "kotest-runner-junit5-jvm-6.0.3.jar",
+          "url": "kotest-runner-junit5-jvm-6.0.3.jar",
+          "size": 67500,
+          "sha512": "7b54e155a41b2a34df9bac3f1abd61f93f37519b04cc6759d864a8e797551555ee862e1e3b1603819a3b085d9c49d87be43f5c87bcba366670ec75a6d746b2bb",
+          "sha256": "b69ec79be2526459ab119134cbd2542d7d004997b2925a5d66c35e16d76307ac",
+          "sha1": "0eb2fc5ffcf365633c301cd8136ea240a08706ef",
+          "md5": "21d1a7bd0860c29c22f8c6097f51bd2f"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.kotest",
+          "module": "kotest-common",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-framework-engine",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-assertions-core",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "io.kotest",
+          "module": "kotest-extensions",
+          "version": {
+            "requires": "6.0.3"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-engine",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-suite-api",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.platform",
+          "module": "junit-platform-launcher",
+          "version": {
+            "requires": "1.11.4"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.13.4"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-reflect",
+          "version": {
+            "requires": "2.2.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "kotest-runner-junit5-jvm-6.0.3.jar",
+          "url": "kotest-runner-junit5-jvm-6.0.3.jar",
+          "size": 67500,
+          "sha512": "7b54e155a41b2a34df9bac3f1abd61f93f37519b04cc6759d864a8e797551555ee862e1e3b1603819a3b085d9c49d87be43f5c87bcba366670ec75a6d746b2bb",
+          "sha256": "b69ec79be2526459ab119134cbd2542d7d004997b2925a5d66c35e16d76307ac",
+          "sha1": "0eb2fc5ffcf365633c301cd8136ea240a08706ef",
+          "md5": "21d1a7bd0860c29c22f8c6097f51bd2f"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "kotest-runner-junit5-jvm-6.0.3-sources.jar",
+          "url": "kotest-runner-junit5-jvm-6.0.3-sources.jar",
+          "size": 18911,
+          "sha512": "6aa5e945983980e395f0fcb8864413abb1fd42c210eaa5a3a307761566683d2fd67535c1e59fa16d1d22dc1ce8b2029bc30ba330424be3eca804862963b7979e",
+          "sha256": "e4dfbfc4a2984f9fa55c99aacddb3d8de0bf7f083b6a5da969c3c1f885a1937e",
+          "sha1": "d36574ceb34eadf1749df548fe5b844b42841edc",
+          "md5": "9402c4e2ac0e28b44ed708ed7e09b8a2"
+        }
+      ]
+    }
+  ]
+}

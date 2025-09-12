@@ -1,0 +1,3 @@
+o/.gradle-instrumented-classpath.marker
+o/.gradle-agent-instrumented.marker
+o/instrumented/instrumented-woodstox-core-7.0.0.jar

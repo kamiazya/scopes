@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.fasterxml.jackson.core",
+    "module": "jackson-core",
+    "version": "2.15.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "maven": {
+      "version": "3.9.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "ch.randelshofer",
+          "module": "fastdoubleparser",
+          "version": {
+            "requires": "0.8.0"
+          }
+        },
+        {
+          "group": "com.fasterxml.jackson",
+          "module": "jackson-bom",
+          "version": {
+            "requires": "2.15.0"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          },
+          "endorseStrictVersions": true
+        }
+      ],
+      "files": [
+        {
+          "name": "jackson-core-2.15.0.jar",
+          "url": "jackson-core-2.15.0.jar",
+          "size": 424872,
+          "sha512": "c76b6f6d1b9b57793ea6de4c45ff92d8121b414708896d404f3c017ceb0a01d6234061d08c15c307a62e9d999a464d908bf7f162f14820bc12261bd272ccc36a",
+          "sha256": "9979ade1bb56ed0fe946a3d8318134c59ba83c261f2320f693657414084c40c8",
+          "sha1": "c86876df530f6f4d23d9ee4c77d69beb1fc7ca41",
+          "md5": "6791b06af1f5268de81b4002e2e5753b"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "ch.randelshofer",
+          "module": "fastdoubleparser",
+          "version": {
+            "requires": "0.8.0"
+          }
+        },
+        {
+          "group": "com.fasterxml.jackson",
+          "module": "jackson-bom",
+          "version": {
+            "requires": "2.15.0"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          },
+          "endorseStrictVersions": true
+        }
+      ],
+      "files": [
+        {
+          "name": "jackson-core-2.15.0.jar",
+          "url": "jackson-core-2.15.0.jar",
+          "size": 424872,
+          "sha512": "c76b6f6d1b9b57793ea6de4c45ff92d8121b414708896d404f3c017ceb0a01d6234061d08c15c307a62e9d999a464d908bf7f162f14820bc12261bd272ccc36a",
+          "sha256": "9979ade1bb56ed0fe946a3d8318134c59ba83c261f2320f693657414084c40c8",
+          "sha1": "c86876df530f6f4d23d9ee4c77d69beb1fc7ca41",
+          "md5": "6791b06af1f5268de81b4002e2e5753b"
+        }
+      ]
+    }
+  ]
+}

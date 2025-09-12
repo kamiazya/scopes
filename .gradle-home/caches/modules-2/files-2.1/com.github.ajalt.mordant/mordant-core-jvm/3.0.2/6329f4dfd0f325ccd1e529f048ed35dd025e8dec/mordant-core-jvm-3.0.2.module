@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../mordant-core/3.0.2/mordant-core-3.0.2.module",
+    "group": "com.github.ajalt.mordant",
+    "module": "mordant-core",
+    "version": "3.0.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.8"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.ajalt.colormath",
+          "module": "colormath",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-jvm.jar",
+          "url": "mordant-core-jvm-3.0.2.jar",
+          "size": 653548,
+          "sha512": "b044b981218e3ffa4a6b3c851e3ab997e1ca0f7a3605abf35f61809d15c9b4ed4969a0cb3fe3a5e960fa3d760ad7f0db2aed8955053798dd424c4e0c7530baa2",
+          "sha256": "651c3bd74ff4e98db4d58e3dcf4b14e8099ee0d220e672f571f8cfeee4493905",
+          "sha1": "9969171c4236b6df161370bd454e523c94961af1",
+          "md5": "f72f5f04ab7806c23dde56e14b76ac26"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.ajalt.colormath",
+          "module": "colormath",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-jvm.jar",
+          "url": "mordant-core-jvm-3.0.2.jar",
+          "size": 653548,
+          "sha512": "b044b981218e3ffa4a6b3c851e3ab997e1ca0f7a3605abf35f61809d15c9b4ed4969a0cb3fe3a5e960fa3d760ad7f0db2aed8955053798dd424c4e0c7530baa2",
+          "sha256": "651c3bd74ff4e98db4d58e3dcf4b14e8099ee0d220e672f571f8cfeee4493905",
+          "sha1": "9969171c4236b6df161370bd454e523c94961af1",
+          "md5": "f72f5f04ab7806c23dde56e14b76ac26"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "mordant-jvm-sources.jar",
+          "url": "mordant-core-jvm-3.0.2-sources.jar",
+          "size": 154994,
+          "sha512": "fe884c248821e21b78fbdfc178939a146a18c5c538b90b642f93aa3da7a1c10e46ded0dac18d6de0e638306339054e71bbaf03adbe579da77fce6aedbd1e8cc7",
+          "sha256": "c71b0c271e475972ed804f7abe0d22d62bc40e36fec8fdd49e2d15646c5b9c8b",
+          "sha1": "35b6909b74e9789d81fa77d92a2d2fe8cc005292",
+          "md5": "4c648a4bc9978a8b063bb585fb31f658"
+        }
+      ]
+    }
+  ]
+}

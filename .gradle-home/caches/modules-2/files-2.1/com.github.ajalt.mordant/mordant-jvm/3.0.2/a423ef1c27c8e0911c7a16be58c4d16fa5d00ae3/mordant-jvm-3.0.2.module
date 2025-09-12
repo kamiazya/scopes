@@ -1,0 +1,137 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../mordant/3.0.2/mordant-3.0.2.module",
+    "group": "com.github.ajalt.mordant",
+    "module": "mordant",
+    "version": "3.0.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.8"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-core",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-omnibus-jvm.jar",
+          "url": "mordant-jvm-3.0.2.jar",
+          "size": 436,
+          "sha512": "393a76f2a8f328bf51bdace5fd01eada08218e1f0b44610ecca5ffcf43463cb6bff5c8ae7ef702c2d73c55bce3ed18c70277cda299d314073133280b648f0817",
+          "sha256": "9ed3b976fcccc78da746d49866fa8ebb8f10530a93c544ea0420259a607dd95e",
+          "sha1": "ce34373aa2e8f4ab8c3f229615676e7da88de2ad",
+          "md5": "9688c7e35f9b8c131e06ce7c6b682cb7"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-core",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        },
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-jvm-jna",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-jvm-ffm",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-jvm-graal-ffi",
+          "version": {
+            "requires": "3.0.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-omnibus-jvm.jar",
+          "url": "mordant-jvm-3.0.2.jar",
+          "size": 436,
+          "sha512": "393a76f2a8f328bf51bdace5fd01eada08218e1f0b44610ecca5ffcf43463cb6bff5c8ae7ef702c2d73c55bce3ed18c70277cda299d314073133280b648f0817",
+          "sha256": "9ed3b976fcccc78da746d49866fa8ebb8f10530a93c544ea0420259a607dd95e",
+          "sha1": "ce34373aa2e8f4ab8c3f229615676e7da88de2ad",
+          "md5": "9688c7e35f9b8c131e06ce7c6b682cb7"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "mordant-omnibus-jvm-sources.jar",
+          "url": "mordant-jvm-3.0.2-sources.jar",
+          "size": 1372,
+          "sha512": "06c3d95149791468489a6d75ef684a1889718d18f0c3b85014920702140056cb131c71e18d1f9f43207ed888413dff6b281b98f78887c0fe7af2b2a024892a3b",
+          "sha256": "3aa71b91497d7a6e10947949ee91039186c181fda3cc5418e49ccd5cbee98b62",
+          "sha1": "f9b58b61c156089e3cf873f7de31b853a5c45b82",
+          "md5": "2fbae953784e4157391e853341684d64"
+        }
+      ]
+    }
+  ]
+}

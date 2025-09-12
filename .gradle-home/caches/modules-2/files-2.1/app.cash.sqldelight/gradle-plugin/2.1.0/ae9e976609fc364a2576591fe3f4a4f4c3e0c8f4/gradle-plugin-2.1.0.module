@@ -1,0 +1,313 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "app.cash.sqldelight",
+    "module": "gradle-plugin",
+    "version": "2.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "core",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "gradle-plugin-2.1.0.jar",
+          "url": "gradle-plugin-2.1.0.jar",
+          "size": 129940,
+          "sha512": "a49f87718b7f52988d22c3cb71f976e306998f9990b6f655d649de38fa1bb72da506658034d2c91bb650332b3bdf82a9e7cfcdb784ea301a5ee5728a6f765b3d",
+          "sha256": "197ca1e0faaf90ca612b5e937891504c776143342d964e0f5c108be6abd5a3d9",
+          "sha1": "daa8d73134fc829e41a35238e1ddb9aaf988a653",
+          "md5": "36af895f1e2b0f8674a46238c268d027"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "migrations",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sql-psi",
+          "module": "environment",
+          "version": {
+            "requires": "0.5.2"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-gradle-plugin",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sqldelight",
+          "module": "core",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "gradle-plugin-2.1.0.jar",
+          "url": "gradle-plugin-2.1.0.jar",
+          "size": 129940,
+          "sha512": "a49f87718b7f52988d22c3cb71f976e306998f9990b6f655d649de38fa1bb72da506658034d2c91bb650332b3bdf82a9e7cfcdb784ea301a5ee5728a6f765b3d",
+          "sha256": "197ca1e0faaf90ca612b5e937891504c776143342d964e0f5c108be6abd5a3d9",
+          "sha1": "daa8d73134fc829e41a35238e1ddb9aaf988a653",
+          "md5": "36af895f1e2b0f8674a46238c268d027"
+        }
+      ]
+    }
+  ]
+}

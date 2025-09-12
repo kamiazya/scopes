@@ -1,0 +1,728 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "app.cash.sqldelight",
+    "module": "sqlite-3-18-dialect",
+    "version": "2.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "dialect-api",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-3-18-dialect-2.1.0.jar",
+          "url": "sqlite-3-18-dialect-2.1.0.jar",
+          "size": 49862,
+          "sha512": "4236006ec13dc5c684fa9663a2ec73549faa7ccd9fad0496e7845f12e3e1e7914a988f4cedf939051d69a08f3a23e5828a99e76c1de37957387b88a064edf7f4",
+          "sha256": "bd7167e92bd0c582ed9795d15c9c541323e3030db256a6363a46483a94c0c7aa",
+          "sha1": "edf95cfbe3dc4411442d3259eea4176c394fa1a1",
+          "md5": "4545c7f03c33b4d24bfa15e246c7c169"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "dialect-api",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-3-18-dialect-2.1.0.jar",
+          "url": "sqlite-3-18-dialect-2.1.0.jar",
+          "size": 49862,
+          "sha512": "4236006ec13dc5c684fa9663a2ec73549faa7ccd9fad0496e7845f12e3e1e7914a988f4cedf939051d69a08f3a23e5828a99e76c1de37957387b88a064edf7f4",
+          "sha256": "bd7167e92bd0c582ed9795d15c9c541323e3030db256a6363a46483a94c0c7aa",
+          "sha1": "edf95cfbe3dc4411442d3259eea4176c394fa1a1",
+          "md5": "4545c7f03c33b4d24bfa15e246c7c169"
+        }
+      ]
+    },
+    {
+      "name": "testFixturesApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "sqlite-3-18-dialect",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sqldelight",
+          "module": "compiler-env",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sql-psi",
+          "module": "core",
+          "version": {
+            "requires": "0.5.2"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ],
+          "requestedCapabilities": [
+            {
+              "group": "app.cash.sql-psi",
+              "name": "core-test-fixtures"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-3-18-dialect-2.1.0-test-fixtures.jar",
+          "url": "sqlite-3-18-dialect-2.1.0-test-fixtures.jar",
+          "size": 9756,
+          "sha512": "6879fd634c155fef02aefdcd5bcc74eda520bd510a3e61dc5d0d9df17674129dc5c63f36bc1a85a70f5ab5b6d9035b233bd548fdc804cd21ff95cd65a5d142df",
+          "sha256": "84eebbb05f5197de7032ccd46d5a17894654ca21d8d4540e65f066532a89ea9d",
+          "sha1": "b1ff9c955aac8fccae60c7f872832736aa0a1073",
+          "md5": "866adaaf460d795788fa45d7a9774fc0"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "app.cash.sqldelight",
+          "name": "sqlite-3-18-test-fixtures",
+          "version": "2.1.0"
+        }
+      ]
+    },
+    {
+      "name": "testFixturesRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "sqlite-3-18-dialect",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sqldelight",
+          "module": "compiler-env",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sql-psi",
+          "module": "core",
+          "version": {
+            "requires": "0.5.2"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ],
+          "requestedCapabilities": [
+            {
+              "group": "app.cash.sql-psi",
+              "name": "core-test-fixtures"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-3-18-dialect-2.1.0-test-fixtures.jar",
+          "url": "sqlite-3-18-dialect-2.1.0-test-fixtures.jar",
+          "size": 9756,
+          "sha512": "6879fd634c155fef02aefdcd5bcc74eda520bd510a3e61dc5d0d9df17674129dc5c63f36bc1a85a70f5ab5b6d9035b233bd548fdc804cd21ff95cd65a5d142df",
+          "sha256": "84eebbb05f5197de7032ccd46d5a17894654ca21d8d4540e65f066532a89ea9d",
+          "sha1": "b1ff9c955aac8fccae60c7f872832736aa0a1073",
+          "md5": "866adaaf460d795788fa45d7a9774fc0"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "app.cash.sqldelight",
+          "name": "sqlite-3-18-test-fixtures",
+          "version": "2.1.0"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.gitlab.arturbosch.detekt",
+    "module": "detekt-gradle-plugin",
+    "version": "1.23.8",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.12.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "detekt-gradle-plugin-1.23.8.jar",
+          "url": "detekt-gradle-plugin-1.23.8.jar",
+          "size": 173802,
+          "sha512": "121af41e8ed5b8bf5544617bdac9edf0d63a8c811a83b5820c74b1063c1323eefa42a8d6345137c6e60b5a590f0cff574fcd75c34737d6e91bf029eca8cbb932",
+          "sha256": "783150e4708942c5d7705ff8b7b90f9fb5ad0179d46ad6a9b01d192b70379750",
+          "sha1": "2bb6bfb711944bf3d70aba264e64fe6bc61e558b",
+          "md5": "3cdc9ebc7b0631bfafb9a42402eb96d6"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "detekt-gradle-plugin-1.23.8.jar",
+          "url": "detekt-gradle-plugin-1.23.8.jar",
+          "size": 173802,
+          "sha512": "121af41e8ed5b8bf5544617bdac9edf0d63a8c811a83b5820c74b1063c1323eefa42a8d6345137c6e60b5a590f0cff574fcd75c34737d6e91bf029eca8cbb932",
+          "sha256": "783150e4708942c5d7705ff8b7b90f9fb5ad0179d46ad6a9b01d192b70379750",
+          "sha1": "2bb6bfb711944bf3d70aba264e64fe6bc61e558b",
+          "md5": "3cdc9ebc7b0631bfafb9a42402eb96d6"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "detekt-gradle-plugin-1.23.8-sources.jar",
+          "url": "detekt-gradle-plugin-1.23.8-sources.jar",
+          "size": 31414,
+          "sha512": "f8ddb33c2bfe4e86f1c75353d85b845c434a601c856875731be2486a7c6250026d627e7c8684a2f7b8ec3667de3bfca46731e46b63f60680e923bae214f8a3ca",
+          "sha256": "49878ad53af07e0a17b098b54adce35afae0f0a3b4c026735b0068e3d1852c48",
+          "sha1": "0817a04b803e6ce4f6554fe504b0f97188dcd2e4",
+          "md5": "e5eacc1d00c0b8b302191aad6af4086e"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "detekt-gradle-plugin-1.23.8-javadoc.jar",
+          "url": "detekt-gradle-plugin-1.23.8-javadoc.jar",
+          "size": 304,
+          "sha512": "0cda9eee16f9b9b1f8107756124db0fbfcccc882cdb4a1d16a97e3484e2c81e4640efadaec14b6b36bc74de04ac152801668cc9b43a44d1b3c859783b2c09504",
+          "sha256": "a3ee516f3837fbc01d5c3b86f5dc7be7dba81345bfc57c4eb58af12f6923a560",
+          "sha1": "fa75adfe749657ffe087dbc77e6294a11b61a25d",
+          "md5": "9b34481c1237d0802059d85415b08572"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.github.ajalt.mordant",
+    "module": "mordant",
+    "version": "2.5.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.7"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "com.github.ajalt.colormath",
+          "module": "colormath",
+          "version": {
+            "requires": "3.5.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.23"
+          }
+        },
+        {
+          "group": "org.jetbrains",
+          "module": "markdown",
+          "version": {
+            "requires": "0.7.0"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna",
+          "version": {
+            "requires": "5.14.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-metadata.jar",
+          "url": "mordant-2.5.0.jar",
+          "size": 66206,
+          "sha512": "459e76e06f924d4c096ec167a5b53e39283460732d13149326639abe8ddae703b8a52bb0386338267ba12976a80e66e4e99133ba2189c27ff11f7f7c16570814",
+          "sha256": "8fcd2e59ac61650cbc77ba5ac6a0da665303eb1bd55117a3cd94a98be8abd313",
+          "sha1": "9f27a33d5ec69027731864e95d427146b8db4cd5",
+          "md5": "8f7ae1b0add7f935fc77619280cb4f39"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "mordant-kotlin-sources.jar",
+          "url": "mordant-2.5.0-sources.jar",
+          "size": 142232,
+          "sha512": "76a953cee6d1e4b6d2e5683c7680f5906f57e0fdc8b6bc1713e30694948989a6095471423c63b6a8d24bf1e52042a8a9d4f7a0228a60c4237cade6674dd530cf",
+          "sha256": "37216a9449ea9d5acddd298b791363c30cb79bf1d970674524810855ac3e39ff",
+          "sha1": "2338ea90a2250c28adb45e06222eb7ee1ceb7372",
+          "md5": "b9cc5d1045c762912f000a94f5f3416e"
+        }
+      ]
+    },
+    {
+      "name": "jsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-js/2.5.0/mordant-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-js",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "jsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-js/2.5.0/mordant-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-js",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "jsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-js/2.5.0/mordant-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-js",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../mordant-jvm/2.5.0/mordant-jvm-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-jvm",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../mordant-jvm/2.5.0/mordant-jvm-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-jvm",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../mordant-jvm/2.5.0/mordant-jvm-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-jvm",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "linuxArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-linuxarm64/2.5.0/mordant-linuxarm64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-linuxarm64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "linuxArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-linuxarm64/2.5.0/mordant-linuxarm64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-linuxarm64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "linuxX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-linuxx64/2.5.0/mordant-linuxx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-linuxx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "linuxX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-linuxx64/2.5.0/mordant-linuxx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-linuxx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosarm64/2.5.0/mordant-macosarm64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosarm64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosarm64/2.5.0/mordant-macosarm64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosarm64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosarm64/2.5.0/mordant-macosarm64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosarm64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosx64/2.5.0/mordant-macosx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosx64/2.5.0/mordant-macosx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "macosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-macosx64/2.5.0/mordant-macosx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-macosx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "mingwX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-mingwx64/2.5.0/mordant-mingwx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-mingwx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "mingwX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../mordant-mingwx64/2.5.0/mordant-mingwx64-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-mingwx64",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "wasmJsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-wasm-js/2.5.0/mordant-wasm-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-wasm-js",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "wasmJsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-wasm-js/2.5.0/mordant-wasm-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-wasm-js",
+        "version": "2.5.0"
+      }
+    },
+    {
+      "name": "wasmJsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../mordant-wasm-js/2.5.0/mordant-wasm-js-2.5.0.module",
+        "group": "com.github.ajalt.mordant",
+        "module": "mordant-wasm-js",
+        "version": "2.5.0"
+      }
+    }
+  ]
+}

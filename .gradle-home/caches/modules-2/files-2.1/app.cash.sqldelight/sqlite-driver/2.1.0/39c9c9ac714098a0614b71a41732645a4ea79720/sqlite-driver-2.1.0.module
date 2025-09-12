@@ -1,0 +1,313 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "app.cash.sqldelight",
+    "module": "sqlite-driver",
+    "version": "2.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "app.cash.sqldelight",
+          "module": "jdbc-driver",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-driver-2.1.0.jar",
+          "url": "sqlite-driver-2.1.0.jar",
+          "size": 15427,
+          "sha512": "10889de4358e122a1182817c306b13d10632e1a652e0da53ac84d1288995f8d85c5da5897f2803aa08c4cc475e263ba734d3d3087b729ff412a7db485ae8cb78",
+          "sha256": "c24a7dd0048ab3ce4369b3353fceaf5d50222a79284f5594d9951ae0f3058d72",
+          "sha1": "807322616732301cd109c7e13e0cabe671b93587",
+          "md5": "39af9518b140f50773560c5f6005c699"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.xerial",
+          "module": "sqlite-jdbc",
+          "version": {
+            "requires": "3.49.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "app.cash.sqldelight",
+          "module": "jdbc-driver",
+          "version": {
+            "requires": "2.1.0"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "sqlite-driver-2.1.0.jar",
+          "url": "sqlite-driver-2.1.0.jar",
+          "size": 15427,
+          "sha512": "10889de4358e122a1182817c306b13d10632e1a652e0da53ac84d1288995f8d85c5da5897f2803aa08c4cc475e263ba734d3d3087b729ff412a7db485ae8cb78",
+          "sha256": "c24a7dd0048ab3ce4369b3353fceaf5d50222a79284f5594d9951ae0f3058d72",
+          "sha1": "807322616732301cd109c7e13e0cabe671b93587",
+          "md5": "39af9518b140f50773560c5f6005c699"
+        }
+      ]
+    }
+  ]
+}

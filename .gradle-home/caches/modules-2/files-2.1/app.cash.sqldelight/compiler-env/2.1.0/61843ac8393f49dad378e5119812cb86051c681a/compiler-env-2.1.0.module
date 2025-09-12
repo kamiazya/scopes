@@ -1,0 +1,448 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "app.cash.sqldelight",
+    "module": "compiler-env",
+    "version": "2.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "compiler-env-2.1.0.jar",
+          "url": "compiler-env-2.1.0.jar",
+          "size": 48273849,
+          "sha512": "5a189443ce46c5ec1f48cdf5b45b414b48e263ee28417dd5618f9ecd9b5614bd1498ac6bc936527aba1539d633370a7d1513c7cb515ce7b5ee11dd89181b29c0",
+          "sha256": "77c281f953b30e1d3a0c758470dc404b754ced1df3a947300b0412342c5ec767",
+          "sha1": "100de8868cae12550b0ebf9e118dc8bc948e6183",
+          "md5": "60f9ff2dc334a71e6d3cbc060abcbc19"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.20"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "compiler-env-2.1.0.jar",
+          "url": "compiler-env-2.1.0.jar",
+          "size": 48273849,
+          "sha512": "5a189443ce46c5ec1f48cdf5b45b414b48e263ee28417dd5618f9ecd9b5614bd1498ac6bc936527aba1539d633370a7d1513c7cb515ce7b5ee11dd89181b29c0",
+          "sha256": "77c281f953b30e1d3a0c758470dc404b754ced1df3a947300b0412342c5ec767",
+          "sha1": "100de8868cae12550b0ebf9e118dc8bc948e6183",
+          "md5": "60f9ff2dc334a71e6d3cbc060abcbc19"
+        }
+      ]
+    },
+    {
+      "name": "shadowRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "shadowed",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "core",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "com.jetbrains.rd",
+              "module": "*"
+            },
+            {
+              "group": "com.github.jetbrains",
+              "module": "jetCheck"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "wsl-impl"
+            },
+            {
+              "group": "org.roaringbitmap",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.infra",
+              "module": "*"
+            },
+            {
+              "group": "org.jetbrains.teamcity",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.spell",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.model",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.utils",
+              "module": "*"
+            },
+            {
+              "group": "ai.grazie.nlp",
+              "module": "*"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "util-xml-dom"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "util-text-matching"
+            },
+            {
+              "group": "com.jetbrains.intellij.platform",
+              "module": "util-diff"
+            },
+            {
+              "group": "com.fasterxml",
+              "module": "aalto-xml"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "analysis",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "lang",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "core-impl",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "core-ui",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "project-model",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "project-model-impl",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "analysis-impl",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "test-framework",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "lang-impl",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "ide",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "ide-core",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "ide-impl",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "util",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "util-ui",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.jetbrains.intellij.platform",
+          "module": "util-ex",
+          "version": {
+            "requires": "231.9392.1"
+          },
+          "excludes": [
+            {
+              "group": "*",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "compiler-env-2.1.0.jar",
+          "url": "compiler-env-2.1.0.jar",
+          "size": 48273849,
+          "sha512": "5a189443ce46c5ec1f48cdf5b45b414b48e263ee28417dd5618f9ecd9b5614bd1498ac6bc936527aba1539d633370a7d1513c7cb515ce7b5ee11dd89181b29c0",
+          "sha256": "77c281f953b30e1d3a0c758470dc404b754ced1df3a947300b0412342c5ec767",
+          "sha1": "100de8868cae12550b0ebf9e118dc8bc948e6183",
+          "md5": "60f9ff2dc334a71e6d3cbc060abcbc19"
+        }
+      ]
+    }
+  ]
+}

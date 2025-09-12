@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../colormath/3.5.0/colormath-3.5.0.module",
+    "group": "com.github.ajalt.colormath",
+    "module": "colormath",
+    "version": "3.5.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.6"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "colormath-jvm.jar",
+          "url": "colormath-jvm-3.5.0.jar",
+          "size": 370636,
+          "sha512": "18f42cc6ee058af5a75d4cbf83f3c672421fa1069eb6204565d99dfd725c452af843348606e9b622d3e04183fe22933b0c819a455f399c9b71754a2f307e6ca9",
+          "sha256": "43935db06558b4aac3dd900a775be3e89b54c9f488601457df27d2a1743167b0",
+          "sha1": "fa1349041613d996aaadf307143e8a6f0f3bd407",
+          "md5": "af2c992693f61a43b27c308cf46a4416"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "colormath-jvm.jar",
+          "url": "colormath-jvm-3.5.0.jar",
+          "size": 370636,
+          "sha512": "18f42cc6ee058af5a75d4cbf83f3c672421fa1069eb6204565d99dfd725c452af843348606e9b622d3e04183fe22933b0c819a455f399c9b71754a2f307e6ca9",
+          "sha256": "43935db06558b4aac3dd900a775be3e89b54c9f488601457df27d2a1743167b0",
+          "sha1": "fa1349041613d996aaadf307143e8a6f0f3bd407",
+          "md5": "af2c992693f61a43b27c308cf46a4416"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "colormath-jvm-sources.jar",
+          "url": "colormath-jvm-3.5.0-sources.jar",
+          "size": 68150,
+          "sha512": "dd0cfdf16665437b044d43e0b758e7e83618ab6a558de0567cfb4e1d84fb4c39c66344ff56539b48dc8bc5e8d31ae4fc5eb4cb2573eccc65e47fc759e76b986f",
+          "sha256": "cd4baaaa928f21ec45b0cbf78f7071a94be9830bf0e3ed8f320e851f47b32864",
+          "sha1": "a0f43a207f4b991240cea93b9be5845e1cdcfde2",
+          "md5": "15508a4f8879465963a985259b8f24d3"
+        }
+      ]
+    }
+  ]
+}

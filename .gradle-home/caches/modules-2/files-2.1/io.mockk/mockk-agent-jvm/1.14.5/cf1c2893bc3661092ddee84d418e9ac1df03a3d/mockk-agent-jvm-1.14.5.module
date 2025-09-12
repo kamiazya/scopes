@@ -1,0 +1,175 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../mockk-agent/1.14.5/mockk-agent-1.14.5.module",
+    "group": "io.mockk",
+    "module": "mockk-agent",
+    "version": "1.14.5",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.objenesis",
+          "module": "objenesis",
+          "version": {
+            "requires": "3.3"
+          }
+        },
+        {
+          "group": "net.bytebuddy",
+          "module": "byte-buddy",
+          "version": {
+            "requires": "1.15.11"
+          }
+        },
+        {
+          "group": "net.bytebuddy",
+          "module": "byte-buddy-agent",
+          "version": {
+            "requires": "1.15.11"
+          }
+        },
+        {
+          "group": "io.mockk",
+          "module": "mockk-agent-api",
+          "version": {
+            "requires": "1.14.5"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mockk-agent-jvm-1.14.5.jar",
+          "url": "mockk-agent-jvm-1.14.5.jar",
+          "size": 92650,
+          "sha512": "20f6b9d66c183be6a5a48217961c5d8fe726d73228fd30fc2e6a485f6798876aa6d64e394d3b8379f23b9313b843c5000c92cb49915eec6266b8431ab662f412",
+          "sha256": "9f78e9988e84c98569edcf9a6225d5b7354939529642e54c2c58da3ef3913106",
+          "sha1": "b1a1a2942efaf18762176a525ecb6350dca51c12",
+          "md5": "582359e6248479a8f9372174577dee2e"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.objenesis",
+          "module": "objenesis",
+          "version": {
+            "requires": "3.3"
+          }
+        },
+        {
+          "group": "net.bytebuddy",
+          "module": "byte-buddy",
+          "version": {
+            "requires": "1.15.11"
+          }
+        },
+        {
+          "group": "net.bytebuddy",
+          "module": "byte-buddy-agent",
+          "version": {
+            "requires": "1.15.11"
+          }
+        },
+        {
+          "group": "io.mockk",
+          "module": "mockk-agent-api",
+          "version": {
+            "requires": "1.14.5"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.20"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-reflect"
+        },
+        {
+          "group": "io.mockk",
+          "module": "mockk-core",
+          "version": {
+            "requires": "1.14.5"
+          }
+        }
+      ],
+      "dependencyConstraints": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-reflect",
+          "version": {
+            "requires": "2.1.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mockk-agent-jvm-1.14.5.jar",
+          "url": "mockk-agent-jvm-1.14.5.jar",
+          "size": 92650,
+          "sha512": "20f6b9d66c183be6a5a48217961c5d8fe726d73228fd30fc2e6a485f6798876aa6d64e394d3b8379f23b9313b843c5000c92cb49915eec6266b8431ab662f412",
+          "sha256": "9f78e9988e84c98569edcf9a6225d5b7354939529642e54c2c58da3ef3913106",
+          "sha1": "b1a1a2942efaf18762176a525ecb6350dca51c12",
+          "md5": "582359e6248479a8f9372174577dee2e"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "mockk-agent-jvm-1.14.5-sources.jar",
+          "url": "mockk-agent-jvm-1.14.5-sources.jar",
+          "size": 25330,
+          "sha512": "87357614bff161204725a9b88e5cefcd5a87f902a3f7efe52248f6cd9552aeb1bb51f2a915348f916b6093890a6c8b52cbe73bd96e7a17f5e0ce863506b33383",
+          "sha256": "572a634d38fedb6a716df0636c93a3ef4c5cdd052660e7f7cf61940d1a1a545e",
+          "sha1": "510112694d075a74d910e006a66c46671a6c2992",
+          "md5": "31756f629457cd18b960ff08d4fa768e"
+        }
+      ]
+    }
+  ]
+}

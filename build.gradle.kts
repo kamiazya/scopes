@@ -39,7 +39,7 @@ subprojects {
         // Skip JaCoCo configuration for problematic infrastructure module
         if (project.name != "user-preferences-infrastructure") {
             apply(plugin = "jacoco")
-            
+
             // Configure JaCoCo for projects with tests
             tasks.withType<Test> {
                 useJUnitPlatform()

@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../koin-core-annotations/4.1.1/koin-core-annotations-4.1.1.module",
+    "group": "io.insert-koin",
+    "module": "koin-core-annotations",
+    "version": "4.1.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.11"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "koin-core-annotations-jvm-4.1.1.jar",
+          "url": "koin-core-annotations-jvm-4.1.1.jar",
+          "size": 2068,
+          "sha512": "ae8b718c88f70771a3cf4fe6d28c52ec1a591b3cb39d1c59ab6184708e4efa022bc7215945e5e10be6f173bed6ca76e2d564a3b03de381b2d6b281dacda823bd",
+          "sha256": "b1e47a6320dce1749fde8429887f19d12a452bee749a5c0590ab528b32063be2",
+          "sha1": "7afb8340221dd9ec432b494c11896457d7765426",
+          "md5": "c6a59a26759f1a3dd3f1c06dcb6ab03b"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "koin-core-annotations-jvm-4.1.1.jar",
+          "url": "koin-core-annotations-jvm-4.1.1.jar",
+          "size": 2068,
+          "sha512": "ae8b718c88f70771a3cf4fe6d28c52ec1a591b3cb39d1c59ab6184708e4efa022bc7215945e5e10be6f173bed6ca76e2d564a3b03de381b2d6b281dacda823bd",
+          "sha256": "b1e47a6320dce1749fde8429887f19d12a452bee749a5c0590ab528b32063be2",
+          "sha1": "7afb8340221dd9ec432b494c11896457d7765426",
+          "md5": "c6a59a26759f1a3dd3f1c06dcb6ab03b"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "koin-core-annotations-jvm-4.1.1-sources.jar",
+          "url": "koin-core-annotations-jvm-4.1.1-sources.jar",
+          "size": 1692,
+          "sha512": "6ecd0095835480ada8f82d424cfc76db1859f72528a96e63ba19c5aaa0500feb2923a7156d9c4999a6d3582cea67e5dada0e3fda7ca16fa1637d45ccee70937c",
+          "sha256": "fc5dc018ad056e3beb6a77618dea4f5a1ce56eb30a0445ae15e411852932f618",
+          "sha1": "91e59f5e26a1d264f6bf6095f91ca26415524e71",
+          "md5": "f6ba1e77121d1284a4a73f31ee3bf426"
+        }
+      ]
+    }
+  ]
+}

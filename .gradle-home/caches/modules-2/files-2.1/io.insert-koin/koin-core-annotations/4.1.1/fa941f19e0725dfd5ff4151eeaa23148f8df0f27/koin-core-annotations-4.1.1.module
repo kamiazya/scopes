@@ -1,0 +1,1000 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.insert-koin",
+    "module": "koin-core-annotations",
+    "version": "4.1.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.11"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "koin-core-annotations-metadata-4.1.1.jar",
+          "url": "koin-core-annotations-4.1.1.jar",
+          "size": 2603,
+          "sha512": "2fd1a75ee59d3a87970a58e85bcd340aac27249593ca6eb5a34d6acadced0c818b912d0e8eafbc529fc2fc74912ed8f592451da8873fd15e5233786c47f2c2b8",
+          "sha256": "18b33c34509e0c62aca55ac51d0c410b09f4193c3397041f1883d39c1177e858",
+          "sha1": "5cf8450124c2b863bde97633a4f19ef5df9f6ae8",
+          "md5": "c4ca487e00f18dfeb2f45d39cca11779"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "koin-core-annotations-kotlin-4.1.1-sources.jar",
+          "url": "koin-core-annotations-4.1.1-sources.jar",
+          "size": 1692,
+          "sha512": "6ecd0095835480ada8f82d424cfc76db1859f72528a96e63ba19c5aaa0500feb2923a7156d9c4999a6d3582cea67e5dada0e3fda7ca16fa1637d45ccee70937c",
+          "sha256": "fc5dc018ad056e3beb6a77618dea4f5a1ce56eb30a0445ae15e411852932f618",
+          "sha1": "91e59f5e26a1d264f6bf6095f91ca26415524e71",
+          "md5": "f6ba1e77121d1284a4a73f31ee3bf426"
+        }
+      ]
+    },
+    {
+      "name": "iosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosarm64/4.1.1/koin-core-annotations-iosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosarm64/4.1.1/koin-core-annotations-iosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosarm64/4.1.1/koin-core-annotations-iosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iossimulatorarm64/4.1.1/koin-core-annotations-iossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iossimulatorarm64/4.1.1/koin-core-annotations-iossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iossimulatorarm64/4.1.1/koin-core-annotations-iossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosx64/4.1.1/koin-core-annotations-iosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosx64/4.1.1/koin-core-annotations-iosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "iosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-iosx64/4.1.1/koin-core-annotations-iosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-iosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-js/4.1.1/koin-core-annotations-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-js/4.1.1/koin-core-annotations-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-js/4.1.1/koin-core-annotations-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-jvm/4.1.1/koin-core-annotations-jvm-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-jvm",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-jvm/4.1.1/koin-core-annotations-jvm-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-jvm",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-jvm/4.1.1/koin-core-annotations-jvm-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-jvm",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "linuxArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-linuxarm64/4.1.1/koin-core-annotations-linuxarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-linuxarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "linuxArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-linuxarm64/4.1.1/koin-core-annotations-linuxarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-linuxarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "linuxX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-linuxx64/4.1.1/koin-core-annotations-linuxx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-linuxx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "linuxX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-linuxx64/4.1.1/koin-core-annotations-linuxx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-linuxx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosarm64/4.1.1/koin-core-annotations-macosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosarm64/4.1.1/koin-core-annotations-macosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosarm64/4.1.1/koin-core-annotations-macosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosx64/4.1.1/koin-core-annotations-macosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosx64/4.1.1/koin-core-annotations-macosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "macosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-macosx64/4.1.1/koin-core-annotations-macosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-macosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "mingwX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-mingwx64/4.1.1/koin-core-annotations-mingwx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-mingwx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "mingwX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-mingwx64/4.1.1/koin-core-annotations-mingwx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-mingwx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosarm64/4.1.1/koin-core-annotations-tvosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosarm64/4.1.1/koin-core-annotations-tvosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosarm64/4.1.1/koin-core-annotations-tvosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvossimulatorarm64/4.1.1/koin-core-annotations-tvossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvossimulatorarm64/4.1.1/koin-core-annotations-tvossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvossimulatorarm64/4.1.1/koin-core-annotations-tvossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosx64/4.1.1/koin-core-annotations-tvosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosx64/4.1.1/koin-core-annotations-tvosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "tvosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-tvosx64/4.1.1/koin-core-annotations-tvosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-tvosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "wasmJsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-wasm-js/4.1.1/koin-core-annotations-wasm-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-wasm-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "wasmJsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-wasm-js/4.1.1/koin-core-annotations-wasm-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-wasm-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "wasmJsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-wasm-js/4.1.1/koin-core-annotations-wasm-js-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-wasm-js",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm32ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm32/4.1.1/koin-core-annotations-watchosarm32-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm32",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm32SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm32/4.1.1/koin-core-annotations-watchosarm32-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm32",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm32MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm32/4.1.1/koin-core-annotations-watchosarm32-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm32",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm64/4.1.1/koin-core-annotations-watchosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm64/4.1.1/koin-core-annotations-watchosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosarm64/4.1.1/koin-core-annotations-watchosarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosdevicearm64/4.1.1/koin-core-annotations-watchosdevicearm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosdevicearm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosdevicearm64/4.1.1/koin-core-annotations-watchosdevicearm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosdevicearm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosdevicearm64/4.1.1/koin-core-annotations-watchosdevicearm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosdevicearm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchossimulatorarm64/4.1.1/koin-core-annotations-watchossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchossimulatorarm64/4.1.1/koin-core-annotations-watchossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchossimulatorarm64/4.1.1/koin-core-annotations-watchossimulatorarm64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchossimulatorarm64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosx64/4.1.1/koin-core-annotations-watchosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosx64/4.1.1/koin-core-annotations-watchosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosx64",
+        "version": "4.1.1"
+      }
+    },
+    {
+      "name": "watchosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../koin-core-annotations-watchosx64/4.1.1/koin-core-annotations-watchosx64-4.1.1.module",
+        "group": "io.insert-koin",
+        "module": "koin-core-annotations-watchosx64",
+        "version": "4.1.1"
+      }
+    }
+  ]
+}

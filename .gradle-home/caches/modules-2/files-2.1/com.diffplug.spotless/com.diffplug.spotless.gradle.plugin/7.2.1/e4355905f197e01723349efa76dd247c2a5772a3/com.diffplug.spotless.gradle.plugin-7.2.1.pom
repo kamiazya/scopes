@@ -1,0 +1,14 @@
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0">
+      <modelVersion>4.0.0</modelVersion>
+      <groupId>com.diffplug.spotless</groupId>
+      <artifactId>com.diffplug.spotless.gradle.plugin</artifactId>
+      <version>7.2.1</version>
+      <packaging>pom</packaging>
+      <dependencies>
+        <dependency>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-plugin-gradle</artifactId>
+          <version>7.2.1</version>
+        </dependency>
+      </dependencies>
+    </project>

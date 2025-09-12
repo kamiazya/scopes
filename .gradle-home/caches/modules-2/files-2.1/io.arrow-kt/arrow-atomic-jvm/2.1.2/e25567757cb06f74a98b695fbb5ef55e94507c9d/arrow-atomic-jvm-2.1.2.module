@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../arrow-atomic/2.1.2/arrow-atomic-2.1.2.module",
+    "group": "io.arrow-kt",
+    "module": "arrow-atomic",
+    "version": "2.1.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "arrow-atomic-jvm-2.1.2.jar",
+          "url": "arrow-atomic-jvm-2.1.2.jar",
+          "size": 14297,
+          "sha512": "dbbec5592a3fda788536d0169486a8b4edb39127f9c253d9de26defe09815404b3d64bf6c758c027d12cd1d749a959b7f501f9b886d0735b76d08c8ce69dd130",
+          "sha256": "fdb36c4e152a89676239b8cbd5a132aae8a72fca14b56d91c7e7ac6b47e97bf1",
+          "sha1": "fa38bf1bfd41d546a73560607617d95825e4ab26",
+          "md5": "889900aad6095468c0ae99f60a3c932c"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib"
+        }
+      ],
+      "dependencyConstraints": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "arrow-atomic-jvm-2.1.2.jar",
+          "url": "arrow-atomic-jvm-2.1.2.jar",
+          "size": 14297,
+          "sha512": "dbbec5592a3fda788536d0169486a8b4edb39127f9c253d9de26defe09815404b3d64bf6c758c027d12cd1d749a959b7f501f9b886d0735b76d08c8ce69dd130",
+          "sha256": "fdb36c4e152a89676239b8cbd5a132aae8a72fca14b56d91c7e7ac6b47e97bf1",
+          "sha1": "fa38bf1bfd41d546a73560607617d95825e4ab26",
+          "md5": "889900aad6095468c0ae99f60a3c932c"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "arrow-atomic-jvm-2.1.2-sources.jar",
+          "url": "arrow-atomic-jvm-2.1.2-sources.jar",
+          "size": 5652,
+          "sha512": "e12321e6242ab3e138452e587fcb794c5b7167cbe9bdfa1f5c49656c1d1470dfec8a0f982c99f07bac14966e14b74bc3f954c7d761711bf4d433f0d95b4598ae",
+          "sha256": "1d1a7089d1028bc29b007a246b2e18c6318e023ac657fd45414f0e895b3abf51",
+          "sha1": "43629757f73bf92fb27a8586cd03864b1922898b",
+          "md5": "76806a01cf727291442c02f4edd59c86"
+        }
+      ]
+    }
+  ]
+}

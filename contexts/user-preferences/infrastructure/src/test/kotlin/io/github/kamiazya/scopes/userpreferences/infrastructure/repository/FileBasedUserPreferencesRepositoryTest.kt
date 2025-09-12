@@ -20,6 +20,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
+import io.github.kamiazya.scopes.platform.domain.time.TestTimeProvider
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.deleteRecursively
@@ -47,6 +48,7 @@ class FileBasedUserPreferencesRepositoryTest :
         describe("FileBasedUserPreferencesRepository") {
             val mockLogger = mockk<Logger>(relaxed = true)
             val fixedInstant = Instant.fromEpochSeconds(1640995200)
+            val timeProvider = TestTimeProvider(fixedInstant)
             val testConfigPath = "test-config"
 
             describe("initialization") {
@@ -56,7 +58,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     configPath.deleteRecursively()
 
                     // When
-                    FileBasedUserPreferencesRepository("test-config-init", mockLogger)
+                    FileBasedUserPreferencesRepository("test-config-init", mockLogger, timeProvider)
 
                     // Then
                     configPath.exists() shouldBe true
@@ -71,7 +73,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     configPath.toFile().mkdirs()
 
                     // When - should not throw
-                    FileBasedUserPreferencesRepository("test-config-existing", mockLogger)
+                    FileBasedUserPreferencesRepository("test-config-existing", mockLogger, timeProvider)
 
                     // Then - directory still exists
                     configPath.exists() shouldBe true
@@ -84,7 +86,7 @@ class FileBasedUserPreferencesRepositoryTest :
             describe("saving preferences") {
                 it("should save valid preferences to file successfully") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     val hierarchyPreferences = HierarchyPreferences.create(10, 20).getOrNull()!!
                     val userPreferences = UserPreferences(
@@ -120,7 +122,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should save preferences with null values (unlimited settings)") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     val hierarchyPreferences = HierarchyPreferences.create(null, null).getOrNull()!!
                     val userPreferences = UserPreferences(
@@ -150,7 +152,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should save preferences with mixed null and valid values") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     val hierarchyPreferences = HierarchyPreferences.create(15, null).getOrNull()!!
                     val userPreferences = UserPreferences(
@@ -180,7 +182,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should fail when aggregate has no preferences") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     val aggregate = UserPreferencesAggregate(
                         id = AggregateId.Simple.generate(),
@@ -200,7 +202,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should update cache after successful save") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     val hierarchyPreferences = HierarchyPreferences.create(5, 10).getOrNull()!!
                     val userPreferences = UserPreferences(
@@ -233,7 +235,7 @@ class FileBasedUserPreferencesRepositoryTest :
             describe("finding preferences by current user") {
                 it("should return null when no config file exists") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
 
                     // When
                     val result = runBlocking { repository.findForCurrentUser() }
@@ -247,7 +249,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should load valid preferences from file successfully") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
 
                     // Create valid JSON file
@@ -280,7 +282,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should load preferences with null values from file") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
 
                     val validJson = """
@@ -308,7 +310,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should handle corrupted JSON file") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
 
                     // Create invalid JSON
@@ -329,7 +331,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should handle file with invalid hierarchy preferences") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
 
                     // Create JSON with invalid values (negative numbers)
@@ -444,7 +446,7 @@ class FileBasedUserPreferencesRepositoryTest :
                 it("should handle permission errors when writing file") {
                     // Given - This test is platform-specific and might be hard to simulate
                     // We'll test by using an invalid path that should cause write failure
-                    val repository = FileBasedUserPreferencesRepository("/invalid/readonly/path", mockLogger)
+                    val repository = FileBasedUserPreferencesRepository("/invalid/readonly/path", mockLogger, timeProvider)
 
                     val hierarchyPreferences = HierarchyPreferences.create(10, 20).getOrNull()!!
                     val userPreferences = UserPreferences(
@@ -474,7 +476,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should handle empty JSON file") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
                     configFile.writeText("")
 
@@ -489,7 +491,7 @@ class FileBasedUserPreferencesRepositoryTest :
 
                 it("should handle JSON with missing required fields") {
                     // Given
-                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
+                    val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger, timeProvider)
                     val configFile = Path(testConfigPath, UserPreferencesConfig.CONFIG_FILE_NAME)
 
                     // JSON missing hierarchyPreferences

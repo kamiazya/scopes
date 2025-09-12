@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../mordant-jvm-jna/3.0.2/mordant-jvm-jna-3.0.2.module",
+    "group": "com.github.ajalt.mordant",
+    "module": "mordant-jvm-jna",
+    "version": "3.0.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.8"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-jvm-jna-jvm.jar",
+          "url": "mordant-jvm-jna-jvm-3.0.2.jar",
+          "size": 38316,
+          "sha512": "2676044d0d1a0cf7de26642528acb07c40d674dbecf4d227ddb128ca5b437b17009f3ffb9374c3d91fb0691752089f6f065059834f47e51de7861e9f3dc37037",
+          "sha256": "41063442c8891b2774536a9b87a5062a7fd20e6f1949974c6da72f49472d6f4d",
+          "sha1": "64aa5240720a08af4fd72bc1cf52c05bd20dea1d",
+          "md5": "2248fd1a4a2aba94fa92893ca7bbcea2"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        },
+        {
+          "group": "net.java.dev.jna",
+          "module": "jna",
+          "version": {
+            "requires": "5.14.0"
+          }
+        },
+        {
+          "group": "com.github.ajalt.mordant",
+          "module": "mordant-core",
+          "version": {
+            "requires": "3.0.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "mordant-jvm-jna-jvm.jar",
+          "url": "mordant-jvm-jna-jvm-3.0.2.jar",
+          "size": 38316,
+          "sha512": "2676044d0d1a0cf7de26642528acb07c40d674dbecf4d227ddb128ca5b437b17009f3ffb9374c3d91fb0691752089f6f065059834f47e51de7861e9f3dc37037",
+          "sha256": "41063442c8891b2774536a9b87a5062a7fd20e6f1949974c6da72f49472d6f4d",
+          "sha1": "64aa5240720a08af4fd72bc1cf52c05bd20dea1d",
+          "md5": "2248fd1a4a2aba94fa92893ca7bbcea2"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "mordant-jvm-jna-jvm-sources.jar",
+          "url": "mordant-jvm-jna-jvm-3.0.2-sources.jar",
+          "size": 7766,
+          "sha512": "8086e95c64efcaaeca577e6b76fa96997b13740208f2b90ba96d7184f6d8a693704122fa7674bb5b2ab4af197edbfd36798e0cead640ffef62fd450e2269ba73",
+          "sha256": "ba4d912f4636a55b19aeb9754188161ecada44e904f47597697efcb1f3aa5c14",
+          "sha1": "f17ac292602303c4fc91efbe01f205273f5720eb",
+          "md5": "3b828c1619eb9834420e037ca090ffda"
+        }
+      ]
+    }
+  ]
+}

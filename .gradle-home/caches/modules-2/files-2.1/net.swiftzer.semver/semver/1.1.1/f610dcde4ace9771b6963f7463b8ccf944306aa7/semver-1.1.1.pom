@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>net.swiftzer.semver</groupId>
+  <artifactId>semver</artifactId>
+  <version>1.1.1</version>
+  <name>semver</name>
+  <description>SemVer</description>
+  <url>https://github.com/swiftzer/semver</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>ericksli</id>
+      <name>Eric Li</name>
+      <email>eric@swiftzer.net</email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:github.com/swiftzer/semver.git</connection>
+    <developerConnection>scm:git:ssh://github.com/swiftzer/semver.git</developerConnection>
+    <url>https://github.com/swiftzer/semver/tree/master</url>
+  </scm>
+  <dependencies/>
+</project>

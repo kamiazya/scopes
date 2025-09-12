@@ -1,0 +1,1016 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.arrow-kt",
+    "module": "arrow-core",
+    "version": "2.1.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "io.arrow-kt",
+          "module": "arrow-atomic",
+          "version": {
+            "requires": "2.1.2"
+          }
+        },
+        {
+          "group": "io.arrow-kt",
+          "module": "arrow-annotations",
+          "version": {
+            "requires": "2.1.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib"
+        }
+      ],
+      "dependencyConstraints": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "arrow-core-metadata-2.1.2.jar",
+          "url": "arrow-core-2.1.2.jar",
+          "size": 42388,
+          "sha512": "da5a1e530fc8fbea68cba749528d087ce1a637467eca29772e02fdd069a2e726f0185972bd9b67c9cae538e2743467de036444edaf25554fc844cff8ba3e3c9a",
+          "sha256": "230b92de14a9fe33033426cab641a5d749668ead5b5b281dc6b035a42f6dcac2",
+          "sha1": "a4a7007452236ac8c2b8811b1a6231504d88735e",
+          "md5": "84eb7354e898b9419f9e40a98a9aae9a"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "arrow-core-kotlin-2.1.2-sources.jar",
+          "url": "arrow-core-2.1.2-sources.jar",
+          "size": 74812,
+          "sha512": "82a9aadf0197cd0ea75af6eda3e75e2395729d69cadf71010c0dc248c41e65695f0ed3aa7b78efb8af203759ec2023bb2c84cc756c64155a2d880c2f96582cef",
+          "sha256": "019cb5254a6428ae92377433f4f1fb01008e61c05845dc2fe216064cfc99c257",
+          "sha1": "8289eb4f0a7f4e0e1afa1d2b94224a601217bd89",
+          "md5": "07ebcb80ced5774de4844ae74659f43a"
+        }
+      ]
+    },
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-android/2.1.2/arrow-core-android-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-android",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-android/2.1.2/arrow-core-android-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-android",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-android/2.1.2/arrow-core-android-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-android",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosarm64/2.1.2/arrow-core-iosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosarm64/2.1.2/arrow-core-iosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosarm64/2.1.2/arrow-core-iosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iossimulatorarm64/2.1.2/arrow-core-iossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iossimulatorarm64/2.1.2/arrow-core-iossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iossimulatorarm64/2.1.2/arrow-core-iossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosx64/2.1.2/arrow-core-iosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosx64/2.1.2/arrow-core-iosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "iosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-iosx64/2.1.2/arrow-core-iosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-iosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-js/2.1.2/arrow-core-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-js/2.1.2/arrow-core-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-js/2.1.2/arrow-core-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-jvm/2.1.2/arrow-core-jvm-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-jvm",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-jvm/2.1.2/arrow-core-jvm-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-jvm",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../arrow-core-jvm/2.1.2/arrow-core-jvm-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-jvm",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "linuxArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-linuxarm64/2.1.2/arrow-core-linuxarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-linuxarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "linuxArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-linuxarm64/2.1.2/arrow-core-linuxarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-linuxarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "linuxX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-linuxx64/2.1.2/arrow-core-linuxx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-linuxx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "linuxX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-linuxx64/2.1.2/arrow-core-linuxx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-linuxx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosarm64/2.1.2/arrow-core-macosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosarm64/2.1.2/arrow-core-macosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosarm64/2.1.2/arrow-core-macosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosx64/2.1.2/arrow-core-macosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosx64/2.1.2/arrow-core-macosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "macosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-macosx64/2.1.2/arrow-core-macosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-macosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "mingwX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-mingwx64/2.1.2/arrow-core-mingwx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-mingwx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "mingwX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-mingwx64/2.1.2/arrow-core-mingwx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-mingwx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosarm64/2.1.2/arrow-core-tvosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosarm64/2.1.2/arrow-core-tvosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosarm64/2.1.2/arrow-core-tvosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvossimulatorarm64/2.1.2/arrow-core-tvossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvossimulatorarm64/2.1.2/arrow-core-tvossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvossimulatorarm64/2.1.2/arrow-core-tvossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosx64/2.1.2/arrow-core-tvosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosx64/2.1.2/arrow-core-tvosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "tvosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-tvosx64/2.1.2/arrow-core-tvosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-tvosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "wasmJsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-wasm-js/2.1.2/arrow-core-wasm-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-wasm-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "wasmJsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-wasm-js/2.1.2/arrow-core-wasm-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-wasm-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "wasmJsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../arrow-core-wasm-js/2.1.2/arrow-core-wasm-js-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-wasm-js",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm32ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm32/2.1.2/arrow-core-watchosarm32-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm32",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm32SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm32/2.1.2/arrow-core-watchosarm32-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm32",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm32MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm32/2.1.2/arrow-core-watchosarm32-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm32",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm64/2.1.2/arrow-core-watchosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm64/2.1.2/arrow-core-watchosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosarm64/2.1.2/arrow-core-watchosarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchossimulatorarm64/2.1.2/arrow-core-watchossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchossimulatorarm64/2.1.2/arrow-core-watchossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchossimulatorarm64/2.1.2/arrow-core-watchossimulatorarm64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchossimulatorarm64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosx64/2.1.2/arrow-core-watchosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosx64/2.1.2/arrow-core-watchosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosx64",
+        "version": "2.1.2"
+      }
+    },
+    {
+      "name": "watchosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../arrow-core-watchosx64/2.1.2/arrow-core-watchosx64-2.1.2.module",
+        "group": "io.arrow-kt",
+        "module": "arrow-core-watchosx64",
+        "version": "2.1.2"
+      }
+    }
+  ]
+}

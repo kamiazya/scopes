@@ -1,0 +1,138 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "org.jetbrains.kotlinx",
+    "module": "kotlinx-coroutines-jdk8",
+    "version": "1.10.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.13"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-bom",
+          "version": {
+            "requires": "1.10.2"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          },
+          "endorseStrictVersions": true
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "kotlinx-coroutines-jdk8-1.10.2.jar",
+          "url": "kotlinx-coroutines-jdk8-1.10.2.jar",
+          "size": 954,
+          "sha512": "039bd94dca7a2691344ab24d936bb6847c33b56c9f63b851be7e0dc0422fdaceda87fc80b405b078530a799f2981627b215fd42da95c1bebd6c306334c384f27",
+          "sha256": "f861f9fa3b3088e6f7c59bc92a91adacf687b5bdeb081cf3608c5454f7739625",
+          "sha1": "809f71bf722bad7e78ebe8ec710c0327c23b7a31",
+          "md5": "0273a357e43ba3266dab1e0c900d1497"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-bom",
+          "version": {
+            "requires": "1.10.2"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          },
+          "endorseStrictVersions": true
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "kotlinx-coroutines-jdk8-1.10.2.jar",
+          "url": "kotlinx-coroutines-jdk8-1.10.2.jar",
+          "size": 954,
+          "sha512": "039bd94dca7a2691344ab24d936bb6847c33b56c9f63b851be7e0dc0422fdaceda87fc80b405b078530a799f2981627b215fd42da95c1bebd6c306334c384f27",
+          "sha256": "f861f9fa3b3088e6f7c59bc92a91adacf687b5bdeb081cf3608c5454f7739625",
+          "sha1": "809f71bf722bad7e78ebe8ec710c0327c23b7a31",
+          "md5": "0273a357e43ba3266dab1e0c900d1497"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "kotlinx-coroutines-jdk8-1.10.2-sources.jar",
+          "url": "kotlinx-coroutines-jdk8-1.10.2-sources.jar",
+          "size": 439,
+          "sha512": "34f8ccbd8fa5e83018d0e879067975a7ec2c4e3c0e21ca9018fe414e7b5cd7a59378a5bcab12f8993b0c4efebcd433e19647dc01e300ca7a0ee6540601f8b4f9",
+          "sha256": "122ccbf04986ba215e0c08947c345be4ee8a0bc3f71059db28593ecccfbaa695",
+          "sha1": "7b04d784a3df2298847e13b7f7a9c6b55090b74b",
+          "md5": "18ae7997c7af88617864942dd97bad47"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+o/.gradle-instrumented-classpath.marker
+o/.gradle-agent-instrumented.marker
+o/instrumented/instrumented-detekt-gradle-plugin-1.23.8.jar

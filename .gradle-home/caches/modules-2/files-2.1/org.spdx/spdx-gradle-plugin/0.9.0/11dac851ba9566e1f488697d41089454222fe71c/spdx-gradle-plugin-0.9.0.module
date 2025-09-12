@@ -1,0 +1,137 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "org.spdx",
+    "module": "spdx-gradle-plugin",
+    "version": "0.9.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.13"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "spdx-gradle-plugin-0.9.0.jar",
+          "url": "spdx-gradle-plugin-0.9.0.jar",
+          "size": 3497454,
+          "sha512": "89fed55e8d30c741c74ebde04ac9bbddb820552a45c78b2614fcd58ed0e68cb848c8a688bc1962b32b859eae57a51e950e72f6c1fd1b50166c9cda7bf24b1f98",
+          "sha256": "ff6b7ce514fd351e1efd9df9211961a6e3aa773e2a8304e91f097631d6a94a9d",
+          "sha1": "36c7cd44c26c9af2c7084532119868e40a2e7fe3",
+          "md5": "c50484b44c3739b2a861a96e8102cc91"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.spdx",
+          "module": "java-spdx-library",
+          "version": {
+            "requires": "1.1.12"
+          }
+        },
+        {
+          "group": "org.spdx",
+          "module": "spdx-jackson-store",
+          "version": {
+            "requires": "1.1.9.1"
+          }
+        },
+        {
+          "group": "org.apache.maven",
+          "module": "maven-model-builder",
+          "version": {
+            "requires": "3.9.9"
+          }
+        },
+        {
+          "group": "org.apache.maven",
+          "module": "maven-model",
+          "version": {
+            "requires": "3.9.9"
+          }
+        },
+        {
+          "group": "com.google.guava",
+          "module": "guava",
+          "version": {
+            "requires": "33.4.0-jre"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "spdx-gradle-plugin-0.9.0.jar",
+          "url": "spdx-gradle-plugin-0.9.0.jar",
+          "size": 3497454,
+          "sha512": "89fed55e8d30c741c74ebde04ac9bbddb820552a45c78b2614fcd58ed0e68cb848c8a688bc1962b32b859eae57a51e950e72f6c1fd1b50166c9cda7bf24b1f98",
+          "sha256": "ff6b7ce514fd351e1efd9df9211961a6e3aa773e2a8304e91f097631d6a94a9d",
+          "sha1": "36c7cd44c26c9af2c7084532119868e40a2e7fe3",
+          "md5": "c50484b44c3739b2a861a96e8102cc91"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "spdx-gradle-plugin-0.9.0-javadoc.jar",
+          "url": "spdx-gradle-plugin-0.9.0-javadoc.jar",
+          "size": 183176,
+          "sha512": "e75ce3b88a282f9b7adb28c9d7084657a067c3c0a3467b7b6fca355d4b138efcb77a6c5f03a5047e226e17a4aa3eea8c443d11454a56adff7977abdd831f87f7",
+          "sha256": "069bb7ee0fc7256ddd0702d0d53d399dcad44bd69dc93ab0e2e03f3eac20aed7",
+          "sha1": "953b52ea2c4ef51573ffda07a4690fe95703d421",
+          "md5": "698a35f498da87fcd66abeebe1d0c483"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "spdx-gradle-plugin-0.9.0-sources.jar",
+          "url": "spdx-gradle-plugin-0.9.0-sources.jar",
+          "size": 3442380,
+          "sha512": "38e0cd0d1e0ce914825e912d49f2e056576db0ec763f8581ed99e4667ddd2efd1d9200991f4826f404578d1da518b941cc879393373f8950540c575449f3afa3",
+          "sha256": "b03566cdaa4c897491ce3ef39d672acffb865abdc81d3918dbe449a27bd1849e",
+          "sha1": "2c789d171ce2ee75789eb6c358c16bc4f690a0b7",
+          "md5": "0d3dc079c94a134afab7a4cd802db947"
+        }
+      ]
+    }
+  ]
+}

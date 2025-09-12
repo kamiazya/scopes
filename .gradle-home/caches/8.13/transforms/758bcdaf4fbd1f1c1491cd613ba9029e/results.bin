@@ -1,0 +1,3 @@
+o/.gradle-instrumented-classpath.marker
+o/.gradle-agent-instrumented.marker
+o/instrumented/instrumented-graalvm-reachability-metadata-0.11.0.jar

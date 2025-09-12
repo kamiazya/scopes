@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- This module was also published with a richer model, Gradle metadata,  -->
+  <!-- which should be used instead. Do not delete the following line which  -->
+  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+  <!-- that they should prefer consuming it instead. -->
+  <!-- do_not_remove: published-with-gradle-metadata -->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.kotest.extensions</groupId>
+  <artifactId>kotest-assertions-arrow-jvm</artifactId>
+  <version>2.0.0</version>
+  <name>Kotest</name>
+  <description>Kotlin Test Framework</description>
+  <url>https://github.com/kotest/kotest-extensions-arrow</url>
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://opensource.org/licenses/Apache-2.0</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>sksamuel</id>
+      <name>Stephen Samuel</name>
+      <email>sam@sksamuel.com</email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/kotest/kotest-extensions-arrow/</connection>
+    <developerConnection>scm:git:https://github.com/sksamuel/</developerConnection>
+    <url>https://github.com/kotest/kotest-extensions-arrow/</url>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.kotest</groupId>
+      <artifactId>kotest-assertions-core-jvm</artifactId>
+      <version>5.8.1</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>

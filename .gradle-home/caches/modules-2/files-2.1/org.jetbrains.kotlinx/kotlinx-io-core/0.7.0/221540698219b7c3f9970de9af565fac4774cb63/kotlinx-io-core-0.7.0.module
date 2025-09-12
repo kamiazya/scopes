@@ -1,0 +1,1232 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "org.jetbrains.kotlinx",
+    "module": "kotlinx-io-core",
+    "version": "0.7.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.9"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-io-bytestring",
+          "version": {
+            "requires": "0.7.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "kotlinx-io-core-metadata-0.7.0.jar",
+          "url": "kotlinx-io-core-0.7.0.jar",
+          "size": 42966,
+          "sha512": "efeb5ebd5cff67fc689df5aa862b82d0ba50921f52e0e14cee05cb1f060bc97052889f72355bc98bdc2a45025745da768de094f25cc0acc3c194f0357e6b5e99",
+          "sha256": "e102b088609e7a8bdbcc277a547e4684ec0447e40893d7285831fbebd1b27ee8",
+          "sha1": "40638028dd8470ac383c42286f20839a451f4748",
+          "md5": "9ede90e44d8c0e42ec9edfe3c59f1c28"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "kotlinx-io-core-kotlin-0.7.0-sources.jar",
+          "url": "kotlinx-io-core-0.7.0-sources.jar",
+          "size": 84752,
+          "sha512": "8dad4196afd99a47d0dc145c0844e7c2de0d630c6a239706454e659e2b3e12c9fedbaed8cb444d9e91a7ab58a57b72bd9445482b0cafd464d13eecf9306f5e8b",
+          "sha256": "58db7c88bae5f3ce1293fdcd6190b5bec5ea9578317670fef8974c54c9747c48",
+          "sha1": "36c15f00b9f6a5b320f92aa616bc9895981b07de",
+          "md5": "31f857387ce2db8bfb66e36a5da184dc"
+        }
+      ]
+    },
+    {
+      "name": "androidNativeArm32ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "android_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativearm32/0.7.0/kotlinx-io-core-androidnativearm32-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativearm32",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeArm32SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "android_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativearm32/0.7.0/kotlinx-io-core-androidnativearm32-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativearm32",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "android_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativearm64/0.7.0/kotlinx-io-core-androidnativearm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativearm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "android_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativearm64/0.7.0/kotlinx-io-core-androidnativearm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativearm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "android_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativex64/0.7.0/kotlinx-io-core-androidnativex64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativex64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "android_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativex64/0.7.0/kotlinx-io-core-androidnativex64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativex64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeX86ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "android_x86",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativex86/0.7.0/kotlinx-io-core-androidnativex86-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativex86",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "androidNativeX86SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "android_x86",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-androidnativex86/0.7.0/kotlinx-io-core-androidnativex86-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-androidnativex86",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosarm64/0.7.0/kotlinx-io-core-iosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosarm64/0.7.0/kotlinx-io-core-iosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosarm64/0.7.0/kotlinx-io-core-iosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iossimulatorarm64/0.7.0/kotlinx-io-core-iossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iossimulatorarm64/0.7.0/kotlinx-io-core-iossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iossimulatorarm64/0.7.0/kotlinx-io-core-iossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosx64/0.7.0/kotlinx-io-core-iosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosx64/0.7.0/kotlinx-io-core-iosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "iosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-iosx64/0.7.0/kotlinx-io-core-iosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-iosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-js/0.7.0/kotlinx-io-core-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-js/0.7.0/kotlinx-io-core-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-js/0.7.0/kotlinx-io-core-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-jvm/0.7.0/kotlinx-io-core-jvm-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-jvm",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-jvm/0.7.0/kotlinx-io-core-jvm-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-jvm",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-jvm/0.7.0/kotlinx-io-core-jvm-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-jvm",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxArm32HfpApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_arm32_hfp",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxarm32hfp/0.7.0/kotlinx-io-core-linuxarm32hfp-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxarm32hfp",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxArm32HfpSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_arm32_hfp",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxarm32hfp/0.7.0/kotlinx-io-core-linuxarm32hfp-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxarm32hfp",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxarm64/0.7.0/kotlinx-io-core-linuxarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxarm64/0.7.0/kotlinx-io-core-linuxarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxx64/0.7.0/kotlinx-io-core-linuxx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "linuxX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "linux_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-linuxx64/0.7.0/kotlinx-io-core-linuxx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-linuxx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosarm64/0.7.0/kotlinx-io-core-macosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosarm64/0.7.0/kotlinx-io-core-macosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosarm64/0.7.0/kotlinx-io-core-macosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosx64/0.7.0/kotlinx-io-core-macosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosx64/0.7.0/kotlinx-io-core-macosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "macosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-macosx64/0.7.0/kotlinx-io-core-macosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-macosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "mingwX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-mingwx64/0.7.0/kotlinx-io-core-mingwx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-mingwx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "mingwX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "mingw_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-mingwx64/0.7.0/kotlinx-io-core-mingwx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-mingwx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosarm64/0.7.0/kotlinx-io-core-tvosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosarm64/0.7.0/kotlinx-io-core-tvosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosarm64/0.7.0/kotlinx-io-core-tvosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvossimulatorarm64/0.7.0/kotlinx-io-core-tvossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvossimulatorarm64/0.7.0/kotlinx-io-core-tvossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvossimulatorarm64/0.7.0/kotlinx-io-core-tvossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosx64/0.7.0/kotlinx-io-core-tvosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosx64/0.7.0/kotlinx-io-core-tvosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "tvosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "tvos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-tvosx64/0.7.0/kotlinx-io-core-tvosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-tvosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmJsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-js/0.7.0/kotlinx-io-core-wasm-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmJsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-js/0.7.0/kotlinx-io-core-wasm-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmJsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-js/0.7.0/kotlinx-io-core-wasm-js-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-js",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmWasiApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "wasi"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-wasi/0.7.0/kotlinx-io-core-wasm-wasi-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-wasi",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmWasiRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "wasi"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-wasi/0.7.0/kotlinx-io-core-wasm-wasi-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-wasi",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "wasmWasiSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "wasi"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-wasm-wasi/0.7.0/kotlinx-io-core-wasm-wasi-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-wasm-wasi",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm32ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm32/0.7.0/kotlinx-io-core-watchosarm32-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm32",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm32SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm32/0.7.0/kotlinx-io-core-watchosarm32-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm32",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm32MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm32",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm32/0.7.0/kotlinx-io-core-watchosarm32-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm32",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm64/0.7.0/kotlinx-io-core-watchosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm64/0.7.0/kotlinx-io-core-watchosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosarm64/0.7.0/kotlinx-io-core-watchosarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosdevicearm64/0.7.0/kotlinx-io-core-watchosdevicearm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosdevicearm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosdevicearm64/0.7.0/kotlinx-io-core-watchosdevicearm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosdevicearm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosDeviceArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_device_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosdevicearm64/0.7.0/kotlinx-io-core-watchosdevicearm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosdevicearm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchossimulatorarm64/0.7.0/kotlinx-io-core-watchossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchossimulatorarm64/0.7.0/kotlinx-io-core-watchossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchossimulatorarm64/0.7.0/kotlinx-io-core-watchossimulatorarm64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchossimulatorarm64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosX64ApiElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosx64/0.7.0/kotlinx-io-core-watchosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosX64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosx64/0.7.0/kotlinx-io-core-watchosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosx64",
+        "version": "0.7.0"
+      }
+    },
+    {
+      "name": "watchosX64MetadataElements-published",
+      "attributes": {
+        "artifactType": "org.jetbrains.kotlin.klib",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "watchos_x64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../kotlinx-io-core-watchosx64/0.7.0/kotlinx-io-core-watchosx64-0.7.0.module",
+        "group": "org.jetbrains.kotlinx",
+        "module": "kotlinx-io-core-watchosx64",
+        "version": "0.7.0"
+      }
+    }
+  ]
+}

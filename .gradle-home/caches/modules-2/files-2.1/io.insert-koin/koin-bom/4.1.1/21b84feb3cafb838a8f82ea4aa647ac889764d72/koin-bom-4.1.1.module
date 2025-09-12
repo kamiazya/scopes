@@ -1,0 +1,358 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.insert-koin",
+    "module": "koin-bom",
+    "version": "4.1.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.11"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "platform",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencyConstraints": [
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-annotations",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-jvm",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-coroutines",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-viewmodel",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-coroutines",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-junit4",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-junit5",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-ktor",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-ktor-jvm",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-logger-slf4j",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android-compat",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android-test",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-workmanager",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-startup",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose-viewmodel",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose-viewmodel-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-compose",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-compose-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "platform",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencyConstraints": [
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-annotations",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-jvm",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-coroutines",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-core-viewmodel",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-coroutines",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-junit4",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-test-junit5",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-ktor",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-ktor-jvm",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-logger-slf4j",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android-compat",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-android-test",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-workmanager",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-startup",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose-viewmodel",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-compose-viewmodel-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-compose",
+          "version": {
+            "requires": "4.1.1"
+          }
+        },
+        {
+          "group": "io.insert-koin",
+          "module": "koin-androidx-compose-navigation",
+          "version": {
+            "requires": "4.1.1"
+          }
+        }
+      ]
+    }
+  ]
+}

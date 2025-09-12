@@ -26,4 +26,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Konsist scans many files; give the test JVM more heap to avoid OOM on CI runners
+    minHeapSize = "512m"
+    maxHeapSize = "2048m"
 }
