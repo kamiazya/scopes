@@ -213,7 +213,7 @@ class ListCommand :
 
                 // Fetch and display all aliases
                 scopeQueryAdapter.listAliases(scope.id).fold(
-                    { error ->
+                    { _ ->
                         // If we can't fetch aliases, show just the canonical one
                         if (debugContext.debug) {
                             appendLine("  Aliases: ${scope.canonicalAlias} (ULID: ${scope.id})")

@@ -127,7 +127,7 @@ class GetFilteredScopesHandler(
                     totalScopeCount = totalCount,
                     appliedBy = null, // TODO: Add user context to track who applied the filter
                 ).fold(
-                    { error ->
+                    { _ ->
                         // TODO: Add proper logging - for now, silently continue
                         // logger.warn("Failed to publish context applied event: $error")
                     },

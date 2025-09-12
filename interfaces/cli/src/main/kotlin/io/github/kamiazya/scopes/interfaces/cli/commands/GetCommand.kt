@@ -45,7 +45,7 @@ class GetCommand :
                         { scope ->
                             // Fetch all aliases for the scope
                             scopeQueryAdapter.listAliases(scope.id).fold(
-                                { aliasError ->
+                                { _ ->
                                     // If we can't fetch aliases, still show the scope with just canonical alias
                                     echo(scopeOutputFormatter.formatContractScope(scope, debugContext.debug))
                                 },

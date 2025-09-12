@@ -24,6 +24,10 @@ import kotlinx.datetime.Clock
  */
 class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Loggable {
 
+    companion object {
+        private const val DEFAULT_ERROR_MESSAGE = "Unknown error"
+    }
+
     /**
      * Publish an event when a context view is activated.
      * This creates an audit trail of context switches.
@@ -79,7 +83,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = PersistenceError.StorageUnavailable(
                 operation = "publishContextActivated",
-                cause = e.message ?: "Unknown error",
+                cause = e.message ?: DEFAULT_ERROR_MESSAGE,
             )
             logger.error("Failed to publish context activated event for context: ${contextView.key.value}", throwable = e)
             error.left()
@@ -124,7 +128,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = PersistenceError.StorageUnavailable(
                 operation = "publishActiveContextCleared",
-                cause = e.message ?: "Unknown error",
+                cause = e.message ?: DEFAULT_ERROR_MESSAGE,
             )
             logger.error("Failed to publish active context cleared event for context: ${previousContext.key.value}", throwable = e)
             error.left()
@@ -178,7 +182,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = PersistenceError.StorageUnavailable(
                 operation = "publishContextApplied",
-                cause = e.message ?: "Unknown error",
+                cause = e.message ?: DEFAULT_ERROR_MESSAGE,
             )
             logger.error("Failed to publish context applied event for context: ${contextView.key.value}", throwable = e)
             error.left()

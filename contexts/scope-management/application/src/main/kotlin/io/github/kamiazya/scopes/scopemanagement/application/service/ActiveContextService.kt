@@ -65,7 +65,7 @@ class ActiveContextService(
             previousContextId = previousContext?.id?.value,
             activatedBy = activatedBy,
         ).fold(
-            { error ->
+            { _ ->
                 // TODO: Add proper logging - for now, silently continue
                 // logger.warn("Failed to publish context activated event: $error")
             },
@@ -100,7 +100,7 @@ class ActiveContextService(
                 previousContext = previous,
                 clearedBy = clearedBy,
             ).fold(
-                { error ->
+                { _ ->
                     // TODO: Add proper logging - for now, silently continue
                     // logger.warn("Failed to publish active context cleared event: $error")
                 },
@@ -115,7 +115,7 @@ class ActiveContextService(
      */
     suspend fun switchToContextByKey(key: String, activatedBy: String? = null): Either<ApplicationError, ContextView> = either {
         val contextKey = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey.create(key)
-            .mapLeft { errorMsg ->
+            .mapLeft { _ ->
                 ContextError.KeyInvalidFormat(
                     attemptedKey = key,
                 )

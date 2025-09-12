@@ -65,7 +65,7 @@ class CreateScopeHandler(
             either {
                 // Parse parent ID if provided
                 val parentId = command.parentId?.let { parentIdString ->
-                    ScopeId.create(parentIdString).mapLeft { idError ->
+                    ScopeId.create(parentIdString).mapLeft { _ ->
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
                         ScopeHierarchyError.InvalidParentId(
                             invalidId = parentIdString,

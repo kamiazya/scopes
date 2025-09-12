@@ -20,6 +20,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Log unmapped errors for visibility and debugging
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
+    companion object {
+        private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
+    }
+
     private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
         ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
         ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
@@ -145,9 +149,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         }
         is ScopesError.SystemError -> when (domainError.errorType) {
             ScopesError.SystemError.SystemErrorType.SERVICE_UNAVAILABLE ->
-                ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: "scope-management")
+                ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: SCOPE_MANAGEMENT_SERVICE)
             else -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = domainError.service ?: "scope-management",
+                service = domainError.service ?: SCOPE_MANAGEMENT_SERVICE,
             )
         }
         is ScopesError.ValidationFailed -> {
@@ -170,7 +174,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopesError.InvalidOperation -> when {
             domainError.reason == ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
                 ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.entityId ?: "")
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
         }
         is ScopesError.Conflict -> when (domainError.conflictType) {
             ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
@@ -188,13 +192,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             actualVersion = domainError.actualVersion?.toLong() ?: 0,
         )
         is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = "scope-management",
+            service = SCOPE_MANAGEMENT_SERVICE,
         )
 
         // Default fallback for unmapped errors
         else -> handleUnmappedError(
             domainError,
-            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+            ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE),
         )
     }
 }

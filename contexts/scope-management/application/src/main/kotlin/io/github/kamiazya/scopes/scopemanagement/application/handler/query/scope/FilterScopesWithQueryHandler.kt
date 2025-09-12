@@ -28,6 +28,10 @@ class FilterScopesWithQueryHandler(
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopesError, List<ScopeDto>> {
 
+    companion object {
+        private const val SCOPE_REPOSITORY_SERVICE = "scope-repository"
+    }
+
     override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Filtering scopes with query",
@@ -41,7 +45,7 @@ class FilterScopesWithQueryHandler(
         either {
             // Parse the query
             val ast = parser.parse(query.query).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopesError.InvalidOperation(
                             operation = "filter-scopes-with-query",
@@ -76,7 +80,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf(
                                     "operation" to "findByParentId",
@@ -92,7 +96,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf(
                                     "operation" to "findAll",
@@ -109,7 +113,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf("operation" to "findAllRoot"),
                             )
