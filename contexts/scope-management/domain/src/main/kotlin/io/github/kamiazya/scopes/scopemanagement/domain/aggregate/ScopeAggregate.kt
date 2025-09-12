@@ -171,11 +171,11 @@ data class ScopeAggregate(
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope.id)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (scope!!.title == newTitle) {
+        if (scope.title == newTitle) {
             return@either this@ScopeAggregate
         }
 
@@ -184,8 +184,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scope!!.id,
-            oldTitle = scope!!.title,
+            scopeId = scope.id,
+            oldTitle = scope.title,
             newTitle = newTitle,
         )
 
@@ -201,11 +201,11 @@ data class ScopeAggregate(
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope.id)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (scope!!.title == newTitle) {
+        if (scope.title == newTitle) {
             return@either emptyList()
         }
 
@@ -214,8 +214,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = AggregateVersion.initial(), // Dummy version
-            scopeId = scope!!.id,
-            oldTitle = scope!!.title,
+            scopeId = scope.id,
+            oldTitle = scope.title,
             newTitle = newTitle,
         )
 
@@ -257,11 +257,11 @@ data class ScopeAggregate(
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scope!!.id)
+            ScopeError.AlreadyDeleted(scope.id)
         }
 
         val newDescription = ScopeDescription.create(description).bind()
-        if (scope!!.description == newDescription) {
+        if (scope.description == newDescription) {
             return@either this@ScopeAggregate
         }
 
@@ -270,8 +270,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scope!!.id,
-            oldDescription = scope!!.description,
+            scopeId = scope.id,
+            oldDescription = scope.description,
             newDescription = newDescription,
         )
 

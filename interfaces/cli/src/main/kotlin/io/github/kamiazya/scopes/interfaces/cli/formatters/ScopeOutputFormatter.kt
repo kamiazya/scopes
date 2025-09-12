@@ -67,13 +67,11 @@ class ScopeOutputFormatter {
                 appendLine("Parent ID: $it")
             }
         }
-        result.canonicalAlias?.let {
-            val displayAlias = formatAlias(it)
-            if (debugMode) {
-                appendLine("Alias: $displayAlias (ULID: ${result.id})")
-            } else {
-                appendLine("Alias: $displayAlias")
-            }
+        val displayAlias = formatAlias(result.canonicalAlias)
+        if (debugMode) {
+            appendLine("Alias: $displayAlias (ULID: ${result.id})")
+        } else {
+            appendLine("Alias: $displayAlias")
         }
     }.trim()
 

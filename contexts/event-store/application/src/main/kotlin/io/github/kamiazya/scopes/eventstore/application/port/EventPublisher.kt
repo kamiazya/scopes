@@ -8,7 +8,7 @@ import io.github.kamiazya.scopes.eventstore.domain.entity.PersistedEventRecord
  * This interface defines the contract for event publishers,
  * allowing different implementations (e.g., in-memory, message queue, etc.).
  */
-interface EventPublisher {
+fun interface EventPublisher {
     /**
      * Publishes a stored event.
      *

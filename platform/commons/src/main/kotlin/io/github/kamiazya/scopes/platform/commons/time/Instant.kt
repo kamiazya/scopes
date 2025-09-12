@@ -8,6 +8,6 @@ typealias Instant = KotlinxInstant
  * Abstraction for time providers to support testability and dependency inversion.
  * Domain layers should depend on this interface rather than concrete time implementations.
  */
-interface TimeProvider {
+fun interface TimeProvider {
     fun now(): Instant
 }
