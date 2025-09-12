@@ -46,7 +46,6 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                 DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION
                             else -> null
                         },
-                        occurredAt = error.occurredAt,
                         cause = null,
                     )
                 }
@@ -62,7 +61,6 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                     operation = DeviceSyncApplicationError.SyncOperation.CONFLICT_RESOLUTION,
                                     deviceId = command.remoteDeviceId,
                                     failureReason = DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION,
-                                    occurredAt = error.occurredAt,
                                     cause = null,
                                 )
                             }
