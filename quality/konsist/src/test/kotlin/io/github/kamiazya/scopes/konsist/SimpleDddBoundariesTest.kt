@@ -202,6 +202,10 @@ class SimpleDddBoundariesTest :
                             func.name == "generate" || func.name == "from"
                         }
                     }
+                    // Exclude known non-ID value objects
+                    .filterNot { clazz ->
+                        clazz.name in listOf("VersionNumber", "ResourceContent")
+                    }
                     .assertTrue { idClass ->
                         idClass.name.endsWith("Id")
                     }

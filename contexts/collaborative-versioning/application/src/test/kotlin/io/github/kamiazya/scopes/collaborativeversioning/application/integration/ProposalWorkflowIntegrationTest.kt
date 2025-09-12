@@ -83,11 +83,11 @@ class ProposalWorkflowIntegrationTest :
                                     path = "/features/newFeature",
                                     operation = ChangeOperation.ADD,
                                     previousValue = null,
-                                    newValue = "enabled"
-                                )
-                            )
-                        )
-                    )
+                                    newValue = "enabled",
+                                ),
+                            ),
+                        ),
+                    ),
                 )
 
                 val createResult = proposeHandler(createCommand)
@@ -213,11 +213,11 @@ class ProposalWorkflowIntegrationTest :
                                     path = "/features/problematic",
                                     operation = ChangeOperation.ADD,
                                     previousValue = null,
-                                    newValue = "risky"
-                                )
-                            )
-                        )
-                    )
+                                    newValue = "risky",
+                                ),
+                            ),
+                        ),
+                    ),
                 )
 
                 val createResult = proposeHandler(createCommand)
@@ -303,11 +303,11 @@ class ProposalWorkflowIntegrationTest :
                                     path = "conflict.path",
                                     operation = ChangeOperation.MODIFY,
                                     previousValue = "old_value",
-                                    newValue = "new_value"
-                                )
-                            )
-                        )
-                    )
+                                    newValue = "new_value",
+                                ),
+                            ),
+                        ),
+                    ),
                 )
 
                 val proposeResult = proposeHandler(createCommand)
