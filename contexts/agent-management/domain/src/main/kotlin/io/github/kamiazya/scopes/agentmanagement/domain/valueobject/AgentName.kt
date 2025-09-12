@@ -26,7 +26,7 @@ value class AgentName private constructor(val value: String) {
             val trimmedName = value.trim()
 
             ensure(trimmedName.isNotEmpty()) {
-                AgentNameError.EmptyName()
+                AgentNameError.EmptyName
             }
 
             ensure(trimmedName.length >= MIN_LENGTH) {

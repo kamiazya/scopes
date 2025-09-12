@@ -23,7 +23,6 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
                     aggregateId = command.aggregateId,
                     eventType = command.eventType,
                     storageReason = EventStoreContractError.StorageFailureReason.INVALID_EVENT,
-                    occurredAt = error.occurredAt,
                     cause = null,
                 )
             }

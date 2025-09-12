@@ -35,7 +35,7 @@ sealed class ContextError : ContextManagementError() {
     }
 
     // New error cases for ContextViewKey
-    data class EmptyKey() : ContextError()
+    data object EmptyKey : ContextError()
 
     data class KeyTooShort(val minimumLength: Int) : ContextError()
 
@@ -52,14 +52,14 @@ sealed class ContextError : ContextManagementError() {
     }
 
     // New error cases for ContextViewDescription
-    data class EmptyDescription() : ContextError()
+    data object EmptyDescription : ContextError()
 
     data class DescriptionTooShort(val minimumLength: Int) : ContextError()
 
     data class DescriptionTooLong(val maximumLength: Int) : ContextError()
 
     // New error cases for ContextViewFilter
-    data class EmptyFilter() : ContextError()
+    data object EmptyFilter : ContextError()
 
     data class FilterTooShort(val minimumLength: Int) : ContextError()
 

@@ -16,9 +16,14 @@ import org.koin.core.context.stopKoin
 class ScopesCliApplication : AutoCloseable {
     private var koinApp: KoinApplication = startKoin {
         // Set environment property for database configuration
+        // Priority: System property -> Environment variable -> default
         properties(
             mapOf(
-                "app.environment" to (System.getenv("APP_ENVIRONMENT") ?: "development"),
+                "app.environment" to (
+                    System.getProperty("app.environment")
+                        ?: System.getenv("APP_ENVIRONMENT")
+                        ?: "development"
+                    ),
             ),
         )
         // Load modules

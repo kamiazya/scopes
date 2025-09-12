@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Reso
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.SnapshotId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.VersionNumber
+import kotlinx.datetime.Instant
 
 /**
  * Base error class for Collaborative Versioning bounded context.
@@ -89,7 +90,7 @@ sealed class VersionNumberError : CollaborativeVersioningError() {
  * Errors related to ResourceContent validation.
  */
 sealed class ResourceContentError : CollaborativeVersioningError() {
-    data class EmptyContent() : ResourceContentError()
+    data object EmptyContent : ResourceContentError()
 
     data class ContentTooLarge(val actualSize: Int, val maxSize: Int) : ResourceContentError()
 

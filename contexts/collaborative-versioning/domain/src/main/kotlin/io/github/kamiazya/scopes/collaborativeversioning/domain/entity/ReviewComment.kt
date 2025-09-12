@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.entity
 
+import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ReviewCommentType
@@ -56,7 +57,7 @@ data class ReviewComment(
         /**
          * Generate a unique ID for a review comment.
          */
-        fun generateId(): String = "review_comment_${System.nanoTime()}"
+        fun generateId(): String = "review_comment_${ULID.random()}"
 
         /**
          * Create a new review comment.

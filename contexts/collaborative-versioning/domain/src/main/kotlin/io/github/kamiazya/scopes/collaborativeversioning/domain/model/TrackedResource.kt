@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ResourceChange
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.Snapshot
@@ -114,7 +115,7 @@ class TrackedResource private constructor(
             )
         }
 
-        private fun generateChangeId(): String = "change_${System.nanoTime()}"
+        private fun generateChangeId(): String = "change_${ULID.random()}"
     }
 
     /**

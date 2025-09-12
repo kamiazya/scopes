@@ -20,7 +20,7 @@ sealed class AgentIdError : AgentManagementError() {
  * Errors related to Agent Name validation.
  */
 sealed class AgentNameError : AgentManagementError() {
-    data class EmptyName() : AgentNameError()
+    data object EmptyName : AgentNameError()
     data class NameTooShort(val minLength: Int, val actualLength: Int, val name: String) : AgentNameError()
     data class NameTooLong(val maxLength: Int, val actualLength: Int, val name: String) : AgentNameError()
     data class InvalidCharacters(val name: String, val invalidCharacters: Set<Char>) : AgentNameError()

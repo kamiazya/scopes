@@ -36,7 +36,6 @@ class GetEventsByAggregateHandler(private val eventRepository: EventRepository) 
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.GET_AGGREGATE_EVENTS,
                     aggregateId = query.aggregateId.value,
-                    occurredAt = error.occurredAt,
                     cause = null,
                 )
             }

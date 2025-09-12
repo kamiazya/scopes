@@ -28,7 +28,7 @@ value class ResourceContent private constructor(val value: JsonElement) {
          */
         fun fromJson(jsonString: String): Either<ResourceContentError, ResourceContent> = either {
             ensure(jsonString.isNotBlank()) {
-                ResourceContentError.EmptyContent()
+                ResourceContentError.EmptyContent
             }
 
             ensure(jsonString.length <= MAX_CONTENT_SIZE) {

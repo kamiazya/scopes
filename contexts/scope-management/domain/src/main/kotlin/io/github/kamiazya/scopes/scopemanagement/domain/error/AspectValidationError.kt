@@ -6,17 +6,17 @@ package io.github.kamiazya.scopes.scopemanagement.domain.error
  */
 sealed class AspectValidationError : ScopesError() {
     // AspectKey validation errors
-    data class EmptyAspectKey() : AspectValidationError()
-    data class AspectKeyTooShort() : AspectValidationError()
+    data object EmptyAspectKey : AspectValidationError()
+    data object AspectKeyTooShort : AspectValidationError()
     data class AspectKeyTooLong(val maxLength: Int, val actualLength: Int) : AspectValidationError()
-    data class InvalidAspectKeyFormat() : AspectValidationError()
+    data object InvalidAspectKeyFormat : AspectValidationError()
 
     // AspectValue validation errors
-    data class EmptyAspectValue() : AspectValidationError()
-    data class AspectValueTooShort() : AspectValidationError()
+    data object EmptyAspectValue : AspectValidationError()
+    data object AspectValueTooShort : AspectValidationError()
     data class AspectValueTooLong(val maxLength: Int, val actualLength: Int) : AspectValidationError()
 
     // AspectDefinition validation errors
-    data class EmptyAspectAllowedValues() : AspectValidationError()
-    data class DuplicateAspectAllowedValues() : AspectValidationError()
+    data object EmptyAspectAllowedValues : AspectValidationError()
+    data object DuplicateAspectAllowedValues : AspectValidationError()
 }

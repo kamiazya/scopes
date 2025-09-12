@@ -5,6 +5,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.application.command.ProposeChangeCommand
 import io.github.kamiazya.scopes.collaborativeversioning.application.error.ProposeChangeError
+import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.ChangeProposalError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.FindTrackedResourceError
 import io.github.kamiazya.scopes.collaborativeversioning.domain.error.SaveChangeProposalError
@@ -14,6 +15,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.Track
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.Author
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ProposalState
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.ResourceId
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -27,7 +29,9 @@ class ProposeChangeHandlerTest :
 
         val mockChangeProposalRepository = mockk<ChangeProposalRepository>()
         val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
-        val handler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
+        val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+        val mockLogger = mockk<Logger>(relaxed = true)
+        val handler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
 
         describe("ProposeChangeHandler") {
 

@@ -57,7 +57,7 @@ class ReviewProposalHandlerTest :
                     coEvery { mockChangeProposalRepository.save(reviewingProposal) } returns reviewingProposal.right()
 
                     // When
-                    val result = startReviewHandler.startReview(command)
+                    val result = startReviewHandler(command)
 
                     // Then
                     result.isRight() shouldBe true
@@ -77,7 +77,7 @@ class ReviewProposalHandlerTest :
                     coEvery { mockChangeProposalRepository.findById(proposalId) } returns null.right()
 
                     // When
-                    val result = startReviewHandler.startReview(command)
+                    val result = startReviewHandler(command)
 
                     // Then
                     result.isLeft() shouldBe true
@@ -98,7 +98,7 @@ class ReviewProposalHandlerTest :
                     coEvery { mockChangeProposalRepository.findById(proposalId) } returns findError.left()
 
                     // When
-                    val result = startReviewHandler.startReview(command)
+                    val result = startReviewHandler(command)
 
                     // Then
                     result.isLeft() shouldBe true

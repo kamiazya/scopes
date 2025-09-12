@@ -34,7 +34,6 @@ class GetEventsSinceHandler(private val eventRepository: EventRepository) :
             .mapLeft { error ->
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.GET_EVENTS,
-                    occurredAt = error.occurredAt,
                     cause = null,
                 )
             }

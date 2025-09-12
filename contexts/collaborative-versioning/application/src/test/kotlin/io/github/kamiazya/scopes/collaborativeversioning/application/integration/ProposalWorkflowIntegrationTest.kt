@@ -4,6 +4,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
 import io.github.kamiazya.scopes.collaborativeversioning.application.command.*
 import io.github.kamiazya.scopes.collaborativeversioning.application.handler.command.*
+import io.github.kamiazya.scopes.collaborativeversioning.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewComment
 import io.github.kamiazya.scopes.collaborativeversioning.domain.entity.ReviewCommentType
 import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ChangeProposal
@@ -11,6 +12,7 @@ import io.github.kamiazya.scopes.collaborativeversioning.domain.model.ResourceSt
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.ChangeProposalRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.repository.TrackedResourceRepository
 import io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject.*
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -31,7 +33,9 @@ class ProposalWorkflowIntegrationTest :
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
                 val mockResourceState = mockk<ResourceState>()
 
-                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
+                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockLogger = mockk<Logger>(relaxed = true)
+                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
                 val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
                 val approveHandler = ApproveProposalCommandHandler(mockChangeProposalRepository)
@@ -141,7 +145,9 @@ class ProposalWorkflowIntegrationTest :
                 val mockChangeProposalRepository = mockk<ChangeProposalRepository>()
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
 
-                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
+                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockLogger = mockk<Logger>(relaxed = true)
+                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
                 val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
                 val rejectHandler = RejectProposalHandler(mockChangeProposalRepository)
@@ -200,7 +206,9 @@ class ProposalWorkflowIntegrationTest :
                 val mockTrackedResourceRepository = mockk<TrackedResourceRepository>()
                 val mockResourceState = mockk<ResourceState>()
 
-                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository)
+                val mockEventPublisher = mockk<DomainEventPublisher>(relaxed = true)
+                val mockLogger = mockk<Logger>(relaxed = true)
+                val proposeHandler = ProposeChangeHandler(mockChangeProposalRepository, mockTrackedResourceRepository, mockEventPublisher, mockLogger)
                 val startReviewHandler = StartReviewHandler(mockChangeProposalRepository)
                 val addCommentHandler = AddReviewCommentHandler(mockChangeProposalRepository)
                 val approveHandler = ApproveProposalCommandHandler(mockChangeProposalRepository)

@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.collaborativeversioning.domain.valueobject
 
+import com.github.guepardoapps.kulid.ULID
 import io.github.kamiazya.scopes.collaborativeversioning.domain.service.SystemTimeProvider
 import kotlinx.datetime.Instant
 
@@ -48,7 +49,7 @@ sealed class ProposedChange {
         /**
          * Generate a unique ID for a proposed change.
          */
-        fun generateId(): String = "proposed_change_${System.nanoTime()}"
+        fun generateId(): String = "proposed_change_${ULID.random()}"
 
         /**
          * Create a proposed change from an existing changeset.

@@ -19,7 +19,7 @@ sealed class UserPreferencesIntegrationError : ScopesError() {
     /**
      * Error when hierarchy settings are missing from user preferences.
      */
-    data class HierarchySettingsNotFound() : UserPreferencesIntegrationError()
+    data object HierarchySettingsNotFound : UserPreferencesIntegrationError()
 
     /**
      * Error when hierarchy settings contain invalid values.
