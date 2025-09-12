@@ -63,6 +63,5 @@ jobs:
       with:
         name: coverage-reports
         path: |
-          build/reports/jacoco/
           **/build/reports/jacoco/
         if-no-files-found: warn
