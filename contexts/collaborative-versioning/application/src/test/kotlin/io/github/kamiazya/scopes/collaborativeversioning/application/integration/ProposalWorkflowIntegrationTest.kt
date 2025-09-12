@@ -72,6 +72,22 @@ class ProposalWorkflowIntegrationTest :
                     targetResourceId = resourceId,
                     title = "Add new feature",
                     description = "This proposal adds a new feature to the system",
+                    proposedChanges = listOf(
+                        ProposedChange.Inline(
+                            id = ProposedChange.generateId(),
+                            resourceId = resourceId,
+                            description = "Add new feature",
+                            createdAt = Clock.System.now(),
+                            changes = listOf(
+                                Change(
+                                    path = "/features/newFeature",
+                                    operation = ChangeOperation.ADD,
+                                    previousValue = null,
+                                    newValue = "enabled"
+                                )
+                            )
+                        )
+                    )
                 )
 
                 val createResult = proposeHandler(createCommand)
@@ -87,10 +103,6 @@ class ProposalWorkflowIntegrationTest :
                 val submitCommand = SubmitProposalCommand(proposalId)
                 val submitResult = submitHandler(submitCommand)
 
-                if (submitResult.isLeft()) {
-                    println("Submit failed with error: ${submitResult.leftOrNull()}")
-                    println("Current savedProposal: $savedProposal")
-                }
                 submitResult.isRight() shouldBe true
                 val submittedDto = submitResult.getOrNull()!!
                 submittedDto.state shouldBe ProposalState.SUBMITTED
@@ -190,6 +202,22 @@ class ProposalWorkflowIntegrationTest :
                     targetResourceId = resourceId,
                     title = "Problematic feature",
                     description = "This proposal has issues",
+                    proposedChanges = listOf(
+                        ProposedChange.Inline(
+                            id = ProposedChange.generateId(),
+                            resourceId = resourceId,
+                            description = "Add problematic feature",
+                            createdAt = Clock.System.now(),
+                            changes = listOf(
+                                Change(
+                                    path = "/features/problematic",
+                                    operation = ChangeOperation.ADD,
+                                    previousValue = null,
+                                    newValue = "risky"
+                                )
+                            )
+                        )
+                    )
                 )
 
                 val createResult = proposeHandler(createCommand)
@@ -264,6 +292,22 @@ class ProposalWorkflowIntegrationTest :
                     targetResourceId = resourceId,
                     title = "Conflicting change",
                     description = "This change will conflict with current state",
+                    proposedChanges = listOf(
+                        ProposedChange.Inline(
+                            id = ProposedChange.generateId(),
+                            resourceId = resourceId,
+                            description = "Update conflicting value",
+                            createdAt = Clock.System.now(),
+                            changes = listOf(
+                                Change(
+                                    path = "conflict.path",
+                                    operation = ChangeOperation.MODIFY,
+                                    previousValue = "old_value",
+                                    newValue = "new_value"
+                                )
+                            )
+                        )
+                    )
                 )
 
                 val proposeResult = proposeHandler(createCommand)
