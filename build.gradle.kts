@@ -30,26 +30,34 @@ subprojects {
 
     // Configure Kotlin compilation when plugin is applied
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-        apply(plugin = "jacoco")
-
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
             }
         }
 
-        // Configure JaCoCo for projects with tests
-        tasks.withType<Test> {
-            useJUnitPlatform()
-            finalizedBy("jacocoTestReport")
-        }
+        // Skip JaCoCo configuration for problematic infrastructure module
+        if (project.name != "user-preferences-infrastructure") {
+            apply(plugin = "jacoco")
+            
+            // Configure JaCoCo for projects with tests
+            tasks.withType<Test> {
+                useJUnitPlatform()
+                finalizedBy("jacocoTestReport")
+            }
 
-        tasks.named<JacocoReport>("jacocoTestReport") {
-            mustRunAfter("test")
-            reports {
-                xml.required.set(true)
-                html.required.set(false)
-                csv.required.set(false)
+            tasks.named<JacocoReport>("jacocoTestReport") {
+                mustRunAfter("test")
+                reports {
+                    xml.required.set(true)
+                    html.required.set(false)
+                    csv.required.set(false)
+                }
+            }
+        } else {
+            // For user-preferences-infrastructure, use Kotest without JaCoCo for now
+            tasks.withType<Test> {
+                useJUnitPlatform()
             }
         }
     }
@@ -152,7 +160,7 @@ tasks.register<JacocoReport>("jacocoRootReport") {
 
     // Depend on individual jacoco test report tasks, not test tasks directly
     dependsOn(
-        subprojects.mapNotNull {
+        subprojects.filter { it.name != "user-preferences-infrastructure" }.mapNotNull {
             try {
                 it.tasks.named("jacocoTestReport")
             } catch (e: Exception) {
@@ -162,10 +170,11 @@ tasks.register<JacocoReport>("jacocoRootReport") {
     )
 
     val kotlinSubprojects = subprojects.filter { it.plugins.hasPlugin("org.jetbrains.kotlin.jvm") }
+    val jacocoSubprojects = kotlinSubprojects.filter { it.name != "user-preferences-infrastructure" }
 
-    sourceDirectories.setFrom(kotlinSubprojects.map { it.fileTree("src/main/kotlin") })
-    classDirectories.setFrom(kotlinSubprojects.map { it.fileTree("build/classes/kotlin/main") })
-    executionData.setFrom(kotlinSubprojects.map { it.file("build/jacoco/test.exec") }.filter { it.exists() })
+    sourceDirectories.setFrom(jacocoSubprojects.map { it.fileTree("src/main/kotlin") })
+    classDirectories.setFrom(jacocoSubprojects.map { it.fileTree("build/classes/kotlin/main") })
+    executionData.setFrom(jacocoSubprojects.map { it.file("build/jacoco/test.exec") }.filter { it.exists() })
 
     reports {
         xml.required.set(true)
