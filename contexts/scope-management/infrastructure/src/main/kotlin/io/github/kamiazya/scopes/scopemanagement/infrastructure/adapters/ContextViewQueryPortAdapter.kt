@@ -10,10 +10,10 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetContextVie
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextViewsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.ListContextViewsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.context.GetContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.context.ListContextViewsHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetContextView
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.ListContextViews
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 

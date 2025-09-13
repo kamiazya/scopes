@@ -10,7 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPol
  * This interface acts as an Anti-Corruption Layer between the Scope Management
  * context and external contexts (e.g., User Preferences).
  */
-interface HierarchyPolicyProvider {
+fun interface HierarchyPolicyProvider {
     /**
      * Retrieves the current hierarchy policy configuration.
      *

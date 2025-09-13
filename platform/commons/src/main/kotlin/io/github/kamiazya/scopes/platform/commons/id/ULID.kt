@@ -6,7 +6,7 @@ import com.github.guepardoapps.kulid.ULID as KULID
  * Abstraction for ULID generators to support testability and dependency inversion.
  * Domain layers should depend on this interface rather than concrete ULID implementations.
  */
-interface ULIDGenerator {
+fun interface ULIDGenerator {
     fun generate(): ULID
 }
 

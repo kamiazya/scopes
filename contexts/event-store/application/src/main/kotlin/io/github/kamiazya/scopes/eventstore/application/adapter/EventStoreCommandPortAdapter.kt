@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.contracts.eventstore.commands.StoreEventCommand
 import io.github.kamiazya.scopes.contracts.eventstore.errors.EventStoreContractError
 import io.github.kamiazya.scopes.eventstore.application.handler.command.StoreEventHandler
 import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
+import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.eventstore.application.command.StoreEventCommand as AppStoreEventCommand
 
 /**
@@ -23,7 +24,7 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
                     aggregateId = command.aggregateId,
                     eventType = command.eventType,
                     storageReason = EventStoreContractError.StorageFailureReason.INVALID_EVENT,
-                    occurredAt = error.occurredAt,
+                    occurredAt = Clock.System.now(),
                     cause = null,
                 )
             }

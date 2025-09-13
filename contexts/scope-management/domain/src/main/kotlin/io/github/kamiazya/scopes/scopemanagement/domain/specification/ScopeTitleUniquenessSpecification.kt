@@ -6,7 +6,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessErr
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import kotlinx.datetime.Clock
 
 /**
  * Specification for validating title uniqueness within the same parent scope.
@@ -45,7 +44,6 @@ class ScopeTitleUniquenessSpecification {
         if (existingScopeId != null && existingScopeId != currentScopeId) {
             raise(
                 ScopeUniquenessError.DuplicateTitle(
-                    occurredAt = Clock.System.now(),
                     title = newTitle.value,
                     parentScopeId = parentId,
                     existingScopeId = existingScopeId, // Now we have the actual conflicting scope ID

@@ -6,13 +6,12 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.DeleteScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Handler for deleting a scope.
@@ -40,7 +39,6 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                     logger.warn("Scope not found for deletion", mapOf("scopeId" to command.id))
                     ScopeNotFoundError(
                         scopeId = scopeId,
-                        occurredAt = Clock.System.now(),
                     )
                 }
 
@@ -74,7 +72,6 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
                         raise(
                             ScopeHierarchyError.HasChildren(
                                 scopeId = scopeId,
-                                occurredAt = Clock.System.now(),
                             ),
                         )
                     }

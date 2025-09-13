@@ -48,7 +48,6 @@ class StoreEventHandler(private val eventRepository: EventRepository, private va
                     eventType = command.event::class.simpleName
                         ?: command.event::class.qualifiedName
                         ?: "DomainEvent",
-                    occurredAt = error.occurredAt,
                     cause = null,
                 )
             }

@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.application.factory
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.observability.Loggable
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
@@ -64,7 +63,6 @@ class ScopeFactory(
             }
 
             return ScopeHierarchyError.HierarchyUnavailable(
-                occurredAt = currentTimestamp(),
                 scopeId = scopeId,
                 operation = operation,
                 reason = reason,
@@ -103,7 +101,6 @@ class ScopeFactory(
                 .bind()
             ensure(parentExists) {
                 ScopeHierarchyError.ParentNotFound(
-                    occurredAt = currentTimestamp(),
                     scopeId = newScopeId,
                     parentId = parentId,
                 )
@@ -144,7 +141,6 @@ class ScopeFactory(
 
         ensure(existingScopeId == null) {
             ScopeUniquenessError.DuplicateTitle(
-                occurredAt = currentTimestamp(),
                 title = title,
                 parentScopeId = parentId,
                 existingScopeId = existingScopeId!!,

@@ -1,43 +1,35 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Instant
 
 /**
  * Constraint violations related to Scope hierarchy.
  */
 sealed class ScopeHierarchyError : ScopesError() {
 
-    data class CircularReference(override val occurredAt: Instant, val scopeId: ScopeId, val parentId: ScopeId) : ScopeHierarchyError()
+    data class CircularReference(val scopeId: ScopeId, val parentId: ScopeId) : ScopeHierarchyError()
 
-    data class CircularPath(override val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
+    data class CircularPath(val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
 
-    data class MaxDepthExceeded(override val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) :
-        ScopeHierarchyError()
+    data class MaxDepthExceeded(val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
 
-    data class MaxChildrenExceeded(override val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) :
-        ScopeHierarchyError()
+    data class MaxChildrenExceeded(val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
 
-    data class SelfParenting(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
+    data class SelfParenting(val scopeId: ScopeId) : ScopeHierarchyError()
 
-    data class ParentNotFound(override val occurredAt: Instant, val scopeId: ScopeId, val parentId: ScopeId) : ScopeHierarchyError()
+    data class ParentNotFound(val scopeId: ScopeId, val parentId: ScopeId) : ScopeHierarchyError()
 
-    data class InvalidParentId(override val occurredAt: Instant, val invalidId: String) : ScopeHierarchyError()
+    data class InvalidParentId(val invalidId: String) : ScopeHierarchyError()
 
-    data class ScopeInHierarchyNotFound(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
+    data class ScopeInHierarchyNotFound(val scopeId: ScopeId) : ScopeHierarchyError()
 
-    data class HasChildren(override val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
+    data class HasChildren(val scopeId: ScopeId) : ScopeHierarchyError()
 
     /**
      * Represents a failure in hierarchy operations due to availability issues.
      * This models business-level failures without exposing technical details.
      */
-    data class HierarchyUnavailable(
-        override val occurredAt: Instant,
-        val scopeId: ScopeId? = null,
-        val operation: HierarchyOperation,
-        val reason: AvailabilityReason,
-    ) : ScopeHierarchyError()
+    data class HierarchyUnavailable(val scopeId: ScopeId? = null, val operation: HierarchyOperation, val reason: AvailabilityReason) : ScopeHierarchyError()
 }
 
 /**

@@ -15,21 +15,21 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResu
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetChildren
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetRootScopes
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAliases
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetChildrenHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.FilterScopesWithQueryHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.GetChildrenHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.GetRootScopesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.GetScopeByAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.ListAliasesHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.FilterScopesWithQuery
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetChildren
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetRootScopes
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetScopeById
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.ListAliases
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias as AppGetScopeByAliasQuery
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetScopeByAlias as AppGetScopeByAliasQuery
 
 /**
  * Query port adapter implementing the ScopeManagementQueryPort interface.

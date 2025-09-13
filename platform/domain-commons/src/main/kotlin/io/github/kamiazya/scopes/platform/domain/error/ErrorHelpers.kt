@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.platform.domain.error
 
 import io.github.kamiazya.scopes.platform.commons.time.Instant
 import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.platform.domain.service.SystemTimeProvider
 
 /**
  * Helper function to create errors with timestamps.
@@ -15,4 +15,4 @@ fun createErrorWithTimestamp(timeProvider: TimeProvider): Instant = timeProvider
  * @deprecated Use TimeProvider injection pattern for clean architecture
  */
 @Deprecated(message = "Use TimeProvider injection pattern instead of direct Clock.System access")
-fun currentTimestamp(): Instant = Clock.System.now()
+fun currentTimestamp(): Instant = SystemTimeProvider().now()

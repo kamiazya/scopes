@@ -1,13 +1,16 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
+import arrow.core.Either
 import arrow.core.toNonEmptyListOrNull
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.FilterScopesWithQueryHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
@@ -185,12 +188,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "status=open", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
@@ -198,12 +201,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "status!=open", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope2.id.value, scope4.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope2.id.value, scope4.id.value)
                     }
                 }
 
@@ -211,12 +214,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "size>10", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id.value, scope4.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope3.id.value, scope4.id.value)
                     }
                 }
 
@@ -224,12 +227,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "size<=10", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope2.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope2.id.value)
                     }
                 }
 
@@ -237,12 +240,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "active=true", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
@@ -250,12 +253,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "priority>=high", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
@@ -263,12 +266,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "estimatedTime<PT4H", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
             }
@@ -278,12 +281,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "status=open AND size>10", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope3.id.value)
                     }
                 }
 
@@ -291,12 +294,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "priority=critical OR priority=low", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope2.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope2.id.value, scope3.id.value)
                     }
                 }
 
@@ -304,12 +307,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "NOT status=closed", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value, scope4.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value, scope4.id.value)
                     }
                 }
 
@@ -321,12 +324,12 @@ class AspectQueryIntegrationTest :
                             offset = 0,
                             limit = 1000,
                         )
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
@@ -338,12 +341,12 @@ class AspectQueryIntegrationTest :
                             offset = 0,
                             limit = 1000,
                         )
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value, scope4.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value, scope4.id.value)
                     }
                 }
             }
@@ -353,12 +356,12 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act
                         val query = FilterScopesWithQuery(query = "status=\"open\"", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
@@ -366,23 +369,23 @@ class AspectQueryIntegrationTest :
                     runTest {
                         // Act - scope4 doesn't have 'active' aspect
                         val query = FilterScopesWithQuery(query = "active=true", offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value)
                     }
                 }
 
                 it("should handle invalid queries gracefully") {
                     runTest {
                         // Act
-                        val results = listOf(
-                            filterScopesWithQueryHandler(FilterScopesWithQuery(query = "", offset = 0, limit = 1000)),
-                            filterScopesWithQueryHandler(FilterScopesWithQuery(query = "status", offset = 0, limit = 1000)),
-                            filterScopesWithQueryHandler(FilterScopesWithQuery(query = "status==open", offset = 0, limit = 1000)),
-                            filterScopesWithQueryHandler(FilterScopesWithQuery(query = "(status=open", offset = 0, limit = 1000)),
+                        val results = listOf<Either<ScopesError, List<ScopeDto>>>(
+                            filterScopesWithQueryHandler.invoke(FilterScopesWithQuery(query = "", offset = 0, limit = 1000)),
+                            filterScopesWithQueryHandler.invoke(FilterScopesWithQuery(query = "status", offset = 0, limit = 1000)),
+                            filterScopesWithQueryHandler.invoke(FilterScopesWithQuery(query = "status==open", offset = 0, limit = 1000)),
+                            filterScopesWithQueryHandler.invoke(FilterScopesWithQuery(query = "(status=open", offset = 0, limit = 1000)),
                         )
 
                         // Assert - all should be errors
@@ -405,13 +408,13 @@ class AspectQueryIntegrationTest :
                         """.trimIndent().replace("\n", " ")
 
                         val query = FilterScopesWithQuery(query = complexQuery, offset = 0, limit = 1000)
-                        val result = filterScopesWithQueryHandler(query)
+                        val result = filterScopesWithQueryHandler.invoke(query)
 
                         // Assert
                         result.shouldBeRight()
                         val scopes = result.getOrNull()!!
                         // scope4 doesn't have active aspect, so NOT active=false should include it
-                        scopes.map { it.id } shouldContainExactlyInAnyOrder listOf(scope1.id.value, scope3.id.value, scope4.id.value)
+                        scopes.map { scope -> scope.id }.shouldContainExactlyInAnyOrder(scope1.id.value, scope3.id.value, scope4.id.value)
                     }
                 }
             }

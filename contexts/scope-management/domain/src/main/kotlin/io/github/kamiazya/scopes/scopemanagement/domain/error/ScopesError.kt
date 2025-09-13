@@ -1,8 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-
 /**
  * Base type for all errors in the Scopes domain.
  *
@@ -17,10 +14,6 @@ import kotlinx.datetime.Instant
  * - Infrastructure errors (PersistenceError)
  */
 sealed class ScopesError {
-    /**
-     * Contextual timestamp when the error occurred.
-     */
-    abstract val occurredAt: Instant
 
     /**
      * Error for invalid operations.
@@ -30,7 +23,6 @@ sealed class ScopesError {
         val entityType: String? = null,
         val entityId: String? = null,
         val reason: InvalidOperationReason? = null,
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError() {
         enum class InvalidOperationReason {
             INVALID_STATE,
@@ -47,7 +39,6 @@ sealed class ScopesError {
         val entityType: String,
         val identifier: String,
         val identifierType: String = "key", // key, id, alias, etc.
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError()
 
     /**
@@ -57,7 +48,6 @@ sealed class ScopesError {
         val entityType: String,
         val identifier: String,
         val identifierType: String = "key", // key, id, alias, etc.
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError()
 
     /**
@@ -68,7 +58,6 @@ sealed class ScopesError {
         val service: String? = null,
         val cause: Throwable? = null,
         val context: Map<String, Any> = emptyMap(),
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError() {
         enum class SystemErrorType {
             SERVICE_UNAVAILABLE,
@@ -85,13 +74,8 @@ sealed class ScopesError {
     /**
      * Error indicating a validation failure.
      */
-    data class ValidationFailed(
-        val field: String,
-        val value: String,
-        val constraint: ValidationConstraintType,
-        val details: Map<String, Any> = emptyMap(),
-        override val occurredAt: Instant = Clock.System.now(),
-    ) : ScopesError()
+    data class ValidationFailed(val field: String, val value: String, val constraint: ValidationConstraintType, val details: Map<String, Any> = emptyMap()) :
+        ScopesError()
 
     /**
      * Validation constraint types.
@@ -108,13 +92,8 @@ sealed class ScopesError {
     /**
      * Error indicating a resource conflict.
      */
-    data class Conflict(
-        val resourceType: String,
-        val resourceId: String,
-        val conflictType: ConflictType,
-        val details: Map<String, Any> = emptyMap(),
-        override val occurredAt: Instant = Clock.System.now(),
-    ) : ScopesError() {
+    data class Conflict(val resourceType: String, val resourceId: String, val conflictType: ConflictType, val details: Map<String, Any> = emptyMap()) :
+        ScopesError() {
         enum class ConflictType {
             ALREADY_IN_USE,
             HAS_DEPENDENCIES,
@@ -132,7 +111,6 @@ sealed class ScopesError {
         val expectedVersion: Int? = null,
         val actualVersion: Int? = null,
         val operation: String? = null,
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError()
 
     /**
@@ -144,7 +122,6 @@ sealed class ScopesError {
         val entityType: String? = null,
         val entityId: String? = null,
         val cause: Throwable? = null,
-        override val occurredAt: Instant = Clock.System.now(),
     ) : ScopesError() {
         enum class RepositoryOperation {
             SAVE,
@@ -162,6 +139,5 @@ sealed class ScopesError {
      * This error is raised when attempting to transition a scope
      * from one status to another that is not allowed by the domain rules.
      */
-    data class ScopeStatusTransitionError(val from: String, val to: String, val reason: String, override val occurredAt: Instant = Clock.System.now()) :
-        ScopesError()
+    data class ScopeStatusTransitionError(val from: String, val to: String, val reason: String) : ScopesError()
 }

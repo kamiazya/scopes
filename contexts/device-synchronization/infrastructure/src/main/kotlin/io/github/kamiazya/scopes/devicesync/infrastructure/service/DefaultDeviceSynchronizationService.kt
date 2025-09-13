@@ -34,7 +34,6 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                         SynchronizationError.InvalidDeviceError(
                             deviceId = remoteDeviceId.value,
                             configurationIssue = SynchronizationError.ConfigurationIssue.MISSING_SYNC_CAPABILITY,
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 }
@@ -55,7 +54,6 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                     deviceId = remoteDeviceId.value,
                                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                                     cause = null,
-                                    occurredAt = Clock.System.now(),
                                 )
                             }
                             .flatMap { events ->
