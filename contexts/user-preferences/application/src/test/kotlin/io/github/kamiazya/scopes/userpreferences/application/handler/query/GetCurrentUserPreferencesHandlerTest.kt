@@ -95,50 +95,19 @@ class GetCurrentUserPreferencesHandlerTest :
             }
 
             describe("when no preferences exist in repository") {
-                it("should create and save default preferences successfully") {
-                    // Given
+                it("should return PreferencesNotInitialized error") {
+                    // Given - repository returns null (no aggregate exists)
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
-
-                    val newAggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
-                        version = AggregateVersion.initial(),
-                        preferences = UserPreferences(
-                            hierarchyPreferences = HierarchyPreferences.DEFAULT,
-                            createdAt = fixedInstant,
-                            updatedAt = fixedInstant,
-                        ),
-                        createdAt = fixedInstant,
-                        updatedAt = fixedInstant,
-                    )
-                    coEvery { mockRepository.save(any()) } returns Unit.right()
-
-                    // When
-                    val result = handler.invoke(GetCurrentUserPreferences)
-
-                    // Then
-                    val dto = result.shouldBeRight()
-                    dto.hierarchyPreferences.maxDepth shouldBe null
-                    dto.hierarchyPreferences.maxChildrenPerScope shouldBe null
-
-                    coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
-                    coVerify(exactly = 1) { mockRepository.save(any()) }
-                }
-
-                it("should handle save failure when creating default preferences") {
-                    // Given
-                    val saveError = UserPreferencesError.InvalidPreferenceValue("save", "test", UserPreferencesError.ValidationError.INVALID_FORMAT)
-                    coEvery { mockRepository.findForCurrentUser() } returns null.right()
-                    coEvery { mockRepository.save(any()) } returns saveError.left()
 
                     // When
                     val result = handler.invoke(GetCurrentUserPreferences)
 
                     // Then
                     val error = result.shouldBeLeft()
-                    error shouldBe saveError
+                    error shouldBe UserPreferencesError.PreferencesNotInitialized
 
                     coVerify(exactly = 1) { mockRepository.findForCurrentUser() }
-                    coVerify(exactly = 1) { mockRepository.save(any()) }
+                    coVerify(exactly = 0) { mockRepository.save(any()) }
                 }
             }
 
