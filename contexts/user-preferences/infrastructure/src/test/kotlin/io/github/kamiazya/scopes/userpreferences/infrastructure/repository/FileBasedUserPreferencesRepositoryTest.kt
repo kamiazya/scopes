@@ -318,8 +318,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    val error = result.shouldBeLeft()
-                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    val invalidError = result.shouldBeLeft()
+                        .shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "load"
                     invalidError.value shouldBe configFile.toString()
                     invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
@@ -348,8 +348,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    val error = result.shouldBeLeft()
-                    error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    result.shouldBeLeft()
+                        .shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                 }
 
                 it("should cache loaded preferences for subsequent calls") {
@@ -464,8 +464,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.save(aggregate) }
 
                     // Then - should handle the I/O error gracefully
-                    val error = result.shouldBeLeft()
-                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    val invalidError = result.shouldBeLeft()
+                        .shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.key shouldBe "save"
                     invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
 
@@ -482,8 +482,8 @@ class FileBasedUserPreferencesRepositoryTest :
                     val result = runBlocking { repository.findForCurrentUser() }
 
                     // Then
-                    val error = result.shouldBeLeft()
-                    val invalidError = error.shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
+                    val invalidError = result.shouldBeLeft()
+                        .shouldBeInstanceOf<UserPreferencesError.InvalidPreferenceValue>()
                     invalidError.validationError shouldBe UserPreferencesError.ValidationError.INVALID_FORMAT
                 }
 

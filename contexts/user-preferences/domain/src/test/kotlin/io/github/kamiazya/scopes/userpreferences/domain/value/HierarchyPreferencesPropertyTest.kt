@@ -49,8 +49,8 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb()) { invalidDepth ->
                 val result = HierarchyPreferences.create(invalidDepth, null)
 
-                val error = result.shouldBeLeft()
-                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                val hierarchyError = result.shouldBeLeft()
+                    .shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
                 hierarchyError.preferenceType shouldBe UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT
             }
         }
@@ -59,8 +59,8 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb()) { invalidChildren ->
                 val result = HierarchyPreferences.create(null, invalidChildren)
 
-                val error = result.shouldBeLeft()
-                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                val hierarchyError = result.shouldBeLeft()
+                    .shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
                 hierarchyError.preferenceType shouldBe UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT
             }
         }
@@ -69,8 +69,8 @@ class HierarchyPreferencesPropertyTest :
             checkAll(invalidIntArb(), invalidIntArb()) { invalidDepth, invalidChildren ->
                 val result = HierarchyPreferences.create(invalidDepth, invalidChildren)
 
-                val error = result.shouldBeLeft()
-                val hierarchyError = error.shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
+                val hierarchyError = result.shouldBeLeft()
+                    .shouldBeInstanceOf<UserPreferencesError.InvalidHierarchyPreferences>()
                 // Should fail on maxDepth first (as per implementation order)
                 hierarchyError.preferenceType shouldBe UserPreferencesError.HierarchyPreferenceType.INVALID_DEFAULT
             }

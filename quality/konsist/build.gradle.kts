@@ -26,6 +26,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    maxHeapSize = "2048m"
-    jvmArgs("-XX:MaxMetaspaceSize=512m")
+    maxHeapSize = "4096m"
+    jvmArgs(
+        "-XX:MaxMetaspaceSize=1024m",
+        "-XX:+UseG1GC",
+        "-XX:+UseStringDeduplication",
+        "-XX:MaxGCPauseMillis=200",
+        "-XX:InitiatingHeapOccupancyPercent=45",
+        "-Dkotlinx.coroutines.debug=off"
+    )
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }

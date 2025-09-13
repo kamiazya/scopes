@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.agentmanagement.domain.valueobject.AgentId
  */
 sealed class FindAgentError : AgentManagementError() {
     data class QueryTimeout(val operation: String, val timeoutMs: Long) : FindAgentError()
-    data class IndexCorruption(val agentId: AgentId, val message: String) : FindAgentError()
-    data class NetworkError(val message: String, val cause: Throwable?) : FindAgentError()
+    data class IndexCorruption(val agentId: AgentId) : FindAgentError()
+    data class NetworkError(val cause: Throwable?) : FindAgentError()
 }
 
 /**
@@ -18,7 +18,7 @@ sealed class SaveAgentError : AgentManagementError() {
     data class ConcurrentModification(val agentId: AgentId, val expectedVersion: Int, val actualVersion: Int) : SaveAgentError()
     data class ValidationFailed(val violations: List<String>) : SaveAgentError()
     data class StorageQuotaExceeded(val currentSize: Long, val maxSize: Long) : SaveAgentError()
-    data class NetworkError(val message: String, val cause: Throwable?) : SaveAgentError()
+    data class NetworkError(val cause: Throwable?) : SaveAgentError()
 }
 
 /**
@@ -27,7 +27,7 @@ sealed class SaveAgentError : AgentManagementError() {
 sealed class DeleteAgentError : AgentManagementError() {
     data class AgentInUse(val agentId: AgentId, val dependentEntities: List<String>) : DeleteAgentError()
     data class ConcurrentModification(val agentId: AgentId) : DeleteAgentError()
-    data class NetworkError(val message: String, val cause: Throwable?) : DeleteAgentError()
+    data class NetworkError(val cause: Throwable?) : DeleteAgentError()
 }
 
 /**
@@ -35,5 +35,5 @@ sealed class DeleteAgentError : AgentManagementError() {
  */
 sealed class ExistsAgentError : AgentManagementError() {
     data class QueryTimeout(val operation: String, val timeoutMs: Long) : ExistsAgentError()
-    data class NetworkError(val message: String, val cause: Throwable?) : ExistsAgentError()
+    data class NetworkError(val cause: Throwable?) : ExistsAgentError()
 }
