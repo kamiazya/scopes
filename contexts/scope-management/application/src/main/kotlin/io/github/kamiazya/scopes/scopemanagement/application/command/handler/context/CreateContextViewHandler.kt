@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.dto.context.Context
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError as DomainContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
@@ -26,9 +27,9 @@ class CreateContextViewHandler(private val contextViewRepository: ContextViewRep
     override suspend operator fun invoke(command: CreateContextViewCommand): Either<ScopesError, ContextViewDto> = transactionManager.inTransaction {
         either {
             // Validate and create value objects
-            val key = ContextViewKey.create(command.key).mapLeft { it as ScopesError }.bind()
-            val name = ContextViewName.create(command.name).mapLeft { it as ScopesError }.bind()
-            val filter = ContextViewFilter.create(command.filter).mapLeft { it as ScopesError }.bind()
+            val key = ContextViewKey.create(command.key).bind()
+            val name = ContextViewName.create(command.name).bind()
+            val filter = ContextViewFilter.create(command.filter).bind()
 
             // Create the context view
             val contextView = ContextView.create(
@@ -40,7 +41,7 @@ class CreateContextViewHandler(private val contextViewRepository: ContextViewRep
             ).bind()
 
             // Save to repository
-            val saved = contextViewRepository.save(contextView).mapLeft { it as ScopesError }.bind()
+            val saved = contextViewRepository.save(contextView).bind()
 
             // Map to DTO
             ContextViewDto(
