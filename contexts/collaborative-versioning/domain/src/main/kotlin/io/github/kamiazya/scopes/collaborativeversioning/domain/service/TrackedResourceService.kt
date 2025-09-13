@@ -121,26 +121,27 @@ object TrackedResourceService {
             // Skip if deleted in both
             if (sourceValue == null && targetValue == null) continue
 
-            val value: JsonElement = when {
+            val value: JsonElement? = when {
                 // If only in source, take source
-                baseValue == null && targetValue == null -> sourceValue!!
+                baseValue == null && targetValue == null -> sourceValue
                 // If only in target, take target
-                baseValue == null && sourceValue == null -> targetValue!!
+                baseValue == null && sourceValue == null -> targetValue
                 // If deleted in source but modified in target, take target
-                sourceValue == null && targetValue != baseValue -> targetValue!!
+                sourceValue == null && targetValue != baseValue -> targetValue
                 // If deleted in target but modified in source, take source
-                targetValue == null && sourceValue != baseValue -> sourceValue!!
+                targetValue == null && sourceValue != baseValue -> sourceValue
                 // If both have same value, take it
-                sourceValue == targetValue -> sourceValue!!
+                sourceValue == targetValue -> sourceValue
                 // If source modified but target didn't, take source
-                sourceValue != baseValue && targetValue == baseValue -> sourceValue!!
+                sourceValue != baseValue && targetValue == baseValue -> sourceValue
                 // If target modified but source didn't, take target
-                targetValue != baseValue && sourceValue == baseValue -> targetValue!!
+                targetValue != baseValue && sourceValue == baseValue -> targetValue
                 // Both modified differently - prefer source (could be made configurable)
-                else -> sourceValue!!
+                else -> sourceValue
             }
 
-            merged[key] = value
+            // Only add to merged if value is not null
+            value?.let { merged[key] = it }
         }
 
         return JsonObject(merged)

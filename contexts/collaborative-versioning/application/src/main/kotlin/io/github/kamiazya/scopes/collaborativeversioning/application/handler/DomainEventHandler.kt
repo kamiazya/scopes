@@ -77,7 +77,9 @@ class DomainEventHandlerRegistry {
         eventHandlers.forEach { handler ->
             handler.handle(event).fold(
                 { error -> errors.add(error) },
-                { /* Success - continue */ },
+                { _ ->
+                    // Success - continue
+                },
             )
         }
 

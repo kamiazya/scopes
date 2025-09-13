@@ -14,6 +14,9 @@ class ErrorMapperTest :
         val mockLogger = mockk<Logger>(relaxed = true)
         val errorMapper = ErrorMapper(mockLogger)
 
+        // Test constants
+        val testScopeId = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+
         describe("ErrorMapper") {
             context("Input validation errors") {
                 it("should map ScopeInputError.IdError.Blank to InvalidId") {
@@ -129,58 +132,58 @@ class ErrorMapperTest :
 
             context("Business rule violations") {
                 it("should map ScopeError.NotFound to BusinessError.NotFound") {
-                    val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
+                    val scopeId = ScopeId.create(testScopeId).getOrNull()!!
                     val domainError = ScopeError.NotFound(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                 }
 
                 it("should map ScopeError.ParentNotFound to BusinessError.NotFound") {
-                    val parentId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
+                    val parentId = ScopeId.create(testScopeId).getOrNull()!!
                     val domainError = ScopeError.ParentNotFound(parentId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                 }
 
                 it("should map ScopeError.AlreadyDeleted to BusinessError.AlreadyDeleted") {
-                    val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
+                    val scopeId = ScopeId.create(testScopeId).getOrNull()!!
                     val domainError = ScopeError.AlreadyDeleted(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AlreadyDeleted>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                 }
 
                 it("should map ScopeError.AlreadyArchived to BusinessError.ArchivedScope") {
-                    val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
+                    val scopeId = ScopeId.create(testScopeId).getOrNull()!!
                     val domainError = ScopeError.AlreadyArchived(scopeId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.ArchivedScope>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                 }
 
                 it("should map ScopeError.DuplicateTitle to BusinessError.DuplicateTitle") {
-                    val parentId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()
+                    val parentId = ScopeId.create(testScopeId).getOrNull()
                     val domainError = ScopeError.DuplicateTitle("My Title", parentId)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.DuplicateTitle>()
                     result.title shouldBe "My Title"
-                    result.parentId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.parentId shouldBe testScopeId
                 }
 
                 it("should map ScopeError.VersionMismatch to SystemError.ConcurrentModification") {
-                    val scopeId = ScopeId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV").getOrNull()!!
+                    val scopeId = ScopeId.create(testScopeId).getOrNull()!!
                     val domainError = ScopeError.VersionMismatch(scopeId, expectedVersion = 1, actualVersion = 2)
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ConcurrentModification>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                     result.expectedVersion shouldBe 1L
                     result.actualVersion shouldBe 2L
                 }
@@ -203,12 +206,12 @@ class ErrorMapperTest :
                     val domainError = ScopesError.NotFound(
                         entityType = "Scope",
                         identifierType = "id",
-                        identifier = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                        identifier = testScopeId,
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
-                    result.scopeId shouldBe "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+                    result.scopeId shouldBe testScopeId
                 }
 
                 it("should map ScopesError.AlreadyExists to BusinessError.DuplicateAlias") {

@@ -43,9 +43,12 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
-                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()!!
-                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()
+                    ?: error("Failed to create author")
+                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()
+                    ?: error("Failed to create reviewer")
+                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()
+                    ?: error("Failed to create approver")
                 val resourceId = ResourceId.generate()
 
                 // Track latest saved proposal
@@ -93,7 +96,8 @@ class ProposalWorkflowIntegrationTest :
                 val createResult = proposeHandler(createCommand)
                 createResult.isRight() shouldBe true
 
-                val createdDto = createResult.getOrNull()!!
+                val createdDto = createResult.getOrNull()
+                    ?: error("Failed to create proposal")
                 createdDto.state shouldBe ProposalState.DRAFT
                 createdDto.title shouldBe "Add new feature"
 
@@ -104,7 +108,8 @@ class ProposalWorkflowIntegrationTest :
                 val submitResult = submitHandler(submitCommand)
 
                 submitResult.isRight() shouldBe true
-                val submittedDto = submitResult.getOrNull()!!
+                val submittedDto = submitResult.getOrNull()
+                    ?: error("Failed to submit proposal")
                 submittedDto.state shouldBe ProposalState.SUBMITTED
                 submittedDto.submittedAt shouldNotBe null
 
@@ -113,7 +118,8 @@ class ProposalWorkflowIntegrationTest :
                 val startReviewResult = startReviewHandler(startReviewCommand)
 
                 startReviewResult.isRight() shouldBe true
-                val reviewingDto = startReviewResult.getOrNull()!!
+                val reviewingDto = startReviewResult.getOrNull()
+                    ?: error("Failed to start review")
                 reviewingDto.state shouldBe ProposalState.REVIEWING
 
                 // Step 4: Add review comments
@@ -128,7 +134,8 @@ class ProposalWorkflowIntegrationTest :
                 val commentResult = addCommentHandler(addCommentCommand)
 
                 commentResult.isRight() shouldBe true
-                val commentedDto = commentResult.getOrNull()!!
+                val commentedDto = commentResult.getOrNull()
+                    ?: error("Failed to add comment")
                 commentedDto.reviewComments.size shouldBe 1
                 commentedDto.statistics.totalCommentCount shouldBe 1
 
@@ -142,7 +149,8 @@ class ProposalWorkflowIntegrationTest :
                 val approveResult = approveHandler(approveCommand)
                 approveResult.isRight() shouldBe true
 
-                val approvedDto = approveResult.getOrNull()!!
+                val approvedDto = approveResult.getOrNull()
+                    ?: error("Failed to approve proposal")
                 approvedDto.state shouldBe ProposalState.APPROVED
                 approvedDto.resolvedAt shouldNotBe null
 
@@ -156,7 +164,8 @@ class ProposalWorkflowIntegrationTest :
                 val mergeResult = mergeHandler(mergeCommand)
                 mergeResult.isRight() shouldBe true
 
-                val mergedDto = mergeResult.getOrNull()!!
+                val mergedDto = mergeResult.getOrNull()
+                    ?: error("Failed to merge proposal")
                 mergedDto.state shouldBe ProposalState.APPLIED
                 mergedDto.appliedAt shouldNotBe null
                 mergedDto.appliedChanges shouldNotBe null
@@ -178,8 +187,10 @@ class ProposalWorkflowIntegrationTest :
                 val submitHandler = SubmitProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
-                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()
+                    ?: error("Failed to create author")
+                val reviewer = Author.fromAgent(AgentId.generate(), "Reviewer Agent").getOrNull()
+                    ?: error("Failed to create reviewer")
                 val resourceId = ResourceId.generate()
 
                 // Track latest saved proposal
@@ -222,7 +233,9 @@ class ProposalWorkflowIntegrationTest :
 
                 val createResult = proposeHandler(createCommand)
                 createResult.isRight() shouldBe true
-                val proposalId = createResult.getOrNull()!!.proposalId
+                val createDto = createResult.getOrNull()
+                    ?: error("Failed to create proposal")
+                val proposalId = createDto.proposalId
 
                 // Submit for review
                 val submitResult = submitHandler(SubmitProposalCommand(proposalId))
@@ -242,7 +255,8 @@ class ProposalWorkflowIntegrationTest :
                 val rejectResult = rejectHandler(rejectCommand)
                 rejectResult.isRight() shouldBe true
 
-                val rejectedDto = rejectResult.getOrNull()!!
+                val rejectedDto = rejectResult.getOrNull()
+                    ?: error("Failed to reject proposal")
                 rejectedDto.state shouldBe ProposalState.REJECTED
                 rejectedDto.resolvedAt shouldNotBe null
             }
@@ -264,8 +278,10 @@ class ProposalWorkflowIntegrationTest :
                 val mergeHandler = MergeApprovedProposalHandler(mockChangeProposalRepository)
 
                 // Test data
-                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()!!
-                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()!!
+                val author = Author.fromAgent(AgentId.generate(), "Author Agent").getOrNull()
+                    ?: error("Failed to create author")
+                val approver = Author.fromAgent(AgentId.generate(), "Approver Agent").getOrNull()
+                    ?: error("Failed to create approver")
                 val resourceId = ResourceId.generate()
 
                 // Track latest saved proposal
@@ -311,7 +327,9 @@ class ProposalWorkflowIntegrationTest :
                 )
 
                 val proposeResult = proposeHandler(createCommand)
-                val proposalId = proposeResult.getOrNull()!!.proposalId
+                val proposeDto = proposeResult.getOrNull()
+                    ?: error("Failed to create proposal")
+                val proposalId = proposeDto.proposalId
 
                 submitHandler(SubmitProposalCommand(proposalId))
                 startReviewHandler(StartReviewCommand(proposalId))
@@ -328,7 +346,8 @@ class ProposalWorkflowIntegrationTest :
 
                 // Should fail due to conflicts
                 mergeResult.isLeft() shouldBe true
-                val error = mergeResult.leftOrNull()!!
+                val error = mergeResult.leftOrNull()
+                    ?: error("Expected merge to fail with conflict error")
                 error.shouldBeInstanceOf<io.github.kamiazya.scopes.collaborativeversioning.application.error.MergeProposalError.ConflictsDetected>()
             }
         }

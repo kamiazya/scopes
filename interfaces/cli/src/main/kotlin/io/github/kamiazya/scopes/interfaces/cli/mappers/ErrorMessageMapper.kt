@@ -26,6 +26,11 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ValidationError
  * Maps domain and contract errors to user-friendly messages for CLI output.
  */
 object ErrorMessageMapper {
+    // Common error message patterns
+    private const val CANNOT_BE_EMPTY = "cannot be empty"
+    private const val CANNOT_BE_BLANK = "cannot be blank"
+    private const val IS_TOO_SHORT = "is too short"
+    private const val IS_TOO_LONG = "is too long"
     private fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidFormat.AliasPatternType): String = when (patternType) {
         ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase letters with hyphens"
         ScopeInputError.AliasError.InvalidFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters"
@@ -90,13 +95,13 @@ object ErrorMessageMapper {
         is ScopeInputError -> when (error) {
             is ScopeInputError.IdError.Blank -> "Scope ID cannot be blank: '${error.attemptedValue}'"
             is ScopeInputError.IdError.InvalidFormat -> "Invalid scope ID format: ${error.attemptedValue}"
-            is ScopeInputError.TitleError.Empty -> "Scope title cannot be empty"
+            is ScopeInputError.TitleError.Empty -> "Scope title $CANNOT_BE_EMPTY"
             is ScopeInputError.TitleError.TooShort -> "Scope title is too short: minimum ${error.minimumLength} characters"
             is ScopeInputError.TitleError.TooLong -> "Scope title is too long: maximum ${error.maximumLength} characters"
             is ScopeInputError.TitleError.ContainsProhibitedCharacters ->
                 "Scope title contains prohibited characters: ${error.prohibitedCharacters.joinToString()}"
             is ScopeInputError.DescriptionError.TooLong -> "Scope description is too long: maximum ${error.maximumLength} characters"
-            is ScopeInputError.AliasError.Empty -> "Scope alias cannot be empty"
+            is ScopeInputError.AliasError.Empty -> "Scope alias $CANNOT_BE_EMPTY"
             is ScopeInputError.AliasError.TooShort -> "Scope alias is too short: minimum ${error.minimumLength} characters"
             is ScopeInputError.AliasError.TooLong -> "Scope alias is too long: maximum ${error.maximumLength} characters"
             is ScopeInputError.AliasError.InvalidFormat -> "Invalid scope alias format: expected ${presentAliasPattern(error.patternType)}"
@@ -154,7 +159,7 @@ object ErrorMessageMapper {
         is ContextError -> when (error) {
             is ContextError.BlankId -> "Context view ID cannot be blank: '${error.attemptedValue}'"
             is ContextError.InvalidIdFormat -> "Invalid context view ID format: ${error.attemptedValue}, expected: ${error.expectedFormat}"
-            is ContextError.EmptyName -> "Context view name cannot be empty: '${error.attemptedValue}'"
+            is ContextError.EmptyName -> "Context view name $CANNOT_BE_EMPTY: '${error.attemptedValue}'"
             is ContextError.InvalidNameFormat -> "Invalid context view name format: ${error.attemptedValue}, expected: ${error.expectedPattern}"
             is ContextError.NameTooLong -> "Context view name is too long: maximum ${error.maximumLength} characters"
             is ContextError.DuplicateName -> "Context view with name '${error.attemptedName}' already exists"
@@ -162,14 +167,14 @@ object ErrorMessageMapper {
                 ": $it"
             } ?: ""}${error.contextName?.let { " (name: $it)" } ?: ""}"
             is ContextError.InvalidFilter -> "Invalid filter '${error.filter}': ${presentInvalidFilterType(error.errorType)}"
-            is ContextError.EmptyKey -> "Context view key cannot be empty"
+            is ContextError.EmptyKey -> "Context view key $CANNOT_BE_EMPTY"
             is ContextError.KeyTooShort -> "Context view key must be at least ${error.minimumLength} characters"
             is ContextError.KeyTooLong -> "Context view key must be at most ${error.maximumLength} characters"
             is ContextError.InvalidKeyFormat -> "Invalid context view key format: ${presentInvalidKeyFormatType(error.errorType)}"
-            is ContextError.EmptyDescription -> "Context view description cannot be empty"
+            is ContextError.EmptyDescription -> "Context view description $CANNOT_BE_EMPTY"
             is ContextError.DescriptionTooShort -> "Context view description must be at least ${error.minimumLength} characters"
             is ContextError.DescriptionTooLong -> "Context view description must be at most ${error.maximumLength} characters"
-            is ContextError.EmptyFilter -> "Context view filter cannot be empty"
+            is ContextError.EmptyFilter -> "Context view filter $CANNOT_BE_EMPTY"
             is ContextError.FilterTooShort -> "Context view filter must be at least ${error.minimumLength} characters"
             is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
             is ContextError.InvalidFilterSyntax ->
@@ -213,24 +218,24 @@ object ErrorMessageMapper {
             } ?: ""}: ${presentDuplicateScopeType(error.errorType)}"
         }
         is AspectValidationError -> when (error) {
-            is AspectValidationError.EmptyAspectKey -> "Aspect key cannot be empty"
+            is AspectValidationError.EmptyAspectKey -> "Aspect key $CANNOT_BE_EMPTY"
             is AspectValidationError.AspectKeyTooShort -> "Aspect key is too short"
             is AspectValidationError.AspectKeyTooLong -> "Aspect key is too long: max ${error.maxLength}, actual ${error.actualLength}"
             is AspectValidationError.InvalidAspectKeyFormat -> "Invalid aspect key format"
-            is AspectValidationError.EmptyAspectValue -> "Aspect value cannot be empty"
+            is AspectValidationError.EmptyAspectValue -> "Aspect value $CANNOT_BE_EMPTY"
             is AspectValidationError.AspectValueTooShort -> "Aspect value is too short"
             is AspectValidationError.AspectValueTooLong -> "Aspect value is too long: max ${error.maxLength}, actual ${error.actualLength}"
-            is AspectValidationError.EmptyAspectAllowedValues -> "Aspect allowed values cannot be empty"
+            is AspectValidationError.EmptyAspectAllowedValues -> "Aspect allowed values $CANNOT_BE_EMPTY"
             is AspectValidationError.DuplicateAspectAllowedValues -> "Aspect allowed values contain duplicates"
         }
         is AspectKeyError -> when (error) {
-            is AspectKeyError.EmptyKey -> "Aspect key cannot be empty"
+            is AspectKeyError.EmptyKey -> "Aspect key $CANNOT_BE_EMPTY"
             is AspectKeyError.TooShort -> "Aspect key is too short: length ${error.actualLength}, minimum ${error.minLength} characters"
             is AspectKeyError.TooLong -> "Aspect key is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
             is AspectKeyError.InvalidFormat -> "Invalid aspect key format"
         }
         is AspectValueError -> when (error) {
-            is AspectValueError.EmptyValue -> "Aspect value cannot be empty"
+            is AspectValueError.EmptyValue -> "Aspect value $CANNOT_BE_EMPTY"
             is AspectValueError.TooLong -> "Aspect value is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
         }
         is HierarchyPolicyError -> when (error) {
@@ -336,7 +341,7 @@ object ErrorMessageMapper {
             is ScopeContractError.InputError.InvalidId ->
                 "Invalid ID format: ${error.id}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
             is ScopeContractError.InputError.InvalidTitle -> when (val failure = error.validationFailure) {
-                is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
+                is ScopeContractError.TitleValidationFailure.Empty -> "Title $CANNOT_BE_EMPTY"
                 is ScopeContractError.TitleValidationFailure.TooShort ->
                     "Title too short: minimum ${failure.minimumLength} characters"
                 is ScopeContractError.TitleValidationFailure.TooLong ->

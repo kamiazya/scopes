@@ -231,16 +231,24 @@ class DefaultSnapshotDiffer(private val logger: Logger = ConsoleLogger("Snapshot
         for (key in allKeys) {
             when {
                 key !in fromMetadata -> {
-                    changes[key] = MetadataChange.Added(toMetadata[key]!!)
+                    toMetadata[key]?.let { value ->
+                        changes[key] = MetadataChange.Added(value)
+                    }
                 }
                 key !in toMetadata -> {
-                    changes[key] = MetadataChange.Removed(fromMetadata[key]!!)
+                    fromMetadata[key]?.let { value ->
+                        changes[key] = MetadataChange.Removed(value)
+                    }
                 }
                 fromMetadata[key] != toMetadata[key] -> {
-                    changes[key] = MetadataChange.Modified(
-                        oldValue = fromMetadata[key]!!,
-                        newValue = toMetadata[key]!!,
-                    )
+                    val oldValue = fromMetadata[key]
+                    val newValue = toMetadata[key]
+                    if (oldValue != null && newValue != null) {
+                        changes[key] = MetadataChange.Modified(
+                            oldValue = oldValue,
+                            newValue = newValue,
+                        )
+                    }
                 }
             }
         }
