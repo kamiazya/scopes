@@ -10,19 +10,31 @@ Scopes releases include comprehensive SBOM files that provide:
 - **License compliance**: Full license information for all components
 - **Supply chain transparency**: Build-time dependency resolution
 
-## SBOM Formats
+## SBOM Types
 
-### CycloneDX (Recommended for Security)
-- **Format**: JSON and XML
-- **Focus**: Security-oriented with vulnerability tracking
-- **Features**: VEX (Vulnerability Exploitability eXchange) support
-- **Files**: `sbom-{platform}-{arch}.json`, `sbom-{platform}-{arch}.xml`
+Starting with the GraalVM Inspect Tool integration, Scopes generates two complementary types of SBOMs:
 
-#### CycloneDX Advantages
+### Build-time SBOM (From Gradle)
+- **Format**: CycloneDX JSON and XML
+- **Files**: `sbom-build-{platform}-{arch}.json`, `sbom-build-{platform}-{arch}.xml`
+- **Source**: Generated from Gradle dependency analysis
+- **Content**: Declared Java dependencies, build-time artifacts
+- **Best for**: License compliance, development security scanning
+
+### Binary SBOM (From Syft)
+- **Format**: CycloneDX JSON
+- **Files**: `sbom-image-{platform}-{arch}.cyclonedx.json`
+- **Source**: Generated using Syft binary analysis tool
+- **Content**: Binary analysis results from native executable
+- **Best for**: Production security analysis, runtime vulnerability scanning
+
+#### CycloneDX Format Advantages
 - Native vulnerability database integration
 - Real-time security analysis capabilities
 - OWASP ecosystem compatibility
 - Continuous security monitoring support
+
+For detailed comparison of all SBOM types, see the [SBOM Types Guide](sbom-types-guide.md).
 
 ## Verification Steps
 
@@ -58,12 +70,14 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/i
 ### 2. Manual Download and Verify Checksums
 
 ```bash
-# Download SBOM files and checksums
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/sbom-linux-x64.json
+# Download all available SBOM files and checksums
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/sbom-build-linux-x64.json
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/sbom-image-linux-x64.cyclonedx.json
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-linux-x64.txt
 
 # Verify SBOM integrity (SBOM hashes are included in binary hash files)
-sha256sum sbom-linux-x64.json
+sha256sum sbom-build-linux-x64.json
+sha256sum sbom-image-linux-x64.cyclonedx.json
 ```
 
 ### 2. Validate SBOM Format
@@ -72,8 +86,11 @@ sha256sum sbom-linux-x64.json
 # Install CycloneDX CLI tools
 npm install -g @cyclonedx/cli
 
-# Validate SBOM format compliance
-cyclonedx validate sbom-linux-x64.json
+# Validate build-time SBOM format compliance
+cyclonedx validate sbom-build-linux-x64.json
+
+# Validate binary SBOM format compliance
+cyclonedx validate sbom-image-linux-x64.cyclonedx.json
 ```
 
 ### 3. SLSA Provenance Integration
@@ -81,8 +98,12 @@ cyclonedx validate sbom-linux-x64.json
 SBOM files are included in the SLSA provenance generation process:
 
 ```bash
-# Verify SBOM is covered by SLSA provenance
-slsa-verifier verify-artifact sbom-linux-x64.json \
+# Verify SBOM files are covered by SLSA provenance
+slsa-verifier verify-artifact sbom-build-linux-x64.json \
+  --provenance-path multiple.intoto.jsonl \
+  --source-uri github.com/kamiazya/scopes
+
+slsa-verifier verify-artifact sbom-image-linux-x64.cyclonedx.json \
   --provenance-path multiple.intoto.jsonl \
   --source-uri github.com/kamiazya/scopes
 ```
@@ -92,21 +113,24 @@ slsa-verifier verify-artifact sbom-linux-x64.json \
 ### Vulnerability Scanning
 
 ```bash
-# Scan for known vulnerabilities
-cyclonedx analyze sbom-linux-x64.json
+# Scan build-time dependencies for known vulnerabilities
+cyclonedx analyze sbom-build-linux-x64.json
+
+# Scan binary components (more accurate for production)
+cyclonedx analyze sbom-image-linux-x64.cyclonedx.json
 
 # Generate vulnerability report
-cyclonedx analyze sbom-linux-x64.json --output-format json > vulnerabilities.json
+cyclonedx analyze sbom-image-linux-x64.cyclonedx.json --output-format json > vulnerabilities.json
 ```
 
 ### License Compliance
 
 ```bash
-# Extract license information
-cyclonedx licenses sbom-linux-x64.json
+# Extract license information from build-time SBOM
+cyclonedx licenses sbom-build-linux-x64.json
 
-# Generate license report
-cyclonedx licenses sbom-linux-x64.json --output-format csv > licenses.csv
+# Generate comprehensive license report
+cyclonedx licenses sbom-build-linux-x64.json --output-format csv > licenses.csv
 ```
 
 ## Integration with Security Tools
@@ -114,31 +138,43 @@ cyclonedx licenses sbom-linux-x64.json --output-format csv > licenses.csv
 ### OWASP Dependency-Track
 
 ```bash
-# Upload to Dependency-Track server
+# Upload build-time SBOM for development analysis
 curl -X POST "http://dtrack-server/api/v1/bom" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d @sbom-linux-x64.json
+  -d @sbom-build-linux-x64.json
+
+# Upload binary SBOM for production analysis (preferred)
+curl -X POST "http://dtrack-server/api/v1/bom" \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d @sbom-image-linux-x64.cyclonedx.json
 ```
 
 ### Grype Vulnerability Scanner
 
 ```bash
-# Scan SBOM with Grype
-grype sbom:sbom-linux-x64.json
+# Scan build-time SBOM
+grype sbom:sbom-build-linux-x64.json
 
-# Generate detailed report
-grype sbom:sbom-linux-x64.json -o json > grype-report.json
+# Scan binary SBOM (recommended for production)
+grype sbom:sbom-image-linux-x64.cyclonedx.json
+
+# Generate detailed report from binary SBOM
+grype sbom:sbom-image-linux-x64.cyclonedx.json -o json > grype-report.json
 ```
 
 ### Syft Analysis
 
 ```bash
-# Analyze SBOM with Syft
-syft scan sbom-linux-x64.json
+# Analyze build-time SBOM
+syft scan sbom-build-linux-x64.json
+
+# Analyze binary SBOM
+syft scan sbom-image-linux-x64.cyclonedx.json
 
 # Convert between formats
-syft convert sbom-linux-x64.json -o spdx-json > sbom.spdx.json
+syft convert sbom-build-linux-x64.json -o spdx-json > sbom-build.spdx.json
 ```
 
 ## Continuous Monitoring
@@ -156,13 +192,18 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
-    - name: Download latest SBOM
+    - name: Download latest SBOMs
       run: |
-        wget https://github.com/kamiazya/scopes/releases/latest/download/sbom-linux-x64.json
+        wget https://github.com/kamiazya/scopes/releases/latest/download/sbom-build-linux-x64.json
+        wget https://github.com/kamiazya/scopes/releases/latest/download/sbom-image-linux-x64.cyclonedx.json
     
     - name: Scan for vulnerabilities
       run: |
-        grype sbom:sbom-linux-x64.json --fail-on critical
+        # Scan build-time dependencies
+        grype sbom:sbom-build-linux-x64.json --fail-on critical
+        
+        # Scan binary components (more accurate)
+        grype sbom:sbom-image-linux-x64.cyclonedx.json --fail-on critical
 ```
 
 ### Policy Enforcement

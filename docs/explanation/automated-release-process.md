@@ -60,9 +60,9 @@ graph TB
         direction TB
         A[📥 Checkout Code] --> B[⚙️ Setup Environment<br/>GraalVM + Gradle]
         B --> C[🏷️ Extract Version<br/>from Tag/Input]
-        C --> D[📋 Generate Source SBOM<br/>CycloneDX from Dependencies]
+        C --> D[📋 Generate Build-time SBOM<br/>CycloneDX from Gradle]
         D --> E[🔨 Native Compile<br/>Platform Binary]
-        E --> F[🔍 Generate Binary SBOM<br/>Syft Scanner]
+        E --> F[🔍 Extract Binary SBOM<br/>Syft binary analysis]
         F --> G[🛡️ Vulnerability Scan<br/>Grype (SARIF + JSON)]
         G --> H[#️⃣ Generate SHA-256<br/>All Artifact Hashes]
         H --> I[📤 Upload Artifacts<br/>Binary + SBOMs + Scan Results]
@@ -85,13 +85,13 @@ graph TB
     subgraph Download ["📦 Artifact Collection"]
         direction TB
         GetBin[📥 Download Binaries<br/>All Platforms]
-        GetSrcSBOM[📥 Download Source SBOMs<br/>CycloneDX Format]
+        GetBuildSBOM[📥 Download Build-time SBOMs<br/>CycloneDX from Gradle]
     end
     
     subgraph Scanning ["🔍 Security Analysis"]
         direction TB
         GrypeVuln[🛡️ Grype Vulnerability Scan<br/>JSON + SARIF Export]
-        SyftSBOM[📋 Syft Binary SBOM<br/>CycloneDX Generation]
+        ImageSBOM[📋 Binary SBOM<br/>Syft binary analysis]
         VerifyIntegrity[🔐 Binary Integrity Check<br/>SHA-256 Verification]
     end
     
@@ -153,8 +153,8 @@ graph TB
     subgraph Downloads ["📦 Artifact Collection"]
         direction TB
         GetBinaries[📥 Download Binaries<br/>All Platforms]
-        GetSourceSBOM[📥 Download Source SBOMs<br/>CycloneDX from Dependencies]
-        GetBinarySBOM[📥 Download Binary SBOMs<br/>Syft Generated]
+        GetBuildSBOM[📥 Download Build-time SBOMs<br/>CycloneDX from Gradle]
+        GetImageSBOM[📥 Download Binary SBOMs<br/>Syft binary analysis]
         GetScanResults[📥 Download Vulnerability<br/>Scan Results (JSON + SARIF)]
         GetProvenance[📥 Download SLSA<br/>Provenance Files]
     end
@@ -209,7 +209,7 @@ Pull requests and commits are automatically categorized using labels defined in 
 Each release automatically includes:
 
 - **Verification Instructions**: Quick one-liner installation with verification
-- **Dual-Level SBOM**: Source-level (dependencies) and binary-level (compiled artifacts) Software Bill of Materials
+- **Dual-Level SBOM**: Build-time (Gradle dependencies) and image-level (final binary components) Software Bill of Materials
 - **Vulnerability Assessment**: Grype security scan results integrated with GitHub Security tab
 - **SLSA Provenance**: Level 3 compliance with cryptographic attestations
 - **Documentation Links**: Links to security guides and verification procedures
