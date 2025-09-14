@@ -59,7 +59,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         val serverFromClient = PipedInputStream(clientToServer)
 
         // Create transports using the connected pipes
-        val serverTransport = StdioServerTransport(
+        val serverTransport = StdioServerTransport.fromStreams(
             inputStream = BufferedInputStream(serverFromClient),
             outputStream = PrintStream(serverToClient)
         )

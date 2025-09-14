@@ -26,8 +26,10 @@ ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
 gradle-develocity = "4.1.1"
 spotless = "7.2.1"
-mcp-kotlin-sdk = "0.1.0"
+mcp-kotlin-sdk = "0.7.0"
 ktor = "2.3.12"
+okio = "3.16.0"
+kotlinx-io = "0.8.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
@@ -64,6 +66,9 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-kotlin-sdk" }
 # Ktor (server engine used only if needed by sdk)
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-io-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-io-core-jvm", version.ref = "kotlinx-io" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -123,5 +123,5 @@ val cliAppModule = module {
     }
 
     // MCP server adapter
-    single { McpServerAdapter(scopeQueryPort = get(), scopeCommandPort = get()) }
+    single { McpServerAdapter(scopeQueryPort = get(), scopeCommandPort = get(), logger = get<Logger>().withName("MCP")) }
 }
