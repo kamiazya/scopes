@@ -127,17 +127,54 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
             parentId = domainError.parentScopeId?.value,
-            existingScopeId = domainError.existingScopeId?.value,
+            existingScopeId = domainError.existingScopeId.value,
         )
+        is ScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = domainError.identifier,
+        )
+
+        // Hierarchy errors
+        is ScopeHierarchyError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
+            scopeId = domainError.scopeId.value,
+            childrenCount = null,
+        )
+        is ScopeHierarchyError.CircularReference -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.CircularReference(
+                scopeId = domainError.scopeId.value,
+                parentId = domainError.parentId.value,
+            ),
+        )
+        is ScopeHierarchyError.SelfParenting -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+                scopeId = domainError.scopeId.value,
+            ),
+        )
+        is ScopeHierarchyError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = domainError.parentId.value,
+        )
+
+        // Alias errors
+        is ScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = domainError.aliasName,
+        )
+        is ScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = domainError.aliasName,
+        )
+        is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
 
         // New structured errors
         is ScopesError.NotFound -> when (domainError.identifierType) {
             "alias" -> ScopeContractError.BusinessError.AliasNotFound(alias = domainError.identifier)
             else -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.identifier)
         }
-        is ScopesError.AlreadyExists -> when (domainError.entityType) {
-            "AspectDefinition" -> ScopeContractError.BusinessError.DuplicateAlias(
-                alias = domainError.identifier, // Using DuplicateAlias for aspect keys as a workaround
+        is ScopesError.AlreadyExists -> when (domainError.identifierType) {
+            "alias" -> ScopeContractError.BusinessError.DuplicateAlias(
+                alias = domainError.identifier,
+            )
+            "title" -> ScopeContractError.BusinessError.DuplicateTitle(
+                title = domainError.identifier,
+                parentId = null,
+                existingScopeId = null,
             )
             else -> ScopeContractError.BusinessError.DuplicateAlias(
                 alias = domainError.identifier,
@@ -167,9 +204,17 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 )
             }
         }
-        is ScopesError.InvalidOperation -> when {
-            domainError.reason == ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
+        is ScopesError.InvalidOperation -> when (domainError.reason) {
+            ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
                 ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.entityId ?: "")
+            ScopesError.InvalidOperation.InvalidOperationReason.OPERATION_NOT_ALLOWED -> when (domainError.operation) {
+                "delete" -> ScopeContractError.BusinessError.HasChildren(
+                    scopeId = domainError.entityId ?: "",
+                    childrenCount = null,
+                )
+                "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+                else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+            }
             else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
         }
         is ScopesError.Conflict -> when (domainError.conflictType) {

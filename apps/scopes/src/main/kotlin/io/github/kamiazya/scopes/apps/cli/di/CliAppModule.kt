@@ -26,8 +26,7 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
-import io.github.kamiazya.scopes.interfaces.providers.McpServerFactory
-import io.github.kamiazya.scopes.interfaces.providers.McpServerRunner
+import io.github.kamiazya.scopes.interfaces.mcp.adapters.McpServerAdapter
 import org.koin.dsl.module
 
 /**
@@ -123,7 +122,6 @@ val cliAppModule = module {
         )
     }
 
-    // MCP server wiring (kept in apps layer to satisfy DI placement rules)
-    single { McpServerFactory(logger = get(), scopeQueryPort = get(), scopeCommandPort = get()) }
-    single { McpServerRunner(factory = get(), logger = get()) }
+    // MCP server adapter
+    single { McpServerAdapter(scopeQueryPort = get(), scopeCommandPort = get()) }
 }

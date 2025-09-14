@@ -25,17 +25,11 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
 
-    // DI
-    implementation(platform(libs.koin.bom))
-    implementation(libs.koin.core)
-
-    // Logging
-    implementation(libs.slf4j.api)
-
     // Tests
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mcp.kotlin.sdk) // For InMemoryTransport and Client
 }
 
 tasks.test {

@@ -375,7 +375,7 @@ object ErrorMessageMapper {
             is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
             is ScopeContractError.BusinessError.DuplicateAlias -> "Alias already exists: ${error.alias}"
             is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias ->
-                "Cannot remove canonical alias: ${error.alias}"
+                "Cannot remove canonical alias"
         }
         is ScopeContractError.SystemError -> when (error) {
             is ScopeContractError.SystemError.ServiceUnavailable ->

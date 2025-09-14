@@ -78,7 +78,7 @@ object ContractErrorMessageMapper {
         is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
         is ScopeContractError.BusinessError.DuplicateAlias -> "Alias already exists: ${error.alias}"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias ->
-            "Cannot remove canonical alias: ${error.alias}. Set a different alias as canonical first."
+            "Cannot remove canonical alias. Set a different alias as canonical first."
 
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout -> "Operation timed out: ${error.operation}"

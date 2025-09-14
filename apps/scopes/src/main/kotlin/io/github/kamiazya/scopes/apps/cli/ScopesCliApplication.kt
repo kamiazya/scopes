@@ -37,7 +37,7 @@ class ScopesCliApplication : AutoCloseable {
             // Log initialization errors but don't fail application startup
             errors.forEach { error ->
                 val critical = if (error.isCritical) " [CRITICAL]" else ""
-                println("Warning: Bootstrap error in ${error.component}$critical: ${error.message}")
+                System.err.println("Warning: Bootstrap error in ${error.component}$critical: ${error.message}")
             }
         }
     }
