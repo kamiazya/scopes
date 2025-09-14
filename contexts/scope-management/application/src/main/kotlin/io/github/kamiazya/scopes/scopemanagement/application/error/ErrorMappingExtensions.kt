@@ -25,31 +25,12 @@ private val scopeInputErrorPresenter = ScopeInputErrorPresenter()
  * Maps PersistenceError to ApplicationError.PersistenceError
  */
 fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) {
-    is DomainPersistenceError.StorageUnavailable ->
-        AppPersistenceError.StorageUnavailable(
-            operation = this.operation,
-            cause = this.cause?.toString(),
-        )
-
-    is DomainPersistenceError.DataCorruption ->
-        AppPersistenceError.DataCorruption(
-            entityType = this.entityType,
-            entityId = this.entityId,
-            reason = this.reason,
-        )
-
     is DomainPersistenceError.ConcurrencyConflict ->
         AppPersistenceError.ConcurrencyConflict(
             entityType = this.entityType,
             entityId = this.entityId,
-            expectedVersion = this.expectedVersion.toString(),
-            actualVersion = this.actualVersion.toString(),
-        )
-
-    is DomainPersistenceError.NotFound ->
-        AppPersistenceError.NotFound(
-            entityType = this.entityType,
-            entityId = this.entityId,
+            expectedVersion = this.expectedVersion,
+            actualVersion = this.actualVersion,
         )
 }
 
@@ -57,55 +38,14 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
  * Maps ContextError to ApplicationError.ContextError
  */
 fun ContextError.toApplicationError(): ApplicationError = when (this) {
-    is ContextError.BlankId ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedValue,
-        )
-
-    is ContextError.InvalidIdFormat ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedValue,
-        )
-
-    is ContextError.EmptyName ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedValue,
-        )
-
-    is ContextError.InvalidNameFormat ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedValue,
-        )
-
-    is ContextError.NameTooLong ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedValue,
-        )
-
-    is ContextError.DuplicateName ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = this.attemptedName,
-        )
-
-    is ContextError.ContextNotFound ->
-        AppContextError.StateNotFound(
-            contextId = this.contextId ?: "<not-provided>",
-        )
-
-    is ContextError.InvalidFilter ->
-        AppContextError.InvalidFilter(
-            filter = this.filter,
-            reason = contextErrorPresenter.presentInvalidFilter(this.errorType),
-        )
-
     is ContextError.KeyTooShort ->
         AppContextError.KeyInvalidFormat(
-            attemptedKey = "key too short",
+            attemptedKey = "key too short (minimum: ${this.minimumLength})",
         )
 
     is ContextError.KeyTooLong ->
         AppContextError.KeyInvalidFormat(
-            attemptedKey = "key too long",
+            attemptedKey = "key too long (maximum: ${this.maximumLength})",
         )
 
     is ContextError.InvalidKeyFormat ->
@@ -113,69 +53,34 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
             attemptedKey = contextErrorPresenter.presentInvalidKeyFormat(this.errorType),
         )
 
-    is ContextError.DescriptionTooShort ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = "description too short",
-        )
-
-    is ContextError.DescriptionTooLong ->
-        AppContextError.KeyInvalidFormat(
-            attemptedKey = "description too long",
-        )
-
-    is ContextError.FilterTooShort ->
-        AppContextError.InvalidFilter(
-            filter = "",
-            reason = "Filter too short",
-        )
-
-    is ContextError.FilterTooLong ->
-        AppContextError.InvalidFilter(
-            filter = "",
-            reason = "Filter too long",
-        )
-
-    is ContextError.InvalidFilterSyntax ->
-        AppContextError.InvalidFilter(
-            filter = this.expression,
-            reason = when (val errorType = this.errorType) {
-                is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
-                is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
-                is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
-                    "Unexpected character '${errorType.char}' at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.UnterminatedString ->
-                    "Unterminated string at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
-                    "Unexpected token at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
-                    "Missing closing parenthesis at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
-                    "Expected expression at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
-                    "Expected identifier at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
-                    "Expected operator at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.ExpectedValue ->
-                    "Expected value at position ${errorType.position}"
-                is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
-                    "Unbalanced parentheses"
-                is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
-                    "Unbalanced quotes"
-                is ContextError.FilterSyntaxErrorType.EmptyOperator ->
-                    "Empty operator"
-                is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
-                    "Invalid syntax"
-            },
-        )
-
     is ContextError.EmptyKey ->
         AppContextError.KeyInvalidFormat(
             attemptedKey = "empty key",
         )
 
+    is ContextError.EmptyName ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "empty name",
+        )
+
+    is ContextError.NameTooLong ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "name too long (maximum: ${this.maximumLength})",
+        )
+
     is ContextError.EmptyDescription ->
         AppContextError.KeyInvalidFormat(
             attemptedKey = "empty description",
+        )
+
+    is ContextError.DescriptionTooShort ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "description too short (minimum: ${this.minimumLength})",
+        )
+
+    is ContextError.DescriptionTooLong ->
+        AppContextError.KeyInvalidFormat(
+            attemptedKey = "description too long (maximum: ${this.maximumLength})",
         )
 
     is ContextError.EmptyFilter ->
@@ -184,7 +89,24 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
             reason = "Empty filter",
         )
 
-    // New domain validation error cases
+    is ContextError.FilterTooShort ->
+        AppContextError.InvalidFilter(
+            filter = "",
+            reason = "Filter too short (minimum: ${this.minimumLength})",
+        )
+
+    is ContextError.FilterTooLong ->
+        AppContextError.InvalidFilter(
+            filter = "",
+            reason = "Filter too long (maximum: ${this.maximumLength})",
+        )
+
+    is ContextError.InvalidFilterSyntax ->
+        AppContextError.InvalidFilter(
+            filter = this.expression,
+            reason = contextErrorPresenter.presentInvalidFilterSyntax(this.errorType),
+        )
+
     is ContextError.InvalidScope ->
         AppContextError.StateNotFound(
             contextId = this.scopeId,
@@ -205,61 +127,61 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
  * Maps ScopeInputError to ApplicationError.ScopeInputError
  */
 fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
-    is DomainScopeInputError.IdError.Blank ->
-        AppScopeInputError.IdBlank(this.attemptedValue)
+    is DomainScopeInputError.IdError.EmptyId ->
+        AppScopeInputError.IdBlank("empty-id")
 
-    is DomainScopeInputError.IdError.InvalidFormat ->
+    is DomainScopeInputError.IdError.InvalidIdFormat ->
         AppScopeInputError.IdInvalidFormat(
-            attemptedValue = this.attemptedValue,
-            expectedFormat = scopeInputErrorPresenter.presentIdFormat(this.formatType),
+            attemptedValue = this.id,
+            expectedFormat = scopeInputErrorPresenter.presentIdFormat(this.expectedFormat),
         )
 
-    is DomainScopeInputError.TitleError.Empty ->
-        AppScopeInputError.TitleEmpty(this.attemptedValue)
+    is DomainScopeInputError.TitleError.EmptyTitle ->
+        AppScopeInputError.TitleEmpty("empty-title")
 
-    is DomainScopeInputError.TitleError.TooShort ->
+    is DomainScopeInputError.TitleError.TitleTooShort ->
         AppScopeInputError.TitleTooShort(
-            attemptedValue = this.attemptedValue,
-            minimumLength = this.minimumLength,
+            attemptedValue = "too-short",
+            minimumLength = this.minLength,
         )
 
-    is DomainScopeInputError.TitleError.TooLong ->
+    is DomainScopeInputError.TitleError.TitleTooLong ->
         AppScopeInputError.TitleTooLong(
-            attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength,
+            attemptedValue = "too-long",
+            maximumLength = this.maxLength,
         )
 
-    is DomainScopeInputError.TitleError.ContainsProhibitedCharacters ->
+    is DomainScopeInputError.TitleError.InvalidTitleFormat ->
         AppScopeInputError.TitleContainsProhibitedCharacters(
-            attemptedValue = this.attemptedValue,
-            prohibitedCharacters = this.prohibitedCharacters,
+            attemptedValue = this.title,
+            prohibitedCharacters = listOf('<', '>', '&', '"'),
         )
 
-    is DomainScopeInputError.DescriptionError.TooLong ->
+    is DomainScopeInputError.DescriptionError.DescriptionTooLong ->
         AppScopeInputError.DescriptionTooLong(
-            attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength,
+            attemptedValue = "too-long",
+            maximumLength = this.maxLength,
         )
 
-    is DomainScopeInputError.AliasError.Empty ->
-        AppScopeInputError.AliasEmpty(this.attemptedValue)
+    is DomainScopeInputError.AliasError.EmptyAlias ->
+        AppScopeInputError.AliasEmpty("empty-alias")
 
-    is DomainScopeInputError.AliasError.TooShort ->
+    is DomainScopeInputError.AliasError.AliasTooShort ->
         AppScopeInputError.AliasTooShort(
-            attemptedValue = this.attemptedValue,
-            minimumLength = this.minimumLength,
+            attemptedValue = "too-short",
+            minimumLength = this.minLength,
         )
 
-    is DomainScopeInputError.AliasError.TooLong ->
+    is DomainScopeInputError.AliasError.AliasTooLong ->
         AppScopeInputError.AliasTooLong(
-            attemptedValue = this.attemptedValue,
-            maximumLength = this.maximumLength,
+            attemptedValue = "too-long",
+            maximumLength = this.maxLength,
         )
 
-    is DomainScopeInputError.AliasError.InvalidFormat ->
+    is DomainScopeInputError.AliasError.InvalidAliasFormat ->
         AppScopeInputError.AliasInvalidFormat(
-            attemptedValue = this.attemptedValue,
-            expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.patternType),
+            attemptedValue = this.alias,
+            expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.expectedPattern),
         )
 }
 
@@ -269,50 +191,47 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
 fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
     is DomainScopeAliasError.DuplicateAlias ->
         AppScopeAliasError.AliasDuplicate(
-            aliasName = this.aliasName,
-            existingScopeId = this.existingScopeId.toString(),
-            attemptedScopeId = this.attemptedScopeId.toString(),
+            aliasName = this.alias,
+            existingScopeId = this.scopeId.toString(),
+            attemptedScopeId = this.scopeId.toString(),
         )
 
-    is DomainScopeAliasError.AliasNotFound ->
+    is DomainScopeAliasError.AliasNotFoundByName ->
         AppScopeAliasError.AliasNotFound(
-            aliasName = this.aliasName,
+            aliasName = this.alias,
         )
 
     is DomainScopeAliasError.AliasNotFoundById ->
         AppScopeAliasError.AliasNotFound(
-            // Convert the ID to a string for the application layer
-            // This maintains backward compatibility while being semantically correct
             aliasName = "ID:${this.aliasId.value}",
         )
 
     is DomainScopeAliasError.CannotRemoveCanonicalAlias ->
         AppScopeAliasError.CannotRemoveCanonicalAlias(
             scopeId = this.scopeId.toString(),
-            aliasName = this.aliasName,
+            aliasName = this.alias,
         )
 
     is DomainScopeAliasError.AliasGenerationFailed ->
         AppScopeAliasError.AliasGenerationFailed(
             scopeId = this.scopeId.toString(),
-            retryCount = this.retryCount,
+            retryCount = 0, // Default retry count since not available in new structure
         )
 
-    is DomainScopeAliasError.AliasGenerationValidationFailed ->
+    is DomainScopeAliasError.AliasError ->
         AppScopeAliasError.AliasGenerationValidationFailed(
-            scopeId = this.scopeId.toString(),
+            scopeId = "unknown",
             reason = this.reason,
-            attemptedValue = this.attemptedValue,
+            attemptedValue = this.alias,
         )
 
-    is DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+    is DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope ->
         AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-            aliasName = this.aliasName,
+            aliasName = this.aliasId.value,
             scopeId = this.scopeId.toString(),
         )
 
     // Fail fast for any unmapped DataInconsistencyError subtypes
-    // This ensures new error types are properly handled during development
     is DomainScopeAliasError.DataInconsistencyError ->
         error(
             "Unmapped DataInconsistencyError subtype: ${this::class.simpleName}. " +

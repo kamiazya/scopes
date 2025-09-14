@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.observability.Loggable
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
@@ -48,14 +47,11 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             // Map to business-meaningful error
             val reason = when (error) {
-                is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
-                is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
                 is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
-                is PersistenceError.NotFound -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
+                else -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
             }
 
             return ScopeHierarchyError.HierarchyUnavailable(
-                occurredAt = currentTimestamp(),
                 scopeId = scopeId,
                 operation = operation,
                 reason = reason,
@@ -160,9 +156,10 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
-                ScopeHierarchyError.ScopeInHierarchyNotFound(
-                    currentTimestamp(),
-                    currentId,
+                ScopeHierarchyError.HierarchyUnavailable(
+                    scopeId = currentId,
+                    operation = HierarchyOperation.RETRIEVE_SCOPE,
+                    reason = AvailabilityReason.TEMPORARILY_UNAVAILABLE,
                 )
             }
 
@@ -171,10 +168,9 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
         // Check if we hit the iteration limit
         ensure(currentId == null) {
-            ScopeHierarchyError.CircularPath(
-                currentTimestamp(),
-                scopeId,
-                path,
+            ScopeHierarchyError.CircularDependency(
+                scopeId = scopeId,
+                ancestorId = path.firstOrNull() ?: scopeId,
             )
         }
 
@@ -201,9 +197,10 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             // If scope is null but no error, it truly doesn't exist
             ensureNotNull(scope) {
-                ScopeHierarchyError.ScopeInHierarchyNotFound(
-                    currentTimestamp(),
-                    id,
+                ScopeHierarchyError.HierarchyUnavailable(
+                    scopeId = id,
+                    operation = HierarchyOperation.RETRIEVE_SCOPE,
+                    reason = AvailabilityReason.TEMPORARILY_UNAVAILABLE,
                 )
             }
             ancestors.add(scope)

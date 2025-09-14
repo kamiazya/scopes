@@ -45,14 +45,14 @@ class AddAliasHandler(
                         ),
                     )
                     when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
                             ScopeInputError.AliasEmpty(command.existingAlias)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.existingAlias, error.minimumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.existingAlias, error.maximumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.existingAlias, errorPresenter.presentAliasPattern(error.patternType))
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
+                            ScopeInputError.AliasTooShort(command.existingAlias, error.minLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
+                            ScopeInputError.AliasTooLong(command.existingAlias, error.maxLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.existingAlias, errorPresenter.presentAliasPattern(error.expectedPattern))
                     }
                 }
                 .bind()

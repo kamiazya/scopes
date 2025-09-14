@@ -57,14 +57,11 @@ class ScopeFactory(
 
             // Map to business-meaningful error
             val reason = when (error) {
-                is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
-                is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
                 is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
-                is PersistenceError.NotFound -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
+                else -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
             }
 
             return ScopeHierarchyError.HierarchyUnavailable(
-                occurredAt = currentTimestamp(),
                 scopeId = scopeId,
                 operation = operation,
                 reason = reason,
@@ -102,10 +99,10 @@ class ScopeFactory(
                 }
                 .bind()
             ensure(parentExists) {
-                ScopeHierarchyError.ParentNotFound(
-                    occurredAt = currentTimestamp(),
-                    scopeId = newScopeId,
-                    parentId = parentId,
+                ScopeHierarchyError.HierarchyUnavailable(
+                    scopeId = parentId,
+                    operation = HierarchyOperation.VERIFY_EXISTENCE,
+                    reason = AvailabilityReason.TEMPORARILY_UNAVAILABLE,
                 )
             }
 
@@ -143,11 +140,10 @@ class ScopeFactory(
         }.bind()
 
         ensure(existingScopeId == null) {
-            ScopeUniquenessError.DuplicateTitle(
-                occurredAt = currentTimestamp(),
+            ScopeUniquenessError.DuplicateTitleInContext(
                 title = title,
-                parentScopeId = parentId,
-                existingScopeId = existingScopeId!!,
+                parentId = parentId,
+                existingId = existingScopeId!!,
             )
         }
 
