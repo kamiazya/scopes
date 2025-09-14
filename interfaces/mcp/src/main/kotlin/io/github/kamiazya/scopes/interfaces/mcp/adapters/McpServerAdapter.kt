@@ -3,38 +3,29 @@ package io.github.kamiazya.scopes.interfaces.mcp.adapters
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.*
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
-import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.GetPromptResult
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.PromptArgument
-import io.modelcontextprotocol.kotlin.sdk.PromptMessage
-import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
-import io.modelcontextprotocol.kotlin.sdk.Role
-import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
-import io.modelcontextprotocol.kotlin.sdk.TextContent
-import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
-import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.serialization.json.*
+import kotlin.time.Duration.Companion.minutes
+
+/**
+ * Stores idempotency results with TTL.
+ */
+private data class StoredResult(
+    val result: CallToolResult,
+    val timestamp: Instant
+)
 
 /**
  * MCP Server Adapter that provides an MCP interface to Scopes functionality.
@@ -44,13 +35,21 @@ class McpServerAdapter(
     private val scopeQueryPort: ScopeManagementQueryPort,
     private val scopeCommandPort: ScopeManagementCommandPort
 ) {
-    
+    // Idempotency store: toolName|idempotencyKey|argsHash -> StoredResult
+    // Note: In production, use a thread-safe implementation
+    private val idempotencyStore: MutableMap<String, StoredResult> = mutableMapOf()
+    private val idempotencyTtlMinutes = 10L
+
+    companion object {
+        private val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
+    }
+
     /**
      * Run the MCP server on stdio transport.
      * This is the main entry point for the MCP server.
      */
     fun runStdio(
-        inputStream: java.io.InputStream = System.`in`, 
+        inputStream: java.io.InputStream = System.`in`,
         outputStream: java.io.OutputStream = System.out
     ) {
         val server = createServer()
@@ -58,13 +57,13 @@ class McpServerAdapter(
             inputStream = java.io.BufferedInputStream(inputStream),
             outputStream = java.io.PrintStream(outputStream, true)
         )
-        
+
         runBlocking {
             try {
                 System.err.println("[MCP] Starting server...")
                 server.connect(transport)
                 System.err.println("[MCP] Server connected successfully")
-                
+
                 // Keep process alive; MCP client typically terminates the process when done.
                 try {
                     while (true) kotlinx.coroutines.delay(60_000)
@@ -77,7 +76,7 @@ class McpServerAdapter(
             }
         }
     }
-    
+
     /**
      * Create a server configured for testing purposes.
      * This method exposes server configuration for integration tests.
@@ -93,14 +92,14 @@ class McpServerAdapter(
                 )
             )
         )
-        
+
         registerTools(server)
         registerResources(server)
         registerPrompts(server)
-        
+
         return server
     }
-    
+
     private fun createServer(): Server {
         val server = Server(
             Implementation(name = "scopes", version = "0.1.0"),
@@ -112,14 +111,14 @@ class McpServerAdapter(
                 )
             )
         )
-        
+
         registerTools(server)
         registerResources(server)
         registerPrompts(server)
-        
+
         return server
     }
-    
+
     private fun registerTools(server: Server) {
         // aliases.resolve
         server.addTool(
@@ -255,6 +254,13 @@ class McpServerAdapter(
             val description = req.arguments["description"]?.jsonPrimitive?.content
             val parentAlias = req.arguments["parentAlias"]?.jsonPrimitive?.content
             val customAlias = req.arguments["customAlias"]?.jsonPrimitive?.content
+            val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
+
+            // Check idempotency
+            idempotencyKey?.let { key ->
+                val cached = checkIdempotency("scopes.create", key, req.arguments)
+                if (cached != null) return@addTool cached
+            }
 
             // Resolve parent ID if parent alias provided
             val parentId = if (parentAlias != null) {
@@ -281,7 +287,7 @@ class McpServerAdapter(
                 )
             }
 
-            result.fold(
+            val toolResult = result.fold(
                 { error -> errorResult(error) },
                 { created ->
                     val json = buildJsonObject {
@@ -294,6 +300,13 @@ class McpServerAdapter(
                     CallToolResult(content = listOf(TextContent(json.toString())))
                 }
             )
+
+            // Store result for idempotency
+            idempotencyKey?.let { key ->
+                storeIdempotency("scopes.create", key, req.arguments, toolResult)
+            }
+
+            toolResult
         }
 
         // Additional tools registration continues...
@@ -303,7 +316,7 @@ class McpServerAdapter(
         registerRootsTool(server)
         registerAliasingTools(server)
     }
-    
+
     private fun registerUpdateTool(server: Server) {
         server.addTool(
             name = "scopes.update",
@@ -869,5 +882,75 @@ class McpServerAdapter(
         is ScopeContractError.BusinessError.NotArchived -> "Not archived"
         is ScopeContractError.BusinessError.HasChildren -> "Has children"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias"
+    }
+
+    /**
+     * Check if we have a cached result for this idempotent operation.
+     * Returns the cached result if found and not expired, null otherwise.
+     */
+    private fun checkIdempotency(toolName: String, idempotencyKey: String, arguments: Map<String, kotlinx.serialization.json.JsonElement>): CallToolResult? {
+        if (!idempotencyKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
+            return err("Invalid idempotency key format")
+        }
+
+        val cacheKey = buildCacheKey(toolName, idempotencyKey, arguments)
+        val stored = idempotencyStore[cacheKey]
+
+        return if (stored != null) {
+            val now = Clock.System.now()
+            val age = now - stored.timestamp
+
+            if (age < idempotencyTtlMinutes.minutes) {
+                // Return cached result
+                stored.result
+            } else {
+                // Expired, remove it
+                idempotencyStore.remove(cacheKey)
+                null
+            }
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Store the result of an idempotent operation.
+     */
+    private fun storeIdempotency(toolName: String, idempotencyKey: String, arguments: Map<String, kotlinx.serialization.json.JsonElement>, result: CallToolResult) {
+        val cacheKey = buildCacheKey(toolName, idempotencyKey, arguments)
+        val stored = StoredResult(result, Clock.System.now())
+        idempotencyStore[cacheKey] = stored
+
+        // Clean up old entries (simple TTL-based cleanup)
+        cleanupExpiredEntries()
+    }
+
+    /**
+     * Build a cache key from tool name, idempotency key, and normalized arguments.
+     */
+    private fun buildCacheKey(toolName: String, idempotencyKey: String, arguments: Map<String, kotlinx.serialization.json.JsonElement>): String {
+        // Normalize arguments by removing null values and sorting keys
+        val normalized = arguments
+            .filterValues { it !is kotlinx.serialization.json.JsonNull }
+            .toSortedMap()
+            .toString()
+
+        // Simple hash using Kotlin's hashCode
+        val argsHash = normalized.hashCode().toString(16)
+
+        return "$toolName|$idempotencyKey|$argsHash"
+    }
+
+    /**
+     * Clean up expired entries from the idempotency store.
+     * This is a simple implementation - in production, you might want a more sophisticated approach.
+     */
+    private fun cleanupExpiredEntries() {
+        val now = Clock.System.now()
+        val cutoff = now - idempotencyTtlMinutes.minutes
+
+        idempotencyStore.entries.removeIf { (_, stored) ->
+            stored.timestamp < cutoff
+        }
     }
 }

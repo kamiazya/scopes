@@ -1,24 +1,18 @@
 package io.github.kamiazya.scopes.interfaces.mcp.adapters
 
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
-import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.*
 
 /**
  * Tests for the aliases.resolve tool functionality.
- * 
+ *
  * This tool provides alias resolution with different matching modes:
  * - auto: tries exact match first, falls back to unique prefix
  * - exact: only exact matches
  * - prefix: unique prefix matching
- * 
+ *
  * Returns canonicalAlias on success, or AmbiguousAlias error with candidates.
  */
 class AliasResolveTest : BaseIntegrationTest() {
@@ -27,18 +21,18 @@ class AliasResolveTest : BaseIntegrationTest() {
         "should resolve exact alias match" {
             runTest {
                 setupMocks()
-                
+
                 val testScope = TestData.createScopeResult(
                     canonicalAlias = "project-alpha",
                     title = "Project Alpha"
                 )
                 MockConfig.run { queryPort.mockSuccessfulGet("project-alpha", testScope) }
-                
+
                 // Expected response for exact match
                 val expectedResponse = buildJsonObject {
                     put("canonicalAlias", "project-alpha")
                 }
-                
+
                 // Verify test data setup
                 testScope.canonicalAlias shouldBe "project-alpha"
                 expectedResponse["canonicalAlias"]?.toString() shouldBe "\"project-alpha\""
@@ -48,10 +42,10 @@ class AliasResolveTest : BaseIntegrationTest() {
         "should return AmbiguousAlias error with candidates" {
             runTest {
                 setupMocks()
-                
+
                 // Setup ambiguous match scenario
                 MockConfig.run { queryPort.mockNotFound("proj") }
-                
+
                 // Expected AmbiguousAlias error response
                 val expectedError = buildJsonObject {
                     put("code", -32011)
@@ -60,14 +54,14 @@ class AliasResolveTest : BaseIntegrationTest() {
                         put("type", "AmbiguousAlias")
                         put("message", "Multiple scopes match the prefix 'proj'")
                         putJsonArray("candidates") {
-                            add("project-alpha")
-                            add("project-beta") 
-                            add("proj-gamma")
+                            add(JsonPrimitive("project-alpha"))
+                            add(JsonPrimitive("project-beta"))
+                            add(JsonPrimitive("proj-gamma"))
                         }
                         put("hint", "Use a more specific prefix or exact match")
                     }
                 }
-                
+
                 // Verify error structure
                 expectedError["code"]?.toString() shouldBe "-32011"
                 expectedError["data"]?.let { data ->
@@ -79,15 +73,15 @@ class AliasResolveTest : BaseIntegrationTest() {
         "should handle different match modes" {
             runTest {
                 setupMocks()
-                
+
                 val matchModes = listOf("auto", "exact", "prefix")
-                
+
                 // Test that all match modes are valid
                 matchModes.forEach { mode ->
                     mode shouldBe mode // Basic validation
                 }
-                
-                // Default mode should be "auto" 
+
+                // Default mode should be "auto"
                 "auto" shouldBe "auto"
             }
         }
@@ -99,16 +93,16 @@ class AliasResolveTest : BaseIntegrationTest() {
                     put("alias", "test-alias")
                     put("match", "auto")
                 }
-                
+
                 val minimalInput = buildJsonObject {
                     put("alias", "test-alias")
                     // match is optional, defaults to "auto"
                 }
-                
+
                 // Verify required fields
                 validInput["alias"] shouldNotBe null
                 minimalInput["alias"] shouldNotBe null
-                
+
                 // Verify match mode validation
                 val validModes = listOf("auto", "exact", "prefix")
                 validModes.contains("auto") shouldBe true
@@ -123,16 +117,16 @@ class AliasResolveTest : BaseIntegrationTest() {
                 val successResponse = buildJsonObject {
                     put("canonicalAlias", "resolved-alias")
                 }
-                
+
                 // Test ambiguous response structure
                 val ambiguousResponse = buildJsonObject {
                     put("canonicalAlias", "partial-match")
                     putJsonArray("candidates") {
-                        add("partial-match-1")
-                        add("partial-match-2")
+                        add(JsonPrimitive("partial-match-1"))
+                        add(JsonPrimitive("partial-match-2"))
                     }
                 }
-                
+
                 successResponse["canonicalAlias"] shouldNotBe null
                 ambiguousResponse["candidates"] shouldNotBe null
             }
@@ -146,7 +140,7 @@ class AliasResolveTest : BaseIntegrationTest() {
                     "project-a" to listOf("project-alpha"),  // unique prefix
                     "project-" to listOf("project-alpha", "project-beta") // ambiguous
                 )
-                
+
                 prefixes.forEach { (prefix, matches) ->
                     when (matches.size) {
                         1 -> {

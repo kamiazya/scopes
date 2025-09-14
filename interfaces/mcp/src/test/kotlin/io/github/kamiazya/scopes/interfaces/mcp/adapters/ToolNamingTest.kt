@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryP
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldMatch
 import io.mockk.mockk
 

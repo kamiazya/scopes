@@ -1,15 +1,14 @@
 package io.github.kamiazya.scopes.interfaces.mcp.adapters
 
-import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
 import io.kotest.core.spec.style.StringSpec
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -19,26 +18,17 @@ import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import java.io.BufferedInputStream
-import java.io.InputStream
-import java.io.OutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.io.PrintStream
 
 /**
  * Base class for MCP server integration tests using InMemoryTransport.
- * 
+ *
  * This class provides common infrastructure for testing MCP server functionality
  * including client-server communication setup, mock configuration, and assertion helpers.
  */
@@ -48,7 +38,7 @@ abstract class BaseIntegrationTest : StringSpec() {
     protected lateinit var queryPort: ScopeManagementQueryPort
     protected lateinit var commandPort: ScopeManagementCommandPort
     protected lateinit var adapter: McpServerAdapter
-    
+
     // MCP client-server infrastructure
     protected lateinit var client: Client
     protected lateinit var server: Server
@@ -57,28 +47,28 @@ abstract class BaseIntegrationTest : StringSpec() {
         queryPort = mockk(relaxed = true)
         commandPort = mockk(relaxed = true)
         adapter = McpServerAdapter(queryPort, commandPort)
-        
+
         // Create the test server
         server = adapter.createTestServer()
-        
+
         // Create connected pipes for stdio transport testing
         val serverToClient = PipedOutputStream()
         val clientFromServer = PipedInputStream(serverToClient)
-        
+
         val clientToServer = PipedOutputStream()
         val serverFromClient = PipedInputStream(clientToServer)
-        
+
         // Create transports using the connected pipes
         val serverTransport = StdioServerTransport(
             inputStream = BufferedInputStream(serverFromClient),
             outputStream = PrintStream(serverToClient)
         )
-        
+
         val clientTransport = StdioClientTransport(
             input = clientFromServer,
             output = clientToServer
         )
-        
+
         // Connect server and client using transports
         server.connect(serverTransport)
         client = Client(
@@ -86,7 +76,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         )
         client.connect(clientTransport)
     }
-    
+
     protected fun setupMocks() {
         queryPort = mockk(relaxed = true)
         commandPort = mockk(relaxed = true)
@@ -97,6 +87,14 @@ abstract class BaseIntegrationTest : StringSpec() {
      * Test data factory for creating standard test objects
      */
     protected object TestData {
+        fun aliasNotFoundError(alias: String) = ScopeContractError.BusinessError.AliasNotFound(alias)
+
+        fun duplicateTitleError(title: String) = ScopeContractError.BusinessError.DuplicateTitle(
+            title = title,
+            parentId = null,
+            existingScopeId = "existing-scope-id"
+        )
+
         fun createScopeResult(
             id: String = "test-scope-id",
             canonicalAlias: String = "test-scope",
@@ -153,7 +151,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         }
 
         fun ScopeManagementQueryPort.mockNotFound(alias: String) {
-            coEvery { getScopeByAlias(GetScopeByAliasQuery(alias)) } returns 
+            coEvery { getScopeByAlias(GetScopeByAliasQuery(alias)) } returns
                 ScopeContractError.BusinessError.AliasNotFound(alias).left()
         }
 
@@ -179,7 +177,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         }
 
         fun ScopeManagementCommandPort.mockCannotRemoveCanonicalAlias() {
-            coEvery { removeAlias(any()) } returns 
+            coEvery { removeAlias(any()) } returns
                 ScopeContractError.BusinessError.CannotRemoveCanonicalAlias.left()
         }
     }
@@ -197,15 +195,15 @@ abstract class BaseIntegrationTest : StringSpec() {
 
         fun assertErrorResponse(json: JsonObject, expectedMessage: String? = null): JsonObject {
             assert(json.containsKey("error")) {
-                "Expected error response but got success: $json"  
+                "Expected error response but got success: $json"
             }
-            
+
             expectedMessage?.let { expected ->
                 val errorField = json["error"]
                 val actualMessage = when {
-                    errorField?.jsonObject?.containsKey("message") == true -> 
+                    errorField?.jsonObject?.containsKey("message") == true ->
                         errorField.jsonObject["message"]?.jsonPrimitive?.content
-                    errorField?.jsonPrimitive != null -> 
+                    errorField?.jsonPrimitive != null ->
                         errorField.jsonPrimitive.content
                     else -> null
                 }
@@ -236,25 +234,25 @@ abstract class BaseIntegrationTest : StringSpec() {
      * Execute a tool call using real MCP client-server communication
      */
     protected suspend fun executeToolCall(
-        toolName: String, 
+        toolName: String,
         arguments: Map<String, Any?>
     ): JsonObject {
         return try {
             // Use real MCP client to call the tool
             val result = client.callTool(toolName, arguments)
-            
+
             // Parse the JSON response - result can be null
             if (result == null) {
                 return buildJsonObject { put("error", "Null result from tool call") }
             }
-            
+
             when (result.content.size) {
                 1 -> {
                     val content = result.content[0]
                     when (content) {
-                        is TextContent -> 
+                        is TextContent ->
                             Json.parseToJsonElement(content.text ?: "{}").jsonObject
-                        else -> buildJsonObject { 
+                        else -> buildJsonObject {
                             put("error", "Unsupported content type: ${content::class.simpleName}")
                         }
                     }
@@ -263,7 +261,7 @@ abstract class BaseIntegrationTest : StringSpec() {
                 else -> buildJsonObject { put("error", "Multiple response contents not supported") }
             }
         } catch (e: Exception) {
-            buildJsonObject { 
+            buildJsonObject {
                 put("error", e.message ?: "Unknown error")
                 put("exception", e::class.simpleName)
             }
@@ -282,7 +280,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         runTest {
             setupClientServer()
             setup()
-            
+
             val response = executeToolCall(toolName, arguments)
             Assertions.assertSuccessResponse(response)
             validation(response)
@@ -298,7 +296,7 @@ abstract class BaseIntegrationTest : StringSpec() {
         runTest {
             setupClientServer()
             setup()
-            
+
             val response = executeToolCall(toolName, arguments)
             Assertions.assertErrorResponse(response, expectedErrorMessage)
         }
