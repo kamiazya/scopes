@@ -24,7 +24,7 @@ class AliasResolveTest : BaseIntegrationTest() {
 
                 val testScope = TestData.createScopeResult(
                     canonicalAlias = "project-alpha",
-                    title = "Project Alpha"
+                    title = "Project Alpha",
                 )
                 MockConfig.run { queryPort.mockSuccessfulGet("project-alpha", testScope) }
 
@@ -137,8 +137,8 @@ class AliasResolveTest : BaseIntegrationTest() {
                 // Test prefix matching scenarios
                 val prefixes = mapOf(
                     "proj" to listOf("project-alpha", "project-beta", "proj-gamma"),
-                    "project-a" to listOf("project-alpha"),  // unique prefix
-                    "project-" to listOf("project-alpha", "project-beta") // ambiguous
+                    "project-a" to listOf("project-alpha"), // unique prefix
+                    "project-" to listOf("project-alpha", "project-beta"), // ambiguous
                 )
 
                 prefixes.forEach { (prefix, matches) ->

@@ -8,42 +8,46 @@ import io.mockk.mockk
 
 /**
  * Unit tests for McpServerAdapter focusing on adapter structure and tool registration.
- * 
+ *
  * This test class verifies:
  * - Adapter initialization and configuration
  * - Server creation and setup
  * - Basic functionality without diving into private API details
  */
-class McpServerAdapterTest : StringSpec({
+class McpServerAdapterTest :
+    StringSpec({
 
-    "should create adapter with required dependencies" {
-        val queryPort = mockk<ScopeManagementQueryPort>()
-        val commandPort = mockk<ScopeManagementCommandPort>()
-        
-        val adapter = McpServerAdapter(queryPort, commandPort)
-        
-        adapter shouldNotBe null
-    }
+        "should create adapter with required dependencies" {
+            val queryPort = mockk<ScopeManagementQueryPort>()
+            val commandPort = mockk<ScopeManagementCommandPort>()
 
-    "should create test server successfully" {
-        val queryPort = mockk<ScopeManagementQueryPort>()
-        val commandPort = mockk<ScopeManagementCommandPort>()
-        val adapter = McpServerAdapter(queryPort, commandPort)
-        
-        val server = adapter.createTestServer()
-        
-        server shouldNotBe null
-        // Note: Server.capabilities is private, so we can't test it directly
-        // But successful server creation indicates proper setup
-    }
+            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
+            val adapter = McpServerAdapter(queryPort, commandPort, logger)
 
-    "should handle stdio server creation" {
-        val queryPort = mockk<ScopeManagementQueryPort>()
-        val commandPort = mockk<ScopeManagementCommandPort>()
-        val adapter = McpServerAdapter(queryPort, commandPort)
-        
-        // This should not throw an exception
-        // We can't easily test stdio without actual input/output streams
-        adapter shouldNotBe null
-    }
-})
+            adapter shouldNotBe null
+        }
+
+        "should create test server successfully" {
+            val queryPort = mockk<ScopeManagementQueryPort>()
+            val commandPort = mockk<ScopeManagementCommandPort>()
+            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
+            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+
+            val server = adapter.createTestServer()
+
+            server shouldNotBe null
+            // Note: Server.capabilities is private, so we can't test it directly
+            // But successful server creation indicates proper setup
+        }
+
+        "should handle stdio server creation" {
+            val queryPort = mockk<ScopeManagementQueryPort>()
+            val commandPort = mockk<ScopeManagementCommandPort>()
+            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
+            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+
+            // This should not throw an exception
+            // We can't easily test stdio without actual input/output streams
+            adapter shouldNotBe null
+        }
+    })
