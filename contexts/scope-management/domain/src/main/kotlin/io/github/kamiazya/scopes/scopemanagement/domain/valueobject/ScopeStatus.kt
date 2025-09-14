@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import kotlinx.datetime.Clock
 
 /**
  * Represents the status/state of a scope in its lifecycle.
@@ -87,7 +86,6 @@ sealed class ScopeStatus {
             from = this.toString(),
             to = target.toString(),
             reason = "Invalid state transition from $this to $target",
-            occurredAt = Clock.System.now(),
         ).left()
     }
 

@@ -23,7 +23,6 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
                     aggregateId = command.aggregateId,
                     eventType = command.eventType,
                     storageReason = EventStoreContractError.StorageFailureReason.INVALID_EVENT,
-                    occurredAt = kotlinx.datetime.Clock.System.now(),
                     cause = null,
                 )
             }
@@ -37,7 +36,6 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
                             aggregateId = command.aggregateId,
                             eventType = command.eventType,
                             storageReason = EventStoreContractError.StorageFailureReason.WRITE_TIMEOUT,
-                            occurredAt = kotlinx.datetime.Clock.System.now(),
                             cause = null,
                         )
                     }

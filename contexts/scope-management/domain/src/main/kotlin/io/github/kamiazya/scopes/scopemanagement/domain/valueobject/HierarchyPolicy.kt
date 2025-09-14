@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyPolicyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import kotlin.ConsistentCopyVisibility
@@ -50,7 +49,6 @@ data class HierarchyPolicy private constructor(
             if (maxDepth != null) {
                 ensure(maxDepth > 0) {
                     HierarchyPolicyError.InvalidMaxDepth(
-                        occurredAt = currentTimestamp(),
                         attemptedValue = maxDepth,
                     )
                 }
@@ -59,7 +57,6 @@ data class HierarchyPolicy private constructor(
             if (maxChildrenPerScope != null) {
                 ensure(maxChildrenPerScope > 0) {
                     HierarchyPolicyError.InvalidMaxChildrenPerScope(
-                        occurredAt = currentTimestamp(),
                         attemptedValue = maxChildrenPerScope,
                     )
                 }

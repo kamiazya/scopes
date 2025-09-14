@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
-import kotlinx.datetime.Instant
 import kotlin.time.Duration
 
 /**
@@ -15,31 +14,26 @@ sealed class UserPreferencesIntegrationError : ScopesError() {
     /**
      * Error when user preferences service is unreachable.
      */
-    data class PreferencesServiceUnavailable(override val occurredAt: Instant, val retryAfter: Duration? = null) : UserPreferencesIntegrationError()
+    data class ServiceUnavailable(val retryAfter: Duration? = null) : UserPreferencesIntegrationError()
 
     /**
      * Error when hierarchy settings are missing from user preferences.
      */
-    data class HierarchySettingsNotFound(override val occurredAt: Instant) : UserPreferencesIntegrationError()
+    data object HierarchySettingsNotFound : UserPreferencesIntegrationError()
 
     /**
      * Error when hierarchy settings contain invalid values.
      */
-    data class InvalidHierarchySettings(
-        override val occurredAt: Instant,
-        val maxDepth: Int? = null,
-        val maxChildrenPerScope: Int? = null,
-        val validationErrors: List<String>,
-    ) : UserPreferencesIntegrationError()
+    data class InvalidHierarchySettings(val maxDepth: Int? = null, val maxChildrenPerScope: Int? = null, val validationErrors: List<String>) :
+        UserPreferencesIntegrationError()
 
     /**
      * Error when preferences service returns malformed data.
      */
-    data class MalformedPreferencesResponse(override val occurredAt: Instant, val expectedFormat: String, val actualContent: String? = null) :
-        UserPreferencesIntegrationError()
+    data class MalformedResponse(val cause: Throwable? = null) : UserPreferencesIntegrationError()
 
     /**
      * Error when preferences service request times out.
      */
-    data class PreferencesRequestTimeout(override val occurredAt: Instant, val timeout: Duration) : UserPreferencesIntegrationError()
+    data class RequestTimeout(val timeoutDuration: Duration) : UserPreferencesIntegrationError()
 }

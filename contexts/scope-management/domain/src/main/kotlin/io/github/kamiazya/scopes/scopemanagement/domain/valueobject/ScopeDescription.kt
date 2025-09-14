@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 
 /**
@@ -31,9 +30,7 @@ value class ScopeDescription private constructor(val value: String) {
                         null
                     } else {
                         ensure(trimmedDescription.length <= MAX_LENGTH) {
-                            ScopeInputError.DescriptionError.TooLong(
-                                currentTimestamp(),
-                                description,
+                            ScopeInputError.DescriptionError.DescriptionTooLong(
                                 MAX_LENGTH,
                             )
                         }

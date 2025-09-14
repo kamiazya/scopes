@@ -9,7 +9,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDe
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
-import kotlinx.datetime.Clock
 
 /**
  * Handler for listing all aspect definitions.
@@ -39,7 +38,6 @@ class ListAspectDefinitionsHandler(
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "list-aspect-definitions"),
-                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()

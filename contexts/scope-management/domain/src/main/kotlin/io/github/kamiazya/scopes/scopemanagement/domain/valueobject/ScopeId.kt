@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.platform.commons.id.ULID
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
@@ -26,16 +25,12 @@ value class ScopeId private constructor(val value: String) {
          */
         fun create(value: String): Either<ScopeInputError.IdError, ScopeId> = either {
             ensure(value.isNotBlank()) {
-                ScopeInputError.IdError.Blank(
-                    currentTimestamp(),
-                    value,
-                )
+                ScopeInputError.IdError.EmptyId
             }
             ensure(ULID.isValid(value)) {
-                ScopeInputError.IdError.InvalidFormat(
-                    currentTimestamp(),
+                ScopeInputError.IdError.InvalidIdFormat(
                     value,
-                    ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
+                    ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID,
                 )
             }
             ScopeId(value)
@@ -52,7 +47,6 @@ value class ScopeId private constructor(val value: String) {
         id = value,
     ).mapLeft {
         AggregateIdError.InvalidFormat(
-            occurredAt = currentTimestamp(),
             value = value,
             formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )

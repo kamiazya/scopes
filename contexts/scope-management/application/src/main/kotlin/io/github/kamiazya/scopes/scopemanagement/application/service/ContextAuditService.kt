@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ActiveContextCleared
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ContextViewActivated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ContextViewApplied
-import kotlinx.datetime.Clock
 
 /**
  * Application service responsible for publishing audit events for context operations.
@@ -63,7 +62,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         val event = ContextViewActivated(
             aggregateId = aggregateId,
             eventId = eventId,
-            occurredAt = Clock.System.now(),
             aggregateVersion = io.github.kamiazya.scopes.platform.domain.value.AggregateVersion.initial().increment(),
             contextViewId = contextView.id,
             contextKey = contextView.key,
@@ -110,7 +108,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         val event = ActiveContextCleared(
             aggregateId = aggregateId,
             eventId = eventId,
-            occurredAt = Clock.System.now(),
             aggregateVersion = io.github.kamiazya.scopes.platform.domain.value.AggregateVersion.initial().increment(),
             previousContextId = previousContext.id,
             previousContextKey = previousContext.key,
@@ -162,7 +159,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         val event = ContextViewApplied(
             aggregateId = aggregateId,
             eventId = eventId,
-            occurredAt = Clock.System.now(),
             aggregateVersion = io.github.kamiazya.scopes.platform.domain.value.AggregateVersion.initial().increment(),
             contextViewId = contextView.id,
             contextKey = contextView.key,

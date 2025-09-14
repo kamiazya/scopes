@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
@@ -41,10 +40,9 @@ class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val 
 
         for (id in hierarchyPath) {
             ensure(!seen.contains(id)) {
-                ScopeHierarchyError.CircularPath(
-                    currentTimestamp(),
-                    id,
-                    seen.toList(),
+                ScopeHierarchyError.CircularDependency(
+                    scopeId = id,
+                    ancestorId = seen.first(),
                 )
             }
             seen.add(id)
@@ -62,18 +60,17 @@ class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val 
     fun validateParentChildRelationship(parentId: ScopeId, childId: ScopeId, parentAncestorPath: List<ScopeId>): Either<ScopeHierarchyError, Unit> = either {
         // Check self-parenting
         ensure(parentId != childId) {
-            ScopeHierarchyError.SelfParenting(
-                currentTimestamp(),
-                childId,
+            ScopeHierarchyError.CircularDependency(
+                scopeId = childId,
+                ancestorId = childId,
             )
         }
 
         // Check if child is in parent's ancestor path (would create cycle)
         ensure(!parentAncestorPath.contains(childId)) {
-            ScopeHierarchyError.CircularReference(
-                currentTimestamp(),
+            ScopeHierarchyError.CircularDependency(
                 scopeId = childId,
-                parentId = parentId,
+                ancestorId = parentId,
             )
         }
     }
@@ -93,10 +90,9 @@ class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val 
         if (effectiveLimit != null) {
             ensure(currentChildCount < effectiveLimit) {
                 ScopeHierarchyError.MaxChildrenExceeded(
-                    occurredAt = currentTimestamp(),
-                    parentScopeId = parentId,
-                    currentChildrenCount = currentChildCount,
-                    maximumChildren = effectiveLimit,
+                    parentId = parentId,
+                    currentCount = currentChildCount,
+                    maxChildren = effectiveLimit,
                 )
             }
         }
@@ -118,10 +114,9 @@ class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val 
             val attemptedDepth = currentDepth + 1
             ensure(attemptedDepth <= effectiveLimit) {
                 ScopeHierarchyError.MaxDepthExceeded(
-                    occurredAt = currentTimestamp(),
                     scopeId = scopeId,
-                    attemptedDepth = attemptedDepth,
-                    maximumDepth = effectiveLimit,
+                    currentDepth = attemptedDepth,
+                    maxDepth = effectiveLimit,
                 )
             }
         }

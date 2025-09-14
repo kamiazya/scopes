@@ -5,7 +5,6 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 
 /**
  * Aggregate identifier for domain entities.
@@ -31,12 +30,10 @@ sealed interface AggregateId {
                 value.isEmpty() -> DomainError.InvalidId(
                     value = value,
                     errorType = DomainError.InvalidId.InvalidIdType.EMPTY,
-                    occurredAt = currentTimestamp(),
                 ).left()
                 !ULID.isValid(value) -> DomainError.InvalidId(
                     value = value,
                     errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
-                    occurredAt = currentTimestamp(),
                 ).left()
                 else -> Simple(value.uppercase()).right() // Normalize to uppercase like ULID
             }
@@ -90,7 +87,6 @@ sealed interface AggregateId {
                     return DomainError.InvalidId(
                         value = id,
                         errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
-                        occurredAt = currentTimestamp(),
                     ).left()
                 }
                 val normalizedId = id.uppercase() // Normalize ULID to uppercase
@@ -102,12 +98,10 @@ sealed interface AggregateId {
                 value.isEmpty() -> DomainError.InvalidId(
                     value = value,
                     errorType = DomainError.InvalidId.InvalidIdType.EMPTY,
-                    occurredAt = currentTimestamp(),
                 ).left()
                 !URI_PATTERN.matches(value) -> DomainError.InvalidId(
                     value = value,
                     errorType = DomainError.InvalidId.InvalidIdType.INVALID_FORMAT,
-                    occurredAt = currentTimestamp(),
                 ).left()
                 else -> Uri(value).right()
             }

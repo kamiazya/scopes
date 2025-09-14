@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 
 /**
@@ -28,27 +27,23 @@ value class ScopeTitle private constructor(private val data: Pair<String, String
         fun create(title: String): Either<ScopeInputError.TitleError, ScopeTitle> = either {
             // Check for prohibited characters in the original input
             ensure(!title.contains('\n') && !title.contains('\r')) {
-                ScopeInputError.TitleError.ContainsProhibitedCharacters(
-                    currentTimestamp(),
-                    title,
-                    listOf('\n', '\r'),
-                )
+                ScopeInputError.TitleError.InvalidTitleFormat(title)
             }
 
             val trimmedTitle = title.trim()
             val normalizedTitle = normalize(trimmedTitle)
 
             ensure(trimmedTitle.isNotBlank()) {
-                ScopeInputError.TitleError.Empty(currentTimestamp(), title)
+                ScopeInputError.TitleError.EmptyTitle
             }
             // MIN_LENGTH is currently 1, making this check unreachable after isNotBlank().
             // However, it's included to support future increases to MIN_LENGTH and is used
             // in recovery logic and formatting utilities.
             ensure(trimmedTitle.length >= MIN_LENGTH) {
-                ScopeInputError.TitleError.Empty(currentTimestamp(), title)
+                ScopeInputError.TitleError.EmptyTitle
             }
             ensure(trimmedTitle.length <= MAX_LENGTH) {
-                ScopeInputError.TitleError.TooLong(currentTimestamp(), title, MAX_LENGTH)
+                ScopeInputError.TitleError.TitleTooLong(MAX_LENGTH)
             }
 
             ScopeTitle(trimmedTitle, normalizedTitle)

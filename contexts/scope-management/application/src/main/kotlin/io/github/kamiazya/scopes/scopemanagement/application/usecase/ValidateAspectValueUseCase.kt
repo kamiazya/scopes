@@ -8,7 +8,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinit
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import kotlinx.datetime.Clock
 
 /**
  * Use case for validating aspect values against their definitions.
@@ -39,7 +38,6 @@ class ValidateAspectValueUseCase(
                     service = "aspect-repository",
                     cause = it as? Throwable,
                     context = mapOf("operation" to "find-aspect-definition", "key" to input.key),
-                    occurredAt = Clock.System.now(),
                 ).left()
             },
             {
@@ -47,7 +45,6 @@ class ValidateAspectValueUseCase(
                     entityType = "AspectDefinition",
                     identifier = input.key,
                     identifierType = "key",
-                    occurredAt = Clock.System.now(),
                 ).left()
             },
         )
@@ -100,7 +97,6 @@ class ValidateAspectValueUseCase(
                         service = "aspect-repository",
                         cause = it as? Throwable,
                         context = mapOf("operation" to "find-aspect-definition", "key" to key),
-                        occurredAt = Clock.System.now(),
                     ).left()
                 },
                 {
@@ -108,7 +104,6 @@ class ValidateAspectValueUseCase(
                         entityType = "AspectDefinition",
                         identifier = key,
                         identifierType = "key",
-                        occurredAt = Clock.System.now(),
                     ).left()
                 },
             )

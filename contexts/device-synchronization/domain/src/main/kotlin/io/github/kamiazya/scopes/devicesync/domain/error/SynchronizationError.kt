@@ -1,18 +1,14 @@
 package io.github.kamiazya.scopes.devicesync.domain.error
 
-import kotlinx.datetime.Instant
-
 /**
  * Domain errors that can occur during device synchronization operations.
  */
 sealed class SynchronizationError {
-    abstract val occurredAt: Instant
 
     /**
      * Network error occurred during synchronization.
      */
-    data class NetworkError(val deviceId: String, val errorType: NetworkErrorType, override val occurredAt: Instant, val cause: Throwable? = null) :
-        SynchronizationError()
+    data class NetworkError(val deviceId: String, val errorType: NetworkErrorType, val cause: Throwable? = null) : SynchronizationError()
 
     enum class NetworkErrorType {
         CONNECTION_REFUSED,
@@ -25,8 +21,7 @@ sealed class SynchronizationError {
     /**
      * The remote device is unreachable.
      */
-    data class DeviceUnreachableError(val deviceId: String, val lastKnownStatus: String? = null, val attemptCount: Int = 1, override val occurredAt: Instant) :
-        SynchronizationError()
+    data class DeviceUnreachableError(val deviceId: String, val lastKnownStatus: String? = null, val attemptCount: Int = 1) : SynchronizationError()
 
     /**
      * Version conflict detected between devices.
@@ -36,7 +31,6 @@ sealed class SynchronizationError {
         val remoteVersion: Long,
         val aggregateId: String,
         val conflictType: ConflictType = ConflictType.VERSION_MISMATCH,
-        override val occurredAt: Instant,
     ) : SynchronizationError()
 
     enum class ConflictType {
@@ -54,7 +48,6 @@ sealed class SynchronizationError {
         val resolvedCount: Int,
         val resolutionStrategy: String,
         val failureReason: ResolutionFailureReason,
-        override val occurredAt: Instant,
     ) : SynchronizationError()
 
     enum class ResolutionFailureReason {
@@ -68,23 +61,14 @@ sealed class SynchronizationError {
     /**
      * Synchronization protocol error.
      */
-    data class ProtocolError(
-        val protocolVersion: String,
-        val expectedFormat: String? = null,
-        val actualFormat: String? = null,
-        val operation: String,
-        override val occurredAt: Instant,
-    ) : SynchronizationError()
+    data class ProtocolError(val protocolVersion: String, val expectedFormat: String? = null, val actualFormat: String? = null, val operation: String) :
+        SynchronizationError()
 
     /**
      * Invalid device configuration.
      */
-    data class InvalidDeviceError(
-        val deviceId: String,
-        val configurationIssue: ConfigurationIssue,
-        val requiredConfiguration: String? = null,
-        override val occurredAt: Instant,
-    ) : SynchronizationError()
+    data class InvalidDeviceError(val deviceId: String, val configurationIssue: ConfigurationIssue, val requiredConfiguration: String? = null) :
+        SynchronizationError()
 
     enum class ConfigurationIssue {
         MISSING_DEVICE_ID,

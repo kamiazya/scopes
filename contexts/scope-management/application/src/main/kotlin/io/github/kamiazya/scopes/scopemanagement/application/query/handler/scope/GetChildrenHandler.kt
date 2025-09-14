@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetChildr
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Handler for getting children of a scope.
@@ -49,7 +48,6 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
                             "offset" to query.offset,
                             "limit" to query.limit,
                         ),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -63,7 +61,6 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
                             "operation" to "countByParentId",
                             "parentId" to (parentId?.value?.toString() ?: "null"),
                         ),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
