@@ -26,6 +26,8 @@ ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
 gradle-develocity = "4.1.1"
 spotless = "7.2.1"
+mcp-kotlin-sdk = "0.1.0"
+ktor = "2.3.12"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
@@ -59,6 +61,9 @@ sqldelight-dialect-sqlite = { module = "app.cash.sqldelight:sqlite-3-38-dialect"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-kotlin-sdk" }
+# Ktor (server engine used only if needed by sdk)
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

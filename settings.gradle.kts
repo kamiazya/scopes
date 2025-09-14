@@ -44,6 +44,8 @@ include(
     // Apps layer - Application logic & Entry points
     ":apps-scopes",
     ":apps-scopesd",
+    // Interfaces - MCP server
+    ":interfaces-mcp",
     // Quality
     ":quality-konsist",
 )
@@ -102,6 +104,7 @@ project(":platform-infrastructure").projectDir = file("platform/infrastructure")
 
 // Interface layer
 project(":interfaces-cli").projectDir = file("interfaces/cli")
+project(":interfaces-mcp").projectDir = file("interfaces/mcp")
 
 // Contracts layer
 project(":contracts-scope-management").projectDir = file("contracts/scope-management")

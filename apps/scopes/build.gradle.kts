@@ -21,6 +21,7 @@ dependencies {
 
     // Interface layer
     implementation(project(":interfaces-cli"))
+    implementation(project(":interfaces-mcp"))
 
     // Bounded Contexts - scope-management
     // Infrastructure dependencies are required here for the Composition Root pattern.
