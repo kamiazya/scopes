@@ -1,8 +1,6 @@
 package io.github.kamiazya.scopes.eventstore.application.error
 
 import io.github.kamiazya.scopes.platform.application.error.ApplicationError
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * Application-level errors for Event Store operations.
@@ -17,7 +15,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val aggregateId: String? = null,
         val eventType: String? = null,
         val affectedCount: Int? = null,
-        override val occurredAt: Instant = Clock.System.now(),
         override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
@@ -38,7 +35,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val targetType: String,
         val dataSize: Int? = null,
         val format: String = "JSON",
-        override val occurredAt: Instant = Clock.System.now(),
         override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
@@ -55,7 +51,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val invalidValue: Any?,
         val constraint: ValidationConstraint,
         val allowedRange: String? = null,
-        override val occurredAt: Instant = Clock.System.now(),
         override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 

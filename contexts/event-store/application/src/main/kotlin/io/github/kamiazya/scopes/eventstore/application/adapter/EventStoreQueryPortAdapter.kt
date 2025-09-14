@@ -53,13 +53,13 @@ class EventStoreQueryPortAdapter(
                                     parameterName = "query",
                                     providedValue = query,
                                     constraint = EventStoreContractError.QueryConstraint.INVALID_COMBINATION,
-                                    occurredAt = error.occurredAt,
+                                    occurredAt = kotlinx.datetime.Clock.System.now(),
                                 )
                             else ->
                                 EventStoreContractError.EventRetrievalError(
                                     aggregateId = query.aggregateId,
                                     retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
-                                    occurredAt = error.occurredAt,
+                                    occurredAt = kotlinx.datetime.Clock.System.now(),
                                     cause = null,
                                 )
                         }
@@ -100,12 +100,12 @@ class EventStoreQueryPortAdapter(
                         parameterName = "query",
                         providedValue = query,
                         constraint = EventStoreContractError.QueryConstraint.INVALID_FORMAT,
-                        occurredAt = error.occurredAt,
+                        occurredAt = kotlinx.datetime.Clock.System.now(),
                     )
                 else ->
                     EventStoreContractError.EventRetrievalError(
                         retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
-                        occurredAt = error.occurredAt,
+                        occurredAt = kotlinx.datetime.Clock.System.now(),
                         cause = null,
                     )
             }
