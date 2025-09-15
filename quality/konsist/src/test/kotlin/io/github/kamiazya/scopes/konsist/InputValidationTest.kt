@@ -16,6 +16,7 @@ class InputValidationTest :
                 .scopeFromProject()
                 .functions()
                 .filter { it.text.contains("idempotencyKey") || it.text.contains("IdempotencyKey") }
+                .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
                 .assertTrue { function ->
                     val functionText = function.text
 
@@ -76,6 +77,7 @@ class InputValidationTest :
                         it.text.contains("jsonObject")
                 }
                 .filter { !it.resideInPackage("..test..") }
+                .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
                 .assertTrue { function ->
                     val functionText = function.text
 

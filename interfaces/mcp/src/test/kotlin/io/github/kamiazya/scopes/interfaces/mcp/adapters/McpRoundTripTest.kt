@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.mcp.adapters
 
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 
@@ -28,10 +27,13 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 }
 
                 // Test create operation
-                val response = executeToolCall("scopes.create", mapOf(
-                    "title" to "Test Scope",
-                    "idempotencyKey" to "test-key-123"
-                ))
+                val response = executeToolCall(
+                    "scopes.create",
+                    mapOf(
+                        "title" to "Test Scope",
+                        "idempotencyKey" to "test-key-123",
+                    ),
+                )
 
                 // Verify response structure
                 Assertions.assertSuccessResponse(response)
@@ -49,10 +51,13 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 }
 
                 // Test remove operation that should fail
-                val response = executeToolCall("aliases.remove", mapOf(
-                    "scopeAlias" to "main-scope",
-                    "aliasToRemove" to "main-scope" // trying to remove canonical
-                ))
+                val response = executeToolCall(
+                    "aliases.remove",
+                    mapOf(
+                        "scopeAlias" to "main-scope",
+                        "aliasToRemove" to "main-scope", // trying to remove canonical
+                    ),
+                )
 
                 // Should be mocked response for testing
                 response["toolName"]?.jsonPrimitive?.content shouldBe "aliases.remove"
@@ -73,10 +78,13 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 }
 
                 // Test idempotency behavior
-                val response = executeToolCall("scopes.create", mapOf(
-                    "title" to "Idempotent Test",
-                    "idempotencyKey" to "unique-key-456"
-                ))
+                val response = executeToolCall(
+                    "scopes.create",
+                    mapOf(
+                        "title" to "Idempotent Test",
+                        "idempotencyKey" to "unique-key-456",
+                    ),
+                )
 
                 // Verify response
                 Assertions.assertSuccessResponse(response)
@@ -98,9 +106,12 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 }
 
                 // Test exact match resolution
-                val response = executeToolCall("aliases.resolve", mapOf(
-                    "alias" to "project-alpha"
-                ))
+                val response = executeToolCall(
+                    "aliases.resolve",
+                    mapOf(
+                        "alias" to "project-alpha",
+                    ),
+                )
 
                 // Verify response
                 Assertions.assertSuccessResponse(response)
@@ -118,9 +129,12 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 }
 
                 // Test not found case
-                val response = executeToolCall("aliases.resolve", mapOf(
-                    "alias" to "non-existent"
-                ))
+                val response = executeToolCall(
+                    "aliases.resolve",
+                    mapOf(
+                        "alias" to "non-existent",
+                    ),
+                )
 
                 // Should handle error case in mock
                 response["toolName"]?.jsonPrimitive?.content shouldBe "aliases.resolve"

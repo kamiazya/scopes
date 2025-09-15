@@ -20,9 +20,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Log unmapped errors for visibility and debugging
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
-    
+
     companion object {
-        private const val SCOPE_MANAGEMENT_SERVICE = SCOPE_MANAGEMENT_SERVICE
+        private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
     }
     private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
         ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
@@ -189,6 +189,32 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeHierarchyError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.parentId.value,
         )
+        is ScopeHierarchyError.CircularPath -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.CircularReference(
+                scopeId = domainError.scopeId.value,
+                parentId = domainError.cyclePath.firstOrNull()?.value ?: domainError.scopeId.value,
+            ),
+        )
+        is ScopeHierarchyError.InvalidParentId -> ScopeContractError.InputError.InvalidId(
+            id = domainError.invalidId,
+            expectedFormat = "Valid parent scope ID",
+        )
+        is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+                scopeId = domainError.parentScopeId.value,
+            ),
+        )
+        is ScopeHierarchyError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+                scopeId = domainError.scopeId.value,
+            ),
+        )
+        is ScopeHierarchyError.ScopeInHierarchyNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = domainError.scopeId.value,
+        )
+        is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
+        )
     }
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
@@ -199,6 +225,19 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             alias = domainError.aliasName,
         )
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+        is ScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
+        )
+        is ScopeAliasError.AliasGenerationValidationFailed -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.attemptedValue,
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
+        )
+        is ScopeAliasError.AliasNotFoundById -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = domainError.aliasId.value,
+        )
+        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = domainError.scopeId.value,
+        )
     }
 
     private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {

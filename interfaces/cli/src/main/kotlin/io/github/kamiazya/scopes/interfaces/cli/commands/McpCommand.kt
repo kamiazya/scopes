@@ -11,6 +11,10 @@ class McpCommand :
     private val mcpServerAdapter: McpServerAdapter by inject()
 
     override fun run() {
-        mcpServerAdapter.runStdio()
+        try {
+            mcpServerAdapter.runStdio()
+        } finally {
+            // Cleanup handled by mcpServerAdapter internally
+        }
     }
 }

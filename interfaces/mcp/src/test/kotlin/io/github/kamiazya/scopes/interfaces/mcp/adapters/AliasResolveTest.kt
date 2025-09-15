@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
-import org.junit.jupiter.api.Disabled
+import io.kotest.core.annotation.Ignored
 
 /**
  * Tests for the aliases.resolve tool functionality.
@@ -39,7 +39,7 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        @Disabled("TODO: v1 removed prefix matching - AmbiguousAlias no longer applies")
+        @Ignored("TODO: v1 removed prefix matching - AmbiguousAlias no longer applies")
         "should return AmbiguousAlias error with candidates - DEPRECATED" {
             runTest {
                 setupMocks()
@@ -93,7 +93,7 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        @Disabled("TODO: v1 removed match modes - only exact matching supported")
+        @Ignored("TODO: v1 removed match modes - only exact matching supported")
         "should handle different match modes - DEPRECATED" {
             runTest {
                 setupMocks()
@@ -152,7 +152,7 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        @Disabled("TODO: v1 removed prefix matching - only exact matching supported")
+        @Ignored("TODO: v1 removed prefix matching - only exact matching supported")
         "should handle prefix matching logic - DEPRECATED" {
             runTest {
                 // NOTE: This test is disabled because v1 only supports exact matching

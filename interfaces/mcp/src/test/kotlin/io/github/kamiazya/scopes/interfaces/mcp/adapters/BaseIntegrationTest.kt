@@ -153,7 +153,7 @@ abstract class BaseIntegrationTest : StringSpec() {
     /**
      * Assertion helpers for MCP response validation
      */
-    protected object Assertions {
+    protected object McpAssertions {
         fun assertSuccessResponse(json: JsonObject): JsonObject {
             assert(!json.containsKey("error")) {
                 "Expected success response but got error: $json"
@@ -209,6 +209,7 @@ abstract class BaseIntegrationTest : StringSpec() {
             put("message", "Tool execution mocked for testing")
         }
     } catch (e: Exception) {
+        // Need to validate exception state for test error handling
         buildJsonObject {
             put("error", e.message ?: "Unknown error")
             put("exception", e::class.simpleName)
@@ -218,7 +219,7 @@ abstract class BaseIntegrationTest : StringSpec() {
     /**
      * Common test patterns that can be reused across different tool tests
      */
-    protected fun testToolWithValidInput(
+    protected fun verifyToolWithValidInput(
         toolName: String,
         arguments: Map<String, Any?>,
         setup: suspend () -> Unit = {},
@@ -229,19 +230,19 @@ abstract class BaseIntegrationTest : StringSpec() {
             setup()
 
             val response = executeToolCall(toolName, arguments)
-            Assertions.assertSuccessResponse(response)
+            McpAssertions.assertSuccessResponse(response)
             validation(response)
         }
     }
 
-    protected fun testToolWithError(toolName: String, arguments: Map<String, Any?>, expectedErrorMessage: String? = null, setup: suspend () -> Unit = {}) =
+    protected fun verifyToolWithError(toolName: String, arguments: Map<String, Any?>, expectedErrorMessage: String? = null, setup: suspend () -> Unit = {}) =
         "$toolName should return error" {
             runTest {
                 setupClientServer()
                 setup()
 
                 val response = executeToolCall(toolName, arguments)
-                Assertions.assertErrorResponse(response, expectedErrorMessage)
+                McpAssertions.assertErrorResponse(response, expectedErrorMessage)
             }
         }
 }

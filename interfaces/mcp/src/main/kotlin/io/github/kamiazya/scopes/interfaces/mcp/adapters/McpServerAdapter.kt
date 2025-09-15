@@ -3,7 +3,12 @@ package io.github.kamiazya.scopes.interfaces.mcp.adapters
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.*
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
@@ -11,7 +16,17 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.modelcontextprotocol.kotlin.sdk.*
+import io.modelcontextprotocol.kotlin.sdk.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.GetPromptResult
+import io.modelcontextprotocol.kotlin.sdk.Implementation
+import io.modelcontextprotocol.kotlin.sdk.PromptArgument
+import io.modelcontextprotocol.kotlin.sdk.PromptMessage
+import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
+import io.modelcontextprotocol.kotlin.sdk.Role
+import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
+import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
+import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -22,9 +37,17 @@ import kotlinx.datetime.Instant
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
-import kotlinx.serialization.json.*
-import java.security.MessageDigest
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -42,7 +65,7 @@ class McpServerAdapter(
     private val logger: Logger,
 ) {
     // Idempotency store: toolName|idempotencyKey|argsHash -> StoredResult
-    private val idempotencyStore: MutableMap<String, StoredResult> = ConcurrentHashMap()
+    private val idempotencyStore: MutableMap<String, StoredResult> = mutableMapOf()
     private val idempotencyTtlMinutes = 10L
     private var server: Server? = null
 
@@ -68,7 +91,7 @@ class McpServerAdapter(
         private const val DESC_SCOPE_ALIAS = "Scope alias"
         private const val DESC_MISSING_ALIAS = "Missing 'alias'"
         private const val DESC_MISSING_SCOPE_ALIAS = "Missing 'scopeAlias'"
-        
+
         // Notification messages
         private const val MSG_LIST_CHANGED_NO_OP = "list_changed notification is currently a no-op (SDK API TBD)"
     }
@@ -1662,8 +1685,13 @@ class McpServerAdapter(
     }
 
     private fun computeEtag(text: String): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(text.toByteArray())
-        return digest.joinToString("") { b -> "%02x".format(b) }
+        // Simple hash function for KMP compatibility
+        var hash = 0L
+        for (char in text) {
+            hash = ((hash shl 5) - hash) + char.code
+            hash = hash and 0xFFFFFFFFL // Keep it 32-bit
+        }
+        return hash.toString(16).padStart(8, '0')
     }
 
     private fun registerPrompts(server: Server) {
@@ -1900,8 +1928,13 @@ class McpServerAdapter(
      */
     private fun buildCacheKey(toolName: String, idempotencyKey: String, arguments: Map<String, kotlinx.serialization.json.JsonElement>): String {
         val canonical = canonicalizeArguments(arguments)
-        val digest = MessageDigest.getInstance("SHA-256").digest(canonical.toByteArray())
-        val argsHash = digest.joinToString(separator = "") { b -> "%02x".format(b) }
+        // Simple hash function for KMP compatibility
+        var hash = 0L
+        for (char in canonical) {
+            hash = ((hash shl 5) - hash) + char.code
+            hash = hash and 0xFFFFFFFFL // Keep it 32-bit
+        }
+        val argsHash = hash.toString(16).padStart(8, '0')
         return "$toolName|$idempotencyKey|$argsHash"
     }
 

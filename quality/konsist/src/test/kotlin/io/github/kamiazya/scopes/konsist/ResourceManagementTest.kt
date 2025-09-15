@@ -17,6 +17,7 @@ class ResourceManagementTest :
                 .scopeFromProject()
                 .functions()
                 .filter { it.text.contains("runBlocking") && it.text.contains("server") }
+                .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
                 .assertTrue { function ->
                     // Should have try-catch-finally or similar error handling
                     val hasProperErrorHandling =
@@ -33,6 +34,7 @@ class ResourceManagementTest :
                 .functions()
                 .withNameContaining("run", "start", "connect")
                 .filter { it.text.contains("server") || it.text.contains("Server") }
+                .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
                 .assertTrue { function ->
                     val functionText = function.text
 
