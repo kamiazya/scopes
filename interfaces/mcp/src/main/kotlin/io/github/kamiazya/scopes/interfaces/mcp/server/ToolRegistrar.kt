@@ -9,15 +9,12 @@ import kotlinx.coroutines.runBlocking
 
 /**
  * Registers multiple tool handlers with the MCP server.
- * 
+ *
  * This class bridges the suspend-based tool handler interface with
  * the synchronous MCP SDK tool registration API.
  */
-class ToolRegistrar(
-    private val handlers: List<ToolHandler>,
-    private val ctxFactory: () -> Pair<Ports, Services>,
-) : ServerRegistrar {
-    
+class ToolRegistrar(private val handlers: List<ToolHandler>, private val ctxFactory: () -> Pair<Ports, Services>) : ServerRegistrar {
+
     override fun register(server: Server) {
         handlers.forEach { handler ->
             server.addTool(
@@ -33,7 +30,7 @@ class ToolRegistrar(
                             args = req.arguments,
                             ports = ports,
                             services = services,
-                        )
+                        ),
                     )
                 }
             }

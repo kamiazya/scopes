@@ -4,7 +4,10 @@ import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -15,25 +18,18 @@ private data class StoredResult(val result: CallToolResult, val timestamp: Insta
 /**
  * Default implementation of IdempotencyService using in-memory storage.
  */
-class DefaultIdempotencyService(
-    private val argumentCodec: ArgumentCodec,
-    private val ttlMinutes: Long = 30,
-    private val maxEntries: Int = 10_000,
-) : IdempotencyService {
-    
+class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, private val ttlMinutes: Long = 30, private val maxEntries: Int = 10_000) :
+    IdempotencyService {
+
     private val idempotencyStore = mutableMapOf<String, StoredResult>()
-    
+
     companion object {
         private val IDEMPOTENCY_KEY_PATTERN = Regex("[a-zA-Z0-9._-]{1,255}")
     }
-    
-    override suspend fun checkIdempotency(
-        toolName: String,
-        arguments: Map<String, JsonElement>,
-        idempotencyKey: String?,
-    ): CallToolResult? {
+
+    override suspend fun checkIdempotency(toolName: String, arguments: Map<String, JsonElement>, idempotencyKey: String?): CallToolResult? {
         val effectiveKey = idempotencyKey ?: return null
-        
+
         if (!effectiveKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
             val payload = buildJsonObject {
                 put("code", -32602)
@@ -49,17 +45,17 @@ class DefaultIdempotencyService(
                 isError = true,
             )
         }
-        
+
         // Clean up expired entries periodically
         cleanupExpiredEntries()
-        
+
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = idempotencyStore[cacheKey]
-        
+
         return if (stored != null) {
             val now = Clock.System.now()
             val age = now - stored.timestamp
-            
+
             if (age < ttlMinutes.minutes) {
                 // Return cached result
                 stored.result
@@ -72,32 +68,27 @@ class DefaultIdempotencyService(
             null
         }
     }
-    
-    override suspend fun storeIdempotency(
-        toolName: String,
-        arguments: Map<String, JsonElement>,
-        result: CallToolResult,
-        idempotencyKey: String?,
-    ) {
+
+    override suspend fun storeIdempotency(toolName: String, arguments: Map<String, JsonElement>, result: CallToolResult, idempotencyKey: String?) {
         val effectiveKey = idempotencyKey ?: return
-        
+
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = StoredResult(result, Clock.System.now())
         idempotencyStore[cacheKey] = stored
-        
+
         // Clean up old entries (simple TTL-based cleanup)
         cleanupExpiredEntries()
     }
-    
+
     override suspend fun cleanupExpiredEntries() {
         val now = Clock.System.now()
         val cutoff = now - ttlMinutes.minutes
-        
+
         // Remove expired entries
         idempotencyStore.entries.removeIf { entry ->
             entry.value.timestamp < cutoff
         }
-        
+
         // If still over limit, remove oldest entries
         if (idempotencyStore.size > maxEntries) {
             val entriesToRemove = idempotencyStore.size - maxEntries

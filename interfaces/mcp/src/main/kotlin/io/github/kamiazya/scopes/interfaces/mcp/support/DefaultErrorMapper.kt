@@ -11,7 +11,7 @@ import kotlinx.serialization.json.putJsonObject
  * Default implementation of ErrorMapper for MCP tool error handling.
  */
 class DefaultErrorMapper : ErrorMapper {
-    
+
     override fun mapContractError(error: ScopeContractError): CallToolResult {
         val errorData = buildJsonObject {
             put("code", getErrorCode(error))
@@ -35,7 +35,7 @@ class DefaultErrorMapper : ErrorMapper {
         }
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
-    
+
     override fun errorResult(message: String, code: Int?): CallToolResult {
         val errorData = buildJsonObject {
             put("code", code ?: -32000)
@@ -43,7 +43,7 @@ class DefaultErrorMapper : ErrorMapper {
         }
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
-    
+
     private fun getErrorCode(error: ScopeContractError): Int = when (error) {
         is ScopeContractError.InputError -> -32602 // Invalid params
         is ScopeContractError.BusinessError.NotFound,
@@ -61,7 +61,7 @@ class DefaultErrorMapper : ErrorMapper {
         is ScopeContractError.SystemError -> -32000 // Server error
         else -> -32010 // Generic business error
     }
-    
+
     private fun mapContractErrorMessage(error: ScopeContractError): String = when (error) {
         is ScopeContractError.BusinessError.NotFound -> "Scope not found: ${error.scopeId}"
         is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
@@ -80,5 +80,9 @@ class DefaultErrorMapper : ErrorMapper {
         is ScopeContractError.BusinessError.NotArchived -> "Not archived"
         is ScopeContractError.BusinessError.HasChildren -> "Has children"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias"
+    }
+    
+    override fun successResult(content: String): CallToolResult {
+        return CallToolResult(content = listOf(TextContent(content)), isError = false)
     }
 }

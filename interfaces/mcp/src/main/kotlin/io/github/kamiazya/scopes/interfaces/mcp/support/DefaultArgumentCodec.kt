@@ -6,7 +6,7 @@ import kotlinx.serialization.json.*
  * Default implementation of ArgumentCodec for tool argument handling.
  */
 class DefaultArgumentCodec : ArgumentCodec {
-    
+
     override fun canonicalizeArguments(arguments: Map<String, JsonElement>): String {
         // Remove nulls, sort keys at root, recursively canonicalize
         val filtered = buildJsonObject {
@@ -17,7 +17,7 @@ class DefaultArgumentCodec : ArgumentCodec {
         }
         return canonicalizeJson(filtered)
     }
-    
+
     override fun canonicalizeJson(json: JsonElement): String = when (json) {
         is JsonNull -> "null"
         is JsonPrimitive -> if (json.isString) {
@@ -42,12 +42,8 @@ class DefaultArgumentCodec : ArgumentCodec {
             }
         }
     }
-    
-    override fun buildCacheKey(
-        toolName: String,
-        arguments: Map<String, JsonElement>,
-        idempotencyKey: String?,
-    ): String {
+
+    override fun buildCacheKey(toolName: String, arguments: Map<String, JsonElement>, idempotencyKey: String?): String {
         val canonical = canonicalizeArguments(arguments)
         // Simple hash function for KMP compatibility
         var hash = 0L
@@ -58,5 +54,30 @@ class DefaultArgumentCodec : ArgumentCodec {
         val argsHash = hash.toString(16).padStart(8, '0')
         val effectiveKey = idempotencyKey ?: "auto"
         return "$toolName|$effectiveKey|$argsHash"
+    }
+    
+    override fun getString(args: Map<String, JsonElement>, key: String, required: Boolean): String? {
+        val element = args[key]
+        return when {
+            element == null -> {
+                if (required) throw IllegalArgumentException("Missing required parameter: $key")
+                null
+            }
+            element is JsonPrimitive && element.isString -> element.content
+            else -> {
+                if (required) throw IllegalArgumentException("Parameter '$key' must be a string")
+                null
+            }
+        }
+    }
+    
+    override fun getBoolean(args: Map<String, JsonElement>, key: String, default: Boolean): Boolean {
+        val element = args[key] ?: return default
+        return when {
+            element is JsonPrimitive && !element.isString -> {
+                element.content.toBooleanStrictOrNull() ?: default
+            }
+            else -> default
+        }
     }
 }

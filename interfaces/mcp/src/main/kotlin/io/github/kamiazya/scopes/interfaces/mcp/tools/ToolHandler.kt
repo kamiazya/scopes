@@ -12,26 +12,26 @@ import kotlinx.serialization.json.JsonElement
 
 /**
  * Interface for handling individual MCP tools.
- * 
+ *
  * Each tool handler defines its schema, name, description and provides
  * a suspend handler function that processes tool calls.
  */
 interface ToolHandler {
     /** The name of the tool (e.g., "scopes.get") */
     val name: String
-    
+
     /** Human-readable description of what this tool does */
     val description: String
-    
+
     /** Input schema definition for this tool */
     val input: Tool.Input
-    
+
     /** Optional output schema definition for this tool */
     val output: Tool.Output?
-    
+
     /**
      * Handle a tool call with the given context.
-     * 
+     *
      * @param ctx The tool execution context containing arguments, ports, and services
      * @return The result of the tool execution
      */
@@ -53,17 +53,9 @@ data class ToolContext(
 /**
  * Container for domain ports used by tools.
  */
-data class Ports(
-    val query: ScopeManagementQueryPort,
-    val command: ScopeManagementCommandPort,
-)
+data class Ports(val query: ScopeManagementQueryPort, val command: ScopeManagementCommandPort)
 
 /**
  * Container for support services used by tools.
  */
-data class Services(
-    val errors: ErrorMapper,
-    val idempotency: IdempotencyService,
-    val codec: ArgumentCodec,
-    val logger: Logger,
-)
+data class Services(val errors: ErrorMapper, val idempotency: IdempotencyService, val codec: ArgumentCodec, val logger: Logger)

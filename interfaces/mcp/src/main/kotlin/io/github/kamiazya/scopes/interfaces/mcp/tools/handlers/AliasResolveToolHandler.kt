@@ -5,21 +5,21 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.*
 
 /**
- * Tool handler for getting a scope by alias.
- *
- * This tool retrieves detailed information about a scope given its alias.
+ * Tool handler for resolving aliases to scopes.
+ * 
+ * This tool resolves a scope by alias (exact match only) and returns 
+ * basic scope information including the canonical alias.
  */
-class ScopeGetToolHandler : ToolHandler {
-
-    override val name: String = "scopes.get"
-
-    override val description: String = "Get a scope by alias (exact match)"
-
+class AliasResolveToolHandler : ToolHandler {
+    
+    override val name: String = "aliases.resolve"
+    
+    override val description: String = "Resolve a scope by alias (exact match only). Returns the canonical alias if found."
+    
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -31,52 +31,56 @@ class ScopeGetToolHandler : ToolHandler {
                 putJsonObject("alias") {
                     put("type", "string")
                     put("minLength", 1)
-                    put("description", "Scope alias to look up")
+                    put("description", "Alias to resolve (exact match only)")
                 }
             }
-        },
+        }
     )
-
+    
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
             put("additionalProperties", false)
             putJsonObject("properties") {
-                putJsonObject("canonicalAlias") { put("type", "string") }
-                putJsonObject("title") { put("type", "string") }
-                putJsonObject("description") { put("type", "string") }
-                putJsonObject("createdAt") { put("type", "string") }
-                putJsonObject("updatedAt") { put("type", "string") }
+                putJsonObject("alias") {
+                    put("type", "string")
+                    put("description", "The input alias provided by the user")
+                }
+                putJsonObject("canonicalAlias") {
+                    put("type", "string")
+                    put("description", "The canonical (normalized) alias of the scope")
+                }
+                putJsonObject("title") {
+                    put("type", "string")
+                    put("description", "The title of the resolved scope")
+                }
             }
             putJsonArray("required") {
+                add("alias")
                 add("canonicalAlias")
                 add("title")
-                add("createdAt")
-                add("updatedAt")
             }
-        },
+        }
     )
-
+    
     override suspend fun handle(ctx: ToolContext): CallToolResult {
-        val alias = ctx.args["alias"]?.jsonPrimitive?.content
+        val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'alias' parameter")
-
-        ctx.services.logger.debug("Getting scope by alias: $alias")
-
+        
+        ctx.services.logger.debug("Resolving alias: $alias")
+        
         val result = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(alias))
-
+        
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
                 val scope = result.value
                 val json = buildJsonObject {
-                    put("canonicalAlias", scope.canonicalAlias)
+                    put("alias", alias) // Input alias
+                    put("canonicalAlias", scope.canonicalAlias) // Normalized alias
                     put("title", scope.title)
-                    scope.description?.let { put("description", it) }
-                    put("createdAt", scope.createdAt.toString())
-                    put("updatedAt", scope.updatedAt.toString())
                 }
-                CallToolResult(content = listOf(TextContent(json.toString())))
+                ctx.services.errors.successResult(json.toString())
             }
         }
     }

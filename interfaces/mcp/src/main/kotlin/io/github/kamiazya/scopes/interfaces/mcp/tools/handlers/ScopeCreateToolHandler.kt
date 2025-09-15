@@ -6,21 +6,21 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.*
 
 /**
  * Tool handler for creating new scopes.
- * 
+ *
  * This tool creates a new scope with optional parent, custom alias, and idempotency support.
  */
 class ScopeCreateToolHandler : ToolHandler {
-    
+
     override val name: String = "scopes.create"
-    
+
     override val description: String = "Create a new scope. Parent can be specified by alias."
-    
+
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -54,9 +54,9 @@ class ScopeCreateToolHandler : ToolHandler {
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
-        }
+        },
     )
-    
+
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
@@ -73,27 +73,27 @@ class ScopeCreateToolHandler : ToolHandler {
                 add("title")
                 add("createdAt")
             }
-        }
+        },
     )
-    
+
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val title = ctx.args["title"]?.jsonPrimitive?.content
             ?: return ctx.services.errors.errorResult("Missing 'title' parameter")
-            
+
         val description = ctx.args["description"]?.jsonPrimitive?.content
         val parentAlias = ctx.args["parentAlias"]?.jsonPrimitive?.content
         val customAlias = ctx.args["customAlias"]?.jsonPrimitive?.content
         val idempotencyKey = ctx.args["idempotencyKey"]?.jsonPrimitive?.content
-        
+
         ctx.services.logger.debug("Creating scope: $title (parentAlias: $parentAlias, customAlias: $customAlias)")
-        
+
         // Check idempotency if key provided
         val cachedResult = ctx.services.idempotency.checkIdempotency(name, ctx.args, idempotencyKey)
         if (cachedResult != null) {
             ctx.services.logger.debug("Returning cached result for idempotency key: $idempotencyKey")
             return cachedResult
         }
-        
+
         // Resolve parent ID if parent alias provided
         val parentId = if (parentAlias != null) {
             val parentResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(parentAlias))
@@ -104,7 +104,7 @@ class ScopeCreateToolHandler : ToolHandler {
         } else {
             null
         }
-        
+
         val result = ctx.ports.command.createScope(
             CreateScopeCommand(
                 title = title,
@@ -112,9 +112,9 @@ class ScopeCreateToolHandler : ToolHandler {
                 parentId = parentId,
                 generateAlias = customAlias == null,
                 customAlias = customAlias,
-            )
+            ),
         )
-        
+
         val toolResult = when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
@@ -129,10 +129,10 @@ class ScopeCreateToolHandler : ToolHandler {
                 CallToolResult(content = listOf(TextContent(json.toString())))
             }
         }
-        
+
         // Store result for idempotency if key was provided
         ctx.services.idempotency.storeIdempotency(name, ctx.args, toolResult, idempotencyKey)
-        
+
         return toolResult
     }
 }
