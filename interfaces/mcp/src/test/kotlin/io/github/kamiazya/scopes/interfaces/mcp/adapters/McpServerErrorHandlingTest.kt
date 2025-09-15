@@ -9,6 +9,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.Buffer
 
 /**
  * Tests for MCP server error handling, particularly the canonical alias removal fix.
@@ -111,7 +112,13 @@ class McpServerErrorHandlingTest :
 
                 // Act & Assert - Basic instantiation test
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
                 adapter.shouldBeInstanceOf<McpServerAdapter>()
             }
         }

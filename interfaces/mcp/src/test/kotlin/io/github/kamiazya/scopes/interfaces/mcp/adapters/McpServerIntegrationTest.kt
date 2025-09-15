@@ -21,7 +21,6 @@ class McpServerIntegrationTest : BaseIntegrationTest() {
 
     init {
 
-
         "should validate test data factory methods" {
             runTest {
                 // Test ScopeResult creation

@@ -34,8 +34,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.io.asSink
-import kotlinx.io.asSource
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -63,6 +63,8 @@ class McpServerAdapter(
     private val scopeQueryPort: ScopeManagementQueryPort,
     private val scopeCommandPort: ScopeManagementCommandPort,
     private val logger: Logger,
+    private val sink: Sink,
+    private val source: Source,
 ) {
     // Idempotency store: toolName|idempotencyKey|argsHash -> StoredResult
     private val idempotencyStore: MutableMap<String, StoredResult> = mutableMapOf()
@@ -115,12 +117,12 @@ class McpServerAdapter(
      * Run the MCP server on stdio transport.
      * This is the main entry point for the MCP server.
      */
-    fun runStdio(inputStream: java.io.InputStream = System.`in`, outputStream: java.io.OutputStream = System.out) {
+    fun runStdio() {
         val server = createServer()
         this.server = server
         val transport = StdioServerTransport(
-            inputStream = inputStream.asSource().buffered(),
-            outputStream = outputStream.asSink().buffered(),
+            inputStream = source.buffered(),
+            outputStream = sink.buffered(),
         )
 
         runBlocking {

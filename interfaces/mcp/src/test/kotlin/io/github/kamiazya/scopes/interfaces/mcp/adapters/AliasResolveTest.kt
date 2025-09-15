@@ -18,9 +18,6 @@ class AliasResolveTest : BaseIntegrationTest() {
 
     init {
 
-
-
-
         "should validate input schema requirements for v1 exact-only" {
             runTest {
                 // Test expected input structure for aliases.resolve v1 (exact-only)
@@ -50,6 +47,5 @@ class AliasResolveTest : BaseIntegrationTest() {
                 successResponse["canonicalAlias"]?.jsonPrimitive?.content shouldBe "resolved-alias"
             }
         }
-
     }
 }

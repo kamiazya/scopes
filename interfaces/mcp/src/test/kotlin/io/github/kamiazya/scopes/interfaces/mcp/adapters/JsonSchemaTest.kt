@@ -1,12 +1,8 @@
 package io.github.kamiazya.scopes.interfaces.mcp.adapters
 
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
-import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldMatch
-import io.mockk.mockk
 
 /**
  * Tests for JSON Schema validation in MCP tools.
@@ -19,9 +15,6 @@ import io.mockk.mockk
  */
 class JsonSchemaTest :
     StringSpec({
-
-
-
 
         "should validate idempotency key pattern" {
             // Test the idempotency key validation pattern
@@ -51,5 +44,4 @@ class JsonSchemaTest :
                 key.matches(idempotencyPattern) shouldBe false
             }
         }
-
     })

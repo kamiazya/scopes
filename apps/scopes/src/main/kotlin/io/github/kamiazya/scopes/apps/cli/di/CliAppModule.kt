@@ -28,6 +28,9 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import io.github.kamiazya.scopes.interfaces.mcp.adapters.McpServerAdapter
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import org.koin.dsl.module
 
 /**
@@ -124,5 +127,13 @@ val cliAppModule = module {
     }
 
     // MCP server adapter
-    single { McpServerAdapter(scopeQueryPort = get(), scopeCommandPort = get(), logger = get<Logger>().withName("MCP")) }
+    single {
+        McpServerAdapter(
+            scopeQueryPort = get(),
+            scopeCommandPort = get(),
+            logger = get<Logger>().withName("MCP"),
+            sink = System.out.asSink().buffered(),
+            source = System.`in`.asSource().buffered(),
+        )
+    }
 }

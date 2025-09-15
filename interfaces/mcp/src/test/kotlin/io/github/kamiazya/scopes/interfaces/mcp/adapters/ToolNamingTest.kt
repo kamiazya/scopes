@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldMatch
 import io.mockk.mockk
+import kotlinx.io.Buffer
 
 /**
  * Tests for MCP server tool naming conventions.
@@ -22,7 +23,13 @@ class ToolNamingTest :
             val queryPort = mockk<ScopeManagementQueryPort>()
             val commandPort = mockk<ScopeManagementCommandPort>()
             val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+            val adapter = McpServerAdapter(
+                queryPort,
+                commandPort,
+                logger,
+                sink = Buffer(),
+                source = Buffer(),
+            )
 
             val server = adapter.createTestServer()
 

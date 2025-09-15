@@ -16,6 +16,9 @@ import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlinx.io.Buffer
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.serialization.json.*
 
 /**
@@ -35,11 +38,21 @@ abstract class BaseIntegrationTest : StringSpec() {
     protected lateinit var client: Client
     protected lateinit var server: Server
 
+    // Test I/O streams
+    protected fun createTestSink(): Sink = Buffer()
+    protected fun createTestSource(): Source = Buffer()
+
     protected suspend fun setupClientServer() {
         queryPort = mockk(relaxed = true)
         commandPort = mockk(relaxed = true)
         val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-        adapter = McpServerAdapter(queryPort, commandPort, logger)
+        adapter = McpServerAdapter(
+            queryPort,
+            commandPort,
+            logger,
+            sink = createTestSink(),
+            source = createTestSource(),
+        )
 
         // Create the test server
         server = adapter.createTestServer()
@@ -52,7 +65,13 @@ abstract class BaseIntegrationTest : StringSpec() {
         queryPort = mockk(relaxed = true)
         commandPort = mockk(relaxed = true)
         val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-        adapter = McpServerAdapter(queryPort, commandPort, logger)
+        adapter = McpServerAdapter(
+            queryPort,
+            commandPort,
+            logger,
+            sink = createTestSink(),
+            source = createTestSource(),
+        )
     }
 
     /**

@@ -44,9 +44,9 @@ class TestFrameworkConsistencyTest :
                         // Return true (fail assertion) if class does NOT extend DescribeSpec or StringSpec
                         // Check immediate parent or if parent has BaseIntegrationTest pattern
                         val hasKotestParent = clazz.hasParent { parent ->
-                            parent.name == "DescribeSpec" || 
-                            parent.name == "StringSpec" ||
-                            parent.name == "BaseIntegrationTest" // MCP module uses BaseIntegrationTest which extends StringSpec
+                            parent.name == "DescribeSpec" ||
+                                parent.name == "StringSpec" ||
+                                parent.name == "BaseIntegrationTest" // MCP module uses BaseIntegrationTest which extends StringSpec
                         }
                         !hasKotestParent
                     }

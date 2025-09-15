@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlinx.io.Buffer
 
 /**
  * End-to-end tests for MCP server functionality.
@@ -21,7 +22,13 @@ class McpServerE2ETest : BaseIntegrationTest() {
                 val queryPort = mockk<ScopeManagementQueryPort>()
                 val commandPort = mockk<ScopeManagementCommandPort>()
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
                 val server = adapter.createTestServer()
 
                 // Mock successful create
@@ -48,7 +55,13 @@ class McpServerE2ETest : BaseIntegrationTest() {
                 val queryPort = mockk<ScopeManagementQueryPort>()
                 val commandPort = mockk<ScopeManagementCommandPort>()
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
 
                 val createdScope = TestData.createCreateScopeResult(
                     title = "Idempotent Test",
@@ -72,7 +85,13 @@ class McpServerE2ETest : BaseIntegrationTest() {
                 val queryPort = mockk<ScopeManagementQueryPort>()
                 val commandPort = mockk<ScopeManagementCommandPort>()
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
 
                 val scope = TestData.createScopeResult(
                     canonicalAlias = "project-alpha",
@@ -99,7 +118,13 @@ class McpServerE2ETest : BaseIntegrationTest() {
                 val queryPort = mockk<ScopeManagementQueryPort>()
                 val commandPort = mockk<ScopeManagementCommandPort>()
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
 
                 // Mock various error scenarios
                 coEvery {
@@ -120,7 +145,13 @@ class McpServerE2ETest : BaseIntegrationTest() {
                 val queryPort = mockk<ScopeManagementQueryPort>()
                 val commandPort = mockk<ScopeManagementCommandPort>()
                 val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-                val adapter = McpServerAdapter(queryPort, commandPort, logger)
+                val adapter = McpServerAdapter(
+                    queryPort,
+                    commandPort,
+                    logger,
+                    sink = Buffer(),
+                    source = Buffer(),
+                )
 
                 // The server should reject invalid inputs based on JSON Schema
                 val server = adapter.createTestServer()

@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryP
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldNotBe
 import io.mockk.mockk
+import kotlinx.io.Buffer
 
 /**
  * Unit tests for McpServerAdapter focusing on adapter structure and tool registration.
@@ -22,7 +23,13 @@ class McpServerAdapterTest :
             val commandPort = mockk<ScopeManagementCommandPort>()
 
             val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+            val adapter = McpServerAdapter(
+                queryPort,
+                commandPort,
+                logger,
+                sink = Buffer(),
+                source = Buffer(),
+            )
 
             adapter shouldNotBe null
         }
@@ -31,7 +38,13 @@ class McpServerAdapterTest :
             val queryPort = mockk<ScopeManagementQueryPort>()
             val commandPort = mockk<ScopeManagementCommandPort>()
             val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+            val adapter = McpServerAdapter(
+                queryPort,
+                commandPort,
+                logger,
+                sink = Buffer(),
+                source = Buffer(),
+            )
 
             val server = adapter.createTestServer()
 
@@ -44,7 +57,13 @@ class McpServerAdapterTest :
             val queryPort = mockk<ScopeManagementQueryPort>()
             val commandPort = mockk<ScopeManagementCommandPort>()
             val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
+            val adapter = McpServerAdapter(
+                queryPort,
+                commandPort,
+                logger,
+                sink = Buffer(),
+                source = Buffer(),
+            )
 
             // This should not throw an exception
             // We can't easily test stdio without actual input/output streams

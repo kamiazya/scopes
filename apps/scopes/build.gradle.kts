@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.io.core)
     implementation(libs.arrow.core)
 
     // DI
