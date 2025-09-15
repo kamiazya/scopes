@@ -29,6 +29,10 @@ class FilterScopesWithQueryHandler(
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopesError, List<ScopeDto>> {
 
+    companion object {
+        private const val SCOPE_REPOSITORY_SERVICE = "scope-repository"
+    }
+
     override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Filtering scopes with query",
@@ -42,7 +46,7 @@ class FilterScopesWithQueryHandler(
         either {
             // Parse the query
             val ast = parser.parse(query.query).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopesError.InvalidOperation(
                             operation = "filter-scopes-with-query",
@@ -79,7 +83,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf(
                                     "operation" to "findByParentId",
@@ -96,7 +100,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf(
                                     "operation" to "findAll",
@@ -114,7 +118,7 @@ class FilterScopesWithQueryHandler(
                         .mapLeft { error ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "scope-repository",
+                                service = SCOPE_REPOSITORY_SERVICE,
                                 cause = error as? Throwable,
                                 context = mapOf("operation" to "findAllRoot"),
                                 occurredAt = Clock.System.now(),
@@ -158,24 +162,4 @@ class FilterScopesWithQueryHandler(
         )
     }
 
-    private fun formatParseError(error: QueryParseError): String = when (error) {
-        is QueryParseError.EmptyQuery ->
-            "Query cannot be empty"
-        is QueryParseError.UnexpectedCharacter ->
-            "Unexpected character '${error.char}' at position ${error.position}"
-        is QueryParseError.UnterminatedString ->
-            "Unterminated string at position ${error.position}"
-        is QueryParseError.UnexpectedToken ->
-            "Unexpected token at position ${error.position}"
-        is QueryParseError.MissingClosingParen ->
-            "Missing closing parenthesis at position ${error.position}"
-        is QueryParseError.ExpectedExpression ->
-            "Expected expression at position ${error.position}"
-        is QueryParseError.ExpectedIdentifier ->
-            "Expected identifier at position ${error.position}"
-        is QueryParseError.ExpectedOperator ->
-            "Expected operator at position ${error.position}"
-        is QueryParseError.ExpectedValue ->
-            "Expected value at position ${error.position}"
-    }
 }

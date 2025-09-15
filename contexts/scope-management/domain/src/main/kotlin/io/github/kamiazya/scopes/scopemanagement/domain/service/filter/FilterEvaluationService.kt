@@ -108,8 +108,8 @@ class FilterEvaluationService(private val caseSensitiveComparisons: Boolean = fa
     }
 
     private fun evaluateStringComparison(actual: String, operator: ComparisonOperator, expected: String): Boolean = when (operator) {
-        ComparisonOperator.EQUALS -> actual.equals(expected, ignoreCase = !caseSensitiveComparisons)
-        ComparisonOperator.NOT_EQUALS -> !actual.equals(expected, ignoreCase = !caseSensitiveComparisons)
+        ComparisonOperator.EQUALS -> actual == expected
+        ComparisonOperator.NOT_EQUALS -> actual != expected
         ComparisonOperator.GREATER_THAN -> actual > expected
         ComparisonOperator.GREATER_THAN_OR_EQUAL -> actual >= expected
         ComparisonOperator.LESS_THAN -> actual < expected
