@@ -43,7 +43,6 @@ val contractsModule = module {
             transactionManager = get(),
             errorMapper = get(),
             applicationErrorMapper = get(),
-            logger = get(),
         )
     }
     single<ScopeManagementQueryPort> {
@@ -54,8 +53,7 @@ val contractsModule = module {
             getRootScopesHandler = get(),
             listAliasesHandler = get(),
             filterScopesWithQueryHandler = get(),
-            errorMapper = get(),
-            logger = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -83,6 +81,7 @@ val contractsModule = module {
             listContextViewsHandler = get(),
             getContextViewHandler = get(),
             activeContextService = get(),
+            logger = get(),
         )
     }
 
@@ -91,6 +90,7 @@ val contractsModule = module {
             defineAspectHandler = get(),
             updateAspectDefinitionHandler = get(),
             deleteAspectDefinitionHandler = get(),
+            logger = get(),
         )
     }
 
@@ -99,6 +99,7 @@ val contractsModule = module {
             getAspectDefinitionHandler = get(),
             listAspectDefinitionsHandler = get(),
             validateAspectValueUseCase = get(),
+            logger = get(),
         )
     }
 

@@ -8,11 +8,11 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspect
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand as AppDeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand as AppUpdateAspectDefinitionCommand
 
@@ -24,7 +24,9 @@ public class AspectCommandPortAdapter(
     private val defineAspectHandler: DefineAspectHandler,
     private val updateAspectDefinitionHandler: UpdateAspectDefinitionHandler,
     private val deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler,
+    logger: Logger,
 ) : AspectCommandPort {
+    private val errorMapper = ApplicationErrorMapper(logger)
 
     override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = defineAspectHandler(
@@ -42,7 +44,7 @@ public class AspectCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -56,7 +58,7 @@ public class AspectCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -65,21 +67,8 @@ public class AspectCommandPortAdapter(
         val result = deleteAspectDefinitionHandler(AppDeleteAspectDefinitionCommand(command.key))
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
-    }
-
-    /**
-     * Maps domain errors to contract layer errors following CQRS principles.
-     */
-    private fun mapScopesErrorToScopeContractError(error: ScopesError): ScopeContractError = when (error) {
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
-            ScopeContractError.BusinessError.NotFound(error.identifier)
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.AlreadyExists ->
-            ScopeContractError.BusinessError.DuplicateAlias(error.identifier)
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
-            ScopeContractError.InputError.InvalidTitle(error.field, ScopeContractError.TitleValidationFailure.Empty)
-        else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")
     }
 }

@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler.command
+package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -8,10 +8,9 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
-import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
 /**
  * Handler for setting a canonical alias for a scope.
@@ -21,11 +20,11 @@ class SetCanonicalAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : CommandHandler<SetCanonicalAliasCommand, ScopesError, Unit> {
+) : CommandHandler<SetCanonicalAliasCommand, ScopeManagementApplicationError, Unit> {
 
     private val errorPresenter = ScopeInputErrorPresenter()
 
-    override suspend operator fun invoke(command: SetCanonicalAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: SetCanonicalAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Setting canonical alias",
@@ -46,14 +45,14 @@ class SetCanonicalAliasHandler(
                         ),
                     )
                     when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
                             ScopeInputError.AliasEmpty(command.currentAlias)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.currentAlias, error.minimumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.currentAlias, error.maximumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.currentAlias, errorPresenter.presentAliasPattern(error.patternType))
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
+                            ScopeInputError.AliasTooShort(command.currentAlias, error.minLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
+                            ScopeInputError.AliasTooLong(command.currentAlias, error.maxLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.currentAlias, errorPresenter.presentAliasPattern(error.expectedPattern))
                     }
                 }
                 .bind()
@@ -68,7 +67,7 @@ class SetCanonicalAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toGenericApplicationError()
+                    error
                 }
                 .bind()
 
@@ -93,14 +92,14 @@ class SetCanonicalAliasHandler(
                         ),
                     )
                     when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
                             ScopeInputError.AliasEmpty(command.newCanonicalAlias)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.newCanonicalAlias, error.minimumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.newCanonicalAlias, error.maximumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.newCanonicalAlias, errorPresenter.presentAliasPattern(error.patternType))
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
+                            ScopeInputError.AliasTooShort(command.newCanonicalAlias, error.minLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
+                            ScopeInputError.AliasTooLong(command.newCanonicalAlias, error.maxLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.newCanonicalAlias, errorPresenter.presentAliasPattern(error.expectedPattern))
                     }
                 }
                 .bind()
@@ -115,7 +114,7 @@ class SetCanonicalAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toGenericApplicationError()
+                    error
                 }
                 .bind()
 
@@ -155,7 +154,7 @@ class SetCanonicalAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toGenericApplicationError()
+                    error
                 }
                 .bind()
 

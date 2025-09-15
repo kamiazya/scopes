@@ -6,8 +6,9 @@ import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAliases
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -21,87 +22,79 @@ class ListAliasesHandler(
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : QueryHandler<ListAliases, ScopesError, List<AliasDto>> {
+) : QueryHandler<ListAliases, ScopeManagementApplicationError, List<AliasDto>> {
 
-    override suspend operator fun invoke(query: ListAliases): Either<ScopesError, List<AliasDto>> = transactionManager.inReadOnlyTransaction {
-        logger.debug(
-            "Listing aliases for scope",
-            mapOf(
-                "scopeId" to query.scopeId,
-            ),
-        )
-        either {
-            // Validate and create scope ID
-            val scopeId = ScopeId.create(query.scopeId).bind()
+    override suspend operator fun invoke(query: ListAliases): Either<ScopeManagementApplicationError, List<AliasDto>> =
+        transactionManager.inReadOnlyTransaction {
+            logger.debug(
+                "Listing aliases for scope",
+                mapOf(
+                    "scopeId" to query.scopeId,
+                ),
+            )
+            either {
+                // Validate and create scope ID
+                val scopeId = ScopeId.create(query.scopeId)
+                    .mapLeft { it.toGenericApplicationError() }
+                    .bind()
 
-            // Get the scope to verify it exists
-            val scope = scopeRepository.findById(scopeId)
-                .mapLeft { error ->
-                    ScopesError.SystemError(
-                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                        service = "scope-repository",
-                        cause = error as? Throwable,
-                        context = mapOf(
-                            "operation" to "findById",
-                            "scopeId" to scopeId.value.toString(),
+                // Get the scope to verify it exists
+                val scope = scopeRepository.findById(scopeId)
+                    .mapLeft { error ->
+                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                            operation = "find-scope",
+                            errorCause = error.toString(),
+                        )
+                    }
+                    .bind()
+                    ?: raise(
+                        ScopeManagementApplicationError.PersistenceError.NotFound(
+                            entityType = "Scope",
+                            entityId = query.scopeId,
                         ),
                     )
-                }
-                .bind()
-                ?: raise(
-                    ScopesError.NotFound(
-                        entityType = "Scope",
-                        identifier = query.scopeId,
-                        identifierType = "id",
+
+                // Get all aliases for the scope
+                val aliases = scopeAliasRepository.findByScopeId(scopeId)
+                    .mapLeft { error ->
+                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                            operation = "find-aliases",
+                            errorCause = error.toString(),
+                        )
+                    }
+                    .bind()
+
+                // Map to DTOs
+                val result = aliases.map { alias ->
+                    AliasDto(
+                        alias = alias.aliasName.value,
+                        scopeId = alias.scopeId.value.toString(),
+                        isCanonical = alias.isCanonical(),
+                        createdAt = alias.createdAt,
+                    )
+                }.sortedWith(
+                    compareByDescending<AliasDto> { it.isCanonical }
+                        .thenBy { it.alias },
+                )
+
+                logger.info(
+                    "Successfully listed aliases for scope",
+                    mapOf(
+                        "scopeId" to scopeId.value.toString(),
+                        "aliasCount" to result.size,
                     ),
                 )
 
-            // Get all aliases for the scope
-            val aliases = scopeAliasRepository.findByScopeId(scopeId)
-                .mapLeft { error ->
-                    ScopesError.SystemError(
-                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                        service = "alias-repository",
-                        cause = error as? Throwable,
-                        context = mapOf(
-                            "operation" to "findByScopeId",
-                            "scopeId" to scopeId.value.toString(),
-                        ),
-                    )
-                }
-                .bind()
-
-            // Map to DTOs
-            val result = aliases.map { alias ->
-                AliasDto(
-                    alias = alias.aliasName.value,
-                    scopeId = alias.scopeId.value.toString(),
-                    isCanonical = alias.isCanonical(),
-                    createdAt = alias.createdAt,
-                )
-            }.sortedWith(
-                compareByDescending<AliasDto> { it.isCanonical }
-                    .thenBy { it.alias },
-            )
-
-            logger.info(
-                "Successfully listed aliases for scope",
+                result
+            }
+        }.onLeft { error ->
+            logger.error(
+                "Failed to list aliases",
                 mapOf(
-                    "scopeId" to scopeId.value.toString(),
-                    "aliasCount" to result.size,
+                    "scopeId" to query.scopeId,
+                    "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                    "message" to error.toString(),
                 ),
             )
-
-            result
         }
-    }.onLeft { error ->
-        logger.error(
-            "Failed to list aliases",
-            mapOf(
-                "scopeId" to query.scopeId,
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                "message" to error.toString(),
-            ),
-        )
-    }
 }

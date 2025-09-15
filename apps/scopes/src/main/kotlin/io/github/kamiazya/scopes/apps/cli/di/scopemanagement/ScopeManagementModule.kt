@@ -1,6 +1,13 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.AddAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.CreateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.DeleteScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.RemoveAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.RenameAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.SetCanonicalAliasHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
@@ -8,13 +15,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.AddAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.DeleteScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.RemoveAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.RenameAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.SetCanonicalAliasHandler
-import io.github.kamiazya.scopes.scopemanagement.application.handler.command.UpdateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler

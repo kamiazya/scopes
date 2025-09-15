@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
@@ -11,7 +11,6 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDe
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -79,8 +78,8 @@ class SqlDelightScopeAliasRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
-                    error.operation shouldBe "save"
+                    val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
+                    error.operation shouldBe ScopesError.RepositoryError.RepositoryOperation.SAVE
                     error.cause shouldNotBe null
                 }
             }
@@ -603,9 +602,9 @@ class SqlDelightScopeAliasRepositoryTest :
 
                     operations.forEach { result ->
                         result.isLeft() shouldBe true
-                        val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+                        val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
                         error.operation shouldNotBe null
-                        error.operation.shouldNotBeBlank()
+                        error.repositoryName shouldBe "SqlDelightScopeAliasRepository"
                         error.cause shouldNotBe null
                     }
                 }

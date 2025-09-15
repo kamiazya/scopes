@@ -5,8 +5,9 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 
@@ -16,57 +17,55 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
  * could break existing data.
  */
 class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: AspectDefinitionRepository, private val transactionManager: TransactionManager) :
-    CommandHandler<UpdateAspectDefinitionCommand, ScopesError, AspectDefinition> {
+    CommandHandler<UpdateAspectDefinitionCommand, ScopeManagementApplicationError, AspectDefinition> {
 
-    override suspend operator fun invoke(command: UpdateAspectDefinitionCommand): Either<ScopesError, AspectDefinition> = transactionManager.inTransaction {
-        either {
-            // Validate and create aspect key
-            val aspectKey = AspectKey.create(command.key).bind()
+    override suspend operator fun invoke(command: UpdateAspectDefinitionCommand): Either<ScopeManagementApplicationError, AspectDefinition> =
+        transactionManager.inTransaction {
+            either {
+                // Validate and create aspect key
+                val aspectKey = AspectKey.create(command.key)
+                    .mapLeft { it.toGenericApplicationError() }
+                    .bind()
 
-            // Find existing definition
-            val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error ->
-                    raise(
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            cause = error as? Throwable,
-                            context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
-                        ),
-                    )
-                },
-                { definition ->
-                    definition ?: raise(
-                        ScopesError.NotFound(
-                            entityType = "AspectDefinition",
-                            identifier = command.key,
-                            identifierType = "key",
-                        ),
-                    )
-                },
-            )
+                // Find existing definition
+                val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
+                    { error ->
+                        raise(
+                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                                operation = "retrieve-aspect-definition",
+                                errorCause = error.toString(),
+                            ),
+                        )
+                    },
+                    { definition ->
+                        definition ?: raise(
+                            ScopeManagementApplicationError.PersistenceError.NotFound(
+                                entityType = "AspectDefinition",
+                                entityId = command.key,
+                            ),
+                        )
+                    },
+                )
 
-            // Update only if description is provided and different
-            if (command.description == null || command.description == existing.description) {
-                return@either existing
+                // Update only if description is provided and different
+                if (command.description == null || command.description == existing.description) {
+                    return@either existing
+                }
+
+                val updated = existing.copy(description = command.description)
+
+                // Save updated definition
+                aspectDefinitionRepository.save(updated).fold(
+                    { error ->
+                        raise(
+                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                                operation = "update-aspect-definition",
+                                errorCause = error.toString(),
+                            ),
+                        )
+                    },
+                    { saved -> saved },
+                )
             }
-
-            val updated = existing.copy(description = command.description)
-
-            // Save updated definition
-            aspectDefinitionRepository.save(updated).fold(
-                { error ->
-                    raise(
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            cause = error as? Throwable,
-                            context = mapOf("operation" to "update-aspect-definition", "key" to command.key),
-                        ),
-                    )
-                },
-                { saved -> saved },
-            )
         }
-    }
 }

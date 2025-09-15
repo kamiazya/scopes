@@ -22,9 +22,8 @@ class ErrorMappingSpecificationTest :
             describe("Known error types") {
                 it("should map AliasExistsButScopeNotFound to application error") {
                     // Given: A known data inconsistency error
-                    val domainError = DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        occurredAt = Clock.System.now(),
-                        aliasName = "test-alias",
+                    val domainError = DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope(
+                        aliasId = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId.generate(),
                         scopeId = ScopeId.generate(),
                     )
 
@@ -33,7 +32,7 @@ class ErrorMappingSpecificationTest :
 
                     // Then: Should successfully map without throwing
                     result shouldBe ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        aliasName = "test-alias",
+                        aliasName = domainError.aliasId.value,
                         scopeId = domainError.scopeId.toString(),
                     )
                 }
@@ -58,9 +57,8 @@ class ErrorMappingSpecificationTest :
                         ?.readText() ?: ""
 
                     // If we can't read the file in test, at least verify the mapping works for known types
-                    val knownError = DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        occurredAt = Clock.System.now(),
-                        aliasName = "test",
+                    val knownError = DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope(
+                        aliasId = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId.generate(),
                         scopeId = ScopeId.generate(),
                     )
 
@@ -68,7 +66,7 @@ class ErrorMappingSpecificationTest :
                     val result = knownError.toApplicationError()
                     result.shouldBe(
                         ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                            aliasName = "test",
+                            aliasName = knownError.aliasId.value,
                             scopeId = knownError.scopeId.toString(),
                         ),
                     )
@@ -93,9 +91,8 @@ class ErrorMappingSpecificationTest :
                      */
 
                     // Test that mapped errors preserve important information
-                    val testError = DomainScopeAliasError.AliasNotFound(
-                        occurredAt = Clock.System.now(),
-                        aliasName = "important-alias-name",
+                    val testError = DomainScopeAliasError.AliasNotFoundByName(
+                        alias = "important-alias-name",
                     )
 
                     val mappedError = testError.toApplicationError() as ScopeAliasError.AliasNotFound
@@ -105,16 +102,14 @@ class ErrorMappingSpecificationTest :
 
                     // Test error messages for other types
                     val duplicateError = DomainScopeAliasError.DuplicateAlias(
-                        occurredAt = Clock.System.now(),
-                        aliasName = "duplicate-alias",
-                        existingScopeId = ScopeId.generate(),
-                        attemptedScopeId = ScopeId.generate(),
+                        alias = "duplicate-alias",
+                        scopeId = ScopeId.generate(),
                     )
 
                     val mappedDuplicate = duplicateError.toApplicationError() as ScopeAliasError.AliasDuplicate
                     mappedDuplicate.aliasName shouldBe "duplicate-alias"
-                    mappedDuplicate.existingScopeId shouldBe duplicateError.existingScopeId.toString()
-                    mappedDuplicate.attemptedScopeId shouldBe duplicateError.attemptedScopeId.toString()
+                    mappedDuplicate.existingScopeId shouldBe duplicateError.scopeId.toString()
+                    mappedDuplicate.attemptedScopeId shouldBe "unknown"
                 }
             }
 
@@ -134,24 +129,19 @@ class ErrorMappingSpecificationTest :
                     // Test various error types to ensure they're all mapped
                     val now = Clock.System.now()
                     val errorSamples = listOf(
-                        DomainScopeAliasError.AliasNotFound(
-                            occurredAt = now,
-                            aliasName = "test-alias",
+                        DomainScopeAliasError.AliasNotFoundByName(
+                            alias = "test-alias",
                         ),
                         DomainScopeAliasError.DuplicateAlias(
-                            occurredAt = now,
-                            aliasName = "test",
-                            existingScopeId = ScopeId.generate(),
-                            attemptedScopeId = ScopeId.generate(),
+                            alias = "test",
+                            scopeId = ScopeId.generate(),
                         ),
                         DomainScopeAliasError.CannotRemoveCanonicalAlias(
-                            occurredAt = now,
                             scopeId = ScopeId.generate(),
-                            aliasName = "canonical",
+                            alias = "canonical",
                         ),
-                        DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                            occurredAt = now,
-                            aliasName = "inconsistent",
+                        DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope(
+                            aliasId = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId.generate(),
                             scopeId = ScopeId.generate(),
                         ),
                     )
@@ -161,7 +151,7 @@ class ErrorMappingSpecificationTest :
                         val result = error.toApplicationError()
                         // Verify it returns an ApplicationError (not null or exception)
                         // All application errors extend ApplicationError
-                        result shouldBe instanceOf<ApplicationError>()
+                        result shouldBe instanceOf<ScopeManagementApplicationError>()
                     }
                 }
             }

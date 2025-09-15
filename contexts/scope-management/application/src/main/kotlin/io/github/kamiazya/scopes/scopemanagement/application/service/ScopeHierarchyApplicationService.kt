@@ -8,8 +8,8 @@ import io.github.kamiazya.scopes.platform.observability.Loggable
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
 import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyOperation
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
@@ -34,7 +34,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
          * Maps persistence errors to domain-specific hierarchy errors.
          * Logs technical details while returning business-meaningful errors.
          */
-        private fun mapPersistenceError(error: PersistenceError, operation: HierarchyOperation, scopeId: ScopeId? = null): ScopeHierarchyError {
+        private fun mapPersistenceError(error: ScopesError, operation: HierarchyOperation, scopeId: ScopeId? = null): ScopeHierarchyError {
             // Log technical details for debugging
             logger.debug(
                 "Hierarchy operation failed",
@@ -47,7 +47,8 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
 
             // Map to business-meaningful error
             val reason = when (error) {
-                is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
+                is ScopesError.ConcurrencyError -> AvailabilityReason.CONCURRENT_MODIFICATION
+                is ScopesError.RepositoryError -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
                 else -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
             }
 

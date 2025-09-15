@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResu
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetChildren
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetRootScopes
@@ -26,9 +27,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias as AppGetScopeByAliasQuery
 
 /**
@@ -52,7 +51,7 @@ class ScopeManagementQueryPortAdapter(
     private val getRootScopesHandler: GetRootScopesHandler,
     private val listAliasesHandler: ListAliasesHandler,
     private val filterScopesWithQueryHandler: FilterScopesWithQueryHandler,
-    private val errorMapper: ErrorMapper,
+    private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger = ConsoleLogger("ScopeManagementQueryPortAdapter"),
 ) : ScopeManagementQueryPort {
 
@@ -63,10 +62,10 @@ class ScopeManagementQueryPortAdapter(
     ).fold(
         { error ->
             // For GET operations, NotFound is not an error but returns null
-            if (error is ScopeError.NotFound) {
+            if (error is ScopeManagementApplicationError.PersistenceError.NotFound) {
                 Either.Right(null)
             } else {
-                Either.Left(errorMapper.mapToContractError(error))
+                Either.Left(applicationErrorMapper.mapToContractError(error))
             }
         },
         { scopeDto ->
@@ -97,7 +96,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }.map { paged ->
         io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
             scopes = paged.items.map { scopeDto ->
@@ -127,7 +126,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }.map { paged ->
         io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
             scopes = paged.items.map { scopeDto ->
@@ -155,7 +154,7 @@ class ScopeManagementQueryPortAdapter(
         ),
     ).fold(
         { error ->
-            Either.Left(errorMapper.mapToContractError(error))
+            Either.Left(applicationErrorMapper.mapToContractError(error))
         },
         { scopeDto ->
             scopeDto?.let {
@@ -173,11 +172,10 @@ class ScopeManagementQueryPortAdapter(
                     ),
                 )
             } ?: Either.Left(
-                errorMapper.mapToContractError(
-                    ScopesError.NotFound(
+                applicationErrorMapper.mapToContractError(
+                    ScopeManagementApplicationError.PersistenceError.NotFound(
                         entityType = "Scope",
-                        identifier = query.aliasName,
-                        identifierType = "alias",
+                        entityId = query.aliasName,
                     ),
                 ),
             )
@@ -189,7 +187,7 @@ class ScopeManagementQueryPortAdapter(
             scopeId = query.scopeId,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }.map { aliasDtos ->
         AliasListResult(
             scopeId = query.scopeId,
@@ -225,7 +223,7 @@ class ScopeManagementQueryPortAdapter(
             limit = query.limit,
         ),
     ).mapLeft { error ->
-        errorMapper.mapToContractError(error)
+        applicationErrorMapper.mapToContractError(error)
     }.map { scopeDtos ->
         scopeDtos.map { scopeDto ->
             ScopeResult(

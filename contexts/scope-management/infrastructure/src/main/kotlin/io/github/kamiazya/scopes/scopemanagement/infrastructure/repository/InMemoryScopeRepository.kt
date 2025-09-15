@@ -2,9 +2,8 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -23,28 +22,44 @@ open class InMemoryScopeRepository : ScopeRepository {
     protected val scopes = mutableMapOf<ScopeId, Scope>()
     protected val mutex = Mutex()
 
-    override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = either {
+    override suspend fun save(scope: Scope): Either<ScopesError, Scope> = either {
         mutex.withLock {
             try {
                 scopes[scope.id] = scope
                 scope
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "save", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                        entityType = "Scope",
+                        entityId = scope.id.value,
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean> = either {
+    override suspend fun existsById(id: ScopeId): Either<ScopesError, Boolean> = either {
         mutex.withLock {
             try {
                 scopes.containsKey(id)
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsById", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        entityId = id.value,
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean> = either {
+    override suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, Boolean> = either {
         mutex.withLock {
             try {
                 // Create a temporary ScopeTitle to get normalized value for comparison
@@ -58,12 +73,19 @@ open class InMemoryScopeRepository : ScopeRepository {
                     }
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsByParentIdAndTitle", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, ScopeId?> = either {
+    override suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, ScopeId?> = either {
         mutex.withLock {
             try {
                 // Create a temporary ScopeTitle to get normalized value for comparison
@@ -77,12 +99,19 @@ open class InMemoryScopeRepository : ScopeRepository {
                     }?.id
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findIdByParentIdAndTitle", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
+    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<ScopesError, List<Scope>> = either {
         mutex.withLock {
             try {
                 scopes.values
@@ -93,43 +122,73 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .take(limit)
                     .toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId(offset,limit)", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit> = either {
+    override suspend fun deleteById(id: ScopeId): Either<ScopesError, Unit> = either {
         mutex.withLock {
             try {
                 scopes.remove(id)
                 Unit
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "deleteById", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+                        entityType = "Scope",
+                        entityId = id.value,
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = either {
+    override suspend fun findById(id: ScopeId): Either<ScopesError, Scope?> = either {
         mutex.withLock {
             try {
                 scopes[id]
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findById", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        entityId = id.value,
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findAll(): Either<PersistenceError, List<Scope>> = either {
+    override suspend fun findAll(): Either<ScopesError, List<Scope>> = either {
         mutex.withLock {
             try {
                 scopes.values.toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun update(scope: Scope): Either<PersistenceError, Scope> = either {
+    override suspend fun update(scope: Scope): Either<ScopesError, Scope> = either {
         mutex.withLock {
             try {
                 // For in-memory implementation, update is the same as save
@@ -137,32 +196,54 @@ open class InMemoryScopeRepository : ScopeRepository {
                 scopes[scope.id] = scope
                 scope
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "update", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+                        entityType = "Scope",
+                        entityId = scope.id.value,
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int> = either {
+    override suspend fun countChildrenOf(parentId: ScopeId): Either<ScopesError, Int> = either {
         mutex.withLock {
             try {
                 scopes.values.count { it.parentId == parentId }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countChildrenOf", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = either {
+    override suspend fun countByParentId(parentId: ScopeId?): Either<ScopesError, Int> = either {
         mutex.withLock {
             try {
                 scopes.values.count { it.parentId == parentId }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByParentId", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
+    override suspend fun findAll(offset: Int, limit: Int): Either<ScopesError, List<Scope>> = either {
         mutex.withLock {
             try {
                 scopes.values
@@ -170,29 +251,50 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .drop(offset)
                     .take(limit)
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = either {
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<ScopesError, Int> = either {
         mutex.withLock {
             try {
                 scopes.values.count { scope ->
                     scope.aspects.contains(aspectKey)
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByAspectKey", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }
 
-    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = either {
+    override suspend fun findAllRoot(): Either<ScopesError, List<Scope>> = either {
         mutex.withLock {
             try {
                 scopes.values.filter { it.parentId == null }.toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAllRoot", e))
+                raise(
+                    ScopesError.RepositoryError(
+                        repositoryName = "InMemoryScopeRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "Scope",
+                        cause = e,
+                    ),
+                )
             }
         }
     }

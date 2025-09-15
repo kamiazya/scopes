@@ -42,7 +42,7 @@ class ActiveContextService(
      * Set the active context and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun setActiveContext(context: ContextView, activatedBy: String? = null): Either<ApplicationError, Unit> = either {
+    suspend fun setActiveContext(context: ContextView, activatedBy: String? = null): Either<ScopeManagementApplicationError, Unit> = either {
         // Get current context before switching for audit trail
         val previousContext = getCurrentContext()
 
@@ -51,9 +51,9 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "setActiveContext",
-                        cause = error.toString(),
+                        errorCause = error.toString(),
                     )
                 }
             }
@@ -77,7 +77,7 @@ class ActiveContextService(
      * Clear the active context and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun clearActiveContext(clearedBy: String? = null): Either<ApplicationError, Unit> = either {
+    suspend fun clearActiveContext(clearedBy: String? = null): Either<ScopeManagementApplicationError, Unit> = either {
         // Get current context before clearing for audit trail
         val previousContext = getCurrentContext()
 
@@ -86,9 +86,9 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "clearActiveContext",
-                        cause = error.toString(),
+                        errorCause = error.toString(),
                     )
                 }
             }
@@ -113,7 +113,7 @@ class ActiveContextService(
      * Switch to a context by key and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun switchToContextByKey(key: String, activatedBy: String? = null): Either<ApplicationError, ContextView> = either {
+    suspend fun switchToContextByKey(key: String, activatedBy: String? = null): Either<ScopeManagementApplicationError, ContextView> = either {
         val contextKey = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey.create(key)
             .mapLeft { errorMsg ->
                 ContextError.KeyInvalidFormat(
@@ -126,9 +126,9 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "findByKey",
-                        cause = error.toString(),
+                        errorCause = error.toString(),
                     )
                 }
             }
@@ -140,7 +140,7 @@ class ActiveContextService(
 
         // Use setActiveContext method to ensure audit event is published
         setActiveContext(context, activatedBy)
-            .mapLeft { it } // Already mapped to ApplicationError
+            .mapLeft { it } // Already mapped to ScopeManagementApplicationError
             .bind()
 
         context

@@ -5,9 +5,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError as AppContextError
-import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError as AppScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError as AppScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
@@ -24,7 +24,7 @@ private val scopeInputErrorPresenter = ScopeInputErrorPresenter()
 /**
  * Maps PersistenceError to ApplicationError.PersistenceError
  */
-fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) {
+fun DomainPersistenceError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainPersistenceError.ConcurrencyConflict ->
         AppPersistenceError.ConcurrencyConflict(
             entityType = this.entityType,
@@ -37,7 +37,7 @@ fun DomainPersistenceError.toApplicationError(): ApplicationError = when (this) 
 /**
  * Maps ContextError to ApplicationError.ContextError
  */
-fun ContextError.toApplicationError(): ApplicationError = when (this) {
+fun ContextError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is ContextError.KeyTooShort ->
         AppContextError.KeyInvalidFormat(
             attemptedKey = "key too short (minimum: ${this.minimumLength})",
@@ -126,7 +126,7 @@ fun ContextError.toApplicationError(): ApplicationError = when (this) {
 /**
  * Maps ScopeInputError to ApplicationError.ScopeInputError
  */
-fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
+fun DomainScopeInputError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainScopeInputError.IdError.EmptyId ->
         AppScopeInputError.IdBlank("empty-id")
 
@@ -188,12 +188,12 @@ fun DomainScopeInputError.toApplicationError(): ApplicationError = when (this) {
 /**
  * Maps ScopeAliasError to ApplicationError.ScopeAliasError
  */
-fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
+fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainScopeAliasError.DuplicateAlias ->
         AppScopeAliasError.AliasDuplicate(
             aliasName = this.alias,
             existingScopeId = this.scopeId.toString(),
-            attemptedScopeId = this.scopeId.toString(),
+            attemptedScopeId = "unknown", // Domain error doesn't provide attempted scope ID
         )
 
     is DomainScopeAliasError.AliasNotFoundByName ->
@@ -243,7 +243,7 @@ fun DomainScopeAliasError.toApplicationError(): ApplicationError = when (this) {
  * Generic fallback for any ScopesError that doesn't have a specific mapping.
  * Use this sparingly - prefer context-specific mappings in handlers.
  */
-fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
+fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()
     is ContextError -> this.toApplicationError()
     is DomainScopeInputError -> this.toApplicationError()
@@ -258,20 +258,20 @@ fun ScopesError.toGenericApplicationError(): ApplicationError = when (this) {
         }
         AppPersistenceError.StorageUnavailable(
             operation = "hierarchy.${this.operation.name.lowercase()}",
-            cause = cause,
+            errorCause = cause,
         )
     }
 
     // Map other hierarchy errors to generic persistence errors
     is ScopeHierarchyError -> AppPersistenceError.StorageUnavailable(
         operation = "hierarchy",
-        cause = "Hierarchy error: ${this::class.simpleName}",
+        errorCause = "Hierarchy error: ${this::class.simpleName}",
     )
 
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
     else -> AppPersistenceError.StorageUnavailable(
         operation = "domain-operation",
-        cause = "Unmapped domain error: ${this::class.simpleName}",
+        errorCause = "Unmapped domain error: ${this::class.simpleName}",
     )
 }

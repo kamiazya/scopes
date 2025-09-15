@@ -3,7 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.application.usecase
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -16,47 +17,45 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 class ValidateAspectValueUseCase(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val validationService: AspectValueValidationService,
-) : UseCase<ValidateAspectValueUseCase.Query, ScopesError, AspectValue> {
+) : UseCase<ValidateAspectValueUseCase.Query, ScopeManagementApplicationError, AspectValue> {
 
     // Query classes for different validation scenarios
     data class Query(val key: String, val value: String)
 
     data class MultipleQuery(val values: Map<String, List<String>>)
 
-    override suspend operator fun invoke(input: Query): Either<ScopesError, AspectValue> {
+    override suspend operator fun invoke(input: Query): Either<ScopeManagementApplicationError, AspectValue> {
         // Parse the aspect key
         val aspectKey = AspectKey.create(input.key).fold(
-            { return it.left() },
+            { return it.toGenericApplicationError().left() },
             { it },
         )
 
         // Find the aspect definition
         val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
             {
-                return ScopesError.SystemError(
-                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                    service = "aspect-repository",
-                    cause = it as? Throwable,
-                    context = mapOf("operation" to "find-aspect-definition", "key" to input.key),
+                return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                    operation = "find-aspect-definition",
+                    errorCause = it.toString(),
                 ).left()
             },
             {
-                it ?: return ScopesError.NotFound(
+                it ?: return ScopeManagementApplicationError.PersistenceError.NotFound(
                     entityType = "AspectDefinition",
-                    identifier = input.key,
-                    identifierType = "key",
+                    entityId = input.key,
                 ).left()
             },
         )
 
         // Create the aspect value
         val aspectValue = AspectValue.create(input.value).fold(
-            { return it.left() },
+            { return it.toGenericApplicationError().left() },
             { it },
         )
 
         // Delegate validation to domain service
         return validationService.validateValue(definition, aspectValue)
+            .mapLeft { it.toGenericApplicationError() }
     }
 
     /**
@@ -65,52 +64,50 @@ class ValidateAspectValueUseCase(
      * @param value The aspect value to validate
      * @return Either an error or the validated AspectValue
      */
-    suspend fun execute(key: String, value: String): Either<ScopesError, AspectValue> = invoke(Query(key, value))
+    suspend fun execute(key: String, value: String): Either<ScopeManagementApplicationError, AspectValue> = invoke(Query(key, value))
 
     /**
      * Validate multiple aspect values.
      * @param query MultipleQuery containing the values to validate
      * @return Either an error (first validation failure) or the validated values
      */
-    suspend operator fun invoke(query: MultipleQuery): Either<ScopesError, Map<AspectKey, List<AspectValue>>> = executeMultiple(query.values)
+    suspend operator fun invoke(query: MultipleQuery): Either<ScopeManagementApplicationError, Map<AspectKey, List<AspectValue>>> =
+        executeMultiple(query.values)
 
     /**
      * Validate multiple aspect values.
      * @param values Map of aspect key to values
      * @return Either an error (first validation failure) or the validated values
      */
-    suspend fun executeMultiple(values: Map<String, List<String>>): Either<ScopesError, Map<AspectKey, List<AspectValue>>> {
+    suspend fun executeMultiple(values: Map<String, List<String>>): Either<ScopeManagementApplicationError, Map<AspectKey, List<AspectValue>>> {
         val validatedValues = mutableMapOf<AspectKey, List<AspectValue>>()
 
         for ((key, valueList) in values) {
             // Parse the aspect key
             val aspectKey = AspectKey.create(key).fold(
-                { return it.left() },
+                { return it.toGenericApplicationError().left() },
                 { it },
             )
 
             // Find the aspect definition
             val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
                 {
-                    return ScopesError.SystemError(
-                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                        service = "aspect-repository",
-                        cause = it as? Throwable,
-                        context = mapOf("operation" to "find-aspect-definition", "key" to key),
+                    return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                        operation = "find-aspect-definition",
+                        errorCause = it.toString(),
                     ).left()
                 },
                 {
-                    it ?: return ScopesError.NotFound(
+                    it ?: return ScopeManagementApplicationError.PersistenceError.NotFound(
                         entityType = "AspectDefinition",
-                        identifier = key,
-                        identifierType = "key",
+                        entityId = key,
                     ).left()
                 },
             )
 
             // Check if multiple values are allowed using domain service
             validationService.validateMultipleValuesAllowed(definition, valueList.size).fold(
-                { return it.left() },
+                { return it.toGenericApplicationError().left() },
                 { },
             )
 
@@ -118,12 +115,12 @@ class ValidateAspectValueUseCase(
             val validatedList = mutableListOf<AspectValue>()
             for (value in valueList) {
                 val aspectValue = AspectValue.create(value).fold(
-                    { return it.left() },
+                    { return it.toGenericApplicationError().left() },
                     { it },
                 )
 
                 validationService.validateValue(definition, aspectValue).fold(
-                    { return it.left() },
+                    { return it.toGenericApplicationError().left() },
                     { validatedList.add(it) },
                 )
             }
@@ -140,6 +137,7 @@ class ValidateAspectValueUseCase(
      * @param requiredKeys Set of required aspect keys
      * @return Either an error or Unit if all required aspects are present
      */
-    fun validateRequired(providedKeys: Set<String>, requiredKeys: Set<String>): Either<ScopesError, Unit> =
+    fun validateRequired(providedKeys: Set<String>, requiredKeys: Set<String>): Either<ScopeManagementApplicationError, Unit> =
         validationService.validateRequiredAspects(providedKeys, requiredKeys)
+            .mapLeft { it.toGenericApplicationError() }
 }

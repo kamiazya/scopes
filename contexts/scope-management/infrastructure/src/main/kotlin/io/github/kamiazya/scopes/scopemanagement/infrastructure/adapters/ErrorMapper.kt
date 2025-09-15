@@ -20,76 +20,76 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Log unmapped errors for visibility and debugging
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
-    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
+    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
     }
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
-        is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
-            id = domainError.attemptedValue,
+        is ScopeInputError.IdError.EmptyId -> ScopeContractError.InputError.InvalidId(
+            id = "",
             expectedFormat = "Non-empty ULID format",
         )
-        is ScopeInputError.IdError.InvalidFormat -> ScopeContractError.InputError.InvalidId(
-            id = domainError.attemptedValue,
-            expectedFormat = presentIdFormat(domainError.formatType),
+        is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
+            id = domainError.id,
+            expectedFormat = presentIdFormat(domainError.expectedFormat),
         )
-        is ScopeInputError.TitleError.Empty -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.EmptyTitle -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeInputError.TitleError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = domainError.attemptedValue.length,
+                minimumLength = domainError.minLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.ContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.InvalidTitleFormat -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.title,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = domainError.prohibitedCharacters,
+                prohibitedCharacters = emptyList(),
             ),
         )
-        is ScopeInputError.DescriptionError.TooLong -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = domainError.attemptedValue,
+        is ScopeInputError.DescriptionError.DescriptionTooLong -> ScopeContractError.InputError.InvalidDescription(
+            descriptionText = "",
             validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
 
         // Alias validation errors (map to title for now, as aliases are like alternative titles)
-        is ScopeInputError.AliasError.Empty -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.EmptyAlias -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeInputError.AliasError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.AliasTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = domainError.attemptedValue.length,
+                minimumLength = domainError.minLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.AliasTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.InvalidFormat -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.alias,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
                 prohibitedCharacters = emptyList(), // Pattern validation mapped to character validation
             ),
@@ -124,10 +124,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
 
         // Uniqueness errors
-        is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
+        is ScopeUniquenessError.DuplicateTitleInContext -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
-            parentId = domainError.parentScopeId?.value,
-            existingScopeId = domainError.existingScopeId?.value,
+            parentId = domainError.parentId?.value,
+            existingScopeId = domainError.existingId.value,
+        )
+        is ScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = domainError.identifier,
         )
 
         // New structured errors

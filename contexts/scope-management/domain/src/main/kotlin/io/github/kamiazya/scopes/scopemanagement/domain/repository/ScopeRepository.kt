@@ -2,7 +2,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.repository
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
@@ -17,12 +17,12 @@ interface ScopeRepository {
     /**
      * Save a scope (create or update).
      */
-    suspend fun save(scope: Scope): Either<PersistenceError, Scope>
+    suspend fun save(scope: Scope): Either<ScopesError, Scope>
 
     /**
      * Find a scope by ID.
      */
-    suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?>
+    suspend fun findById(id: ScopeId): Either<ScopesError, Scope?>
 
     /**
      * Find all scopes.
@@ -30,14 +30,14 @@ interface ScopeRepository {
      * Ordering: deterministic, newest first (ordered by `created_at DESC, id DESC`).
      * Use the paginated overload for large datasets.
      */
-    suspend fun findAll(): Either<PersistenceError, List<Scope>>
+    suspend fun findAll(): Either<ScopesError, List<Scope>>
 
     /**
      * Find all scopes with pagination.
      *
      * Ordering: deterministic, newest first (ordered by `created_at DESC, id DESC`).
      */
-    suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
+    suspend fun findAll(offset: Int, limit: Int): Either<ScopesError, List<Scope>>
 
     // NOTE: Non-paginated version removed. Use paginated overload to avoid full scans.
 
@@ -47,17 +47,17 @@ interface ScopeRepository {
      * within a parent group (ties broken by `id ASC`). When parentId is null,
      * returns root scopes.
      */
-    suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>>
+    suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<ScopesError, List<Scope>>
 
     /**
      * Find all root scopes (scopes with no parent).
      */
-    suspend fun findAllRoot(): Either<PersistenceError, List<Scope>>
+    suspend fun findAllRoot(): Either<ScopesError, List<Scope>>
 
     /**
      * Check if a scope exists.
      */
-    suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean>
+    suspend fun existsById(id: ScopeId): Either<ScopesError, Boolean>
 
     /**
      * Check if a scope exists with the given title and parent.
@@ -65,7 +65,7 @@ interface ScopeRepository {
      * When parentId is null, checks for root-level title uniqueness.
      * Title uniqueness is enforced at ALL levels including root level.
      */
-    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean>
+    suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, Boolean>
 
     /**
      * Find the ID of a scope with the given title and parent.
@@ -73,34 +73,34 @@ interface ScopeRepository {
      * When parentId is null, searches for root-level scopes.
      * Returns null if no scope exists with the given title and parent.
      */
-    suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, ScopeId?>
+    suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, ScopeId?>
 
     /**
      * Delete a scope by ID.
      */
-    suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit>
+    suspend fun deleteById(id: ScopeId): Either<ScopesError, Unit>
 
     /**
      * Update an existing scope.
      * This is used by the command handler to update the read model after events are applied.
      */
-    suspend fun update(scope: Scope): Either<PersistenceError, Scope>
+    suspend fun update(scope: Scope): Either<ScopesError, Scope>
 
     /**
      * Count the number of direct children of a scope.
      * Used for validating children limits.
      */
-    suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int>
+    suspend fun countChildrenOf(parentId: ScopeId): Either<ScopesError, Int>
 
     /**
      * Count scopes by parent id. When parentId is null, counts root scopes.
      * Useful for pagination total counts.
      */
-    suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int>
+    suspend fun countByParentId(parentId: ScopeId?): Either<ScopesError, Int>
 
     /**
      * Count scopes that have a specific aspect key.
      * Used for validating aspect usage before deletion.
      */
-    suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int>
+    suspend fun countByAspectKey(aspectKey: AspectKey): Either<ScopesError, Int>
 }

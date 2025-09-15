@@ -7,38 +7,27 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
  * Note: This is an application-layer error that doesn't extend domain errors
  * to maintain proper layer separation.
  */
-sealed class CrossAggregateValidationError {
-    abstract val message: String
+sealed class CrossAggregateValidationError(cause: Throwable? = null) : ScopeManagementApplicationError(false, cause) {
 
     /**
      * Error when a cross-aggregate reference is violated.
      */
     data class CrossReferenceViolation(val sourceAggregate: String, val targetAggregate: String, val referenceType: String, val violation: String) :
-        CrossAggregateValidationError() {
-        override val message: String = "Cross-reference violation: $violation (from $sourceAggregate to $targetAggregate via $referenceType)"
-    }
+        CrossAggregateValidationError()
 
     /**
      * Error when a cross-aggregate invariant is violated.
      */
-    data class InvariantViolation(val invariantName: String, val aggregateIds: List<String>, val violationDescription: String) :
-        CrossAggregateValidationError() {
-        override val message: String = "Invariant '$invariantName' violated across aggregates ${aggregateIds.joinToString()}: $violationDescription"
-    }
+    data class InvariantViolation(val invariantName: String, val aggregateIds: List<String>, val violationDescription: String) : CrossAggregateValidationError()
 
     /**
      * Error when compensating transaction fails in a saga.
      */
-    data class CompensationFailure(val sagaName: String, val failedStep: String, val compensationError: String) : CrossAggregateValidationError() {
-        override val message: String = "Compensation failed in saga '$sagaName' at step '$failedStep': $compensationError"
-    }
+    data class CompensationFailure(val sagaName: String, val failedStep: String, val compensationError: String) : CrossAggregateValidationError()
 
     /**
      * Error when eventual consistency violation is detected.
      */
     data class EventualConsistencyViolation(val aggregateIds: List<String>, val expectedState: String, val actualState: String) :
-        CrossAggregateValidationError() {
-        override val message: String =
-            "Eventual consistency violation for aggregates ${aggregateIds.joinToString()}: expected $expectedState but found $actualState"
-    }
+        CrossAggregateValidationError()
 }

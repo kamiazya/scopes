@@ -6,7 +6,6 @@ import io.github.kamiazya.scopes.scopemanagement.db.Context_views
 import io.github.kamiazya.scopes.scopemanagement.db.GetActiveContext
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
@@ -42,9 +41,10 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "initializeActiveContext",
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                        entityType = "ActiveContext",
                         cause = e,
                     ),
                 )
@@ -79,9 +79,10 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 result?.let { activeContextToContextView(it) }
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "getActiveContext",
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "ActiveContext",
                         cause = e,
                     ),
                 )
@@ -99,9 +100,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "setActiveContext",
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+                        entityType = "ActiveContext",
+                        entityId = contextView.id.value,
                         cause = e,
                     ),
                 )
@@ -118,9 +121,10 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "clearActiveContext",
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+                        entityType = "ActiveContext",
                         cause = e,
                     ),
                 )
@@ -135,9 +139,10 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 database.activeContextQueries.hasActiveContext().executeAsOne()
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "hasActiveContext",
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "ActiveContext",
                         cause = e,
                     ),
                 )

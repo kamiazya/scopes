@@ -6,13 +6,12 @@ import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.db.Scope_aliases
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -20,7 +19,7 @@ import kotlinx.datetime.Instant
  */
 class SqlDelightScopeAliasRepository(private val database: ScopeManagementDatabase) : ScopeAliasRepository {
 
-    override suspend fun save(alias: ScopeAlias): Either<PersistenceError, Unit> = try {
+    override suspend fun save(alias: ScopeAlias): Either<ScopesError, Unit> = try {
         val existing = database.scopeAliasQueries.findById(alias.id.value).executeAsOneOrNull()
 
         if (existing != null) {
@@ -43,124 +42,138 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         }
         Unit.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "save",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+            entityType = "ScopeAlias",
+            entityId = alias.id.value,
             cause = e,
         ).left()
     }
 
-    override suspend fun findByAliasName(aliasName: AliasName): Either<PersistenceError, ScopeAlias?> = try {
+    override suspend fun findByAliasName(aliasName: AliasName): Either<ScopesError, ScopeAlias?> = try {
         val result = database.scopeAliasQueries.findByAliasName(aliasName.value).executeAsOneOrNull()
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findByAliasName",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun findById(aliasId: AliasId): Either<PersistenceError, ScopeAlias?> = try {
+    override suspend fun findById(aliasId: AliasId): Either<ScopesError, ScopeAlias?> = try {
         val result = database.scopeAliasQueries.findById(aliasId.value).executeAsOneOrNull()
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findById",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
             cause = e,
         ).left()
     }
 
-    override suspend fun findByScopeId(scopeId: ScopeId): Either<PersistenceError, List<ScopeAlias>> = try {
+    override suspend fun findByScopeId(scopeId: ScopeId): Either<ScopesError, List<ScopeAlias>> = try {
         val results = database.scopeAliasQueries.findByScopeId(scopeId.value).executeAsList()
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findByScopeId",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun findCanonicalByScopeId(scopeId: ScopeId): Either<PersistenceError, ScopeAlias?> = try {
+    override suspend fun findCanonicalByScopeId(scopeId: ScopeId): Either<ScopesError, ScopeAlias?> = try {
         val result = database.scopeAliasQueries.findCanonicalAlias(scopeId.value).executeAsOneOrNull()
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findCanonicalByScopeId",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun findByScopeIdAndType(scopeId: ScopeId, aliasType: AliasType): Either<PersistenceError, List<ScopeAlias>> = try {
+    override suspend fun findByScopeIdAndType(scopeId: ScopeId, aliasType: AliasType): Either<ScopesError, List<ScopeAlias>> = try {
         val results = database.scopeAliasQueries.findByTypeForScope(scopeId.value, aliasType.name).executeAsList()
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findByScopeIdAndType",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun findByAliasNamePrefix(prefix: String, limit: Int): Either<PersistenceError, List<ScopeAlias>> = try {
+    override suspend fun findByAliasNamePrefix(prefix: String, limit: Int): Either<ScopesError, List<ScopeAlias>> = try {
         val results = database.scopeAliasQueries.findByPrefix("$prefix%", limit.toLong()).executeAsList()
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "findByAliasNamePrefix",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun existsByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean> = try {
+    override suspend fun existsByAliasName(aliasName: AliasName): Either<ScopesError, Boolean> = try {
         val result = database.scopeAliasQueries.existsByAliasName(aliasName.value).executeAsOne()
         result.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "existsByAliasName",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun removeById(aliasId: AliasId): Either<PersistenceError, Boolean> = try {
+    override suspend fun removeById(aliasId: AliasId): Either<ScopesError, Boolean> = try {
         database.scopeAliasQueries.deleteById(aliasId.value)
         true.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "removeById",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
             cause = e,
         ).left()
     }
 
-    override suspend fun removeByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean> = try {
+    override suspend fun removeByAliasName(aliasName: AliasName): Either<ScopesError, Boolean> = try {
         database.scopeAliasQueries.deleteByAliasName(aliasName.value)
         true.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "removeByAliasName",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun removeByScopeId(scopeId: ScopeId): Either<PersistenceError, Int> = try {
+    override suspend fun removeByScopeId(scopeId: ScopeId): Either<ScopesError, Int> = try {
         database.scopeAliasQueries.deleteAllForScope(scopeId.value)
         0.right() // SQLDelight doesn't return row count
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "removeByScopeId",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun update(alias: ScopeAlias): Either<PersistenceError, Boolean> = try {
+    override suspend fun update(alias: ScopeAlias): Either<ScopesError, Boolean> = try {
         database.scopeAliasQueries.updateAlias(
             scope_id = alias.scopeId.value,
             alias_name = alias.aliasName.value,
@@ -170,31 +183,35 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         )
         true.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "update",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+            entityType = "ScopeAlias",
+            entityId = alias.id.value,
             cause = e,
         ).left()
     }
 
-    override suspend fun count(): Either<PersistenceError, Long> = try {
+    override suspend fun count(): Either<ScopesError, Long> = try {
         val result = database.scopeAliasQueries.countAliases().executeAsOne()
         result.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "count",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }
 
-    override suspend fun listAll(offset: Int, limit: Int): Either<PersistenceError, List<ScopeAlias>> = try {
+    override suspend fun listAll(offset: Int, limit: Int): Either<ScopesError, List<ScopeAlias>> = try {
         val results = database.scopeAliasQueries.getAllAliasesPaged(limit.toLong(), offset.toLong()).executeAsList()
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
-        PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
-            operation = "listAll",
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
             cause = e,
         ).left()
     }

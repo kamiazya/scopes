@@ -6,9 +6,10 @@ import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
@@ -17,9 +18,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  * Retrieves a scope by its ID and returns it as a DTO.
  */
 class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    QueryHandler<GetScopeById, ScopesError, ScopeDto?> {
+    QueryHandler<GetScopeById, ScopeManagementApplicationError, ScopeDto?> {
 
-    override suspend operator fun invoke(query: GetScopeById): Either<ScopesError, ScopeDto?> = transactionManager.inReadOnlyTransaction {
+    override suspend operator fun invoke(query: GetScopeById): Either<ScopeManagementApplicationError, ScopeDto?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting scope by ID",
             mapOf(
@@ -29,19 +30,16 @@ class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private 
 
         either {
             // Parse and validate the scope ID
-            val scopeId = ScopeId.create(query.id).bind()
+            val scopeId = ScopeId.create(query.id)
+                .mapLeft { it.toGenericApplicationError() }
+                .bind()
 
             // Retrieve the scope from repository
             val scope = scopeRepository.findById(scopeId)
                 .mapLeft { error ->
-                    ScopesError.SystemError(
-                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                        service = "scope-repository",
-                        cause = error as? Throwable,
-                        context = mapOf(
-                            "operation" to "findById",
-                            "scopeId" to scopeId.value.toString(),
-                        ),
+                    ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                        operation = "findById",
+                        errorCause = error.toString(),
                     )
                 }
                 .bind()

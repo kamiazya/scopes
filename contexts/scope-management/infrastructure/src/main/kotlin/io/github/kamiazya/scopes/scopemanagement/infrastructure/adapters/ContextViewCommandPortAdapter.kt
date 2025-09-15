@@ -41,7 +41,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -57,7 +57,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
@@ -66,7 +66,7 @@ public class ContextViewCommandPortAdapter(
         val result = deleteContextViewHandler(AppDeleteContextViewCommand(command.key))
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { Unit.right() },
         )
     }
