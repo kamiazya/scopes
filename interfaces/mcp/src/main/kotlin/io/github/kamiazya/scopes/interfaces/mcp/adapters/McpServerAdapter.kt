@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQu
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAliasesQuery
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.server.Server
@@ -50,47 +51,38 @@ class McpServerAdapter(
         private const val MAX_IDEMPOTENCY_ENTRIES = 10_000
         
         // MIME Types
-        private const val MIME_TYPE_MARKDOWN = MIME_TYPE_MARKDOWN
-        private const val MIME_TYPE_JSON = MIME_TYPE_JSON
+        private const val MIME_MD = "text/markdown; charset=utf-8"
+        private const val MIME_JSON = "application/json; charset=utf-8"
         
         // Tool names
-        private const val TOOL_SCOPES_CREATE = TOOL_SCOPES_CREATE
-        private const val TOOL_SCOPES_UPDATE = TOOL_SCOPES_UPDATE
-        private const val TOOL_SCOPES_DELETE = TOOL_SCOPES_DELETE
-        private const val TOOL_ALIASES_ADD = TOOL_ALIASES_ADD
-        private const val TOOL_ALIASES_REMOVE = TOOL_ALIASES_REMOVE
-        private const val TOOL_ALIASES_SET_CANONICAL = TOOL_ALIASES_SET_CANONICAL
+        private const val TOOL_SCOPES_CREATE = "scopes.create"
+        private const val TOOL_SCOPES_UPDATE = "scopes.update"
+        private const val TOOL_SCOPES_DELETE = "scopes.delete"
+        private const val TOOL_ALIASES_ADD = "aliases.add"
+        private const val TOOL_ALIASES_REMOVE = "aliases.remove"
+        private const val TOOL_ALIASES_SET_CANONICAL = "aliases.setCanonical"
         
         // Common descriptions
-        private const val DESC_IDEMPOTENCY_KEY = DESC_IDEMPOTENCY_KEY
-        private const val DESC_EXISTING_SCOPE_ALIAS = DESC_EXISTING_SCOPE_ALIAS
-        private const val DESC_SCOPE_ALIAS = DESC_SCOPE_ALIAS
-        private const val DESC_MISSING_ALIAS = DESC_MISSING_ALIAS
-        private const val DESC_MISSING_SCOPE_ALIAS = DESC_MISSING_SCOPE_ALIAS
+        private const val DESC_IDEMPOTENCY_KEY = "Idempotency key to avoid duplicate operations"
+        private const val DESC_EXISTING_SCOPE_ALIAS = "Existing scope alias"
+        private const val DESC_SCOPE_ALIAS = "Scope alias"
+        private const val DESC_MISSING_ALIAS = "Missing 'alias'"
+        private const val DESC_MISSING_SCOPE_ALIAS = "Missing 'scopeAlias'"
     }
 
-    suspend fun notifyToolsListChanged(): Boolean = try {
-        server?.sendToolListChanged()
-        true
-    } catch (e: Exception) {
-        logger.warn("Failed to send tools list changed notification: ${e.message}")
-        false
+    fun notifyToolsListChanged(): Boolean {
+        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        return false
     }
 
-    suspend fun notifyResourcesListChanged(): Boolean = try {
-        server?.sendResourceListChanged()
-        true
-    } catch (e: Exception) {
-        logger.warn("Failed to send resources list changed notification: ${e.message}")
-        false
+    fun notifyResourcesListChanged(): Boolean {
+        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        return false
     }
 
-    suspend fun notifyPromptsListChanged(): Boolean = try {
-        server?.sendPromptListChanged()
-        true
-    } catch (e: Exception) {
-        logger.warn("Failed to send prompts list changed notification: ${e.message}")
-        false
+    fun notifyPromptsListChanged(): Boolean {
+        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        return false
     }
 
     /**
@@ -755,10 +747,10 @@ class McpServerAdapter(
     }
 
     private fun registerAliasingTools(server: Server) {
-        // debug.listChanged - development-only helper to trigger list_changed notifications
+        // debug.listChanged - development-only helper to trigger list_changed notifications (currently no-op)
         server.addTool(
             name = "debug.listChanged",
-            description = "Trigger list_changed notifications for tools/resources/prompts (debug only)",
+            description = "Trigger list_changed notifications for tools/resources/prompts (debug only, currently no-op)",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
                     put("type", "object")
@@ -1249,7 +1241,7 @@ class McpServerAdapter(
             uri = "scopes:/docs/cli",
             name = "CLI Quick Reference",
             description = "Scopes CLI quick reference",
-            mimeType = MIME_TYPE_MARKDOWN,
+            mimeType = MIME_MD,
         ) {
             val text = "See repository docs/reference/cli-quick-reference.md"
             val etag = computeEtag(text)
@@ -1258,7 +1250,7 @@ class McpServerAdapter(
                     TextResourceContents(
                         text = text,
                         uri = it.uri,
-                        mimeType = MIME_TYPE_MARKDOWN,
+                        mimeType = MIME_MD,
                     ),
                 ),
                 _meta = buildJsonObject {
@@ -1282,7 +1274,7 @@ class McpServerAdapter(
             uri = "scopes:/scope/{canonicalAlias}",
             name = "Scope Details (JSON)",
             description = "Scope details by canonical alias using the standard object shape",
-            mimeType = MIME_TYPE_JSON,
+            mimeType = MIME_JSON,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/scope/"
@@ -1309,7 +1301,7 @@ class McpServerAdapter(
             uri = "scopes:/tree/{canonicalAlias}",
             name = "Scope Tree (JSON)",
             description = "Scope with children (configurable depth).",
-            mimeType = MIME_TYPE_JSON,
+            mimeType = MIME_JSON,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/tree/"
@@ -1347,7 +1339,7 @@ class McpServerAdapter(
             uri = "scopes:/tree.md/{canonicalAlias}",
             name = "Scope Tree (Markdown)",
             description = "Scope with immediate children rendered as Markdown (depth=1)",
-            mimeType = MIME_TYPE_MARKDOWN,
+            mimeType = MIME_MD,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/tree.md/"
@@ -1357,7 +1349,7 @@ class McpServerAdapter(
                 return@addResource createSimpleTextResult(
                     uri = uri,
                     text = "Invalid resource: missing alias",
-                    mimeType = MIME_TYPE_MARKDOWN
+                    mimeType = MIME_MD
                 )
             }
 
@@ -1367,7 +1359,7 @@ class McpServerAdapter(
                     createSimpleTextResult(
                         uri = uri,
                         text = "Error: ${mapContractError(error)}",
-                        mimeType = MIME_TYPE_MARKDOWN
+                        mimeType = MIME_MD
                     )
                 },
                 { scope -> createTreeMarkdownResult(uri, scope) }
@@ -1419,7 +1411,7 @@ class McpServerAdapter(
                 TextResourceContents(
                     text = payload,
                     uri = uri,
-                    mimeType = MIME_TYPE_JSON,
+                    mimeType = MIME_JSON,
                 ),
             ),
             _meta = buildJsonObject {
@@ -1446,7 +1438,7 @@ class McpServerAdapter(
         )
     }
 
-    private fun createScopeDetailsResult(uri: String, scope: ScopeDTO): ReadResourceResult {
+    private fun createScopeDetailsResult(uri: String, scope: ScopeResult): ReadResourceResult {
         val payload = buildJsonObject {
             put("canonicalAlias", scope.canonicalAlias)
             put("title", scope.title)
@@ -1475,7 +1467,7 @@ class McpServerAdapter(
                 TextResourceContents(
                     text = payload,
                     uri = uri,
-                    mimeType = MIME_TYPE_JSON,
+                    mimeType = MIME_JSON,
                 ),
             ),
             _meta = buildJsonObject {
@@ -1499,7 +1491,7 @@ class McpServerAdapter(
         )
     }
 
-    private fun createTreeJsonResult(scope: ScopeDTO, depthValue: Int): ReadResourceResult {
+    private fun createTreeJsonResult(scope: ScopeResult, depthValue: Int): ReadResourceResult {
         var nodeCount = 0
         val maxNodes = 1000
         var latestUpdatedAt = scope.updatedAt
@@ -1559,7 +1551,7 @@ class McpServerAdapter(
                 TextResourceContents(
                     text = jsonText,
                     uri = "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue",
-                    mimeType = MIME_TYPE_JSON,
+                    mimeType = MIME_JSON,
                 ),
             ),
             _meta = buildJsonObject {
@@ -1581,7 +1573,7 @@ class McpServerAdapter(
         )
     }
 
-    private fun createTreeMarkdownResult(uri: String, scope: ScopeDTO): ReadResourceResult {
+    private fun createTreeMarkdownResult(uri: String, scope: ScopeResult): ReadResourceResult {
         val childrenRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = scope.id)) }
 
         var latestUpdated = scope.updatedAt
@@ -1621,7 +1613,7 @@ class McpServerAdapter(
                 TextResourceContents(
                     text = md,
                     uri = uri,
-                    mimeType = MIME_TYPE_MARKDOWN,
+                    mimeType = MIME_MD,
                 ),
             ),
             _meta = buildJsonObject {

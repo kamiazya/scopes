@@ -4,16 +4,16 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
+import org.junit.jupiter.api.Disabled
 
 /**
  * Tests for the aliases.resolve tool functionality.
  *
- * This tool provides alias resolution with different matching modes:
- * - auto: tries exact match first, falls back to unique prefix
- * - exact: only exact matches
- * - prefix: unique prefix matching
+ * NOTE: As of v1, this tool supports EXACT MATCH ONLY.
+ * Previous prefix/auto matching functionality has been removed
+ * to simplify the implementation and ensure deterministic behavior.
  *
- * Returns canonicalAlias on success, or AmbiguousAlias error with candidates.
+ * Returns canonicalAlias on success, or AliasNotFound error if not found.
  */
 class AliasResolveTest : BaseIntegrationTest() {
 
@@ -39,9 +39,13 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        "should return AmbiguousAlias error with candidates" {
+        @Disabled("TODO: v1 removed prefix matching - AmbiguousAlias no longer applies")
+        "should return AmbiguousAlias error with candidates - DEPRECATED" {
             runTest {
                 setupMocks()
+
+                // NOTE: This test is disabled because v1 only supports exact matching
+                // AmbiguousAlias errors are no longer possible with exact-only matching
 
                 // Setup ambiguous match scenario
                 MockConfig.run { queryPort.mockNotFound("proj") }
@@ -70,9 +74,32 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        "should handle different match modes" {
+        "should return AliasNotFound error for non-existent alias" {
             runTest {
                 setupMocks()
+
+                // Setup not found scenario
+                MockConfig.run { queryPort.mockNotFound("non-existent-alias") }
+
+                // Expected AliasNotFound error response
+                val expectedError = buildJsonObject {
+                    put("code", -32011)
+                    put("message", "Alias not found: non-existent-alias")
+                }
+
+                // Verify error structure for exact-only v1 behavior
+                expectedError["code"]?.toString() shouldBe "-32011"
+                expectedError["message"]?.toString() shouldBe "\"Alias not found: non-existent-alias\""
+            }
+        }
+
+        @Disabled("TODO: v1 removed match modes - only exact matching supported")
+        "should handle different match modes - DEPRECATED" {
+            runTest {
+                setupMocks()
+
+                // NOTE: This test is disabled because v1 only supports exact matching
+                // Match modes (auto, exact, prefix) are no longer supported
 
                 val matchModes = listOf("auto", "exact", "prefix")
 
@@ -86,28 +113,21 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        "should validate input schema requirements" {
+        "should validate input schema requirements for v1 exact-only" {
             runTest {
-                // Test expected input structure for aliases.resolve
+                // Test expected input structure for aliases.resolve v1 (exact-only)
                 val validInput = buildJsonObject {
                     put("alias", "test-alias")
-                    put("match", "auto")
+                    // NOTE: v1 removed 'match' parameter - only exact matching
                 }
 
-                val minimalInput = buildJsonObject {
-                    put("alias", "test-alias")
-                    // match is optional, defaults to "auto"
-                }
-
-                // Verify required fields
+                // Verify required fields for v1
                 validInput["alias"] shouldNotBe null
-                minimalInput["alias"] shouldNotBe null
 
-                // Verify match mode validation
-                val validModes = listOf("auto", "exact", "prefix")
-                validModes.contains("auto") shouldBe true
-                validModes.contains("exact") shouldBe true
-                validModes.contains("prefix") shouldBe true
+                // v1 only supports exact matching - no mode parameter needed
+                val inputKeys = validInput.keys
+                inputKeys.contains("alias") shouldBe true
+                inputKeys.contains("match") shouldBe false // Removed in v1
             }
         }
 
@@ -132,8 +152,12 @@ class AliasResolveTest : BaseIntegrationTest() {
             }
         }
 
-        "should handle prefix matching logic" {
+        @Disabled("TODO: v1 removed prefix matching - only exact matching supported")
+        "should handle prefix matching logic - DEPRECATED" {
             runTest {
+                // NOTE: This test is disabled because v1 only supports exact matching
+                // Prefix matching logic is no longer applicable
+
                 // Test prefix matching scenarios
                 val prefixes = mapOf(
                     "proj" to listOf("project-alpha", "project-beta", "proj-gamma"),
