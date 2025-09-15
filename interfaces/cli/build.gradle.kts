@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.io.core)
     implementation(libs.arrow.core)
 
     // CLI framework

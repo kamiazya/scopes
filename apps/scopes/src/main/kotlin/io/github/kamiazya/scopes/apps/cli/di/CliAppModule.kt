@@ -7,6 +7,8 @@ import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
+import io.github.kamiazya.scopes.apps.cli.di.contractsModule
+import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
@@ -26,11 +28,8 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
-import io.github.kamiazya.scopes.interfaces.mcp.adapters.McpServerAdapter
+import io.github.kamiazya.scopes.apps.cli.di.simpleMcpModule
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import kotlinx.io.asSink
-import kotlinx.io.asSource
-import kotlinx.io.buffered
 import org.koin.dsl.module
 
 /**
@@ -60,6 +59,8 @@ val cliAppModule = module {
         // Contracts layer
         contractsModule,
 
+        // MCP components
+        simpleMcpModule,
     )
 
     // CLI Commands
@@ -126,14 +127,5 @@ val cliAppModule = module {
         )
     }
 
-    // MCP server adapter
-    single {
-        McpServerAdapter(
-            scopeQueryPort = get(),
-            scopeCommandPort = get(),
-            logger = get<Logger>().withName("MCP"),
-            sink = System.out.asSink().buffered(),
-            source = System.`in`.asSource().buffered(),
-        )
-    }
+    // MCP server provided by simpleMcpModule
 }
