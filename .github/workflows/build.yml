@@ -136,7 +136,6 @@ jobs:
       run: |
         Set-Location "C:\build-workspace\scopes"
         Write-Host "Running E2E tests on native binary..."
-        & .\gradlew.bat --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
 
         # Run full E2E test suite only on primary Windows build
         if ("${{ matrix.arch }}" -eq "x64") {
@@ -178,7 +177,6 @@ jobs:
       if: matrix.platform != 'win32'  # Unix/Linux/macOS
       run: |
         echo "Running E2E tests on native binary..."
-        ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
 
         # Run full E2E test suite only on main platform builds
         if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ]; then

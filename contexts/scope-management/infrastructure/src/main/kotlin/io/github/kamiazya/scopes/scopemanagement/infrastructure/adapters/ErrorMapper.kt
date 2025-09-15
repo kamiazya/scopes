@@ -29,6 +29,41 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
+        is ScopeInputError.IdError -> mapIdError(domainError)
+        is ScopeInputError.TitleError -> mapTitleError(domainError)
+        is ScopeInputError.DescriptionError -> mapDescriptionError(domainError)
+        is ScopeInputError.AliasError -> mapAliasError(domainError)
+
+        // Business rule violations
+        is ScopeError -> mapScopeError(domainError)
+        is ScopeUniquenessError -> mapUniquenessError(domainError)
+        is ScopeHierarchyError -> mapHierarchyError(domainError)
+        is ScopeAliasError -> mapAliasErrorDomain(domainError)
+
+        // New structured errors
+        is ScopesError.NotFound -> mapNotFoundError(domainError)
+        is ScopesError.AlreadyExists -> mapAlreadyExistsError(domainError)
+        is ScopesError.SystemError -> mapSystemError(domainError)
+        is ScopesError.ValidationFailed -> mapValidationError(domainError)
+        is ScopesError.InvalidOperation -> mapInvalidOperationError(domainError)
+        is ScopesError.Conflict -> mapConflictError(domainError)
+        is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
+            scopeId = domainError.aggregateId,
+            expectedVersion = domainError.expectedVersion?.toLong() ?: 0,
+            actualVersion = domainError.actualVersion?.toLong() ?: 0,
+        )
+        is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "scope-management",
+        )
+
+        // Default fallback for unmapped errors
+        else -> handleUnmappedError(
+            domainError,
+            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+        )
+    }
+
+    private fun mapIdError(domainError: ScopeInputError.IdError): ScopeContractError.InputError.InvalidId = when (domainError) {
         is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
             id = domainError.attemptedValue,
             expectedFormat = "Non-empty ULID format",
@@ -37,6 +72,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             id = domainError.attemptedValue,
             expectedFormat = presentIdFormat(domainError.formatType),
         )
+    }
+
+    private fun mapTitleError(domainError: ScopeInputError.TitleError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
         is ScopeInputError.TitleError.Empty -> ScopeContractError.InputError.InvalidTitle(
             title = domainError.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
@@ -61,6 +99,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 prohibitedCharacters = domainError.prohibitedCharacters,
             ),
         )
+    }
+
+    private fun mapDescriptionError(domainError: ScopeInputError.DescriptionError): ScopeContractError.InputError.InvalidDescription = when (domainError) {
         is ScopeInputError.DescriptionError.TooLong -> ScopeContractError.InputError.InvalidDescription(
             descriptionText = domainError.attemptedValue,
             validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
@@ -68,8 +109,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 actualLength = domainError.attemptedValue.length,
             ),
         )
+    }
 
-        // Alias validation errors (map to title for now, as aliases are like alternative titles)
+    private fun mapAliasError(domainError: ScopeInputError.AliasError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
         is ScopeInputError.AliasError.Empty -> ScopeContractError.InputError.InvalidTitle(
             title = domainError.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
@@ -91,39 +133,29 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeInputError.AliasError.InvalidFormat -> ScopeContractError.InputError.InvalidTitle(
             title = domainError.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = emptyList(), // Pattern validation mapped to character validation
+                prohibitedCharacters = emptyList(),
             ),
         )
+    }
 
-        // Business rule violations
-        is ScopeError.NotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.scopeId.value,
-        )
-        is ScopeError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.parentId.value,
-        )
-        is ScopeError.AlreadyDeleted -> ScopeContractError.BusinessError.AlreadyDeleted(
-            scopeId = domainError.scopeId.value,
-        )
-        is ScopeError.AlreadyArchived -> ScopeContractError.BusinessError.ArchivedScope(
-            scopeId = domainError.scopeId.value,
-        )
-
-        // Additional scope errors
+    private fun mapScopeError(domainError: ScopeError): ScopeContractError = when (domainError) {
+        is ScopeError.NotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        is ScopeError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.parentId.value)
+        is ScopeError.AlreadyDeleted -> ScopeContractError.BusinessError.AlreadyDeleted(scopeId = domainError.scopeId.value)
+        is ScopeError.AlreadyArchived -> ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.scopeId.value)
         is ScopeError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
             parentId = domainError.parentId?.value,
         )
-        is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotArchived(
-            scopeId = domainError.scopeId.value,
-        )
+        is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotArchived(scopeId = domainError.scopeId.value)
         is ScopeError.VersionMismatch -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = domainError.scopeId.value,
             expectedVersion = domainError.expectedVersion,
             actualVersion = domainError.actualVersion,
         )
+    }
 
-        // Uniqueness errors
+    private fun mapUniquenessError(domainError: ScopeUniquenessError): ScopeContractError = when (domainError) {
         is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
             parentId = domainError.parentScopeId?.value,
@@ -132,8 +164,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
         )
+    }
 
-        // Hierarchy errors
+    private fun mapHierarchyError(domainError: ScopeHierarchyError): ScopeContractError = when (domainError) {
         is ScopeHierarchyError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
             scopeId = domainError.scopeId.value,
             childrenCount = null,
@@ -152,8 +185,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeHierarchyError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.parentId.value,
         )
+    }
 
-        // Alias errors
+    private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
         is ScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.aliasName,
         )
@@ -161,85 +195,60 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             alias = domainError.aliasName,
         )
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+    }
 
-        // New structured errors
-        is ScopesError.NotFound -> when (domainError.identifierType) {
-            "alias" -> ScopeContractError.BusinessError.AliasNotFound(alias = domainError.identifier)
-            else -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.identifier)
-        }
-        is ScopesError.AlreadyExists -> when (domainError.identifierType) {
-            "alias" -> ScopeContractError.BusinessError.DuplicateAlias(
-                alias = domainError.identifier,
+    private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {
+        "alias" -> ScopeContractError.BusinessError.AliasNotFound(alias = domainError.identifier)
+        else -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.identifier)
+    }
+
+    private fun mapAlreadyExistsError(domainError: ScopesError.AlreadyExists): ScopeContractError = when (domainError.identifierType) {
+        "alias" -> ScopeContractError.BusinessError.DuplicateAlias(alias = domainError.identifier)
+        "title" -> ScopeContractError.BusinessError.DuplicateTitle(
+            title = domainError.identifier,
+            parentId = null,
+            existingScopeId = null,
+        )
+        else -> ScopeContractError.BusinessError.DuplicateAlias(alias = domainError.identifier)
+    }
+
+    private fun mapSystemError(domainError: ScopesError.SystemError): ScopeContractError.SystemError.ServiceUnavailable =
+        ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: "scope-management")
+
+    private fun mapValidationError(domainError: ScopesError.ValidationFailed): ScopeContractError.InputError = when (domainError.field) {
+        "title" -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.value,
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
+        )
+        "description" -> ScopeContractError.InputError.InvalidDescription(
+            descriptionText = domainError.value,
+            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(1000, domainError.value.length),
+        )
+        else -> ScopeContractError.InputError.InvalidId(
+            id = domainError.value,
+            expectedFormat = "Valid ${domainError.field} value",
+        )
+    }
+
+    private fun mapInvalidOperationError(domainError: ScopesError.InvalidOperation): ScopeContractError = when (domainError.reason) {
+        ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
+            ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.entityId ?: "")
+        ScopesError.InvalidOperation.InvalidOperationReason.OPERATION_NOT_ALLOWED -> when (domainError.operation) {
+            "delete" -> ScopeContractError.BusinessError.HasChildren(
+                scopeId = domainError.entityId ?: "",
+                childrenCount = null,
             )
-            "title" -> ScopeContractError.BusinessError.DuplicateTitle(
-                title = domainError.identifier,
-                parentId = null,
-                existingScopeId = null,
-            )
-            else -> ScopeContractError.BusinessError.DuplicateAlias(
-                alias = domainError.identifier,
-            )
-        }
-        is ScopesError.SystemError -> when (domainError.errorType) {
-            ScopesError.SystemError.SystemErrorType.SERVICE_UNAVAILABLE ->
-                ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: "scope-management")
-            else -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = domainError.service ?: "scope-management",
-            )
-        }
-        is ScopesError.ValidationFailed -> {
-            // Map validation errors to appropriate input errors
-            when (domainError.field) {
-                "title" -> ScopeContractError.InputError.InvalidTitle(
-                    title = domainError.value,
-                    validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
-                )
-                "description" -> ScopeContractError.InputError.InvalidDescription(
-                    descriptionText = domainError.value,
-                    validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(1000, domainError.value.length),
-                )
-                else -> ScopeContractError.InputError.InvalidId(
-                    id = domainError.value,
-                    expectedFormat = "Valid ${domainError.field} value",
-                )
-            }
-        }
-        is ScopesError.InvalidOperation -> when (domainError.reason) {
-            ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE ->
-                ScopeContractError.BusinessError.ArchivedScope(scopeId = domainError.entityId ?: "")
-            ScopesError.InvalidOperation.InvalidOperationReason.OPERATION_NOT_ALLOWED -> when (domainError.operation) {
-                "delete" -> ScopeContractError.BusinessError.HasChildren(
-                    scopeId = domainError.entityId ?: "",
-                    childrenCount = null,
-                )
-                "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-                else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
-            }
+            "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
             else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
         }
-        is ScopesError.Conflict -> when (domainError.conflictType) {
-            ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
-                ScopeContractError.BusinessError.HasChildren(
-                    scopeId = domainError.resourceId,
-                    childrenCount = null,
-                )
-            else -> ScopeContractError.BusinessError.DuplicateAlias(
-                alias = domainError.resourceId,
-            )
-        }
-        is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
-            scopeId = domainError.aggregateId,
-            expectedVersion = domainError.expectedVersion?.toLong() ?: 0,
-            actualVersion = domainError.actualVersion?.toLong() ?: 0,
-        )
-        is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = "scope-management",
-        )
+        else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+    }
 
-        // Default fallback for unmapped errors
-        else -> handleUnmappedError(
-            domainError,
-            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+    private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {
+        ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES -> ScopeContractError.BusinessError.HasChildren(
+            scopeId = domainError.resourceId,
+            childrenCount = null,
         )
+        else -> ScopeContractError.BusinessError.DuplicateAlias(alias = domainError.resourceId)
     }
 }

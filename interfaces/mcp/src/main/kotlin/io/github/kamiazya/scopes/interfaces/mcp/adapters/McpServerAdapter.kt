@@ -43,17 +43,55 @@ class McpServerAdapter(
     // Idempotency store: toolName|idempotencyKey|argsHash -> StoredResult
     private val idempotencyStore: MutableMap<String, StoredResult> = ConcurrentHashMap()
     private val idempotencyTtlMinutes = 10L
-    private var stdioOut: java.io.PrintStream? = null
+    private var server: Server? = null
 
     companion object {
         private val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
+        private const val MAX_IDEMPOTENCY_ENTRIES = 10_000
+        
+        // MIME Types
+        private const val MIME_TYPE_MARKDOWN = MIME_TYPE_MARKDOWN
+        private const val MIME_TYPE_JSON = MIME_TYPE_JSON
+        
+        // Tool names
+        private const val TOOL_SCOPES_CREATE = TOOL_SCOPES_CREATE
+        private const val TOOL_SCOPES_UPDATE = TOOL_SCOPES_UPDATE
+        private const val TOOL_SCOPES_DELETE = TOOL_SCOPES_DELETE
+        private const val TOOL_ALIASES_ADD = TOOL_ALIASES_ADD
+        private const val TOOL_ALIASES_REMOVE = TOOL_ALIASES_REMOVE
+        private const val TOOL_ALIASES_SET_CANONICAL = TOOL_ALIASES_SET_CANONICAL
+        
+        // Common descriptions
+        private const val DESC_IDEMPOTENCY_KEY = DESC_IDEMPOTENCY_KEY
+        private const val DESC_EXISTING_SCOPE_ALIAS = DESC_EXISTING_SCOPE_ALIAS
+        private const val DESC_SCOPE_ALIAS = DESC_SCOPE_ALIAS
+        private const val DESC_MISSING_ALIAS = DESC_MISSING_ALIAS
+        private const val DESC_MISSING_SCOPE_ALIAS = DESC_MISSING_SCOPE_ALIAS
     }
 
-    fun notifyToolsListChanged(): Boolean = sendJsonRpcNotification("tools/list_changed")
+    suspend fun notifyToolsListChanged(): Boolean = try {
+        server?.sendToolListChanged()
+        true
+    } catch (e: Exception) {
+        logger.warn("Failed to send tools list changed notification: ${e.message}")
+        false
+    }
 
-    fun notifyResourcesListChanged(): Boolean = sendJsonRpcNotification("resources/list_changed")
+    suspend fun notifyResourcesListChanged(): Boolean = try {
+        server?.sendResourceListChanged()
+        true
+    } catch (e: Exception) {
+        logger.warn("Failed to send resources list changed notification: ${e.message}")
+        false
+    }
 
-    fun notifyPromptsListChanged(): Boolean = sendJsonRpcNotification("prompts/list_changed")
+    suspend fun notifyPromptsListChanged(): Boolean = try {
+        server?.sendPromptListChanged()
+        true
+    } catch (e: Exception) {
+        logger.warn("Failed to send prompts list changed notification: ${e.message}")
+        false
+    }
 
     /**
      * Run the MCP server on stdio transport.
@@ -61,63 +99,28 @@ class McpServerAdapter(
      */
     fun runStdio(inputStream: java.io.InputStream = System.`in`, outputStream: java.io.OutputStream = System.out) {
         val server = createServer()
-        val ps = java.io.PrintStream(outputStream, true)
+        this.server = server
         val transport = StdioServerTransport(
             inputStream = inputStream.asSource().buffered(),
             outputStream = outputStream.asSink().buffered(),
         )
 
-        // Setup shutdown hook for graceful termination
-        Runtime.getRuntime().addShutdownHook(Thread {
-            logger.info("Shutdown hook triggered - cleaning up MCP server")
-            stdioOut = null
-        })
-
         runBlocking {
             try {
                 logger.info("Starting MCP server (stdio)")
-                stdioOut = ps
                 server.connect(transport)
-                logger.info("MCP server connected successfully")
-
-                // Keep process alive; MCP client typically terminates the process when done.
-                try {
-                    while (true) kotlinx.coroutines.delay(60_000)
-                } catch (e: CancellationException) {
-                    logger.info("MCP server coroutine cancelled - shutting down gracefully")
-                } catch (_: Throwable) {
-                    // exit gracefully
-                }
+                logger.info("MCP server disconnected")
+            } catch (e: CancellationException) {
+                logger.info("MCP server cancelled")
             } catch (e: Exception) {
-                logger.error("Failed to start MCP server", throwable = e)
+                logger.error("Failed to run MCP server", throwable = e)
                 throw e
             } finally {
-                logger.info("MCP server shutting down")
-                stdioOut = null
+                this@McpServerAdapter.server = null
             }
         }
     }
 
-    private fun sendJsonRpcNotification(method: String, params: JsonObject = buildJsonObject { }): Boolean = try {
-        val out = stdioOut
-        if (out == null) {
-            logger.warn("Cannot send notification: stdioOut is null", mapOf("method" to method))
-            false
-        } else {
-            val json = buildJsonObject {
-                put("jsonrpc", "2.0")
-                put("method", method)
-                put("params", params)
-            }.toString()
-            out.println(json)
-            out.flush()
-            logger.debug("Sent JSON-RPC notification", mapOf("method" to method))
-            true
-        }
-    } catch (e: Exception) {
-        logger.error("Failed to send JSON-RPC notification", mapOf("method" to method), e)
-        false
-    }
 
     /**
      * Create a server configured for testing purposes.
@@ -165,7 +168,7 @@ class McpServerAdapter(
         // aliases.resolve
         server.addTool(
             name = "aliases.resolve",
-            description = "Resolve a scope by alias (exact match). Returns canonical alias if found.",
+            description = "Resolve a scope by alias (exact match only). Returns the canonical alias if found.",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
                     put("type", "object")
@@ -177,17 +180,7 @@ class McpServerAdapter(
                         putJsonObject("alias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Alias to resolve")
-                        }
-                        putJsonObject("match") {
-                            put("type", "string")
-                            putJsonArray("enum") {
-                                add("auto")
-                                add("exact")
-                                add("prefix")
-                            }
-                            put("default", "auto")
-                            put("description", "Matching mode: auto (exact then prefix), exact, or prefix")
+                            put("description", "Alias to resolve (exact match only)")
                         }
                     }
                 },
@@ -197,18 +190,28 @@ class McpServerAdapter(
                     put("type", "object")
                     put("additionalProperties", false)
                     putJsonObject("properties") {
-                        putJsonObject("canonicalAlias") { put("type", "string") }
-                        putJsonObject("alias") { put("type", "string") }
-                        putJsonObject("title") { put("type", "string") }
+                        putJsonObject("alias") { 
+                            put("type", "string")
+                            put("description", "The input alias provided by the user")
+                        }
+                        putJsonObject("canonicalAlias") { 
+                            put("type", "string")
+                            put("description", "The canonical (normalized) alias of the scope")
+                        }
+                        putJsonObject("title") { 
+                            put("type", "string")
+                            put("description", "The title of the resolved scope")
+                        }
                     }
                     putJsonArray("required") {
+                        add("alias")
                         add("canonicalAlias")
                         add("title")
                     }
                 },
             ),
         ) { req ->
-            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'alias'")
+            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_ALIAS)
             val result = runCatching {
                 runBlocking {
                     scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias))
@@ -219,8 +222,8 @@ class McpServerAdapter(
                 { error -> errorResult(error) },
                 { scope ->
                     val payload = buildJsonObject {
-                        put("canonicalAlias", scope.canonicalAlias)
-                        put("alias", scope.canonicalAlias)
+                        put("alias", alias) // Input alias
+                        put("canonicalAlias", scope.canonicalAlias) // Normalized alias
                         put("title", scope.title)
                     }
                     CallToolResult(content = listOf(TextContent(payload.toString())))
@@ -268,7 +271,7 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'alias'")
+            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_ALIAS)
             val res = runBlocking {
                 scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias))
             }
@@ -289,7 +292,7 @@ class McpServerAdapter(
 
         // scopes.create
         server.addTool(
-            name = "scopes.create",
+            name = TOOL_SCOPES_CREATE,
             description = "Create a new scope. Parent can be specified by alias.",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -321,7 +324,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -353,7 +356,7 @@ class McpServerAdapter(
 
             // Check idempotency
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("scopes.create", key, req.arguments)
+                val cached = checkIdempotency(TOOL_SCOPES_CREATE, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -398,7 +401,7 @@ class McpServerAdapter(
 
             // Store result for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("scopes.create", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_SCOPES_CREATE, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -414,7 +417,7 @@ class McpServerAdapter(
 
     private fun registerUpdateTool(server: Server) {
         server.addTool(
-            name = "scopes.update",
+            name = TOOL_SCOPES_UPDATE,
             description = "Update an existing scope's title or description",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -441,7 +444,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -464,14 +467,14 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'alias'")
+            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_ALIAS)
             val title = req.arguments["title"]?.jsonPrimitive?.content
             val description = req.arguments["description"]?.jsonPrimitive?.content
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             // Idempotency check
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("scopes.update", key, req.arguments)
+                val cached = checkIdempotency(TOOL_SCOPES_UPDATE, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -508,7 +511,7 @@ class McpServerAdapter(
 
             // Store for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("scopes.update", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_SCOPES_UPDATE, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -517,7 +520,7 @@ class McpServerAdapter(
 
     private fun registerDeleteTool(server: Server) {
         server.addTool(
-            name = "scopes.delete",
+            name = TOOL_SCOPES_DELETE,
             description = "Delete a scope (must have no children)",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -535,7 +538,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -555,12 +558,12 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'alias'")
+            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_ALIAS)
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             // Idempotency check
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("scopes.delete", key, req.arguments)
+                val cached = checkIdempotency(TOOL_SCOPES_DELETE, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -589,7 +592,7 @@ class McpServerAdapter(
 
             // Store for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("scopes.delete", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_SCOPES_DELETE, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -724,7 +727,7 @@ class McpServerAdapter(
                     putJsonArray("required") { add("roots") }
                 },
             ),
-        ) { req ->
+        ) { _ ->
             val result = runBlocking {
                 scopeQueryPort.getRootScopes(GetRootScopesQuery())
             }
@@ -803,7 +806,7 @@ class McpServerAdapter(
         }
         // aliases.add
         server.addTool(
-            name = "aliases.add",
+            name = TOOL_ALIASES_ADD,
             description = "Add a new alias to an existing scope",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -817,7 +820,7 @@ class McpServerAdapter(
                         putJsonObject("scopeAlias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Existing scope alias")
+                            put("description", DESC_EXISTING_SCOPE_ALIAS)
                         }
                         putJsonObject("newAlias") {
                             put("type", "string")
@@ -827,7 +830,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -847,13 +850,13 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'scopeAlias'")
+            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_SCOPE_ALIAS)
             val newAlias = req.arguments["newAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'newAlias'")
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             // Idempotency check
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("aliases.add", key, req.arguments)
+                val cached = checkIdempotency(TOOL_ALIASES_ADD, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -882,7 +885,7 @@ class McpServerAdapter(
 
             // Store for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("aliases.add", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_ALIASES_ADD, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -890,7 +893,7 @@ class McpServerAdapter(
 
         // aliases.remove
         server.addTool(
-            name = "aliases.remove",
+            name = TOOL_ALIASES_REMOVE,
             description = "Remove an alias from a scope (cannot remove canonical alias)",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -904,7 +907,7 @@ class McpServerAdapter(
                         putJsonObject("scopeAlias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Existing scope alias")
+                            put("description", DESC_EXISTING_SCOPE_ALIAS)
                         }
                         putJsonObject("aliasToRemove") {
                             put("type", "string")
@@ -914,7 +917,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -934,13 +937,13 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'scopeAlias'")
+            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_SCOPE_ALIAS)
             val aliasToRemove = req.arguments["aliasToRemove"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'aliasToRemove'")
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             // Idempotency check
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("aliases.remove", key, req.arguments)
+                val cached = checkIdempotency(TOOL_ALIASES_REMOVE, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -969,7 +972,7 @@ class McpServerAdapter(
 
             // Store for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("aliases.remove", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_ALIASES_REMOVE, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -977,7 +980,7 @@ class McpServerAdapter(
 
         // aliases.setCanonical
         server.addTool(
-            name = "aliases.setCanonical",
+            name = TOOL_ALIASES_SET_CANONICAL,
             description = "Set which alias should be the canonical (primary) alias for a scope",
             inputSchema = Tool.Input(
                 properties = buildJsonObject {
@@ -991,7 +994,7 @@ class McpServerAdapter(
                         putJsonObject("scopeAlias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Existing scope alias")
+                            put("description", DESC_EXISTING_SCOPE_ALIAS)
                         }
                         putJsonObject("newCanonicalAlias") {
                             put("type", "string")
@@ -1001,7 +1004,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -1021,13 +1024,13 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'scopeAlias'")
+            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_SCOPE_ALIAS)
             val newCanonicalAlias = req.arguments["newCanonicalAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'newCanonicalAlias'")
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             // Idempotency check
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("aliases.setCanonical", key, req.arguments)
+                val cached = checkIdempotency(TOOL_ALIASES_SET_CANONICAL, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -1055,7 +1058,7 @@ class McpServerAdapter(
             )
             // Store for idempotency
             idempotencyKey?.let { key ->
-                storeIdempotency("aliases.setCanonical", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_ALIASES_SET_CANONICAL, key, req.arguments, toolResult)
             }
 
             toolResult
@@ -1077,7 +1080,7 @@ class McpServerAdapter(
                         putJsonObject("scopeAlias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Existing scope alias")
+                            put("description", DESC_EXISTING_SCOPE_ALIAS)
                         }
                         putJsonObject("newCanonicalAlias") {
                             put("type", "string")
@@ -1087,7 +1090,7 @@ class McpServerAdapter(
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
                             put("pattern", "^[A-Za-z0-9_-]{8,128}$")
-                            put("description", "Idempotency key for avoiding duplicate operations")
+                            put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
                 },
@@ -1107,12 +1110,12 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'scopeAlias'")
+            val scopeAlias = req.arguments["scopeAlias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_SCOPE_ALIAS)
             val newCanonicalAlias = req.arguments["newCanonicalAlias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'newCanonicalAlias'")
             val idempotencyKey = req.arguments["idempotencyKey"]?.jsonPrimitive?.content
 
             idempotencyKey?.let { key ->
-                val cached = checkIdempotency("aliases.setCanonical", key, req.arguments)
+                val cached = checkIdempotency(TOOL_ALIASES_SET_CANONICAL, key, req.arguments)
                 if (cached != null) return@addTool cached
             }
 
@@ -1139,7 +1142,7 @@ class McpServerAdapter(
                 },
             )
             idempotencyKey?.let { key ->
-                storeIdempotency("aliases.setCanonical", key, req.arguments, toolResult)
+                storeIdempotency(TOOL_ALIASES_SET_CANONICAL, key, req.arguments, toolResult)
             }
             toolResult
         }
@@ -1159,7 +1162,7 @@ class McpServerAdapter(
                         putJsonObject("alias") {
                             put("type", "string")
                             put("minLength", 1)
-                            put("description", "Scope alias")
+                            put("description", DESC_SCOPE_ALIAS)
                         }
                     }
                 },
@@ -1195,7 +1198,7 @@ class McpServerAdapter(
                 },
             ),
         ) { req ->
-            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err("Missing 'alias'")
+            val alias = req.arguments["alias"]?.jsonPrimitive?.content ?: return@addTool err(DESC_MISSING_ALIAS)
 
             val scopeResult = runBlocking {
                 scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias))
@@ -1235,12 +1238,18 @@ class McpServerAdapter(
     }
 
     private fun registerResources(server: Server) {
-        // Minimal static resource for now
+        registerCliDocResource(server)
+        registerScopeDetailsResource(server)
+        registerTreeJsonResource(server)
+        registerTreeMarkdownResource(server)
+    }
+
+    private fun registerCliDocResource(server: Server) {
         server.addResource(
             uri = "scopes:/docs/cli",
             name = "CLI Quick Reference",
             description = "Scopes CLI quick reference",
-            mimeType = "text/markdown; charset=utf-8",
+            mimeType = MIME_TYPE_MARKDOWN,
         ) {
             val text = "See repository docs/reference/cli-quick-reference.md"
             val etag = computeEtag(text)
@@ -1249,7 +1258,7 @@ class McpServerAdapter(
                     TextResourceContents(
                         text = text,
                         uri = it.uri,
-                        mimeType = "text/markdown; charset=utf-8",
+                        mimeType = MIME_TYPE_MARKDOWN,
                     ),
                 ),
                 _meta = buildJsonObject {
@@ -1266,415 +1275,374 @@ class McpServerAdapter(
                 },
             )
         }
+    }
 
-        // Template-like resource for scope details by canonical alias (best-effort)
-        // Note: Depending on SDK support, this may be treated as a static entry in resources/list.
+    private fun registerScopeDetailsResource(server: Server) {
         server.addResource(
             uri = "scopes:/scope/{canonicalAlias}",
             name = "Scope Details (JSON)",
             description = "Scope details by canonical alias using the standard object shape",
-            mimeType = "application/json; charset=utf-8",
+            mimeType = MIME_TYPE_JSON,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/scope/"
             val alias = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
 
             if (alias.isBlank()) {
-                val payload = buildJsonObject {
-                    put(
-                        "error",
-                        buildJsonObject {
-                            put("code", -32602)
-                            put("message", "Missing or invalid alias in resource URI")
-                        },
-                    )
-                }.toString()
-                val etag = computeEtag(payload)
-                return@addResource ReadResourceResult(
-                    contents = listOf(
-                        TextResourceContents(
-                            text = payload,
-                            uri = uri,
-                            mimeType = "application/json; charset=utf-8",
-                        ),
-                    ),
-                    _meta = buildJsonObject {
-                        put("etag", etag)
-                        put("lastModified", Clock.System.now().toString())
-                    },
+                return@addResource createErrorResourceResult(
+                    uri = uri,
+                    code = -32602,
+                    message = "Missing or invalid alias in resource URI"
                 )
             }
 
             val res = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias)) }
             res.fold(
-                { error ->
-                    val payload = buildJsonObject {
-                        put(
-                            "error",
-                            buildJsonObject {
-                                put("code", getErrorCode(error))
-                                put("message", mapContractError(error))
-                            },
-                        )
-                    }.toString()
-                    val etag = computeEtag(payload)
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = payload,
-                                uri = uri,
-                                mimeType = "application/json; charset=utf-8",
-                            ),
-                        ),
-                        _meta = buildJsonObject {
-                            put("etag", etag)
-                            put("lastModified", Clock.System.now().toString())
-                        },
-                    )
-                },
-                { scope ->
-                    val payload = buildJsonObject {
-                        put("canonicalAlias", scope.canonicalAlias)
-                        put("title", scope.title)
-                        scope.description?.let { put("description", it) }
-                        put("createdAt", scope.createdAt.toString())
-                        put("updatedAt", scope.updatedAt.toString())
-                        putJsonArray("links") {
-                            add(
-                                buildJsonObject {
-                                    put("rel", "self")
-                                    put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                                },
-                            )
-                            add(
-                                buildJsonObject {
-                                    put("rel", "tree")
-                                    put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                                },
-                            )
-                            add(
-                                buildJsonObject {
-                                    put("rel", "tree.md")
-                                    put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                                },
-                            )
-                        }
-                    }.toString()
-                    val etag = computeEtag(payload)
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = payload,
-                                uri = uri,
-                                mimeType = "application/json; charset=utf-8",
-                            ),
-                        ),
-                        _meta = buildJsonObject {
-                            put("etag", etag)
-                            put("lastModified", scope.updatedAt.toString())
-                            putJsonArray("links") {
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "self")
-                                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                                    },
-                                )
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "tree")
-                                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                                    },
-                                )
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "tree.md")
-                                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                                    },
-                                )
-                            }
-                        },
-                    )
-                },
+                { error -> createErrorResourceResult(uri, getErrorCode(error), mapContractError(error)) },
+                { scope -> createScopeDetailsResult(uri, scope) }
             )
         }
+    }
 
-        // Tree JSON (depth=1 for now)
+    private fun registerTreeJsonResource(server: Server) {
         server.addResource(
             uri = "scopes:/tree/{canonicalAlias}",
             name = "Scope Tree (JSON)",
             description = "Scope with children (configurable depth).",
-            mimeType = "application/json; charset=utf-8",
+            mimeType = MIME_TYPE_JSON,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/tree/"
             val alias = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
-            // Optional query param: depth (default 1)
-            val depth = runCatching {
-                val qIndex = alias.indexOf('?')
-                if (qIndex >= 0) alias.substring(qIndex + 1) else null
-            }.getOrNull()
-            val (pureAlias, depthValue) = run {
-                val qPos = alias.indexOf('?')
-                val a = if (qPos >= 0) alias.substring(0, qPos) else alias
-                val d = depth?.split('=')?.let { if (it.size == 2 && it[0] == "depth") it[1].toIntOrNull() else null } ?: 1
-                a to d.coerceIn(1, 5)
-            }
+            
+            val (pureAlias, depthValue) = parseTreeAlias(alias)
 
             if (pureAlias.isBlank()) {
-                return@addResource ReadResourceResult(
-                    contents = listOf(
-                        TextResourceContents(
-                            text = buildJsonObject {
-                                put("code", -32602)
-                                putJsonObject("data") {
-                                    put("type", "InvalidParams")
-                                    put("message", "Missing or invalid alias in resource URI. Optional ?depth=1..5 supported.")
-                                }
-                            }.toString(),
-                            uri = "scopes:/tree/$pureAlias?depth=$depthValue",
-                            mimeType = "application/json; charset=utf-8",
-                        ),
-                    ),
+                return@addResource createErrorResourceResult(
+                    uri = "scopes:/tree/$pureAlias?depth=$depthValue",
+                    code = -32602,
+                    message = "Missing or invalid alias in resource URI. Optional ?depth=1..5 supported.",
+                    asJson = true
                 )
             }
 
             val rootRes = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(pureAlias)) }
             rootRes.fold(
-                { error ->
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = buildJsonObject {
-                                    put("code", getErrorCode(error))
-                                    putJsonObject("data") {
-                                        put("type", error::class.simpleName)
-                                        put("message", mapContractError(error))
-                                    }
-                                }.toString(),
-                                uri = uri,
-                                mimeType = "application/json; charset=utf-8",
-                            ),
-                        ),
-                    )
+                { error -> 
+                    createErrorResourceResult(
+                        uri = uri,
+                        code = getErrorCode(error),
+                        message = mapContractError(error),
+                        errorType = error::class.simpleName,
+                        asJson = true
+                    ) 
                 },
-                { scope ->
-                    // Build tree up to depthValue with safety limits
-                    var nodeCount = 0
-                    val maxNodes = 1000 // Safety limit for large trees
-                    var latestUpdatedAt = scope.updatedAt
-
-                    fun nodeJson(alias: String, currentDepth: Int): JsonObject? {
-                        if (nodeCount >= maxNodes) return null // Safety cutoff
-                        nodeCount++
-
-                        val nodeRes = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias)) }
-                        return nodeRes.fold(
-                            { _ ->
-                                buildJsonObject {
-                                    put("canonicalAlias", alias)
-                                    put("title", alias)
-                                }
-                            },
-                            { s ->
-                                // Track latest updatedAt for tree-wide lastModified
-                                if (s.updatedAt > latestUpdatedAt) {
-                                    latestUpdatedAt = s.updatedAt
-                                }
-
-                                val childrenJson = if (currentDepth < depthValue && nodeCount < maxNodes) {
-                                    val chRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = s.id)) }
-                                    chRes.fold(
-                                        { emptyList<JsonObject>() },
-                                        { ch ->
-                                            ch.scopes.mapNotNull { c ->
-                                                nodeJson(c.canonicalAlias, currentDepth + 1)
-                                            }
-                                        },
-                                    )
-                                } else {
-                                    emptyList()
-                                }
-
-                                buildJsonObject {
-                                    put("canonicalAlias", s.canonicalAlias)
-                                    put("title", s.title)
-                                    s.description?.let { put("description", it) }
-                                    put("updatedAt", s.updatedAt.toString())
-                                    putJsonArray("children") { childrenJson.forEach { add(it) } }
-                                    putJsonArray("links") {
-                                        add(
-                                            buildJsonObject {
-                                                put("rel", "self")
-                                                put("uri", "scopes:/scope/${s.canonicalAlias}")
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                        )
-                    }
-
-                    val json = nodeJson(scope.canonicalAlias, 1)
-                    val jsonText = json?.toString() ?: buildJsonObject {
-                        put("error", "Tree too large (>$maxNodes nodes)")
-                        put("canonicalAlias", scope.canonicalAlias)
-                        put("title", scope.title)
-                    }.toString()
-
-                    val etag = computeEtag(jsonText)
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = jsonText,
-                                uri = "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue",
-                                mimeType = "application/json; charset=utf-8",
-                            ),
-                        ),
-                        _meta = buildJsonObject {
-                            put("etag", etag)
-                            put("lastModified", latestUpdatedAt.toString())
-                            put("nodeCount", nodeCount)
-                            put("maxDepth", depthValue)
-                            putJsonArray("links") {
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "self")
-                                        put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
-                                    },
-                                )
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "scope")
-                                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                                    },
-                                )
-                            }
-                        },
-                    )
-                },
+                { scope -> createTreeJsonResult(scope, depthValue) }
             )
         }
+    }
 
-        // Tree Markdown (depth=1)
+    private fun registerTreeMarkdownResource(server: Server) {
         server.addResource(
             uri = "scopes:/tree.md/{canonicalAlias}",
             name = "Scope Tree (Markdown)",
             description = "Scope with immediate children rendered as Markdown (depth=1)",
-            mimeType = "text/markdown; charset=utf-8",
+            mimeType = MIME_TYPE_MARKDOWN,
         ) { req ->
             val uri = req.uri
             val prefix = "scopes:/tree.md/"
             val alias = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
 
             if (alias.isBlank()) {
-                val text = "Invalid resource: missing alias"
-                val etag = computeEtag(text)
-                return@addResource ReadResourceResult(
-                    contents = listOf(
-                        TextResourceContents(
-                            text = text,
-                            uri = uri,
-                            mimeType = "text/markdown; charset=utf-8",
-                        ),
-                    ),
-                    _meta = buildJsonObject {
-                        put("etag", etag)
-                        put("lastModified", Clock.System.now().toString())
-                    },
+                return@addResource createSimpleTextResult(
+                    uri = uri,
+                    text = "Invalid resource: missing alias",
+                    mimeType = MIME_TYPE_MARKDOWN
                 )
             }
 
             val rootRes = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias)) }
             rootRes.fold(
                 { error ->
-                    val text = "Error: ${mapContractError(error)}"
-                    val etag = computeEtag(text)
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = text,
-                                uri = uri,
-                                mimeType = "text/markdown; charset=utf-8",
-                            ),
-                        ),
-                        _meta = buildJsonObject {
-                            put("etag", etag)
-                            put("lastModified", Clock.System.now().toString())
-                        },
+                    createSimpleTextResult(
+                        uri = uri,
+                        text = "Error: ${mapContractError(error)}",
+                        mimeType = MIME_TYPE_MARKDOWN
                     )
                 },
-                { scope ->
-                    val childrenRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = scope.id)) }
-
-                    // Calculate lastModified from scope and children
-                    var latestUpdated = scope.updatedAt
-                    childrenRes.fold(
-                        { /* no children to check */ },
-                        { children ->
-                            children.scopes.forEach { child ->
-                                if (child.updatedAt > latestUpdated) {
-                                    latestUpdated = child.updatedAt
-                                }
-                            }
-                        },
-                    )
-
-                    val md = buildString {
-                        appendLine("# ${scope.title} (${scope.canonicalAlias})")
-                        scope.description?.let { appendLine("\n$it") }
-                        appendLine("\n## Children")
-                        childrenRes.fold(
-                            { _ -> appendLine("(no children or failed to load)") },
-                            { children ->
-                                if (children.scopes.isEmpty()) {
-                                    appendLine("(no children)")
-                                } else {
-                                    children.scopes.forEach { ch ->
-                                        appendLine("- ${ch.title} (${ch.canonicalAlias})" + (ch.description?.let { ": $it" } ?: ""))
-                                    }
-                                }
-                            },
-                        )
-                        appendLine("\n[JSON] scopes:/tree/${scope.canonicalAlias}")
-                    }
-
-                    val etag = computeEtag(md)
-                    ReadResourceResult(
-                        contents = listOf(
-                            TextResourceContents(
-                                text = md,
-                                uri = uri,
-                                mimeType = "text/markdown; charset=utf-8",
-                            ),
-                        ),
-                        _meta = buildJsonObject {
-                            put("etag", etag)
-                            put("lastModified", latestUpdated.toString())
-                            putJsonArray("links") {
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "self")
-                                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                                    },
-                                )
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "scope")
-                                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                                    },
-                                )
-                                add(
-                                    buildJsonObject {
-                                        put("rel", "tree")
-                                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                                    },
-                                )
-                            }
-                        },
-                    )
-                },
+                { scope -> createTreeMarkdownResult(uri, scope) }
             )
         }
+    }
+
+    private fun parseTreeAlias(alias: String): Pair<String, Int> {
+        val qPos = alias.indexOf('?')
+        val pureAlias = if (qPos >= 0) alias.substring(0, qPos) else alias
+        val depth = if (qPos >= 0) {
+            alias.substring(qPos + 1).split('=').let { 
+                if (it.size == 2 && it[0] == "depth") it[1].toIntOrNull() else null 
+            }
+        } else null
+        return pureAlias to (depth ?: 1).coerceIn(1, 5)
+    }
+
+    private fun createErrorResourceResult(
+        uri: String,
+        code: Int,
+        message: String,
+        errorType: String? = null,
+        asJson: Boolean = false
+    ): ReadResourceResult {
+        val payload = if (asJson) {
+            buildJsonObject {
+                put("code", code)
+                putJsonObject("data") {
+                    put("type", errorType ?: "Error")
+                    put("message", message)
+                }
+            }.toString()
+        } else {
+            buildJsonObject {
+                put(
+                    "error",
+                    buildJsonObject {
+                        put("code", code)
+                        put("message", message)
+                    },
+                )
+            }.toString()
+        }
+        
+        val etag = computeEtag(payload)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = payload,
+                    uri = uri,
+                    mimeType = MIME_TYPE_JSON,
+                ),
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", Clock.System.now().toString())
+            },
+        )
+    }
+
+    private fun createSimpleTextResult(uri: String, text: String, mimeType: String): ReadResourceResult {
+        val etag = computeEtag(text)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = text,
+                    uri = uri,
+                    mimeType = mimeType,
+                ),
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", Clock.System.now().toString())
+            },
+        )
+    }
+
+    private fun createScopeDetailsResult(uri: String, scope: ScopeDTO): ReadResourceResult {
+        val payload = buildJsonObject {
+            put("canonicalAlias", scope.canonicalAlias)
+            put("title", scope.title)
+            scope.description?.let { put("description", it) }
+            put("createdAt", scope.createdAt.toString())
+            put("updatedAt", scope.updatedAt.toString())
+            putJsonArray("links") {
+                add(buildJsonObject {
+                    put("rel", "self")
+                    put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                })
+                add(buildJsonObject {
+                    put("rel", "tree")
+                    put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                })
+                add(buildJsonObject {
+                    put("rel", "tree.md")
+                    put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                })
+            }
+        }.toString()
+        
+        val etag = computeEtag(payload)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = payload,
+                    uri = uri,
+                    mimeType = MIME_TYPE_JSON,
+                ),
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", scope.updatedAt.toString())
+                putJsonArray("links") {
+                    add(buildJsonObject {
+                        put("rel", "self")
+                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                    })
+                    add(buildJsonObject {
+                        put("rel", "tree")
+                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                    })
+                    add(buildJsonObject {
+                        put("rel", "tree.md")
+                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                    })
+                }
+            },
+        )
+    }
+
+    private fun createTreeJsonResult(scope: ScopeDTO, depthValue: Int): ReadResourceResult {
+        var nodeCount = 0
+        val maxNodes = 1000
+        var latestUpdatedAt = scope.updatedAt
+
+        fun buildScopeNode(alias: String, currentDepth: Int): JsonObject? {
+            if (nodeCount >= maxNodes) return null
+            nodeCount++
+
+            val nodeRes = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias)) }
+            return nodeRes.fold(
+                { _ ->
+                    buildJsonObject {
+                        put("canonicalAlias", alias)
+                        put("title", alias)
+                    }
+                },
+                { s ->
+                    if (s.updatedAt > latestUpdatedAt) {
+                        latestUpdatedAt = s.updatedAt
+                    }
+
+                    val childrenJson = if (currentDepth < depthValue && nodeCount < maxNodes) {
+                        val chRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = s.id)) }
+                        chRes.fold(
+                            { emptyList<JsonObject>() },
+                            { ch -> ch.scopes.mapNotNull { c -> buildScopeNode(c.canonicalAlias, currentDepth + 1) } }
+                        )
+                    } else emptyList()
+
+                    buildJsonObject {
+                        put("canonicalAlias", s.canonicalAlias)
+                        put("title", s.title)
+                        s.description?.let { put("description", it) }
+                        put("updatedAt", s.updatedAt.toString())
+                        putJsonArray("children") { childrenJson.forEach { add(it) } }
+                        putJsonArray("links") {
+                            add(buildJsonObject {
+                                put("rel", "self")
+                                put("uri", "scopes:/scope/${s.canonicalAlias}")
+                            })
+                        }
+                    }
+                }
+            )
+        }
+
+        val json = buildScopeNode(scope.canonicalAlias, 1)
+        val jsonText = json?.toString() ?: buildJsonObject {
+            put("error", "Tree too large (>$maxNodes nodes)")
+            put("canonicalAlias", scope.canonicalAlias)
+            put("title", scope.title)
+        }.toString()
+
+        val etag = computeEtag(jsonText)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = jsonText,
+                    uri = "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue",
+                    mimeType = MIME_TYPE_JSON,
+                ),
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", latestUpdatedAt.toString())
+                put("nodeCount", nodeCount)
+                put("maxDepth", depthValue)
+                putJsonArray("links") {
+                    add(buildJsonObject {
+                        put("rel", "self")
+                        put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
+                    })
+                    add(buildJsonObject {
+                        put("rel", "scope")
+                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                    })
+                }
+            },
+        )
+    }
+
+    private fun createTreeMarkdownResult(uri: String, scope: ScopeDTO): ReadResourceResult {
+        val childrenRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = scope.id)) }
+
+        var latestUpdated = scope.updatedAt
+        childrenRes.fold(
+            { /* no children to check */ },
+            { children ->
+                children.scopes.forEach { child ->
+                    if (child.updatedAt > latestUpdated) {
+                        latestUpdated = child.updatedAt
+                    }
+                }
+            },
+        )
+
+        val md = buildString {
+            appendLine("# ${scope.title} (${scope.canonicalAlias})")
+            scope.description?.let { appendLine("\n$it") }
+            appendLine("\n## Children")
+            childrenRes.fold(
+                { _ -> appendLine("(no children or failed to load)") },
+                { children ->
+                    if (children.scopes.isEmpty()) {
+                        appendLine("(no children)")
+                    } else {
+                        children.scopes.forEach { ch ->
+                            appendLine("- ${ch.title} (${ch.canonicalAlias})" + (ch.description?.let { ": $it" } ?: ""))
+                        }
+                    }
+                },
+            )
+            appendLine("\n[JSON] scopes:/tree/${scope.canonicalAlias}")
+        }
+
+        val etag = computeEtag(md)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = md,
+                    uri = uri,
+                    mimeType = MIME_TYPE_MARKDOWN,
+                ),
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", latestUpdated.toString())
+                putJsonArray("links") {
+                    add(buildJsonObject {
+                        put("rel", "self")
+                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                    })
+                    add(buildJsonObject {
+                        put("rel", "scope")
+                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                    })
+                    add(buildJsonObject {
+                        put("rel", "tree")
+                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                    })
+                }
+            },
+        )
     }
 
     private fun computeEtag(text: String): String {
@@ -1687,7 +1655,7 @@ class McpServerAdapter(
             name = "prompts.scopes.summarize",
             description = "Summarize a scope by alias",
             arguments = listOf(
-                PromptArgument(name = "alias", description = "Scope alias", required = true),
+                PromptArgument(name = "alias", description = DESC_SCOPE_ALIAS, required = true),
                 PromptArgument(name = "level", description = "Summary level", required = false),
             ),
         ) { req ->
@@ -1708,7 +1676,7 @@ class McpServerAdapter(
             name = "prompts.scopes.outline",
             description = "Create a concise bullet-point outline for a scope",
             arguments = listOf(
-                PromptArgument(name = "alias", description = "Scope alias", required = true),
+                PromptArgument(name = "alias", description = DESC_SCOPE_ALIAS, required = true),
                 PromptArgument(name = "depth", description = "Outline depth (1-3)", required = false),
             ),
         ) { req ->
@@ -1739,7 +1707,7 @@ class McpServerAdapter(
             name = "prompts.scopes.plan",
             description = "Propose practical next steps for a scope",
             arguments = listOf(
-                PromptArgument(name = "alias", description = "Scope alias", required = true),
+                PromptArgument(name = "alias", description = DESC_SCOPE_ALIAS, required = true),
                 PromptArgument(name = "timeHorizon", description = "e.g. '1 week' or '1 month'", required = false),
             ),
         ) { req ->
@@ -1838,6 +1806,9 @@ class McpServerAdapter(
             return err("Invalid idempotency key format")
         }
 
+        // Clean up expired entries periodically
+        cleanupExpiredEntries()
+
         val cacheKey = buildCacheKey(toolName, idempotencyKey, arguments)
         val stored = idempotencyStore[cacheKey]
 
@@ -1855,6 +1826,27 @@ class McpServerAdapter(
             }
         } else {
             null
+        }
+    }
+
+    /**
+     * Clean up expired entries from the idempotency store and enforce max size.
+     */
+    private fun cleanupExpiredEntries(now: Instant = Clock.System.now()) {
+        val cutoff = now - idempotencyTtlMinutes.minutes
+        
+        // Remove expired entries
+        idempotencyStore.entries.removeIf { entry ->
+            entry.value.timestamp < cutoff
+        }
+        
+        // If still over limit, remove oldest entries
+        if (idempotencyStore.size > MAX_IDEMPOTENCY_ENTRIES) {
+            val entriesToRemove = idempotencyStore.size - MAX_IDEMPOTENCY_ENTRIES
+            idempotencyStore.entries
+                .sortedBy { it.value.timestamp }
+                .take(entriesToRemove)
+                .forEach { idempotencyStore.remove(it.key) }
         }
     }
 
@@ -1919,19 +1911,6 @@ class McpServerAdapter(
                 "$key:${canonicalizeJson(v)}"
             }
         }
-        else -> elem.toString()
     }
 
-    /**
-     * Clean up expired entries from the idempotency store.
-     * This is a simple implementation - in production, you might want a more sophisticated approach.
-     */
-    private fun cleanupExpiredEntries() {
-        val now = Clock.System.now()
-        val cutoff = now - idempotencyTtlMinutes.minutes
-
-        idempotencyStore.entries.removeIf { (_, stored) ->
-            stored.timestamp < cutoff
-        }
-    }
 }
