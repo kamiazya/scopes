@@ -53,7 +53,7 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
 
     private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopesError, Unit> = either {
         val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
-        
+
         if (children.isNotEmpty()) {
             if (cascade) {
                 cascadeDeleteChildren(scopeId, children).bind()

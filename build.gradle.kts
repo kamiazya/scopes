@@ -21,6 +21,13 @@ allprojects {
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
     }
+
+    // Force Netty HTTP/2 to patched version to fix security vulnerability GHSA-prj3-ccx8-p6x4
+    configurations.configureEach {
+        resolutionStrategy {
+            force("io.netty:netty-codec-http2:4.1.124.Final")
+        }
+    }
 }
 
 subprojects {
@@ -133,7 +140,7 @@ tasks.register("konsistTest") {
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
         target("**/*.kt")
-        targetExclude("**/build/**/*.kt")
+        targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt")
         ktlint("1.5.0")
             .editorConfigOverride(
                 mapOf(

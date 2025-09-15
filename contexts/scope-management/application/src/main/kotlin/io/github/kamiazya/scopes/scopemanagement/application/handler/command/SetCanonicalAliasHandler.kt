@@ -41,7 +41,7 @@ class SetCanonicalAliasHandler(
 
             val newCanonicalAliasName = validateAndParseAliasName(command.newCanonicalAlias, "new canonical").bind()
             val newCanonicalAlias = findExistingAlias(newCanonicalAliasName, command.newCanonicalAlias, "new canonical").bind()
-            
+
             validateSameScopeAlias(scopeId, newCanonicalAlias.scopeId, command).bind()
             assignCanonicalAlias(scopeId, newCanonicalAliasName, command).bind()
 
@@ -56,23 +56,21 @@ class SetCanonicalAliasHandler(
         }
     }
 
-    private fun validateAndParseAliasName(aliasName: String, aliasType: String): Either<ScopesError, AliasName> {
-        return AliasName.create(aliasName)
-            .mapLeft { error ->
-                logger.error(
-                    "Invalid $aliasType alias name",
-                    mapOf(
-                        "aliasName" to aliasName,
-                        "aliasType" to aliasType,
-                        "error" to error.toString(),
-                    ),
-                )
-                mapAliasError(error, aliasName)
-            }
-    }
+    private fun validateAndParseAliasName(aliasName: String, aliasType: String): Either<ScopesError, AliasName> = AliasName.create(aliasName)
+        .mapLeft { error ->
+            logger.error(
+                "Invalid $aliasType alias name",
+                mapOf(
+                    "aliasName" to aliasName,
+                    "aliasType" to aliasType,
+                    "error" to error.toString(),
+                ),
+            )
+            mapAliasError(error, aliasName)
+        }
 
-    private fun mapAliasError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError, aliasName: String): ScopeInputError {
-        return when (error) {
+    private fun mapAliasError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError, aliasName: String): ScopeInputError =
+        when (error) {
             is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
                 ScopeInputError.AliasEmpty(aliasName)
             is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
@@ -82,9 +80,12 @@ class SetCanonicalAliasHandler(
             is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
                 ScopeInputError.AliasInvalidFormat(aliasName, errorPresenter.presentAliasPattern(error.patternType))
         }
-    }
 
-    private suspend fun findExistingAlias(aliasName: AliasName, originalName: String, aliasType: String): Either<ScopesError, io.github.kamiazya.scopes.scopemanagement.domain.entity.Alias> = either {
+    private suspend fun findExistingAlias(
+        aliasName: AliasName,
+        originalName: String,
+        aliasType: String,
+    ): Either<ScopesError, io.github.kamiazya.scopes.scopemanagement.domain.entity.Alias> = either {
         val alias = scopeAliasService.findAliasByName(aliasName)
             .mapLeft { error ->
                 logger.error(
@@ -112,41 +113,37 @@ class SetCanonicalAliasHandler(
     private fun validateSameScopeAlias(
         currentScopeId: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId,
         newScopeId: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId,
-        command: SetCanonicalAliasCommand
-    ): Either<ScopesError, Unit> {
-        return if (newScopeId != currentScopeId) {
-            logger.error(
-                "New canonical alias belongs to different scope",
-                mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newCanonicalAlias" to command.newCanonicalAlias,
-                    "currentAliasScope" to currentScopeId.value,
-                    "newCanonicalAliasScope" to newScopeId.value,
-                ),
-            )
-            ScopeInputError.InvalidAlias(command.newCanonicalAlias).left()
-        } else {
-            Unit.right()
-        }
+        command: SetCanonicalAliasCommand,
+    ): Either<ScopesError, Unit> = if (newScopeId != currentScopeId) {
+        logger.error(
+            "New canonical alias belongs to different scope",
+            mapOf(
+                "currentAlias" to command.currentAlias,
+                "newCanonicalAlias" to command.newCanonicalAlias,
+                "currentAliasScope" to currentScopeId.value,
+                "newCanonicalAliasScope" to newScopeId.value,
+            ),
+        )
+        ScopeInputError.InvalidAlias(command.newCanonicalAlias).left()
+    } else {
+        Unit.right()
     }
 
     private suspend fun assignCanonicalAlias(
         scopeId: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId,
         newCanonicalAliasName: AliasName,
-        command: SetCanonicalAliasCommand
-    ): Either<ScopesError, Unit> {
-        return scopeAliasService.assignCanonicalAlias(scopeId, newCanonicalAliasName)
-            .mapLeft { error ->
-                logger.error(
-                    "Failed to set canonical alias",
-                    mapOf(
-                        "currentAlias" to command.currentAlias,
-                        "newCanonicalAlias" to command.newCanonicalAlias,
-                        "scopeId" to scopeId.value,
-                        "error" to error.toString(),
-                    ),
-                )
-                error.toGenericApplicationError()
-            }
-    }
+        command: SetCanonicalAliasCommand,
+    ): Either<ScopesError, Unit> = scopeAliasService.assignCanonicalAlias(scopeId, newCanonicalAliasName)
+        .mapLeft { error ->
+            logger.error(
+                "Failed to set canonical alias",
+                mapOf(
+                    "currentAlias" to command.currentAlias,
+                    "newCanonicalAlias" to command.newCanonicalAlias,
+                    "scopeId" to scopeId.value,
+                    "error" to error.toString(),
+                ),
+            )
+            error.toGenericApplicationError()
+        }
 }

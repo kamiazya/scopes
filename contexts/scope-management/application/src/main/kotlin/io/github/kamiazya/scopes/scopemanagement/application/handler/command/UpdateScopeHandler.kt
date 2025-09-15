@@ -47,7 +47,7 @@ class UpdateScopeHandler(
                 val existingScope = findExistingScope(scopeId, command.id).bind()
                 val updatedScope = applyUpdates(existingScope, command, scopeId).bind()
                 val savedScope = scopeRepository.save(updatedScope).bind()
-                
+
                 logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
                 ScopeMapper.toDto(savedScope)
             }
@@ -64,33 +64,25 @@ class UpdateScopeHandler(
         }
     }
 
-    private suspend fun applyUpdates(
-        scope: ScopeAggregate,
-        command: UpdateScopeCommand,
-        scopeId: ScopeId
-    ): Either<ScopesError, ScopeAggregate> = either {
+    private suspend fun applyUpdates(scope: ScopeAggregate, command: UpdateScopeCommand, scopeId: ScopeId): Either<ScopesError, ScopeAggregate> = either {
         var updatedScope = scope
-        
+
         if (command.title != null) {
             updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
         }
-        
+
         if (command.description != null) {
             updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
         }
-        
+
         if (command.metadata.isNotEmpty()) {
             updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
         }
-        
+
         updatedScope
     }
 
-    private suspend fun updateTitle(
-        scope: ScopeAggregate,
-        newTitle: String,
-        scopeId: ScopeId
-    ): Either<ScopesError, ScopeAggregate> = either {
+    private suspend fun updateTitle(scope: ScopeAggregate, newTitle: String, scopeId: ScopeId): Either<ScopesError, ScopeAggregate> = either {
         val title = ScopeTitle.create(newTitle).bind()
 
         titleUniquenessSpec.isSatisfiedByForUpdate(
@@ -111,11 +103,7 @@ class UpdateScopeHandler(
         updated
     }
 
-    private fun updateDescription(
-        scope: ScopeAggregate,
-        newDescription: String,
-        scopeId: ScopeId
-    ): Either<ScopesError, ScopeAggregate> = either {
+    private fun updateDescription(scope: ScopeAggregate, newDescription: String, scopeId: ScopeId): Either<ScopesError, ScopeAggregate> = either {
         val updated = scope.updateDescription(newDescription, Clock.System.now()).bind()
         logger.debug(
             "Description updated",
@@ -127,11 +115,7 @@ class UpdateScopeHandler(
         updated
     }
 
-    private fun updateAspects(
-        scope: ScopeAggregate,
-        metadata: Map<String, String>,
-        scopeId: ScopeId
-    ): Either<ScopesError, ScopeAggregate> = either {
+    private fun updateAspects(scope: ScopeAggregate, metadata: Map<String, String>, scopeId: ScopeId): Either<ScopesError, ScopeAggregate> = either {
         val aspects = metadata.mapNotNull { (key, value) ->
             val aspectKey = AspectKey.create(key).getOrNull()
             val aspectValue = AspectValue.create(value).getOrNull()

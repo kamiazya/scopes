@@ -15,6 +15,7 @@ import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -25,7 +26,6 @@ import kotlinx.serialization.json.*
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.CancellationException
 
 /**
  * Stores idempotency results with TTL.
@@ -49,11 +49,11 @@ class McpServerAdapter(
     companion object {
         private val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
         private const val MAX_IDEMPOTENCY_ENTRIES = 10_000
-        
+
         // MIME Types
         private const val MIME_MD = "text/markdown; charset=utf-8"
         private const val MIME_JSON = "application/json; charset=utf-8"
-        
+
         // Tool names
         private const val TOOL_SCOPES_CREATE = "scopes.create"
         private const val TOOL_SCOPES_UPDATE = "scopes.update"
@@ -61,7 +61,7 @@ class McpServerAdapter(
         private const val TOOL_ALIASES_ADD = "aliases.add"
         private const val TOOL_ALIASES_REMOVE = "aliases.remove"
         private const val TOOL_ALIASES_SET_CANONICAL = "aliases.setCanonical"
-        
+
         // Common descriptions
         private const val DESC_IDEMPOTENCY_KEY = "Idempotency key to avoid duplicate operations"
         private const val DESC_EXISTING_SCOPE_ALIAS = "Existing scope alias"
@@ -112,7 +112,6 @@ class McpServerAdapter(
             }
         }
     }
-
 
     /**
      * Create a server configured for testing purposes.
@@ -182,15 +181,15 @@ class McpServerAdapter(
                     put("type", "object")
                     put("additionalProperties", false)
                     putJsonObject("properties") {
-                        putJsonObject("alias") { 
+                        putJsonObject("alias") {
                             put("type", "string")
                             put("description", "The input alias provided by the user")
                         }
-                        putJsonObject("canonicalAlias") { 
+                        putJsonObject("canonicalAlias") {
                             put("type", "string")
                             put("description", "The canonical (normalized) alias of the scope")
                         }
-                        putJsonObject("title") { 
+                        putJsonObject("title") {
                             put("type", "string")
                             put("description", "The title of the resolved scope")
                         }
@@ -1284,14 +1283,14 @@ class McpServerAdapter(
                 return@addResource createErrorResourceResult(
                     uri = uri,
                     code = -32602,
-                    message = "Missing or invalid alias in resource URI"
+                    message = "Missing or invalid alias in resource URI",
                 )
             }
 
             val res = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(alias)) }
             res.fold(
                 { error -> createErrorResourceResult(uri, getErrorCode(error), mapContractError(error)) },
-                { scope -> createScopeDetailsResult(uri, scope) }
+                { scope -> createScopeDetailsResult(uri, scope) },
             )
         }
     }
@@ -1306,7 +1305,7 @@ class McpServerAdapter(
             val uri = req.uri
             val prefix = "scopes:/tree/"
             val alias = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
-            
+
             val (pureAlias, depthValue) = parseTreeAlias(alias)
 
             if (pureAlias.isBlank()) {
@@ -1314,22 +1313,22 @@ class McpServerAdapter(
                     uri = "scopes:/tree/$pureAlias?depth=$depthValue",
                     code = -32602,
                     message = "Missing or invalid alias in resource URI. Optional ?depth=1..5 supported.",
-                    asJson = true
+                    asJson = true,
                 )
             }
 
             val rootRes = runBlocking { scopeQueryPort.getScopeByAlias(GetScopeByAliasQuery(pureAlias)) }
             rootRes.fold(
-                { error -> 
+                { error ->
                     createErrorResourceResult(
                         uri = uri,
                         code = getErrorCode(error),
                         message = mapContractError(error),
                         errorType = error::class.simpleName,
-                        asJson = true
-                    ) 
+                        asJson = true,
+                    )
                 },
-                { scope -> createTreeJsonResult(scope, depthValue) }
+                { scope -> createTreeJsonResult(scope, depthValue) },
             )
         }
     }
@@ -1349,7 +1348,7 @@ class McpServerAdapter(
                 return@addResource createSimpleTextResult(
                     uri = uri,
                     text = "Invalid resource: missing alias",
-                    mimeType = MIME_MD
+                    mimeType = MIME_MD,
                 )
             }
 
@@ -1359,10 +1358,10 @@ class McpServerAdapter(
                     createSimpleTextResult(
                         uri = uri,
                         text = "Error: ${mapContractError(error)}",
-                        mimeType = MIME_MD
+                        mimeType = MIME_MD,
                     )
                 },
-                { scope -> createTreeMarkdownResult(uri, scope) }
+                { scope -> createTreeMarkdownResult(uri, scope) },
             )
         }
     }
@@ -1371,20 +1370,16 @@ class McpServerAdapter(
         val qPos = alias.indexOf('?')
         val pureAlias = if (qPos >= 0) alias.substring(0, qPos) else alias
         val depth = if (qPos >= 0) {
-            alias.substring(qPos + 1).split('=').let { 
-                if (it.size == 2 && it[0] == "depth") it[1].toIntOrNull() else null 
+            alias.substring(qPos + 1).split('=').let {
+                if (it.size == 2 && it[0] == "depth") it[1].toIntOrNull() else null
             }
-        } else null
+        } else {
+            null
+        }
         return pureAlias to (depth ?: 1).coerceIn(1, 5)
     }
 
-    private fun createErrorResourceResult(
-        uri: String,
-        code: Int,
-        message: String,
-        errorType: String? = null,
-        asJson: Boolean = false
-    ): ReadResourceResult {
+    private fun createErrorResourceResult(uri: String, code: Int, message: String, errorType: String? = null, asJson: Boolean = false): ReadResourceResult {
         val payload = if (asJson) {
             buildJsonObject {
                 put("code", code)
@@ -1404,7 +1399,7 @@ class McpServerAdapter(
                 )
             }.toString()
         }
-        
+
         val etag = computeEtag(payload)
         return ReadResourceResult(
             contents = listOf(
@@ -1446,21 +1441,27 @@ class McpServerAdapter(
             put("createdAt", scope.createdAt.toString())
             put("updatedAt", scope.updatedAt.toString())
             putJsonArray("links") {
-                add(buildJsonObject {
-                    put("rel", "self")
-                    put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                })
-                add(buildJsonObject {
-                    put("rel", "tree")
-                    put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                })
-                add(buildJsonObject {
-                    put("rel", "tree.md")
-                    put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                })
+                add(
+                    buildJsonObject {
+                        put("rel", "self")
+                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("rel", "tree")
+                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("rel", "tree.md")
+                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                    },
+                )
             }
         }.toString()
-        
+
         val etag = computeEtag(payload)
         return ReadResourceResult(
             contents = listOf(
@@ -1474,18 +1475,24 @@ class McpServerAdapter(
                 put("etag", etag)
                 put("lastModified", scope.updatedAt.toString())
                 putJsonArray("links") {
-                    add(buildJsonObject {
-                        put("rel", "self")
-                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    })
-                    add(buildJsonObject {
-                        put("rel", "tree")
-                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                    })
-                    add(buildJsonObject {
-                        put("rel", "tree.md")
-                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                    })
+                    add(
+                        buildJsonObject {
+                            put("rel", "self")
+                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                        },
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "tree")
+                            put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                        },
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "tree.md")
+                            put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                        },
+                    )
                 }
             },
         )
@@ -1517,9 +1524,11 @@ class McpServerAdapter(
                         val chRes = runBlocking { scopeQueryPort.getChildren(GetChildrenQuery(parentId = s.id)) }
                         chRes.fold(
                             { emptyList<JsonObject>() },
-                            { ch -> ch.scopes.mapNotNull { c -> buildScopeNode(c.canonicalAlias, currentDepth + 1) } }
+                            { ch -> ch.scopes.mapNotNull { c -> buildScopeNode(c.canonicalAlias, currentDepth + 1) } },
                         )
-                    } else emptyList()
+                    } else {
+                        emptyList()
+                    }
 
                     buildJsonObject {
                         put("canonicalAlias", s.canonicalAlias)
@@ -1528,13 +1537,15 @@ class McpServerAdapter(
                         put("updatedAt", s.updatedAt.toString())
                         putJsonArray("children") { childrenJson.forEach { add(it) } }
                         putJsonArray("links") {
-                            add(buildJsonObject {
-                                put("rel", "self")
-                                put("uri", "scopes:/scope/${s.canonicalAlias}")
-                            })
+                            add(
+                                buildJsonObject {
+                                    put("rel", "self")
+                                    put("uri", "scopes:/scope/${s.canonicalAlias}")
+                                },
+                            )
                         }
                     }
-                }
+                },
             )
         }
 
@@ -1560,14 +1571,18 @@ class McpServerAdapter(
                 put("nodeCount", nodeCount)
                 put("maxDepth", depthValue)
                 putJsonArray("links") {
-                    add(buildJsonObject {
-                        put("rel", "self")
-                        put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
-                    })
-                    add(buildJsonObject {
-                        put("rel", "scope")
-                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    })
+                    add(
+                        buildJsonObject {
+                            put("rel", "self")
+                            put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
+                        },
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "scope")
+                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                        },
+                    )
                 }
             },
         )
@@ -1620,18 +1635,24 @@ class McpServerAdapter(
                 put("etag", etag)
                 put("lastModified", latestUpdated.toString())
                 putJsonArray("links") {
-                    add(buildJsonObject {
-                        put("rel", "self")
-                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                    })
-                    add(buildJsonObject {
-                        put("rel", "scope")
-                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    })
-                    add(buildJsonObject {
-                        put("rel", "tree")
-                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                    })
+                    add(
+                        buildJsonObject {
+                            put("rel", "self")
+                            put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                        },
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "scope")
+                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                        },
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "tree")
+                            put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                        },
+                    )
                 }
             },
         )
@@ -1795,7 +1816,19 @@ class McpServerAdapter(
      */
     private fun checkIdempotency(toolName: String, idempotencyKey: String, arguments: Map<String, kotlinx.serialization.json.JsonElement>): CallToolResult? {
         if (!idempotencyKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
-            return err("Invalid idempotency key format")
+            val payload = buildJsonObject {
+                put("code", -32602)
+                put("message", "Invalid idempotency key format")
+                putJsonObject("data") {
+                    put("type", "InvalidIdempotencyKey")
+                    put("key", idempotencyKey)
+                    put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
+                }
+            }
+            return CallToolResult(
+                content = listOf(TextContent(text = payload.toString())),
+                isError = true,
+            )
         }
 
         // Clean up expired entries periodically
@@ -1826,12 +1859,12 @@ class McpServerAdapter(
      */
     private fun cleanupExpiredEntries(now: Instant = Clock.System.now()) {
         val cutoff = now - idempotencyTtlMinutes.minutes
-        
+
         // Remove expired entries
         idempotencyStore.entries.removeIf { entry ->
             entry.value.timestamp < cutoff
         }
-        
+
         // If still over limit, remove oldest entries
         if (idempotencyStore.size > MAX_IDEMPOTENCY_ENTRIES) {
             val entriesToRemove = idempotencyStore.size - MAX_IDEMPOTENCY_ENTRIES
@@ -1904,5 +1937,4 @@ class McpServerAdapter(
             }
         }
     }
-
 }

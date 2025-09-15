@@ -1,18 +1,16 @@
 package io.github.kamiazya.scopes.interfaces.mcp.adapters
 
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.InMemoryTransport
-import io.modelcontextprotocol.kotlin.sdk.server.Server
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 
 /**
  * Round-trip E2E tests using InMemoryTransport to test the actual MCP Server implementation.
- * 
+ *
  * These tests start a real server with InMemoryTransport and use a Client to perform
  * actual tool calls, ensuring the complete MCP tool integration works end-to-end.
  */
@@ -26,9 +24,9 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 // Setup successful create response
                 val createdScope = TestData.createScopeResult(
                     canonicalAlias = "test-scope",
-                    title = "Test Scope"
+                    title = "Test Scope",
                 )
-                MockConfig.run { 
+                MockConfig.run {
                     commandPort.mockSuccessfulCreate(createdScope)
                     queryPort.mockSuccessfulGet("test-scope", createdScope)
                 }
@@ -62,7 +60,6 @@ class McpRoundTripTest : BaseIntegrationTest() {
                     val getResult = client.callTool("scopes.get", getArgs)
                     getResult.isError shouldBe false
                     getResult.content.first().text shouldContain "Test Scope"
-
                 } finally {
                     client.close()
                     server.close()
@@ -75,7 +72,7 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 setupMocks()
 
                 // Setup error case for removing canonical alias
-                MockConfig.run { 
+                MockConfig.run {
                     commandPort.mockCannotRemoveCanonicalAlias("main-scope")
                 }
 
@@ -99,7 +96,6 @@ class McpRoundTripTest : BaseIntegrationTest() {
                     val removeResult = client.callTool("aliases.remove", removeArgs)
                     removeResult.isError shouldBe true
                     removeResult.content.first().text shouldContain "CannotRemoveCanonicalAlias"
-
                 } finally {
                     client.close()
                     server.close()
@@ -114,9 +110,9 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 // Setup successful create response
                 val createdScope = TestData.createScopeResult(
                     canonicalAlias = "idempotent-scope",
-                    title = "Idempotent Test"
+                    title = "Idempotent Test",
                 )
-                MockConfig.run { 
+                MockConfig.run {
                     commandPort.mockSuccessfulCreate(createdScope)
                 }
 
@@ -148,7 +144,6 @@ class McpRoundTripTest : BaseIntegrationTest() {
 
                     // Should return identical results
                     firstContent shouldBe secondContent
-
                 } finally {
                     client.close()
                     server.close()
@@ -163,9 +158,9 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 // Setup successful resolve response
                 val resolvedScope = TestData.createScopeResult(
                     canonicalAlias = "project-alpha",
-                    title = "Project Alpha"
+                    title = "Project Alpha",
                 )
-                MockConfig.run { 
+                MockConfig.run {
                     queryPort.mockSuccessfulGet("project-alpha", resolvedScope)
                 }
 
@@ -187,12 +182,11 @@ class McpRoundTripTest : BaseIntegrationTest() {
 
                     val resolveResult = client.callTool("aliases.resolve", resolveArgs)
                     resolveResult.isError shouldBe false
-                    
+
                     val responseJson = Json.parseToJsonElement(resolveResult.content.first().text).jsonObject
                     responseJson["alias"]?.jsonPrimitive?.content shouldBe "project-alpha"
                     responseJson["canonicalAlias"]?.jsonPrimitive?.content shouldBe "project-alpha"
                     responseJson["title"]?.jsonPrimitive?.content shouldBe "Project Alpha"
-
                 } finally {
                     client.close()
                     server.close()
@@ -205,7 +199,7 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 setupMocks()
 
                 // Setup not found response
-                MockConfig.run { 
+                MockConfig.run {
                     queryPort.mockNotFound("non-existent")
                 }
 
@@ -228,7 +222,6 @@ class McpRoundTripTest : BaseIntegrationTest() {
                     val resolveResult = client.callTool("aliases.resolve", resolveArgs)
                     resolveResult.isError shouldBe true
                     resolveResult.content.first().text shouldContain "AliasNotFound"
-
                 } finally {
                     client.close()
                     server.close()

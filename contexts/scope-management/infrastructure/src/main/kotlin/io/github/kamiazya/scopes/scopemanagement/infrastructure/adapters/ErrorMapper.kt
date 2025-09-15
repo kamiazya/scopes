@@ -159,7 +159,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
             parentId = domainError.parentScopeId?.value,
-            existingScopeId = domainError.existingScopeId.value,
+            existingScopeId = domainError.existingScopeId?.value,
         )
         is ScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
