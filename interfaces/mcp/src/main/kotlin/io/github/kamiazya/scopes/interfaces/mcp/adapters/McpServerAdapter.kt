@@ -68,20 +68,23 @@ class McpServerAdapter(
         private const val DESC_SCOPE_ALIAS = "Scope alias"
         private const val DESC_MISSING_ALIAS = "Missing 'alias'"
         private const val DESC_MISSING_SCOPE_ALIAS = "Missing 'scopeAlias'"
+        
+        // Notification messages
+        private const val MSG_LIST_CHANGED_NO_OP = "list_changed notification is currently a no-op (SDK API TBD)"
     }
 
     fun notifyToolsListChanged(): Boolean {
-        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        logger.warn("tools $MSG_LIST_CHANGED_NO_OP")
         return false
     }
 
     fun notifyResourcesListChanged(): Boolean {
-        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        logger.warn("resources $MSG_LIST_CHANGED_NO_OP")
         return false
     }
 
     fun notifyPromptsListChanged(): Boolean {
-        logger.warn("list_changed notification is currently a no-op (SDK API TBD)")
+        logger.warn("prompts $MSG_LIST_CHANGED_NO_OP")
         return false
     }
 
@@ -314,7 +317,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -434,7 +437,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -528,7 +531,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -820,7 +823,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -907,7 +910,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -994,7 +997,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }
@@ -1080,7 +1083,7 @@ class McpServerAdapter(
                         }
                         putJsonObject("idempotencyKey") {
                             put("type", "string")
-                            put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                            put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
                             put("description", DESC_IDEMPOTENCY_KEY)
                         }
                     }

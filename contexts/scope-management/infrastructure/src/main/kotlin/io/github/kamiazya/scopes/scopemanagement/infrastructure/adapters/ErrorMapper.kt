@@ -20,6 +20,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.*
  * - Log unmapped errors for visibility and debugging
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractError>(logger) {
+    
+    companion object {
+        private const val SCOPE_MANAGEMENT_SERVICE = SCOPE_MANAGEMENT_SERVICE
+    }
     private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
         ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
         ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
@@ -53,13 +57,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             actualVersion = domainError.actualVersion?.toLong() ?: 0,
         )
         is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = "scope-management",
+            service = SCOPE_MANAGEMENT_SERVICE,
         )
 
         // Default fallback for unmapped errors
         else -> handleUnmappedError(
             domainError,
-            ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management"),
+            ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE),
         )
     }
 
@@ -213,7 +217,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
 
     private fun mapSystemError(domainError: ScopesError.SystemError): ScopeContractError.SystemError.ServiceUnavailable =
-        ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: "scope-management")
+        ScopeContractError.SystemError.ServiceUnavailable(service = domainError.service ?: SCOPE_MANAGEMENT_SERVICE)
 
     private fun mapValidationError(domainError: ScopesError.ValidationFailed): ScopeContractError.InputError = when (domainError.field) {
         "title" -> ScopeContractError.InputError.InvalidTitle(
@@ -239,9 +243,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 childrenCount = null,
             )
             "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
         }
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-management")
+        else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
     }
 
     private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {
