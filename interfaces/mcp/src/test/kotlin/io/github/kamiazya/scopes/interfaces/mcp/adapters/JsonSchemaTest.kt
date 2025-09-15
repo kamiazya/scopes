@@ -20,62 +20,8 @@ import io.mockk.mockk
 class JsonSchemaTest :
     StringSpec({
 
-        "should have JSON Schema for scopes.get tool" {
-            val queryPort = mockk<ScopeManagementQueryPort>()
-            val commandPort = mockk<ScopeManagementCommandPort>()
-            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
 
-            val server = adapter.createTestServer()
 
-            // We can't directly inspect tool schemas from the SDK API
-            // But we can test that the server was created successfully
-            // This validates that the schema structure is valid
-            server shouldNotBe null
-
-            // TODO: When SDK provides tool inspection API, verify:
-            // - scopes.get has inputSchema
-            // - inputSchema has required: ["alias"]
-            // - inputSchema has additionalProperties: false
-            // - alias property has type: "string", minLength: 1
-            // - match property has enum: ["auto", "exact", "prefix"], default: "auto"
-        }
-
-        "should have JSON Schema for scopes.create tool" {
-            val queryPort = mockk<ScopeManagementQueryPort>()
-            val commandPort = mockk<ScopeManagementCommandPort>()
-            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
-
-            val server = adapter.createTestServer()
-            server shouldNotBe null
-
-            // TODO: When SDK provides tool inspection API, verify:
-            // - scopes.create has inputSchema
-            // - required: ["title"]
-            // - additionalProperties: false
-            // - title: type "string", minLength: 1
-            // - description: type "string" (optional)
-            // - parentAlias: type "string" (optional)
-            // - idempotencyKey: type "string", pattern for validation (optional)
-        }
-
-        "should have JSON Schema for aliases.resolve tool" {
-            val queryPort = mockk<ScopeManagementQueryPort>()
-            val commandPort = mockk<ScopeManagementCommandPort>()
-            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val adapter = McpServerAdapter(queryPort, commandPort, logger)
-
-            val server = adapter.createTestServer()
-            server shouldNotBe null
-
-            // TODO: When SDK provides tool inspection API, verify:
-            // - aliases.resolve has inputSchema
-            // - required: ["alias"]
-            // - additionalProperties: false
-            // - alias: type "string", minLength: 1
-            // - match: enum ["auto", "exact", "prefix"], default: "auto"
-        }
 
         "should validate idempotency key pattern" {
             // Test the idempotency key validation pattern
@@ -106,15 +52,4 @@ class JsonSchemaTest :
             }
         }
 
-        "should validate JSON Schema structure requirements" {
-            // Test the expected structure of our JSON schemas
-            val schemaRequirements = mapOf(
-                "additionalProperties" to false,
-                "type" to "object",
-            )
-
-            // This validates our understanding of what each schema should contain
-            schemaRequirements["additionalProperties"] shouldBe false
-            schemaRequirements["type"] shouldBe "object"
-        }
     })

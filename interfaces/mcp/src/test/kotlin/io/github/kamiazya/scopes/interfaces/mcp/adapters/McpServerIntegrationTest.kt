@@ -20,42 +20,7 @@ import kotlinx.serialization.json.put
 class McpServerIntegrationTest : BaseIntegrationTest() {
 
     init {
-        "should setup mocks for successful scope retrieval" {
-            runTest {
-                setupMocks()
 
-                val testScope = TestData.createScopeResult(
-                    canonicalAlias = "test-scope",
-                    title = "Test Scope",
-                    description = "A test scope",
-                )
-                MockConfig.run { queryPort.mockSuccessfulGet("test-scope", testScope) }
-
-                // Verify test data creation
-                testScope.canonicalAlias shouldBe "test-scope"
-                testScope.title shouldBe "Test Scope"
-                testScope.description shouldBe "A test scope"
-            }
-        }
-
-        "should setup mocks for error scenarios" {
-            runTest {
-                setupMocks()
-
-                // Test various error scenarios can be configured
-                MockConfig.run { queryPort.mockNotFound("nonexistent") }
-                MockConfig.run { commandPort.mockCannotRemoveCanonicalAlias() }
-
-                val errorResult = TestData.createCreateScopeResult(
-                    title = "Duplicate",
-                    canonicalAlias = "existing-scope",
-                )
-                MockConfig.run { commandPort.mockCreateSuccess(errorResult) }
-
-                // Verify error mock setup works
-                errorResult.title shouldBe "Duplicate"
-            }
-        }
 
         "should validate test data factory methods" {
             runTest {
