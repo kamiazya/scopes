@@ -45,6 +45,8 @@ subprojects {
     configurations.all {
         resolutionStrategy {
             preferProjectModules()
+            // Force Netty to patched version to fix GHSA-prj3-ccx8-p6x4 vulnerability
+            force("io.netty:netty-codec-http2:4.1.124.Final")
         }
     }
 }

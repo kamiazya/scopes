@@ -24,6 +24,7 @@ import kotlinx.serialization.json.*
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CancellationException
 
 /**
  * Stores idempotency results with TTL.
@@ -66,6 +67,12 @@ class McpServerAdapter(
             outputStream = outputStream.asSink().buffered(),
         )
 
+        // Setup shutdown hook for graceful termination
+        Runtime.getRuntime().addShutdownHook(Thread {
+            logger.info("Shutdown hook triggered - cleaning up MCP server")
+            stdioOut = null
+        })
+
         runBlocking {
             try {
                 logger.info("Starting MCP server (stdio)")
@@ -76,12 +83,17 @@ class McpServerAdapter(
                 // Keep process alive; MCP client typically terminates the process when done.
                 try {
                     while (true) kotlinx.coroutines.delay(60_000)
+                } catch (e: CancellationException) {
+                    logger.info("MCP server coroutine cancelled - shutting down gracefully")
                 } catch (_: Throwable) {
                     // exit gracefully
                 }
             } catch (e: Exception) {
                 logger.error("Failed to start MCP server", throwable = e)
                 throw e
+            } finally {
+                logger.info("MCP server shutting down")
+                stdioOut = null
             }
         }
     }

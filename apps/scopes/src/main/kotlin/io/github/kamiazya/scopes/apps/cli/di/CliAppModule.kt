@@ -27,6 +27,7 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatte
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
 import io.github.kamiazya.scopes.interfaces.mcp.adapters.McpServerAdapter
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import org.koin.dsl.module
 
 /**

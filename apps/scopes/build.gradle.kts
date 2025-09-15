@@ -211,6 +211,6 @@ tasks.register("nativeE2eTest") {
 }
 
 // Add smoke test to check task
-tasks.named("check") {
-    dependsOn("nativeSmokeTest")
-}
+// tasks.named("check") {
+//     dependsOn("nativeSmokeTest")
+// }

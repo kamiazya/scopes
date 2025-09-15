@@ -28,8 +28,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
-    implementation(libs.kotlinx.io.core)
-    implementation(libs.kotlinx.io.core.jvm)
 
     // Tests
     testImplementation(libs.bundles.kotest)
