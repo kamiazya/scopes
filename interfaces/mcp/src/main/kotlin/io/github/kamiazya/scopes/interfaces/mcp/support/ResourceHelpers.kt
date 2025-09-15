@@ -1,0 +1,177 @@
+package io.github.kamiazya.scopes.interfaces.mcp.support
+
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
+import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
+import kotlinx.datetime.Clock
+import kotlinx.serialization.json.*
+
+/**
+ * Helper functions for MCP resource handling.
+ */
+object ResourceHelpers {
+    
+    /**
+     * Compute ETag for resource content using a simple hash function.
+     */
+    fun computeEtag(text: String): String {
+        // Simple hash function for KMP compatibility
+        var hash = 0L
+        for (char in text) {
+            hash = ((hash shl 5) - hash) + char.code
+            hash = hash and 0xFFFFFFFFL // Keep it 32-bit
+        }
+        return hash.toString(16).padStart(8, '0')
+    }
+    
+    /**
+     * Parse tree alias to extract pure alias and depth parameter.
+     * Example: "my-alias?depth=3" -> ("my-alias", 3)
+     */
+    fun parseTreeAlias(alias: String): Pair<String, Int> {
+        val qPos = alias.indexOf('?')
+        val pureAlias = if (qPos >= 0) alias.substring(0, qPos) else alias
+        val depth = if (qPos >= 0) {
+            alias.substring(qPos + 1).split('=').let {
+                if (it.size == 2 && it[0] == "depth") it[1].toIntOrNull() else null
+            }
+        } else {
+            null
+        }
+        return pureAlias to (depth ?: 1).coerceIn(1, 5)
+    }
+    
+    /**
+     * Create an error resource result with proper formatting.
+     */
+    fun createErrorResourceResult(
+        uri: String, 
+        code: Int, 
+        message: String, 
+        errorType: String? = null, 
+        asJson: Boolean = false
+    ): ReadResourceResult {
+        val payload = if (asJson) {
+            buildJsonObject {
+                put("code", code)
+                putJsonObject("data") {
+                    put("type", errorType ?: "Error")
+                    put("message", message)
+                }
+            }.toString()
+        } else {
+            buildJsonObject {
+                put(
+                    "error",
+                    buildJsonObject {
+                        put("code", code)
+                        put("message", message)
+                    }
+                )
+            }.toString()
+        }
+
+        val etag = computeEtag(payload)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = payload,
+                    uri = uri,
+                    mimeType = "application/json"
+                )
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", Clock.System.now().toString())
+            }
+        )
+    }
+    
+    /**
+     * Create a simple text resource result.
+     */
+    fun createSimpleTextResult(uri: String, text: String, mimeType: String): ReadResourceResult {
+        val etag = computeEtag(text)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = text,
+                    uri = uri,
+                    mimeType = mimeType
+                )
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", Clock.System.now().toString())
+            }
+        )
+    }
+    
+    /**
+     * Create scope details resource result with proper links.
+     */
+    fun createScopeDetailsResult(uri: String, scope: ScopeResult): ReadResourceResult {
+        val payload = buildJsonObject {
+            put("canonicalAlias", scope.canonicalAlias)
+            put("title", scope.title)
+            scope.description?.let { put("description", it) }
+            put("createdAt", scope.createdAt.toString())
+            put("updatedAt", scope.updatedAt.toString())
+            putJsonArray("links") {
+                add(
+                    buildJsonObject {
+                        put("rel", "self")
+                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                    }
+                )
+                add(
+                    buildJsonObject {
+                        put("rel", "tree")
+                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                    }
+                )
+                add(
+                    buildJsonObject {
+                        put("rel", "tree.md")
+                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                    }
+                )
+            }
+        }.toString()
+
+        val etag = computeEtag(payload)
+        return ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = payload,
+                    uri = uri,
+                    mimeType = "application/json"
+                )
+            ),
+            _meta = buildJsonObject {
+                put("etag", etag)
+                put("lastModified", scope.updatedAt.toString())
+                putJsonArray("links") {
+                    add(
+                        buildJsonObject {
+                            put("rel", "self")
+                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                        }
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "tree")
+                            put("uri", "scopes:/tree/${scope.canonicalAlias}")
+                        }
+                    )
+                    add(
+                        buildJsonObject {
+                            put("rel", "tree.md")
+                            put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
+                        }
+                    )
+                }
+            }
+        )
+    }
+}
