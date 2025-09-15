@@ -36,7 +36,7 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 )
 
                 // Verify response structure
-                Assertions.assertSuccessResponse(response)
+                McpAssertions.assertSuccessResponse(response)
                 response["status"]?.jsonPrimitive?.content shouldBe "mocked"
             }
         }
@@ -87,7 +87,7 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 )
 
                 // Verify response
-                Assertions.assertSuccessResponse(response)
+                McpAssertions.assertSuccessResponse(response)
                 response["status"]?.jsonPrimitive?.content shouldBe "mocked"
             }
         }
@@ -114,7 +114,7 @@ class McpRoundTripTest : BaseIntegrationTest() {
                 )
 
                 // Verify response
-                Assertions.assertSuccessResponse(response)
+                McpAssertions.assertSuccessResponse(response)
                 response["status"]?.jsonPrimitive?.content shouldBe "mocked"
             }
         }

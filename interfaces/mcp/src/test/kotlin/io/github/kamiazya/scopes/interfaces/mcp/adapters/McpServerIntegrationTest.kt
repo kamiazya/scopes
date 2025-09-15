@@ -107,13 +107,13 @@ class McpServerIntegrationTest : BaseIntegrationTest() {
                     put("title", "Test Title")
                 }
 
-                val result = Assertions.assertSuccessResponse(successJson)
+                val result = McpAssertions.assertSuccessResponse(successJson)
                 result shouldBe successJson
 
                 // Test field validation
-                Assertions.assertHasFields(successJson, "canonicalAlias", "title")
-                Assertions.assertFieldEquals(successJson, "canonicalAlias", "test-scope")
-                Assertions.assertFieldEquals(successJson, "title", "Test Title")
+                McpAssertions.assertHasFields(successJson, "canonicalAlias", "title")
+                McpAssertions.assertFieldEquals(successJson, "canonicalAlias", "test-scope")
+                McpAssertions.assertFieldEquals(successJson, "title", "Test Title")
             }
         }
     }
