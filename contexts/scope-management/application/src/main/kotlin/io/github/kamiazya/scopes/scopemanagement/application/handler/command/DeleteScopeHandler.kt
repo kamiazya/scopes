@@ -31,69 +31,60 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
 
         transactionManager.inTransaction {
             either {
+                // Parse scope ID
                 val scopeId = ScopeId.create(command.id).bind()
-                validateScopeExists(scopeId).bind()
-                handleChildrenDeletion(scopeId, command.cascade).bind()
-                deleteScopeById(scopeId).bind()
+
+                // Find existing scope
+                val existingScope = scopeRepository.findById(scopeId).bind()
+                ensure(existingScope != null) {
+                    logger.warn("Scope not found for deletion", mapOf("scopeId" to command.id))
+                    ScopeNotFoundError(
+                        scopeId = scopeId,
+                        occurredAt = Clock.System.now(),
+                    )
+                }
+
+                // Check for children
+                val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
+
+                if (children.isNotEmpty()) {
+                    if (command.cascade) {
+                        // Cascade delete children
+                        logger.debug(
+                            "Cascade deleting children",
+                            mapOf(
+                                "parentId" to scopeId.value,
+                                "childCount" to children.size.toString(),
+                            ),
+                        )
+
+                        for (child in children) {
+                            // Recursively delete children
+                            deleteRecursive(child.id)
+                        }
+                    } else {
+                        // Cannot delete scope with children unless cascade is enabled
+                        logger.warn(
+                            "Cannot delete scope with children",
+                            mapOf(
+                                "scopeId" to scopeId.value,
+                                "childCount" to children.size.toString(),
+                            ),
+                        )
+                        raise(
+                            ScopeHierarchyError.HasChildren(
+                                scopeId = scopeId,
+                                occurredAt = Clock.System.now(),
+                            ),
+                        )
+                    }
+                }
+
+                // Delete the scope
+                scopeRepository.deleteById(scopeId).bind()
+                logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
             }
         }.bind()
-    }
-
-    private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopesError, ScopeAggregate> = either {
-        val existingScope = scopeRepository.findById(scopeId).bind()
-        ensure(existingScope != null) {
-            logger.warn("Scope not found for deletion", mapOf("scopeId" to scopeId.value))
-            ScopeNotFoundError(
-                scopeId = scopeId,
-                occurredAt = Clock.System.now(),
-            )
-        }
-        existingScope
-    }
-
-    private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopesError, Unit> = either {
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).bind()
-
-        if (children.isNotEmpty()) {
-            if (cascade) {
-                cascadeDeleteChildren(scopeId, children).bind()
-            } else {
-                preventDeletionWithChildren(scopeId, children).bind()
-            }
-        }
-    }
-
-    private suspend fun cascadeDeleteChildren(scopeId: ScopeId, children: List<ScopeAggregate>): Either<ScopesError, Unit> = either {
-        logger.debug(
-            "Cascade deleting children",
-            mapOf(
-                "parentId" to scopeId.value,
-                "childCount" to children.size.toString(),
-            ),
-        )
-
-        for (child in children) {
-            deleteRecursive(child.id)
-        }
-    }
-
-    private fun preventDeletionWithChildren(scopeId: ScopeId, children: List<ScopeAggregate>): Either<ScopesError, Unit> {
-        logger.warn(
-            "Cannot delete scope with children",
-            mapOf(
-                "scopeId" to scopeId.value,
-                "childCount" to children.size.toString(),
-            ),
-        )
-        return ScopeHierarchyError.HasChildren(
-            scopeId = scopeId,
-            occurredAt = Clock.System.now(),
-        ).left()
-    }
-
-    private suspend fun deleteScopeById(scopeId: ScopeId): Either<ScopesError, Unit> = either {
-        scopeRepository.deleteById(scopeId).bind()
-        logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
     }.onLeft { error ->
         logger.error(
             "Failed to delete scope",
