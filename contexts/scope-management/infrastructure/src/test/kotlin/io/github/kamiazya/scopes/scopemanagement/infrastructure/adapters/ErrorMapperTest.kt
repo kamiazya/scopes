@@ -2,7 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.domain.error.*
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -179,77 +181,72 @@ class ErrorMapperTest :
                 }
             }
 
-            context("Hierarchy errors") {
-                it("should map ScopeHierarchyError.CircularDependency to HierarchyViolation.CircularReference") {
-                    val scopeId = ScopeId.generate()
-                    val ancestorId = ScopeId.generate()
-                    val domainError = ScopeHierarchyError.CircularDependency(
-                        scopeId = scopeId,
-                        ancestorId = ancestorId,
+            context("Hierarchy errors - unified error model") {
+                it("should map ScopesError.Conflict with HAS_DEPENDENCIES to HasChildren") {
+                    val parentId = "parent-123"
+                    val domainError = ScopesError.Conflict(
+                        resourceType = "Scope",
+                        resourceId = parentId,
+                        conflictType = ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES,
+                        details = mapOf("usage_count" to "5"),
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.HierarchyViolation>()
-                    val violation = result.violation.shouldBeInstanceOf<ScopeContractError.HierarchyViolationType.CircularReference>()
-                    violation.scopeId shouldBe scopeId.value
-                    violation.parentId shouldBe ancestorId.value
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.HasChildren>()
+                    result.scopeId shouldBe parentId
+                    result.childrenCount shouldBe null
                 }
 
-                it("should map ScopeHierarchyError.MaxDepthExceeded to HierarchyViolation.MaxDepthExceeded") {
-                    val scopeId = ScopeId.generate()
-                    val domainError = ScopeHierarchyError.MaxDepthExceeded(
-                        scopeId = scopeId,
-                        currentDepth = 10,
-                        maxDepth = 5,
+                it("should map ScopesError.InvalidOperation with INVALID_STATE to ArchivedScope") {
+                    val scopeId = "scope-123"
+                    val domainError = ScopesError.InvalidOperation(
+                        operation = "update",
+                        entityType = "Scope",
+                        entityId = scopeId,
+                        reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_STATE,
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.HierarchyViolation>()
-                    val violation = result.violation.shouldBeInstanceOf<ScopeContractError.HierarchyViolationType.MaxDepthExceeded>()
-                    violation.attemptedDepth shouldBe 10
-                    violation.maximumDepth shouldBe 5
-                }
-
-                it("should map ScopeHierarchyError.MaxChildrenExceeded to HierarchyViolation.MaxChildrenExceeded") {
-                    val parentId = ScopeId.generate()
-                    val domainError = ScopeHierarchyError.MaxChildrenExceeded(
-                        parentId = parentId,
-                        currentCount = 50,
-                        maxChildren = 20,
-                    )
-                    val contractError = errorMapper.mapToContractError(domainError)
-
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.HierarchyViolation>()
-                    val violation = result.violation.shouldBeInstanceOf<ScopeContractError.HierarchyViolationType.MaxChildrenExceeded>()
-                    violation.parentId shouldBe parentId.value
-                    violation.currentChildrenCount shouldBe 50
-                    violation.maximumChildren shouldBe 20
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.ArchivedScope>()
+                    result.scopeId shouldBe scopeId
                 }
             }
 
             context("System errors") {
-                it("should map PersistenceError.ConcurrencyConflict to SystemError.ConcurrentModification") {
-                    val domainError = PersistenceError.ConcurrencyConflict(
-                        entityType = "Scope",
-                        entityId = "scope-123",
-                        expectedVersion = "1",
-                        actualVersion = "2",
+                it("should map ScopesError.ConcurrencyError to SystemError.ConcurrentModification") {
+                    val domainError = ScopesError.ConcurrencyError(
+                        aggregateId = "scope-123",
+                        aggregateType = "Scope",
+                        expectedVersion = 1,
+                        actualVersion = 2,
+                        operation = "update",
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ConcurrentModification>()
                     result.scopeId shouldBe "scope-123"
-                    result.expectedVersion shouldBe "1"
-                    result.actualVersion shouldBe "2"
+                    result.expectedVersion shouldBe 1L
+                    result.actualVersion shouldBe 2L
+                }
+
+                it("should map ScopesError.SystemError to ServiceUnavailable") {
+                    val domainError = ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.SERVICE_UNAVAILABLE,
+                        service = "scope-management",
+                    )
+                    val contractError = errorMapper.mapToContractError(domainError)
+
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.SystemError.ServiceUnavailable>()
+                    result.service shouldBe "scope-management"
                 }
             }
 
-            context("Alias errors") {
-                it("should map ScopeAliasError.DuplicateAlias to BusinessError.DuplicateAlias") {
-                    val scopeId = ScopeId.generate()
-                    val domainError = ScopeAliasError.DuplicateAlias(
-                        alias = "duplicate-alias",
-                        scopeId = scopeId,
+            context("Alias errors - unified error model") {
+                it("should map ScopesError.AlreadyExists to BusinessError.DuplicateAlias") {
+                    val domainError = ScopesError.AlreadyExists(
+                        entityType = "Alias",
+                        identifier = "duplicate-alias",
+                        identifierType = "alias",
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
@@ -257,24 +254,28 @@ class ErrorMapperTest :
                     result.alias shouldBe "duplicate-alias"
                 }
 
-                it("should map ScopeAliasError.AliasNotFoundByName to BusinessError.AliasNotFound") {
-                    val domainError = ScopeAliasError.AliasNotFoundByName(alias = "missing-alias")
+                it("should map ScopesError.NotFound with alias type to BusinessError.AliasNotFound") {
+                    val domainError = ScopesError.NotFound(
+                        entityType = "Scope",
+                        identifier = "missing-alias",
+                        identifierType = "alias",
+                    )
                     val contractError = errorMapper.mapToContractError(domainError)
 
                     val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.AliasNotFound>()
                     result.alias shouldBe "missing-alias"
                 }
 
-                it("should map ScopeAliasError.CannotRemoveCanonicalAlias to BusinessError.CannotRemoveCanonicalAlias") {
-                    val scopeId = ScopeId.generate()
-                    val domainError = ScopeAliasError.CannotRemoveCanonicalAlias(
-                        scopeId = scopeId,
-                        alias = "canonical-alias",
+                it("should map ScopesError.NotFound with id type to BusinessError.NotFound") {
+                    val domainError = ScopesError.NotFound(
+                        entityType = "Scope",
+                        identifier = "missing-scope-id",
+                        identifierType = "id",
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.CannotRemoveCanonicalAlias>()
-                    result.alias shouldBe "canonical-alias"
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.BusinessError.NotFound>()
+                    result.scopeId shouldBe "missing-scope-id"
                 }
             }
 

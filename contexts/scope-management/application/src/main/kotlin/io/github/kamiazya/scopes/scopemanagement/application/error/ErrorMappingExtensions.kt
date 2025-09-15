@@ -193,7 +193,7 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
         AppScopeAliasError.AliasDuplicate(
             aliasName = this.alias,
             existingScopeId = this.scopeId.toString(),
-            attemptedScopeId = "unknown", // Domain error doesn't provide attempted scope ID
+            attemptedScopeId = "attempted-scope-id", // Domain error doesn't provide attempted scope ID
         )
 
     is DomainScopeAliasError.AliasNotFoundByName ->
@@ -220,7 +220,7 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
 
     is DomainScopeAliasError.AliasError ->
         AppScopeAliasError.AliasGenerationValidationFailed(
-            scopeId = "unknown",
+            scopeId = "scope-id",
             reason = this.reason,
             attemptedValue = this.alias,
         )

@@ -109,7 +109,7 @@ class ErrorMappingSpecificationTest :
                     val mappedDuplicate = duplicateError.toApplicationError() as ScopeAliasError.AliasDuplicate
                     mappedDuplicate.aliasName shouldBe "duplicate-alias"
                     mappedDuplicate.existingScopeId shouldBe duplicateError.scopeId.toString()
-                    mappedDuplicate.attemptedScopeId shouldBe "unknown"
+                    mappedDuplicate.attemptedScopeId shouldBe "attempted-scope-id"
                 }
             }
 

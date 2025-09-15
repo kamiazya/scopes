@@ -25,9 +25,6 @@ class ContextErrorPresenter {
         ContextError.FilterSyntaxErrorType.InvalidSyntax -> "Invalid filter syntax"
     }
 
-    @Deprecated("Use presentInvalidFilterSyntax instead", ReplaceWith("presentInvalidFilterSyntax(errorType)"))
-    fun presentInvalidFilter(errorType: ContextError.FilterSyntaxErrorType): String = presentInvalidFilterSyntax(errorType)
-
     fun presentInvalidKeyFormat(errorType: ContextError.InvalidKeyFormat.InvalidKeyFormatType): String = when (errorType) {
         ContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_CHARACTERS -> "Key contains invalid characters"
         ContextError.InvalidKeyFormat.InvalidKeyFormatType.RESERVED_KEYWORD -> "Key is a reserved keyword"
