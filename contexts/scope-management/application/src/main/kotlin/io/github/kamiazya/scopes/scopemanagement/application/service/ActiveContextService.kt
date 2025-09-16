@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.application.error.*
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
@@ -65,7 +64,7 @@ class ActiveContextService(
             previousContextId = previousContext?.id?.value,
             activatedBy = activatedBy,
         ).fold(
-            { error ->
+            { _ ->
                 // TODO: Add proper logging - for now, silently continue
                 // logger.warn("Failed to publish context activated event: $error")
             },
@@ -100,7 +99,7 @@ class ActiveContextService(
                 previousContext = previous,
                 clearedBy = clearedBy,
             ).fold(
-                { error ->
+                { _ ->
                     // TODO: Add proper logging - for now, silently continue
                     // logger.warn("Failed to publish active context cleared event: $error")
                 },

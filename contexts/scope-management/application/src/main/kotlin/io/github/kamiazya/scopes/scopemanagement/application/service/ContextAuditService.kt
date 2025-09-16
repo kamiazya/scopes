@@ -21,6 +21,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ContextViewApplied
  * rather than encapsulating core domain logic.
  */
 class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Loggable {
+    companion object {
+        private const val UNKNOWN_ERROR = "Unknown error"
+    }
 
     /**
      * Publish an event when a context view is activated.
@@ -77,7 +80,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishContextActivated",
-                errorCause = e.message ?: "Unknown error",
+                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish context activated event for context: ${contextView.key.value}", throwable = e)
             error.left()
@@ -122,7 +125,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishActiveContextCleared",
-                errorCause = e.message ?: "Unknown error",
+                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish active context cleared event for context: ${previousContext.key.value}", throwable = e)
             error.left()
@@ -176,7 +179,7 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishContextApplied",
-                errorCause = e.message ?: "Unknown error",
+                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish context applied event for context: ${contextView.key.value}", throwable = e)
             error.left()

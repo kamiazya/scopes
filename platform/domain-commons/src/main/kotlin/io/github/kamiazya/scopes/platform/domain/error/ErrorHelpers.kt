@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.platform.domain.error
 
-import io.github.kamiazya.scopes.platform.commons.time.Instant
 import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 /**
  * Helper function to create errors with timestamps.

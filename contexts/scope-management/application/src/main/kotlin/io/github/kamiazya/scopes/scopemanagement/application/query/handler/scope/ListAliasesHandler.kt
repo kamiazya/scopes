@@ -38,8 +38,8 @@ class ListAliasesHandler(
                     .mapLeft { it.toGenericApplicationError() }
                     .bind()
 
-                // Get the scope to verify it exists
-                val scope = scopeRepository.findById(scopeId)
+                // Verify the scope exists
+                scopeRepository.findById(scopeId)
                     .mapLeft { error ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-scope",
