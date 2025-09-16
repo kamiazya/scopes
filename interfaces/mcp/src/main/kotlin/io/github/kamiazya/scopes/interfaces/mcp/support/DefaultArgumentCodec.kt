@@ -63,12 +63,12 @@ internal class DefaultArgumentCodec : ArgumentCodec {
         val element = args[key]
         return when {
             element == null -> {
-                if (required) throw IllegalArgumentException("Missing required parameter: $key")
+                require(!required) { "Missing required parameter: $key" }
                 null
             }
             element is JsonPrimitive && element.isString -> element.content
             else -> {
-                if (required) throw IllegalArgumentException("Parameter '$key' must be a string")
+                require(!required) { "Parameter '$key' must be a string" }
                 null
             }
         }

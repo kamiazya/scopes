@@ -85,7 +85,7 @@ class AliasesAddToolHandler : ToolHandler {
         val newAlias = ctx.services.codec.getString(ctx.args, "newAlias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'newAlias' parameter")
 
-        val makeCanonical = ctx.services.codec.getBoolean(ctx.args, "makeCanonical") ?: false
+        val makeCanonical = ctx.services.codec.getBoolean(ctx.args, "makeCanonical")
         val idempotencyKey = ctx.services.codec.getString(ctx.args, "idempotencyKey")
 
         ctx.services.logger.debug("Adding alias '$newAlias' to scope: $scopeAlias (makeCanonical: $makeCanonical)")

@@ -1,9 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
-import io.github.kamiazya.scopes.apps.cli.di.contractsModule
 import io.github.kamiazya.scopes.apps.cli.di.devicesync.deviceSyncInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.eventstore.eventStoreInfrastructureModule
-import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
