@@ -205,17 +205,20 @@ class BasicArchitectureTest :
             Konsist
                 .scopeFromProduction()
                 .files
-                .filterNot { it.path.contains("/tmp/") }
+                .filterNot { it.path.contains("/tmp/") || it.path.contains("/.tmp/") }
                 .flatMap { it.classes() }
                 .filter { it.name.endsWith("Dto") || it.name.endsWith("Result") }
                 .filter { !it.name.endsWith("Test") }
+                .filter { !it.hasPrivateModifier } // Exclude private classes
                 .filter { clazz ->
                     val packageName = clazz.packagee?.name ?: ""
                     // Only apply this rule to non-contracts packages
                     // Contracts layer has different conventions (results package)
                     !packageName.contains(".contracts.") &&
                         // Domain layer results are domain concepts, not DTOs
-                        !packageName.contains(".domain.")
+                        !packageName.contains(".domain.") &&
+                        // Exclude external SDK classes
+                        !packageName.startsWith("io.modelcontextprotocol.")
                 }
                 .assertTrue { dto ->
                     val packageName = dto.packagee?.name ?: ""

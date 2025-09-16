@@ -36,7 +36,7 @@ class ListAliasesHandler(
             val scopeId = ScopeId.create(query.scopeId).bind()
 
             // Get the scope to verify it exists
-            val scope = scopeRepository.findById(scopeId)
+            scopeRepository.findById(scopeId)
                 .mapLeft { error ->
                     ScopesError.SystemError(
                         errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,

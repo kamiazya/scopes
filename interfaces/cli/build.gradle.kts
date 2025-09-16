@@ -10,9 +10,11 @@ dependencies {
     implementation(project(":scope-management-application"))
     implementation(project(":platform-commons"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":interfaces-mcp"))
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.io.core)
     implementation(libs.arrow.core)
 
     // CLI framework

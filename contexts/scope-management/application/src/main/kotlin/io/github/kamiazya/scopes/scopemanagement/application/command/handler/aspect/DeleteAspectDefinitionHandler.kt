@@ -27,7 +27,7 @@ class DeleteAspectDefinitionHandler(
             val aspectKey = AspectKey.create(command.key).bind()
 
             // Check if definition exists
-            val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
+            aspectDefinitionRepository.findByKey(aspectKey).fold(
                 { error ->
                     raise(
                         ScopesError.SystemError(
