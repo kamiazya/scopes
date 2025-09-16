@@ -30,7 +30,7 @@ class DeleteAspectDefinitionHandler(
                     .bind()
 
                 // Check if definition exists
-                val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
+                aspectDefinitionRepository.findByKey(aspectKey).fold(
                     { error ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
