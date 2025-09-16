@@ -9,18 +9,19 @@ import io.kotest.core.spec.style.DescribeSpec
  *
  * Rationale: Timestamps belong to events/audit logs, not error models.
  */
-class ErrorTypeNoOccurredAtTest : DescribeSpec({
-    describe("Error types should not expose occurredAt") {
-        it("production error classes/interfaces have no occurredAt property") {
-            Konsist.scopeFromProduction()
-                .classes()
-                .filter { klass ->
-                    val name = klass.name ?: ""
-                    name.endsWith("Error") || name.endsWith("Errors")
-                }
-                .assertTrue { klass ->
-                    klass.properties().none { it.name == "occurredAt" }
-                }
+class ErrorTypeNoOccurredAtTest :
+    DescribeSpec({
+        describe("Error types should not expose occurredAt") {
+            it("production error classes/interfaces have no occurredAt property") {
+                Konsist.scopeFromProduction()
+                    .classes()
+                    .filter { klass ->
+                        val name = klass.name ?: ""
+                        name.endsWith("Error") || name.endsWith("Errors")
+                    }
+                    .assertTrue { klass ->
+                        klass.properties().none { it.name == "occurredAt" }
+                    }
+            }
         }
-    }
-})
+    })

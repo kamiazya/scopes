@@ -31,7 +31,7 @@ class SqlDelightSynchronizationRepositoryTest :
                 repository = SqlDelightSynchronizationRepository(
                     database.deviceQueries,
                     database.vectorClockQueries,
-                    timeProvider = io.github.kamiazya.scopes.platform.domain.time.TestTimeProvider()
+                    timeProvider = io.github.kamiazya.scopes.platform.domain.time.TestTimeProvider(),
                 )
             }
 

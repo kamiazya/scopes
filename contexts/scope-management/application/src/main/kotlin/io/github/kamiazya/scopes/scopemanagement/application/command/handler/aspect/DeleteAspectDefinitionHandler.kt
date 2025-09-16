@@ -7,8 +7,8 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 
@@ -38,7 +38,7 @@ class DeleteAspectDefinitionHandler(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "aspect-repository",
                                 context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
-                            ),
+                            ).toGenericApplicationError(),
                         )
                     },
                     { definition ->
@@ -47,7 +47,7 @@ class DeleteAspectDefinitionHandler(
                                 entityType = "AspectDefinition",
                                 identifier = command.key,
                                 identifierType = "key",
-                            ),
+                            ).toGenericApplicationError(),
                         )
                     },
                 )
@@ -64,7 +64,7 @@ class DeleteAspectDefinitionHandler(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "aspect-repository",
                                 context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
-                            ),
+                            ).toGenericApplicationError(),
                         )
                     },
                     { Unit },

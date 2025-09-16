@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
 
-import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -259,6 +258,16 @@ fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = w
     // Map other hierarchy errors to generic persistence errors
     is ScopeHierarchyError -> AppPersistenceError.StorageUnavailable(
         operation = "hierarchy",
+    )
+
+    // Map common domain errors to application errors
+    is ScopesError.SystemError -> AppPersistenceError.StorageUnavailable(
+        operation = this.context["operation"]?.toString() ?: "system-operation",
+    )
+
+    is ScopesError.NotFound -> AppPersistenceError.NotFound(
+        entityType = this.entityType,
+        entityId = this.identifier,
     )
 
     // For other errors, create a generic persistence error

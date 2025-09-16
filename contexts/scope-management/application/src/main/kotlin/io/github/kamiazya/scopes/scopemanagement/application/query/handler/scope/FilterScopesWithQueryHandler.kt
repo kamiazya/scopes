@@ -49,7 +49,6 @@ class FilterScopesWithQueryHandler(
                         ScopesError.InvalidOperation(
                             operation = "filter-scopes-with-query",
                             reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },

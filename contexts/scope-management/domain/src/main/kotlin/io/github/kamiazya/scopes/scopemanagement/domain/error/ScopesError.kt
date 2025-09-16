@@ -53,11 +53,7 @@ sealed class ScopesError {
     /**
      * Error indicating a system-level failure.
      */
-    data class SystemError(
-        val errorType: SystemErrorType,
-        val service: String? = null,
-        val context: Map<String, Any> = emptyMap(),
-    ) : ScopesError() {
+    data class SystemError(val errorType: SystemErrorType, val service: String? = null, val context: Map<String, Any> = emptyMap()) : ScopesError() {
         enum class SystemErrorType {
             SERVICE_UNAVAILABLE,
             SERIALIZATION_FAILED,

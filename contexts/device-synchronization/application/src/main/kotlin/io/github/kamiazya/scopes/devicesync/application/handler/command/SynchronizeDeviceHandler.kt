@@ -60,7 +60,7 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                     operation = DeviceSyncApplicationError.SyncOperation.CONFLICT_RESOLUTION,
                                     deviceId = command.remoteDeviceId,
                                     failureReason = DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION,
-                                    )
+                                )
                             }
                             .map { resolution ->
                                 val status = when {

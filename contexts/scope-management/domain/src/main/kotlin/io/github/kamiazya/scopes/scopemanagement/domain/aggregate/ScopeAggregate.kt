@@ -6,7 +6,6 @@ import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
-import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
 import io.github.kamiazya.scopes.platform.domain.event.evolveWithPending
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -30,6 +29,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**

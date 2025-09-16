@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**

@@ -10,11 +10,7 @@ sealed class DeviceSyncApplicationError : ApplicationError {
     /**
      * Repository operation failed.
      */
-    data class RepositoryError(
-        val operation: RepositoryOperation,
-        val entityType: String,
-        val entityId: String? = null,
-    ) : DeviceSyncApplicationError()
+    data class RepositoryError(val operation: RepositoryOperation, val entityType: String, val entityId: String? = null) : DeviceSyncApplicationError()
 
     enum class RepositoryOperation {
         SAVE,
@@ -53,12 +49,8 @@ sealed class DeviceSyncApplicationError : ApplicationError {
     /**
      * Event store operation failed.
      */
-    data class EventStoreError(
-        val operation: EventStoreOperation,
-        val aggregateId: String,
-        val eventType: String? = null,
-        val eventCount: Int? = null,
-    ) : DeviceSyncApplicationError()
+    data class EventStoreError(val operation: EventStoreOperation, val aggregateId: String, val eventType: String? = null, val eventCount: Int? = null) :
+        DeviceSyncApplicationError()
 
     enum class EventStoreOperation {
         APPEND,
@@ -71,12 +63,8 @@ sealed class DeviceSyncApplicationError : ApplicationError {
     /**
      * Input validation failed.
      */
-    data class ValidationError(
-        val fieldName: String,
-        val invalidValue: Any?,
-        val validationRule: ValidationRule,
-        val context: String? = null,
-    ) : DeviceSyncApplicationError()
+    data class ValidationError(val fieldName: String, val invalidValue: Any?, val validationRule: ValidationRule, val context: String? = null) :
+        DeviceSyncApplicationError()
 
     enum class ValidationRule {
         REQUIRED,

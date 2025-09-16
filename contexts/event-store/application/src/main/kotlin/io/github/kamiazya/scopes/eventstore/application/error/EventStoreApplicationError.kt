@@ -29,12 +29,8 @@ sealed class EventStoreApplicationError : ApplicationError {
     /**
      * Serialization or deserialization failed.
      */
-    data class SerializationError(
-        val operation: SerializationOperation,
-        val targetType: String,
-        val dataSize: Int? = null,
-        val format: String = "JSON",
-    ) : EventStoreApplicationError()
+    data class SerializationError(val operation: SerializationOperation, val targetType: String, val dataSize: Int? = null, val format: String = "JSON") :
+        EventStoreApplicationError()
 
     enum class SerializationOperation {
         SERIALIZE,
@@ -44,12 +40,8 @@ sealed class EventStoreApplicationError : ApplicationError {
     /**
      * Query validation failed.
      */
-    data class ValidationError(
-        val parameter: String,
-        val invalidValue: Any?,
-        val constraint: ValidationConstraint,
-        val allowedRange: String? = null,
-    ) : EventStoreApplicationError()
+    data class ValidationError(val parameter: String, val invalidValue: Any?, val constraint: ValidationConstraint, val allowedRange: String? = null) :
+        EventStoreApplicationError()
 
     enum class ValidationConstraint {
         NEGATIVE_LIMIT,
