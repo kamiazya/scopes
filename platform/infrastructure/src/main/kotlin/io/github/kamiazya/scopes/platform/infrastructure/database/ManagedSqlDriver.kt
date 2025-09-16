@@ -46,8 +46,9 @@ class ManagedSqlDriver(private val databasePath: String, private val connectionP
         _driver?.let { driver ->
             try {
                 driver.close()
-            } catch (e: Exception) {
+            } catch (e: RuntimeException) {
                 // Log but don't rethrow - cleanup should not fail
+                // Only catch runtime exceptions to allow critical errors to propagate
                 System.err.println("Failed to close database driver: ${e.message}")
             }
             _driver = null

@@ -5,7 +5,6 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.scopemanagement.application.error.CrossAggregateValidationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
@@ -24,7 +23,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 class CrossAggregateValidationService(
     private val hierarchyValidationService: ScopeHierarchyValidationService,
     private val uniquenessValidationService: ScopeUniquenessValidationService,
-    private val scopeHierarchyService: ScopeHierarchyService, // Domain service
 ) {
 
     /**

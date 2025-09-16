@@ -26,7 +26,6 @@ public class ContextViewCommandPortAdapter(
     private val updateContextViewHandler: UpdateContextViewHandler,
     private val deleteContextViewHandler: DeleteContextViewHandler,
     private val activeContextService: ActiveContextService,
-    private val errorMapper: ErrorMapper,
     private val applicationErrorMapper: ApplicationErrorMapper,
 ) : ContextViewCommandPort {
 

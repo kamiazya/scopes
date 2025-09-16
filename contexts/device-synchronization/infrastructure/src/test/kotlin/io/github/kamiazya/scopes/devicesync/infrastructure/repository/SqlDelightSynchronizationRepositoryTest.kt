@@ -28,7 +28,11 @@ class SqlDelightSynchronizationRepositoryTest :
                 driver = app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver(app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY)
                 io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase.Schema.create(driver)
                 database = io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase(driver)
-                repository = SqlDelightSynchronizationRepository(database.deviceQueries, database.vectorClockQueries)
+                repository = SqlDelightSynchronizationRepository(
+                    database.deviceQueries,
+                    database.vectorClockQueries,
+                    timeProvider = io.github.kamiazya.scopes.platform.domain.time.TestTimeProvider()
+                )
             }
 
             afterEach {

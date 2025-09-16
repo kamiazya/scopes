@@ -84,7 +84,6 @@ val scopeManagementModule = module {
         CrossAggregateValidationService(
             hierarchyValidationService = get(),
             uniquenessValidationService = get(),
-            scopeHierarchyService = get(),
         )
     }
 

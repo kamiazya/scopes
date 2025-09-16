@@ -55,9 +55,7 @@ class ScopeManagementCommandPortAdapter(
     private val setCanonicalAliasHandler: SetCanonicalAliasHandler,
     private val renameAliasHandler: RenameAliasHandler,
     private val transactionManager: TransactionManager,
-    private val errorMapper: ErrorMapper,
     private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger = ConsoleLogger("ScopeManagementCommandPortAdapter"),
 ) : ScopeManagementCommandPort {
 
     override suspend fun createScope(command: ContractCreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = createScopeHandler(

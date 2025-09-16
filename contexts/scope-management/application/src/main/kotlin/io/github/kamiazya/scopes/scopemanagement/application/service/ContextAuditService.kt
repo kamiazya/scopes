@@ -21,9 +21,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ContextViewApplied
  * rather than encapsulating core domain logic.
  */
 class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Loggable {
-    companion object {
-        private const val UNKNOWN_ERROR = "Unknown error"
-    }
 
     /**
      * Publish an event when a context view is activated.

@@ -144,6 +144,7 @@ class ScopeHierarchyApplicationService(private val repository: ScopeRepository, 
         val path = mutableListOf<ScopeId>()
         var currentId: ScopeId? = scopeId
 
+        @Suppress("UnusedPrivateProperty")
         for (iteration in 0 until MAX_HIERARCHY_PATH_ITERATIONS) {
             if (currentId == null) break
 

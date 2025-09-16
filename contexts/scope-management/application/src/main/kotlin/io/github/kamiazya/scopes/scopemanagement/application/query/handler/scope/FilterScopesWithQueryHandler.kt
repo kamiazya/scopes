@@ -30,9 +30,6 @@ class FilterScopesWithQueryHandler(
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopeManagementApplicationError, List<ScopeDto>> {
 
-    companion object {
-        private const val SCOPE_REPOSITORY_OPERATION = "scope-repository"
-    }
 
     override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> =
         transactionManager.inReadOnlyTransaction {
