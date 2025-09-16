@@ -4,7 +4,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.instanceOf
-import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
 
 /**
@@ -23,7 +22,6 @@ class ErrorMappingSpecificationTest :
                 it("should map AliasExistsButScopeNotFound to application error") {
                     // Given: A known data inconsistency error
                     val domainError = DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        occurredAt = Clock.System.now(),
                         aliasName = "test-alias",
                         scopeId = ScopeId.generate(),
                     )
@@ -59,7 +57,6 @@ class ErrorMappingSpecificationTest :
 
                     // If we can't read the file in test, at least verify the mapping works for known types
                     val knownError = DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                        occurredAt = Clock.System.now(),
                         aliasName = "test",
                         scopeId = ScopeId.generate(),
                     )
@@ -94,7 +91,6 @@ class ErrorMappingSpecificationTest :
 
                     // Test that mapped errors preserve important information
                     val testError = DomainScopeAliasError.AliasNotFound(
-                        occurredAt = Clock.System.now(),
                         aliasName = "important-alias-name",
                     )
 
@@ -105,7 +101,6 @@ class ErrorMappingSpecificationTest :
 
                     // Test error messages for other types
                     val duplicateError = DomainScopeAliasError.DuplicateAlias(
-                        occurredAt = Clock.System.now(),
                         aliasName = "duplicate-alias",
                         existingScopeId = ScopeId.generate(),
                         attemptedScopeId = ScopeId.generate(),
@@ -132,25 +127,20 @@ class ErrorMappingSpecificationTest :
                      */
 
                     // Test various error types to ensure they're all mapped
-                    val now = Clock.System.now()
                     val errorSamples = listOf(
                         DomainScopeAliasError.AliasNotFound(
-                            occurredAt = now,
                             aliasName = "test-alias",
                         ),
                         DomainScopeAliasError.DuplicateAlias(
-                            occurredAt = now,
                             aliasName = "test",
                             existingScopeId = ScopeId.generate(),
                             attemptedScopeId = ScopeId.generate(),
                         ),
                         DomainScopeAliasError.CannotRemoveCanonicalAlias(
-                            occurredAt = now,
                             scopeId = ScopeId.generate(),
                             aliasName = "canonical",
                         ),
                         DomainScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound(
-                            occurredAt = now,
                             aliasName = "inconsistent",
                             scopeId = ScopeId.generate(),
                         ),

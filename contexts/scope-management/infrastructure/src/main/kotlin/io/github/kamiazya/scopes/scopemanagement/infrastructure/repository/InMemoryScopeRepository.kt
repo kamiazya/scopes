@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -29,7 +28,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                 scopes[scope.id] = scope
                 scope
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "save", e))
+                raise(PersistenceError.StorageUnavailable("save", e))
             }
         }
     }
@@ -39,7 +38,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes.containsKey(id)
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsById", e))
+                raise(PersistenceError.StorageUnavailable("existsById", e))
             }
         }
     }
@@ -58,7 +57,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                     }
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "existsByParentIdAndTitle", e))
+                raise(PersistenceError.StorageUnavailable("existsByParentIdAndTitle", e))
             }
         }
     }
@@ -77,7 +76,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                     }?.id
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findIdByParentIdAndTitle", e))
+                raise(PersistenceError.StorageUnavailable("findIdByParentIdAndTitle", e))
             }
         }
     }
@@ -93,7 +92,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .take(limit)
                     .toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findByParentId(offset,limit)", e))
+                raise(PersistenceError.StorageUnavailable("findByParentId(offset,limit)", e))
             }
         }
     }
@@ -104,7 +103,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                 scopes.remove(id)
                 Unit
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "deleteById", e))
+                raise(PersistenceError.StorageUnavailable("deleteById", e))
             }
         }
     }
@@ -114,7 +113,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes[id]
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findById", e))
+                raise(PersistenceError.StorageUnavailable("findById", e))
             }
         }
     }
@@ -124,7 +123,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes.values.toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+                raise(PersistenceError.StorageUnavailable("findAll", e))
             }
         }
     }
@@ -137,7 +136,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                 scopes[scope.id] = scope
                 scope
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "update", e))
+                raise(PersistenceError.StorageUnavailable("update", e))
             }
         }
     }
@@ -147,7 +146,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes.values.count { it.parentId == parentId }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countChildrenOf", e))
+                raise(PersistenceError.StorageUnavailable("countChildrenOf", e))
             }
         }
     }
@@ -157,7 +156,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes.values.count { it.parentId == parentId }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByParentId", e))
+                raise(PersistenceError.StorageUnavailable("countByParentId", e))
             }
         }
     }
@@ -170,7 +169,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                     .drop(offset)
                     .take(limit)
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAll", e))
+                raise(PersistenceError.StorageUnavailable("findAll", e))
             }
         }
     }
@@ -182,7 +181,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                     scope.aspects.contains(aspectKey)
                 }
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "countByAspectKey", e))
+                raise(PersistenceError.StorageUnavailable("countByAspectKey", e))
             }
         }
     }
@@ -192,7 +191,7 @@ open class InMemoryScopeRepository : ScopeRepository {
             try {
                 scopes.values.filter { it.parentId == null }.toList()
             } catch (e: Exception) {
-                raise(PersistenceError.StorageUnavailable(currentTimestamp(), "findAllRoot", e))
+                raise(PersistenceError.StorageUnavailable("findAllRoot", e))
             }
         }
     }

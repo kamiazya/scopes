@@ -6,7 +6,6 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Application service for validating scope uniqueness constraints.
@@ -36,7 +35,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                         title,
                         contextId.value,
                         ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -46,7 +44,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                     title = title,
                     contextId = contextId.value,
                     errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                    occurredAt = Clock.System.now(),
                 )
             }
         }
@@ -67,7 +64,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                     title,
                     parentId?.value,
                     ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                    occurredAt = Clock.System.now(),
                 )
             }
             .bind()
@@ -82,7 +78,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                 title = title,
                 contextId = parentId?.value,
                 errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                occurredAt = Clock.System.now(),
             )
         }
     }
@@ -106,7 +101,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                     title,
                     null,
                     ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                    occurredAt = Clock.System.now(),
                 )
             }
             .bind()
@@ -120,7 +114,6 @@ class ScopeUniquenessValidationService(private val scopeRepository: ScopeReposit
                 title = title,
                 contextId = null,
                 errorType = ContextError.DuplicateScope.DuplicateScopeType.TITLE_EXISTS_IN_CONTEXT,
-                occurredAt = Clock.System.now(),
             )
         }
     }

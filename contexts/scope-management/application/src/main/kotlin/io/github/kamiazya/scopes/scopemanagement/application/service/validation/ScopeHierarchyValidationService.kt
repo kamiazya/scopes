@@ -6,7 +6,6 @@ import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 
 /**
  * Application service for validating scope hierarchy constraints.
@@ -27,13 +26,12 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
     suspend fun validateHierarchyConsistency(parentId: ScopeId, childIds: List<ScopeId>): Either<ContextError, Unit> = either {
         // Business rule: Parent must exist
         val parentExists = scopeRepository.existsById(parentId)
-            .mapLeft { ContextError.InvalidScope(parentId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND, occurredAt = Clock.System.now()) }
+            .mapLeft { ContextError.InvalidScope(parentId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND) }
             .bind()
         ensure(parentExists) {
             ContextError.InvalidScope(
                 scopeId = parentId.value,
                 errorType = ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
-                occurredAt = Clock.System.now(),
             )
         }
 
@@ -41,14 +39,13 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
         childIds.forEach { childId ->
             val childExists = scopeRepository.existsById(childId)
                 .mapLeft {
-                    ContextError.InvalidScope(childId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND, occurredAt = Clock.System.now())
+                    ContextError.InvalidScope(childId.value, ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND)
                 }
                 .bind()
             ensure(childExists) {
                 ContextError.InvalidScope(
                     scopeId = childId.value,
                     errorType = ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
-                    occurredAt = Clock.System.now(),
                 )
             }
         }
@@ -71,7 +68,6 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
                 scopeId = scopeId.value,
                 parentId = newParentId.value,
                 errorType = ContextError.InvalidHierarchy.InvalidHierarchyType.CIRCULAR_REFERENCE,
-                occurredAt = Clock.System.now(),
             )
         }
 
@@ -82,7 +78,6 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
                 scopeId = scopeId.value,
                 parentId = newParentId.value,
                 errorType = ContextError.InvalidHierarchy.InvalidHierarchyType.CIRCULAR_REFERENCE,
-                occurredAt = Clock.System.now(),
             )
         }
     }
@@ -113,7 +108,6 @@ class ScopeHierarchyValidationService(private val scopeRepository: ScopeReposito
                     ContextError.InvalidScope(
                         currentParentId.value,
                         ContextError.InvalidScope.InvalidScopeType.SCOPE_NOT_FOUND,
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()

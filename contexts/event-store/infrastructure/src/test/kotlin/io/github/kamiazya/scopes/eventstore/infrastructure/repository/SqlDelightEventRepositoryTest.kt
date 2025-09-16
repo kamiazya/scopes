@@ -53,7 +53,6 @@ class MockEventSerializer : EventSerializer {
                             actualValue = "Serialization error",
                         ),
                     ),
-                    occurredAt = Clock.System.now(),
                 ).left()
             }
         }
@@ -77,13 +76,11 @@ class MockEventSerializer : EventSerializer {
                             actualValue = "Deserialization error",
                         ),
                     ),
-                    occurredAt = Clock.System.now(),
                 ).left()
             }
         }
 
         return events[eventData]?.right() ?: EventStoreError.InvalidEventError(
-            occurredAt = Clock.System.now(),
             eventType = eventType,
             validationErrors = listOf(
                 EventStoreError.ValidationIssue(
@@ -197,7 +194,6 @@ class SqlDelightEventRepositoryTest :
                                 actualValue = "error",
                             ),
                         ),
-                        occurredAt = Clock.System.now(),
                     )
 
                     // When
@@ -350,7 +346,6 @@ class SqlDelightEventRepositoryTest :
                                 actualValue = "error",
                             ),
                         ),
-                        occurredAt = Clock.System.now(),
                     )
 
                     // When

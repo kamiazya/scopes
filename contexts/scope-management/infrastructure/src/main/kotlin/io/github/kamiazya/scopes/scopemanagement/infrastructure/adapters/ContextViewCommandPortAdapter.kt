@@ -9,13 +9,13 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteContex
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateContextViewCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.DeleteContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.command.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand as AppCreateContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand as AppDeleteContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.UpdateContextViewCommand as AppUpdateContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.CreateContextViewCommand as AppCreateContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.DeleteContextViewCommand as AppDeleteContextViewCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.context.UpdateContextViewCommand as AppUpdateContextViewCommand
 
 /**
  * Command port adapter implementation for ContextView operations.

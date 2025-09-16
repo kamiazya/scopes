@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import kotlinx.datetime.Clock
 /**
  * Value object representing a unique key for a context view.
  * The key is used for programmatic access and must follow specific naming conventions.
@@ -30,13 +29,12 @@ value class ContextViewKey private constructor(val value: String) {
         fun create(value: String): Either<ContextError, ContextViewKey> = either {
             val trimmed = value.trim()
 
-            ensure(trimmed.isNotEmpty()) { ContextError.EmptyKey(occurredAt = Clock.System.now()) }
-            ensure(trimmed.length >= MIN_LENGTH) { ContextError.KeyTooShort(MIN_LENGTH, occurredAt = Clock.System.now()) }
-            ensure(trimmed.length <= MAX_LENGTH) { ContextError.KeyTooLong(MAX_LENGTH, occurredAt = Clock.System.now()) }
+            ensure(trimmed.isNotEmpty()) { ContextError.EmptyKey }
+            ensure(trimmed.length >= MIN_LENGTH) { ContextError.KeyTooShort(MIN_LENGTH) }
+            ensure(trimmed.length <= MAX_LENGTH) { ContextError.KeyTooLong(MAX_LENGTH) }
             ensure(VALID_PATTERN.matches(trimmed)) {
                 ContextError.InvalidKeyFormat(
                     errorType = ContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_PATTERN,
-                    occurredAt = Clock.System.now(),
                 )
             }
 

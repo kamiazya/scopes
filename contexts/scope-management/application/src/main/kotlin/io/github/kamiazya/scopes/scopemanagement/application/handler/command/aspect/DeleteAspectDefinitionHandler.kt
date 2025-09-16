@@ -4,12 +4,11 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.aspect.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import kotlinx.datetime.Clock
 
 /**
  * Handler for deleting an aspect definition.
@@ -35,7 +34,6 @@ class DeleteAspectDefinitionHandler(
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },
@@ -45,7 +43,6 @@ class DeleteAspectDefinitionHandler(
                             entityType = "AspectDefinition",
                             identifier = command.key,
                             identifierType = "key",
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },
@@ -63,7 +60,6 @@ class DeleteAspectDefinitionHandler(
                             service = "aspect-repository",
                             cause = error as? Throwable,
                             context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 },

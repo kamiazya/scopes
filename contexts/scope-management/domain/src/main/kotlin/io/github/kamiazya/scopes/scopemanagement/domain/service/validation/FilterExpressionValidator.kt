@@ -10,7 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
  * exposing the technical details of how the validation is performed.
  * The actual implementation will be provided by the infrastructure layer.
  */
-interface FilterExpressionValidator {
+fun interface FilterExpressionValidator {
     /**
      * Validates a filter expression according to the business rules.
      *

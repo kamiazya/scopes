@@ -16,7 +16,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -59,7 +58,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             scope.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "save",
                 cause = e,
             ).left()
@@ -72,7 +70,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             scopeRow?.let { rowToScope(it) }.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findById",
                 cause = e,
             ).left()
@@ -96,7 +93,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             scopes.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findAll",
                 cause = e,
             ).left()
@@ -120,7 +116,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findByParentId(offset,limit)",
                 cause = e,
             ).left()
@@ -133,7 +128,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             exists.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "existsById",
                 cause = e,
             ).left()
@@ -151,7 +145,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             exists.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "existsByParentIdAndTitle",
                 cause = e,
             ).left()
@@ -174,7 +167,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findIdByParentIdAndTitle",
                 cause = e,
             ).left()
@@ -194,7 +186,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             Unit.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "deleteById",
                 cause = e,
             ).left()
@@ -209,7 +200,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             count.toInt().right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "countChildrenOf",
                 cause = e,
             ).left()
@@ -226,7 +216,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             count.toInt().right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "countByParentId",
                 cause = e,
             ).left()
@@ -247,7 +236,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findAll",
                 cause = e,
             ).left()
@@ -262,7 +250,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             rows.right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "findAllRoot",
                 cause = e,
             ).left()
@@ -395,7 +382,6 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             count.toInt().right()
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
                 operation = "countByAspectKey",
                 cause = e,
             ).left()

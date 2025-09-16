@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -44,7 +43,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         Unit.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "save",
             cause = e,
         ).left()
@@ -55,7 +53,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findByAliasName",
             cause = e,
         ).left()
@@ -66,7 +63,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findById",
             cause = e,
         ).left()
@@ -77,7 +73,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findByScopeId",
             cause = e,
         ).left()
@@ -88,7 +83,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         result?.let { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findCanonicalByScopeId",
             cause = e,
         ).left()
@@ -99,7 +93,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findByScopeIdAndType",
             cause = e,
         ).left()
@@ -110,7 +103,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "findByAliasNamePrefix",
             cause = e,
         ).left()
@@ -121,7 +113,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         result.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "existsByAliasName",
             cause = e,
         ).left()
@@ -132,7 +123,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         true.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "removeById",
             cause = e,
         ).left()
@@ -143,7 +133,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         true.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "removeByAliasName",
             cause = e,
         ).left()
@@ -154,7 +143,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         0.right() // SQLDelight doesn't return row count
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "removeByScopeId",
             cause = e,
         ).left()
@@ -171,7 +159,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         true.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "update",
             cause = e,
         ).left()
@@ -182,7 +169,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         result.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "count",
             cause = e,
         ).left()
@@ -193,7 +179,6 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         results.map { rowToScopeAlias(it) }.right()
     } catch (e: Exception) {
         PersistenceError.StorageUnavailable(
-            occurredAt = Clock.System.now(),
             operation = "listAll",
             cause = e,
         ).left()

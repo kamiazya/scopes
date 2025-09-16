@@ -2,16 +2,17 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler.command
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
+import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.CreateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -65,10 +66,9 @@ class CreateScopeHandler(
             either {
                 // Parse parent ID if provided
                 val parentId = command.parentId?.let { parentIdString ->
-                    ScopeId.create(parentIdString).mapLeft { idError ->
+                    ScopeId.create(parentIdString).mapLeft { _ ->
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
                         ScopeHierarchyError.InvalidParentId(
-                            occurredAt = Clock.System.now(),
                             invalidId = parentIdString,
                         )
                     }.bind()
@@ -83,7 +83,13 @@ class CreateScopeHandler(
                 ).bind()
 
                 // Extract the scope from aggregate
-                val scope = scopeAggregate.scope!!
+                val scope = ensureNotNull(scopeAggregate.scope) {
+                    PersistenceError.DataCorruption(
+                        entityType = "ScopeAggregate",
+                        entityId = scopeAggregate.id.value,
+                        reason = "Newly created aggregate must have a scope",
+                    )
+                }
 
                 // Save the scope
                 val savedScope = scopeRepository.save(scope).bind()
@@ -119,23 +125,21 @@ class CreateScopeHandler(
 
                     // Check if alias already exists
                     // Check if alias already exists and get the existing scope ID if it does
-                    val existingAlias = scopeAliasRepository.findByAliasName(aliasName).bind()
-                    ensure(existingAlias == null) {
+                    scopeAliasRepository.findByAliasName(aliasName).bind()?.let { existing ->
                         val duplicateError = ScopeAliasError.DuplicateAlias(
-                            occurredAt = Clock.System.now(),
                             aliasName = aliasName.value,
-                            existingScopeId = existingAlias!!.scopeId, // The actual scope that owns this alias
+                            existingScopeId = existing.scopeId, // The actual scope that owns this alias
                             attemptedScopeId = savedScope.id, // The new scope that tried to use it
                         )
                         logger.warn(
                             "Alias already exists",
                             mapOf(
                                 "alias" to aliasName.value,
-                                "existingScopeId" to existingAlias.scopeId.value,
+                                "existingScopeId" to existing.scopeId.value,
                                 "attemptedScopeId" to savedScope.id.value,
                             ),
                         )
-                        duplicateError
+                        raise(duplicateError)
                     }
 
                     // Create and save the canonical alias

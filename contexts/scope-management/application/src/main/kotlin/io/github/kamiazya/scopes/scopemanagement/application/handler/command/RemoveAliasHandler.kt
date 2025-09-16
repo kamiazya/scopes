@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.RemoveAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError

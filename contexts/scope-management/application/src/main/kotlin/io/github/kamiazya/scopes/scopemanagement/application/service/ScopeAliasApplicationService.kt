@@ -181,7 +181,6 @@ class ScopeAliasApplicationService(
 
         raise(
             ScopeAliasError.AliasGenerationFailed(
-                occurredAt = Clock.System.now(),
                 scopeId = scopeId,
                 retryCount = maxRetries,
             ),
@@ -197,7 +196,6 @@ class ScopeAliasApplicationService(
     suspend fun deleteAlias(aliasId: AliasId): Either<ScopesError, Unit> = either {
         val alias = ensureNotNull(aliasRepository.findById(aliasId).bind()) {
             ScopeAliasError.AliasNotFoundById(
-                occurredAt = Clock.System.now(),
                 aliasId = aliasId,
             )
         }
@@ -205,7 +203,6 @@ class ScopeAliasApplicationService(
         // Check if this is a canonical alias - they cannot be deleted
         ensure(!alias.isCanonical()) {
             ScopeAliasError.CannotRemoveCanonicalAlias(
-                occurredAt = Clock.System.now(),
                 scopeId = alias.scopeId,
                 aliasName = alias.aliasName.value,
             )
@@ -215,7 +212,6 @@ class ScopeAliasApplicationService(
         val removed = aliasRepository.removeById(alias.id).bind()
         ensure(removed) {
             ScopeAliasError.AliasNotFound(
-                occurredAt = Clock.System.now(),
                 aliasName = alias.aliasName.value,
             )
         }

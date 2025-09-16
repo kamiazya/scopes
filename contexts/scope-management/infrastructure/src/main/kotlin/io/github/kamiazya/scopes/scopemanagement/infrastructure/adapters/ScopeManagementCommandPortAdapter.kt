@@ -8,13 +8,13 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeRe
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.AddAliasCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RenameAliasCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.SetCanonicalAliasCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.AddAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.CreateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.DeleteScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.RemoveAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.RenameAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.SetCanonicalAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.scope.UpdateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.AddAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.CreateScopeHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.DeleteScopeHandler
@@ -22,8 +22,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.command.Rem
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.handler.command.UpdateScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.handler.query.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.scope.GetScopeById
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand as ContractCreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand as ContractDeleteScopeCommand
