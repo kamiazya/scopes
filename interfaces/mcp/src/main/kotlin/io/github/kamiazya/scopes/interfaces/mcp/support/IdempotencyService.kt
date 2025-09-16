@@ -10,6 +10,19 @@ import kotlinx.serialization.json.JsonElement
  * arguments return cached results instead of being re-executed.
  */
 interface IdempotencyService {
+    companion object {
+        /**
+         * Regular expression pattern for valid idempotency keys.
+         * Keys must be 8-128 characters long and contain only alphanumeric characters, hyphens, and underscores.
+         */
+        val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
+
+        /**
+         * Pattern string for use in JSON schemas.
+         * This is the raw pattern string without Regex compilation, suitable for JSON schema definitions.
+         */
+        const val IDEMPOTENCY_KEY_PATTERN_STRING = "^[A-Za-z0-9_-]{8,128}$"
+    }
     /**
      * Check if a tool call with the given arguments has been seen before.
      *

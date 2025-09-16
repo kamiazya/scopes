@@ -33,21 +33,18 @@ internal class DefaultIdempotencyService(
     private val idempotencyStore = mutableMapOf<String, StoredResult>()
     private val mutex = Mutex()
 
-    companion object {
-        private val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
-    }
 
     override suspend fun checkIdempotency(toolName: String, arguments: Map<String, JsonElement>, idempotencyKey: String?): CallToolResult? {
         val effectiveKey = idempotencyKey ?: return null
 
-        if (!effectiveKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
+        if (!effectiveKey.matches(IdempotencyService.IDEMPOTENCY_KEY_PATTERN)) {
             val payload = buildJsonObject {
                 put("code", -32602)
                 put("message", "Invalid idempotency key format")
                 putJsonObject("data") {
                     put("type", "InvalidIdempotencyKey")
                     put("key", effectiveKey)
-                    put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
+                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN.pattern)
                 }
             }
             return CallToolResult(
