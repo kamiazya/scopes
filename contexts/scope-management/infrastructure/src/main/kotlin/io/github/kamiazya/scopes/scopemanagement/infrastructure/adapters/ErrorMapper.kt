@@ -24,11 +24,11 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     companion object {
         private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
     }
-    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
+    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
     }
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
@@ -68,74 +68,74 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
 
     private fun mapIdError(domainError: ScopeInputError.IdError): ScopeContractError.InputError.InvalidId = when (domainError) {
-        is ScopeInputError.IdError.Blank -> ScopeContractError.InputError.InvalidId(
-            id = domainError.attemptedValue,
+        is ScopeInputError.IdError.EmptyId -> ScopeContractError.InputError.InvalidId(
+            id = "",
             expectedFormat = "Non-empty ULID format",
         )
-        is ScopeInputError.IdError.InvalidFormat -> ScopeContractError.InputError.InvalidId(
-            id = domainError.attemptedValue,
-            expectedFormat = presentIdFormat(domainError.formatType),
+        is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
+            id = domainError.id,
+            expectedFormat = presentIdFormat(domainError.expectedFormat),
         )
     }
 
     private fun mapTitleError(domainError: ScopeInputError.TitleError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
-        is ScopeInputError.TitleError.Empty -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.EmptyTitle -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeInputError.TitleError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = domainError.attemptedValue.length,
+                minimumLength = domainError.minLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.ContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.TitleError.InvalidTitleFormat -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.title,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = domainError.prohibitedCharacters,
+                prohibitedCharacters = emptyList(),
             ),
         )
     }
 
     private fun mapDescriptionError(domainError: ScopeInputError.DescriptionError): ScopeContractError.InputError.InvalidDescription = when (domainError) {
-        is ScopeInputError.DescriptionError.TooLong -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = domainError.attemptedValue,
+        is ScopeInputError.DescriptionError.DescriptionTooLong -> ScopeContractError.InputError.InvalidDescription(
+            descriptionText = "",
             validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
     }
 
     private fun mapAliasError(domainError: ScopeInputError.AliasError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
-        is ScopeInputError.AliasError.Empty -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.EmptyAlias -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeInputError.AliasError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.AliasTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = domainError.attemptedValue.length,
+                minimumLength = domainError.minLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.AliasTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                maximumLength = domainError.maxLength,
+                actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.InvalidFormat -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.alias,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
                 prohibitedCharacters = emptyList(),
             ),
@@ -160,10 +160,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
 
     private fun mapUniquenessError(domainError: ScopeUniquenessError): ScopeContractError = when (domainError) {
-        is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
+        is ScopeUniquenessError.DuplicateTitleInContext -> ScopeContractError.BusinessError.DuplicateTitle(
             title = domainError.title,
-            parentId = domainError.parentScopeId?.value,
-            existingScopeId = domainError.existingScopeId?.value,
+            parentId = domainError.parentId?.value,
+            existingScopeId = domainError.existingId.value,
         )
         is ScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
@@ -171,37 +171,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
 
     private fun mapHierarchyError(domainError: ScopeHierarchyError): ScopeContractError = when (domainError) {
-        is ScopeHierarchyError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
-            scopeId = domainError.scopeId.value,
-            childrenCount = null,
-        )
-        is ScopeHierarchyError.CircularReference -> ScopeContractError.BusinessError.HierarchyViolation(
+        is ScopeHierarchyError.CircularDependency -> ScopeContractError.BusinessError.HierarchyViolation(
             violation = ScopeContractError.HierarchyViolationType.CircularReference(
                 scopeId = domainError.scopeId.value,
-                parentId = domainError.parentId.value,
-            ),
-        )
-        is ScopeHierarchyError.SelfParenting -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
-                scopeId = domainError.scopeId.value,
-            ),
-        )
-        is ScopeHierarchyError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.parentId.value,
-        )
-        is ScopeHierarchyError.CircularPath -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.CircularReference(
-                scopeId = domainError.scopeId.value,
-                parentId = domainError.cyclePath.firstOrNull()?.value ?: domainError.scopeId.value,
-            ),
-        )
-        is ScopeHierarchyError.InvalidParentId -> ScopeContractError.InputError.InvalidId(
-            id = domainError.invalidId,
-            expectedFormat = "Valid parent scope ID",
-        )
-        is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
-                scopeId = domainError.parentScopeId.value,
+                parentId = domainError.ancestorId.value,
             ),
         )
         is ScopeHierarchyError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
@@ -209,8 +182,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 scopeId = domainError.scopeId.value,
             ),
         )
-        is ScopeHierarchyError.ScopeInHierarchyNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.scopeId.value,
+        is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
+            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+                scopeId = domainError.parentId.value,
+            ),
         )
         is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
@@ -219,24 +194,27 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
         is ScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = domainError.aliasName,
+            alias = domainError.alias,
         )
-        is ScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
-            alias = domainError.aliasName,
+        is ScopeAliasError.AliasNotFoundByName -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = domainError.alias,
         )
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
         is ScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
-        is ScopeAliasError.AliasGenerationValidationFailed -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.attemptedValue,
+        is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidTitle(
+            title = domainError.alias,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
         )
         is ScopeAliasError.AliasNotFoundById -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.aliasId.value,
         )
-        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.scopeId.value,
+        is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
+            scopeId = domainError.scopeId.toString(),
+        )
+        is ScopeAliasError.DataInconsistencyError -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
         )
     }
 

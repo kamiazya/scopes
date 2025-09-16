@@ -8,6 +8,8 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -25,13 +27,13 @@ class FilterScopesWithQueryHandler(
     private val transactionManager: TransactionManager,
     private val logger: Logger,
     private val parser: AspectQueryParser = AspectQueryParser(),
-) : QueryHandler<FilterScopesWithQuery, ScopesError, List<ScopeDto>> {
+) : QueryHandler<FilterScopesWithQuery, ScopeManagementApplicationError, List<ScopeDto>> {
 
     companion object {
         private const val SCOPE_REPOSITORY_SERVICE = "scope-repository"
     }
 
-    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopesError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
+    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Filtering scopes with query",
             mapOf(
@@ -49,7 +51,7 @@ class FilterScopesWithQueryHandler(
                         ScopesError.InvalidOperation(
                             operation = "filter-scopes-with-query",
                             reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                        ),
+                        ).toGenericApplicationError(),
                     )
                 },
                 { it },
@@ -62,7 +64,7 @@ class FilterScopesWithQueryHandler(
                         errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                         service = "aspect-repository",
                         context = mapOf("operation" to "findAll"),
-                    )
+                    ).toGenericApplicationError()
                 }
                 .bind()
                 .associateBy { it.key.value }
@@ -73,7 +75,9 @@ class FilterScopesWithQueryHandler(
             // Get scopes to filter
             val scopesToFilter = when {
                 query.parentId != null -> {
-                    val parentScopeId = ScopeId.create(query.parentId).bind()
+                    val parentScopeId = ScopeId.create(query.parentId)
+                        .mapLeft { it.toGenericApplicationError() }
+                        .bind()
                     scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
                         .mapLeft { error ->
                             ScopesError.SystemError(
@@ -83,7 +87,7 @@ class FilterScopesWithQueryHandler(
                                     "operation" to "findByParentId",
                                     "parentId" to parentScopeId.value.toString(),
                                 ),
-                            )
+                            ).toGenericApplicationError()
                         }
                         .bind()
                 }
@@ -99,7 +103,7 @@ class FilterScopesWithQueryHandler(
                                     "offset" to query.offset,
                                     "limit" to query.limit,
                                 ),
-                            )
+                            ).toGenericApplicationError()
                         }
                         .bind()
                 }
@@ -111,7 +115,7 @@ class FilterScopesWithQueryHandler(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = SCOPE_REPOSITORY_SERVICE,
                                 context = mapOf("operation" to "findAllRoot"),
-                            )
+                            ).toGenericApplicationError()
                         }
                         .bind()
                 }

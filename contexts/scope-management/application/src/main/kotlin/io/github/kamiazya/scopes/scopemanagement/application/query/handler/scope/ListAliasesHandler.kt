@@ -7,6 +7,8 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasDto
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAliases
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -21,9 +23,9 @@ class ListAliasesHandler(
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : QueryHandler<ListAliases, ScopesError, List<AliasDto>> {
+) : QueryHandler<ListAliases, ScopeManagementApplicationError, List<AliasDto>> {
 
-    override suspend operator fun invoke(query: ListAliases): Either<ScopesError, List<AliasDto>> = transactionManager.inReadOnlyTransaction {
+    override suspend operator fun invoke(query: ListAliases): Either<ScopeManagementApplicationError, List<AliasDto>> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Listing aliases for scope",
             mapOf(
@@ -32,7 +34,9 @@ class ListAliasesHandler(
         )
         either {
             // Validate and create scope ID
-            val scopeId = ScopeId.create(query.scopeId).bind()
+            val scopeId = ScopeId.create(query.scopeId)
+                .mapLeft { it.toGenericApplicationError() }
+                .bind()
 
             // Get the scope to verify it exists
             scopeRepository.findById(scopeId)
@@ -44,7 +48,7 @@ class ListAliasesHandler(
                             "operation" to "findById",
                             "scopeId" to scopeId.value.toString(),
                         ),
-                    )
+                    ).toGenericApplicationError()
                 }
                 .bind()
                 ?: raise(
@@ -52,7 +56,7 @@ class ListAliasesHandler(
                         entityType = "Scope",
                         identifier = query.scopeId,
                         identifierType = "id",
-                    ),
+                    ).toGenericApplicationError(),
                 )
 
             // Get all aliases for the scope
@@ -65,7 +69,7 @@ class ListAliasesHandler(
                             "operation" to "findByScopeId",
                             "scopeId" to scopeId.value.toString(),
                         ),
-                    )
+                    ).toGenericApplicationError()
                 }
                 .bind()
 
