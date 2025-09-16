@@ -1,14 +1,15 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
+import io.github.kamiazya.scopes.apps.cli.di.contractsModule
 import io.github.kamiazya.scopes.apps.cli.di.devicesync.deviceSyncInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.eventstore.eventStoreInfrastructureModule
+import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
+import io.github.kamiazya.scopes.interfaces.mcp.di.simpleMcpModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
-import io.github.kamiazya.scopes.apps.cli.di.contractsModule
-import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
@@ -28,8 +29,6 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
-import io.github.kamiazya.scopes.apps.cli.di.simpleMcpModule
-import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import org.koin.dsl.module
 
 /**

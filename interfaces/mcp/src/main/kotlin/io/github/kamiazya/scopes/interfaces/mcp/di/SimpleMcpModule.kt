@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.apps.cli.di
+package io.github.kamiazya.scopes.interfaces.mcp.di
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
@@ -27,6 +27,9 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Services
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasResolveToolHandler
+import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesAddToolHandler
+import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesRemoveToolHandler
+import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesSetCanonicalCamelToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesSetCanonicalToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.DebugListChangedToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopeChildrenToolHandler
@@ -41,89 +44,92 @@ import org.koin.dsl.module
 
 /**
  * Simplified Koin module for MCP server components.
- * 
+ *
  * This module provides dependency injection configuration for the new MCP architecture.
  */
 val simpleMcpModule = module {
-    
+
     // Support Services
     single<ErrorMapper> { DefaultErrorMapper() }
     single<ArgumentCodec> { DefaultArgumentCodec() }
     single<IdempotencyService> { DefaultIdempotencyService(get<ArgumentCodec>()) }
-    
+
     // Context Factory
-    factory { 
+    factory {
         val ports = Ports(
             query = get<ScopeManagementQueryPort>(),
-            command = get<ScopeManagementCommandPort>()
+            command = get<ScopeManagementCommandPort>(),
         )
         val services = Services(
             errors = get<ErrorMapper>(),
             idempotency = get<IdempotencyService>(),
             codec = get<ArgumentCodec>(),
-            logger = get<Logger>().withName("MCP")
+            logger = get<Logger>().withName("MCP"),
         )
         ports to services
     }
-    
+
     // Tool Handlers (manually list them for now)
     single {
         listOf<ToolHandler>(
             AliasResolveToolHandler(),
+            AliasesAddToolHandler(),
+            AliasesRemoveToolHandler(),
+            AliasesSetCanonicalCamelToolHandler(), // Primary camelCase version
+            AliasesSetCanonicalToolHandler(), // Deprecated snake_case version
             ScopeGetToolHandler(),
             ScopeCreateToolHandler(),
             ScopeUpdateToolHandler(),
             ScopeDeleteToolHandler(),
             ScopeChildrenToolHandler(),
             ScopesRootsToolHandler(),
-            DebugListChangedToolHandler(),
-            AliasesSetCanonicalToolHandler(),
-            ScopesListAliasesToolHandler()
+            ScopesListAliasesToolHandler(),
+            DebugListChangedToolHandler()
         )
     }
-    
+
     // Resource Handlers
     single {
         listOf<ResourceHandler>(
             CliDocResourceHandler(),
             ScopeDetailsResourceHandler(),
             TreeJsonResourceHandler(),
-            TreeMarkdownResourceHandler()
+            TreeMarkdownResourceHandler(),
         )
     }
-    
+
     // Prompt Providers
     single {
         listOf<PromptProvider>(
             ScopesSummarizePromptProvider(),
             ScopesOutlinePromptProvider(),
-            ScopesPlanPromptProvider()
+            ScopesPlanPromptProvider(),
         )
     }
-    
+
     // Registrars
-    single { 
+    single {
         ToolRegistrar(
             handlers = get<List<ToolHandler>>(),
-            ctxFactory = { get() }
+            ctxFactory = { get() },
         )
     }
-    
+
     single {
         ResourceRegistrar(
             handlers = get<List<ResourceHandler>>(),
-            contextFactory = { get() }
+            contextFactory = { get() },
         )
     }
-    
+
     single {
         PromptRegistrar(providers = get<List<PromptProvider>>())
     }
-    
+
     // Server Components
     single { ServerBuilder() }
     single { TransportFactory.create() }
-    
+
     // Main MCP Server
     single {
         McpServer(
@@ -132,9 +138,9 @@ val simpleMcpModule = module {
             registrars = listOf(
                 get<ToolRegistrar>(),
                 get<ResourceRegistrar>(),
-                get<PromptRegistrar>()
+                get<PromptRegistrar>(),
             ),
-            logger = get<Logger>().withName("McpServer")
+            logger = get<Logger>().withName("McpServer"),
         )
     }
 }

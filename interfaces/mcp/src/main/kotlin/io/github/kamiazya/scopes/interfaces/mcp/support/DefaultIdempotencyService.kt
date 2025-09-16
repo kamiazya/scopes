@@ -2,6 +2,8 @@ package io.github.kamiazya.scopes.interfaces.mcp.support
 
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.JsonElement
@@ -16,15 +18,19 @@ import kotlin.time.Duration.Companion.minutes
 private data class StoredResult(val result: CallToolResult, val timestamp: Instant)
 
 /**
- * Default implementation of IdempotencyService using in-memory storage.
+ * Default implementation of IdempotencyService using thread-safe in-memory storage.
+ * 
+ * This implementation uses a Mutex to ensure thread-safety when accessing the cache.
+ * This class is internal as it should only be used within the MCP module.
  */
-class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, private val ttlMinutes: Long = 30, private val maxEntries: Int = 10_000) :
+internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, private val ttlMinutes: Long = 10, private val maxEntries: Int = 10_000) :
     IdempotencyService {
 
     private val idempotencyStore = mutableMapOf<String, StoredResult>()
+    private val mutex = Mutex()
 
     companion object {
-        private val IDEMPOTENCY_KEY_PATTERN = Regex("[a-zA-Z0-9._-]{1,255}")
+        private val IDEMPOTENCY_KEY_PATTERN = Regex("^[A-Za-z0-9_-]{8,128}$")
     }
 
     override suspend fun checkIdempotency(toolName: String, arguments: Map<String, JsonElement>, idempotencyKey: String?): CallToolResult? {
@@ -46,26 +52,29 @@ class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, privat
             )
         }
 
-        // Clean up expired entries periodically
-        cleanupExpiredEntries()
-
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
-        val stored = idempotencyStore[cacheKey]
+        
+        return mutex.withLock {
+            // Clean up expired entries periodically
+            cleanupExpiredEntriesInternal()
+            
+            val stored = idempotencyStore[cacheKey]
 
-        return if (stored != null) {
-            val now = Clock.System.now()
-            val age = now - stored.timestamp
+            if (stored != null) {
+                val now = Clock.System.now()
+                val age = now - stored.timestamp
 
-            if (age < ttlMinutes.minutes) {
-                // Return cached result
-                stored.result
+                if (age < ttlMinutes.minutes) {
+                    // Return cached result
+                    stored.result
+                } else {
+                    // Expired, remove it
+                    idempotencyStore.remove(cacheKey)
+                    null
+                }
             } else {
-                // Expired, remove it
-                idempotencyStore.remove(cacheKey)
                 null
             }
-        } else {
-            null
         }
     }
 
@@ -74,13 +83,24 @@ class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, privat
 
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = StoredResult(result, Clock.System.now())
-        idempotencyStore[cacheKey] = stored
-
-        // Clean up old entries (simple TTL-based cleanup)
-        cleanupExpiredEntries()
+        
+        mutex.withLock {
+            idempotencyStore[cacheKey] = stored
+            // Clean up old entries (simple TTL-based cleanup)
+            cleanupExpiredEntriesInternal()
+        }
     }
 
     override suspend fun cleanupExpiredEntries() {
+        mutex.withLock {
+            cleanupExpiredEntriesInternal()
+        }
+    }
+    
+    /**
+     * Internal cleanup method that must be called within a mutex lock.
+     */
+    private fun cleanupExpiredEntriesInternal() {
         val now = Clock.System.now()
         val cutoff = now - ttlMinutes.minutes
 

@@ -50,7 +50,7 @@ class ScopeCreateToolHandler : ToolHandler {
                 }
                 putJsonObject("idempotencyKey") {
                     put("type", "string")
-                    put("pattern", "[a-zA-Z0-9._-]{1,255}")
+                    put("pattern", "^[A-Za-z0-9_-]{8,128}$")
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
@@ -77,13 +77,13 @@ class ScopeCreateToolHandler : ToolHandler {
     )
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
-        val title = ctx.args["title"]?.jsonPrimitive?.content
+        val title = ctx.services.codec.getString(ctx.args, "title", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'title' parameter")
 
-        val description = ctx.args["description"]?.jsonPrimitive?.content
-        val parentAlias = ctx.args["parentAlias"]?.jsonPrimitive?.content
-        val customAlias = ctx.args["customAlias"]?.jsonPrimitive?.content
-        val idempotencyKey = ctx.args["idempotencyKey"]?.jsonPrimitive?.content
+        val description = ctx.services.codec.getString(ctx.args, "description")
+        val parentAlias = ctx.services.codec.getString(ctx.args, "parentAlias")
+        val customAlias = ctx.services.codec.getString(ctx.args, "customAlias")
+        val idempotencyKey = ctx.services.codec.getString(ctx.args, "idempotencyKey")
 
         ctx.services.logger.debug("Creating scope: $title (parentAlias: $parentAlias, customAlias: $customAlias)")
 

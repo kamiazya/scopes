@@ -4,8 +4,11 @@ import kotlinx.serialization.json.*
 
 /**
  * Default implementation of ArgumentCodec for tool argument handling.
+ * 
+ * This class is internal as it should only be used within the MCP module.
+ * External modules should depend on the ArgumentCodec interface.
  */
-class DefaultArgumentCodec : ArgumentCodec {
+internal class DefaultArgumentCodec : ArgumentCodec {
 
     override fun canonicalizeArguments(arguments: Map<String, JsonElement>): String {
         // Remove nulls, sort keys at root, recursively canonicalize
@@ -55,7 +58,7 @@ class DefaultArgumentCodec : ArgumentCodec {
         val effectiveKey = idempotencyKey ?: "auto"
         return "$toolName|$effectiveKey|$argsHash"
     }
-    
+
     override fun getString(args: Map<String, JsonElement>, key: String, required: Boolean): String? {
         val element = args[key]
         return when {
@@ -70,7 +73,7 @@ class DefaultArgumentCodec : ArgumentCodec {
             }
         }
     }
-    
+
     override fun getBoolean(args: Map<String, JsonElement>, key: String, default: Boolean): Boolean {
         val element = args[key] ?: return default
         return when {

@@ -15,19 +15,19 @@ import kotlinx.serialization.json.*
 
 /**
  * Resource handler for scope tree in JSON format.
- * 
+ *
  * Provides scope hierarchy with configurable depth in JSON format.
  */
 class TreeJsonResourceHandler : ResourceHandler {
-    
+
     override val uriPattern: String = "scopes:/tree/{canonicalAlias}"
-    
+
     override val name: String = "Scope Tree (JSON)"
-    
+
     override val description: String = "Scope with children (configurable depth)."
-    
+
     override val mimeType: String = "application/json"
-    
+
     override suspend fun read(req: ReadResourceRequest, ports: Ports, services: Services): ReadResourceResult {
         val uri = req.uri
         val prefix = "scopes:/tree/"
@@ -42,23 +42,14 @@ class TreeJsonResourceHandler : ResourceHandler {
                 uri = "scopes:/tree/$pureAlias?depth=$depthValue",
                 code = -32602,
                 message = "Missing or invalid alias in resource URI. Optional ?depth=1..5 supported.",
-                asJson = true
+                asJson = true,
             )
         }
 
         val rootResult = ports.query.getScopeByAlias(GetScopeByAliasQuery(pureAlias))
-        
+
         return when (rootResult) {
-            is Either.Left -> {
-                val error = rootResult.value
-                ResourceHelpers.createErrorResourceResult(
-                    uri = uri,
-                    code = -32011,
-                    message = error.toString(),
-                    errorType = error::class.simpleName,
-                    asJson = true
-                )
-            }
+            is Either.Left -> services.errors.mapContractErrorToResource(uri, rootResult.value)
             is Either.Right -> {
                 val scope = rootResult.value
                 createTreeJsonResult(scope, depthValue, ports, services)
@@ -66,12 +57,7 @@ class TreeJsonResourceHandler : ResourceHandler {
         }
     }
 
-    private suspend fun createTreeJsonResult(
-        scope: ScopeResult, 
-        depthValue: Int, 
-        ports: Ports, 
-        services: Services
-    ): ReadResourceResult {
+    private suspend fun createTreeJsonResult(scope: ScopeResult, depthValue: Int, ports: Ports, services: Services): ReadResourceResult {
         var nodeCount = 0
         val maxNodes = 1000
         var latestUpdatedAt = scope.updatedAt
@@ -97,11 +83,11 @@ class TreeJsonResourceHandler : ResourceHandler {
                         val childrenResult = ports.query.getChildren(GetChildrenQuery(parentId = s.id))
                         childrenResult.fold(
                             { emptyList<JsonObject>() },
-                            { ch -> 
-                                ch.scopes.mapNotNull { c -> 
-                                    buildScopeNode(c.canonicalAlias, currentDepth + 1) 
-                                } 
-                            }
+                            { ch ->
+                                ch.scopes.mapNotNull { c ->
+                                    buildScopeNode(c.canonicalAlias, currentDepth + 1)
+                                }
+                            },
                         )
                     } else {
                         emptyList()
@@ -118,11 +104,11 @@ class TreeJsonResourceHandler : ResourceHandler {
                                 buildJsonObject {
                                     put("rel", "self")
                                     put("uri", "scopes:/scope/${s.canonicalAlias}")
-                                }
+                                },
                             )
                         }
                     }
-                }
+                },
             )
         }
 
@@ -139,8 +125,8 @@ class TreeJsonResourceHandler : ResourceHandler {
                 TextResourceContents(
                     text = jsonText,
                     uri = "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue",
-                    mimeType = mimeType
-                )
+                    mimeType = mimeType,
+                ),
             ),
             _meta = buildJsonObject {
                 put("etag", etag)
@@ -152,16 +138,16 @@ class TreeJsonResourceHandler : ResourceHandler {
                         buildJsonObject {
                             put("rel", "self")
                             put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
-                        }
+                        },
                     )
                     add(
                         buildJsonObject {
                             put("rel", "scope")
                             put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                        }
+                        },
                     )
                 }
-            }
+            },
         )
     }
 }

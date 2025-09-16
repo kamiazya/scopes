@@ -11,15 +11,15 @@ import kotlinx.serialization.json.*
 
 /**
  * Tool handler for getting child scopes.
- * 
+ *
  * This tool retrieves all child scopes of a parent scope.
  */
 class ScopeChildrenToolHandler : ToolHandler {
-    
+
     override val name: String = "scopes.children"
-    
+
     override val description: String = "Get child scopes of a parent scope"
-    
+
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -34,9 +34,9 @@ class ScopeChildrenToolHandler : ToolHandler {
                     put("description", "Parent scope alias")
                 }
             }
-        }
+        },
     )
-    
+
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
@@ -64,25 +64,25 @@ class ScopeChildrenToolHandler : ToolHandler {
                 add("parentAlias")
                 add("children")
             }
-        }
+        },
     )
-    
+
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val parentAlias = ctx.services.codec.getString(ctx.args, "parentAlias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'parentAlias' parameter")
-        
+
         ctx.services.logger.debug("Getting children of scope: $parentAlias")
-        
+
         // First get the parent scope to get its ID
         val parentResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(parentAlias))
         val parentId = when (parentResult) {
             is Either.Left -> return ctx.services.errors.mapContractError(parentResult.value)
             is Either.Right -> parentResult.value.id
         }
-        
+
         // Get the children
         val result = ctx.ports.query.getChildren(GetChildrenQuery(parentId = parentId))
-        
+
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
@@ -96,7 +96,7 @@ class ScopeChildrenToolHandler : ToolHandler {
                                     put("canonicalAlias", child.canonicalAlias)
                                     put("title", child.title)
                                     child.description?.let { put("description", it) }
-                                }
+                                },
                             )
                         }
                     }

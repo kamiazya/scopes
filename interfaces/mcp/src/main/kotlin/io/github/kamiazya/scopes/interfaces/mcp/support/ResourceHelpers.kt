@@ -10,7 +10,7 @@ import kotlinx.serialization.json.*
  * Helper functions for MCP resource handling.
  */
 object ResourceHelpers {
-    
+
     /**
      * Compute ETag for resource content using a simple hash function.
      */
@@ -23,7 +23,7 @@ object ResourceHelpers {
         }
         return hash.toString(16).padStart(8, '0')
     }
-    
+
     /**
      * Parse tree alias to extract pure alias and depth parameter.
      * Example: "my-alias?depth=3" -> ("my-alias", 3)
@@ -40,17 +40,11 @@ object ResourceHelpers {
         }
         return pureAlias to (depth ?: 1).coerceIn(1, 5)
     }
-    
+
     /**
      * Create an error resource result with proper formatting.
      */
-    fun createErrorResourceResult(
-        uri: String, 
-        code: Int, 
-        message: String, 
-        errorType: String? = null, 
-        asJson: Boolean = false
-    ): ReadResourceResult {
+    fun createErrorResourceResult(uri: String, code: Int, message: String, errorType: String? = null, asJson: Boolean = false): ReadResourceResult {
         val payload = if (asJson) {
             buildJsonObject {
                 put("code", code)
@@ -66,7 +60,7 @@ object ResourceHelpers {
                     buildJsonObject {
                         put("code", code)
                         put("message", message)
-                    }
+                    },
                 )
             }.toString()
         }
@@ -77,36 +71,49 @@ object ResourceHelpers {
                 TextResourceContents(
                     text = payload,
                     uri = uri,
-                    mimeType = "application/json"
-                )
+                    mimeType = "application/json",
+                ),
             ),
             _meta = buildJsonObject {
                 put("etag", etag)
                 put("lastModified", Clock.System.now().toString())
-            }
+            },
         )
     }
-    
+
     /**
      * Create a simple text resource result.
+     * Note: Per MCP spec, text/markdown and text/plain resources should not include _meta.
      */
-    fun createSimpleTextResult(uri: String, text: String, mimeType: String): ReadResourceResult {
-        val etag = computeEtag(text)
-        return ReadResourceResult(
+    fun createSimpleTextResult(uri: String, text: String, mimeType: String): ReadResourceResult = if (mimeType == "text/markdown" || mimeType == "text/plain") {
+        // No metadata for text/markdown and text/plain
+        ReadResourceResult(
             contents = listOf(
                 TextResourceContents(
                     text = text,
                     uri = uri,
-                    mimeType = mimeType
-                )
+                    mimeType = mimeType,
+                ),
+            ),
+        )
+    } else {
+        // Include metadata for other MIME types
+        val etag = computeEtag(text)
+        ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = text,
+                    uri = uri,
+                    mimeType = mimeType,
+                ),
             ),
             _meta = buildJsonObject {
                 put("etag", etag)
                 put("lastModified", Clock.System.now().toString())
-            }
+            },
         )
     }
-    
+
     /**
      * Create scope details resource result with proper links.
      */
@@ -122,19 +129,19 @@ object ResourceHelpers {
                     buildJsonObject {
                         put("rel", "self")
                         put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    }
+                    },
                 )
                 add(
                     buildJsonObject {
                         put("rel", "tree")
                         put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                    }
+                    },
                 )
                 add(
                     buildJsonObject {
                         put("rel", "tree.md")
                         put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                    }
+                    },
                 )
             }
         }.toString()
@@ -145,8 +152,8 @@ object ResourceHelpers {
                 TextResourceContents(
                     text = payload,
                     uri = uri,
-                    mimeType = "application/json"
-                )
+                    mimeType = "application/json",
+                ),
             ),
             _meta = buildJsonObject {
                 put("etag", etag)
@@ -156,22 +163,22 @@ object ResourceHelpers {
                         buildJsonObject {
                             put("rel", "self")
                             put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                        }
+                        },
                     )
                     add(
                         buildJsonObject {
                             put("rel", "tree")
                             put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                        }
+                        },
                     )
                     add(
                         buildJsonObject {
                             put("rel", "tree.md")
                             put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                        }
+                        },
                     )
                 }
-            }
+            },
         )
     }
 }

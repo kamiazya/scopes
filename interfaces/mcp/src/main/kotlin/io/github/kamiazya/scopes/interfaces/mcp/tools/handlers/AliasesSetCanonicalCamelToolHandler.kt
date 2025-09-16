@@ -10,18 +10,16 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.*
 
 /**
- * Tool handler for setting canonical alias (deprecated).
+ * Tool handler for setting canonical alias (camelCase).
  *
  * This tool sets the canonical alias for a scope with idempotency support.
- *
- * @deprecated Use aliases.setCanonical (camelCase) instead. This snake_case version is kept for backward compatibility.
+ * This is the primary version using camelCase naming convention.
  */
-@Deprecated("Use aliases.setCanonical (camelCase) instead", level = DeprecationLevel.WARNING)
-class AliasesSetCanonicalToolHandler : ToolHandler {
+class AliasesSetCanonicalCamelToolHandler : ToolHandler {
 
-    override val name: String = "aliases.set_canonical"
+    override val name: String = "aliases.setCanonical"
 
-    override val description: String = "[Deprecated] Set canonical alias (snake_case name)"
+    override val description: String = "Set canonical alias"
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

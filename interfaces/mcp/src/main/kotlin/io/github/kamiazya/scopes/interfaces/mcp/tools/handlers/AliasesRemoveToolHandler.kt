@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -10,37 +10,34 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.*
 
 /**
- * Tool handler for setting canonical alias (deprecated).
- *
- * This tool sets the canonical alias for a scope with idempotency support.
- *
- * @deprecated Use aliases.setCanonical (camelCase) instead. This snake_case version is kept for backward compatibility.
+ * Tool handler for removing aliases from scopes.
+ * 
+ * This tool removes an alias from a scope (cannot remove canonical alias).
  */
-@Deprecated("Use aliases.setCanonical (camelCase) instead", level = DeprecationLevel.WARNING)
-class AliasesSetCanonicalToolHandler : ToolHandler {
-
-    override val name: String = "aliases.set_canonical"
-
-    override val description: String = "[Deprecated] Set canonical alias (snake_case name)"
-
+class AliasesRemoveToolHandler : ToolHandler {
+    
+    override val name: String = "aliases.remove"
+    
+    override val description: String = "Remove alias (cannot remove canonical)"
+    
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
             put("additionalProperties", false)
             putJsonArray("required") {
                 add("scopeAlias")
-                add("newCanonicalAlias")
+                add("aliasToRemove")
             }
             putJsonObject("properties") {
                 putJsonObject("scopeAlias") {
                     put("type", "string")
                     put("minLength", 1)
-                    put("description", "Existing scope alias")
+                    put("description", "Scope alias to look up")
                 }
-                putJsonObject("newCanonicalAlias") {
+                putJsonObject("aliasToRemove") {
                     put("type", "string")
                     put("minLength", 1)
-                    put("description", "Alias to make canonical")
+                    put("description", "Alias to remove (cannot be canonical)")
                 }
                 putJsonObject("idempotencyKey") {
                     put("type", "string")
@@ -48,35 +45,35 @@ class AliasesSetCanonicalToolHandler : ToolHandler {
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
-        },
+        }
     )
-
+    
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
             put("additionalProperties", false)
             putJsonObject("properties") {
                 putJsonObject("scopeAlias") { put("type", "string") }
-                putJsonObject("newCanonicalAlias") { put("type", "string") }
+                putJsonObject("removedAlias") { put("type", "string") }
             }
             putJsonArray("required") {
                 add("scopeAlias")
-                add("newCanonicalAlias")
+                add("removedAlias")
             }
-        },
+        }
     )
-
+    
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val scopeAlias = ctx.services.codec.getString(ctx.args, "scopeAlias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'scopeAlias' parameter")
-
-        val newCanonicalAlias = ctx.services.codec.getString(ctx.args, "newCanonicalAlias", required = true)
-            ?: return ctx.services.errors.errorResult("Missing 'newCanonicalAlias' parameter")
-
+        
+        val aliasToRemove = ctx.services.codec.getString(ctx.args, "aliasToRemove", required = true)
+            ?: return ctx.services.errors.errorResult("Missing 'aliasToRemove' parameter")
+        
         val idempotencyKey = ctx.services.codec.getString(ctx.args, "idempotencyKey")
-
-        ctx.services.logger.debug("Setting canonical alias for scope: $scopeAlias to: $newCanonicalAlias")
-
+        
+        ctx.services.logger.debug("Removing alias '$aliasToRemove' from scope: $scopeAlias")
+        
         return ctx.services.idempotency.getOrCompute(name, ctx.args, idempotencyKey) {
             // First get the scope
             val scopeResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(scopeAlias))
@@ -84,18 +81,18 @@ class AliasesSetCanonicalToolHandler : ToolHandler {
                 is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(scopeResult.value)
                 is Either.Right -> scopeResult.value.id
             }
-
-            // Set the canonical alias
-            val result = ctx.ports.command.setCanonicalAlias(
-                SetCanonicalAliasCommand(scopeId = scopeId, aliasName = newCanonicalAlias),
+            
+            // Remove the alias
+            val result = ctx.ports.command.removeAlias(
+                RemoveAliasCommand(scopeId = scopeId, aliasName = aliasToRemove)
             )
-
+            
             when (result) {
                 is Either.Left -> ctx.services.errors.mapContractError(result.value)
                 is Either.Right -> {
                     val json = buildJsonObject {
                         put("scopeAlias", scopeAlias)
-                        put("newCanonicalAlias", newCanonicalAlias)
+                        put("removedAlias", aliasToRemove)
                     }
                     ctx.services.errors.successResult(json.toString())
                 }

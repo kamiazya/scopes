@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.interfaces.mcp.support
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -9,8 +10,11 @@ import kotlinx.serialization.json.putJsonObject
 
 /**
  * Default implementation of ErrorMapper for MCP tool error handling.
+ * 
+ * This class is internal as it should only be used within the MCP module.
+ * External modules should depend on the ErrorMapper interface.
  */
-class DefaultErrorMapper : ErrorMapper {
+internal class DefaultErrorMapper : ErrorMapper {
 
     override fun mapContractError(error: ScopeContractError): CallToolResult {
         val errorData = buildJsonObject {
@@ -81,8 +85,20 @@ class DefaultErrorMapper : ErrorMapper {
         is ScopeContractError.BusinessError.HasChildren -> "Has children"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias"
     }
+
+    override fun successResult(content: String): CallToolResult = CallToolResult(content = listOf(TextContent(content)), isError = false)
     
-    override fun successResult(content: String): CallToolResult {
-        return CallToolResult(content = listOf(TextContent(content)), isError = false)
+    override fun mapContractErrorToResource(uri: String, error: ScopeContractError): ReadResourceResult {
+        val code = getErrorCode(error)
+        val message = mapContractErrorMessage(error)
+        val errorType = error::class.simpleName ?: "UnknownError"
+        
+        return ResourceHelpers.createErrorResourceResult(
+            uri = uri,
+            code = code,
+            message = message,
+            errorType = errorType,
+            asJson = true
+        )
     }
 }

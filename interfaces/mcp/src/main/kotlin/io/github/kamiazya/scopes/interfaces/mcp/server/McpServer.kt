@@ -9,7 +9,7 @@ import kotlinx.io.Source
 
 /**
  * MCP Server orchestrator that coordinates all server components.
- * 
+ *
  * This is the main entry point for the MCP server, coordinating server creation,
  * component registration, and lifecycle management following Clean Architecture principles.
  */
@@ -17,11 +17,11 @@ class McpServer(
     private val serverBuilder: ServerBuilder,
     private val transportFactory: TransportFactory,
     private val registrars: List<ServerRegistrar>,
-    private val logger: Logger
+    private val logger: Logger,
 ) {
-    
+
     private var server: Server? = null
-    
+
     /**
      * Run the MCP server on stdio transport.
      * This is the main entry point for the MCP server.
@@ -46,7 +46,7 @@ class McpServer(
             }
         }
     }
-    
+
     /**
      * Create a server configured for production use.
      */
@@ -55,7 +55,7 @@ class McpServer(
         registerComponents(server)
         return server
     }
-    
+
     /**
      * Create a server configured for testing purposes.
      * This method exposes server configuration for integration tests.
@@ -65,7 +65,7 @@ class McpServer(
         registerComponents(server)
         return server
     }
-    
+
     /**
      * Register all components (tools, resources, prompts) with the server.
      */
@@ -76,7 +76,7 @@ class McpServer(
         }
         logger.debug("Server components registered successfully")
     }
-    
+
     /**
      * Notification methods for list_changed events.
      * Currently no-op as SDK API is TBD.

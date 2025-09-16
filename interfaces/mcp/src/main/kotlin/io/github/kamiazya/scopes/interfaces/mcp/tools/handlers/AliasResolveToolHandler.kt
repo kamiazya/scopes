@@ -10,16 +10,16 @@ import kotlinx.serialization.json.*
 
 /**
  * Tool handler for resolving aliases to scopes.
- * 
- * This tool resolves a scope by alias (exact match only) and returns 
+ *
+ * This tool resolves a scope by alias (exact match only) and returns
  * basic scope information including the canonical alias.
  */
 class AliasResolveToolHandler : ToolHandler {
-    
+
     override val name: String = "aliases.resolve"
-    
+
     override val description: String = "Resolve a scope by alias (exact match only). Returns the canonical alias if found."
-    
+
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -34,9 +34,9 @@ class AliasResolveToolHandler : ToolHandler {
                     put("description", "Alias to resolve (exact match only)")
                 }
             }
-        }
+        },
     )
-    
+
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
@@ -60,17 +60,17 @@ class AliasResolveToolHandler : ToolHandler {
                 add("canonicalAlias")
                 add("title")
             }
-        }
+        },
     )
-    
+
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'alias' parameter")
-        
+
         ctx.services.logger.debug("Resolving alias: $alias")
-        
+
         val result = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(alias))
-        
+
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {

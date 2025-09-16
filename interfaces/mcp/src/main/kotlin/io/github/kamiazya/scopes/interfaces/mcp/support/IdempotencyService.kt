@@ -35,12 +35,12 @@ interface IdempotencyService {
      * This should be called periodically to prevent memory leaks.
      */
     suspend fun cleanupExpiredEntries()
-    
+
     /**
      * Get cached result or compute and store new result.
-     * 
+     *
      * This is a convenience method that combines checkIdempotency and storeIdempotency.
-     * 
+     *
      * @param toolName The name of the tool being called
      * @param arguments The tool arguments
      * @param idempotencyKey Optional explicit idempotency key
@@ -58,13 +58,13 @@ interface IdempotencyService {
         if (cached != null) {
             return cached
         }
-        
+
         // Compute new result
         val result = compute()
-        
+
         // Store for future calls
         storeIdempotency(toolName, arguments, result, idempotencyKey)
-        
+
         return result
     }
 }

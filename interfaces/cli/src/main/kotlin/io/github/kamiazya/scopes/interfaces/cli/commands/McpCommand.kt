@@ -17,7 +17,7 @@ class McpCommand :
         try {
             mcpServer.runStdio(
                 source = System.`in`.asSource().buffered(),
-                sink = System.out.asSink().buffered()
+                sink = System.out.asSink().buffered(),
             )
         } finally {
             // Cleanup handled by mcpServer internally

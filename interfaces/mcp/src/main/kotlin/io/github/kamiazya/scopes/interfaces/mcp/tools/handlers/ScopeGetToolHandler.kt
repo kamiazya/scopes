@@ -58,7 +58,7 @@ class ScopeGetToolHandler : ToolHandler {
     )
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
-        val alias = ctx.args["alias"]?.jsonPrimitive?.content
+        val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'alias' parameter")
 
         ctx.services.logger.debug("Getting scope by alias: $alias")

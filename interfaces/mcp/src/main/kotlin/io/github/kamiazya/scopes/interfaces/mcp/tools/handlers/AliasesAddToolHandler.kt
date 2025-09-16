@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
@@ -10,26 +11,23 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import kotlinx.serialization.json.*
 
 /**
- * Tool handler for setting canonical alias (deprecated).
- *
- * This tool sets the canonical alias for a scope with idempotency support.
- *
- * @deprecated Use aliases.setCanonical (camelCase) instead. This snake_case version is kept for backward compatibility.
+ * Tool handler for adding aliases to scopes.
+ * 
+ * This tool adds a new alias to an existing scope.
  */
-@Deprecated("Use aliases.setCanonical (camelCase) instead", level = DeprecationLevel.WARNING)
-class AliasesSetCanonicalToolHandler : ToolHandler {
-
-    override val name: String = "aliases.set_canonical"
-
-    override val description: String = "[Deprecated] Set canonical alias (snake_case name)"
-
+class AliasesAddToolHandler : ToolHandler {
+    
+    override val name: String = "aliases.add"
+    
+    override val description: String = "Add alias to scope"
+    
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
             put("additionalProperties", false)
             putJsonArray("required") {
                 add("scopeAlias")
-                add("newCanonicalAlias")
+                add("newAlias")
             }
             putJsonObject("properties") {
                 putJsonObject("scopeAlias") {
@@ -37,10 +35,14 @@ class AliasesSetCanonicalToolHandler : ToolHandler {
                     put("minLength", 1)
                     put("description", "Existing scope alias")
                 }
-                putJsonObject("newCanonicalAlias") {
+                putJsonObject("newAlias") {
                     put("type", "string")
                     put("minLength", 1)
-                    put("description", "Alias to make canonical")
+                    put("description", "New alias to add")
+                }
+                putJsonObject("makeCanonical") {
+                    put("type", "boolean")
+                    put("description", "Make this the canonical alias (optional, default false)")
                 }
                 putJsonObject("idempotencyKey") {
                     put("type", "string")
@@ -48,35 +50,38 @@ class AliasesSetCanonicalToolHandler : ToolHandler {
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
-        },
+        }
     )
-
+    
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
             put("additionalProperties", false)
             putJsonObject("properties") {
                 putJsonObject("scopeAlias") { put("type", "string") }
-                putJsonObject("newCanonicalAlias") { put("type", "string") }
+                putJsonObject("newAlias") { put("type", "string") }
+                putJsonObject("isCanonical") { put("type", "boolean") }
             }
             putJsonArray("required") {
                 add("scopeAlias")
-                add("newCanonicalAlias")
+                add("newAlias")
+                add("isCanonical")
             }
-        },
+        }
     )
-
+    
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val scopeAlias = ctx.services.codec.getString(ctx.args, "scopeAlias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'scopeAlias' parameter")
-
-        val newCanonicalAlias = ctx.services.codec.getString(ctx.args, "newCanonicalAlias", required = true)
-            ?: return ctx.services.errors.errorResult("Missing 'newCanonicalAlias' parameter")
-
+        
+        val newAlias = ctx.services.codec.getString(ctx.args, "newAlias", required = true)
+            ?: return ctx.services.errors.errorResult("Missing 'newAlias' parameter")
+        
+        val makeCanonical = ctx.services.codec.getBoolean(ctx.args, "makeCanonical") ?: false
         val idempotencyKey = ctx.services.codec.getString(ctx.args, "idempotencyKey")
-
-        ctx.services.logger.debug("Setting canonical alias for scope: $scopeAlias to: $newCanonicalAlias")
-
+        
+        ctx.services.logger.debug("Adding alias '$newAlias' to scope: $scopeAlias (makeCanonical: $makeCanonical)")
+        
         return ctx.services.idempotency.getOrCompute(name, ctx.args, idempotencyKey) {
             // First get the scope
             val scopeResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(scopeAlias))
@@ -84,18 +89,30 @@ class AliasesSetCanonicalToolHandler : ToolHandler {
                 is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(scopeResult.value)
                 is Either.Right -> scopeResult.value.id
             }
-
-            // Set the canonical alias
-            val result = ctx.ports.command.setCanonicalAlias(
-                SetCanonicalAliasCommand(scopeId = scopeId, aliasName = newCanonicalAlias),
+            
+            // Add the alias
+            val addResult = ctx.ports.command.addAlias(
+                AddAliasCommand(scopeId = scopeId, aliasName = newAlias)
             )
-
-            when (result) {
-                is Either.Left -> ctx.services.errors.mapContractError(result.value)
+            
+            when (addResult) {
+                is Either.Left -> ctx.services.errors.mapContractError(addResult.value)
                 is Either.Right -> {
+                    // If makeCanonical is true, set it as canonical
+                    if (makeCanonical) {
+                        val setCanonicalResult = ctx.ports.command.setCanonicalAlias(
+                            SetCanonicalAliasCommand(scopeId = scopeId, aliasName = newAlias)
+                        )
+                        when (setCanonicalResult) {
+                            is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(setCanonicalResult.value)
+                            is Either.Right -> Unit // Continue
+                        }
+                    }
+                    
                     val json = buildJsonObject {
                         put("scopeAlias", scopeAlias)
-                        put("newCanonicalAlias", newCanonicalAlias)
+                        put("newAlias", newAlias)
+                        put("isCanonical", makeCanonical)
                     }
                     ctx.services.errors.successResult(json.toString())
                 }

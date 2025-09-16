@@ -10,15 +10,15 @@ import kotlinx.serialization.json.*
 
 /**
  * Tool handler for getting all root scopes.
- * 
+ *
  * This tool retrieves all scopes that have no parent (root scopes).
  */
 class ScopesRootsToolHandler : ToolHandler {
-    
+
     override val name: String = "scopes.roots"
-    
+
     override val description: String = "Get all root scopes (scopes without parents)"
-    
+
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -29,9 +29,9 @@ class ScopesRootsToolHandler : ToolHandler {
             putJsonObject("properties") {
                 // No properties required
             }
-        }
+        },
     )
-    
+
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
@@ -55,14 +55,14 @@ class ScopesRootsToolHandler : ToolHandler {
                 }
             }
             putJsonArray("required") { add("roots") }
-        }
+        },
     )
-    
+
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         ctx.services.logger.debug("Getting root scopes")
-        
+
         val result = ctx.ports.query.getRootScopes(GetRootScopesQuery())
-        
+
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
@@ -75,7 +75,7 @@ class ScopesRootsToolHandler : ToolHandler {
                                     put("canonicalAlias", scope.canonicalAlias)
                                     put("title", scope.title)
                                     scope.description?.let { put("description", it) }
-                                }
+                                },
                             )
                         }
                     }

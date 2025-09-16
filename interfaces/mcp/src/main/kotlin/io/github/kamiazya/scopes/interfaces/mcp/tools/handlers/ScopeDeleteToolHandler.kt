@@ -11,15 +11,15 @@ import kotlinx.serialization.json.*
 
 /**
  * Tool handler for deleting scopes.
- * 
+ *
  * This tool deletes a scope that must have no children, with idempotency support.
  */
 class ScopeDeleteToolHandler : ToolHandler {
-    
+
     override val name: String = "scopes.delete"
-    
+
     override val description: String = "Delete a scope (must have no children)"
-    
+
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
             put("type", "object")
@@ -35,13 +35,13 @@ class ScopeDeleteToolHandler : ToolHandler {
                 }
                 putJsonObject("idempotencyKey") {
                     put("type", "string")
-                    put("pattern", "[a-zA-Z0-9._-]{1,255}")
+                    put("pattern", "^[A-Za-z0-9_-]{8,128}$")
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
-        }
+        },
     )
-    
+
     override val output: Tool.Output = Tool.Output(
         properties = buildJsonObject {
             put("type", "object")
@@ -54,17 +54,17 @@ class ScopeDeleteToolHandler : ToolHandler {
                 add("canonicalAlias")
                 add("deleted")
             }
-        }
+        },
     )
-    
+
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)
             ?: return ctx.services.errors.errorResult("Missing 'alias' parameter")
-        
+
         val idempotencyKey = ctx.services.codec.getString(ctx.args, "idempotencyKey")
-        
+
         ctx.services.logger.debug("Deleting scope: $alias")
-        
+
         return ctx.services.idempotency.getOrCompute(name, ctx.args, idempotencyKey) {
             // First get the scope to delete
             val scopeResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(alias))
@@ -72,10 +72,10 @@ class ScopeDeleteToolHandler : ToolHandler {
                 is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(scopeResult.value)
                 is Either.Right -> scopeResult.value.id to scopeResult.value.canonicalAlias
             }
-            
+
             // Delete the scope
             val result = ctx.ports.command.deleteScope(DeleteScopeCommand(id = scopeId))
-            
+
             when (result) {
                 is Either.Left -> ctx.services.errors.mapContractError(result.value)
                 is Either.Right -> {
