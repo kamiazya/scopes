@@ -9,7 +9,6 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -41,18 +40,15 @@ internal class DefaultIdempotencyService(
         val effectiveKey = idempotencyKey ?: return null
 
         if (!effectiveKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
-            val payload = buildJsonObject {
-                put("code", -32602)
-                put("message", "Invalid idempotency key format")
-                putJsonObject("data") {
+            return CallToolResult(
+                content = listOf(TextContent(text = "Invalid idempotency key format")),
+                isError = true,
+                _meta = buildJsonObject {
+                    put("code", -32602)
                     put("type", "InvalidIdempotencyKey")
                     put("key", effectiveKey)
                     put("pattern", IDEMPOTENCY_KEY_PATTERN.pattern)
-                }
-            }
-            return CallToolResult(
-                content = listOf(TextContent(text = payload.toString())),
-                isError = true,
+                },
             )
         }
 
@@ -84,6 +80,12 @@ internal class DefaultIdempotencyService(
 
     override suspend fun storeIdempotency(toolName: String, arguments: Map<String, JsonElement>, result: CallToolResult, idempotencyKey: String?) {
         val effectiveKey = idempotencyKey ?: return
+
+        // Validate the idempotency key using the same logic as checkIdempotency
+        if (!effectiveKey.matches(IDEMPOTENCY_KEY_PATTERN)) {
+            // Invalid key - return early without storing anything
+            return
+        }
 
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = StoredResult(result, Clock.System.now())

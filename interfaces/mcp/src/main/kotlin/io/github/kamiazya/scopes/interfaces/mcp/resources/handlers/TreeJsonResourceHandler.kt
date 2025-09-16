@@ -14,7 +14,6 @@ import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.*
 
@@ -109,7 +108,7 @@ class TreeJsonResourceHandler : ResourceHandler {
     private class TreeNodeBuilder(private val ports: Ports, private val services: Services, private val maxDepth: Int) {
         var nodeCount = 0
         val maxNodes = 1000
-        var latestUpdatedAt: Instant = Clock.System.now()
+        var latestUpdatedAt: Instant = Instant.DISTANT_PAST
 
         suspend fun buildScopeNode(alias: String, currentDepth: Int): JsonObject? {
             currentCoroutineContext().ensureActive()
