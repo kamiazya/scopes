@@ -2,34 +2,35 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.left
+import arrow.core.raise.either
 import arrow.core.right
-import arrow.core.toNonEmptyListOrNull
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.mapper.PersistenceErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.mapper.ScopeDataMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * SQLDelight implementation of ScopeRepository.
+ * Refactored to use dedicated mappers and eliminate code duplication.
  */
-class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) : ScopeRepository {
+class SqlDelightScopeRepository(
+    private val database: ScopeManagementDatabase,
+    private val errorMapper: PersistenceErrorMapper = PersistenceErrorMapper(),
+    private val dataMapper: ScopeDataMapper = ScopeDataMapper()
+) : ScopeRepository {
     companion object {
         // SQLite has a default limit of 999 variables in a single query
         private const val SQLITE_VARIABLE_LIMIT = 999
     }
 
     override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
-        try {
+        errorMapper.executeWithErrorMapping("save") {
             database.transaction {
                 // Use UPSERT for atomic operation
                 database.scopeQueries.upsertScope(
@@ -56,74 +57,61 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 }
             }
 
-            scope.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "save",
-                cause = e,
-            ).left()
+            scope
         }
     }
 
     override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = withContext(Dispatchers.IO) {
-        try {
+        errorMapper.executeWithErrorMapping("findById") {
             val scopeRow = database.scopeQueries.findScopeById(id.value).executeAsOneOrNull()
-            scopeRow?.let { rowToScope(it) }.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findById",
-                cause = e,
-            ).left()
+            if (scopeRow == null) {
+                null
+            } else {
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(listOf(scopeRow.id)).executeAsList()
+                dataMapper.mapRow(scopeRow, aspectRows).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
+            }
         }
     }
 
     override suspend fun findAll(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            val scopeRows = database.scopeQueries.selectAll().executeAsList()
-            if (scopeRows.isEmpty()) {
-                return@withContext emptyList<Scope>().right()
+        errorMapper.executeSuspendingWithErrorMapping("findAll") {
+            val rows = database.scopeQueries.selectAll().executeAsList()
+            if (rows.isEmpty()) {
+                emptyList()
+            } else {
+                val scopeIds = rows.map { it.id }
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(scopeIds).executeAsList()
+                val aspectsMap = dataMapper.groupAspectsForScopes(aspectRows)
+                dataMapper.mapRows(rows, aspectsMap).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
             }
-
-            // Batch load all aspects to avoid N+1 queries
-            val scopeIds = scopeRows.map { it.id }
-            val aspectsMap = loadAspectsForScopes(scopeIds)
-
-            val scopes = scopeRows.map { row ->
-                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList())
-            }
-            scopes.right()
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAll",
-                cause = e,
-            ).left()
         }
     }
 
     override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
-        try {
-            val rows = if (parentId != null) {
+        errorMapper.executeSuspendingWithErrorMapping("findByParentId(offset,limit)") {
+            val scopeRows = if (parentId != null) {
                 database.scopeQueries.findScopesByParentIdPaged(parentId.value, limit.toLong(), offset.toLong()).executeAsList()
             } else {
                 database.scopeQueries.findRootScopesPaged(limit.toLong(), offset.toLong()).executeAsList()
             }
 
-            if (rows.isEmpty()) {
-                emptyList<Scope>().right()
+            if (scopeRows.isEmpty()) {
+                emptyList()
             } else {
-                val scopeIds = rows.map { it.id }
-                val aspectsMap = loadAspectsForScopes(scopeIds)
-                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+                val scopeIds = scopeRows.map { it.id }
+                val aspectRows = database.scopeAspectQueries.findByScopeIds(scopeIds).executeAsList()
+                val aspectsMap = dataMapper.groupAspectsForScopes(aspectRows)
+                dataMapper.mapRows(scopeRows, aspectsMap).fold(
+                    ifLeft = { throw Exception("Data corruption: ${it}") },
+                    ifRight = { it }
+                )
             }
-        } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findByParentId(offset,limit)",
-                cause = e,
-            ).left()
         }
     }
 
@@ -166,12 +154,18 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 database.scopeQueries.findScopeIdByTitleRoot(title).executeAsOneOrNull()
             }
 
-            id?.let {
-                ScopeId.create(it).fold(
-                    ifLeft = { error("Invalid scope id in database: $it") },
-                    ifRight = { it },
-                )
-            }.right()
+            either {
+                id?.let { raw ->
+                    ScopeId.create(raw).mapLeft { validationError ->
+                        PersistenceError.DataCorruption(
+                            occurredAt = Clock.System.now(),
+                            entityType = "Scope",
+                            entityId = raw,
+                            reason = "Invalid scope id in database: $validationError",
+                        )
+                    }.bind()
+                }
+            }
         } catch (e: Exception) {
             PersistenceError.StorageUnavailable(
                 occurredAt = Clock.System.now(),
@@ -233,88 +227,145 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         }
     }
 
-    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = either {
         try {
-            val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
-                .executeAsList()
+            val (rows, aspectsMap) = withContext(Dispatchers.IO) {
+                val scopeRows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
+                    .executeAsList()
 
-            if (rows.isEmpty()) {
-                emptyList<Scope>().right()
-            } else {
-                val scopeIds = rows.map { it.id }
-                val aspectsMap = loadAspectsForScopes(scopeIds)
-                rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
+                if (scopeRows.isEmpty()) {
+                    Pair(emptyList(), emptyMap())
+                } else {
+                    val scopeIds = scopeRows.map { it.id }
+                    val aspects = loadAspectsForScopes(scopeIds)
+                    Pair(scopeRows, aspects)
+                }
+            }
+
+            rows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
             }
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAll",
-                cause = e,
-            ).left()
+            raise(
+                PersistenceError.StorageUnavailable(
+                    occurredAt = Clock.System.now(),
+                    operation = "findAll",
+                    cause = e,
+                ),
+            )
         }
     }
 
-    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = either {
         try {
-            val rows = database.scopeQueries.findRootScopes()
-                .executeAsList()
-                .map { row -> rowToScope(row) }
-            rows.right()
+            val (rows, aspectsMap) = withContext(Dispatchers.IO) {
+                val scopeRows = database.scopeQueries.findRootScopes()
+                    .executeAsList()
+                if (scopeRows.isEmpty()) {
+                    Pair(emptyList(), emptyMap())
+                } else {
+                    val scopeIds = scopeRows.map { it.id }
+                    val aspects = loadAspectsForScopes(scopeIds)
+                    Pair(scopeRows, aspects)
+                }
+            }
+
+            rows.map { row ->
+                rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()).bind()
+            }
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAllRoot",
-                cause = e,
-            ).left()
+            raise(
+                PersistenceError.StorageUnavailable(
+                    occurredAt = Clock.System.now(),
+                    operation = "findAllRoot",
+                    cause = e,
+                ),
+            )
         }
     }
 
-    private fun rowToScope(row: io.github.kamiazya.scopes.scopemanagement.db.Scopes): Scope {
-        val scopeId = ScopeId.create(row.id).fold(
-            ifLeft = { error("Invalid scope id in database: $it") },
-            ifRight = { it },
-        )
+    private fun rowToScope(row: io.github.kamiazya.scopes.scopemanagement.db.Scopes): Either<PersistenceError, Scope> = either {
+        val scopeId = ScopeId.create(row.id).mapLeft { validationError ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid scope id in database: $validationError",
+            )
+        }.bind()
 
         // Load aspects
         val aspectRows = database.scopeAspectQueries.findByScopeId(scopeId.value).executeAsList()
 
-        val aspectMap = aspectRows
-            .groupBy {
-                AspectKey.create(it.aspect_key).fold(
-                    ifLeft = { error("Invalid aspect key in database: $it") },
-                    ifRight = { it },
-                )
-            }
-            .mapValues { (_, rows) ->
-                rows.map { aspectRow ->
-                    AspectValue.create(aspectRow.aspect_value).fold(
-                        ifLeft = { error("Invalid aspect value in database: $it") },
-                        ifRight = { it },
-                    )
-                }
-                    .toNonEmptyListOrNull() ?: error(
-                    "Aspect key exists without values in database - data integrity violation",
-                )
-            }
+        val aspectMap = buildMap<AspectKey, arrow.core.NonEmptyList<AspectValue>> {
+            aspectRows.groupBy { it.aspect_key }.forEach { (keyStr, rows) ->
+                // rows should never be empty here because groupBy wouldn't create an entry for an empty group
+                if (rows.isNotEmpty()) {
+                    val key = AspectKey.create(keyStr).mapLeft { validationError ->
+                        PersistenceError.DataCorruption(
+                            occurredAt = Clock.System.now(),
+                            entityType = "ScopeAspect",
+                            entityId = scopeId.value,
+                            reason = "Invalid aspect key in database: $validationError",
+                        )
+                    }.bind()
 
-        return Scope(
+                    val values = rows.map { aspectRow ->
+                        AspectValue.create(aspectRow.aspect_value).mapLeft { validationError ->
+                            PersistenceError.DataCorruption(
+                                occurredAt = Clock.System.now(),
+                                entityType = "ScopeAspect",
+                                entityId = scopeId.value,
+                                reason = "Invalid aspect value in database: $validationError",
+                            )
+                        }.bind()
+                    }
+
+                    // Since rows was not empty, values should not be empty either
+                    values.toNonEmptyListOrNull()?.let {
+                        put(key, it)
+                    }
+                }
+            }
+        }
+
+        val title = ScopeTitle.create(row.title).mapLeft { validationError ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid title in database: $validationError",
+            )
+        }.bind()
+
+        val description = row.description?.let { desc ->
+            ScopeDescription.create(desc).mapLeft { validationError ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $validationError",
+                )
+            }.bind()
+        }
+
+        val parentId = row.parent_id?.let { pid ->
+            ScopeId.create(pid).mapLeft { validationError ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid parent id in database: $validationError",
+                )
+            }.bind()
+        }
+
+        Scope(
             id = scopeId,
-            title = ScopeTitle.create(row.title).fold(
-                ifLeft = { error("Invalid title in database: $it") },
-                ifRight = { it },
-            ),
-            description = row.description?.let { desc ->
-                ScopeDescription.create(desc).fold(
-                    ifLeft = { error("Invalid description in database: $it") },
-                    ifRight = { it },
-                )
-            },
-            parentId = row.parent_id?.let { pid ->
-                ScopeId.create(pid).fold(
-                    ifLeft = { error("Invalid parent id in database: $it") },
-                    ifRight = { it },
-                )
-            },
+            title = title,
+            description = description,
+            parentId = parentId,
+            status = ScopeStatus.default(),
             aspects = if (aspectMap.isEmpty()) Aspects.empty() else Aspects.from(aspectMap),
             createdAt = Instant.fromEpochMilliseconds(row.created_at),
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
@@ -340,49 +391,85 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
     private fun rowToScopeWithAspects(
         row: io.github.kamiazya.scopes.scopemanagement.db.Scopes,
         aspectRows: List<io.github.kamiazya.scopes.scopemanagement.db.FindByScopeIds>,
-    ): Scope {
-        val scopeId = ScopeId.create(row.id).fold(
-            ifLeft = { error("Invalid scope id in database: $it") },
-            ifRight = { it },
-        )
+    ): Either<PersistenceError, Scope> = either {
+        val scopeId = ScopeId.create(row.id).mapLeft { validationError ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid scope id in database: $validationError",
+            )
+        }.bind()
 
-        val aspectMap = aspectRows
-            .groupBy {
-                AspectKey.create(it.aspect_key).fold(
-                    ifLeft = { error("Invalid aspect key in database: $it") },
-                    ifRight = { it },
-                )
-            }
-            .mapValues { (_, rows) ->
-                rows.map { aspectRow ->
-                    AspectValue.create(aspectRow.aspect_value).fold(
-                        ifLeft = { error("Invalid aspect value in database: $it") },
-                        ifRight = { it },
-                    )
+        val aspectMap = buildMap<AspectKey, arrow.core.NonEmptyList<AspectValue>> {
+            aspectRows.groupBy { it.aspect_key }.forEach { (keyStr, rows) ->
+                // rows should never be empty here because groupBy wouldn't create an entry for an empty group
+                if (rows.isNotEmpty()) {
+                    val key = AspectKey.create(keyStr).mapLeft { validationError ->
+                        PersistenceError.DataCorruption(
+                            occurredAt = Clock.System.now(),
+                            entityType = "ScopeAspect",
+                            entityId = scopeId.value,
+                            reason = "Invalid aspect key in database: $validationError",
+                        )
+                    }.bind()
+
+                    val values = rows.map { aspectRow ->
+                        AspectValue.create(aspectRow.aspect_value).mapLeft { validationError ->
+                            PersistenceError.DataCorruption(
+                                occurredAt = Clock.System.now(),
+                                entityType = "ScopeAspect",
+                                entityId = scopeId.value,
+                                reason = "Invalid aspect value in database: $validationError",
+                            )
+                        }.bind()
+                    }
+
+                    // Since rows was not empty, values should not be empty either
+                    values.toNonEmptyListOrNull()?.let {
+                        put(key, it)
+                    }
                 }
-                    .toNonEmptyListOrNull() ?: error(
-                    "Aspect key exists without values in database - data integrity violation",
-                )
             }
+        }
 
-        return Scope(
+        val title = ScopeTitle.create(row.title).mapLeft { validationError ->
+            PersistenceError.DataCorruption(
+                occurredAt = Clock.System.now(),
+                entityType = "Scope",
+                entityId = row.id,
+                reason = "Invalid title in database: $validationError",
+            )
+        }.bind()
+
+        val description = row.description?.let { desc ->
+            ScopeDescription.create(desc).mapLeft { validationError ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid description in database: $validationError",
+                )
+            }.bind()
+        }
+
+        val parentId = row.parent_id?.let { pid ->
+            ScopeId.create(pid).mapLeft { validationError ->
+                PersistenceError.DataCorruption(
+                    occurredAt = Clock.System.now(),
+                    entityType = "Scope",
+                    entityId = row.id,
+                    reason = "Invalid parent id in database: $validationError",
+                )
+            }.bind()
+        }
+
+        Scope(
             id = scopeId,
-            title = ScopeTitle.create(row.title).fold(
-                ifLeft = { error("Invalid title in database: $it") },
-                ifRight = { it },
-            ),
-            description = row.description?.let { desc ->
-                ScopeDescription.create(desc).fold(
-                    ifLeft = { error("Invalid description in database: $it") },
-                    ifRight = { it },
-                )
-            },
-            parentId = row.parent_id?.let { pid ->
-                ScopeId.create(pid).fold(
-                    ifLeft = { error("Invalid parent id in database: $it") },
-                    ifRight = { it },
-                )
-            },
+            title = title,
+            description = description,
+            parentId = parentId,
+            status = ScopeStatus.default(),
             aspects = if (aspectMap.isEmpty()) Aspects.empty() else Aspects.from(aspectMap),
             createdAt = Instant.fromEpochMilliseconds(row.created_at),
             updatedAt = Instant.fromEpochMilliseconds(row.updated_at),

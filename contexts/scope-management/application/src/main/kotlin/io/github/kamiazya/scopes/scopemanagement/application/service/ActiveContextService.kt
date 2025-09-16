@@ -3,11 +3,13 @@ package io.github.kamiazya.scopes.scopemanagement.application.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.scopemanagement.application.error.*
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
+import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.application.error.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 
 /**
@@ -30,13 +32,18 @@ class ActiveContextService(
 
     /**
      * Get the currently active context.
-     * Returns null if no context is active.
+     * Returns Either with ContextView if active, or null if no context is active.
+     * Propagates errors from the repository.
      */
-    suspend fun getCurrentContext(): ContextView? = activeContextRepository.getActiveContext()
-        .fold(
-            ifLeft = { null },
-            ifRight = { it },
-        )
+    suspend fun getCurrentContext(): Either<ApplicationError, ContextView?> = activeContextRepository.getActiveContext().mapLeft { error ->
+        when (error) {
+            is DomainPersistenceError -> error.toApplicationError()
+            else -> AppPersistenceError.StorageUnavailable(
+                operation = "getActiveContext",
+                cause = error.toString(),
+            )
+        }
+    }
 
     /**
      * Set the active context and publish audit event.
@@ -44,14 +51,14 @@ class ActiveContextService(
      */
     suspend fun setActiveContext(context: ContextView, activatedBy: String? = null): Either<ApplicationError, Unit> = either {
         // Get current context before switching for audit trail
-        val previousContext = getCurrentContext()
+        val previousContext = getCurrentContext().bind()
 
         // Switch the active context
         activeContextRepository.setActiveContext(context)
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> AppPersistenceError.StorageUnavailable(
                         operation = "setActiveContext",
                         cause = error.toString(),
                     )
@@ -79,14 +86,14 @@ class ActiveContextService(
      */
     suspend fun clearActiveContext(clearedBy: String? = null): Either<ApplicationError, Unit> = either {
         // Get current context before clearing for audit trail
-        val previousContext = getCurrentContext()
+        val previousContext = getCurrentContext().bind()
 
         // Clear the active context
         activeContextRepository.clearActiveContext()
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> AppPersistenceError.StorageUnavailable(
                         operation = "clearActiveContext",
                         cause = error.toString(),
                     )
@@ -126,7 +133,7 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> AppPersistenceError.StorageUnavailable(
                         operation = "findByKey",
                         cause = error.toString(),
                     )
@@ -139,7 +146,7 @@ class ActiveContextService(
         }
 
         // Use setActiveContext method to ensure audit event is published
-        setActiveContext(context, activatedBy)
+        setActiveContext(context!!, activatedBy)
             .mapLeft { it } // Already mapped to ApplicationError
             .bind()
 
@@ -157,10 +164,14 @@ class ActiveContextService(
 
     /**
      * Get status information about active context.
+     * Returns the status with null if there's an error getting the current context.
      */
-    suspend fun getStatus(): ActiveContextStatus = ActiveContextStatus(
-        activeContext = getCurrentContext(),
-    )
+    suspend fun getStatus(): Either<ApplicationError, ActiveContextStatus> = either {
+        val activeContext = getCurrentContext().bind()
+        ActiveContextStatus(
+            activeContext = activeContext,
+        )
+    }
 
     /**
      * Data class containing information about currently active context.
