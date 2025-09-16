@@ -19,7 +19,7 @@ private data class StoredResult(val result: CallToolResult, val timestamp: Insta
 
 /**
  * Default implementation of IdempotencyService using thread-safe in-memory storage.
- * 
+ *
  * This implementation uses a Mutex to ensure thread-safety when accessing the cache.
  * This class is internal as it should only be used within the MCP module.
  */
@@ -53,11 +53,11 @@ internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCode
         }
 
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
-        
+
         return mutex.withLock {
             // Clean up expired entries periodically
             cleanupExpiredEntriesInternal()
-            
+
             val stored = idempotencyStore[cacheKey]
 
             if (stored != null) {
@@ -83,7 +83,7 @@ internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCode
 
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = StoredResult(result, Clock.System.now())
-        
+
         mutex.withLock {
             idempotencyStore[cacheKey] = stored
             // Clean up old entries (simple TTL-based cleanup)
@@ -96,7 +96,7 @@ internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCode
             cleanupExpiredEntriesInternal()
         }
     }
-    
+
     /**
      * Internal cleanup method that must be called within a mutex lock.
      */

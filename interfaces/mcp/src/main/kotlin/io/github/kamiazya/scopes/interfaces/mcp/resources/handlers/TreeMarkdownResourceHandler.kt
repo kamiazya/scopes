@@ -85,7 +85,7 @@ class TreeMarkdownResourceHandler : ResourceHandler {
         return ResourceHelpers.createSimpleTextResult(
             uri = uri,
             text = md,
-            mimeType = mimeType
+            mimeType = mimeType,
         )
     }
 }

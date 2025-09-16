@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -19,6 +20,13 @@ class ScopeDeleteToolHandler : ToolHandler {
     override val name: String = "scopes.delete"
 
     override val description: String = "Delete a scope (must have no children)"
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = false,
+        destructiveHint = true,
+        idempotentHint = false,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

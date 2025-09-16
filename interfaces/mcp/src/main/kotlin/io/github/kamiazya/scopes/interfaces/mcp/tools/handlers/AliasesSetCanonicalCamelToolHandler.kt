@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -20,6 +21,13 @@ class AliasesSetCanonicalCamelToolHandler : ToolHandler {
     override val name: String = "aliases.setCanonical"
 
     override val description: String = "Set canonical alias"
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = false,
+        destructiveHint = true,
+        idempotentHint = false,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

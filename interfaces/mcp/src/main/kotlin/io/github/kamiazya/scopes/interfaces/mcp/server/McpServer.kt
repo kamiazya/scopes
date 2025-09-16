@@ -6,6 +6,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Sink
 import kotlinx.io.Source
+import java.util.UUID
 
 /**
  * MCP Server orchestrator that coordinates all server components.
@@ -30,16 +31,17 @@ class McpServer(
         val server = createServer()
         this.server = server
         val transport = transportFactory.stdio(source, sink)
+        val sessionId = UUID.randomUUID().toString()
 
         runBlocking {
             try {
-                logger.info("Starting MCP server (stdio)")
+                logger.info("[$sessionId] Starting MCP server (stdio)")
                 server.connect(transport)
-                logger.info("MCP server disconnected")
+                logger.info("[$sessionId] MCP server disconnected")
             } catch (e: CancellationException) {
-                logger.info("MCP server cancelled")
+                logger.info("[$sessionId] MCP server cancelled")
             } catch (e: Exception) {
-                logger.error("Failed to run MCP server", throwable = e)
+                logger.error("[$sessionId] Failed to run MCP server", throwable = e)
                 throw e
             } finally {
                 this@McpServer.server = null

@@ -8,7 +8,6 @@ import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
 import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
-import io.github.kamiazya.scopes.interfaces.mcp.di.simpleMcpModule
 import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
@@ -59,7 +58,7 @@ val cliAppModule = module {
         contractsModule,
 
         // MCP components
-        simpleMcpModule,
+        mcpModule,
     )
 
     // CLI Commands
@@ -126,5 +125,5 @@ val cliAppModule = module {
         )
     }
 
-    // MCP server provided by simpleMcpModule
+    // MCP server provided by mcpModule
 }

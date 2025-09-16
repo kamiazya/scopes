@@ -1,7 +1,8 @@
-package io.github.kamiazya.scopes.interfaces.mcp.di
+package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort
+import io.github.kamiazya.scopes.interfaces.mcp.completions.CompletionRegistrar
 import io.github.kamiazya.scopes.interfaces.mcp.prompts.PromptProvider
 import io.github.kamiazya.scopes.interfaces.mcp.prompts.PromptRegistrar
 import io.github.kamiazya.scopes.interfaces.mcp.prompts.providers.ScopesOutlinePromptProvider
@@ -18,11 +19,11 @@ import io.github.kamiazya.scopes.interfaces.mcp.server.ServerBuilder
 import io.github.kamiazya.scopes.interfaces.mcp.server.ToolRegistrar
 import io.github.kamiazya.scopes.interfaces.mcp.server.TransportFactory
 import io.github.kamiazya.scopes.interfaces.mcp.support.ArgumentCodec
-import io.github.kamiazya.scopes.interfaces.mcp.support.DefaultArgumentCodec
-import io.github.kamiazya.scopes.interfaces.mcp.support.DefaultErrorMapper
-import io.github.kamiazya.scopes.interfaces.mcp.support.DefaultIdempotencyService
 import io.github.kamiazya.scopes.interfaces.mcp.support.ErrorMapper
 import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
+import io.github.kamiazya.scopes.interfaces.mcp.support.createArgumentCodec
+import io.github.kamiazya.scopes.interfaces.mcp.support.createErrorMapper
+import io.github.kamiazya.scopes.interfaces.mcp.support.createIdempotencyService
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Services
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -30,8 +31,6 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasResolveToolH
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesAddToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesRemoveToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesSetCanonicalCamelToolHandler
-import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.AliasesSetCanonicalToolHandler
-import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.DebugListChangedToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopeChildrenToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopeCreateToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopeDeleteToolHandler
@@ -43,16 +42,21 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import org.koin.dsl.module
 
 /**
- * Simplified Koin module for MCP server components.
+ * MCP (Model Context Protocol) module for the CLI application.
  *
- * This module provides dependency injection configuration for the new MCP architecture.
+ * This module configures all MCP-related components including:
+ * - Support services (error mapping, idempotency, argument codec)
+ * - Tool handlers for scope operations
+ * - Resource handlers for various output formats
+ * - Prompt providers for AI assistance
+ * - Server components and registrars
  */
-val simpleMcpModule = module {
+val mcpModule = module {
 
-    // Support Services
-    single<ErrorMapper> { DefaultErrorMapper() }
-    single<ArgumentCodec> { DefaultArgumentCodec() }
-    single<IdempotencyService> { DefaultIdempotencyService(get<ArgumentCodec>()) }
+    // Support Services - using factory functions from interfaces-mcp
+    single<ErrorMapper> { createErrorMapper() }
+    single<ArgumentCodec> { createArgumentCodec() }
+    single<IdempotencyService> { createIdempotencyService(get<ArgumentCodec>()) }
 
     // Context Factory
     factory {
@@ -69,14 +73,13 @@ val simpleMcpModule = module {
         ports to services
     }
 
-    // Tool Handlers (manually list them for now)
+    // Tool Handlers
     single {
         listOf<ToolHandler>(
             AliasResolveToolHandler(),
             AliasesAddToolHandler(),
             AliasesRemoveToolHandler(),
-            AliasesSetCanonicalCamelToolHandler(), // Primary camelCase version
-            AliasesSetCanonicalToolHandler(), // Deprecated snake_case version
+            AliasesSetCanonicalCamelToolHandler(),
             ScopeGetToolHandler(),
             ScopeCreateToolHandler(),
             ScopeUpdateToolHandler(),
@@ -84,7 +87,6 @@ val simpleMcpModule = module {
             ScopeChildrenToolHandler(),
             ScopesRootsToolHandler(),
             ScopesListAliasesToolHandler(),
-            DebugListChangedToolHandler()
         )
     }
 
@@ -126,6 +128,10 @@ val simpleMcpModule = module {
         PromptRegistrar(providers = get<List<PromptProvider>>())
     }
 
+    single {
+        CompletionRegistrar(contextFactory = { get() })
+    }
+
     // Server Components
     single { ServerBuilder() }
     single { TransportFactory.create() }
@@ -139,6 +145,7 @@ val simpleMcpModule = module {
                 get<ToolRegistrar>(),
                 get<ResourceRegistrar>(),
                 get<PromptRegistrar>(),
+                get<CompletionRegistrar>(),
             ),
             logger = get<Logger>().withName("McpServer"),
         )

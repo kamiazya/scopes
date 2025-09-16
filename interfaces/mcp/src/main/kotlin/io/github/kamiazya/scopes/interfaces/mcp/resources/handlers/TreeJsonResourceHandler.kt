@@ -11,6 +11,9 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.Services
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.*
 
 /**
@@ -63,6 +66,9 @@ class TreeJsonResourceHandler : ResourceHandler {
         var latestUpdatedAt = scope.updatedAt
 
         suspend fun buildScopeNode(alias: String, currentDepth: Int): JsonObject? {
+            // Check for cancellation
+            currentCoroutineContext().ensureActive()
+
             if (nodeCount >= maxNodes) return null
             nodeCount++
 
@@ -85,6 +91,8 @@ class TreeJsonResourceHandler : ResourceHandler {
                             { emptyList<JsonObject>() },
                             { ch ->
                                 ch.scopes.mapNotNull { c ->
+                                    // Exit early if cancelled
+                                    if (!currentCoroutineContext().isActive) return@mapNotNull null
                                     buildScopeNode(c.canonicalAlias, currentDepth + 1)
                                 }
                             },

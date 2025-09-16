@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -19,6 +20,13 @@ class AliasResolveToolHandler : ToolHandler {
     override val name: String = "aliases.resolve"
 
     override val description: String = "Resolve a scope by alias (exact match only). Returns the canonical alias if found."
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = true,
+        destructiveHint = false,
+        idempotentHint = true,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

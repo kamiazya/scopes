@@ -35,7 +35,7 @@ interface ErrorMapper {
      * @return A CallToolResult representing success
      */
     fun successResult(content: String): CallToolResult
-    
+
     /**
      * Map a contract error to a resource error result.
      *

@@ -15,9 +15,9 @@ class ServerBuilder(
     private val name: String = "scopes",
     private val version: String = "0.1.0",
     private val capabilities: ServerCapabilities = ServerCapabilities(
-        tools = ServerCapabilities.Tools(listChanged = true),
-        resources = ServerCapabilities.Resources(subscribe = false, listChanged = true),
-        prompts = ServerCapabilities.Prompts(listChanged = true),
+        tools = ServerCapabilities.Tools(listChanged = false),
+        resources = ServerCapabilities.Resources(subscribe = false, listChanged = false),
+        prompts = ServerCapabilities.Prompts(listChanged = false),
     ),
 ) {
 

@@ -25,10 +25,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
     implementation(libs.arrow.core)
-    
-    // DI
-    implementation(platform(libs.koin.bom))
-    implementation(libs.koin.core)
 
     // Tests
     testImplementation(libs.bundles.kotest)

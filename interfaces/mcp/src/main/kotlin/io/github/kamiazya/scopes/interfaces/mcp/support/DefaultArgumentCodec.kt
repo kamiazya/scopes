@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 
 /**
  * Default implementation of ArgumentCodec for tool argument handling.
- * 
+ *
  * This class is internal as it should only be used within the MCP module.
  * External modules should depend on the ArgumentCodec interface.
  */

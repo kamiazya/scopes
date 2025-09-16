@@ -6,6 +6,8 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import kotlinx.coroutines.runBlocking
+import java.util.*
+import kotlin.time.measureTimedValue
 
 /**
  * Registers multiple tool handlers with the MCP server.
@@ -22,17 +24,29 @@ class ToolRegistrar(private val handlers: List<ToolHandler>, private val ctxFact
                 description = handler.description,
                 inputSchema = handler.input,
                 outputSchema = handler.output,
+                toolAnnotations = handler.annotations,
             ) { req ->
                 val (ports, services) = ctxFactory()
-                runBlocking {
-                    handler.handle(
-                        ToolContext(
-                            args = req.arguments,
-                            ports = ports,
-                            services = services,
-                        ),
-                    )
+                val requestId = UUID.randomUUID().toString()
+
+                services.logger.debug("[$requestId] Starting tool execution: ${handler.name}")
+
+                val (result, duration) = measureTimedValue {
+                    runBlocking {
+                        handler.handle(
+                            ToolContext(
+                                args = req.arguments,
+                                ports = ports,
+                                services = services,
+                            ),
+                        )
+                    }
                 }
+
+                val status = if (result.isError == true) "failed" else "succeeded"
+                services.logger.debug("[$requestId] Tool execution completed: ${handler.name} - $status in ${duration.inWholeMilliseconds}ms")
+
+                result
             }
         }
     }

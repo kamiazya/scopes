@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -28,6 +29,10 @@ interface ToolHandler {
 
     /** Optional output schema definition for this tool */
     val output: Tool.Output?
+
+    /** Optional annotations for this tool (e.g., read-only, destructive) */
+    val annotations: ToolAnnotations?
+        get() = null
 
     /**
      * Handle a tool call with the given context.

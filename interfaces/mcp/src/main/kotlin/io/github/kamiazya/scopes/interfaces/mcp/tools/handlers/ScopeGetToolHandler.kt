@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -35,6 +36,13 @@ class ScopeGetToolHandler : ToolHandler {
                 }
             }
         },
+    )
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = true,
+        destructiveHint = false,
+        idempotentHint = true,
     )
 
     override val output: Tool.Output = Tool.Output(

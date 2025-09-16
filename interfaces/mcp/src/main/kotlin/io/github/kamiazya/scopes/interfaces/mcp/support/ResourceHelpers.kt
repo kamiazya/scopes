@@ -5,6 +5,7 @@ import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextResourceContents
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.*
+import okio.ByteString.Companion.encodeUtf8
 
 /**
  * Helper functions for MCP resource handling.
@@ -12,17 +13,10 @@ import kotlinx.serialization.json.*
 object ResourceHelpers {
 
     /**
-     * Compute ETag for resource content using a simple hash function.
+     * Compute ETag for resource content using SHA-256.
+     * This provides better collision resistance than the previous simple hash.
      */
-    fun computeEtag(text: String): String {
-        // Simple hash function for KMP compatibility
-        var hash = 0L
-        for (char in text) {
-            hash = ((hash shl 5) - hash) + char.code
-            hash = hash and 0xFFFFFFFFL // Keep it 32-bit
-        }
-        return hash.toString(16).padStart(8, '0')
-    }
+    fun computeEtag(text: String): String = text.encodeUtf8().sha256().hex()
 
     /**
      * Parse tree alias to extract pure alias and depth parameter.

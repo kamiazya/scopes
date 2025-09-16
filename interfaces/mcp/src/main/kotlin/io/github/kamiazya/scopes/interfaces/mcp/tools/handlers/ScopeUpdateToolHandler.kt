@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -19,6 +20,13 @@ class ScopeUpdateToolHandler : ToolHandler {
     override val name: String = "scopes.update"
 
     override val description: String = "Update an existing scope's title or description"
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = false,
+        destructiveHint = true,
+        idempotentHint = false,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -19,6 +20,13 @@ class ScopeChildrenToolHandler : ToolHandler {
     override val name: String = "scopes.children"
 
     override val description: String = "Get child scopes of a parent scope"
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = true,
+        destructiveHint = false,
+        idempotentHint = true,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {

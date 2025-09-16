@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
+import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.*
 
 /**
@@ -18,6 +19,13 @@ class ScopesRootsToolHandler : ToolHandler {
     override val name: String = "scopes.roots"
 
     override val description: String = "Get all root scopes (scopes without parents)"
+
+    override val annotations: ToolAnnotations? = ToolAnnotations(
+        title = null,
+        readOnlyHint = true,
+        destructiveHint = false,
+        idempotentHint = true,
+    )
 
     override val input: Tool.Input = Tool.Input(
         properties = buildJsonObject {
