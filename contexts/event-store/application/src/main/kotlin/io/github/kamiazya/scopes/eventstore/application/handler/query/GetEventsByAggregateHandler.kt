@@ -32,11 +32,10 @@ class GetEventsByAggregateHandler(private val eventRepository: EventRepository) 
             since = query.since,
             limit = query.limit,
         )
-            .mapLeft { error ->
+            .mapLeft { _ ->
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.GET_AGGREGATE_EVENTS,
                     aggregateId = query.aggregateId.value,
-                    cause = null,
                 )
             }
             .map { events ->

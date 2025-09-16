@@ -47,7 +47,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
             entityType = "ScopeAlias",
             entityId = alias.id.value,
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -59,7 +59,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -72,7 +72,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
             entityId = aliasId.value,
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -84,7 +84,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -96,7 +96,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -108,7 +108,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -120,7 +120,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -132,7 +132,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -145,7 +145,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
             entityType = "ScopeAlias",
             entityId = aliasId.value,
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -157,7 +157,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -169,7 +169,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -188,7 +188,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
             entityType = "ScopeAlias",
             entityId = alias.id.value,
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -200,7 +200,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 
@@ -212,7 +212,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             repositoryName = "SqlDelightScopeAliasRepository",
             operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
             entityType = "ScopeAlias",
-            cause = e,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
         ).left()
     }
 

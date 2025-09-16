@@ -30,11 +30,10 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
 
                 // Check if aspect already exists
                 aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "check-existing-aspect",
-                                errorCause = error.toString(),
                             ),
                         )
                     },
@@ -78,11 +77,10 @@ class DefineAspectHandler(private val aspectDefinitionRepository: AspectDefiniti
 
                 // Save to repository
                 aspectDefinitionRepository.save(aspectDefinition).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "save-aspect-definition",
-                                errorCause = error.toString(),
                             ),
                         )
                     },

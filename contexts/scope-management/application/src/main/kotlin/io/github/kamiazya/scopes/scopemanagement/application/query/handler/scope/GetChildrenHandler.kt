@@ -41,18 +41,16 @@ class GetChildrenHandler(private val scopeRepository: ScopeRepository, private v
 
                 // Get children from repository with database-side pagination
                 val children = scopeRepository.findByParentId(parentId, query.offset, query.limit)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "findByParentId",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
                 val totalCount = scopeRepository.countByParentId(parentId)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "countByParentId",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()

@@ -14,7 +14,6 @@ sealed class DeviceSyncApplicationError : ApplicationError {
         val operation: RepositoryOperation,
         val entityType: String,
         val entityId: String? = null,
-        override val cause: Throwable? = null,
     ) : DeviceSyncApplicationError()
 
     enum class RepositoryOperation {
@@ -33,7 +32,6 @@ sealed class DeviceSyncApplicationError : ApplicationError {
         val deviceId: String,
         val remoteDeviceId: String? = null,
         val failureReason: SyncFailureReason? = null,
-        override val cause: Throwable? = null,
     ) : DeviceSyncApplicationError()
 
     enum class SyncOperation {
@@ -60,7 +58,6 @@ sealed class DeviceSyncApplicationError : ApplicationError {
         val aggregateId: String,
         val eventType: String? = null,
         val eventCount: Int? = null,
-        override val cause: Throwable? = null,
     ) : DeviceSyncApplicationError()
 
     enum class EventStoreOperation {
@@ -79,7 +76,6 @@ sealed class DeviceSyncApplicationError : ApplicationError {
         val invalidValue: Any?,
         val validationRule: ValidationRule,
         val context: String? = null,
-        override val cause: Throwable? = null,
     ) : DeviceSyncApplicationError()
 
     enum class ValidationRule {

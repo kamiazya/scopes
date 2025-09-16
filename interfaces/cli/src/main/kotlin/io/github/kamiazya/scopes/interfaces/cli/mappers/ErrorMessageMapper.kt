@@ -268,7 +268,7 @@ object ErrorMessageMapper {
             "User preferences service unavailable${formatRetryAfter(error.retryAfter)}"
         is UserPreferencesIntegrationError.HierarchySettingsNotFound -> "Hierarchy settings not found in user preferences"
         is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
-        is UserPreferencesIntegrationError.MalformedResponse -> "Malformed preferences response${formatCause(error.cause)}"
+        is UserPreferencesIntegrationError.MalformedResponse -> "Malformed preferences response"
         is UserPreferencesIntegrationError.RequestTimeout -> "Preferences request timed out after ${error.timeoutDuration}"
     }
 
@@ -445,7 +445,7 @@ object ErrorMessageMapper {
 
     private fun formatRetryAfter(retryAfter: Any?): String = retryAfter?.let { ", retry after: $it" } ?: ""
 
-    private fun formatCause(cause: Throwable?): String = cause?.let { ": ${it.message}" } ?: ""
+    // Cause messages are presentation concerns and should not be propagated from lower layers
 
     private fun formatOperationContext(context: Map<String, Any>?): String = context?.get("operation")?.let { " during $it" } ?: ""
 

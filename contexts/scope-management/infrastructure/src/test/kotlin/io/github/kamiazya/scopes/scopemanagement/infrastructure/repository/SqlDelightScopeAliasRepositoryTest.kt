@@ -80,7 +80,7 @@ class SqlDelightScopeAliasRepositoryTest :
                     result.isLeft() shouldBe true
                     val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
                     error.operation shouldBe ScopesError.RepositoryError.RepositoryOperation.SAVE
-                    error.cause shouldNotBe null
+                    error.failure shouldNotBe null
                 }
             }
 
@@ -605,7 +605,7 @@ class SqlDelightScopeAliasRepositoryTest :
                         val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
                         error.operation shouldNotBe null
                         error.repositoryName shouldBe "SqlDelightScopeAliasRepository"
-                        error.cause shouldNotBe null
+                        error.failure shouldNotBe null
                     }
                 }
             }

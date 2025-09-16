@@ -15,7 +15,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val aggregateId: String? = null,
         val eventType: String? = null,
         val affectedCount: Int? = null,
-        override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
     enum class RepositoryOperation {
@@ -35,7 +34,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val targetType: String,
         val dataSize: Int? = null,
         val format: String = "JSON",
-        override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
     enum class SerializationOperation {
@@ -51,7 +49,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val invalidValue: Any?,
         val constraint: ValidationConstraint,
         val allowedRange: String? = null,
-        override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
     enum class ValidationConstraint {

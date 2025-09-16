@@ -40,10 +40,9 @@ class GetContextViewHandler(
 
                 // Retrieve context view
                 val contextView = contextViewRepository.findByKey(contextKey)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-context-view",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()

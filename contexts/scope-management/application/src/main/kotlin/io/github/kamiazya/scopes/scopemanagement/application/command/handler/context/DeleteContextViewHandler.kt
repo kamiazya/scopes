@@ -33,11 +33,10 @@ class DeleteContextViewHandler(
 
             // Check if context view exists
             val existingContext = contextViewRepository.findByKey(contextKey).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "retrieve-context-view",
-                            errorCause = error.toString(),
                         ),
                     )
                 },
@@ -65,11 +64,10 @@ class DeleteContextViewHandler(
 
             // Delete the context view by its ID
             contextViewRepository.deleteById(existingContext.id).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "delete-context-view",
-                            errorCause = error.toString(),
                         ),
                     )
                 },

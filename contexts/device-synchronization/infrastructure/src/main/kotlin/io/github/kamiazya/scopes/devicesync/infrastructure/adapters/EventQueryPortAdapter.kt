@@ -42,7 +42,6 @@ class EventQueryPortAdapter(private val eventStoreQueryPort: EventStoreQueryPort
                 aggregateId = "all", // Query operations don't have specific aggregate
                 eventType = null,
                 eventCount = limit,
-                cause = contractError as? Throwable,
             )
         }.map { eventResults ->
             logger.debug("Successfully retrieved ${eventResults.size} events from event store")

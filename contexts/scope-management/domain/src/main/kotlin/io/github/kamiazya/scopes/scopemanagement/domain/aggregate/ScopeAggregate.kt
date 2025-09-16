@@ -6,7 +6,7 @@ import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
+import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
 import io.github.kamiazya.scopes.platform.domain.event.evolveWithPending
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
@@ -65,7 +65,7 @@ data class ScopeAggregate(
             description: String? = null,
             parentId: ScopeId? = null,
             scopeId: ScopeId? = null,
-            now: Instant = currentTimestamp(),
+            now: Instant = Clock.System.now(),
         ): Either<ScopesError, ScopeAggregate> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
@@ -106,7 +106,7 @@ data class ScopeAggregate(
             description: String? = null,
             parentId: ScopeId? = null,
             scopeId: ScopeId? = null,
-            now: Instant = currentTimestamp(),
+            now: Instant = Clock.System.now(),
         ): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
@@ -167,7 +167,7 @@ data class ScopeAggregate(
      * Updates the scope title after validation.
      * Ensures the scope exists and is not deleted.
      */
-    fun updateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun updateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -198,7 +198,7 @@ data class ScopeAggregate(
      * Decides whether to update the title (decide phase).
      * Returns pending events or empty list if no change needed.
      */
-    fun decideUpdateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
+    fun decideUpdateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -229,7 +229,7 @@ data class ScopeAggregate(
      * Handles update title command using decide/evolve pattern.
      * Returns an AggregateResult with the updated aggregate and pending events.
      */
-    fun handleUpdateTitle(title: String, now: Instant = currentTimestamp()): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
+    fun handleUpdateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
         val pendingEvents = decideUpdateTitle(title, now).bind()
 
         if (pendingEvents.isEmpty()) {
@@ -255,7 +255,7 @@ data class ScopeAggregate(
     /**
      * Updates the scope description after validation.
      */
-    fun updateDescription(description: String?, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun updateDescription(description: String?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -286,7 +286,7 @@ data class ScopeAggregate(
      * Changes the parent of the scope.
      * Validates hierarchy constraints before applying the change.
      */
-    fun changeParent(newParentId: ScopeId?, now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun changeParent(newParentId: ScopeId?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -316,7 +316,7 @@ data class ScopeAggregate(
      * Deletes the scope.
      * Soft delete that marks the scope as deleted.
      */
-    fun delete(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun delete(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -340,7 +340,7 @@ data class ScopeAggregate(
      * Archives the scope.
      * Archived scopes are hidden but can be restored.
      */
-    fun archive(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun archive(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -367,7 +367,7 @@ data class ScopeAggregate(
     /**
      * Restores an archived scope.
      */
-    fun restore(now: Instant = currentTimestamp()): Either<ScopesError, ScopeAggregate> = either {
+    fun restore(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
         ensureNotNull(scope) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
@@ -465,7 +465,7 @@ data class ScopeAggregate(
         -> this@ScopeAggregate // Not implemented yet
     }
 
-    fun validateVersion(expectedVersion: Long, now: Instant = currentTimestamp()): Either<ScopesError, Unit> = either {
+    fun validateVersion(expectedVersion: Long, now: Instant = Clock.System.now()): Either<ScopesError, Unit> = either {
         val versionValue = version.value
         if (versionValue.toLong() != expectedVersion) {
             raise(

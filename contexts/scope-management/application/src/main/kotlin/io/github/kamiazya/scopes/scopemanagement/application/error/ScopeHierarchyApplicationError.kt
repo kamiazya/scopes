@@ -3,9 +3,9 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
 /**
  * Errors related to scope hierarchy management.
  */
-sealed class ScopeHierarchyApplicationError(recoverable: Boolean = true, cause: Throwable? = null) : ScopeManagementApplicationError(recoverable, cause) {
+sealed class ScopeHierarchyApplicationError : ScopeManagementApplicationError() {
 
-    data class CircularReference(val scopeId: String, val cyclePath: List<String>) : ScopeHierarchyApplicationError(false)
+    data class CircularReference(val scopeId: String, val cyclePath: List<String>) : ScopeHierarchyApplicationError()
 
     data class MaxDepthExceeded(val scopeId: String, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyApplicationError()
 

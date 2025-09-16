@@ -57,10 +57,9 @@ class GetFilteredScopesHandler(
 
                         // Use specified context
                         contextViewRepository.findByKey(contextViewKey)
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                     operation = "find-context-view",
-                                    errorCause = error.toString(),
                                 )
                             }
                             .bind()
@@ -68,10 +67,9 @@ class GetFilteredScopesHandler(
                     else -> {
                         // Use active context if available
                         activeContextRepository.getActiveContext()
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                     operation = "get-active-context",
-                                    errorCause = error.toString(),
                                 )
                             }
                             .bind()
@@ -80,10 +78,9 @@ class GetFilteredScopesHandler(
 
                 // Get all scopes with pagination
                 val allScopes = scopeRepository.findAll(query.offset, query.limit)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-all-scopes",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
@@ -95,10 +92,9 @@ class GetFilteredScopesHandler(
                 val filteredScopes = if (contextView != null) {
                     // Get aspect definitions for type-aware comparison
                     val aspectDefinitions = aspectDefinitionRepository.findAll()
-                        .mapLeft { error ->
+                        .mapLeft { _ ->
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "load-aspect-definitions",
-                                errorCause = error.toString(),
                             )
                         }
                         .bind()
@@ -106,10 +102,9 @@ class GetFilteredScopesHandler(
 
                     // Use the domain-rich filter method
                     val filtered = contextView.filterScopes(allScopes, aspectDefinitions, filterEvaluationService)
-                        .mapLeft { error ->
+                        .mapLeft { _ ->
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "apply-filter",
-                                errorCause = error.toString(),
                             )
                         }
                         .bind()
@@ -119,11 +114,10 @@ class GetFilteredScopesHandler(
                         contextView = contextView,
                         scopeCount = filtered.size,
                         totalScopeCount = totalCount,
-                        appliedBy = null, // TODO: Add user context to track who applied the filter
+                        appliedBy = null
                     ).fold(
-                        { error ->
-                            // TODO: Add proper logging - for now, silently continue
-                            // logger.warn("Failed to publish context applied event: $error")
+                        { _ ->
+                            logger.warn("Failed to publish context applied event - continuing with filter operation")
                         },
                         { },
                     )

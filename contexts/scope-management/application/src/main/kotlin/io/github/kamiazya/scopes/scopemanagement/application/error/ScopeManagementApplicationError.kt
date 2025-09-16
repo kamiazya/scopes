@@ -8,19 +8,19 @@ import io.github.kamiazya.scopes.platform.application.error.ApplicationError
  * containing only structured data without presentation-specific messages.
  * The presentation layer is responsible for generating user-facing messages.
  */
-sealed class ScopeManagementApplicationError(open val recoverable: Boolean = true, override val cause: Throwable? = null) : ApplicationError {
+sealed class ScopeManagementApplicationError : ApplicationError {
 
     /**
      * Errors related to data persistence operations.
      */
-    sealed class PersistenceError(recoverable: Boolean = false, cause: Throwable? = null) : ScopeManagementApplicationError(recoverable, cause) {
-        data class StorageUnavailable(val operation: String, val errorCause: String?) : PersistenceError()
+    sealed class PersistenceError : ScopeManagementApplicationError() {
+        data class StorageUnavailable(val operation: String) : PersistenceError()
 
         data class DataCorruption(val entityType: String, val entityId: String?, val reason: String) : PersistenceError()
 
         data class ConcurrencyConflict(val entityType: String, val entityId: String, val expectedVersion: String, val actualVersion: String) :
             PersistenceError()
 
-        data class NotFound(val entityType: String, val entityId: String?) : PersistenceError(recoverable = true)
+        data class NotFound(val entityType: String, val entityId: String?) : PersistenceError()
     }
 }

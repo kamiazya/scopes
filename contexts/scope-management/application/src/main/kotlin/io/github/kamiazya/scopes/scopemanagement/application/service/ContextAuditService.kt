@@ -45,7 +45,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
             {
                 return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                     operation = "createAggregateId",
-                    errorCause = "Failed to create aggregate ID: $it",
                 ).left()
             },
             { it },
@@ -55,7 +54,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
             when (val result = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewId.create(id)) {
                 is Either.Left -> return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                     operation = "parsePreviousContextId",
-                    errorCause = "Invalid previous context ID: $id",
                 ).left()
                 is Either.Right -> result.value
             }
@@ -80,7 +78,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishContextActivated",
-                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish context activated event for context: ${contextView.key.value}", throwable = e)
             error.left()
@@ -102,7 +99,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
             {
                 return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                     operation = "createAggregateId",
-                    errorCause = "Failed to create aggregate ID: $it",
                 ).left()
             },
             { it },
@@ -125,7 +121,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishActiveContextCleared",
-                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish active context cleared event for context: ${previousContext.key.value}", throwable = e)
             error.left()
@@ -154,7 +149,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
             {
                 return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                     operation = "createAggregateId",
-                    errorCause = "Failed to create aggregate ID: $it",
                 ).left()
             },
             { it },
@@ -179,7 +173,6 @@ class ContextAuditService(private val eventPublisher: DomainEventPublisher) : Lo
         } catch (e: Exception) {
             val error = ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = "publishContextApplied",
-                errorCause = e.message ?: UNKNOWN_ERROR,
             )
             logger.error("Failed to publish context applied event for context: ${contextView.key.value}", throwable = e)
             error.left()

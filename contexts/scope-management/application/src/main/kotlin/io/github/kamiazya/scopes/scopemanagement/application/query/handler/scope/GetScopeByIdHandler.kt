@@ -36,10 +36,9 @@ class GetScopeByIdHandler(private val scopeRepository: ScopeRepository, private 
 
             // Retrieve the scope from repository
             val scope = scopeRepository.findById(scopeId)
-                .mapLeft { error ->
+                .mapLeft { _ ->
                     ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "findById",
-                        errorCause = error.toString(),
                     )
                 }
                 .bind()

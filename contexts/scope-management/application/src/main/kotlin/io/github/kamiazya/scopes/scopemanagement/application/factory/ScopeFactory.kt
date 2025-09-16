@@ -52,7 +52,6 @@ class ScopeFactory(
 
             return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = operation,
-                errorCause = error.toString(),
             )
         }
     }

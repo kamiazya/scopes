@@ -31,10 +31,9 @@ class ListContextViewsHandler(
             either {
                 // Retrieve all context views
                 val contextViews = contextViewRepository.findAll()
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "findAll",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()

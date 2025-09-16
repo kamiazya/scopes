@@ -25,7 +25,6 @@ class AspectUsageValidationService(private val scopeRepository: ScopeRepository)
                 raise(
                     ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "count-aspect-usage",
-                        errorCause = error.toString(),
                     ),
                 )
             },

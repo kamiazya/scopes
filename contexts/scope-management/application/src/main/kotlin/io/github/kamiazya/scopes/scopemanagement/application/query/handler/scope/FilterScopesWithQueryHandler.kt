@@ -30,6 +30,10 @@ class FilterScopesWithQueryHandler(
     private val parser: AspectQueryParser = AspectQueryParser(),
 ) : QueryHandler<FilterScopesWithQuery, ScopeManagementApplicationError, List<ScopeDto>> {
 
+    companion object {
+        private const val SCOPE_REPOSITORY_OPERATION = "scope-repository"
+    }
+
     override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> =
         transactionManager.inReadOnlyTransaction {
             logger.debug(
@@ -57,10 +61,9 @@ class FilterScopesWithQueryHandler(
 
                 // Get all aspect definitions for type-aware comparison
                 val definitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "findAll",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
@@ -76,10 +79,9 @@ class FilterScopesWithQueryHandler(
                             .mapLeft { it.toGenericApplicationError() }
                             .bind()
                         scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                     operation = "findByParentId",
-                                    errorCause = error.toString(),
                                 )
                             }
                             .bind()
@@ -87,10 +89,9 @@ class FilterScopesWithQueryHandler(
                     query.limit != 100 || query.offset > 0 -> {
                         // Use pagination - get all scopes with offset and limit
                         scopeRepository.findAll(query.offset, query.limit)
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                     operation = "findAll",
-                                    errorCause = error.toString(),
                                 )
                             }
                             .bind()
@@ -98,10 +99,9 @@ class FilterScopesWithQueryHandler(
                     else -> {
                         // Default behavior - get root scopes only
                         scopeRepository.findAllRoot()
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                     operation = "findAllRoot",
-                                    errorCause = error.toString(),
                                 )
                             }
                             .bind()

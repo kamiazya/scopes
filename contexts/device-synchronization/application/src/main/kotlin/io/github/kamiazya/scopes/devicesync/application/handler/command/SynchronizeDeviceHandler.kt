@@ -46,7 +46,6 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                 DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION
                             else -> null
                         },
-                        cause = null,
                     )
                 }
                 .flatMap { result ->
@@ -61,8 +60,7 @@ class SynchronizeDeviceHandler(private val synchronizationService: DeviceSynchro
                                     operation = DeviceSyncApplicationError.SyncOperation.CONFLICT_RESOLUTION,
                                     deviceId = command.remoteDeviceId,
                                     failureReason = DeviceSyncApplicationError.SyncFailureReason.DATA_CORRUPTION,
-                                    cause = null,
-                                )
+                                    )
                             }
                             .map { resolution ->
                                 val status = when {

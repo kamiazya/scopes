@@ -30,18 +30,16 @@ class GetRootScopesHandler(private val scopeRepository: ScopeRepository, private
             either {
                 // Get root scopes (parentId = null) with database-side pagination
                 val rootScopes = scopeRepository.findByParentId(null, query.offset, query.limit)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-root-scopes",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
                 val totalCount = scopeRepository.countByParentId(null)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "count-root-scopes",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()

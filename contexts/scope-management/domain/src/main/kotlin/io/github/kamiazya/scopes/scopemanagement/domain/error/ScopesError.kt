@@ -56,7 +56,6 @@ sealed class ScopesError {
     data class SystemError(
         val errorType: SystemErrorType,
         val service: String? = null,
-        val cause: Throwable? = null,
         val context: Map<String, Any> = emptyMap(),
     ) : ScopesError() {
         enum class SystemErrorType {
@@ -121,7 +120,8 @@ sealed class ScopesError {
         val operation: RepositoryOperation,
         val entityType: String? = null,
         val entityId: String? = null,
-        val cause: Throwable? = null,
+        val failure: RepositoryFailure? = null,
+        val details: Map<String, Any> = emptyMap(),
     ) : ScopesError() {
         enum class RepositoryOperation {
             SAVE,
@@ -130,6 +130,15 @@ sealed class ScopesError {
             UPDATE,
             QUERY,
             COUNT,
+        }
+
+        enum class RepositoryFailure {
+            STORAGE_UNAVAILABLE,
+            CONSTRAINT_VIOLATION,
+            TIMEOUT,
+            ACCESS_DENIED,
+            OPERATION_FAILED,
+            CORRUPTED_DATA,
         }
     }
 

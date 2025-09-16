@@ -36,7 +36,6 @@ class ValidateAspectValueUseCase(
             {
                 return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                     operation = "find-aspect-definition",
-                    errorCause = it.toString(),
                 ).left()
             },
             {
@@ -94,7 +93,6 @@ class ValidateAspectValueUseCase(
                 {
                     return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "find-aspect-definition",
-                        errorCause = it.toString(),
                     ).left()
                 },
                 {

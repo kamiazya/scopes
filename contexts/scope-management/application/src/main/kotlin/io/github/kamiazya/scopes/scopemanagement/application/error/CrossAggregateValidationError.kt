@@ -7,7 +7,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
  * Note: This is an application-layer error that doesn't extend domain errors
  * to maintain proper layer separation.
  */
-sealed class CrossAggregateValidationError(cause: Throwable? = null) : ScopeManagementApplicationError(false, cause) {
+sealed class CrossAggregateValidationError : ScopeManagementApplicationError() {
 
     /**
      * Error when a cross-aggregate reference is violated.

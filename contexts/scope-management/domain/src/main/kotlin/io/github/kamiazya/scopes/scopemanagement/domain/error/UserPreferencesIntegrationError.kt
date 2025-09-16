@@ -30,7 +30,7 @@ sealed class UserPreferencesIntegrationError : ScopesError() {
     /**
      * Error when preferences service returns malformed data.
      */
-    data class MalformedResponse(val cause: Throwable? = null) : UserPreferencesIntegrationError()
+    data object MalformedResponse : UserPreferencesIntegrationError()
 
     /**
      * Error when preferences service request times out.

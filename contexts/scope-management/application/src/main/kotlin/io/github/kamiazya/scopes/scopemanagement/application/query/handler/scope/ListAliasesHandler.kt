@@ -40,10 +40,9 @@ class ListAliasesHandler(
 
                 // Verify the scope exists
                 scopeRepository.findById(scopeId)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-scope",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
@@ -56,10 +55,9 @@ class ListAliasesHandler(
 
                 // Get all aliases for the scope
                 val aliases = scopeAliasRepository.findByScopeId(scopeId)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-aliases",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()

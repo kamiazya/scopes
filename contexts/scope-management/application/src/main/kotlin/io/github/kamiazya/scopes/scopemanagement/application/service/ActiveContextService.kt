@@ -52,7 +52,6 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "setActiveContext",
-                        errorCause = error.toString(),
                     )
                 }
             }
@@ -87,7 +86,6 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "clearActiveContext",
-                        errorCause = error.toString(),
                     )
                 }
             }
@@ -127,7 +125,6 @@ class ActiveContextService(
                     is DomainPersistenceError -> error.toApplicationError()
                     else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "findByKey",
-                        errorCause = error.toString(),
                     )
                 }
             }

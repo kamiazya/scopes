@@ -43,10 +43,9 @@ class GetScopeByAliasHandler(
 
                 // Find alias entity
                 val scopeAlias = scopeAliasRepository.findByAliasName(aliasName)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "findByAliasName",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
@@ -54,10 +53,9 @@ class GetScopeByAliasHandler(
                 // If alias found, get the scope
                 scopeAlias?.let { alias ->
                     val scope = scopeRepository.findById(alias.scopeId)
-                        .mapLeft { error ->
+                        .mapLeft { _ ->
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "findById",
-                                errorCause = error.toString(),
                             )
                         }
                         .bind()

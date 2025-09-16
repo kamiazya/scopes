@@ -188,8 +188,6 @@ class CreateContextViewUseCaseTest :
                     (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) shouldBe true
                     if (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) {
                         error.operation shouldBe "save-context-view"
-                        error.errorCause shouldBe
-                            "ConcurrencyConflict(entityType=ContextView, entityId=test-id, expectedVersion=1, actualVersion=2)"
                     }
                 }
             }

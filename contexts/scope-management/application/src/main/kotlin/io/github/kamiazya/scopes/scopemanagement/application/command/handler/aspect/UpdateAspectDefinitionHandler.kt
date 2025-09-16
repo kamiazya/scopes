@@ -29,11 +29,10 @@ class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: Aspe
 
                 // Find existing definition
                 val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "retrieve-aspect-definition",
-                                errorCause = error.toString(),
                             ),
                         )
                     },
@@ -56,11 +55,10 @@ class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: Aspe
 
                 // Save updated definition
                 aspectDefinitionRepository.save(updated).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "update-aspect-definition",
-                                errorCause = error.toString(),
                             ),
                         )
                     },

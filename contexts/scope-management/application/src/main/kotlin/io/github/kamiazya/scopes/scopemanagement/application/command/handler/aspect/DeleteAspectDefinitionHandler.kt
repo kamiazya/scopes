@@ -31,11 +31,10 @@ class DeleteAspectDefinitionHandler(
 
                 // Check if definition exists
                 aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "retrieve-aspect-definition",
-                                errorCause = error.toString(),
                             ),
                         )
                     },
@@ -55,11 +54,10 @@ class DeleteAspectDefinitionHandler(
 
                 // Delete from repository
                 aspectDefinitionRepository.deleteByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "delete-aspect-definition",
-                                errorCause = error.toString(),
                             ),
                         )
                     },

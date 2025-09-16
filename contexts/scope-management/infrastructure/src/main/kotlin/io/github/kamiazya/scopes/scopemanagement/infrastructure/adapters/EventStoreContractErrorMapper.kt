@@ -26,7 +26,7 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                 repositoryName = "EventStore",
                 operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
                 entityType = "Event",
-                cause = sourceError.cause,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             )
         }
 
@@ -49,21 +49,20 @@ internal class EventStoreContractErrorMapper(logger: Logger) : BaseCrossContextE
                         repositoryName = "EventStore",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Event",
-                        cause = null,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     )
                 }
             }
             EventStoreContractError.RetrievalFailureReason.TIMEOUT -> ScopesError.SystemError(
                 errorType = ScopesError.SystemError.SystemErrorType.QUERY_TIMEOUT,
                 service = "event-store",
-                cause = sourceError.cause,
                 context = mapOf("operation" to "event_retrieval"),
             )
             else -> ScopesError.RepositoryError(
                 repositoryName = "EventStore",
                 operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                 entityType = "Event",
-                cause = sourceError.cause,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             )
         }
 

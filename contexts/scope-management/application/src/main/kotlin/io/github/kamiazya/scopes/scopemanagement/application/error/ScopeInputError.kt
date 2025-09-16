@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
 /**
  * Errors related to scope input validation.
  */
-sealed class ScopeInputError(recoverable: Boolean = true, cause: Throwable? = null) : ScopeManagementApplicationError(recoverable, cause) {
+sealed class ScopeInputError : ScopeManagementApplicationError() {
     data class IdBlank(val attemptedValue: String) : ScopeInputError()
     data class IdInvalidFormat(val attemptedValue: String, val expectedFormat: String = "ULID") : ScopeInputError()
 

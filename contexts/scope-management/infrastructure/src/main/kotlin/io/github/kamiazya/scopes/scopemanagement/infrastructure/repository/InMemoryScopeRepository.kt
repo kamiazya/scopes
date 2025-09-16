@@ -34,7 +34,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
                         entityType = "Scope",
                         entityId = scope.id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -52,7 +52,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
                         entityId = id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -78,7 +78,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -104,7 +104,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -127,7 +127,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -146,7 +146,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
                         entityType = "Scope",
                         entityId = id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -164,7 +164,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
                         entityId = id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -181,7 +181,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -202,7 +202,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
                         entityType = "Scope",
                         entityId = scope.id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -219,7 +219,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -236,7 +236,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -256,7 +256,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -275,7 +275,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -292,7 +292,7 @@ open class InMemoryScopeRepository : ScopeRepository {
                         repositoryName = "InMemoryScopeRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "Scope",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }

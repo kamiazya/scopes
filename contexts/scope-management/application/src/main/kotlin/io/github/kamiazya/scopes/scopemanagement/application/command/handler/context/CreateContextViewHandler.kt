@@ -49,11 +49,10 @@ class CreateContextViewHandler(private val contextViewRepository: ContextViewRep
 
                 // Save to repository
                 val saved = contextViewRepository.save(contextView).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "save-context-view",
-                                errorCause = error.toString(),
                             ),
                         )
                     },

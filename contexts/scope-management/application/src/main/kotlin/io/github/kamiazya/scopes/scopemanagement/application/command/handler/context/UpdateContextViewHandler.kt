@@ -33,11 +33,10 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
 
                 // Retrieve existing context view
                 val existingContextView = contextViewRepository.findByKey(key).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "retrieve-context-view",
-                                errorCause = error.toString(),
                             ),
                         )
                     },
@@ -93,11 +92,10 @@ class UpdateContextViewHandler(private val contextViewRepository: ContextViewRep
 
                 // Save to repository (using save method for updates)
                 val saved = contextViewRepository.save(updatedContextView).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                                 operation = "save-context-view",
-                                errorCause = error.toString(),
                             ),
                         )
                     },

@@ -45,7 +45,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                         repositoryName = "ActiveContextRepositoryImpl",
                         operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
                         entityType = "ActiveContext",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -83,7 +83,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                         repositoryName = "ActiveContextRepositoryImpl",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "ActiveContext",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -105,7 +105,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                         operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
                         entityType = "ActiveContext",
                         entityId = contextView.id.value,
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -125,7 +125,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                         repositoryName = "ActiveContextRepositoryImpl",
                         operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
                         entityType = "ActiveContext",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -143,7 +143,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                         repositoryName = "ActiveContextRepositoryImpl",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "ActiveContext",
-                        cause = e,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }

@@ -106,7 +106,6 @@ internal class ContractBasedScopeEventSourcingRepository(
                     ScopesError.SystemError(
                         errorType = ScopesError.SystemError.SystemErrorType.SERIALIZATION_FAILED,
                         service = "EventSourcingRepository",
-                        cause = IllegalStateException("Event ${event::class.simpleName} does not implement VersionSupport"),
                         context = mapOf(
                             "aggregateId" to aggregateId.value,
                             "eventType" to (event::class.simpleName ?: event::class.java.name),

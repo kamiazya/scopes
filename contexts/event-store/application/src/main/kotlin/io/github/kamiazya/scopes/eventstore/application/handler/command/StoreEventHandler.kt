@@ -41,14 +41,13 @@ class StoreEventHandler(private val eventRepository: EventRepository, private va
      */
     override suspend fun invoke(command: StoreEventCommand): Either<EventStoreApplicationError, PersistedEventRecordDto> = transactionManager.inTransaction {
         eventRepository.store(command.event)
-            .mapLeft { error ->
+            .mapLeft { _ ->
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.APPEND_EVENT,
                     aggregateId = command.event.aggregateId.value,
                     eventType = command.event::class.simpleName
                         ?: command.event::class.qualifiedName
                         ?: "DomainEvent",
-                    cause = null,
                 )
             }
             .map { storedEvent ->

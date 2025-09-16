@@ -40,10 +40,9 @@ class GetAspectDefinitionHandler(
 
                 // Find by key
                 val aspectDefinition = aspectDefinitionRepository.findByKey(aspectKey)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                             operation = "find-aspect-definition",
-                            errorCause = error.toString(),
                         )
                     }
                     .bind()
