@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.platform.domain.event
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
+import kotlinx.datetime.Instant
 
 /**
  * Base interface for all domain events in event-sourced systems.
@@ -29,6 +30,11 @@ interface DomainEvent {
      * Used for ordering events and detecting gaps.
      */
     val aggregateVersion: AggregateVersion
+
+    /**
+     * When this event occurred.
+     */
+    val occurredAt: Instant
 
     /**
      * Optional metadata about the event.

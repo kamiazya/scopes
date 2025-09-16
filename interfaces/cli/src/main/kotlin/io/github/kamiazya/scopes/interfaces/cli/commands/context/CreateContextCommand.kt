@@ -76,7 +76,7 @@ class CreateContextCommand :
             val result = contextCommandAdapter.createContext(request)
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to create context '$key': ${ErrorMessageMapper.toUserMessage(error)}", err = true)
+                    echo("Error: Failed to create context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 ifRight = {
                     echo("Context view '$key' created successfully")

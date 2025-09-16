@@ -11,6 +11,7 @@ data class PersistedEventRecordDto(
     val aggregateId: String,
     val aggregateVersion: Long,
     val eventType: String,
+    val occurredAt: Instant,
     val storedAt: Instant,
     val sequenceNumber: Long,
     val event: DomainEvent? = null, // Optional to maintain backward compatibility

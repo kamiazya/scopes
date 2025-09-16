@@ -72,7 +72,7 @@ class EventStoreQueryPortAdapter(
                                         aggregateVersion = dto.aggregateVersion,
                                         eventType = dto.eventType,
                                         eventData = serialized.value,
-
+                                        occurredAt = dto.occurredAt,
                                         storedAt = dto.storedAt,
                                         sequenceNumber = dto.sequenceNumber,
                                     )
@@ -115,7 +115,7 @@ class EventStoreQueryPortAdapter(
                             aggregateVersion = dto.aggregateVersion,
                             eventType = dto.eventType,
                             eventData = serialized.value,
-
+                            occurredAt = dto.occurredAt,
                             storedAt = dto.storedAt,
                             sequenceNumber = dto.sequenceNumber,
                         )
@@ -143,7 +143,7 @@ class EventStoreQueryPortAdapter(
                         aggregateVersion = storedEvent.metadata.aggregateVersion.value,
                         eventType = storedEvent.metadata.eventType.value,
                         eventData = serialized.value,
-
+                        occurredAt = storedEvent.metadata.occurredAt,
                         storedAt = storedEvent.metadata.storedAt,
                         sequenceNumber = storedEvent.metadata.sequenceNumber,
                     )
@@ -179,7 +179,7 @@ class EventStoreQueryPortAdapter(
                         aggregateVersion = storedEvent.metadata.aggregateVersion.value,
                         eventType = storedEvent.metadata.eventType.value,
                         eventData = serialized.value,
-
+                        occurredAt = storedEvent.metadata.occurredAt,
                         storedAt = storedEvent.metadata.storedAt,
                         sequenceNumber = storedEvent.metadata.sequenceNumber,
                     )

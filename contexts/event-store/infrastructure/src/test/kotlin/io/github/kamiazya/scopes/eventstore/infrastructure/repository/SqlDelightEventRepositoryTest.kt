@@ -22,12 +22,14 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.seconds
 
 // Test domain event for testing
 data class TestEvent(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
     override val aggregateVersion: AggregateVersion,
+    override val occurredAt: Instant,
     val testData: String,
 ) : DomainEvent
 
@@ -119,7 +121,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-
+                        occurredAt = Clock.System.now(),
                         testData = "test data",
                     )
 
@@ -144,21 +146,21 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "event 1",
                         ),
                         TestEvent(
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(2),
-
+                            occurredAt = Clock.System.now(),
                             testData = "event 2",
                         ),
                         TestEvent(
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(3),
-
+                            occurredAt = Clock.System.now(),
                             testData = "event 3",
                         ),
                     )
@@ -180,7 +182,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-
+                        occurredAt = Clock.System.now(),
                         testData = "test data",
                     )
                     serializer.serializeError = EventStoreError.InvalidEventError(
@@ -210,7 +212,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-
+                        occurredAt = Clock.System.now(),
                         testData = "test data",
                     )
 
@@ -240,6 +242,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
+                        occurredAt = baseTime.minus(10.seconds),
                         testData = "first event",
                     )
 
@@ -264,6 +267,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
+                        occurredAt = baseTime.minus(5.seconds),
                         testData = "second event",
                     )
 
@@ -289,7 +293,7 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = AggregateId.generate(),
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "event $i",
                         )
                     }
@@ -315,7 +319,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-
+                        occurredAt = Clock.System.now(),
                         testData = "event 1",
                     )
 
@@ -323,7 +327,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.initial(),
-
+                        occurredAt = Clock.System.now(),
                         testData = "event 2",
                     )
 
@@ -364,21 +368,21 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "aggregate event 1",
                         ),
                         TestEvent(
                             eventId = EventId.generate(),
                             aggregateId = otherAggregateId,
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "other aggregate event",
                         ),
                         TestEvent(
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(2),
-
+                            occurredAt = Clock.System.now(),
                             testData = "aggregate event 2",
                         ),
                     )
@@ -407,6 +411,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.initial(),
+                        occurredAt = baseTime.minus(10.seconds),
                         testData = "old event",
                     )
 
@@ -431,6 +436,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = aggregateId,
                         aggregateVersion = AggregateVersion.fromUnsafe(2),
+                        occurredAt = baseTime.minus(5.seconds),
                         testData = "recent event",
                     )
 
@@ -457,7 +463,7 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(i.toLong()),
-
+                            occurredAt = Clock.System.now(),
                             testData = "event $i",
                         )
                     }
@@ -495,14 +501,14 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = AggregateId.generate(),
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "stream event 1",
                         ),
                         TestEvent(
                             eventId = EventId.generate(),
                             aggregateId = AggregateId.generate(),
                             aggregateVersion = AggregateVersion.initial(),
-
+                            occurredAt = Clock.System.now(),
                             testData = "stream event 2",
                         ),
                     )
@@ -543,6 +549,7 @@ class SqlDelightEventRepositoryTest :
                             eventId = EventId.generate(),
                             aggregateId = aggregateId,
                             aggregateVersion = AggregateVersion.fromUnsafe(i.toLong()),
+                            occurredAt = baseTime.plus(i.seconds),
                             testData = "event $i",
                         )
                     }
@@ -595,6 +602,7 @@ class SqlDelightEventRepositoryTest :
                         eventId = EventId.generate(),
                         aggregateId = AggregateId.generate(),
                         aggregateVersion = AggregateVersion.fromUnsafe(42),
+                        occurredAt = occurredAtMillis,
                         testData = "metadata test",
                     )
 
@@ -613,6 +621,7 @@ class SqlDelightEventRepositoryTest :
                     retrievedEvent.metadata.aggregateVersion shouldBe event.aggregateVersion
                     // EventType now depends on whether @EventTypeId is present or legacy class name is used
                     retrievedEvent.metadata.eventType.value shouldBe "io.github.kamiazya.scopes.eventstore.infrastructure.repository.TestEvent"
+                    retrievedEvent.metadata.occurredAt shouldBe event.occurredAt
                     retrievedEvent.metadata.storedAt shouldNotBe null
                     retrievedEvent.metadata.sequenceNumber shouldNotBe null // Sequence number is auto-generated
                 }

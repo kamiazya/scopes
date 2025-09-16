@@ -82,7 +82,7 @@ class EditContextCommand :
             val result = contextCommandAdapter.updateContext(request)
             result.fold(
                 { error ->
-                    echo("Error: Failed to update context '$key': ${ErrorMessageMapper.toUserMessage(error)}", err = true)
+                    echo("Error: Failed to update context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
                 },
                 {
                     echo("Context view '$key' updated successfully")

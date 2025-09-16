@@ -57,7 +57,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         aggregate_version = event.aggregateVersion.value,
                         event_type = getEventType(event),
                         event_data = eventData,
-                        occurred_at = storedAt.toEpochMilliseconds(),
+                        occurred_at = event.occurredAt.toEpochMilliseconds(),
                         stored_at = storedAt.toEpochMilliseconds(),
                     )
 
@@ -72,6 +72,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateId = event.aggregateId,
                             aggregateVersion = event.aggregateVersion,
                             eventType = EventType(getEventType(event)),
+                            occurredAt = event.occurredAt,
                             storedAt = storedAt,
                             sequenceNumber = sequenceNumber,
                         ),
@@ -106,6 +107,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateVersion = row.aggregate_version,
                             eventType = row.event_type,
                             eventData = row.event_data,
+                            occurredAt = row.occurred_at,
                             storedAt = row.stored_at,
                             sequenceNumber = row.sequence_number,
                         )
@@ -147,6 +149,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                                 aggregateVersion = row.aggregate_version,
                                 eventType = row.event_type,
                                 eventData = row.event_data,
+                                occurredAt = row.occurred_at,
                                 storedAt = row.stored_at,
                                 sequenceNumber = row.sequence_number,
                             )
@@ -179,6 +182,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateVersion = row.aggregate_version,
                             eventType = row.event_type,
                             eventData = row.event_data,
+                            occurredAt = row.occurred_at,
                             storedAt = row.stored_at,
                             sequenceNumber = row.sequence_number,
                         )
@@ -216,6 +220,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                                 aggregateVersion = row.aggregate_version,
                                 eventType = row.event_type,
                                 eventData = row.event_data,
+                                occurredAt = row.occurred_at,
                                 storedAt = row.stored_at,
                                 sequenceNumber = row.sequence_number,
                             )
@@ -253,6 +258,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                                 aggregateVersion = row.aggregate_version,
                                 eventType = row.event_type,
                                 eventData = row.event_data,
+                                occurredAt = row.occurred_at,
                                 storedAt = row.stored_at,
                                 sequenceNumber = row.sequence_number,
                             )
@@ -304,6 +310,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateVersion = row.aggregate_version,
                             eventType = row.event_type,
                             eventData = row.event_data,
+                            occurredAt = row.occurred_at,
                             storedAt = row.stored_at,
                             sequenceNumber = row.sequence_number,
                         )
@@ -334,6 +341,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                             aggregateVersion = row.aggregate_version,
                             eventType = row.event_type,
                             eventData = row.event_data,
+                            occurredAt = row.occurred_at,
                             storedAt = row.stored_at,
                             sequenceNumber = row.sequence_number,
                         )
@@ -353,6 +361,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
         aggregateVersion: Long,
         eventType: String,
         eventData: String,
+        occurredAt: Long,
         storedAt: Long,
         sequenceNumber: Long,
     ): Either<EventStoreError, PersistedEventRecord> = eventSerializer.deserialize(eventType, eventData)
@@ -365,6 +374,7 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                         ?: error("Invalid aggregate ID in database"),
                     aggregateVersion = AggregateVersion.fromUnsafe(aggregateVersion),
                     eventType = EventType(eventType),
+                    occurredAt = Instant.fromEpochMilliseconds(occurredAt),
                     storedAt = Instant.fromEpochMilliseconds(storedAt),
                     sequenceNumber = sequenceNumber,
                 ),

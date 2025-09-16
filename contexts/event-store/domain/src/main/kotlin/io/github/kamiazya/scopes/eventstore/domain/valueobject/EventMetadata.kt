@@ -12,6 +12,7 @@ import kotlinx.datetime.Instant
  * @property aggregateId The ID of the aggregate this event belongs to
  * @property aggregateVersion The version of the aggregate after this event
  * @property eventType The type/class name of the event
+ * @property occurredAt When the event occurred
  * @property storedAt When the event was stored
  * @property sequenceNumber The sequence number of this event in the store
  */
@@ -20,10 +21,12 @@ data class EventMetadata(
     val aggregateId: AggregateId,
     val aggregateVersion: AggregateVersion,
     val eventType: EventType,
+    val occurredAt: Instant,
     val storedAt: Instant,
     val sequenceNumber: Long,
 ) {
     init {
         require(sequenceNumber >= 0) { "Sequence number must be non-negative" }
+        require(storedAt >= occurredAt) { "Event cannot be stored before it occurred" }
     }
 }

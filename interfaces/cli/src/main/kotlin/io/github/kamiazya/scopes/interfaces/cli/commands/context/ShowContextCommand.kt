@@ -50,7 +50,7 @@ class ShowContextCommand :
                 // Get the current context key
                 contextQueryAdapter.getCurrentContext().fold(
                     { error ->
-                        echo("Failed to get current context: ${ErrorMessageMapper.toUserMessage(error)}", err = true)
+                        echo("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}", err = true)
                         return@runBlocking
                     },
                     { activeContext ->
@@ -67,7 +67,7 @@ class ShowContextCommand :
 
             contextQueryAdapter.getContextView(contextKey).fold(
                 { error ->
-                    throw CliktError(ErrorMessageMapper.toUserMessage(error))
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
                 },
                 { contextView ->
                     if (contextView == null) {

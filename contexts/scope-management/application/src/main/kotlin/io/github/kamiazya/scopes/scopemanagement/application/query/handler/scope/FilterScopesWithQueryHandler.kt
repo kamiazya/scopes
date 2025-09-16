@@ -6,10 +6,10 @@ import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -33,126 +33,125 @@ class FilterScopesWithQueryHandler(
         private const val SCOPE_REPOSITORY_SERVICE = "scope-repository"
     }
 
-    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> =
-        transactionManager.inReadOnlyTransaction {
-            logger.debug(
-                "Filtering scopes with query",
-                mapOf(
-                    "query" to query.query,
-                    "parentId" to (query.parentId ?: "none"),
-                    "offset" to query.offset,
-                    "limit" to query.limit,
-                ),
+    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> = transactionManager.inReadOnlyTransaction {
+        logger.debug(
+            "Filtering scopes with query",
+            mapOf(
+                "query" to query.query,
+                "parentId" to (query.parentId ?: "none"),
+                "offset" to query.offset,
+                "limit" to query.limit,
+            ),
+        )
+        either {
+            // Parse the query
+            val ast = parser.parse(query.query).fold(
+                { _ ->
+                    raise(
+                        ScopesError.InvalidOperation(
+                            operation = "filter-scopes-with-query",
+                            reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
+                        ).toGenericApplicationError(),
+                    )
+                },
+                { it },
             )
-            either {
-                // Parse the query
-                val ast = parser.parse(query.query).fold(
-                    { _ ->
-                        raise(
-                            ScopesError.InvalidOperation(
-                                operation = "filter-scopes-with-query",
-                                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                            ).toGenericApplicationError(),
-                        )
-                    },
-                    { it },
-                )
 
-                // Get all aspect definitions for type-aware comparison
-                val definitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { error ->
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            context = mapOf("operation" to "findAll"),
-                        ).toGenericApplicationError()
-                    }
-                    .bind()
-                    .associateBy { it.key.value }
-
-                // Create evaluator with definitions
-                val evaluator = AspectQueryEvaluator(definitions)
-
-                // Get scopes to filter
-                val scopesToFilter = when {
-                    query.parentId != null -> {
-                        val parentScopeId = ScopeId.create(query.parentId)
-                            .mapLeft { it.toGenericApplicationError() }
-                            .bind()
-                        scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                            .mapLeft { error ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf(
-                                        "operation" to "findByParentId",
-                                        "parentId" to parentScopeId.value.toString(),
-                                    ),
-                                ).toGenericApplicationError()
-                            }
-                            .bind()
-                    }
-                    query.limit != 100 || query.offset > 0 -> {
-                        // Use pagination - get all scopes with offset and limit
-                        scopeRepository.findAll(query.offset, query.limit)
-                            .mapLeft { error ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf(
-                                        "operation" to "findAll",
-                                        "offset" to query.offset,
-                                        "limit" to query.limit,
-                                    ),
-                                ).toGenericApplicationError()
-                            }
-                            .bind()
-                    }
-                    else -> {
-                        // Default behavior - get root scopes only
-                        scopeRepository.findAllRoot()
-                            .mapLeft { error ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf("operation" to "findAllRoot"),
-                                ).toGenericApplicationError()
-                            }
-                            .bind()
-                    }
+            // Get all aspect definitions for type-aware comparison
+            val definitions = aspectDefinitionRepository.findAll()
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "aspect-repository",
+                        context = mapOf("operation" to "findAll"),
+                    ).toGenericApplicationError()
                 }
+                .bind()
+                .associateBy { it.key.value }
 
-                // Filter scopes based on the query
-                val filteredScopes = scopesToFilter.filter { scope ->
-                    evaluator.evaluate(ast, scope.aspects)
+            // Create evaluator with definitions
+            val evaluator = AspectQueryEvaluator(definitions)
+
+            // Get scopes to filter
+            val scopesToFilter = when {
+                query.parentId != null -> {
+                    val parentScopeId = ScopeId.create(query.parentId)
+                        .mapLeft { it.toGenericApplicationError() }
+                        .bind()
+                    scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = SCOPE_REPOSITORY_SERVICE,
+                                context = mapOf(
+                                    "operation" to "findByParentId",
+                                    "parentId" to parentScopeId.value.toString(),
+                                ),
+                            ).toGenericApplicationError()
+                        }
+                        .bind()
                 }
-
-                // Map to DTOs
-                val result = filteredScopes.map { scope ->
-                    ScopeMapper.toDto(scope)
+                query.limit != 100 || query.offset > 0 -> {
+                    // Use pagination - get all scopes with offset and limit
+                    scopeRepository.findAll(query.offset, query.limit)
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = SCOPE_REPOSITORY_SERVICE,
+                                context = mapOf(
+                                    "operation" to "findAll",
+                                    "offset" to query.offset,
+                                    "limit" to query.limit,
+                                ),
+                            ).toGenericApplicationError()
+                        }
+                        .bind()
                 }
-
-                logger.info(
-                    "Successfully filtered scopes with query",
-                    mapOf(
-                        "query" to query.query,
-                        "parentId" to (query.parentId ?: "none"),
-                        "totalScopes" to scopesToFilter.size,
-                        "filteredScopes" to result.size,
-                    ),
-                )
-
-                result
+                else -> {
+                    // Default behavior - get root scopes only
+                    scopeRepository.findAllRoot()
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = SCOPE_REPOSITORY_SERVICE,
+                                context = mapOf("operation" to "findAllRoot"),
+                            ).toGenericApplicationError()
+                        }
+                        .bind()
+                }
             }
-        }.onLeft { error ->
-            logger.error(
-                "Failed to filter scopes with query",
+
+            // Filter scopes based on the query
+            val filteredScopes = scopesToFilter.filter { scope ->
+                evaluator.evaluate(ast, scope.aspects)
+            }
+
+            // Map to DTOs
+            val result = filteredScopes.map { scope ->
+                ScopeMapper.toDto(scope)
+            }
+
+            logger.info(
+                "Successfully filtered scopes with query",
                 mapOf(
                     "query" to query.query,
                     "parentId" to (query.parentId ?: "none"),
-                    "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                    "message" to error.toString(),
+                    "totalScopes" to scopesToFilter.size,
+                    "filteredScopes" to result.size,
                 ),
             )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to filter scopes with query",
+            mapOf(
+                "query" to query.query,
+                "parentId" to (query.parentId ?: "none"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
+    }
 }

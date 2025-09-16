@@ -29,7 +29,7 @@ class ShowCommand :
         runBlocking {
             aspectQueryAdapter.getAspectDefinition(key).fold(
                 ifLeft = { error ->
-                    throw CliktError(ErrorMessageMapper.toUserMessage(error))
+                    throw CliktError(ErrorMessageMapper.getMessage(error))
                 },
                 ifRight = { definition ->
                     if (definition == null) {

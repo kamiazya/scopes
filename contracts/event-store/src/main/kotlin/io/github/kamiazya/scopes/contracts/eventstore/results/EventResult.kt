@@ -11,6 +11,7 @@ public data class EventResult(
     val aggregateVersion: Long,
     val eventType: String,
     val eventData: String, // JSON serialized event data
+    val occurredAt: Instant,
     val storedAt: Instant,
     val sequenceNumber: Long,
     val metadata: Map<String, String> = emptyMap(),

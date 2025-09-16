@@ -58,7 +58,7 @@ class CurrentContextCommand :
                 // Show the current context
                 contextQueryAdapter.getCurrentContext().fold(
                     { error ->
-                        throw CliktError(ErrorMessageMapper.toUserMessage(error))
+                        throw CliktError(ErrorMessageMapper.getMessage(error))
                     },
                     { context ->
                         if (context == null) {
