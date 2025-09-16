@@ -68,7 +68,7 @@ class DeleteContextCommand :
             val result = contextCommandAdapter.deleteContext(DeleteContextViewCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    echo("Error: Failed to delete context '$key': ${ErrorMessageMapper.toUserMessage(error)}", err = true)
                 },
                 {
                     echo("Context view '$key' deleted successfully")

@@ -43,7 +43,6 @@ class GetEventsSinceHandler(private val eventRepository: EventRepository) :
                         aggregateId = storedEvent.metadata.aggregateId.value,
                         aggregateVersion = storedEvent.metadata.aggregateVersion.value,
                         eventType = storedEvent.metadata.eventType.value,
-                        occurredAt = storedEvent.metadata.occurredAt,
                         storedAt = storedEvent.metadata.storedAt,
                         sequenceNumber = storedEvent.metadata.sequenceNumber,
                         event = storedEvent.event, // Include the domain event

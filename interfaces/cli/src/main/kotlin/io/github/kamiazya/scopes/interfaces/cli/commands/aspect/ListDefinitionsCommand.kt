@@ -26,7 +26,7 @@ class ListDefinitionsCommand :
         runBlocking {
             aspectQueryAdapter.listAspectDefinitions().fold(
                 ifLeft = { error ->
-                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                    throw CliktError(ErrorMessageMapper.toUserMessage(error))
                 },
                 ifRight = { definitions ->
                     if (definitions.isEmpty()) {

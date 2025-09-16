@@ -32,7 +32,7 @@ class ValidateCommand :
         runBlocking {
             aspectQueryAdapter.validateAspectValue(key, values).fold(
                 ifLeft = { error ->
-                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                    throw CliktError(ErrorMessageMapper.toUserMessage(error))
                 },
                 ifRight = { validatedValues ->
                     echo("✓ All values are valid for aspect '$key'")

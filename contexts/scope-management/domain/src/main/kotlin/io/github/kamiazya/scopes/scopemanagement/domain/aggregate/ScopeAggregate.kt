@@ -76,7 +76,6 @@ data class ScopeAggregate(
             val event = ScopeCreated(
                 aggregateId = aggregateId,
                 eventId = eventId,
-                occurredAt = now,
                 aggregateVersion = AggregateVersion.initial().increment(),
                 scopeId = scopeId,
                 title = validatedTitle,
@@ -127,7 +126,6 @@ data class ScopeAggregate(
             val event = ScopeCreated(
                 aggregateId = aggregateId,
                 eventId = EventId.generate(),
-                occurredAt = now,
 
                 aggregateVersion = AggregateVersion.initial(), // Dummy version
                 scopeId = scopeId,
@@ -183,7 +181,6 @@ data class ScopeAggregate(
         val event = ScopeTitleUpdated(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -214,7 +211,6 @@ data class ScopeAggregate(
         val event = ScopeTitleUpdated(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = AggregateVersion.initial(), // Dummy version
             scopeId = scope!!.id,
@@ -271,7 +267,6 @@ data class ScopeAggregate(
         val event = ScopeDescriptionUpdated(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -301,7 +296,6 @@ data class ScopeAggregate(
         val event = ScopeParentChanged(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -327,7 +321,6 @@ data class ScopeAggregate(
         val event = ScopeDeleted(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -354,7 +347,6 @@ data class ScopeAggregate(
         val event = ScopeArchived(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -381,7 +373,6 @@ data class ScopeAggregate(
         val event = ScopeRestored(
             aggregateId = id,
             eventId = EventId.generate(),
-            occurredAt = now,
 
             aggregateVersion = version.increment(),
             scopeId = scope!!.id,
@@ -399,62 +390,67 @@ data class ScopeAggregate(
      * increment based on the number of events applied.
      */
     override fun applyEvent(event: ScopeEvent): ScopeAggregate = when (event) {
-        is ScopeCreated -> copy(
-            version = version.increment(),
-            createdAt = event.occurredAt,
-            updatedAt = event.occurredAt,
-            scope = Scope(
-                id = event.scopeId,
-                title = event.title,
-                description = event.description,
-                parentId = event.parentId,
-                createdAt = event.occurredAt,
-                updatedAt = event.occurredAt,
-            ),
-        )
+        is ScopeCreated -> {
+            // For ScopeCreated, we need to establish initial timestamps
+            // During replay, these will be the original timestamps from when the event was stored
+            val now = createdAt // Use existing createdAt if replaying, otherwise it's Instant.DISTANT_PAST
+            copy(
+                version = version.increment(),
+                createdAt = if (createdAt == Instant.DISTANT_PAST) Clock.System.now() else createdAt,
+                updatedAt = if (createdAt == Instant.DISTANT_PAST) Clock.System.now() else createdAt,
+                scope = Scope(
+                    id = event.scopeId,
+                    title = event.title,
+                    description = event.description,
+                    parentId = event.parentId,
+                    createdAt = if (createdAt == Instant.DISTANT_PAST) Clock.System.now() else createdAt,
+                    updatedAt = if (createdAt == Instant.DISTANT_PAST) Clock.System.now() else createdAt,
+                ),
+            )
+        }
 
         is ScopeTitleUpdated -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             scope = scope?.copy(
                 title = event.newTitle,
-                updatedAt = event.occurredAt,
+                updatedAt = Clock.System.now(),
             ),
         )
 
         is ScopeDescriptionUpdated -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             scope = scope?.copy(
                 description = event.newDescription,
-                updatedAt = event.occurredAt,
+                updatedAt = Clock.System.now(),
             ),
         )
 
         is ScopeParentChanged -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             scope = scope?.copy(
                 parentId = event.newParentId,
-                updatedAt = event.occurredAt,
+                updatedAt = Clock.System.now(),
             ),
         )
 
         is ScopeDeleted -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             isDeleted = true,
         )
 
         is ScopeArchived -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             isArchived = true,
         )
 
         is ScopeRestored -> copy(
             version = version.increment(),
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
             isArchived = false,
         )
 

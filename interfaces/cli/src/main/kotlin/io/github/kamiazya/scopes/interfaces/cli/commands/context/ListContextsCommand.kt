@@ -39,7 +39,7 @@ class ListContextsCommand :
         runBlocking {
             contextQueryAdapter.listContextViews().fold(
                 { error ->
-                    throw CliktError(ErrorMessageMapper.getMessage(error))
+                    throw CliktError(ErrorMessageMapper.toUserMessage(error))
                 },
                 { contextViews ->
                     if (contextViews.isEmpty()) {

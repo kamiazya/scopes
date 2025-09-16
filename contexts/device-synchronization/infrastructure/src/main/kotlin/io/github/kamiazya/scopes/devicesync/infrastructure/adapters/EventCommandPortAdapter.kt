@@ -55,7 +55,6 @@ class EventCommandPortAdapter(private val eventStoreCommandPort: EventStoreComma
                 aggregateVersion = event.aggregateVersion.value,
                 eventType = eventType,
                 eventData = eventData,
-                occurredAt = event.occurredAt,
             ),
         ).mapLeft { contractError ->
             logger.error(

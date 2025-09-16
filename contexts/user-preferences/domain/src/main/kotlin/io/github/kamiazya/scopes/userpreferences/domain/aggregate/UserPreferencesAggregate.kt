@@ -13,6 +13,7 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
 import io.github.kamiazya.scopes.userpreferences.domain.event.PreferencesReset
 import io.github.kamiazya.scopes.userpreferences.domain.event.UserPreferencesCreated
 import io.github.kamiazya.scopes.userpreferences.domain.event.UserPreferencesDomainEvent
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 data class UserPreferencesAggregate(
@@ -35,7 +36,6 @@ data class UserPreferencesAggregate(
                 eventId = EventId.generate(),
                 aggregateId = aggregateId,
                 aggregateVersion = initialVersion.increment(),
-                occurredAt = now,
                 preferences = preferences,
             )
 
@@ -59,7 +59,6 @@ data class UserPreferencesAggregate(
             eventId = EventId.generate(),
             aggregateId = id,
             aggregateVersion = version.increment(),
-            occurredAt = now,
             oldPreferences = currentPreferences,
             newPreferences = newPreferences,
         )
@@ -80,13 +79,13 @@ data class UserPreferencesAggregate(
         is UserPreferencesCreated -> copy(
             preferences = event.preferences,
             version = event.aggregateVersion,
-            createdAt = event.occurredAt,
-            updatedAt = event.occurredAt,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now(),
         )
         is PreferencesReset -> copy(
             preferences = event.newPreferences,
             version = event.aggregateVersion,
-            updatedAt = event.occurredAt,
+            updatedAt = Clock.System.now(),
         )
     }
 }

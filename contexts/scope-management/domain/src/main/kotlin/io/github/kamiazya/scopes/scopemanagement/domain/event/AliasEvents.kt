@@ -12,7 +12,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import kotlinx.datetime.Instant
 
 /**
  * Events related to ScopeAlias aggregate.
@@ -26,7 +25,6 @@ sealed class AliasEvent : DomainEvent
 data class AliasAssigned(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
-    override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val aliasName: AliasName,
@@ -38,7 +36,6 @@ data class AliasAssigned(
             AliasAssigned(
                 aggregateId = aggregateId,
                 eventId = eventId,
-                occurredAt = alias.createdAt,
                 aggregateVersion = AggregateVersion.initial().increment(),
                 aliasId = alias.id,
                 aliasName = alias.aliasName,
@@ -56,13 +53,11 @@ data class AliasAssigned(
 data class AliasRemoved(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
-    override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
     val aliasType: AliasType,
-    val removedAt: Instant,
 ) : AliasEvent()
 
 /**
@@ -73,7 +68,6 @@ data class AliasRemoved(
 data class AliasNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
-    override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
     val aliasId: AliasId,
     val scopeId: ScopeId,
@@ -89,7 +83,6 @@ data class AliasNameChanged(
 data class CanonicalAliasReplaced(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
-    override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
     val scopeId: ScopeId,
     val oldAliasId: AliasId,

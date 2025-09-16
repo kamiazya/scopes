@@ -56,7 +56,6 @@ class StoreEventHandler(private val eventRepository: EventRepository, private va
                     aggregateId = storedEvent.metadata.aggregateId.value,
                     aggregateVersion = storedEvent.metadata.aggregateVersion.value,
                     eventType = storedEvent.metadata.eventType.value,
-                    occurredAt = storedEvent.metadata.occurredAt,
                     storedAt = storedEvent.metadata.storedAt,
                     sequenceNumber = storedEvent.metadata.sequenceNumber,
                 )

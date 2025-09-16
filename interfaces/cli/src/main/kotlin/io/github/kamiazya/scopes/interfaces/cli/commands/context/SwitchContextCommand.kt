@@ -50,7 +50,7 @@ class SwitchContextCommand :
             val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.toUserMessage(error)}", err = true)
                 },
                 {
                     echo("Switched to context '$key'")

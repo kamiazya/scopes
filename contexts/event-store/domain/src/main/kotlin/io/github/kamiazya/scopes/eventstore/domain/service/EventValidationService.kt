@@ -135,7 +135,7 @@ class DefaultEventValidationService : EventValidationService {
             for (i in 1 until sortedEvents.size) {
                 val prev = sortedEvents[i - 1]
                 val curr = sortedEvents[i]
-                if (curr.metadata.occurredAt < prev.metadata.occurredAt) {
+                if (curr.metadata.storedAt < prev.metadata.storedAt) {
                     return EventStoreDomainError.EventOrderingViolation(
                         aggregateId = aggregateId,
                         violationType = EventStoreDomainError.OrderingViolationType.RETROACTIVE_EVENT,

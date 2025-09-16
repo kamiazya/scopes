@@ -64,7 +64,6 @@ internal class ContractBasedScopeEventSourcingRepository(
                 aggregateVersion = event.aggregateVersion.value,
                 eventType = eventTypeId(event),
                 eventData = json.encodeToString(event),
-                occurredAt = event.occurredAt,
                 metadata = mapOf(
                     "eventId" to event.eventId.value,
                 ),
@@ -119,7 +118,6 @@ internal class ContractBasedScopeEventSourcingRepository(
                 aggregateVersion = eventWithVersion.aggregateVersion.value,
                 eventType = eventTypeId(eventWithVersion),
                 eventData = json.encodeToString(eventWithVersion),
-                occurredAt = eventWithVersion.occurredAt,
                 metadata = mapOf(
                     "eventId" to eventWithVersion.eventId.value,
                 ),
