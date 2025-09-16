@@ -14,14 +14,18 @@ import io.github.kamiazya.scopes.devicesync.application.command.SynchronizeDevic
 import io.github.kamiazya.scopes.devicesync.application.handler.command.SynchronizeDeviceHandler
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import kotlinx.datetime.Clock
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictResolutionStrategy as DomainConflictResolutionStrategy
 
 /**
  * Adapter that implements the Device Sync contract command port.
  */
-class DeviceSynchronizationCommandPortAdapter(private val synchronizeHandler: SynchronizeDeviceHandler, private val syncRepository: SynchronizationRepository) :
-    DeviceSynchronizationCommandPort {
+class DeviceSynchronizationCommandPortAdapter(
+    private val synchronizeHandler: SynchronizeDeviceHandler,
+    private val syncRepository: SynchronizationRepository,
+    private val timeProvider: TimeProvider,
+) : DeviceSynchronizationCommandPort {
 
     override suspend fun createDeviceRegistration(command: RegisterDeviceCommand): Either<DeviceSynchronizationContractError, RegisterDeviceResult> {
         // Generate a new device ID
@@ -39,7 +43,7 @@ class DeviceSynchronizationCommandPortAdapter(private val synchronizeHandler: Sy
                                 DeviceSynchronizationContractError.BusinessError.RegistrationFailed(
                                     failure = DeviceSynchronizationContractError.RegistrationFailureType.DuplicateDeviceId(
                                         deviceId = deviceId.value,
-                                        registeredAt = Clock.System.now(),
+                                        registeredAt = timeProvider.now(),
                                     ),
                                 )
                             else ->
@@ -69,7 +73,7 @@ class DeviceSynchronizationCommandPortAdapter(private val synchronizeHandler: Sy
                 RegisterDeviceResult(
                     deviceId = deviceId.value,
                     deviceName = command.deviceName,
-                    registeredAt = Clock.System.now(),
+                    registeredAt = timeProvider.now(),
                 )
             }
     }

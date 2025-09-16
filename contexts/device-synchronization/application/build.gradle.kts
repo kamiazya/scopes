@@ -6,6 +6,7 @@ dependencies {
     implementation(project(":device-synchronization-domain"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-domain-commons"))
+    implementation(project(":platform-commons"))
     implementation(project(":contracts-device-synchronization"))
 
     // Functional programming

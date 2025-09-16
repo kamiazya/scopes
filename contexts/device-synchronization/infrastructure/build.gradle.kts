@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":contracts-event-store"))
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-application-commons"))
+    implementation(project(":platform-commons"))
     implementation(project(":platform-infrastructure"))
     implementation(project(":platform-observability"))
 

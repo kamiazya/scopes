@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefi
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
@@ -24,6 +25,7 @@ public class AspectQueryPortAdapter(
     private val getAspectDefinitionHandler: GetAspectDefinitionHandler,
     private val listAspectDefinitionsHandler: ListAspectDefinitionsHandler,
     private val validateAspectValueUseCase: ValidateAspectValueUseCase,
+    private val timeProvider: TimeProvider,
     logger: Logger,
 ) : AspectQueryPort {
     private val applicationErrorMapper = ApplicationErrorMapper(logger)
@@ -73,7 +75,7 @@ public class AspectQueryPortAdapter(
         key = this.key,
         description = this.description ?: "",
         type = this.type.toString(),
-        createdAt = kotlinx.datetime.Clock.System.now(),
-        updatedAt = kotlinx.datetime.Clock.System.now(),
+        createdAt = timeProvider.now(),
+        updatedAt = timeProvider.now(),
     )
 }

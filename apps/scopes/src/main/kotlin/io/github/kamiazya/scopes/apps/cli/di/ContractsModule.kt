@@ -99,6 +99,7 @@ val contractsModule = module {
             getAspectDefinitionHandler = get(),
             listAspectDefinitionsHandler = get(),
             validateAspectValueUseCase = get(),
+            timeProvider = get(),
             logger = get(),
         )
     }

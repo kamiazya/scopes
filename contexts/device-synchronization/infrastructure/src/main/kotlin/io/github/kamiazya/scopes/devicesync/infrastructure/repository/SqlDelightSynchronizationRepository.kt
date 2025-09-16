@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.devicesync.domain.error.SynchronizationError
 import io.github.kamiazya.scopes.devicesync.domain.repository.SynchronizationRepository
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -17,8 +18,11 @@ import kotlinx.datetime.Instant
 /**
  * SQLDelight implementation of SynchronizationRepository.
  */
-class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueries, private val vectorClockQueries: VectorClockQueries) :
-    SynchronizationRepository {
+class SqlDelightSynchronizationRepository(
+    private val deviceQueries: DeviceQueries,
+    private val vectorClockQueries: VectorClockQueries,
+    private val timeProvider: TimeProvider,
+) : SynchronizationRepository {
 
     override suspend fun getSyncState(deviceId: DeviceId): Either<SynchronizationError, SyncState> = withContext(Dispatchers.IO) {
         try {
@@ -62,7 +66,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
                 last_successful_pull = syncState.lastSuccessfulPull?.toEpochMilliseconds(),
                 sync_status = syncState.syncStatus.name,
                 pending_changes = syncState.pendingChanges.toLong(),
-                updated_at = Clock.System.now().toEpochMilliseconds(),
+                updated_at = timeProvider.now().toEpochMilliseconds(),
                 device_id = syncState.deviceId.value,
             )
 
@@ -132,7 +136,7 @@ class SqlDelightSynchronizationRepository(private val deviceQueries: DeviceQueri
 
     override suspend fun registerDevice(deviceId: DeviceId): Either<SynchronizationError, Unit> = withContext(Dispatchers.IO) {
         try {
-            val now = Clock.System.now().toEpochMilliseconds()
+            val now = timeProvider.now().toEpochMilliseconds()
             deviceQueries.upsertDevice(
                 device_id = deviceId.value,
                 last_sync_at = null,

@@ -2,7 +2,9 @@ package io.github.kamiazya.scopes.apps.cli.di.platform
 
 import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper
 import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationLifecycleManager
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import io.github.kamiazya.scopes.platform.infrastructure.lifecycle.DefaultApplicationLifecycleManager
+import io.github.kamiazya.scopes.platform.infrastructure.time.SystemTimeProvider
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -14,6 +16,11 @@ import org.koin.dsl.module
  * - Other platform-level services
  */
 val platformModule = module {
+    // Time provider for consistent time handling and testability
+    single<TimeProvider> {
+        SystemTimeProvider()
+    }
+
     // Collect all ApplicationBootstrapper instances for lifecycle management
     single<List<ApplicationBootstrapper>> {
         listOf(
