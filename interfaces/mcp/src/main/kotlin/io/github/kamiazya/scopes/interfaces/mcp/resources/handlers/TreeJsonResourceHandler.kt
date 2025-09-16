@@ -65,7 +65,7 @@ class TreeJsonResourceHandler : ResourceHandler {
     private suspend fun createTreeJsonResult(scope: ScopeResult, depthValue: Int, ports: Ports, services: Services): ReadResourceResult {
         val builder = TreeNodeBuilder(ports, services, depthValue)
         val json = builder.buildScopeNode(scope.canonicalAlias, 1)
-        
+
         val jsonText = json?.toString() ?: buildJsonObject {
             put("error", "Tree too large (>${builder.maxNodes} nodes)")
             put("canonicalAlias", scope.canonicalAlias)
@@ -85,55 +85,54 @@ class TreeJsonResourceHandler : ResourceHandler {
         )
     }
 
-    private fun buildTreeMetadata(scope: ScopeResult, depthValue: Int, etag: String, latestUpdatedAt: Instant, nodeCount: Int): JsonObject =
-        buildJsonObject {
-            put("etag", etag)
-            put("lastModified", latestUpdatedAt.toString())
-            put("nodeCount", nodeCount)
-            put("maxDepth", depthValue)
-            putJsonArray("links") {
-                add(buildJsonObject {
+    private fun buildTreeMetadata(scope: ScopeResult, depthValue: Int, etag: String, latestUpdatedAt: Instant, nodeCount: Int): JsonObject = buildJsonObject {
+        put("etag", etag)
+        put("lastModified", latestUpdatedAt.toString())
+        put("nodeCount", nodeCount)
+        put("maxDepth", depthValue)
+        putJsonArray("links") {
+            add(
+                buildJsonObject {
                     put("rel", "self")
                     put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
-                })
-                add(buildJsonObject {
+                },
+            )
+            add(
+                buildJsonObject {
                     put("rel", "scope")
                     put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                })
-            }
+                },
+            )
         }
-    
-    private class TreeNodeBuilder(
-        private val ports: Ports,
-        private val services: Services,
-        private val maxDepth: Int
-    ) {
+    }
+
+    private class TreeNodeBuilder(private val ports: Ports, private val services: Services, private val maxDepth: Int) {
         var nodeCount = 0
         val maxNodes = 1000
         var latestUpdatedAt: Instant = Clock.System.now()
-        
+
         suspend fun buildScopeNode(alias: String, currentDepth: Int): JsonObject? {
             currentCoroutineContext().ensureActive()
-            
+
             if (nodeCount >= maxNodes) return null
             nodeCount++
-            
+
             val nodeResult = ports.query.getScopeByAlias(GetScopeByAliasQuery(alias))
             return nodeResult.fold(
                 { _ -> buildErrorNode(alias) },
-                { scope -> buildSuccessNode(scope, currentDepth) }
+                { scope -> buildSuccessNode(scope, currentDepth) },
             )
         }
-        
+
         private fun buildErrorNode(alias: String): JsonObject = buildJsonObject {
             put("canonicalAlias", alias)
             put("title", alias)
         }
-        
+
         private suspend fun buildSuccessNode(scope: ScopeResult, currentDepth: Int): JsonObject {
             updateLatestTimestamp(scope.updatedAt)
             val children = if (shouldFetchChildren(currentDepth)) fetchChildren(scope, currentDepth) else emptyList()
-            
+
             return buildJsonObject {
                 put("canonicalAlias", scope.canonicalAlias)
                 put("title", scope.title)
@@ -141,31 +140,32 @@ class TreeJsonResourceHandler : ResourceHandler {
                 put("updatedAt", scope.updatedAt.toString())
                 putJsonArray("children") { children.forEach { add(it) } }
                 putJsonArray("links") {
-                    add(buildJsonObject {
-                        put("rel", "self")
-                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    })
+                    add(
+                        buildJsonObject {
+                            put("rel", "self")
+                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
+                        },
+                    )
                 }
             }
         }
-        
+
         private fun updateLatestTimestamp(updatedAt: Instant) {
             if (updatedAt > latestUpdatedAt) {
                 latestUpdatedAt = updatedAt
             }
         }
-        
-        private fun shouldFetchChildren(currentDepth: Int): Boolean =
-            currentDepth < maxDepth && nodeCount < maxNodes
-            
+
+        private fun shouldFetchChildren(currentDepth: Int): Boolean = currentDepth < maxDepth && nodeCount < maxNodes
+
         private suspend fun fetchChildren(scope: ScopeResult, currentDepth: Int): List<JsonObject> {
             val childrenResult = ports.query.getChildren(GetChildrenQuery(parentId = scope.id))
             return childrenResult.fold(
                 { emptyList() },
-                { ch -> ch.scopes.mapNotNull { c -> buildChildNode(c, currentDepth) } }
+                { ch -> ch.scopes.mapNotNull { c -> buildChildNode(c, currentDepth) } },
             )
         }
-        
+
         private suspend fun buildChildNode(child: ScopeResult, currentDepth: Int): JsonObject? {
             if (!currentCoroutineContext().isActive) return null
             return buildScopeNode(child.canonicalAlias, currentDepth + 1)

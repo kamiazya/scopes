@@ -6,8 +6,9 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import kotlinx.coroutines.runBlocking
-import java.util.*
 import kotlin.time.measureTimedValue
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * Registers multiple tool handlers with the MCP server.
@@ -15,6 +16,7 @@ import kotlin.time.measureTimedValue
  * This class bridges the suspend-based tool handler interface with
  * the synchronous MCP SDK tool registration API.
  */
+@OptIn(ExperimentalUuidApi::class)
 class ToolRegistrar(private val handlers: List<ToolHandler>, private val ctxFactory: () -> Pair<Ports, Services>) : ServerRegistrar {
 
     override fun register(server: Server) {
@@ -27,7 +29,7 @@ class ToolRegistrar(private val handlers: List<ToolHandler>, private val ctxFact
                 toolAnnotations = handler.annotations,
             ) { req ->
                 val (ports, services) = ctxFactory()
-                val requestId = UUID.randomUUID().toString()
+                val requestId = Uuid.random().toString()
 
                 services.logger.debug("[$requestId] Starting tool execution: ${handler.name}")
 

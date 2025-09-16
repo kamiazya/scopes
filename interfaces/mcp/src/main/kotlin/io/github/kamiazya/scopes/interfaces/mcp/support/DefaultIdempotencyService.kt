@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -23,8 +24,11 @@ private data class StoredResult(val result: CallToolResult, val timestamp: Insta
  * This implementation uses a Mutex to ensure thread-safety when accessing the cache.
  * This class is internal as it should only be used within the MCP module.
  */
-internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCodec, private val ttlMinutes: Long = 10, private val maxEntries: Int = 10_000) :
-    IdempotencyService {
+internal class DefaultIdempotencyService(
+    private val argumentCodec: ArgumentCodec,
+    private val ttl: Duration = 10.minutes,
+    private val maxEntries: Int = 10_000,
+) : IdempotencyService {
 
     private val idempotencyStore = mutableMapOf<String, StoredResult>()
     private val mutex = Mutex()
@@ -64,7 +68,7 @@ internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCode
                 val now = Clock.System.now()
                 val age = now - stored.timestamp
 
-                if (age < ttlMinutes.minutes) {
+                if (age < ttl) {
                     // Return cached result
                     stored.result
                 } else {
@@ -102,7 +106,7 @@ internal class DefaultIdempotencyService(private val argumentCodec: ArgumentCode
      */
     private fun cleanupExpiredEntriesInternal() {
         val now = Clock.System.now()
-        val cutoff = now - ttlMinutes.minutes
+        val cutoff = now - ttl
 
         // Remove expired entries
         idempotencyStore.entries.removeIf { entry ->

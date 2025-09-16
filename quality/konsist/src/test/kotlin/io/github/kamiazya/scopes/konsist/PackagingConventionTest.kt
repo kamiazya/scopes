@@ -306,7 +306,9 @@ class PackagingConventionTest :
                     val lastPart = pkg.name.split(".").last()
 
                     lastPart in validSubpackages ||
-                        pkg.name.endsWith(".cli") // CLI is a special interface type
+                        pkg.name.endsWith(".cli") ||
+                        // CLI is a special interface type
+                        pkg.name.contains(".mcp.") // MCP is a special interface type following Model Context Protocol structure
                 }
         }
 

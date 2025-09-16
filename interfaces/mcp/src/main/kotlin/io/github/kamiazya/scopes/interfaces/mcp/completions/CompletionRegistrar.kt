@@ -41,25 +41,24 @@ class CompletionRegistrar(private val contextFactory: () -> Pair<Ports, Services
         is ResourceTemplateReference -> completeResourceTemplateArgument(ref, req.argument, ports, services)
         else -> CompleteResult(CompleteResult.Completion(values = emptyList(), total = 0, hasMore = false))
     }
-
 }
 
 private suspend fun completePromptArgument(ref: PromptReference, arg: CompleteRequest.Argument, ports: Ports, services: Services): CompleteResult {
-        val name = ref.name
-        val query = arg.value.trim()
+    val name = ref.name
+    val query = arg.value.trim()
 
-        // Support our prompts
-        val isScopesPrompt = name == "prompts.scopes.plan" || name == "prompts.scopes.summarize" || name == "prompts.scopes.outline"
+    // Support our prompts
+    val isScopesPrompt = name == "prompts.scopes.plan" || name == "prompts.scopes.summarize" || name == "prompts.scopes.outline"
 
-        if (!isScopesPrompt) {
-            return CompleteResult(CompleteResult.Completion(values = emptyList(), total = 0, hasMore = false))
-        }
+    if (!isScopesPrompt) {
+        return CompleteResult(CompleteResult.Completion(values = emptyList(), total = 0, hasMore = false))
+    }
 
-        return when (arg.name) {
-            "alias" -> aliasCompletions(query, ports, services)
-            "timeHorizon" -> horizonCompletions(query)
-            else -> CompleteResult(CompleteResult.Completion(values = emptyList(), total = 0, hasMore = false))
-        }
+    return when (arg.name) {
+        "alias" -> aliasCompletions(query, ports, services)
+        "timeHorizon" -> horizonCompletions(query)
+        else -> CompleteResult(CompleteResult.Completion(values = emptyList(), total = 0, hasMore = false))
+    }
 }
 
 private suspend fun aliasCompletions(prefix: String, ports: Ports, services: Services, canonicalOnly: Boolean = false): CompleteResult {
@@ -71,7 +70,7 @@ private class AliasCompletionCollector(
     private val ports: Ports,
     private val services: Services,
     private val prefix: String,
-    private val canonicalOnly: Boolean
+    private val canonicalOnly: Boolean,
 ) {
     private val q = prefix.lowercase()
     private val visited = mutableSetOf<String>()
@@ -81,28 +80,28 @@ private class AliasCompletionCollector(
     private var nodes = 0
     private val maxNodes = 3000
     private val maxDepth = 6
-    
+
     suspend fun collect(): CompleteResult {
         collectScopesFromTree()
         val results = buildCompletionResults()
-        
+
         services.logger.debug("Completions(alias): query='$prefix' nodes=$nodes depth<=$maxDepth -> ${results.size} values")
         return CompleteResult(
             completion = CompleteResult.Completion(values = results, total = results.size, hasMore = false),
         )
     }
-    
+
     private suspend fun collectScopesFromTree() {
         val roots = ports.query.getRootScopes(GetRootScopesQuery(limit = 200))
         val queue = initializeQueue(roots)
-        
+
         while (queue.isNotEmpty() && nodes < maxNodes) {
             val (node, depth) = queue.removeFirst()
             if (depth >= maxDepth) continue
             addChildrenToQueue(node, depth, queue)
         }
     }
-    
+
     private fun initializeQueue(roots: Either<Any, ScopeListResult>): ArrayDeque<Pair<ScopeResult, Int>> {
         val queue = ArrayDeque<Pair<ScopeResult, Int>>()
         roots.fold({ emptyList<ScopeResult>() }, { it.scopes }).forEach { root ->
@@ -114,11 +113,11 @@ private class AliasCompletionCollector(
         nodes = queue.size
         return queue
     }
-    
+
     private suspend fun addChildrenToQueue(node: ScopeResult, depth: Int, queue: ArrayDeque<Pair<ScopeResult, Int>>) {
         val children = ports.query.getChildren(GetChildrenQuery(parentId = node.id))
             .fold({ emptyList<ScopeResult>() }, { it.scopes })
-            
+
         for (child in children) {
             if (!visited.add(child.id)) continue
             addScope(child)
@@ -127,48 +126,46 @@ private class AliasCompletionCollector(
             queue.add(child to (depth + 1))
         }
     }
-    
+
     private fun addScope(scope: ScopeResult) {
         aliases += scope.canonicalAlias
         titles += scope.canonicalAlias to scope.title
         byCanonical[scope.canonicalAlias] = scope.id
     }
-    
+
     private suspend fun buildCompletionResults(): List<String> {
         val distinct = aliases.distinct()
         val matcher = AliasMatcher(distinct, titles, q)
-        
+
         val prefixMatches = matcher.getPrefixMatches()
         val titleMatches = matcher.getTitleMatches(prefixMatches)
         val containsMatches = matcher.getContainsMatches(prefixMatches, titleMatches)
-        
+
         val alternateMatches = if (q.isNotEmpty()) {
             findAlternateAliasMatches(prefixMatches, titleMatches, containsMatches)
-        } else emptyList()
-        
+        } else {
+            emptyList()
+        }
+
         return combineAndLimitResults(prefixMatches, titleMatches, containsMatches, alternateMatches)
     }
-    
-    private suspend fun findAlternateAliasMatches(
-        prefixMatches: List<String>,
-        titleMatches: List<String>,
-        containsMatches: List<String>
-    ): List<String> {
+
+    private suspend fun findAlternateAliasMatches(prefixMatches: List<String>, titleMatches: List<String>, containsMatches: List<String>): List<String> {
         val maxAliasLookups = 300
         var looked = 0
         val altAliasDirect = mutableListOf<String>()
         val altAliasCanonical = mutableListOf<String>()
-        
+
         val remainingCanonicals = titles.asSequence()
             .map { (a, _) -> a }
             .filter { it !in prefixMatches && it !in titleMatches && it !in containsMatches }
             .toList()
-            
+
         for (canonical in remainingCanonicals) {
             if (looked >= maxAliasLookups) break
             val id = byCanonical[canonical] ?: continue
             looked++
-            
+
             val matches = findAliasMatches(id)
             if (matches.isNotEmpty()) {
                 if (!canonicalOnly) {
@@ -177,13 +174,13 @@ private class AliasCompletionCollector(
                     altAliasCanonical += canonical
                 }
             }
-            
+
             if (altAliasDirect.size + altAliasCanonical.size >= 100) break
         }
-        
+
         return if (!canonicalOnly) altAliasDirect else altAliasCanonical
     }
-    
+
     private suspend fun findAliasMatches(scopeId: String): List<String> {
         val res = ports.query.listAliases(ListAliasesQuery(scopeId = scopeId))
         val alts = res.fold({ emptyList<AliasInfo>() }, { it.aliases })
@@ -192,40 +189,34 @@ private class AliasCompletionCollector(
             .filter { it.lowercase().startsWith(q) || it.lowercase().contains(q) }
             .toList()
     }
-    
+
     private fun combineAndLimitResults(
         prefixMatches: List<String>,
         titleMatches: List<String>,
         containsMatches: List<String>,
-        alternateMatches: List<String>
+        alternateMatches: List<String>,
     ): List<String> {
         val ordered = buildList {
             addAll(prefixMatches)
             addAll(titleMatches)
             addAll(containsMatches)
         }.distinct()
-        
+
         val combined = (ordered + alternateMatches).distinct()
         return combined.take(100)
     }
 }
 
-private class AliasMatcher(
-    private val distinct: List<String>,
-    private val titles: List<Pair<String, String>>,
-    private val q: String
-) {
-    fun getPrefixMatches(): List<String> =
-        distinct.filter { q.isEmpty() || it.lowercase().startsWith(q) }
-    
-    fun getTitleMatches(excludes: List<String>): List<String> =
-        titles.asSequence()
-            .filter { (_, t) -> q.isNotEmpty() && t.lowercase().startsWith(q) }
-            .map { (a, _) -> a }
-            .filter { it !in excludes }
-            .distinct()
-            .toList()
-            
+private class AliasMatcher(private val distinct: List<String>, private val titles: List<Pair<String, String>>, private val q: String) {
+    fun getPrefixMatches(): List<String> = distinct.filter { q.isEmpty() || it.lowercase().startsWith(q) }
+
+    fun getTitleMatches(excludes: List<String>): List<String> = titles.asSequence()
+        .filter { (_, t) -> q.isNotEmpty() && t.lowercase().startsWith(q) }
+        .map { (a, _) -> a }
+        .filter { it !in excludes }
+        .distinct()
+        .toList()
+
     fun getContainsMatches(vararg excludeLists: List<String>): List<String> {
         val allExcludes = excludeLists.flatMap { it }.toSet()
         return distinct.asSequence()
@@ -236,10 +227,10 @@ private class AliasMatcher(
 }
 
 private fun horizonCompletions(prefix: String): CompleteResult {
-        val base = listOf("1 week", "2 weeks", "1 month", "3 months")
-        val q = prefix.lowercase()
-        val filtered = base.filter { it.lowercase().startsWith(q) || q.isEmpty() }
-        return CompleteResult(CompleteResult.Completion(values = filtered, total = filtered.size, hasMore = false))
+    val base = listOf("1 week", "2 weeks", "1 month", "3 months")
+    val q = prefix.lowercase()
+    val filtered = base.filter { it.lowercase().startsWith(q) || q.isEmpty() }
+    return CompleteResult(CompleteResult.Completion(values = filtered, total = filtered.size, hasMore = false))
 }
 
 private suspend fun CompletionRegistrar.completeResourceTemplateArgument(

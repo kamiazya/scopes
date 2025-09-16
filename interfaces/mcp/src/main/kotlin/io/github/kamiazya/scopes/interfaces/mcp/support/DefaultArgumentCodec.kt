@@ -26,7 +26,7 @@ internal class DefaultArgumentCodec : ArgumentCodec {
         is JsonPrimitive -> if (json.isString) {
             buildString {
                 append('"')
-                append(json.content.replace("\\", "\\\\").replace("\"", "\\\""))
+                append(escapeJsonString(json.content))
                 append('"')
             }
         } else {
@@ -38,10 +38,26 @@ internal class DefaultArgumentCodec : ArgumentCodec {
             entries.joinToString(prefix = "{", postfix = "}") { (k, v) ->
                 val key = buildString {
                     append('"')
-                    append(k.replace("\\", "\\\\").replace("\"", "\\\""))
+                    append(escapeJsonString(k))
                     append('"')
                 }
                 "$key:${canonicalizeJson(v)}"
+            }
+        }
+    }
+
+    private fun escapeJsonString(str: String): String = buildString {
+        for (char in str) {
+            when (char) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                '\b' -> append("\\b")
+                '\u000C' -> append("\\f")
+                in '\u0000'..'\u001F' -> append("\\u").append(char.code.toString(16).padStart(4, '0'))
+                else -> append(char)
             }
         }
     }

@@ -398,8 +398,9 @@ class CqrsNamingConventionTest :
                                 file.packagee?.name?.contains("command") == true ||
                                 file.packagee?.name?.contains("query") == true
                             ) &&
-                            // Exclude CLI commands and domain service query files
+                            // Exclude CLI commands, MCP handlers, and domain service query files
                             file.packagee?.name?.contains("interfaces.cli") != true &&
+                            file.packagee?.name?.contains("interfaces.mcp") != true &&
                             file.packagee?.name?.contains("domain.service.query") != true &&
                             // Exclude test files
                             !file.path.contains("/test/") &&

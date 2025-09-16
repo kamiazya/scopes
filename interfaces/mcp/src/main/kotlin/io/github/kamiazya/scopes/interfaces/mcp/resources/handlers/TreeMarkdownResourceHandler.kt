@@ -59,7 +59,12 @@ class TreeMarkdownResourceHandler : ResourceHandler {
         }
     }
 
-    private suspend fun createTreeMarkdownResult(uri: String, scope: ScopeResult, ports: Ports, @Suppress("UNUSED_PARAMETER") services: Services): ReadResourceResult {
+    private suspend fun createTreeMarkdownResult(
+        uri: String,
+        scope: ScopeResult,
+        ports: Ports,
+        @Suppress("UNUSED_PARAMETER") services: Services,
+    ): ReadResourceResult {
         val childrenResult = ports.query.getChildren(GetChildrenQuery(parentId = scope.id))
 
         val md = buildString {

@@ -6,7 +6,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * MCP Server orchestrator that coordinates all server components.
@@ -14,6 +15,7 @@ import java.util.UUID
  * This is the main entry point for the MCP server, coordinating server creation,
  * component registration, and lifecycle management following Clean Architecture principles.
  */
+@OptIn(ExperimentalUuidApi::class)
 class McpServer(
     private val serverBuilder: ServerBuilder,
     private val transportFactory: TransportFactory,
@@ -31,7 +33,7 @@ class McpServer(
         val server = createServer()
         this.server = server
         val transport = transportFactory.stdio(source, sink)
-        val sessionId = UUID.randomUUID().toString()
+        val sessionId = Uuid.random().toString()
 
         runBlocking {
             try {
