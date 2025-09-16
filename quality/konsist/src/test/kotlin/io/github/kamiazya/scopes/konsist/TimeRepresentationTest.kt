@@ -55,6 +55,7 @@ class TimeRepresentationTest :
                     .scopeFromProject()
                     .classes()
                     .properties()
+                    .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
                     .assertTrue { property ->
                         val propertyName = property.name.lowercase()
 

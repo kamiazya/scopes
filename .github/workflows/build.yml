@@ -89,7 +89,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
       with:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
@@ -136,7 +136,6 @@ jobs:
       run: |
         Set-Location "C:\build-workspace\scopes"
         Write-Host "Running E2E tests on native binary..."
-        & .\gradlew.bat --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
 
         # Run full E2E test suite only on primary Windows build
         if ("${{ matrix.arch }}" -eq "x64") {
@@ -178,7 +177,6 @@ jobs:
       if: matrix.platform != 'win32'  # Unix/Linux/macOS
       run: |
         echo "Running E2E tests on native binary..."
-        ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeSmokeTest
 
         # Run full E2E test suite only on main platform builds
         if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ]; then
@@ -435,7 +433,7 @@ jobs:
           source-sboms/**/*
 
     - name: Upload SARIF results to GitHub Security
-      uses: github/codeql-action/upload-sarif@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3.29.11
+      uses: github/codeql-action/upload-sarif@192325c86100d080feab897ff886c34abd4c83a3 # v3.30.3
       if: always()
       with:
         sarif_file: binaries

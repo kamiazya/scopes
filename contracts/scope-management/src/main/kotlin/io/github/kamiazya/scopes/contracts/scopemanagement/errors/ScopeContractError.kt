@@ -172,9 +172,9 @@ public sealed interface ScopeContractError {
 
         /**
          * Cannot remove canonical alias.
-         * @property alias The canonical alias that cannot be removed
+         * The canonical alias is the primary identifier and cannot be removed.
          */
-        public data class CannotRemoveCanonicalAlias(public val alias: String) : BusinessError
+        public data object CannotRemoveCanonicalAlias : BusinessError
     }
 
     /**

@@ -130,7 +130,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         var score = 0.0
 
         // Title matches have highest priority
-        if (scope.title.equals(query, ignoreCase = true)) {
+        if (scope.title == query) {
             score += 100.0
         } else if (scope.title.contains(query, ignoreCase = true)) {
             score += 50.0
@@ -138,7 +138,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
 
         // Alias matches
         scope.aliases.forEach { alias ->
-            if (alias.aliasName.equals(query, ignoreCase = true)) {
+            if (alias.aliasName == query) {
                 score += 80.0
             } else if (alias.aliasName.contains(query, ignoreCase = true)) {
                 score += 40.0

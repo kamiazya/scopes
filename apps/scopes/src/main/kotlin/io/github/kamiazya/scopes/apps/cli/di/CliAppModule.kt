@@ -54,6 +54,9 @@ val cliAppModule = module {
 
         // Contracts layer
         contractsModule,
+
+        // MCP components
+        mcpModule,
     )
 
     // CLI Commands
@@ -119,4 +122,6 @@ val cliAppModule = module {
             scopeManagementPort = get(),
         )
     }
+
+    // MCP server provided by mcpModule
 }

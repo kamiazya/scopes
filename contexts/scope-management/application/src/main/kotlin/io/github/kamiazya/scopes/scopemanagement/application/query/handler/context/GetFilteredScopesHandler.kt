@@ -8,12 +8,11 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ContextViewResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.FilteredScopesResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetFilteredScopes
 import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
@@ -34,145 +33,153 @@ class GetFilteredScopesHandler(
     private val transactionManager: TransactionManager,
     private val logger: Logger,
     private val filterEvaluationService: FilterEvaluationService = FilterEvaluationService(),
-) : QueryHandler<GetFilteredScopes, ScopeManagementApplicationError, FilteredScopesResult> {
+) : QueryHandler<GetFilteredScopes, ScopesError, FilteredScopesResult> {
 
-    override suspend operator fun invoke(query: GetFilteredScopes): Either<ScopeManagementApplicationError, FilteredScopesResult> =
-        transactionManager.inReadOnlyTransaction {
-            logger.debug(
-                "Getting filtered scopes",
-                mapOf(
-                    "contextKey" to (query.contextKey ?: "active"),
-                    "offset" to query.offset,
-                    "limit" to query.limit,
-                ),
-            )
-            either {
-                // Get the context view to use
-                val contextView: ContextView? = when {
-                    query.contextKey != null -> {
-                        // Create ContextViewKey from string
-                        val contextViewKey = ContextViewKey.create(query.contextKey)
-                            .mapLeft { it.toGenericApplicationError() }
-                            .bind()
+    override suspend operator fun invoke(query: GetFilteredScopes): Either<ScopesError, FilteredScopesResult> = transactionManager.inReadOnlyTransaction {
+        logger.debug(
+            "Getting filtered scopes",
+            mapOf(
+                "contextKey" to (query.contextKey ?: "active"),
+                "offset" to query.offset,
+                "limit" to query.limit,
+            ),
+        )
+        either {
+            // Get the context view to use
+            val contextView: ContextView? = when {
+                query.contextKey != null -> {
+                    // Create ContextViewKey from string
+                    val contextViewKey = ContextViewKey.create(query.contextKey).bind()
 
-                        // Use specified context
-                        contextViewRepository.findByKey(contextViewKey)
-                            .mapLeft { _ ->
-                                ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                    operation = "find-context-view",
-                                )
-                            }
-                            .bind()
-                    }
-                    else -> {
-                        // Use active context if available
-                        activeContextRepository.getActiveContext()
-                            .mapLeft { _ ->
-                                ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                    operation = "get-active-context",
-                                )
-                            }
-                            .bind()
-                    }
+                    // Use specified context
+                    contextViewRepository.findByKey(contextViewKey)
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "context-repository",
+                                context = mapOf("operation" to "find-context-view", "key" to query.contextKey),
+                            )
+                        }
+                        .bind()
                 }
+                else -> {
+                    // Use active context if available
+                    activeContextRepository.getActiveContext()
+                        .mapLeft { error ->
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "active-context-repository",
+                                context = mapOf("operation" to "get-active-context"),
+                            )
+                        }
+                        .bind()
+                }
+            }
 
-                // Get all scopes with pagination
-                val allScopes = scopeRepository.findAll(query.offset, query.limit)
-                    .mapLeft { _ ->
-                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                            operation = "find-all-scopes",
+            // Get all scopes with pagination
+            val allScopes = scopeRepository.findAll(query.offset, query.limit)
+                .mapLeft { error ->
+                    ScopesError.SystemError(
+                        errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                        service = "scope-repository",
+                        context = mapOf("operation" to "find-all-scopes", "offset" to query.offset, "limit" to query.limit),
+                    )
+                }
+                .bind()
+
+            // Get total count - use findAll() and count since there's no count() method
+            val totalCount = allScopes.size
+
+            // Apply filter if we have a context view
+            val filteredScopes = if (contextView != null) {
+                // Get aspect definitions for type-aware comparison
+                val aspectDefinitions = aspectDefinitionRepository.findAll()
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "aspect-repository",
+                            context = mapOf("operation" to "load-aspect-definitions"),
+                        )
+                    }
+                    .bind()
+                    .associateBy { def -> def.key.value }
+
+                // Use the domain-rich filter method
+                val filtered = contextView.filterScopes(allScopes, aspectDefinitions, filterEvaluationService)
+                    .mapLeft { error ->
+                        ScopesError.SystemError(
+                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                            service = "filter-evaluation",
+                            context = mapOf("operation" to "apply-filter", "filter" to contextView.filter.expression),
                         )
                     }
                     .bind()
 
-                // Get total count - use findAll() and count since there's no count() method
-                val totalCount = allScopes.size
-
-                // Apply filter if we have a context view
-                val filteredScopes = if (contextView != null) {
-                    // Get aspect definitions for type-aware comparison
-                    val aspectDefinitions = aspectDefinitionRepository.findAll()
-                        .mapLeft { _ ->
-                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                operation = "load-aspect-definitions",
-                            )
-                        }
-                        .bind()
-                        .associateBy { def -> def.key.value }
-
-                    // Use the domain-rich filter method
-                    val filtered = contextView.filterScopes(allScopes, aspectDefinitions, filterEvaluationService)
-                        .mapLeft { _ ->
-                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                operation = "apply-filter",
-                            )
-                        }
-                        .bind()
-
-                    // Publish audit event for context usage (non-blocking)
-                    contextAuditService.publishContextApplied(
-                        contextView = contextView,
-                        scopeCount = filtered.size,
-                        totalScopeCount = totalCount,
-                        appliedBy = null
-                    ).fold(
-                        { _ ->
-                            logger.warn("Failed to publish context applied event - continuing with filter operation")
-                        },
-                        { },
-                    )
-
-                    filtered
-                } else {
-                    // No filter applied
-                    allScopes
-                }
-
-                // Map to DTOs
-                val scopeResults = filteredScopes.map { scope ->
-                    toScopeResult(scope)
-                }
-
-                val contextViewResult = contextView?.let { cv ->
-                    // Check if this is the active context
-                    val activeContextId = activeContextRepository.getActiveContext().fold(
-                        { null },
-                        { it?.id },
-                    )
-
-                    toContextViewResult(cv, isActive = cv.id == activeContextId)
-                }
-
-                val result = FilteredScopesResult(
-                    scopes = scopeResults,
-                    appliedContext = contextViewResult,
-                    totalCount = totalCount,
-                    filteredCount = filteredScopes.size,
+                // Publish audit event for context usage (non-blocking)
+                contextAuditService.publishContextApplied(
+                    contextView = contextView,
+                    scopeCount = filtered.size,
+                    totalScopeCount = totalCount,
+                    appliedBy = null, // TODO: Add user context to track who applied the filter
+                ).fold(
+                    { _ ->
+                        // TODO: Add proper logging - for now, silently continue
+                        // logger.warn("Failed to publish context applied event: $error")
+                    },
+                    { },
                 )
 
-                logger.info(
-                    "Successfully filtered scopes",
-                    mapOf(
-                        "contextKey" to (contextView?.key?.value ?: "none"),
-                        "totalScopes" to totalCount,
-                        "filteredScopes" to filteredScopes.size,
-                        "offset" to query.offset,
-                        "limit" to query.limit,
-                    ),
-                )
-
-                result
+                filtered
+            } else {
+                // No filter applied
+                allScopes
             }
-        }.onLeft { error ->
-            logger.error(
-                "Failed to get filtered scopes",
+
+            // Map to DTOs
+            val scopeResults = filteredScopes.map { scope ->
+                toScopeResult(scope)
+            }
+
+            val contextViewResult = contextView?.let { cv ->
+                // Check if this is the active context
+                val activeContextId = activeContextRepository.getActiveContext().fold(
+                    { null },
+                    { it?.id },
+                )
+
+                toContextViewResult(cv, isActive = cv.id == activeContextId)
+            }
+
+            val result = FilteredScopesResult(
+                scopes = scopeResults,
+                appliedContext = contextViewResult,
+                totalCount = totalCount,
+                filteredCount = filteredScopes.size,
+            )
+
+            logger.info(
+                "Successfully filtered scopes",
                 mapOf(
-                    "contextKey" to (query.contextKey ?: "active"),
-                    "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                    "message" to error.toString(),
+                    "contextKey" to (contextView?.key?.value ?: "none"),
+                    "totalScopes" to totalCount,
+                    "filteredScopes" to filteredScopes.size,
+                    "offset" to query.offset,
+                    "limit" to query.limit,
                 ),
             )
+
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to get filtered scopes",
+            mapOf(
+                "contextKey" to (query.contextKey ?: "active"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
+    }
 
     private fun toScopeResult(scope: Scope): ScopeResult = ScopeResult(
         id = scope.id.value.toString(),

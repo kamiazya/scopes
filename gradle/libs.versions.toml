@@ -21,11 +21,15 @@ slf4j = "2.0.17"
 logback = "1.5.18"
 
 graalvm-buildtools = "0.11.0"
-graalvm-sdk = "23.0.0"
+graalvm-sdk = "24.2.2"
 ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
 gradle-develocity = "4.1.1"
 spotless = "7.2.1"
+mcp-kotlin-sdk = "0.7.0"
+ktor = "2.3.12"
+okio = "3.16.0"
+kotlinx-io = "0.8.0"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
@@ -59,6 +63,12 @@ sqldelight-dialect-sqlite = { module = "app.cash.sqldelight:sqlite-3-38-dialect"
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-kotlin-sdk" }
+# Ktor (server engine used only if needed by sdk)
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-io-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-io-core-jvm", version.ref = "kotlinx-io" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
