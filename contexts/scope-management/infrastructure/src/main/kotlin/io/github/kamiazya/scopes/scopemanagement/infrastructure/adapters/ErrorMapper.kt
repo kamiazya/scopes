@@ -200,13 +200,17 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             expectedFormat = "Valid parent scope ID",
         )
         is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
-                scopeId = domainError.parentScopeId.value,
+            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
+                parentId = domainError.parentScopeId.value,
+                currentChildrenCount = domainError.currentChildrenCount,
+                maximumChildren = domainError.maximumChildren,
             ),
         )
         is ScopeHierarchyError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
                 scopeId = domainError.scopeId.value,
+                attemptedDepth = domainError.attemptedDepth,
+                maximumDepth = domainError.maximumDepth,
             ),
         )
         is ScopeHierarchyError.ScopeInHierarchyNotFound -> ScopeContractError.BusinessError.NotFound(

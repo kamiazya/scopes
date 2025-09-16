@@ -78,7 +78,9 @@ public class AspectQueryPortAdapter(
                 is ScopesError.ValidationConstraintType.InvalidType ->
                     ScopeContractError.InputError.InvalidTitle(
                         error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
+                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                            listOf("Expected type: ${constraint.expectedType}, but got: ${constraint.actualType}".first())
+                        ),
                     )
                 is ScopesError.ValidationConstraintType.MissingRequired ->
                     ScopeContractError.InputError.InvalidTitle(
@@ -88,22 +90,31 @@ public class AspectQueryPortAdapter(
                 is ScopesError.ValidationConstraintType.InvalidFormat ->
                     ScopeContractError.InputError.InvalidDescription(
                         error.field,
-                        ScopeContractError.DescriptionValidationFailure.TooLong(1000, 1001),
+                        ScopeContractError.DescriptionValidationFailure.TooLong(
+                            constraint.expectedFormat?.length ?: 1000, 
+                            error.value.length
+                        ),
                     )
                 is ScopesError.ValidationConstraintType.NotInAllowedValues ->
                     ScopeContractError.InputError.InvalidTitle(
                         error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
+                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                            constraint.allowedValues.map { it.first() }
+                        ),
                     )
                 is ScopesError.ValidationConstraintType.InvalidValue ->
                     ScopeContractError.InputError.InvalidTitle(
                         constraint.reason,
-                        ScopeContractError.TitleValidationFailure.Empty,
+                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                            listOf(constraint.reason.first())
+                        ),
                     )
                 is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
                     ScopeContractError.InputError.InvalidTitle(
                         constraint.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
+                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                            listOf('M') // "Multiple values not allowed"の最初の文字
+                        ),
                     )
             }
         else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")

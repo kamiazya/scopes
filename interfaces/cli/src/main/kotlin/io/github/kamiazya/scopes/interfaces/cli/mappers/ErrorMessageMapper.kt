@@ -71,204 +71,130 @@ object ErrorMessageMapper {
         ContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_PATTERN -> "invalid pattern"
     }
 
-    fun getMessage(error: ScopesError): String = when (error) {
-        is ScopeError -> when (error) {
-            is ScopeError.NotFound -> "Scope not found: ${error.scopeId.value}"
-            is ScopeError.ParentNotFound -> "Parent scope not found: ${error.parentId.value}"
-            is ScopeError.DuplicateTitle -> if (error.parentId != null) {
-                "Scope with title '${error.title}' already exists under parent"
-            } else {
-                "Root scope with title '${error.title}' already exists"
-            }
-            is ScopeError.AlreadyDeleted -> "Scope is already deleted: ${error.scopeId.value}"
-            is ScopeError.AlreadyArchived -> "Scope is already archived: ${error.scopeId.value}"
-            is ScopeError.NotArchived -> "Scope is not archived: ${error.scopeId.value}"
-            is ScopeError.VersionMismatch ->
-                "Version mismatch for scope ${error.scopeId.value}: " +
-                    "expected ${error.expectedVersion} but was ${error.actualVersion}"
+    private fun getScopeErrorMessage(error: ScopeError): String = when (error) {
+        is ScopeError.NotFound -> "Scope not found: ${error.scopeId.value}"
+        is ScopeError.ParentNotFound -> "Parent scope not found: ${error.parentId.value}"
+        is ScopeError.DuplicateTitle -> if (error.parentId != null) {
+            "Scope with title '${error.title}' already exists under parent"
+        } else {
+            "Root scope with title '${error.title}' already exists"
         }
-        is ScopeInputError -> when (error) {
-            is ScopeInputError.IdError.Blank -> "Scope ID cannot be blank: '${error.attemptedValue}'"
-            is ScopeInputError.IdError.InvalidFormat -> "Invalid scope ID format: ${error.attemptedValue}"
-            is ScopeInputError.TitleError.Empty -> "Scope title cannot be empty"
-            is ScopeInputError.TitleError.TooShort -> "Scope title is too short: minimum ${error.minimumLength} characters"
-            is ScopeInputError.TitleError.TooLong -> "Scope title is too long: maximum ${error.maximumLength} characters"
-            is ScopeInputError.TitleError.ContainsProhibitedCharacters ->
-                "Scope title contains prohibited characters: ${error.prohibitedCharacters.joinToString()}"
-            is ScopeInputError.DescriptionError.TooLong -> "Scope description is too long: maximum ${error.maximumLength} characters"
-            is ScopeInputError.AliasError.Empty -> "Scope alias cannot be empty"
-            is ScopeInputError.AliasError.TooShort -> "Scope alias is too short: minimum ${error.minimumLength} characters"
-            is ScopeInputError.AliasError.TooLong -> "Scope alias is too long: maximum ${error.maximumLength} characters"
-            is ScopeInputError.AliasError.InvalidFormat -> "Invalid scope alias format: expected ${presentAliasPattern(error.patternType)}"
+        is ScopeError.AlreadyDeleted -> "Scope is already deleted: ${error.scopeId.value}"
+        is ScopeError.AlreadyArchived -> "Scope is already archived: ${error.scopeId.value}"
+        is ScopeError.NotArchived -> "Scope is not archived: ${error.scopeId.value}"
+        is ScopeError.VersionMismatch ->
+            "Version mismatch for scope ${error.scopeId.value}: " +
+                "expected ${error.expectedVersion} but was ${error.actualVersion}"
+    }
+
+    private fun getScopeInputErrorMessage(error: ScopeInputError): String = when (error) {
+        is ScopeInputError.IdError.Blank -> "Scope ID cannot be blank: '${error.attemptedValue}'"
+        is ScopeInputError.IdError.InvalidFormat -> "Invalid scope ID format: ${error.attemptedValue}"
+        is ScopeInputError.TitleError.Empty -> "Scope title cannot be empty"
+        is ScopeInputError.TitleError.TooShort -> "Scope title is too short: minimum ${error.minimumLength} characters"
+        is ScopeInputError.TitleError.TooLong -> "Scope title is too long: maximum ${error.maximumLength} characters"
+        is ScopeInputError.TitleError.ContainsProhibitedCharacters ->
+            "Scope title contains prohibited characters: ${error.prohibitedCharacters.joinToString()}"
+        is ScopeInputError.DescriptionError.TooLong -> "Scope description is too long: maximum ${error.maximumLength} characters"
+        is ScopeInputError.AliasError.Empty -> "Scope alias cannot be empty"
+        is ScopeInputError.AliasError.TooShort -> "Scope alias is too short: minimum ${error.minimumLength} characters"
+        is ScopeInputError.AliasError.TooLong -> "Scope alias is too long: maximum ${error.maximumLength} characters"
+        is ScopeInputError.AliasError.InvalidFormat -> "Invalid scope alias format: expected ${presentAliasPattern(error.patternType)}"
+    }
+
+    private fun getScopeUniquenessErrorMessage(error: ScopeUniquenessError): String = when (error) {
+        is ScopeUniquenessError.DuplicateTitle -> if (error.parentScopeId != null) {
+            "Scope with title '${error.title}' already exists at parent"
+        } else {
+            "Scope with title '${error.title}' already exists at root level"
         }
-        is ScopeNotFoundError -> "Scope not found: ${error.scopeId.value}"
-        is ScopeUniquenessError -> when (error) {
-            is ScopeUniquenessError.DuplicateTitle -> if (error.parentScopeId != null) {
-                "Scope with title '${error.title}' already exists at parent"
-            } else {
-                "Scope with title '${error.title}' already exists at root level"
-            }
-            is ScopeUniquenessError.DuplicateIdentifier -> "Duplicate identifier: ${error.identifier}"
-        }
-        is ScopeHierarchyError -> when (error) {
-            is ScopeHierarchyError.CircularReference -> "Circular reference detected for scope ${error.scopeId.value} with parent ${error.parentId.value}"
-            is ScopeHierarchyError.CircularPath -> "Circular path detected for scope ${error.scopeId.value}"
-            is ScopeHierarchyError.MaxDepthExceeded -> "Maximum hierarchy depth exceeded: attempted ${error.attemptedDepth}, maximum ${error.maximumDepth}"
-            is ScopeHierarchyError.HasChildren -> "Cannot perform operation: scope ${error.scopeId.value} has children"
-            is ScopeHierarchyError.InvalidParentId -> "Invalid parent ID: ${error.invalidId}"
-            is ScopeHierarchyError.MaxChildrenExceeded ->
-                "Maximum children exceeded for parent ${error.parentScopeId.value}: " +
-                    "current ${error.currentChildrenCount}, maximum ${error.maximumChildren}"
-            is ScopeHierarchyError.ParentNotFound -> "Parent ${error.parentId.value} not found for scope ${error.scopeId.value}"
-            is ScopeHierarchyError.ScopeInHierarchyNotFound -> "Scope ${error.scopeId.value} not found in hierarchy"
-            is ScopeHierarchyError.SelfParenting -> "Scope ${error.scopeId.value} cannot be its own parent"
-            is ScopeHierarchyError.HierarchyUnavailable ->
-                "Hierarchy operation '${error.operation}' failed${error.scopeId?.let { " for scope ${it.value}" } ?: ""}: ${error.reason}"
-        }
-        is PersistenceError -> when (error) {
-            is PersistenceError.StorageUnavailable -> "Storage unavailable for operation '${error.operation}'"
-            is PersistenceError.DataCorruption -> "Data corruption detected for ${error.entityType}${error.entityId?.let { " $it" } ?: ""}: ${error.reason}"
-            is PersistenceError.ConcurrencyConflict ->
-                "Concurrency conflict for ${error.entityType} ${error.entityId}: " +
-                    "expected version ${error.expectedVersion}, actual ${error.actualVersion}"
-            is PersistenceError.NotFound -> "${error.entityType} not found${error.entityId?.let { ": $it" } ?: ""}"
-        }
-        is AggregateIdError -> when (error) {
-            is AggregateIdError.InvalidType -> "Invalid aggregate type '${error.attemptedType}', valid types: ${error.validTypes.joinToString()}"
-            is AggregateIdError.InvalidIdFormat -> "Invalid aggregate ID format '${error.attemptedId}', expected: ${error.expectedFormat}"
-            is AggregateIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
-            is AggregateIdError.EmptyValue -> "Empty value for field: ${error.field}"
-            is AggregateIdError.InvalidFormat -> "Invalid format for ${error.value}: ${error.formatError}"
-        }
-        is AggregateVersionError -> when (error) {
-            is AggregateVersionError.NegativeVersion -> "Negative version not allowed: ${error.attemptedVersion}"
-            is AggregateVersionError.VersionOverflow -> "Version overflow: current ${error.currentVersion}, max ${error.maxVersion}"
-            is AggregateVersionError.InvalidVersionTransition -> "Invalid version transition: from ${error.currentVersion} to ${error.attemptedVersion}"
-        }
-        is EventIdError -> when (error) {
-            is EventIdError.EmptyValue -> "Empty value for field: ${error.field}"
-            is EventIdError.InvalidEventType -> "Invalid event type '${error.attemptedType}': ${error.reason}"
-            is EventIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
-            is EventIdError.UlidError -> "ULID error: ${error.reason}"
-        }
-        is ContextError -> when (error) {
-            is ContextError.BlankId -> "Context view ID cannot be blank: '${error.attemptedValue}'"
-            is ContextError.InvalidIdFormat -> "Invalid context view ID format: ${error.attemptedValue}, expected: ${error.expectedFormat}"
-            is ContextError.EmptyName -> "Context view name cannot be empty: '${error.attemptedValue}'"
-            is ContextError.InvalidNameFormat -> "Invalid context view name format: ${error.attemptedValue}, expected: ${error.expectedPattern}"
-            is ContextError.NameTooLong -> "Context view name is too long: maximum ${error.maximumLength} characters"
-            is ContextError.DuplicateName -> "Context view with name '${error.attemptedName}' already exists"
-            is ContextError.ContextNotFound -> "Context view not found${error.contextId?.let {
-                ": $it"
-            } ?: ""}${error.contextName?.let { " (name: $it)" } ?: ""}"
-            is ContextError.InvalidFilter -> "Invalid filter '${error.filter}': ${presentInvalidFilterType(error.errorType)}"
-            is ContextError.EmptyKey -> "Context view key cannot be empty"
-            is ContextError.KeyTooShort -> "Context view key must be at least ${error.minimumLength} characters"
-            is ContextError.KeyTooLong -> "Context view key must be at most ${error.maximumLength} characters"
-            is ContextError.InvalidKeyFormat -> "Invalid context view key format: ${presentInvalidKeyFormatType(error.errorType)}"
-            is ContextError.EmptyDescription -> "Context view description cannot be empty"
-            is ContextError.DescriptionTooShort -> "Context view description must be at least ${error.minimumLength} characters"
-            is ContextError.DescriptionTooLong -> "Context view description must be at most ${error.maximumLength} characters"
-            is ContextError.EmptyFilter -> "Context view filter cannot be empty"
-            is ContextError.FilterTooShort -> "Context view filter must be at least ${error.minimumLength} characters"
-            is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
-            is ContextError.InvalidFilterSyntax ->
-                "Invalid filter syntax: ${
-                    when (val errorType = error.errorType) {
-                        is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
-                        is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
-                        is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
-                            "Unexpected character '${errorType.char}' at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.UnterminatedString ->
-                            "Unterminated string at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
-                            "Unexpected token at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
-                            "Missing closing parenthesis at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
-                            "Expected expression at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
-                            "Expected identifier at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
-                            "Expected operator at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.ExpectedValue ->
-                            "Expected value at position ${errorType.position}"
-                        is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
-                            "Unbalanced parentheses"
-                        is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
-                            "Unbalanced quotes"
-                        is ContextError.FilterSyntaxErrorType.EmptyOperator ->
-                            "Empty operator"
-                        is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
-                            "Invalid syntax"
-                    }
-                }"
-            // New domain validation error cases
-            is ContextError.InvalidScope -> "Invalid scope '${error.scopeId}': ${presentInvalidScopeType(error.errorType)}"
-            is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${presentInvalidHierarchyType(
-                error.errorType,
-            )}"
-            is ContextError.DuplicateScope -> "Duplicate scope title '${error.title}'${error.contextId?.let {
-                " in context $it"
-            } ?: ""}: ${presentDuplicateScopeType(error.errorType)}"
-        }
-        is AspectValidationError -> when (error) {
-            is AspectValidationError.EmptyAspectKey -> "Aspect key cannot be empty"
-            is AspectValidationError.AspectKeyTooShort -> "Aspect key is too short"
-            is AspectValidationError.AspectKeyTooLong -> "Aspect key is too long: max ${error.maxLength}, actual ${error.actualLength}"
-            is AspectValidationError.InvalidAspectKeyFormat -> "Invalid aspect key format"
-            is AspectValidationError.EmptyAspectValue -> "Aspect value cannot be empty"
-            is AspectValidationError.AspectValueTooShort -> "Aspect value is too short"
-            is AspectValidationError.AspectValueTooLong -> "Aspect value is too long: max ${error.maxLength}, actual ${error.actualLength}"
-            is AspectValidationError.EmptyAspectAllowedValues -> "Aspect allowed values cannot be empty"
-            is AspectValidationError.DuplicateAspectAllowedValues -> "Aspect allowed values contain duplicates"
-        }
-        is AspectKeyError -> when (error) {
-            is AspectKeyError.EmptyKey -> "Aspect key cannot be empty"
-            is AspectKeyError.TooShort -> "Aspect key is too short: length ${error.actualLength}, minimum ${error.minLength} characters"
-            is AspectKeyError.TooLong -> "Aspect key is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
-            is AspectKeyError.InvalidFormat -> "Invalid aspect key format"
-        }
-        is AspectValueError -> when (error) {
-            is AspectValueError.EmptyValue -> "Aspect value cannot be empty"
-            is AspectValueError.TooLong -> "Aspect value is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
-        }
-        is HierarchyPolicyError -> when (error) {
-            is HierarchyPolicyError.InvalidMaxDepth -> "Invalid maximum depth: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
-            is HierarchyPolicyError.InvalidMaxChildrenPerScope ->
-                "Invalid maximum children per scope: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
-        }
-        is ScopeAliasError -> when (error) {
-            is ScopeAliasError.AliasNotFound -> "Alias not found: ${error.aliasName}"
-            is ScopeAliasError.AliasNotFoundById -> "Alias not found by ID: ${error.aliasId.value}"
-            is ScopeAliasError.DuplicateAlias -> "Duplicate alias '${error.aliasName}': already assigned to scope ${error.existingScopeId.value}"
-            is ScopeAliasError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias '${error.aliasName}' from scope ${error.scopeId.value}"
-            is ScopeAliasError.AliasGenerationFailed -> "Failed to generate alias for scope ${error.scopeId.value} after ${error.retryCount} attempts"
-            is ScopeAliasError.AliasGenerationValidationFailed -> "Alias generation validation failed for scope ${error.scopeId.value}: ${error.reason}"
-            is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
-                "Data inconsistency: alias '${error.aliasName}' references non-existent scope ${error.scopeId.value}"
-        }
-        is UserPreferencesIntegrationError -> when (error) {
-            is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> "User preferences service unavailable${error.retryAfter?.let {
-                ", retry after: $it"
-            } ?: ""}"
-            is UserPreferencesIntegrationError.HierarchySettingsNotFound -> "Hierarchy settings not found in user preferences"
-            is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
-            is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"
-            is UserPreferencesIntegrationError.PreferencesRequestTimeout -> "Preferences request timed out after ${error.timeout}"
-        }
-        is QueryParseError -> when (error) {
-            is QueryParseError.EmptyQuery -> "Empty query"
-            is QueryParseError.UnexpectedCharacter -> "Unexpected character '${error.char}' at position ${error.position}"
-            is QueryParseError.UnterminatedString -> "Unterminated string at position ${error.position}"
-            is QueryParseError.UnexpectedToken -> "Unexpected token at position ${error.position}"
-            is QueryParseError.MissingClosingParen -> "Missing closing parenthesis at position ${error.position}"
-            is QueryParseError.ExpectedExpression -> "Expected expression at position ${error.position}"
-            is QueryParseError.ExpectedIdentifier -> "Expected identifier at position ${error.position}"
-            is QueryParseError.ExpectedOperator -> "Expected operator at position ${error.position}"
-            is QueryParseError.ExpectedValue -> "Expected value at position ${error.position}"
-        }
-        is ContextManagementError -> "Context management error"
+        is ScopeUniquenessError.DuplicateIdentifier -> "Duplicate identifier: ${error.identifier}"
+    }
+
+    private fun getScopeHierarchyErrorMessage(error: ScopeHierarchyError): String = when (error) {
+        is ScopeHierarchyError.CircularReference -> "Circular reference detected for scope ${error.scopeId.value} with parent ${error.parentId.value}"
+        is ScopeHierarchyError.CircularPath -> "Circular path detected for scope ${error.scopeId.value}"
+        is ScopeHierarchyError.MaxDepthExceeded -> "Maximum hierarchy depth exceeded: attempted ${error.attemptedDepth}, maximum ${error.maximumDepth}"
+        is ScopeHierarchyError.HasChildren -> "Cannot perform operation: scope ${error.scopeId.value} has children"
+        is ScopeHierarchyError.InvalidParentId -> "Invalid parent ID: ${error.invalidId}"
+        is ScopeHierarchyError.MaxChildrenExceeded ->
+            "Maximum children exceeded for parent ${error.parentScopeId.value}: " +
+                "current ${error.currentChildrenCount}, maximum ${error.maximumChildren}"
+        is ScopeHierarchyError.ParentNotFound -> "Parent ${error.parentId.value} not found for scope ${error.scopeId.value}"
+        is ScopeHierarchyError.ScopeInHierarchyNotFound -> "Scope ${error.scopeId.value} not found in hierarchy"
+        is ScopeHierarchyError.SelfParenting -> "Scope ${error.scopeId.value} cannot be its own parent"
+        is ScopeHierarchyError.HierarchyUnavailable ->
+            "Hierarchy operation '${error.operation}' failed${error.scopeId?.let { " for scope ${it.value}" } ?: ""}: ${error.reason}"
+    }
+
+    private fun getPersistenceErrorMessage(error: PersistenceError): String = when (error) {
+        is PersistenceError.StorageUnavailable -> "Storage unavailable for operation '${error.operation}'"
+        is PersistenceError.DataCorruption -> "Data corruption detected for ${error.entityType}${error.entityId?.let { " $it" } ?: ""}: ${error.reason}"
+        is PersistenceError.ConcurrencyConflict ->
+            "Concurrency conflict for ${error.entityType} ${error.entityId}: " +
+                "expected version ${error.expectedVersion}, actual ${error.actualVersion}"
+        is PersistenceError.NotFound -> "${error.entityType} not found${error.entityId?.let { ": $it" } ?: ""}"
+    }
+
+    private fun getContextErrorMessage(error: ContextError): String = when (error) {
+        is ContextError.BlankId -> "Context view ID cannot be blank: '${error.attemptedValue}'"
+        is ContextError.InvalidIdFormat -> "Invalid context view ID format: ${error.attemptedValue}, expected: ${error.expectedFormat}"
+        is ContextError.EmptyName -> "Context view name cannot be empty: '${error.attemptedValue}'"
+        is ContextError.InvalidNameFormat -> "Invalid context view name format: ${error.attemptedValue}, expected: ${error.expectedPattern}"
+        is ContextError.NameTooLong -> "Context view name is too long: maximum ${error.maximumLength} characters"
+        is ContextError.DuplicateName -> "Context view with name '${error.attemptedName}' already exists"
+        is ContextError.ContextNotFound -> "Context view not found${error.contextId?.let {
+            ": $it"
+        } ?: ""}${error.contextName?.let { " (name: $it)" } ?: ""}"
+        is ContextError.InvalidFilter -> "Invalid filter '${error.filter}': ${presentInvalidFilterType(error.errorType)}"
+        is ContextError.EmptyKey -> "Context view key cannot be empty"
+        is ContextError.KeyTooShort -> "Context view key must be at least ${error.minimumLength} characters"
+        is ContextError.KeyTooLong -> "Context view key must be at most ${error.maximumLength} characters"
+        is ContextError.InvalidKeyFormat -> "Invalid context view key format: ${presentInvalidKeyFormatType(error.errorType)}"
+        is ContextError.EmptyDescription -> "Context view description cannot be empty"
+        is ContextError.DescriptionTooShort -> "Context view description must be at least ${error.minimumLength} characters"
+        is ContextError.DescriptionTooLong -> "Context view description must be at most ${error.maximumLength} characters"
+        is ContextError.EmptyFilter -> "Context view filter cannot be empty"
+        is ContextError.FilterTooShort -> "Context view filter must be at least ${error.minimumLength} characters"
+        is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
+        is ContextError.InvalidFilterSyntax -> "Invalid filter syntax: ${getFilterSyntaxErrorMessage(error.errorType)}"
+        is ContextError.InvalidScope -> "Invalid scope '${error.scopeId}': ${presentInvalidScopeType(error.errorType)}"
+        is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${presentInvalidHierarchyType(error.errorType)}"
+        is ContextError.DuplicateScope -> "Duplicate scope title '${error.title}'${error.contextId?.let {
+            " in context $it"
+        } ?: ""}: ${presentDuplicateScopeType(error.errorType)}"
+    }
+
+    private fun getFilterSyntaxErrorMessage(errorType: ContextError.FilterSyntaxErrorType): String = when (errorType) {
+        is ContextError.FilterSyntaxErrorType.EmptyQuery -> "Empty query"
+        is ContextError.FilterSyntaxErrorType.EmptyExpression -> "Empty expression"
+        is ContextError.FilterSyntaxErrorType.UnexpectedCharacter ->
+            "Unexpected character '${errorType.char}' at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.UnterminatedString ->
+            "Unterminated string at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.UnexpectedToken ->
+            "Unexpected token at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.MissingClosingParen ->
+            "Missing closing parenthesis at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedExpression ->
+            "Expected expression at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedIdentifier ->
+            "Expected identifier at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedOperator ->
+            "Expected operator at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedValue ->
+            "Expected value at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.UnbalancedParentheses ->
+            "Unbalanced parentheses"
+        is ContextError.FilterSyntaxErrorType.UnbalancedQuotes ->
+            "Unbalanced quotes"
+        is ContextError.FilterSyntaxErrorType.EmptyOperator ->
+            "Empty operator"
+        is ContextError.FilterSyntaxErrorType.InvalidSyntax ->
+            "Invalid syntax"
+    }
+
+    private fun getScopesErrorMessage(error: ScopesError): String = when (error) {
         is ScopesError.InvalidOperation -> "Invalid operation: ${error.operation} on ${error.entityType ?: "entity"}${error.entityId?.let {
             " with id '$it'"
         } ?: ""}${error.reason?.let { " (${it.name.lowercase().replace('_', ' ')})" } ?: ""}"
@@ -284,30 +210,8 @@ object ErrorMessageMapper {
         )} in ${error.service ?: "unknown service"}${error.context?.get("operation")?.let {
             " during $it"
         } ?: ""}"
-        is ScopesError.ValidationFailed -> {
-            val constraintMessage = when (val constraint = error.constraint) {
-                is ScopesError.ValidationConstraintType.InvalidType ->
-                    "Expected ${constraint.expectedType} but got ${constraint.actualType}"
-                is ScopesError.ValidationConstraintType.NotInAllowedValues ->
-                    "Value must be one of: ${constraint.allowedValues.joinToString(", ")}"
-                is ScopesError.ValidationConstraintType.InvalidFormat ->
-                    "Invalid format. Expected: ${constraint.expectedFormat}"
-                is ScopesError.ValidationConstraintType.MissingRequired ->
-                    "Missing required fields: ${constraint.requiredFields.joinToString(", ")}"
-                is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
-                    "Multiple values not allowed for field '${constraint.field}'"
-                is ScopesError.ValidationConstraintType.InvalidValue ->
-                    constraint.reason
-            }
-            "Validation failed for '${error.field}': $constraintMessage"
-        }
-        is ScopesError.Conflict -> when (error.conflictType) {
-            ScopesError.Conflict.ConflictType.ALREADY_IN_USE ->
-                "${error.resourceType} '${error.resourceId}' is already in use"
-            ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
-                "${error.resourceType} '${error.resourceId}' has dependencies${error.details["usage_count"]?.let { " ($it usages)" } ?: ""}"
-            else -> "${error.conflictType} conflict for ${error.resourceType} '${error.resourceId}'"
-        }
+        is ScopesError.ValidationFailed -> getValidationFailedMessage(error)
+        is ScopesError.Conflict -> getConflictMessage(error)
         is ScopesError.ConcurrencyError -> "Concurrent modification detected for ${error.aggregateType} '${error.aggregateId}'${error.expectedVersion?.let {
             " (expected: $it, actual: ${error.actualVersion})"
         } ?: ""}"
@@ -315,17 +219,151 @@ object ErrorMessageMapper {
             val operation = error.operation.name.lowercase().replace('_', ' ')
             "Repository error during $operation operation on ${error.entityType ?: "entity"}"
         }
-        is ValidationError -> when (error) {
-            is ValidationError.InvalidNumericValue -> "Invalid numeric value '${error.value.value}' for aspect '${error.aspectKey.value}'"
-            is ValidationError.InvalidBooleanValue -> "Invalid boolean value '${error.value.value}' for aspect '${error.aspectKey.value}'"
-            is ValidationError.ValueNotInAllowedList ->
-                "Value '${error.value.value}' for aspect '${error.aspectKey.value}' is not in allowed list: " +
-                    error.allowedValues.joinToString { it.value }
-            is ValidationError.MultipleValuesNotAllowed -> "Multiple values not allowed for aspect '${error.aspectKey.value}'"
-            is ValidationError.RequiredAspectsMissing -> "Required aspects missing: ${error.missingKeys.joinToString { it.value }}"
-            is ValidationError.InvalidDurationValue -> "Invalid duration value '${error.value.value}' for aspect '${error.aspectKey.value}'"
-        }
         is ScopesError.ScopeStatusTransitionError -> "Invalid status transition from ${error.from} to ${error.to}: ${error.reason}"
+    }
+
+    private fun getValidationFailedMessage(error: ScopesError.ValidationFailed): String {
+        val constraintMessage = when (val constraint = error.constraint) {
+            is ScopesError.ValidationConstraintType.InvalidType ->
+                "Expected ${constraint.expectedType} but got ${constraint.actualType}"
+            is ScopesError.ValidationConstraintType.NotInAllowedValues ->
+                "Value must be one of: ${constraint.allowedValues.joinToString(", ")}"
+            is ScopesError.ValidationConstraintType.InvalidFormat ->
+                "Invalid format. Expected: ${constraint.expectedFormat}"
+            is ScopesError.ValidationConstraintType.MissingRequired ->
+                "Missing required fields: ${constraint.requiredFields.joinToString(", ")}"
+            is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
+                "Multiple values not allowed for field '${constraint.field}'"
+            is ScopesError.ValidationConstraintType.InvalidValue ->
+                constraint.reason
+        }
+        return "Validation failed for '${error.field}': $constraintMessage"
+    }
+
+    private fun getConflictMessage(error: ScopesError.Conflict): String = when (error.conflictType) {
+        ScopesError.Conflict.ConflictType.ALREADY_IN_USE ->
+            "${error.resourceType} '${error.resourceId}' is already in use"
+        ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES ->
+            "${error.resourceType} '${error.resourceId}' has dependencies${error.details["usage_count"]?.let { " ($it usages)" } ?: ""}"
+        else -> "${error.conflictType} conflict for ${error.resourceType} '${error.resourceId}'"
+    }
+
+    private fun getAggregateIdErrorMessage(error: AggregateIdError): String = when (error) {
+        is AggregateIdError.InvalidType -> "Invalid aggregate type '${error.attemptedType}', valid types: ${error.validTypes.joinToString()}"
+        is AggregateIdError.InvalidIdFormat -> "Invalid aggregate ID format '${error.attemptedId}', expected: ${error.expectedFormat}"
+        is AggregateIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
+        is AggregateIdError.EmptyValue -> "Empty value for field: ${error.field}"
+        is AggregateIdError.InvalidFormat -> "Invalid format for ${error.value}: ${error.formatError}"
+    }
+
+    private fun getAggregateVersionErrorMessage(error: AggregateVersionError): String = when (error) {
+        is AggregateVersionError.NegativeVersion -> "Negative version not allowed: ${error.attemptedVersion}"
+        is AggregateVersionError.VersionOverflow -> "Version overflow: current ${error.currentVersion}, max ${error.maxVersion}"
+        is AggregateVersionError.InvalidVersionTransition -> "Invalid version transition: from ${error.currentVersion} to ${error.attemptedVersion}"
+    }
+
+    private fun getEventIdErrorMessage(error: EventIdError): String = when (error) {
+        is EventIdError.EmptyValue -> "Empty value for field: ${error.field}"
+        is EventIdError.InvalidEventType -> "Invalid event type '${error.attemptedType}': ${error.reason}"
+        is EventIdError.InvalidUriFormat -> "Invalid URI format '${error.attemptedUri}': ${error.reason}"
+        is EventIdError.UlidError -> "ULID error: ${error.reason}"
+    }
+
+    private fun getAspectValidationErrorMessage(error: AspectValidationError): String = when (error) {
+        is AspectValidationError.EmptyAspectKey -> "Aspect key cannot be empty"
+        is AspectValidationError.AspectKeyTooShort -> "Aspect key is too short"
+        is AspectValidationError.AspectKeyTooLong -> "Aspect key is too long: max ${error.maxLength}, actual ${error.actualLength}"
+        is AspectValidationError.InvalidAspectKeyFormat -> "Invalid aspect key format"
+        is AspectValidationError.EmptyAspectValue -> "Aspect value cannot be empty"
+        is AspectValidationError.AspectValueTooShort -> "Aspect value is too short"
+        is AspectValidationError.AspectValueTooLong -> "Aspect value is too long: max ${error.maxLength}, actual ${error.actualLength}"
+        is AspectValidationError.EmptyAspectAllowedValues -> "Aspect allowed values cannot be empty"
+        is AspectValidationError.DuplicateAspectAllowedValues -> "Aspect allowed values contain duplicates"
+    }
+
+    private fun getAspectKeyErrorMessage(error: AspectKeyError): String = when (error) {
+        is AspectKeyError.EmptyKey -> "Aspect key cannot be empty"
+        is AspectKeyError.TooShort -> "Aspect key is too short: length ${error.actualLength}, minimum ${error.minLength} characters"
+        is AspectKeyError.TooLong -> "Aspect key is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
+        is AspectKeyError.InvalidFormat -> "Invalid aspect key format"
+    }
+
+    private fun getAspectValueErrorMessage(error: AspectValueError): String = when (error) {
+        is AspectValueError.EmptyValue -> "Aspect value cannot be empty"
+        is AspectValueError.TooLong -> "Aspect value is too long: length ${error.actualLength}, maximum ${error.maxLength} characters"
+    }
+
+    private fun getHierarchyPolicyErrorMessage(error: HierarchyPolicyError): String = when (error) {
+        is HierarchyPolicyError.InvalidMaxDepth -> "Invalid maximum depth: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
+        is HierarchyPolicyError.InvalidMaxChildrenPerScope ->
+            "Invalid maximum children per scope: ${error.attemptedValue}, minimum allowed: ${error.minimumAllowed}"
+    }
+
+    private fun getScopeAliasErrorMessage(error: ScopeAliasError): String = when (error) {
+        is ScopeAliasError.AliasNotFound -> "Alias not found: ${error.aliasName}"
+        is ScopeAliasError.AliasNotFoundById -> "Alias not found by ID: ${error.aliasId.value}"
+        is ScopeAliasError.DuplicateAlias -> "Duplicate alias '${error.aliasName}': already assigned to scope ${error.existingScopeId.value}"
+        is ScopeAliasError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias '${error.aliasName}' from scope ${error.scopeId.value}"
+        is ScopeAliasError.AliasGenerationFailed -> "Failed to generate alias for scope ${error.scopeId.value} after ${error.retryCount} attempts"
+        is ScopeAliasError.AliasGenerationValidationFailed -> "Alias generation validation failed for scope ${error.scopeId.value}: ${error.reason}"
+        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound ->
+            "Data inconsistency: alias '${error.aliasName}' references non-existent scope ${error.scopeId.value}"
+    }
+
+    private fun getUserPreferencesIntegrationErrorMessage(error: UserPreferencesIntegrationError): String = when (error) {
+        is UserPreferencesIntegrationError.PreferencesServiceUnavailable -> "User preferences service unavailable${error.retryAfter?.let {
+            ", retry after: $it"
+        } ?: ""}"
+        is UserPreferencesIntegrationError.HierarchySettingsNotFound -> "Hierarchy settings not found in user preferences"
+        is UserPreferencesIntegrationError.InvalidHierarchySettings -> "Invalid hierarchy settings: ${error.validationErrors.joinToString(", ")}"
+        is UserPreferencesIntegrationError.MalformedPreferencesResponse -> "Malformed preferences response: expected ${error.expectedFormat}"
+        is UserPreferencesIntegrationError.PreferencesRequestTimeout -> "Preferences request timed out after ${error.timeout}"
+    }
+
+    private fun getQueryParseErrorMessage(error: QueryParseError): String = when (error) {
+        is QueryParseError.EmptyQuery -> "Empty query"
+        is QueryParseError.UnexpectedCharacter -> "Unexpected character '${error.char}' at position ${error.position}"
+        is QueryParseError.UnterminatedString -> "Unterminated string at position ${error.position}"
+        is QueryParseError.UnexpectedToken -> "Unexpected token at position ${error.position}"
+        is QueryParseError.MissingClosingParen -> "Missing closing parenthesis at position ${error.position}"
+        is QueryParseError.ExpectedExpression -> "Expected expression at position ${error.position}"
+        is QueryParseError.ExpectedIdentifier -> "Expected identifier at position ${error.position}"
+        is QueryParseError.ExpectedOperator -> "Expected operator at position ${error.position}"
+        is QueryParseError.ExpectedValue -> "Expected value at position ${error.position}"
+    }
+
+    private fun getValidationErrorMessage(error: ValidationError): String = when (error) {
+        is ValidationError.InvalidNumericValue -> "Invalid numeric value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+        is ValidationError.InvalidBooleanValue -> "Invalid boolean value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+        is ValidationError.ValueNotInAllowedList ->
+            "Value '${error.value.value}' for aspect '${error.aspectKey.value}' is not in allowed list: " +
+                error.allowedValues.joinToString { it.value }
+        is ValidationError.MultipleValuesNotAllowed -> "Multiple values not allowed for aspect '${error.aspectKey.value}'"
+        is ValidationError.RequiredAspectsMissing -> "Required aspects missing: ${error.missingKeys.joinToString { it.value }}"
+        is ValidationError.InvalidDurationValue -> "Invalid duration value '${error.value.value}' for aspect '${error.aspectKey.value}'"
+    }
+
+    fun getMessage(error: ScopesError): String = when (error) {
+        is ScopeError -> getScopeErrorMessage(error)
+        is ScopeInputError -> getScopeInputErrorMessage(error)
+        is ScopeNotFoundError -> "Scope not found: ${error.scopeId.value}"
+        is ScopeUniquenessError -> getScopeUniquenessErrorMessage(error)
+        is ScopeHierarchyError -> getScopeHierarchyErrorMessage(error)
+        is PersistenceError -> getPersistenceErrorMessage(error)
+        is AggregateIdError -> getAggregateIdErrorMessage(error)
+        is AggregateVersionError -> getAggregateVersionErrorMessage(error)
+        is EventIdError -> getEventIdErrorMessage(error)
+        is ContextError -> getContextErrorMessage(error)
+        is AspectValidationError -> getAspectValidationErrorMessage(error)
+        is AspectKeyError -> getAspectKeyErrorMessage(error)
+        is AspectValueError -> getAspectValueErrorMessage(error)
+        is HierarchyPolicyError -> getHierarchyPolicyErrorMessage(error)
+        is ScopeAliasError -> getScopeAliasErrorMessage(error)
+        is UserPreferencesIntegrationError -> getUserPreferencesIntegrationErrorMessage(error)
+        is QueryParseError -> getQueryParseErrorMessage(error)
+        is ContextManagementError -> "Context management error"
+        is ValidationError -> getValidationErrorMessage(error)
+        else -> getScopesErrorMessage(error)
     }
 
     /**

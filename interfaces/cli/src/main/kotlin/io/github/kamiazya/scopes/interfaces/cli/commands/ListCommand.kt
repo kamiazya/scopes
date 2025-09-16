@@ -47,6 +47,32 @@ class ListCommand :
         completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
     ).multiple()
 
+    private suspend fun listRootScopesWithFiltering(aspectFilters: Map<String, String>) {
+        scopeQueryAdapter.listRootScopes(offset, limit).fold(
+            { error ->
+                handleContractError(error)
+            },
+            { page ->
+                val scopes = page.scopes
+                val filteredScopes = if (aspectFilters.isNotEmpty()) {
+                    filterByAspects(scopes, aspectFilters)
+                } else {
+                    scopes
+                }
+                if (aspectFilters.isNotEmpty()) {
+                    echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
+                }
+
+                if (verbose) {
+                    // Fetch aliases for each scope and display verbosely
+                    echo(formatVerboseList(filteredScopes, debugContext))
+                } else {
+                    echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
+                }
+            },
+        )
+    }
+
     override fun run() {
         runBlocking {
             // Validate pagination inputs
@@ -115,29 +141,7 @@ class ListCommand :
                     )
                 }
                 root -> {
-                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { page ->
-                            val scopes = page.scopes
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                            }
-
-                            if (verbose) {
-                                // Fetch aliases for each scope and display verbosely
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
+                    listRootScopesWithFiltering(aspectFilters)
                 }
                 parentId != null -> {
                     scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
@@ -165,28 +169,7 @@ class ListCommand :
                 }
                 else -> {
                     // Default: list root scopes
-                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { page ->
-                            val scopes = page.scopes
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                            }
-
-                            if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
+                    listRootScopesWithFiltering(aspectFilters)
                 }
             }
         }
