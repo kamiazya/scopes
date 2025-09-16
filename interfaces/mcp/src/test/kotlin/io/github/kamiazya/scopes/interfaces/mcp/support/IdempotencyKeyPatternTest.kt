@@ -12,7 +12,7 @@ class IdempotencyKeyPatternTest : DescribeSpec({
                 "12345678",                      // Minimum 8 characters
                 "a-b_c-d_",                      // Mix of allowed characters
                 "ABCDEFGH",                      // Uppercase
-                "abcdefgh",                      // Lowercase  
+                "abcdefgh",                      // Lowercase
                 "123_ABC-",                      // Mix of all types
                 "a".repeat(128),                 // Maximum 128 characters
                 "test-key-123",                  // Typical format
@@ -72,14 +72,12 @@ class IdempotencyKeyPatternTest : DescribeSpec({
             }
         }
 
-        it("pattern string should be the expected regex") {
-            pattern.pattern shouldBe "^[A-Za-z0-9_-]{8,128}$"
-        }
-
-        it("pattern string should match schema pattern in tool handlers") {
-            // This ensures the exposed pattern matches what we use in JSON schemas
-            val schemaPattern = "^[A-Za-z0-9_-]{8,128}$"
-            pattern.pattern shouldBe schemaPattern
+        it("regex and string constants should be in sync") {
+            // Ensure the Regex pattern matches the string constant
+            pattern.pattern shouldBe IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING
+            
+            // Also verify the expected pattern value
+            IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING shouldBe "^[A-Za-z0-9_-]{8,128}$"
         }
     }
 })
