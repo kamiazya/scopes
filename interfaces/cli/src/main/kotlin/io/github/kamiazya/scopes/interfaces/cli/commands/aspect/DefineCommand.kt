@@ -123,12 +123,4 @@ class DefineCommand :
             )
         }
     }
-
-    private fun formatType(type: AspectType): String = when (type) {
-        is AspectType.Text -> "Text"
-        is AspectType.Numeric -> "Numeric"
-        is AspectType.BooleanType -> "Boolean"
-        is AspectType.Ordered -> "Ordered (${type.allowedValues.joinToString(", ") { it.value }})"
-        is AspectType.Duration -> "Duration (ISO 8601)"
-    }
 }

@@ -164,23 +164,23 @@ fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManag
         )
 
     is DomainScopeInputError.AliasError.EmptyAlias ->
-        AppScopeInputError.AliasEmpty(attemptedValue = attemptedValue)
+        AppScopeInputError.AliasEmpty(alias = attemptedValue)
 
     is DomainScopeInputError.AliasError.AliasTooShort ->
         AppScopeInputError.AliasTooShort(
-            attemptedValue = attemptedValue,
+            alias = attemptedValue,
             minimumLength = this.minLength,
         )
 
     is DomainScopeInputError.AliasError.AliasTooLong ->
         AppScopeInputError.AliasTooLong(
-            attemptedValue = attemptedValue,
+            alias = attemptedValue,
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.AliasError.InvalidAliasFormat ->
         AppScopeInputError.AliasInvalidFormat(
-            attemptedValue = attemptedValue,
+            alias = attemptedValue,
             expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.expectedPattern),
         )
 }
@@ -222,7 +222,7 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
         AppScopeAliasError.AliasGenerationValidationFailed(
             scopeId = "scope-id",
             reason = this.reason,
-            attemptedValue = this.alias,
+            alias = this.alias,
         )
 
     is DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope ->

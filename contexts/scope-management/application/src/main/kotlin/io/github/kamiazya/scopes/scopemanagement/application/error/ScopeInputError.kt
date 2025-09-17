@@ -19,10 +19,10 @@ sealed class ScopeInputError : ScopeManagementApplicationError() {
     data class DescriptionTooLong(val attemptedValue: String, val maximumLength: Int) : ScopeInputError()
 
     // Alias related errors
-    data class AliasEmpty(val attemptedValue: String) : ScopeInputError()
-    data class AliasTooShort(val attemptedValue: String, val minimumLength: Int) : ScopeInputError()
-    data class AliasTooLong(val attemptedValue: String, val maximumLength: Int) : ScopeInputError()
-    data class AliasInvalidFormat(val attemptedValue: String, val expectedPattern: String) : ScopeInputError()
+    data class AliasEmpty(val alias: String) : ScopeInputError()
+    data class AliasTooShort(val alias: String, val minimumLength: Int) : ScopeInputError()
+    data class AliasTooLong(val alias: String, val maximumLength: Int) : ScopeInputError()
+    data class AliasInvalidFormat(val alias: String, val expectedPattern: String) : ScopeInputError()
 
     data class InvalidAlias(val alias: String) : ScopeInputError()
 

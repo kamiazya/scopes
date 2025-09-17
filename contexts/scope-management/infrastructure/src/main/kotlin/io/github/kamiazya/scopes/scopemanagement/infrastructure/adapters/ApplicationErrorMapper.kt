@@ -66,25 +66,25 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
         // Alias validation errors
         is AppScopeInputError.AliasEmpty -> ScopeContractError.InputError.InvalidAlias(
-            alias = domainError.attemptedValue,
+            alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.Empty,
         )
         is AppScopeInputError.AliasTooShort -> ScopeContractError.InputError.InvalidAlias(
-            alias = domainError.attemptedValue,
+            alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.TooShort(
                 minimumLength = domainError.minimumLength,
-                actualLength = domainError.attemptedValue.length,
+                actualLength = domainError.alias.length,
             ),
         )
         is AppScopeInputError.AliasTooLong -> ScopeContractError.InputError.InvalidAlias(
-            alias = domainError.attemptedValue,
+            alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.TooLong(
                 maximumLength = domainError.maximumLength,
-                actualLength = domainError.attemptedValue.length,
+                actualLength = domainError.alias.length,
             ),
         )
         is AppScopeInputError.AliasInvalidFormat -> ScopeContractError.InputError.InvalidAlias(
-            alias = domainError.attemptedValue,
+            alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
                 expectedPattern = domainError.expectedPattern,
             ),

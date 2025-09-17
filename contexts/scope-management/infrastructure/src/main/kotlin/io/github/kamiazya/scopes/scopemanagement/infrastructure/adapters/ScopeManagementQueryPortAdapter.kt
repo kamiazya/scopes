@@ -27,7 +27,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeByAlias as AppGetScopeByAliasQuery
 
 /**

@@ -210,9 +210,11 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
-        is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.alias,
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(emptyList()),
+        is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(
+            alias = domainError.alias,
+            validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
+                expectedPattern = domainError.reason,
+            ),
         )
         is ScopeAliasError.AliasNotFoundById -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.aliasId.value,
