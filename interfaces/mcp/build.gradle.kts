@@ -13,6 +13,13 @@ dependencies {
     // Contracts
     implementation(project(":contracts-scope-management"))
     implementation(project(":contracts-user-preferences"))
+    implementation(project(":contracts-device-synchronization"))
+
+    // Domain layer (for domain errors)
+    implementation(project(":scope-management-domain"))
+
+    // Application layer (for ResponseFormatterService)
+    implementation(project(":scope-management-application"))
 
     // MCP SDK
     implementation(libs.mcp.kotlin.sdk)

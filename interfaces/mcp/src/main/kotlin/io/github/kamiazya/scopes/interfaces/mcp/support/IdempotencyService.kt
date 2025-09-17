@@ -24,6 +24,7 @@ interface IdempotencyService {
          */
         val IDEMPOTENCY_KEY_PATTERN = Regex(IDEMPOTENCY_KEY_PATTERN_STRING)
     }
+
     /**
      * Check if a tool call with the given arguments has been seen before.
      *

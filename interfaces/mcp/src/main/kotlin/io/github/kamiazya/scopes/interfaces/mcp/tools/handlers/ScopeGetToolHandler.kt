@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
@@ -15,7 +16,7 @@ import kotlinx.serialization.json.*
  *
  * This tool retrieves detailed information about a scope given its alias.
  */
-class ScopeGetToolHandler : ToolHandler {
+class ScopeGetToolHandler(private val responseFormatter: ResponseFormatterService = ResponseFormatterService()) : ToolHandler {
 
     override val name: String = "scopes.get"
 
@@ -76,13 +77,23 @@ class ScopeGetToolHandler : ToolHandler {
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
-                val scope = result.value
+                val responseMap = responseFormatter.formatScopeForMcp(result.value)
+                // Convert Map to JSON string
                 val json = buildJsonObject {
-                    put("canonicalAlias", scope.canonicalAlias)
-                    put("title", scope.title)
-                    scope.description?.let { put("description", it) }
-                    put("createdAt", scope.createdAt.toString())
-                    put("updatedAt", scope.updatedAt.toString())
+                    responseMap.forEach { (key, value) ->
+                        when (value) {
+                            is Map<*, *> -> putJsonObject(key) {
+                                value.forEach { (k, v) ->
+                                    put(k.toString(), JsonPrimitive(v.toString()))
+                                }
+                            }
+                            is Number -> put(key, JsonPrimitive(value))
+                            is Boolean -> put(key, JsonPrimitive(value))
+                            is String -> put(key, JsonPrimitive(value))
+                            null -> put(key, JsonNull)
+                            else -> put(key, JsonPrimitive(value.toString()))
+                        }
+                    }
                 }
                 CallToolResult(content = listOf(TextContent(json.toString())))
             }

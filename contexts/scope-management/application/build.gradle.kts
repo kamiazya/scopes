@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-observability"))
+    implementation(project(":contracts-scope-management"))
     implementation(project(":scope-management-domain"))
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.coroutines.core)

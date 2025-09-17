@@ -13,6 +13,10 @@ import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
+import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ValidationService
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -29,6 +33,9 @@ class ListCommand :
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
+    private val responseFormatter: ResponseFormatterService = ResponseFormatterService()
+    private val aspectService: AspectManagementService = AspectManagementService()
+    private val validationService: ValidationService = ValidationService()
     private val debugContext by requireObject<DebugContext>()
 
     private val parentId by option("-p", "--parent", help = "Parent scope ID to list children")
@@ -49,13 +56,23 @@ class ListCommand :
 
     override fun run() {
         runBlocking {
-            // Validate pagination inputs
-            if (offset < 0) {
-                fail("offset must be >= 0", ExitCode.USAGE_ERROR)
-            }
-            if (limit !in 1..1000) {
-                fail("limit must be in 1..1000", ExitCode.USAGE_ERROR)
-            }
+            // Validate pagination inputs using ValidationService
+            validationService.validatePagination(offset, limit).fold(
+                { error ->
+                    fail(
+                        when (error) {
+                            is DomainValidationError.InvalidPagination.OffsetTooSmall ->
+                                "Offset must be at least ${error.minOffset}, but was ${error.offset}"
+                            is DomainValidationError.InvalidPagination.LimitTooSmall ->
+                                "Limit must be at least ${error.minLimit}, but was ${error.limit}"
+                            is DomainValidationError.InvalidPagination.LimitTooLarge ->
+                                "Limit must not exceed ${error.maxLimit}, but was ${error.limit}"
+                        },
+                        ExitCode.USAGE_ERROR,
+                    )
+                },
+                { /* valid pagination */ },
+            )
 
             // Parse aspect filters (supports key:value and key=value)
             val aspectFilters = parseAspectFilters(aspects)
@@ -107,9 +124,20 @@ class ListCommand :
                                 scopes
                             }
                             if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
+                                echo(formatVerboseListWithAliases(filteredScopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
+                                echo(
+                                    responseFormatter.formatPagedScopesForCli(
+                                        result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                                            scopes = filteredScopes,
+                                            totalCount = scopes.size,
+                                            offset = offset,
+                                            limit = limit,
+                                        ),
+                                        includeDebug = debugContext.debug,
+                                        includeAliases = false,
+                                    ),
+                                )
                             }
                         },
                     )
@@ -131,10 +159,20 @@ class ListCommand :
                             }
 
                             if (verbose) {
-                                // Fetch aliases for each scope and display verbosely
-                                echo(formatVerboseList(filteredScopes, debugContext))
+                                echo(formatVerboseListWithAliases(filteredScopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
+                                echo(
+                                    responseFormatter.formatRootScopesForCli(
+                                        result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                                            scopes = filteredScopes,
+                                            totalCount = filteredScopes.size,
+                                            offset = 0,
+                                            limit = filteredScopes.size,
+                                        ),
+                                        includeDebug = debugContext.debug,
+                                        includeAliases = false,
+                                    ),
+                                )
                             }
                         },
                     )
@@ -156,9 +194,15 @@ class ListCommand :
                             }
 
                             if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
+                                echo(formatVerboseListWithAliases(filteredScopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
+                                echo(
+                                    responseFormatter.formatPagedScopesForCli(
+                                        result = page.copy(scopes = filteredScopes),
+                                        includeDebug = debugContext.debug,
+                                        includeAliases = false,
+                                    ),
+                                )
                             }
                         },
                     )
@@ -181,9 +225,20 @@ class ListCommand :
                             }
 
                             if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
+                                echo(formatVerboseListWithAliases(filteredScopes))
                             } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
+                                echo(
+                                    responseFormatter.formatRootScopesForCli(
+                                        result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                                            scopes = filteredScopes,
+                                            totalCount = filteredScopes.size,
+                                            offset = 0,
+                                            limit = filteredScopes.size,
+                                        ),
+                                        includeDebug = debugContext.debug,
+                                        includeAliases = false,
+                                    ),
+                                )
                             }
                         },
                     )
@@ -192,7 +247,7 @@ class ListCommand :
         }
     }
 
-    private suspend fun formatVerboseList(scopes: List<ScopeResult>, debugContext: DebugContext): String {
+    private suspend fun formatVerboseListWithAliases(scopes: List<ScopeResult>): String {
         if (scopes.isEmpty()) {
             return "No scopes found."
         }
@@ -257,11 +312,6 @@ class ListCommand :
      * A scope matches if it has all the specified aspect key:value pairs.
      */
     private fun filterByAspects(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>): List<ScopeResult> = scopes.filter { scope ->
-        aspectFilters.all { (key, requiredValues) ->
-            val scopeValues = scope.aspects[key] ?: emptyList()
-            requiredValues.all { requiredValue ->
-                scopeValues.contains(requiredValue)
-            }
-        }
+        aspectService.checkAspectFilters(scope.aspects, aspectFilters)
     }
 }
