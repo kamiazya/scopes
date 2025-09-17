@@ -34,7 +34,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         -1L
     }
 
-    private fun mapSystemError(error: ScopeManagementApplicationError): ScopeContractError =
+    private fun mapSystemError(_error: ScopeManagementApplicationError): ScopeContractError =
         ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
 
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
