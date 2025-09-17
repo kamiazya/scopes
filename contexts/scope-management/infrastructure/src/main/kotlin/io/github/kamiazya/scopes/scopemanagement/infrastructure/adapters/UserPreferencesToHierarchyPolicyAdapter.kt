@@ -6,8 +6,8 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesQueryPort
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 
 /**
@@ -18,7 +18,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPol
  */
 class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: UserPreferencesQueryPort, private val logger: Logger) : HierarchyPolicyProvider {
 
-    override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
+    override suspend fun getPolicy(): Either<ScopeManagementApplicationError, HierarchyPolicy> = either {
         logger.debug("Fetching hierarchy policy from user preferences")
 
         // Try to get user preferences from external service

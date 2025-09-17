@@ -1,8 +1,6 @@
 package io.github.kamiazya.scopes.eventstore.application.error
 
 import io.github.kamiazya.scopes.platform.application.error.ApplicationError
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * Application-level errors for Event Store operations.
@@ -17,8 +15,6 @@ sealed class EventStoreApplicationError : ApplicationError {
         val aggregateId: String? = null,
         val eventType: String? = null,
         val affectedCount: Int? = null,
-        override val occurredAt: Instant = Clock.System.now(),
-        override val cause: Throwable? = null,
     ) : EventStoreApplicationError()
 
     enum class RepositoryOperation {
@@ -33,14 +29,8 @@ sealed class EventStoreApplicationError : ApplicationError {
     /**
      * Serialization or deserialization failed.
      */
-    data class SerializationError(
-        val operation: SerializationOperation,
-        val targetType: String,
-        val dataSize: Int? = null,
-        val format: String = "JSON",
-        override val occurredAt: Instant = Clock.System.now(),
-        override val cause: Throwable? = null,
-    ) : EventStoreApplicationError()
+    data class SerializationError(val operation: SerializationOperation, val targetType: String, val dataSize: Int? = null, val format: String = "JSON") :
+        EventStoreApplicationError()
 
     enum class SerializationOperation {
         SERIALIZE,
@@ -50,14 +40,8 @@ sealed class EventStoreApplicationError : ApplicationError {
     /**
      * Query validation failed.
      */
-    data class ValidationError(
-        val parameter: String,
-        val invalidValue: Any?,
-        val constraint: ValidationConstraint,
-        val allowedRange: String? = null,
-        override val occurredAt: Instant = Clock.System.now(),
-        override val cause: Throwable? = null,
-    ) : EventStoreApplicationError()
+    data class ValidationError(val parameter: String, val invalidValue: Any?, val constraint: ValidationConstraint, val allowedRange: String? = null) :
+        EventStoreApplicationError()
 
     enum class ValidationConstraint {
         NEGATIVE_LIMIT,

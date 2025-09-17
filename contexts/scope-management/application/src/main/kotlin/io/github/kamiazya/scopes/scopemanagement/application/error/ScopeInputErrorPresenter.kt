@@ -8,17 +8,17 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
  */
 class ScopeInputErrorPresenter {
 
-    fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidFormat.IdFormatType): String = when (formatType) {
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID -> "ULID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.UUID -> "UUID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
-        ScopeInputError.IdError.InvalidFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
+    fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
     }
 
-    fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidFormat.AliasPatternType): String = when (patternType) {
-        ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase letters with hyphens"
-        ScopeInputError.AliasError.InvalidFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters"
-        ScopeInputError.AliasError.InvalidFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
-        ScopeInputError.AliasError.InvalidFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
+    fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType): String = when (patternType) {
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase letters with hyphens"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
     }
 }

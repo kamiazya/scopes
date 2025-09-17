@@ -31,7 +31,9 @@ class ConsoleLogger(private val name: String = "ConsoleLogger", private val defa
         if (isEnabledFor(LogLevel.ERROR)) {
             val mergedContext = defaultContext + context
             System.err.println("[ERROR] [$name] $message ${formatContext(mergedContext)}")
-            throwable?.printStackTrace()
+            throwable?.let {
+                System.err.println("[ERROR] [$name] Exception: ${it.javaClass.simpleName}: ${it.message}")
+            }
         }
     }
 

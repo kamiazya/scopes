@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generatio
 
 import arrow.core.Either
 import arrow.core.left
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationStrategy
@@ -39,10 +38,9 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
         AliasName.create(aliasString)
     } catch (e: Exception) {
         // If an exception occurs during generation, wrap it as an invalid format error
-        ScopeInputError.AliasError.InvalidFormat(
-            occurredAt = currentTimestamp(),
-            attemptedValue = e.message ?: "generation failed",
-            patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
+        ScopeInputError.AliasError.InvalidAliasFormat(
+            alias = e.message ?: "generation failed",
+            expectedPattern = ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
         ).left()
     }
 
@@ -60,10 +58,9 @@ class DefaultAliasGenerationService(private val strategy: AliasGenerationStrateg
         AliasName.create(aliasString)
     } catch (e: Exception) {
         // If an exception occurs during generation, wrap it as an invalid format error
-        ScopeInputError.AliasError.InvalidFormat(
-            occurredAt = currentTimestamp(),
-            attemptedValue = e.message ?: "generation failed",
-            patternType = ScopeInputError.AliasError.InvalidFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
+        ScopeInputError.AliasError.InvalidAliasFormat(
+            alias = e.message ?: "generation failed",
+            expectedPattern = ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
         ).left()
     }
 }

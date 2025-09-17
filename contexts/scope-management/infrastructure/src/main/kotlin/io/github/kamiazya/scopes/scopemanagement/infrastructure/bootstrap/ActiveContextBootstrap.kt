@@ -20,11 +20,11 @@ class ActiveContextBootstrap(private val activeContextRepository: ActiveContextR
     override suspend fun initialize(): Either<BootstrapError, Unit> {
         logger.info("Initializing ActiveContext repository", mapOf("bootstrapper" to name))
         return activeContextRepository.initialize()
-            .mapLeft { error ->
+            .mapLeft { _ ->
                 BootstrapError(
                     component = name,
-                    message = "Failed to initialize ActiveContext repository: ${error.javaClass.simpleName}",
-                    cause = error as? Throwable,
+                    message = "Failed to initialize ActiveContext repository",
+                    cause = null,
                     isCritical = false,
                 )
             }
@@ -32,7 +32,6 @@ class ActiveContextBootstrap(private val activeContextRepository: ActiveContextR
                 logger.error(
                     "Failed to initialize ActiveContext repository",
                     mapOf("bootstrapper" to name, "error" to error.message),
-                    error.cause,
                 )
             }
             .onRight {

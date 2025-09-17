@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 import arrow.core.nonEmptyListOf
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
@@ -15,7 +15,6 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDe
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -137,9 +136,9 @@ class SqlDelightScopeRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
-                    error.operation shouldBe "save"
-                    error.cause shouldNotBe null
+                    val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
+                    error.operation shouldBe ScopesError.RepositoryError.RepositoryOperation.SAVE
+                    error.failure shouldNotBe null
                 }
             }
 
@@ -190,9 +189,9 @@ class SqlDelightScopeRepositoryTest :
 
                     // Then
                     result.isLeft() shouldBe true
-                    val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
-                    error.operation shouldBe "findById"
-                    error.cause shouldNotBe null
+                    val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
+                    error.operation shouldBe ScopesError.RepositoryError.RepositoryOperation.FIND
+                    error.failure shouldNotBe null
                 }
             }
 
@@ -591,10 +590,10 @@ class SqlDelightScopeRepositoryTest :
 
                     operations.forEach { result ->
                         result.isLeft() shouldBe true
-                        val error = result.leftOrNull().shouldBeInstanceOf<PersistenceError.StorageUnavailable>()
+                        val error = result.leftOrNull().shouldBeInstanceOf<ScopesError.RepositoryError>()
                         error.operation shouldNotBe null
-                        error.operation.shouldNotBeBlank()
-                        error.cause shouldNotBe null
+                        error.repositoryName shouldBe "SqlDelightScopeRepository"
+                        error.failure shouldNotBe null
                     }
                 }
             }

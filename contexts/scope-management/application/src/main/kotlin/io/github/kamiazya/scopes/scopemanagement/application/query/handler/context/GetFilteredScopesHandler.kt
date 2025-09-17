@@ -19,7 +19,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRe
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
-import kotlinx.datetime.Clock
 
 /**
  * Handler for filtering scopes based on a context view.
@@ -58,9 +57,7 @@ class GetFilteredScopesHandler(
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "context-repository",
-                                cause = error as? Throwable,
                                 context = mapOf("operation" to "find-context-view", "key" to query.contextKey),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -72,9 +69,7 @@ class GetFilteredScopesHandler(
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "active-context-repository",
-                                cause = error as? Throwable,
                                 context = mapOf("operation" to "get-active-context"),
-                                occurredAt = Clock.System.now(),
                             )
                         }
                         .bind()
@@ -87,9 +82,7 @@ class GetFilteredScopesHandler(
                     ScopesError.SystemError(
                         errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                         service = "scope-repository",
-                        cause = error as? Throwable,
                         context = mapOf("operation" to "find-all-scopes", "offset" to query.offset, "limit" to query.limit),
-                        occurredAt = Clock.System.now(),
                     )
                 }
                 .bind()
@@ -105,9 +98,7 @@ class GetFilteredScopesHandler(
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "aspect-repository",
-                            cause = error as? Throwable,
                             context = mapOf("operation" to "load-aspect-definitions"),
-                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()
@@ -119,9 +110,7 @@ class GetFilteredScopesHandler(
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "filter-evaluation",
-                            cause = error as? Throwable,
                             context = mapOf("operation" to "apply-filter", "filter" to contextView.filter.expression),
-                            occurredAt = Clock.System.now(),
                         )
                     }
                     .bind()

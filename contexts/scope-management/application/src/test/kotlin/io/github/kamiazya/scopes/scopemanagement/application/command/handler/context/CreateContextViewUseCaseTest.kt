@@ -7,10 +7,9 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
@@ -25,6 +24,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 
 class CreateContextViewUseCaseTest :
     DescribeSpec({
@@ -38,10 +38,16 @@ class CreateContextViewUseCaseTest :
                 io.mockk.clearAllMocks()
 
                 // Setup transaction manager to execute the block directly
-                coEvery { transactionManager.inTransaction<ScopesError, ContextViewDto>(any()) } coAnswers {
-                    val block = arg<suspend io.github.kamiazya.scopes.platform.application.port.TransactionContext.() -> Either<ScopesError, ContextViewDto>>(0)
+                coEvery {
+                    transactionManager.inTransaction<ScopeManagementApplicationError, ContextViewDto>(any())
+                } coAnswers {
+                    val block = arg<
+                        suspend io.github.kamiazya.scopes.platform.application.port.TransactionContext.() ->
+                        Either<ScopeManagementApplicationError, ContextViewDto>,
+                        >(0)
                     // Create a mock transaction context
-                    val transactionContext = mockk<io.github.kamiazya.scopes.platform.application.port.TransactionContext>()
+                    val transactionContext =
+                        mockk<io.github.kamiazya.scopes.platform.application.port.TransactionContext>()
                     block(transactionContext)
                 }
             }
@@ -131,7 +137,7 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.EmptyKey) shouldBe true
+                    (error is ContextError.KeyInvalidFormat) shouldBe true
                 }
 
                 it("should return validation error for invalid filter syntax") {
@@ -149,10 +155,9 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.InvalidFilterSyntax) shouldBe true
-                    if (error is ContextError.InvalidFilterSyntax) {
-                        error.expression shouldBe "((unclosed parenthesis"
-                        error.errorType shouldBe ContextError.FilterSyntaxErrorType.MissingClosingParen(22)
+                    (error is ContextError.InvalidFilter) shouldBe true
+                    if (error is ContextError.InvalidFilter) {
+                        error.filter shouldBe "((unclosed parenthesis"
                     }
                 }
 
@@ -166,10 +171,11 @@ class CreateContextViewUseCaseTest :
                     )
 
                     val errorMessage = "Database connection failed"
-                    val persistenceError = PersistenceError.StorageUnavailable(
-                        occurredAt = kotlinx.datetime.Clock.System.now(),
-                        operation = "save-context-view",
-                        cause = RuntimeException(errorMessage),
+                    val persistenceError = DomainPersistenceError.ConcurrencyConflict(
+                        entityType = "ContextView",
+                        entityId = "test-id",
+                        expectedVersion = "1",
+                        actualVersion = "2",
                     )
                     coEvery { contextViewRepository.save(any()) } returns persistenceError.left()
 
@@ -179,10 +185,9 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is PersistenceError.StorageUnavailable) shouldBe true
-                    if (error is PersistenceError.StorageUnavailable) {
+                    (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) shouldBe true
+                    if (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) {
                         error.operation shouldBe "save-context-view"
-                        error.cause?.message shouldBe errorMessage
                     }
                 }
             }

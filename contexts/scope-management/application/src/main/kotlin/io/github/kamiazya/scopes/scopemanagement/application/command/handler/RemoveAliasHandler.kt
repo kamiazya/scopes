@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler.command
+package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -8,10 +8,9 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
-import io.github.kamiazya.scopes.scopemanagement.application.error.ApplicationError as ScopesError
 
 /**
  * Handler for removing aliases from scopes.
@@ -21,11 +20,11 @@ class RemoveAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
     private val logger: Logger,
-) : CommandHandler<RemoveAliasCommand, ScopesError, Unit> {
+) : CommandHandler<RemoveAliasCommand, ScopeManagementApplicationError, Unit> {
 
     private val errorPresenter = ScopeInputErrorPresenter()
 
-    override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Removing alias",
@@ -43,14 +42,14 @@ class RemoveAliasHandler(
                         ),
                     )
                     when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.Empty ->
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
                             ScopeInputError.AliasEmpty(command.aliasName)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooShort ->
-                            ScopeInputError.AliasTooShort(command.aliasName, error.minimumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.TooLong ->
-                            ScopeInputError.AliasTooLong(command.aliasName, error.maximumLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.aliasName, errorPresenter.presentAliasPattern(error.patternType))
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
+                            ScopeInputError.AliasTooShort(command.aliasName, error.minLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
+                            ScopeInputError.AliasTooLong(command.aliasName, error.maxLength)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
+                            ScopeInputError.AliasInvalidFormat(command.aliasName, errorPresenter.presentAliasPattern(error.expectedPattern))
                     }
                 }
                 .bind()
@@ -65,7 +64,7 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toGenericApplicationError()
+                    error
                 }
                 .bind()
 
@@ -87,7 +86,7 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error.toGenericApplicationError()
+                    error
                 }
                 .bind()
 

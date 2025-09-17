@@ -64,7 +64,7 @@ class ScopeHierarchyServiceTest :
                     val result = service.detectCircularReference(path)
 
                     val error = result.shouldBeLeft()
-                    val circularPathError = error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
+                    val circularPathError = error.shouldBeInstanceOf<ScopeHierarchyError.CircularDependency>()
                     circularPathError.scopeId shouldBe scope1
                 }
 
@@ -83,7 +83,7 @@ class ScopeHierarchyServiceTest :
                     val result = service.detectCircularReference(path)
 
                     val error = result.shouldBeLeft()
-                    error.shouldBeInstanceOf<ScopeHierarchyError.CircularPath>()
+                    error.shouldBeInstanceOf<ScopeHierarchyError.CircularDependency>()
                 }
 
                 it("should return success for empty path") {
@@ -102,7 +102,7 @@ class ScopeHierarchyServiceTest :
                     )
 
                     val error = result.shouldBeLeft()
-                    val selfParentingError = error.shouldBeInstanceOf<ScopeHierarchyError.SelfParenting>()
+                    val selfParentingError = error.shouldBeInstanceOf<ScopeHierarchyError.CircularDependency>()
                     selfParentingError.scopeId shouldBe scopeId
                 }
 
@@ -124,9 +124,9 @@ class ScopeHierarchyServiceTest :
                     )
 
                     val error = result.shouldBeLeft()
-                    val circularError = error.shouldBeInstanceOf<ScopeHierarchyError.CircularReference>()
+                    val circularError = error.shouldBeInstanceOf<ScopeHierarchyError.CircularDependency>()
                     circularError.scopeId shouldBe childId
-                    circularError.parentId shouldBe parentId
+                    circularError.ancestorId shouldBe parentId
                 }
 
                 it("should allow valid parent-child relationship") {
@@ -177,9 +177,9 @@ class ScopeHierarchyServiceTest :
 
                     val error = result.shouldBeLeft()
                     val limitError = error.shouldBeInstanceOf<ScopeHierarchyError.MaxChildrenExceeded>()
-                    limitError.parentScopeId shouldBe parentId
-                    limitError.currentChildrenCount shouldBe 10
-                    limitError.maximumChildren shouldBe 10
+                    limitError.parentId shouldBe parentId
+                    limitError.currentCount shouldBe 10
+                    limitError.maxChildren shouldBe 10
                 }
 
                 it("should allow unlimited children when maxChildren is null") {
@@ -231,8 +231,8 @@ class ScopeHierarchyServiceTest :
                     val error = result.shouldBeLeft()
                     val depthError = error.shouldBeInstanceOf<ScopeHierarchyError.MaxDepthExceeded>()
                     depthError.scopeId shouldBe scopeId
-                    depthError.attemptedDepth shouldBe 6 // currentDepth + 1
-                    depthError.maximumDepth shouldBe 5
+                    depthError.currentDepth shouldBe 6 // currentDepth + 1
+                    depthError.maxDepth shouldBe 5
                 }
 
                 it("should allow unlimited depth when maxDepth is null") {

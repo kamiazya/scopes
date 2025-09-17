@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.application.port
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 
 /**
@@ -16,5 +16,5 @@ interface HierarchyPolicyProvider {
      *
      * @return Either an error or the current HierarchyPolicy
      */
-    suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy>
+    suspend fun getPolicy(): Either<ScopeManagementApplicationError, HierarchyPolicy>
 }

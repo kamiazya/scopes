@@ -6,7 +6,6 @@ import io.github.kamiazya.scopes.scopemanagement.db.Context_views
 import io.github.kamiazya.scopes.scopemanagement.db.GetActiveContext
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
@@ -42,10 +41,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "initializeActiveContext",
-                        cause = e,
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                        entityType = "ActiveContext",
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -79,10 +79,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 result?.let { activeContextToContextView(it) }
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "getActiveContext",
-                        cause = e,
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "ActiveContext",
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -99,10 +100,12 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "setActiveContext",
-                        cause = e,
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+                        entityType = "ActiveContext",
+                        entityId = contextView.id.value,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -118,10 +121,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "clearActiveContext",
-                        cause = e,
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+                        entityType = "ActiveContext",
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }
@@ -135,10 +139,11 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 database.activeContextQueries.hasActiveContext().executeAsOne()
             } catch (e: Exception) {
                 raise(
-                    PersistenceError.StorageUnavailable(
-                        occurredAt = Clock.System.now(),
-                        operation = "hasActiveContext",
-                        cause = e,
+                    ScopesError.RepositoryError(
+                        repositoryName = "ActiveContextRepositoryImpl",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                        entityType = "ActiveContext",
+                        failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
                     ),
                 )
             }

@@ -83,18 +83,17 @@ sealed class TitleValidationError : DomainError() {
     data class InvalidCharacters(val title: String, val invalidCharacters: Set<Char>, val position: Int) : TitleValidationError()
 }
 
-// Hierarchy validation errors (matching actual implementation)
-sealed class ScopeHierarchyError : ConceptualModelError() {
-    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
-    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
-    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
-    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
+// Hierarchy validation errors (matching implementation)
+sealed class ScopeHierarchyError : ScopesError() {
+    data class CircularDependency(val scopeId: ScopeId, val ancestorId: ScopeId) : ScopeHierarchyError()
+    data class MaxDepthExceeded(val scopeId: ScopeId, val currentDepth: Int, val maxDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val parentId: ScopeId, val currentCount: Int, val maxChildren: Int) : ScopeHierarchyError()
 }
 
-// Uniqueness validation with detailed context (matching actual implementation)
-sealed class ScopeUniquenessError : ConceptualModelError() {
+// Uniqueness validation with detailed context (matching implementation)
+sealed class ScopeUniquenessError : ScopesError() {
     // Title uniqueness is enforced at ALL levels including root level
-    data class DuplicateTitle(val occurredAt: Instant, val title: String, val parentScopeId: ScopeId?, val existingScopeId: ScopeId) : ScopeUniquenessError()
+    data class DuplicateTitleInContext(val title: String, val parentId: ScopeId?, val existingId: ScopeId) : ScopeUniquenessError()
 }
 ```
 

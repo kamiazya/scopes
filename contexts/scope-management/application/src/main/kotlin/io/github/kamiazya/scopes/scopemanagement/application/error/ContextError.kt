@@ -3,7 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.error
 /**
  * Errors related to context view operations.
  */
-sealed class ContextError(recoverable: Boolean = true) : ApplicationError(recoverable) {
+sealed class ContextError : ScopeManagementApplicationError() {
     data class KeyInvalidFormat(val attemptedKey: String) : ContextError()
 
     data class StateNotFound(val contextId: String) : ContextError()
@@ -13,7 +13,7 @@ sealed class ContextError(recoverable: Boolean = true) : ApplicationError(recove
     /**
      * Error when trying to delete or modify a context that is currently active
      */
-    data class ContextInUse(val key: String) : ContextError(recoverable = false)
+    data class ContextInUse(val key: String) : ContextError()
 
     /**
      * Error when trying to create a context with a key that already exists

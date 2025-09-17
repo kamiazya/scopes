@@ -39,9 +39,9 @@ fun main(args: Array<String>) {
         System.clearProperty("scopes.cli.exit.code") // Clean up
         exitProcess(exitCode)
     } catch (e: Exception) {
-        // Unexpected error
+        // Unexpected error - log details for debugging without exposing stack trace to users
         System.err.println("Fatal error: ${e.message}")
-        e.printStackTrace(System.err)
+        System.err.println("Error type: ${e.javaClass.simpleName}")
         exitProcess(ExitCode.SOFTWARE_ERROR.code)
     }
 }

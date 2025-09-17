@@ -9,12 +9,13 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetAspectDefi
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListAspectDefinitionsQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspectValueQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 
 /**
  * Query port adapter implementation for Aspect operations.
@@ -24,13 +25,16 @@ public class AspectQueryPortAdapter(
     private val getAspectDefinitionHandler: GetAspectDefinitionHandler,
     private val listAspectDefinitionsHandler: ListAspectDefinitionsHandler,
     private val validateAspectValueUseCase: ValidateAspectValueUseCase,
+    private val timeProvider: TimeProvider,
+    logger: Logger,
 ) : AspectQueryPort {
+    private val applicationErrorMapper = ApplicationErrorMapper(logger)
 
     override suspend fun getAspectDefinition(query: GetAspectDefinitionQuery): Either<ScopeContractError, AspectDefinition?> {
         val result = getAspectDefinitionHandler(GetAspectDefinition(query.key))
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { aspectDefinitionDto ->
                 aspectDefinitionDto?.toContractAspectDefinition().right()
             },
@@ -41,7 +45,7 @@ public class AspectQueryPortAdapter(
         val result = listAspectDefinitionsHandler(ListAspectDefinitions())
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { aspectDefinitionDtos ->
                 aspectDefinitionDtos.map { it.toContractAspectDefinition() }.right()
             },
@@ -60,60 +64,18 @@ public class AspectQueryPortAdapter(
         }
 
         return result.fold(
-            ifLeft = { error -> mapScopesErrorToScopeContractError(error).left() },
+            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
             ifRight = { validatedValues ->
                 validatedValues.right()
             },
         )
     }
 
-    /**
-     * Maps domain errors to contract layer errors for query operations.
-     */
-    private fun mapScopesErrorToScopeContractError(error: ScopesError): ScopeContractError = when (error) {
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
-            ScopeContractError.BusinessError.NotFound(error.identifier)
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
-            when (val constraint = error.constraint) {
-                is ScopesError.ValidationConstraintType.InvalidType ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
-                    )
-                is ScopesError.ValidationConstraintType.MissingRequired ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
-                    )
-                is ScopesError.ValidationConstraintType.InvalidFormat ->
-                    ScopeContractError.InputError.InvalidDescription(
-                        error.field,
-                        ScopeContractError.DescriptionValidationFailure.TooLong(1000, 1001),
-                    )
-                is ScopesError.ValidationConstraintType.NotInAllowedValues ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
-                    )
-                is ScopesError.ValidationConstraintType.InvalidValue ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        constraint.reason,
-                        ScopeContractError.TitleValidationFailure.Empty,
-                    )
-                is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        constraint.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
-                    )
-            }
-        else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")
-    }
-
     private fun io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto.toContractAspectDefinition() = AspectDefinition(
         key = this.key,
         description = this.description ?: "",
         type = this.type.toString(),
-        createdAt = kotlinx.datetime.Clock.System.now(),
-        updatedAt = kotlinx.datetime.Clock.System.now(),
+        createdAt = timeProvider.now(),
+        updatedAt = timeProvider.now(),
     )
 }

@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.platform.infrastructure.transaction
 import arrow.core.Either
 import io.github.kamiazya.scopes.platform.application.port.TransactionContext
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.uuid.ExperimentalUuidApi
@@ -30,10 +31,13 @@ class SimpleTransactionManager : TransactionManager {
             // access, we rely on the repositories to handle their own transactions.
 
             result
-        } catch (e: Exception) {
-            // In case of exception, wrap it in Either.Left
-            @Suppress("UNCHECKED_CAST")
-            Either.Left(e as E)
+        } catch (e: CancellationException) {
+            // Re-throw cancellation exceptions to preserve coroutine cancellation semantics
+            throw e
+        } catch (e: RuntimeException) {
+            // Only catch runtime exceptions, let checked exceptions propagate
+            // Return Either.Left with the runtime exception as the error
+            error("Unexpected runtime exception in transaction: ${e.message}")
         }
     }
 

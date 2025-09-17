@@ -16,14 +16,17 @@ import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolvedConflict
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.SynchronizationResult
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
-import kotlinx.datetime.Clock
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import kotlinx.datetime.Instant
 
 /**
  * Default implementation of DeviceSynchronizationService.
  */
-class DefaultDeviceSynchronizationService(private val syncRepository: SynchronizationRepository, private val eventReader: EventQueryPort) :
-    DeviceSynchronizationService {
+class DefaultDeviceSynchronizationService(
+    private val syncRepository: SynchronizationRepository,
+    private val eventReader: EventQueryPort,
+    private val timeProvider: TimeProvider,
+) : DeviceSynchronizationService {
 
     override suspend fun synchronize(remoteDeviceId: DeviceId, since: Instant?): Either<SynchronizationError, SynchronizationResult> =
         syncRepository.getSyncState(remoteDeviceId)
@@ -34,13 +37,12 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                         SynchronizationError.InvalidDeviceError(
                             deviceId = remoteDeviceId.value,
                             configurationIssue = SynchronizationError.ConfigurationIssue.MISSING_SYNC_CAPABILITY,
-                            occurredAt = Clock.System.now(),
                         ),
                     )
                 }
 
                 // Start sync using domain logic
-                val syncingState = syncState.startSync(now = Clock.System.now())
+                val syncingState = syncState.startSync(now = timeProvider.now())
                 syncRepository.updateSyncState(syncingState)
                     .flatMap {
                         // Get events to push
@@ -55,7 +57,6 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                     deviceId = remoteDeviceId.value,
                                     errorType = SynchronizationError.NetworkErrorType.TIMEOUT,
                                     cause = null,
-                                    occurredAt = Clock.System.now(),
                                 )
                             }
                             .flatMap { events ->
@@ -90,7 +91,7 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                                     eventsPushed = events.size,
                                                     eventsPulled = 0, // TODO: Implement pull logic
                                                     newRemoteVectorClock = newClock,
-                                                    now = Clock.System.now(),
+                                                    now = timeProvider.now(),
                                                 )
 
                                                 syncRepository.updateSyncState(successState)
@@ -101,7 +102,7 @@ class DefaultDeviceSynchronizationService(private val syncRepository: Synchroniz
                                                             eventsPulled = 0, // Simplified - would need actual pull logic
                                                             conflicts = conflicts,
                                                             newVectorClock = newClock,
-                                                            syncedAt = successState.lastSyncAt ?: Clock.System.now(),
+                                                            syncedAt = successState.lastSyncAt ?: timeProvider.now(),
                                                         )
                                                     }
                                                     .mapLeft { error ->

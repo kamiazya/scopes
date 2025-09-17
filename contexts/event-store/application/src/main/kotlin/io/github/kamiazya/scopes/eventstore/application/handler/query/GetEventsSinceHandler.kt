@@ -31,11 +31,9 @@ class GetEventsSinceHandler(private val eventRepository: EventRepository) :
             since = query.since,
             limit = query.limit,
         )
-            .mapLeft { error ->
+            .mapLeft { _ ->
                 EventStoreApplicationError.RepositoryError(
                     operation = EventStoreApplicationError.RepositoryOperation.GET_EVENTS,
-                    occurredAt = error.occurredAt,
-                    cause = null,
                 )
             }
             .map { events ->

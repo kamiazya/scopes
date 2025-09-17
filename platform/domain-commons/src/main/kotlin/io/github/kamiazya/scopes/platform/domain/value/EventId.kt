@@ -5,7 +5,6 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 
 /**
  * Maps a Crockford Base32 character to its corresponding value.
@@ -103,12 +102,10 @@ value class EventId private constructor(val value: String) : Comparable<EventId>
             value.isEmpty() -> DomainError.InvalidEventId(
                 value = value,
                 errorType = DomainError.InvalidEventId.InvalidEventIdType.EMPTY,
-                occurredAt = currentTimestamp(),
             ).left()
             !ULID_PATTERN.matches(value) -> DomainError.InvalidEventId(
                 value = value,
                 errorType = DomainError.InvalidEventId.InvalidEventIdType.INVALID_UUID,
-                occurredAt = currentTimestamp(),
             ).left()
             else -> EventId(value).right()
         }

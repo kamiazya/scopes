@@ -1,4 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.application.dto.common
+
 /**
  * Generic paged result for application layer.
  */

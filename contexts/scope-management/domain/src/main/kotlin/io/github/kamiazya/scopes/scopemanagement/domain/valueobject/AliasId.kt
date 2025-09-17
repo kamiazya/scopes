@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
@@ -27,19 +26,15 @@ value class AliasId private constructor(val value: String) {
             val trimmed = value.trim()
 
             if (trimmed.isBlank()) {
-                return ScopeInputError.IdError.Blank(
-                    occurredAt = currentTimestamp(),
-                    attemptedValue = value,
-                ).left()
+                return ScopeInputError.IdError.EmptyId.left()
             }
 
             return if (ULID.isValid(trimmed)) {
                 AliasId(trimmed).right()
             } else {
-                ScopeInputError.IdError.InvalidFormat(
-                    occurredAt = currentTimestamp(),
-                    attemptedValue = trimmed,
-                    formatType = ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID,
+                ScopeInputError.IdError.InvalidIdFormat(
+                    id = trimmed,
+                    expectedFormat = ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID,
                 ).left()
             }
         }
@@ -58,7 +53,6 @@ value class AliasId private constructor(val value: String) {
         id = value,
     ).mapLeft {
         AggregateIdError.InvalidFormat(
-            occurredAt = currentTimestamp(),
             value = value,
             formatError = AggregateIdError.FormatError.MALFORMED_URI,
         )

@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service.validation
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
-import kotlinx.datetime.Clock
 
 /**
  * Domain service for validating context view filter expressions.
@@ -26,7 +25,7 @@ class ContextViewValidationService(private val strictMode: Boolean = true) {
         // The actual parsing validation will be delegated to the application layer
         // which has access to the AspectQueryParser
         return if (filter.isBlank()) {
-            Either.Left(ContextError.EmptyFilter(occurredAt = Clock.System.now()))
+            Either.Left(ContextError.EmptyFilter)
         } else {
             Either.Right(Unit)
         }

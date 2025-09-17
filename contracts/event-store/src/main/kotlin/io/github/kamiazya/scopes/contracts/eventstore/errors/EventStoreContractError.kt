@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.contracts.eventstore.errors
 
-import kotlinx.datetime.Instant
-
 /**
  * Base error type for event store contract operations.
  */
@@ -15,7 +13,6 @@ public sealed class EventStoreContractError {
         public val eventVersion: Long? = null,
         public val storageReason: StorageFailureReason,
         public val conflictingVersion: Long? = null,
-        public val occurredAt: Instant,
         public val cause: Throwable? = null,
     ) : EventStoreContractError()
 
@@ -37,11 +34,10 @@ public sealed class EventStoreContractError {
         public val timeRange: TimeRange? = null,
         public val queryLimit: Int? = null,
         public val retrievalReason: RetrievalFailureReason,
-        public val occurredAt: Instant,
         public val cause: Throwable? = null,
     ) : EventStoreContractError()
 
-    public data class TimeRange(public val start: Instant, public val end: Instant)
+    public data class TimeRange(public val start: kotlinx.datetime.Instant, public val end: kotlinx.datetime.Instant)
 
     public enum class RetrievalFailureReason {
         NOT_FOUND,
@@ -59,7 +55,6 @@ public sealed class EventStoreContractError {
         public val providedValue: Any?,
         public val constraint: QueryConstraint,
         public val expectedFormat: String? = null,
-        public val occurredAt: Instant,
     ) : EventStoreContractError()
 
     public enum class QueryConstraint {

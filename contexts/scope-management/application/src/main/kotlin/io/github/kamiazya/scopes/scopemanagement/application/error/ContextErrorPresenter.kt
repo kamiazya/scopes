@@ -8,12 +8,21 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
  */
 class ContextErrorPresenter {
 
-    fun presentInvalidFilter(errorType: ContextError.InvalidFilter.InvalidFilterType): String = when (errorType) {
-        ContextError.InvalidFilter.InvalidFilterType.SYNTAX_ERROR -> "Filter has invalid syntax"
-        ContextError.InvalidFilter.InvalidFilterType.UNKNOWN_OPERATOR -> "Filter contains unknown operator"
-        ContextError.InvalidFilter.InvalidFilterType.INVALID_VALUE -> "Filter contains invalid value"
-        ContextError.InvalidFilter.InvalidFilterType.MALFORMED_EXPRESSION -> "Filter expression is malformed"
-        ContextError.InvalidFilter.InvalidFilterType.UNSUPPORTED_FILTER -> "Filter type is not supported"
+    fun presentInvalidFilterSyntax(errorType: ContextError.FilterSyntaxErrorType): String = when (errorType) {
+        ContextError.FilterSyntaxErrorType.EmptyQuery -> "Filter query is empty"
+        ContextError.FilterSyntaxErrorType.EmptyExpression -> "Filter expression is empty"
+        is ContextError.FilterSyntaxErrorType.UnexpectedCharacter -> "Unexpected character '${errorType.char}' at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.UnterminatedString -> "Unterminated string at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.UnexpectedToken -> "Unexpected token at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.MissingClosingParen -> "Missing closing parenthesis at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedExpression -> "Expected expression at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedIdentifier -> "Expected identifier at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedOperator -> "Expected operator at position ${errorType.position}"
+        is ContextError.FilterSyntaxErrorType.ExpectedValue -> "Expected value at position ${errorType.position}"
+        ContextError.FilterSyntaxErrorType.UnbalancedParentheses -> "Unbalanced parentheses in filter"
+        ContextError.FilterSyntaxErrorType.UnbalancedQuotes -> "Unbalanced quotes in filter"
+        ContextError.FilterSyntaxErrorType.EmptyOperator -> "Empty operator in filter"
+        ContextError.FilterSyntaxErrorType.InvalidSyntax -> "Invalid filter syntax"
     }
 
     fun presentInvalidKeyFormat(errorType: ContextError.InvalidKeyFormat.InvalidKeyFormatType): String = when (errorType) {

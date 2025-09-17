@@ -6,7 +6,7 @@ import arrow.core.right
 import arrow.core.toNonEmptyListOrNull
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -16,7 +16,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
@@ -28,7 +27,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         private const val SQLITE_VARIABLE_LIMIT = 999
     }
 
-    override suspend fun save(scope: Scope): Either<PersistenceError, Scope> = withContext(Dispatchers.IO) {
+    override suspend fun save(scope: Scope): Either<ScopesError, Scope> = withContext(Dispatchers.IO) {
         try {
             database.transaction {
                 // Use UPSERT for atomic operation
@@ -58,28 +57,32 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
             scope.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "save",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                entityType = "Scope",
+                entityId = scope.id.value,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findById(id: ScopeId): Either<PersistenceError, Scope?> = withContext(Dispatchers.IO) {
+    override suspend fun findById(id: ScopeId): Either<ScopesError, Scope?> = withContext(Dispatchers.IO) {
         try {
             val scopeRow = database.scopeQueries.findScopeById(id.value).executeAsOneOrNull()
             scopeRow?.let { rowToScope(it) }.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findById",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                entityId = id.value,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findAll(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findAll(): Either<ScopesError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val scopeRows = database.scopeQueries.selectAll().executeAsList()
             if (scopeRows.isEmpty()) {
@@ -95,15 +98,16 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
             scopes.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAll",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findByParentId(parentId: ScopeId?, offset: Int, limit: Int): Either<ScopesError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = if (parentId != null) {
                 database.scopeQueries.findScopesByParentIdPaged(parentId.value, limit.toLong(), offset.toLong()).executeAsList()
@@ -119,28 +123,31 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
             }
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findByParentId(offset,limit)",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun existsById(id: ScopeId): Either<PersistenceError, Boolean> = withContext(Dispatchers.IO) {
+    override suspend fun existsById(id: ScopeId): Either<ScopesError, Boolean> = withContext(Dispatchers.IO) {
         try {
             val exists = database.scopeQueries.existsById(id.value).executeAsOne()
             exists.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "existsById",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                entityId = id.value,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, Boolean> = withContext(Dispatchers.IO) {
+    override suspend fun existsByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, Boolean> = withContext(Dispatchers.IO) {
         try {
             val exists = if (parentId != null) {
                 database.scopeQueries.existsByTitleAndParent(title, parentId.value).executeAsOne()
@@ -150,15 +157,16 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
             exists.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "existsByParentIdAndTitle",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<PersistenceError, ScopeId?> = withContext(Dispatchers.IO) {
+    override suspend fun findIdByParentIdAndTitle(parentId: ScopeId?, title: String): Either<ScopesError, ScopeId?> = withContext(Dispatchers.IO) {
         try {
             val id = if (parentId != null) {
                 database.scopeQueries.findScopeIdByTitleAndParent(title, parentId.value).executeAsOneOrNull()
@@ -173,15 +181,16 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 )
             }.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findIdByParentIdAndTitle",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun deleteById(id: ScopeId): Either<PersistenceError, Unit> = withContext(Dispatchers.IO) {
+    override suspend fun deleteById(id: ScopeId): Either<ScopesError, Unit> = withContext(Dispatchers.IO) {
         try {
             database.transaction {
                 // Delete aspects first
@@ -193,30 +202,33 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
 
             Unit.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "deleteById",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+                entityType = "Scope",
+                entityId = id.value,
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun update(scope: Scope): Either<PersistenceError, Scope> = save(scope)
+    override suspend fun update(scope: Scope): Either<ScopesError, Scope> = save(scope)
 
-    override suspend fun countChildrenOf(parentId: ScopeId): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+    override suspend fun countChildrenOf(parentId: ScopeId): Either<ScopesError, Int> = withContext(Dispatchers.IO) {
         try {
             val count = database.scopeQueries.countChildren(parentId.value).executeAsOne()
             count.toInt().right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "countChildrenOf",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun countByParentId(parentId: ScopeId?): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+    override suspend fun countByParentId(parentId: ScopeId?): Either<ScopesError, Int> = withContext(Dispatchers.IO) {
         try {
             val count = if (parentId != null) {
                 database.scopeQueries.countScopesByParentId(parentId.value).executeAsOne()
@@ -225,15 +237,16 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
             count.toInt().right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "countByParentId",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findAll(offset: Int, limit: Int): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findAll(offset: Int, limit: Int): Either<ScopesError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = database.scopeQueries.selectAllPaged(limit.toLong(), offset.toLong())
                 .executeAsList()
@@ -246,25 +259,27 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
                 rows.map { row -> rowToScopeWithAspects(row, aspectsMap[row.id] ?: emptyList()) }.right()
             }
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAll",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
 
-    override suspend fun findAllRoot(): Either<PersistenceError, List<Scope>> = withContext(Dispatchers.IO) {
+    override suspend fun findAllRoot(): Either<ScopesError, List<Scope>> = withContext(Dispatchers.IO) {
         try {
             val rows = database.scopeQueries.findRootScopes()
                 .executeAsList()
                 .map { row -> rowToScope(row) }
             rows.right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "findAllRoot",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }
@@ -389,15 +404,16 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
         )
     }
 
-    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<PersistenceError, Int> = withContext(Dispatchers.IO) {
+    override suspend fun countByAspectKey(aspectKey: AspectKey): Either<ScopesError, Int> = withContext(Dispatchers.IO) {
         try {
             val count = database.scopeAspectQueries.countByAspectKey(aspectKey.value).executeAsOne()
             count.toInt().right()
         } catch (e: Exception) {
-            PersistenceError.StorageUnavailable(
-                occurredAt = Clock.System.now(),
-                operation = "countByAspectKey",
-                cause = e,
+            ScopesError.RepositoryError(
+                repositoryName = "SqlDelightScopeRepository",
+                operation = ScopesError.RepositoryError.RepositoryOperation.COUNT,
+                entityType = "Scope",
+                failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ).left()
         }
     }

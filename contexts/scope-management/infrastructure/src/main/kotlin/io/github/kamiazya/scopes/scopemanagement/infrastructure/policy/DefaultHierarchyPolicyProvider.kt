@@ -2,8 +2,8 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.policy
 
 import arrow.core.Either
 import arrow.core.right
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 
 /**
@@ -15,5 +15,5 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPol
  */
 class DefaultHierarchyPolicyProvider : HierarchyPolicyProvider {
 
-    override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = HierarchyPolicy.default().right()
+    override suspend fun getPolicy(): Either<ScopeManagementApplicationError, HierarchyPolicy> = HierarchyPolicy.default().right()
 }

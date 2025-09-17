@@ -39,6 +39,7 @@ val deviceSyncInfrastructureModule = module {
         SqlDelightSynchronizationRepository(
             deviceQueries = database.deviceQueries,
             vectorClockQueries = database.vectorClockQueries,
+            timeProvider = get(),
         )
     }
 
@@ -65,6 +66,7 @@ val deviceSyncInfrastructureModule = module {
         DefaultDeviceSynchronizationService(
             syncRepository = get(),
             eventReader = get<EventQueryPort>(),
+            timeProvider = get(),
         )
     }
 
@@ -76,6 +78,7 @@ val deviceSyncInfrastructureModule = module {
         DeviceSynchronizationCommandPortAdapter(
             synchronizeHandler = get(),
             syncRepository = get(),
+            timeProvider = get(),
         )
     }
 }

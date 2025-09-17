@@ -35,7 +35,6 @@ class EventStoreQueryPortAdapter(
                     providedValue = query.aggregateId,
                     constraint = EventStoreContractError.QueryConstraint.INVALID_FORMAT,
                     expectedFormat = "UUID format",
-                    occurredAt = kotlinx.datetime.Clock.System.now(),
                 )
             }
             .flatMap { aggregateId ->
@@ -53,13 +52,11 @@ class EventStoreQueryPortAdapter(
                                     parameterName = "query",
                                     providedValue = query,
                                     constraint = EventStoreContractError.QueryConstraint.INVALID_COMBINATION,
-                                    occurredAt = error.occurredAt,
                                 )
                             else ->
                                 EventStoreContractError.EventRetrievalError(
                                     aggregateId = query.aggregateId,
                                     retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
-                                    occurredAt = error.occurredAt,
                                     cause = null,
                                 )
                         }
@@ -100,12 +97,10 @@ class EventStoreQueryPortAdapter(
                         parameterName = "query",
                         providedValue = query,
                         constraint = EventStoreContractError.QueryConstraint.INVALID_FORMAT,
-                        occurredAt = error.occurredAt,
                     )
                 else ->
                     EventStoreContractError.EventRetrievalError(
                         retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
-                        occurredAt = error.occurredAt,
                         cause = null,
                     )
             }
@@ -160,7 +155,6 @@ class EventStoreQueryPortAdapter(
             Either.Left(
                 EventStoreContractError.EventRetrievalError(
                     retrievalReason = EventStoreContractError.RetrievalFailureReason.CORRUPTED_DATA,
-                    occurredAt = kotlinx.datetime.Clock.System.now(),
                     cause = e,
                 ),
             )
@@ -197,7 +191,6 @@ class EventStoreQueryPortAdapter(
             Either.Left(
                 EventStoreContractError.EventRetrievalError(
                     retrievalReason = EventStoreContractError.RetrievalFailureReason.CORRUPTED_DATA,
-                    occurredAt = kotlinx.datetime.Clock.System.now(),
                     cause = e,
                 ),
             )

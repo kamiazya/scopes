@@ -52,10 +52,8 @@ class ScopeAliasPolicy(private val conflictResolutionStrategy: AliasConflictReso
                 // Rule: Alias name must not be taken by another scope
                 raise(
                     ScopeAliasError.DuplicateAlias(
-                        occurredAt = Clock.System.now(),
-                        aliasName = aliasName.value,
-                        existingScopeId = existingAliasWithName.scopeId,
-                        attemptedScopeId = scopeId,
+                        alias = aliasName.value,
+                        scopeId = existingAliasWithName.scopeId,
                     ),
                 )
             } else if (existingAliasWithName.isCustom()) {
@@ -103,10 +101,8 @@ class ScopeAliasPolicy(private val conflictResolutionStrategy: AliasConflictReso
     fun validateCustomAliasCreation(scopeId: ScopeId, aliasName: AliasName, existingAliasWithName: ScopeAlias?): Either<ScopesError, ScopeAlias> = either {
         ensure(existingAliasWithName == null) {
             ScopeAliasError.DuplicateAlias(
-                occurredAt = Clock.System.now(),
-                aliasName = aliasName.value,
-                existingScopeId = existingAliasWithName!!.scopeId,
-                attemptedScopeId = scopeId,
+                alias = aliasName.value,
+                scopeId = existingAliasWithName!!.scopeId,
             )
         }
 
@@ -143,10 +139,8 @@ class ScopeAliasPolicy(private val conflictResolutionStrategy: AliasConflictReso
         // Ensure the alias name is not already taken
         ensure(existingAliasWithName == null) {
             ScopeAliasError.DuplicateAlias(
-                occurredAt = Clock.System.now(),
-                aliasName = aliasName.value,
-                existingScopeId = existingAliasWithName!!.scopeId,
-                attemptedScopeId = scopeId,
+                alias = aliasName.value,
+                scopeId = existingAliasWithName!!.scopeId,
             )
         }
 

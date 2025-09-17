@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.scopemanagement.application.error.*
-import io.github.kamiazya.scopes.scopemanagement.application.service.ContextAuditService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
@@ -42,7 +41,7 @@ class ActiveContextService(
      * Set the active context and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun setActiveContext(context: ContextView, activatedBy: String? = null): Either<ApplicationError, Unit> = either {
+    suspend fun setActiveContext(context: ContextView, activatedBy: String? = null): Either<ScopeManagementApplicationError, Unit> = either {
         // Get current context before switching for audit trail
         val previousContext = getCurrentContext()
 
@@ -51,9 +50,8 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "setActiveContext",
-                        cause = error.toString(),
                     )
                 }
             }
@@ -65,7 +63,7 @@ class ActiveContextService(
             previousContextId = previousContext?.id?.value,
             activatedBy = activatedBy,
         ).fold(
-            { error ->
+            { _ ->
                 // TODO: Add proper logging - for now, silently continue
                 // logger.warn("Failed to publish context activated event: $error")
             },
@@ -77,7 +75,7 @@ class ActiveContextService(
      * Clear the active context and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun clearActiveContext(clearedBy: String? = null): Either<ApplicationError, Unit> = either {
+    suspend fun clearActiveContext(clearedBy: String? = null): Either<ScopeManagementApplicationError, Unit> = either {
         // Get current context before clearing for audit trail
         val previousContext = getCurrentContext()
 
@@ -86,9 +84,8 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "clearActiveContext",
-                        cause = error.toString(),
                     )
                 }
             }
@@ -100,7 +97,7 @@ class ActiveContextService(
                 previousContext = previous,
                 clearedBy = clearedBy,
             ).fold(
-                { error ->
+                { _ ->
                     // TODO: Add proper logging - for now, silently continue
                     // logger.warn("Failed to publish active context cleared event: $error")
                 },
@@ -113,7 +110,7 @@ class ActiveContextService(
      * Switch to a context by key and publish audit event.
      * Maps domain errors to application errors following Clean Architecture.
      */
-    suspend fun switchToContextByKey(key: String, activatedBy: String? = null): Either<ApplicationError, ContextView> = either {
+    suspend fun switchToContextByKey(key: String, activatedBy: String? = null): Either<ScopeManagementApplicationError, ContextView> = either {
         val contextKey = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey.create(key)
             .mapLeft { errorMsg ->
                 ContextError.KeyInvalidFormat(
@@ -126,9 +123,8 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> PersistenceError.StorageUnavailable(
+                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "findByKey",
-                        cause = error.toString(),
                     )
                 }
             }
@@ -140,7 +136,7 @@ class ActiveContextService(
 
         // Use setActiveContext method to ensure audit event is published
         setActiveContext(context, activatedBy)
-            .mapLeft { it } // Already mapped to ApplicationError
+            .mapLeft { it } // Already mapped to ScopeManagementApplicationError
             .bind()
 
         context

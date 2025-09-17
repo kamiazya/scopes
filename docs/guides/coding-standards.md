@@ -54,23 +54,17 @@ sealed class TitleValidationError {
 // Note: Application errors are translated to domain errors at the application/domain boundary
 // This ensures callers receive appropriate domain-level errors while maintaining layer separation
 
-// Hierarchy validation errors (matching actual implementation)
-sealed class ScopeHierarchyError : ConceptualModelError() {
-    data class MaxDepthExceeded(val occurredAt: Instant, val scopeId: ScopeId, val attemptedDepth: Int, val maximumDepth: Int) : ScopeHierarchyError()
-    data class MaxChildrenExceeded(val occurredAt: Instant, val parentScopeId: ScopeId, val currentChildrenCount: Int, val maximumChildren: Int) : ScopeHierarchyError()
-    data class CircularReference(val occurredAt: Instant, val scopeId: ScopeId, val cyclePath: List<ScopeId>) : ScopeHierarchyError()
-    data class SelfParenting(val occurredAt: Instant, val scopeId: ScopeId) : ScopeHierarchyError()
+// Hierarchy validation errors (matching implementation)
+sealed class ScopeHierarchyError : ScopesError() {
+    data class CircularDependency(val scopeId: ScopeId, val ancestorId: ScopeId) : ScopeHierarchyError()
+    data class MaxDepthExceeded(val scopeId: ScopeId, val currentDepth: Int, val maxDepth: Int) : ScopeHierarchyError()
+    data class MaxChildrenExceeded(val parentId: ScopeId, val currentCount: Int, val maxChildren: Int) : ScopeHierarchyError()
 }
 
-// Uniqueness validation (matching actual implementation)
+// Uniqueness validation (matching implementation)
 // Title uniqueness is enforced at ALL levels including root level
-sealed class ScopeUniquenessError : ConceptualModelError() {
-    data class DuplicateTitle(
-        val occurredAt: Instant,
-        val title: String,
-        val parentScopeId: ScopeId?,
-        val existingScopeId: ScopeId
-    ) : ScopeUniquenessError()
+sealed class ScopeUniquenessError : ScopesError() {
+    data class DuplicateTitleInContext(val title: String, val parentId: ScopeId?, val existingId: ScopeId) : ScopeUniquenessError()
 }
 
 sealed class ApplicationValidationError {
@@ -525,25 +519,25 @@ Use Arrow's `either` blocks with `ensure()`, `ensureNotNull()` to create flat, l
 ### Pattern Guidelines
 
 1. **Use `ensure()` for validation checks**
-   - Replace `if (!condition) raise(error)` with `ensure(condition) { error }`
-   - Makes the happy path more visible
-   - **NEVER use `raise()` directly** - always prefer `ensure()` or `ensureNotNull()`
+    - Replace `if (!condition) raise(error)` with `ensure(condition) { error }`
+    - Makes the happy path more visible
+    - **NEVER use `raise()` directly** - always prefer `ensure()` or `ensureNotNull()`
 
 2. **Use `ensureNotNull()` for null checks**
-   - Replace `if (value == null) raise(error)` with `ensureNotNull(value) { error }`
-   - Provides smart casting after the check
+    - Replace `if (value == null) raise(error)` with `ensureNotNull(value) { error }`
+    - Provides smart casting after the check
 
 3. **Use `forEach` instead of `for` loops**
-   - More functional and composable
-   - Works well with `either` blocks
+    - More functional and composable
+    - Works well with `either` blocks
 
 4. **Single `either` block per function**
-   - Avoid nested `either` blocks
-   - Keep error handling flat and linear
+    - Avoid nested `either` blocks
+    - Keep error handling flat and linear
 
 5. **Special cases for `ensure(false)`**
-   - Only use `ensure(false) { error }` when you need to always fail (e.g., after exhausting retries)
-   - This is equivalent to `raise(error)` but maintains consistency with the ensure pattern
+    - Only use `ensure(false) { error }` when you need to always fail (e.g., after exhausting retries)
+    - This is equivalent to `raise(error)` but maintains consistency with the ensure pattern
 
 ### Before (Nested Structure - Avoid This)
 ```kotlin

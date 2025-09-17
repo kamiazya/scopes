@@ -3,10 +3,8 @@ package io.github.kamiazya.scopes.scopemanagement.application.projection
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,11 +30,16 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
     private var scopeActivities = mutableMapOf<String, MutableList<ScopeActivityProjection>>()
     private var cachedMetrics: ScopeMetricsProjection? = null
 
-    override suspend fun getScopeSummary(scopeId: String): Either<ScopesError, ScopeSummaryProjection?> = scopeSummaries[scopeId].right()
+    override suspend fun getScopeSummary(scopeId: String): Either<ScopeManagementApplicationError, ScopeSummaryProjection?> = scopeSummaries[scopeId].right()
 
-    override suspend fun getScopeDetail(scopeId: String): Either<ScopesError, ScopeDetailProjection?> = scopeDetails[scopeId].right()
+    override suspend fun getScopeDetail(scopeId: String): Either<ScopeManagementApplicationError, ScopeDetailProjection?> = scopeDetails[scopeId].right()
 
-    override suspend fun getScopeTree(rootScopeId: String?, maxDepth: Int, offset: Int, limit: Int): Either<ScopesError, List<ScopeTreeProjection>> {
+    override suspend fun getScopeTree(
+        rootScopeId: String?,
+        maxDepth: Int,
+        offset: Int,
+        limit: Int,
+    ): Either<ScopeManagementApplicationError, List<ScopeTreeProjection>> {
         val rootScopes = if (rootScopeId != null) {
             scopeDetails[rootScopeId]?.let { listOf(it) } ?: emptyList()
         } else {
@@ -70,7 +73,12 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         )
     }
 
-    override suspend fun searchScopes(query: String, parentId: String?, offset: Int, limit: Int): Either<ScopesError, List<ScopeSearchProjection>> {
+    override suspend fun searchScopes(
+        query: String,
+        parentId: String?,
+        offset: Int,
+        limit: Int,
+    ): Either<ScopeManagementApplicationError, List<ScopeSearchProjection>> {
         val searchResults = scopeDetails.values
             .filter { scope ->
                 val matchesParent = parentId == null || isDescendantOf(scope.id, parentId)
@@ -148,7 +156,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         return score
     }
 
-    override suspend fun getScopeActivity(scopeId: String, offset: Int, limit: Int): Either<ScopesError, List<ScopeActivityProjection>> {
+    override suspend fun getScopeActivity(scopeId: String, offset: Int, limit: Int): Either<ScopeManagementApplicationError, List<ScopeActivityProjection>> {
         val activities = scopeActivities[scopeId]
             ?.drop(offset)
             ?.take(limit)
@@ -157,7 +165,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         return activities.right()
     }
 
-    override suspend fun getScopeMetrics(): Either<ScopesError, ScopeMetricsProjection> {
+    override suspend fun getScopeMetrics(): Either<ScopeManagementApplicationError, ScopeMetricsProjection> {
         val metrics = cachedMetrics ?: calculateMetrics()
         cachedMetrics = metrics
         return metrics.right()
@@ -178,7 +186,12 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         )
     }
 
-    override suspend fun getScopesByAspect(aspectKey: String, aspectValue: String, offset: Int, limit: Int): Either<ScopesError, List<ScopeSummaryProjection>> {
+    override suspend fun getScopesByAspect(
+        aspectKey: String,
+        aspectValue: String,
+        offset: Int,
+        limit: Int,
+    ): Either<ScopeManagementApplicationError, List<ScopeSummaryProjection>> {
         val matchingScopes = scopeDetails.values
             .filter { it.aspects[aspectKey] == aspectValue }
             .drop(offset)
@@ -188,7 +201,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         return matchingScopes.right()
     }
 
-    override suspend fun getRecentlyModifiedScopes(offset: Int, limit: Int): Either<ScopesError, List<ScopeSummaryProjection>> {
+    override suspend fun getRecentlyModifiedScopes(offset: Int, limit: Int): Either<ScopeManagementApplicationError, List<ScopeSummaryProjection>> {
         val recentScopes = scopeSummaries.values
             .sortedByDescending { it.lastModified }
             .drop(offset)
@@ -197,7 +210,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         return recentScopes.right()
     }
 
-    override suspend fun refreshProjection(scopeId: String): Either<ScopesError, Unit> {
+    override suspend fun refreshProjection(scopeId: String): Either<ScopeManagementApplicationError, Unit> {
         // In a real implementation, this would rebuild the projection from domain events
         // For now, we just verify the scope exists
         return if (scopeDetails.containsKey(scopeId)) {
@@ -205,13 +218,18 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
         } else {
             // Create ScopeId from string for the error
             ScopeId.create(scopeId).fold(
-                { ScopeInputError.IdError.InvalidFormat(currentTimestamp(), scopeId, ScopeInputError.IdError.InvalidFormat.IdFormatType.ULID).left() },
-                { validScopeId -> ScopeError.NotFound(validScopeId, Clock.System.now()).left() },
+                { it.toGenericApplicationError().left() },
+                { validScopeId ->
+                    ScopeManagementApplicationError.PersistenceError.NotFound(
+                        entityType = "Scope",
+                        entityId = scopeId,
+                    ).left()
+                },
             )
         }
     }
 
-    override suspend fun refreshAllProjections(): Either<ScopesError, Unit> {
+    override suspend fun refreshAllProjections(): Either<ScopeManagementApplicationError, Unit> {
         // In a real implementation, this would rebuild all projections from domain events
         cachedMetrics = null // Invalidate cached metrics
         return Unit.right()

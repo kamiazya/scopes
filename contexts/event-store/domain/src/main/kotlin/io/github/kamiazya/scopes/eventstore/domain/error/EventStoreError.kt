@@ -1,12 +1,9 @@
 package io.github.kamiazya.scopes.eventstore.domain.error
 
-import kotlinx.datetime.Instant
-
 /**
  * Base error type for event store operations.
  */
 sealed class EventStoreError {
-    abstract val occurredAt: Instant
 
     /**
      * Error when storing an event fails.
@@ -16,7 +13,6 @@ sealed class EventStoreError {
         val eventType: String,
         val eventVersion: Long? = null,
         val storageFailureType: StorageFailureType,
-        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -35,7 +31,6 @@ sealed class EventStoreError {
         val query: EventQuery,
         val failureReason: RetrievalFailureReason,
         val attemptedSources: List<String> = emptyList(),
-        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -62,7 +57,6 @@ sealed class EventStoreError {
         val operation: DatabaseOperation,
         val databaseType: String = "SQLite",
         val connectionState: ConnectionState,
-        override val occurredAt: Instant,
         val cause: Throwable? = null,
     ) : EventStoreError()
 
@@ -89,12 +83,8 @@ sealed class EventStoreError {
     /**
      * Error for invalid event data.
      */
-    data class InvalidEventError(
-        val eventType: String?,
-        val validationErrors: List<ValidationIssue>,
-        val eventData: Map<String, Any?> = emptyMap(),
-        override val occurredAt: Instant,
-    ) : EventStoreError()
+    data class InvalidEventError(val eventType: String?, val validationErrors: List<ValidationIssue>, val eventData: Map<String, Any?> = emptyMap()) :
+        EventStoreError()
 
     data class ValidationIssue(val field: String, val rule: ValidationRule, val actualValue: Any? = null)
 
@@ -109,13 +99,8 @@ sealed class EventStoreError {
     /**
      * Error for persistence operations.
      */
-    data class PersistenceError(
-        val operation: PersistenceOperation,
-        val dataType: String,
-        val dataSize: Long? = null,
-        val retryCount: Int = 0,
-        override val occurredAt: Instant,
-    ) : EventStoreError()
+    data class PersistenceError(val operation: PersistenceOperation, val dataType: String, val dataSize: Long? = null, val retryCount: Int = 0) :
+        EventStoreError()
 
     enum class PersistenceOperation {
         WRITE_TO_DISK,

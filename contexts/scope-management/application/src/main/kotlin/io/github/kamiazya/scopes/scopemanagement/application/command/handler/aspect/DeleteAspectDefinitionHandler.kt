@@ -5,11 +5,12 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import kotlinx.datetime.Clock
 
 /**
  * Handler for deleting an aspect definition.
@@ -19,56 +20,55 @@ class DeleteAspectDefinitionHandler(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val aspectUsageValidationService: AspectUsageValidationService,
     private val transactionManager: TransactionManager,
-) : CommandHandler<DeleteAspectDefinitionCommand, ScopesError, Unit> {
+) : CommandHandler<DeleteAspectDefinitionCommand, ScopeManagementApplicationError, Unit> {
 
-    override suspend operator fun invoke(command: DeleteAspectDefinitionCommand): Either<ScopesError, Unit> = transactionManager.inTransaction {
-        either {
-            // Validate and create aspect key
-            val aspectKey = AspectKey.create(command.key).bind()
+    override suspend operator fun invoke(command: DeleteAspectDefinitionCommand): Either<ScopeManagementApplicationError, Unit> =
+        transactionManager.inTransaction {
+            either {
+                // Validate and create aspect key
+                val aspectKey = AspectKey.create(command.key)
+                    .mapLeft { it.toGenericApplicationError() }
+                    .bind()
 
-            // Check if definition exists
-            aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error ->
-                    raise(
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            cause = error as? Throwable,
-                            context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
-                            occurredAt = Clock.System.now(),
-                        ),
-                    )
-                },
-                { definition ->
-                    definition ?: raise(
-                        ScopesError.NotFound(
-                            entityType = "AspectDefinition",
-                            identifier = command.key,
-                            identifierType = "key",
-                            occurredAt = Clock.System.now(),
-                        ),
-                    )
-                },
-            )
+                // Check if definition exists
+                aspectDefinitionRepository.findByKey(aspectKey).fold(
+                    { error ->
+                        raise(
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "aspect-repository",
+                                context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
+                            ).toGenericApplicationError(),
+                        )
+                    },
+                    { definition ->
+                        definition ?: raise(
+                            ScopesError.NotFound(
+                                entityType = "AspectDefinition",
+                                identifier = command.key,
+                                identifierType = "key",
+                            ).toGenericApplicationError(),
+                        )
+                    },
+                )
 
-            // Check if aspect is in use by any scopes
-            aspectUsageValidationService.ensureNotInUse(aspectKey).bind()
+                // Check if aspect is in use by any scopes
+                aspectUsageValidationService.ensureNotInUse(aspectKey)
+                    .bind()
 
-            // Delete from repository
-            aspectDefinitionRepository.deleteByKey(aspectKey).fold(
-                { error ->
-                    raise(
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            cause = error as? Throwable,
-                            context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
-                            occurredAt = Clock.System.now(),
-                        ),
-                    )
-                },
-                { Unit },
-            )
+                // Delete from repository
+                aspectDefinitionRepository.deleteByKey(aspectKey).fold(
+                    { _ ->
+                        raise(
+                            ScopesError.SystemError(
+                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
+                                service = "aspect-repository",
+                                context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
+                            ).toGenericApplicationError(),
+                        )
+                    },
+                    { Unit },
+                )
+            }
         }
-    }
 }

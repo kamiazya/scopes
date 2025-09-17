@@ -73,7 +73,6 @@ class EventCommandPortAdapter(private val eventStoreCommandPort: EventStoreComma
                 aggregateId = event.aggregateId.value,
                 eventType = eventType,
                 eventCount = 1,
-                cause = contractError as? Throwable,
             )
         }.map {
             logger.debug("Successfully appended event: $eventType")
@@ -97,7 +96,6 @@ class EventCommandPortAdapter(private val eventStoreCommandPort: EventStoreComma
                 aggregateId = event.aggregateId.value,
                 eventType = eventType,
                 eventCount = 1,
-                cause = e,
             ),
         )
     }

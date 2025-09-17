@@ -1,7 +1,5 @@
 package io.github.kamiazya.scopes.platform.domain.error
 
-import kotlinx.datetime.Instant
-
 /**
  * Base sealed hierarchy for all domain errors in the platform layer.
  *
@@ -10,12 +8,11 @@ import kotlinx.datetime.Instant
  * or wrap these platform errors as needed.
  */
 sealed class DomainError {
-    abstract val occurredAt: Instant
 
     /**
      * Invalid aggregate ID format or value.
      */
-    data class InvalidId(val value: String, val errorType: InvalidIdType, override val occurredAt: Instant) : DomainError() {
+    data class InvalidId(val value: String, val errorType: InvalidIdType) : DomainError() {
         enum class InvalidIdType {
             EMPTY,
             INVALID_FORMAT,
@@ -28,7 +25,7 @@ sealed class DomainError {
     /**
      * Invalid aggregate version.
      */
-    data class InvalidVersion(val value: Long, val errorType: InvalidVersionType, override val occurredAt: Instant) : DomainError() {
+    data class InvalidVersion(val value: Long, val errorType: InvalidVersionType) : DomainError() {
         enum class InvalidVersionType {
             NEGATIVE,
             TOO_LARGE,
@@ -39,7 +36,7 @@ sealed class DomainError {
     /**
      * Invalid event ID format or value.
      */
-    data class InvalidEventId(val value: String, val errorType: InvalidEventIdType, override val occurredAt: Instant) : DomainError() {
+    data class InvalidEventId(val value: String, val errorType: InvalidEventIdType) : DomainError() {
         enum class InvalidEventIdType {
             EMPTY,
             INVALID_FORMAT,
@@ -50,13 +47,12 @@ sealed class DomainError {
     /**
      * Optimistic concurrency conflict.
      */
-    data class ConcurrencyConflict(val aggregateId: String, val expectedVersion: Long, val actualVersion: Long, override val occurredAt: Instant) :
-        DomainError()
+    data class ConcurrencyConflict(val aggregateId: String, val expectedVersion: Long, val actualVersion: Long) : DomainError()
 
     /**
      * Aggregate not found.
      */
-    data class AggregateNotFound(val aggregateId: String, val aggregateType: String? = null, override val occurredAt: Instant) : DomainError()
+    data class AggregateNotFound(val aggregateId: String, val aggregateType: String? = null) : DomainError()
 
     /**
      * Invalid state transition.
@@ -66,7 +62,6 @@ sealed class DomainError {
         val currentState: String,
         val attemptedTransition: String,
         val errorType: InvalidStateTransitionType,
-        override val occurredAt: Instant,
     ) : DomainError() {
         enum class InvalidStateTransitionType {
             INVALID_SOURCE_STATE,

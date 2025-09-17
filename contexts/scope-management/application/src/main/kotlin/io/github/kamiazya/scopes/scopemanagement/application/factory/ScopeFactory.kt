@@ -3,21 +3,17 @@ package io.github.kamiazya.scopes.scopemanagement.application.factory
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.domain.error.currentTimestamp
 import io.github.kamiazya.scopes.platform.observability.Loggable
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
-import io.github.kamiazya.scopes.scopemanagement.domain.error.AvailabilityReason
-import io.github.kamiazya.scopes.scopemanagement.domain.error.HierarchyOperation
-import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeUniquenessError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError as AppScopeUniquenessError
 
 /**
  * Factory for creating Scope aggregates with complex validation logic.
@@ -41,33 +37,21 @@ class ScopeFactory(
 
     companion object : Loggable {
         /**
-         * Maps persistence errors to domain-specific hierarchy errors.
+         * Maps repository errors to application errors.
          * Logs technical details while returning business-meaningful errors.
          */
-        private fun mapPersistenceError(error: PersistenceError, operation: HierarchyOperation, scopeId: ScopeId? = null): ScopeHierarchyError {
+        private fun mapRepositoryError(error: Any, operation: String): ScopeManagementApplicationError {
             // Log technical details for debugging
             logger.debug(
                 "Factory operation failed",
                 mapOf(
-                    "operation" to operation.name,
-                    "scopeId" to (scopeId?.value ?: "null"),
+                    "operation" to operation,
                     "error" to error.toString(),
                 ),
             )
 
-            // Map to business-meaningful error
-            val reason = when (error) {
-                is PersistenceError.StorageUnavailable -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
-                is PersistenceError.DataCorruption -> AvailabilityReason.CORRUPTED_HIERARCHY
-                is PersistenceError.ConcurrencyConflict -> AvailabilityReason.CONCURRENT_MODIFICATION
-                is PersistenceError.NotFound -> AvailabilityReason.TEMPORARILY_UNAVAILABLE
-            }
-
-            return ScopeHierarchyError.HierarchyUnavailable(
-                occurredAt = currentTimestamp(),
-                scopeId = scopeId,
+            return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                 operation = operation,
-                reason = reason,
             )
         }
     }
@@ -86,9 +70,11 @@ class ScopeFactory(
         description: String? = null,
         parentId: ScopeId? = null,
         hierarchyPolicy: HierarchyPolicy,
-    ): Either<ScopesError, ScopeAggregate> = either {
+    ): Either<ScopeManagementApplicationError, ScopeAggregate> = either {
         // First, validate the title format
-        val validatedTitle = ScopeTitle.create(title).bind()
+        val validatedTitle = ScopeTitle.create(title)
+            .mapLeft { it.toGenericApplicationError() }
+            .bind()
 
         // Generate the scope ID early so we can use it in error messages
         val newScopeId = ScopeId.generate()
@@ -98,31 +84,32 @@ class ScopeFactory(
             // Validate parent exists
             val parentExists = scopeRepository.existsById(parentId)
                 .mapLeft { error ->
-                    mapPersistenceError(error, HierarchyOperation.VERIFY_EXISTENCE, parentId)
+                    mapRepositoryError(error, "verify-parent-existence")
                 }
                 .bind()
             ensure(parentExists) {
-                ScopeHierarchyError.ParentNotFound(
-                    occurredAt = currentTimestamp(),
-                    scopeId = newScopeId,
-                    parentId = parentId,
+                ScopeManagementApplicationError.PersistenceError.NotFound(
+                    entityType = "Scope",
+                    entityId = parentId.value,
                 )
             }
 
             // Calculate current hierarchy depth using application service
-            val currentDepth = hierarchyApplicationService.calculateHierarchyDepth(parentId).bind()
+            val currentDepth = hierarchyApplicationService.calculateHierarchyDepth(parentId)
+                .mapLeft { it.toGenericApplicationError() }
+                .bind()
 
             // Validate depth limit using pure domain service
             hierarchyService.validateHierarchyDepth(
                 newScopeId,
                 currentDepth,
                 hierarchyPolicy.maxDepth,
-            ).bind()
+            ).mapLeft { it.toGenericApplicationError() }.bind()
 
             // Get existing children count
             val existingChildren = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
                 .mapLeft { error ->
-                    mapPersistenceError(error, HierarchyOperation.COUNT_CHILDREN, parentId)
+                    mapRepositoryError(error, "count-children")
                 }
                 .bind()
 
@@ -131,7 +118,7 @@ class ScopeFactory(
                 parentId,
                 existingChildren.size,
                 hierarchyPolicy.maxChildrenPerScope,
-            ).bind()
+            ).mapLeft { it.toGenericApplicationError() }.bind()
         }
 
         // Check title uniqueness at the same level
@@ -139,15 +126,14 @@ class ScopeFactory(
             parentId,
             validatedTitle.value,
         ).mapLeft { error ->
-            mapPersistenceError(error, HierarchyOperation.VERIFY_EXISTENCE, parentId)
+            mapRepositoryError(error, "check-title-uniqueness")
         }.bind()
 
         ensure(existingScopeId == null) {
-            ScopeUniquenessError.DuplicateTitle(
-                occurredAt = currentTimestamp(),
+            AppScopeUniquenessError.DuplicateTitle(
                 title = title,
-                parentScopeId = parentId,
-                existingScopeId = existingScopeId!!,
+                parentScopeId = parentId?.value,
+                existingScopeId = existingScopeId!!.value,
             )
         }
 
@@ -157,6 +143,6 @@ class ScopeFactory(
             description = description,
             parentId = parentId,
             scopeId = newScopeId,
-        ).bind()
+        ).mapLeft { it.toGenericApplicationError() }.bind()
     }
 }
