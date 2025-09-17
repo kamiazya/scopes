@@ -8,8 +8,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectError
  *
  * This service provides centralized logic for parsing, validating,
  * and formatting aspects, removing this responsibility from the interface layer.
+ *
+ * @param allowEmptyAspects Whether to allow empty aspect maps in validation (default: false)
  */
-class AspectManagementService {
+class AspectManagementService(private val allowEmptyAspects: Boolean = false) {
 
     /**
      * Parse aspect entry from string format.
@@ -58,34 +60,58 @@ class AspectManagementService {
      * @return Either validation error or validated aspects
      */
     fun validateAspects(aspects: Map<String, String>): Either<AspectError, Map<String, String>> {
-        // Basic validation for now
-        // TODO: Add more sophisticated validation based on aspect definitions
-
-        if (aspects.isEmpty()) {
+        if (aspects.isEmpty() && !allowEmptyAspects) {
             return Either.Left(AspectError.NoAspectsProvided)
         }
 
         for ((key, value) in aspects) {
-            if (key.isBlank()) {
-                return Either.Left(
+            when {
+                key.isBlank() -> return Either.Left(
                     AspectError.InvalidAspectKey(
                         key,
                         AspectError.InvalidAspectKey.KeyError.EMPTY,
                     ),
                 )
-            }
-            if (value.isBlank()) {
-                return Either.Left(
+                key.length > MAX_ASPECT_KEY_LENGTH -> return Either.Left(
+                    AspectError.InvalidAspectKey(
+                        key,
+                        AspectError.InvalidAspectKey.KeyError.TOO_LONG,
+                    ),
+                )
+                !isValidAspectKeyFormat(key) -> return Either.Left(
+                    AspectError.InvalidAspectKey(
+                        key,
+                        AspectError.InvalidAspectKey.KeyError.CONTAINS_INVALID_CHARACTERS,
+                    ),
+                )
+                value.isBlank() -> return Either.Left(
                     AspectError.InvalidAspectValue(
                         key,
                         value,
                         AspectError.InvalidAspectValue.ValueError.EMPTY,
                     ),
                 )
+                value.length > MAX_ASPECT_VALUE_LENGTH -> return Either.Left(
+                    AspectError.InvalidAspectValue(
+                        key,
+                        value,
+                        AspectError.InvalidAspectValue.ValueError.TOO_LONG,
+                    ),
+                )
             }
         }
 
         return Either.Right(aspects)
+    }
+
+    private fun isValidAspectKeyFormat(key: String): Boolean {
+        // Aspect keys should follow a simple alphanumeric format with hyphens and underscores
+        return key.matches(Regex("^[a-zA-Z][a-zA-Z0-9_-]*$"))
+    }
+
+    companion object {
+        private const val MAX_ASPECT_KEY_LENGTH = 64
+        private const val MAX_ASPECT_VALUE_LENGTH = 512
     }
 
     /**

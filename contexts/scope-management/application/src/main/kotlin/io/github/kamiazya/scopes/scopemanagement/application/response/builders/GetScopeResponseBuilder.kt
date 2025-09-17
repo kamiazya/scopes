@@ -51,38 +51,48 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
     }
 
     override fun buildCliResponse(data: GetScopeResponse): String = buildString {
-        val scope = data.scope
+        appendTitleSection(data)
+        appendDescriptionSection(data.scope)
+        appendAliasesSection(data)
+        appendAspectsSection(data.scope)
+        appendTimestampsSection(data)
+        appendParentSection(data)
+    }.trim()
 
-        // Title and ID
+    private fun StringBuilder.appendTitleSection(data: GetScopeResponse) {
+        val scope = data.scope
         appendLine("${scope.title}")
         if (data.includeDebug) {
             appendLine("ID: ${scope.id}")
         }
         appendLine()
+    }
 
-        // Description
+    private fun StringBuilder.appendDescriptionSection(scope: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult) {
         scope.description?.let {
             appendLine("Description: $it")
             appendLine()
         }
+    }
 
-        // Aliases
+    private fun StringBuilder.appendAliasesSection(data: GetScopeResponse) {
         if (data.aliases?.isNotEmpty() == true) {
             appendLine("Aliases:")
             data.aliases.forEach { alias ->
                 val typeLabel = if (alias.isCanonical) " (canonical)" else ""
                 if (data.includeDebug) {
-                    appendLine("  ${alias.aliasName}$typeLabel (ULID: ${scope.id})")
+                    appendLine("  ${alias.aliasName}$typeLabel (ULID: ${data.scope.id})")
                 } else {
                     appendLine("  ${alias.aliasName}$typeLabel")
                 }
             }
         } else {
-            appendLine("Aliases: ${scope.canonicalAlias}")
+            appendLine("Aliases: ${data.scope.canonicalAlias}")
         }
         appendLine()
+    }
 
-        // Aspects
+    private fun StringBuilder.appendAspectsSection(scope: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult) {
         if (!scope.aspects.isNullOrEmpty()) {
             appendLine("Aspects:")
             scope.aspects.forEach { (key, value) ->
@@ -90,17 +100,19 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
             }
             appendLine()
         }
+    }
 
-        // Timestamps
+    private fun StringBuilder.appendTimestampsSection(data: GetScopeResponse) {
         if (data.includeTimestamps) {
-            appendLine("Created: ${scope.createdAt}")
-            appendLine("Updated: ${scope.updatedAt}")
+            appendLine("Created: ${data.scope.createdAt}")
+            appendLine("Updated: ${data.scope.updatedAt}")
             appendLine()
         }
+    }
 
-        // Parent
-        if (data.includeDebug && scope.parentId != null) {
-            appendLine("Parent: ${scope.parentId}")
+    private fun StringBuilder.appendParentSection(data: GetScopeResponse) {
+        if (data.includeDebug && data.scope.parentId != null) {
+            appendLine("Parent: ${data.scope.parentId}")
         }
-    }.trim()
+    }
 }

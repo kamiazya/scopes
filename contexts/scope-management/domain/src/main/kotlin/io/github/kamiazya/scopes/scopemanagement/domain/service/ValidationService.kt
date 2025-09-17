@@ -8,8 +8,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationEr
  *
  * This service removes validation responsibility from the interface layer,
  * ensuring consistent validation across all interfaces (MCP, CLI, etc.).
+ *
+ * @param strictMode Whether to use strict validation rules (default: true)
  */
-class ValidationService {
+class ValidationService(private val strictMode: Boolean = true) {
 
     companion object {
         private val ULID_REGEX = Regex("^[0-9A-HJKMNP-TV-Z]{26}$")
@@ -100,7 +102,11 @@ class ValidationService {
      */
     fun validateIdempotencyKey(key: String): Either<DomainValidationError.InvalidIdempotencyKey, String> {
         // Idempotency keys should be UUIDs or similar unique identifiers
-        val keyRegex = Regex("^[a-zA-Z0-9-_]{1,64}$")
+        val keyRegex = if (strictMode) {
+            Regex("^[a-zA-Z0-9-_]{1,64}$") // Strict: alphanumeric with hyphens and underscores
+        } else {
+            Regex("^[a-zA-Z0-9-_.]{1,64}$") // Lenient: also allow dots
+        }
 
         return when {
             key.isEmpty() ->
