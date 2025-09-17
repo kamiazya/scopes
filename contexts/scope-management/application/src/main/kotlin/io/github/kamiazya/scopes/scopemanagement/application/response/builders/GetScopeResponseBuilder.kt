@@ -80,7 +80,7 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
             appendLine("Aliases:")
             data.aliases.forEach { alias ->
                 val typeLabel = if (alias.isCanonical) " (canonical)" else ""
-                if (data.includeDebug) {
+                if (data.includeDebug && alias.isCanonical) {
                     appendLine("  ${alias.aliasName}$typeLabel (ULID: ${data.scope.id})")
                 } else {
                     appendLine("  ${alias.aliasName}$typeLabel")
@@ -96,7 +96,7 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
         if (!scope.aspects.isNullOrEmpty()) {
             appendLine("Aspects:")
             scope.aspects.forEach { (key, value) ->
-                appendLine("  $key: $value")
+                appendLine("  $key: ${value.joinToString(", ")}")
             }
             appendLine()
         }

@@ -97,7 +97,11 @@ class ListScopesResponseBuilder : ResponseBuilder<ListScopesResponse> {
         if (!scope.aspects.isNullOrEmpty()) {
             appendLine()
             append("  Aspects: ")
-            append(scope.aspects.entries.joinToString(", ") { "${it.key}:${it.value}" })
+            append(
+                scope.aspects.entries.joinToString(", ") { (key, values) ->
+                    "$key:${values.joinToString(",")}"
+                },
+            )
         }
 
         if (includeDebug && scope.parentId != null) {

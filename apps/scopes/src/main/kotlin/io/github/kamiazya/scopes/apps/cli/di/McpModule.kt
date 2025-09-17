@@ -89,7 +89,7 @@ val mcpModule = module {
             ScopeCreateToolHandler(),
             ScopeUpdateToolHandler(),
             ScopeDeleteToolHandler(),
-            ScopeChildrenToolHandler(),
+            ScopeChildrenToolHandler(responseFormatter),
             ScopesRootsToolHandler(responseFormatter),
             ScopesListAliasesToolHandler(),
         )

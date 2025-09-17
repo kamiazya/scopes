@@ -2,6 +2,7 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.JsonMapConverter.toJsonObject
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
@@ -78,24 +79,7 @@ class ScopeGetToolHandler(private val responseFormatter: ResponseFormatterServic
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
                 val responseMap = responseFormatter.formatScopeForMcp(result.value)
-                // Convert Map to JSON string
-                val json = buildJsonObject {
-                    responseMap.forEach { (key, value) ->
-                        when (value) {
-                            is Map<*, *> -> putJsonObject(key) {
-                                value.forEach { (k, v) ->
-                                    put(k.toString(), JsonPrimitive(v.toString()))
-                                }
-                            }
-                            is Number -> put(key, JsonPrimitive(value))
-                            is Boolean -> put(key, JsonPrimitive(value))
-                            is String -> put(key, JsonPrimitive(value))
-                            null -> put(key, JsonNull)
-                            else -> put(key, JsonPrimitive(value.toString()))
-                        }
-                    }
-                }
-                CallToolResult(content = listOf(TextContent(json.toString())))
+                CallToolResult(content = listOf(TextContent(responseMap.toJsonObject().toString())))
             }
         }
     }
