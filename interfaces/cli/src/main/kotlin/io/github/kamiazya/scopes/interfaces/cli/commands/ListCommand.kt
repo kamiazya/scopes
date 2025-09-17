@@ -13,6 +13,10 @@ import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
+import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ValidationService
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -29,6 +33,9 @@ class ListCommand :
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
+    private val responseFormatter: ResponseFormatterService = ResponseFormatterService()
+    private val aspectService: AspectManagementService = AspectManagementService()
+    private val validationService: ValidationService = ValidationService()
     private val debugContext by requireObject<DebugContext>()
 
     private val parentId by option("-p", "--parent", help = "Parent scope ID to list children")
@@ -49,150 +56,179 @@ class ListCommand :
 
     override fun run() {
         runBlocking {
-            // Validate pagination inputs
-            if (offset < 0) {
-                fail("offset must be >= 0", ExitCode.USAGE_ERROR)
-            }
-            if (limit !in 1..1000) {
-                fail("limit must be in 1..1000", ExitCode.USAGE_ERROR)
-            }
+            validatePaginationInputs()
+            val aspectFilters = parseAndValidateAspectFilters()
+            val effectiveQuery = buildEffectiveQuery()
 
-            // Parse aspect filters (supports key:value and key=value)
-            val aspectFilters = parseAspectFilters(aspects)
-            val invalidAspects = aspects.filter { parseAspectEntry(it) == null }
-            invalidAspects.forEach { invalid ->
-                echo(
-                    "Warning: Invalid aspect format: $invalid (expected key:value or key=value)",
-                    err = true,
+            executeListCommand(aspectFilters, effectiveQuery)
+        }
+    }
+
+    private fun validatePaginationInputs() {
+        validationService.validatePagination(offset, limit).fold(
+            { error ->
+                val message = when (error) {
+                    is DomainValidationError.PaginationViolation.OffsetTooSmall ->
+                        "Offset must be at least ${error.minOffset}, but was ${error.offset}"
+                    is DomainValidationError.PaginationViolation.LimitTooSmall ->
+                        "Limit must be at least ${error.minLimit}, but was ${error.limit}"
+                    is DomainValidationError.PaginationViolation.LimitTooLarge ->
+                        "Limit must not exceed ${error.maxLimit}, but was ${error.limit}"
+                }
+                fail(message, ExitCode.USAGE_ERROR)
+            },
+            { /* valid pagination */ },
+        )
+    }
+
+    private fun parseAndValidateAspectFilters(): Map<String, List<String>> {
+        val aspectFilters = aspectService.parseAspectFilters(aspects)
+        val invalidAspects = aspects.filter { aspectService.parseAspectEntry(it) == null }
+        invalidAspects.forEach { invalid ->
+            echo(
+                "Warning: Invalid aspect format: $invalid (expected key:value or key=value)",
+                err = true,
+            )
+        }
+        return aspectFilters
+    }
+
+    private suspend fun buildEffectiveQuery(): String? {
+        val contextFilter = if (!ignoreContext) {
+            contextQueryAdapter.getCurrentContext().getOrNull()?.filter
+        } else {
+            null
+        }
+
+        if (contextFilter != null && !ignoreContext) {
+            echo("Using context filter: $contextFilter", err = true)
+        }
+
+        return when {
+            query != null && contextFilter != null -> "($contextFilter) AND ($query)"
+            query != null -> query
+            contextFilter != null -> contextFilter
+            else -> null
+        }
+    }
+
+    private suspend fun executeListCommand(aspectFilters: Map<String, List<String>>, effectiveQuery: String?) {
+        when {
+            effectiveQuery != null -> handleQueryBasedListing(aspectFilters, effectiveQuery)
+            root -> handleRootScopeListing(aspectFilters)
+            parentId != null -> handleChildScopeListing(aspectFilters)
+            else -> handleDefaultListing(aspectFilters)
+        }
+    }
+
+    private suspend fun handleQueryBasedListing(aspectFilters: Map<String, List<String>>, effectiveQuery: String) {
+        scopeQueryAdapter.listScopesWithQuery(
+            aspectQuery = effectiveQuery,
+            parentId = parentId,
+            offset = offset,
+            limit = limit,
+        ).fold(
+            { error -> handleContractError(error) },
+            { scopes -> displayFilteredScopes(scopes, aspectFilters) },
+        )
+    }
+
+    private suspend fun handleRootScopeListing(aspectFilters: Map<String, List<String>>) {
+        scopeQueryAdapter.listRootScopes(offset, limit).fold(
+            { error -> handleContractError(error) },
+            { page -> displayPagedScopes(page.scopes, aspectFilters, true) },
+        )
+    }
+
+    private suspend fun handleChildScopeListing(aspectFilters: Map<String, List<String>>) {
+        scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
+            { error -> handleContractError(error) },
+            { page -> displayPagedScopesFromResult(page, aspectFilters) },
+        )
+    }
+
+    private suspend fun handleDefaultListing(aspectFilters: Map<String, List<String>>) {
+        scopeQueryAdapter.listRootScopes(offset, limit).fold(
+            { error -> handleContractError(error) },
+            { page -> displayPagedScopes(page.scopes, aspectFilters, true) },
+        )
+    }
+
+    private suspend fun displayFilteredScopes(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>) {
+        val filteredScopes = applyAspectFilters(scopes, aspectFilters)
+        displayScopesOutput(filteredScopes) {
+            responseFormatter.formatPagedScopesForCli(
+                result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                    scopes = filteredScopes,
+                    totalCount = scopes.size,
+                    offset = offset,
+                    limit = limit,
+                ),
+                includeDebug = debugContext.debug,
+                includeAliases = false,
+            )
+        }
+    }
+
+    private suspend fun displayPagedScopes(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>, isRoot: Boolean) {
+        val filteredScopes = applyAspectFilters(scopes, aspectFilters)
+        displayScopesOutput(filteredScopes) {
+            if (isRoot) {
+                responseFormatter.formatRootScopesForCli(
+                    result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                        scopes = filteredScopes,
+                        totalCount = filteredScopes.size,
+                        offset = 0,
+                        limit = filteredScopes.size,
+                    ),
+                    includeDebug = debugContext.debug,
+                    includeAliases = false,
                 )
-            }
-
-            // Get current context filter if not ignoring context
-            val contextFilter = if (!ignoreContext) {
-                contextQueryAdapter.getCurrentContext().getOrNull()?.filter
             } else {
-                null
-            }
-
-            // Combine query with context filter
-            val effectiveQuery = when {
-                query != null && contextFilter != null -> "($contextFilter) AND ($query)"
-                query != null -> query
-                contextFilter != null -> contextFilter
-                else -> null
-            }
-
-            // Show active context if one is being applied
-            if (contextFilter != null && !ignoreContext) {
-                echo("Using context filter: $contextFilter", err = true)
-            }
-
-            when {
-                effectiveQuery != null -> {
-                    // Use advanced query filtering (either from context, query param, or both)
-                    scopeQueryAdapter.listScopesWithQuery(
-                        aspectQuery = effectiveQuery,
-                        parentId = parentId,
+                responseFormatter.formatPagedScopesForCli(
+                    result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                        scopes = filteredScopes,
+                        totalCount = filteredScopes.size,
                         offset = offset,
                         limit = limit,
-                    ).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { scopes ->
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
-                }
-                root -> {
-                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { page ->
-                            val scopes = page.scopes
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                            }
-
-                            if (verbose) {
-                                // Fetch aliases for each scope and display verbosely
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
-                }
-                parentId != null -> {
-                    scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { page ->
-                            val scopes = page.scopes
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                            }
-
-                            if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
-                }
-                else -> {
-                    // Default: list root scopes
-                    scopeQueryAdapter.listRootScopes(offset, limit).fold(
-                        { error ->
-                            handleContractError(error)
-                        },
-                        { page ->
-                            val scopes = page.scopes
-                            val filteredScopes = if (aspectFilters.isNotEmpty()) {
-                                filterByAspects(scopes, aspectFilters)
-                            } else {
-                                scopes
-                            }
-                            if (aspectFilters.isNotEmpty()) {
-                                echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
-                            }
-
-                            if (verbose) {
-                                echo(formatVerboseList(filteredScopes, debugContext))
-                            } else {
-                                echo(scopeOutputFormatter.formatContractScopeList(filteredScopes, debugContext.debug))
-                            }
-                        },
-                    )
-                }
+                    ),
+                    includeDebug = debugContext.debug,
+                    includeAliases = false,
+                )
             }
         }
     }
 
-    private suspend fun formatVerboseList(scopes: List<ScopeResult>, debugContext: DebugContext): String {
+    private suspend fun displayPagedScopesFromResult(
+        page: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult,
+        aspectFilters: Map<String, List<String>>,
+    ) {
+        val filteredScopes = applyAspectFilters(page.scopes, aspectFilters)
+        displayScopesOutput(filteredScopes) {
+            responseFormatter.formatPagedScopesForCli(
+                result = page.copy(scopes = filteredScopes),
+                includeDebug = debugContext.debug,
+                includeAliases = false,
+            )
+        }
+    }
+
+    private fun applyAspectFilters(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>): List<ScopeResult> = if (aspectFilters.isNotEmpty()) {
+        echo("Note: aspect filtering is applied after pagination; adjust --offset/--limit to explore more matches.", err = true)
+        filterByAspects(scopes, aspectFilters)
+    } else {
+        scopes
+    }
+
+    private suspend inline fun displayScopesOutput(scopes: List<ScopeResult>, formatNonVerbose: () -> String) {
+        if (verbose) {
+            echo(formatVerboseListWithAliases(scopes))
+        } else {
+            echo(formatNonVerbose())
+        }
+    }
+
+    private suspend fun formatVerboseListWithAliases(scopes: List<ScopeResult>): String {
         if (scopes.isEmpty()) {
             return "No scopes found."
         }
@@ -203,53 +239,73 @@ class ListCommand :
 
             scopes.forEachIndexed { index, scope ->
                 if (index > 0) appendLine()
-
-                // Basic scope info
-                appendLine("• ${scope.title}")
-                scope.description?.let { appendLine("  Description: $it") }
-                if (debugContext.debug) {
-                    appendLine("  ID: ${scope.id}")
-                }
-
-                // Fetch and display all aliases
-                scopeQueryAdapter.listAliases(scope.id).fold(
-                    { error ->
-                        // If we can't fetch aliases, show just the canonical one
-                        if (debugContext.debug) {
-                            appendLine("  Aliases: ${scope.canonicalAlias} (ULID: ${scope.id})")
-                        } else {
-                            appendLine("  Aliases: ${scope.canonicalAlias}")
-                        }
-                    },
-                    { aliasResult ->
-                        if (aliasResult.aliases.isEmpty()) {
-                            appendLine("  Aliases: None")
-                        } else {
-                            append("  Aliases: ")
-                            val aliasStrings = aliasResult.aliases.map { alias ->
-                                val typeLabel = if (alias.isCanonical) {
-                                    " (canonical)"
-                                } else {
-                                    ""
-                                }
-                                if (debugContext.debug) {
-                                    "${alias.aliasName}$typeLabel (ULID: ${scope.id})"
-                                } else {
-                                    "${alias.aliasName}$typeLabel"
-                                }
-                            }
-                            appendLine(aliasStrings.joinToString(", "))
-                        }
-                    },
-                )
-
-                scope.parentId?.let {
-                    if (debugContext.debug) {
-                        appendLine("  Parent: $it")
-                    }
-                }
+                appendScopeInfo(scope)
             }
         }.trim()
+    }
+
+    private suspend fun StringBuilder.appendScopeInfo(scope: ScopeResult) {
+        appendBasicScopeInfo(scope)
+        appendScopeAliases(scope)
+        appendParentInfo(scope)
+    }
+
+    private fun StringBuilder.appendBasicScopeInfo(scope: ScopeResult) {
+        appendLine("• ${scope.title}")
+        scope.description?.let { appendLine("  Description: $it") }
+        if (debugContext.debug) {
+            appendLine("  ID: ${scope.id}")
+        }
+    }
+
+    private suspend fun StringBuilder.appendScopeAliases(scope: ScopeResult) {
+        scopeQueryAdapter.listAliases(scope.id).fold(
+            { error ->
+                appendFallbackAliasInfo(scope)
+            },
+            { aliasResult ->
+                appendAliasListInfo(scope, aliasResult)
+            },
+        )
+    }
+
+    private fun StringBuilder.appendFallbackAliasInfo(scope: ScopeResult) {
+        if (debugContext.debug) {
+            appendLine("  Aliases: ${scope.canonicalAlias} (ULID: ${scope.id})")
+        } else {
+            appendLine("  Aliases: ${scope.canonicalAlias}")
+        }
+    }
+
+    private fun StringBuilder.appendAliasListInfo(
+        scope: ScopeResult,
+        aliasResult: io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult,
+    ) {
+        if (aliasResult.aliases.isEmpty()) {
+            appendLine("  Aliases: None")
+        } else {
+            append("  Aliases: ")
+            val aliasStrings = formatAliasStrings(scope, aliasResult.aliases)
+            appendLine(aliasStrings.joinToString(", "))
+        }
+    }
+
+    private fun formatAliasStrings(scope: ScopeResult, aliases: List<io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo>): List<String> =
+        aliases.map { alias ->
+            val typeLabel = if (alias.isCanonical) " (canonical)" else ""
+            if (debugContext.debug) {
+                "${alias.aliasName}$typeLabel (ULID: ${scope.id})"
+            } else {
+                "${alias.aliasName}$typeLabel"
+            }
+        }
+
+    private fun StringBuilder.appendParentInfo(scope: ScopeResult) {
+        scope.parentId?.let {
+            if (debugContext.debug) {
+                appendLine("  Parent: $it")
+            }
+        }
     }
 
     /**
@@ -257,11 +313,6 @@ class ListCommand :
      * A scope matches if it has all the specified aspect key:value pairs.
      */
     private fun filterByAspects(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>): List<ScopeResult> = scopes.filter { scope ->
-        aspectFilters.all { (key, requiredValues) ->
-            val scopeValues = scope.aspects[key] ?: emptyList()
-            requiredValues.all { requiredValue ->
-                scopeValues.contains(requiredValue)
-            }
-        }
+        aspectService.checkAspectFilters(scope.aspects, aspectFilters)
     }
 }

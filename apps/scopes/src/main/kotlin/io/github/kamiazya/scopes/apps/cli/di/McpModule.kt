@@ -39,6 +39,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopeUpdateToolHa
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopesListAliasesToolHandler
 import io.github.kamiazya.scopes.interfaces.mcp.tools.handlers.ScopesRootsToolHandler
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import org.koin.dsl.module
 
 /**
@@ -53,8 +54,11 @@ import org.koin.dsl.module
  */
 val mcpModule = module {
 
+    // Application Services
+    single { ResponseFormatterService() }
+
     // Support Services - using factory functions from interfaces-mcp
-    single<ErrorMapper> { createErrorMapper() }
+    single<ErrorMapper> { createErrorMapper(get<Logger>().withName("MCP.ErrorMapper")) }
     single<ArgumentCodec> { createArgumentCodec() }
     single<IdempotencyService> { createIdempotencyService(get<ArgumentCodec>()) }
 
@@ -75,17 +79,18 @@ val mcpModule = module {
 
     // Tool Handlers
     single {
+        val responseFormatter = get<ResponseFormatterService>()
         listOf<ToolHandler>(
             AliasResolveToolHandler(),
             AliasesAddToolHandler(),
             AliasesRemoveToolHandler(),
             AliasesSetCanonicalCamelToolHandler(),
-            ScopeGetToolHandler(),
+            ScopeGetToolHandler(responseFormatter),
             ScopeCreateToolHandler(),
             ScopeUpdateToolHandler(),
             ScopeDeleteToolHandler(),
-            ScopeChildrenToolHandler(),
-            ScopesRootsToolHandler(),
+            ScopeChildrenToolHandler(responseFormatter),
+            ScopesRootsToolHandler(responseFormatter),
             ScopesListAliasesToolHandler(),
         )
     }

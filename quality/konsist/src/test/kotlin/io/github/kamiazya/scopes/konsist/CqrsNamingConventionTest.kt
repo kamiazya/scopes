@@ -181,6 +181,8 @@ class CqrsNamingConventionTest :
                     .filter { it.packagee?.name?.contains("domain.service.query") != true }
                     // Exclude value objects - they follow different naming conventions
                     .filter { it.packagee?.name?.contains("valueobject") != true }
+                    // Exclude response classes - they follow different naming conventions
+                    .filter { it.packagee?.name?.contains("query.response") != true }
                     .assertTrue { query ->
                         query.name.endsWith("Query") ||
                             query.name.endsWith("QueryPort") ||

@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.interfaces.mcp.support
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.logging.Slf4jLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
@@ -14,11 +16,25 @@ import kotlinx.serialization.json.putJsonObject
  * This class is internal as it should only be used within the MCP module.
  * External modules should depend on the ErrorMapper interface.
  */
-internal class DefaultErrorMapper : ErrorMapper {
+internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("DefaultErrorMapper")) : ErrorMapper {
+
+    private val errorMiddleware = ErrorHandlingMiddleware(logger)
 
     override fun mapContractError(error: ScopeContractError): CallToolResult {
+        val errorResponse = errorMiddleware.mapScopeError(error)
         val errorData = buildJsonObject {
-            put("code", getErrorCode(error))
+            put("code", errorResponse.code)
+            put("message", errorResponse.message)
+            put("userMessage", errorResponse.userMessage)
+            errorResponse.details?.let { details ->
+                putJsonObject("details") {
+                    details.forEach { (key, value) ->
+                        put(key, value.toString())
+                    }
+                }
+            }
+            // Legacy compatibility
+            put("legacyCode", getErrorCode(error))
             putJsonObject("data") {
                 put("type", error::class.simpleName)
                 put("message", mapContractErrorMessage(error))

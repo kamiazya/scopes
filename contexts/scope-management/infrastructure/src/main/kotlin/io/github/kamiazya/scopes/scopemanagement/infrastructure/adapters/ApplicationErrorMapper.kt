@@ -34,7 +34,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         -1L
     }
 
-    private fun mapSystemError(error: ScopeManagementApplicationError): ScopeContractError =
+    private fun mapSystemError(_error: ScopeManagementApplicationError): ScopeContractError =
         ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
 
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
@@ -56,7 +56,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
         is AppScopeInputError.IdInvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedValue,
-            expectedFormat = "${error.expectedFormat}".let { if (it.endsWith("format")) it else "$it format" },
+            expectedFormat = error.expectedFormat,
         )
 
         // Title validation errors
@@ -148,8 +148,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         // System errors
         is ContextError.ContextInUse,
         is ContextError.ContextUpdateConflict,
-        is ContextError.InvalidFilter,
-        -> mapSystemError(error)
+        is ContextError.InvalidFilter -> mapSystemError(error)
 
         // Not found errors
         is ContextError.ContextNotFound -> ScopeContractError.BusinessError.NotFound(
@@ -176,8 +175,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         // System errors
         is ScopeAliasError.AliasGenerationFailed,
         is ScopeAliasError.AliasGenerationValidationFailed,
-        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound,
-        -> mapSystemError(error)
+        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> mapSystemError(error)
 
         // Business errors
         is ScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
@@ -251,8 +249,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             )
         }
         is ScopeManagementApplicationError.PersistenceError.DataCorruption,
-        is ScopeManagementApplicationError.PersistenceError.StorageUnavailable,
-        -> mapSystemError(error)
+        is ScopeManagementApplicationError.PersistenceError.StorageUnavailable -> mapSystemError(error)
 
         is ScopeManagementApplicationError.PersistenceError.NotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = error.entityId ?: "",

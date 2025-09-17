@@ -26,6 +26,9 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
+import io.github.kamiazya.scopes.scopemanagement.domain.service.ValidationService
 import org.koin.dsl.module
 
 /**
@@ -58,6 +61,13 @@ val cliAppModule = module {
         // MCP components
         mcpModule,
     )
+
+    // Domain Services
+    single { AspectManagementService() }
+    single { ValidationService() }
+
+    // Application Services (reuse from MCP module if available)
+    single { ResponseFormatterService() }
 
     // CLI Commands
     factory { ScopesCommand() }

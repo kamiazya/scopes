@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -22,6 +23,7 @@ class GetCommand :
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
+    private val responseFormatter: ResponseFormatterService by inject()
     private val debugContext by requireObject<DebugContext>()
 
     private val identifier by argument(
@@ -47,11 +49,25 @@ class GetCommand :
                             scopeQueryAdapter.listAliases(scope.id).fold(
                                 { aliasError ->
                                     // If we can't fetch aliases, still show the scope with just canonical alias
-                                    echo(scopeOutputFormatter.formatContractScope(scope, debugContext.debug))
+                                    echo(
+                                        responseFormatter.formatScopeForCli(
+                                            scope = scope,
+                                            aliases = null,
+                                            includeDebug = debugContext.debug,
+                                            includeTemporalFields = true,
+                                        ),
+                                    )
                                 },
                                 { aliasResult ->
                                     // Show scope with all aliases
-                                    echo(scopeOutputFormatter.formatContractScopeWithAliases(scope, aliasResult, debugContext.debug))
+                                    echo(
+                                        responseFormatter.formatScopeForCli(
+                                            scope = scope,
+                                            aliases = aliasResult.aliases,
+                                            includeDebug = debugContext.debug,
+                                            includeTemporalFields = true,
+                                        ),
+                                    )
                                 },
                             )
                         },

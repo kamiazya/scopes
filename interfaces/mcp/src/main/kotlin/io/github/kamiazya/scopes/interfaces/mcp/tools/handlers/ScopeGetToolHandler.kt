@@ -2,8 +2,10 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.JsonMapConverter.toJsonObject
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
@@ -15,7 +17,7 @@ import kotlinx.serialization.json.*
  *
  * This tool retrieves detailed information about a scope given its alias.
  */
-class ScopeGetToolHandler : ToolHandler {
+class ScopeGetToolHandler(private val responseFormatter: ResponseFormatterService = ResponseFormatterService()) : ToolHandler {
 
     override val name: String = "scopes.get"
 
@@ -76,15 +78,8 @@ class ScopeGetToolHandler : ToolHandler {
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
-                val scope = result.value
-                val json = buildJsonObject {
-                    put("canonicalAlias", scope.canonicalAlias)
-                    put("title", scope.title)
-                    scope.description?.let { put("description", it) }
-                    put("createdAt", scope.createdAt.toString())
-                    put("updatedAt", scope.updatedAt.toString())
-                }
-                CallToolResult(content = listOf(TextContent(json.toString())))
+                val responseMap = responseFormatter.formatScopeForMcp(result.value)
+                CallToolResult(content = listOf(TextContent(responseMap.toJsonObject().toString())))
             }
         }
     }
