@@ -36,7 +36,7 @@ jobs:
         # Fail the build if vulnerabilities with CVSS >= 7.0 are found
         fail-on-severity: high
         # Allow security fixes to proceed
-        allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, UPL-1.0
+        allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, UPL-1.0, EPL-1.0, LGPL-2.1-only
         # Comment on PR with review summary
         comment-summary-in-pr: true
         # Show only newly introduced vulnerabilities
