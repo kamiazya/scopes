@@ -9,7 +9,6 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -33,23 +32,27 @@ internal class DefaultIdempotencyService(
     private val idempotencyStore = mutableMapOf<String, StoredResult>()
     private val mutex = Mutex()
 
+    companion object {
+        /**
+         * Validates that an idempotency key matches the required pattern.
+         * Uses the centralized pattern from IdempotencyService interface.
+         */
+        private fun isValidKey(key: String): Boolean = key.matches(IdempotencyService.IDEMPOTENCY_KEY_PATTERN)
+    }
 
     override suspend fun checkIdempotency(toolName: String, arguments: Map<String, JsonElement>, idempotencyKey: String?): CallToolResult? {
         val effectiveKey = idempotencyKey ?: return null
 
-        if (!effectiveKey.matches(IdempotencyService.IDEMPOTENCY_KEY_PATTERN)) {
-            val payload = buildJsonObject {
-                put("code", -32602)
-                put("message", "Invalid idempotency key format")
-                putJsonObject("data") {
+        if (!isValidKey(effectiveKey)) {
+            return CallToolResult(
+                content = listOf(TextContent(text = "Invalid idempotency key format")),
+                isError = true,
+                _meta = buildJsonObject {
+                    put("code", -32602)
                     put("type", "InvalidIdempotencyKey")
                     put("key", effectiveKey)
                     put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN.pattern)
-                }
-            }
-            return CallToolResult(
-                content = listOf(TextContent(text = payload.toString())),
-                isError = true,
+                },
             )
         }
 
@@ -81,6 +84,12 @@ internal class DefaultIdempotencyService(
 
     override suspend fun storeIdempotency(toolName: String, arguments: Map<String, JsonElement>, result: CallToolResult, idempotencyKey: String?) {
         val effectiveKey = idempotencyKey ?: return
+
+        // Validate the idempotency key using the same logic as checkIdempotency
+        if (!isValidKey(effectiveKey)) {
+            // Invalid key - return early without storing anything
+            return
+        }
 
         val cacheKey = argumentCodec.buildCacheKey(toolName, arguments, effectiveKey)
         val stored = StoredResult(result, Clock.System.now())
