@@ -37,10 +37,8 @@ class UpdateScopeHandler(
 
     override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
         logUpdateStart(command)
-        
-        val result = executeUpdate(command).bind()
-        
-        result
+
+        executeUpdate(command).bind()
     }.onLeft { error ->
         logUpdateError(error)
     }
@@ -60,66 +58,57 @@ class UpdateScopeHandler(
         logger.error(
             "Failed to update scope",
             mapOf(
-                "error" to getErrorClassName(error),
-                "message" to error.toString(),
+                "code" to getErrorClassName(error),
+                "message" to error.toString().take(500),
             ),
         )
     }
 
-    private fun getErrorClassName(error: ScopeManagementApplicationError): String =
-        error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    private fun getErrorClassName(error: ScopeManagementApplicationError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
 
-    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> =
-        transactionManager.inTransaction {
-            performUpdate(command)
-        }
+    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = transactionManager.inTransaction {
+        performUpdate(command)
+    }
 
     private suspend fun performUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
         val scopeId = parseScopeId(command.id).bind()
         val existingScope = findExistingScope(scopeId).bind()
-        
+
         val updatedScope = applyUpdates(existingScope, command, scopeId).bind()
-        
+
         val savedScope = scopeRepository.save(updatedScope).mapLeft { it.toGenericApplicationError() }.bind()
         logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
-        
+
         ScopeMapper.toDto(savedScope)
     }
 
-    private fun parseScopeId(id: String): Either<ScopeManagementApplicationError, ScopeId> =
-        ScopeId.create(id).mapLeft { error ->
-            mapIdError(error, id)
-        }
-
-    private fun mapIdError(
-        error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError, 
-        id: String
-    ): ScopeManagementApplicationError = when (error) {
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
-            ScopeInputError.IdBlank(id)
-        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
-            ScopeInputError.IdInvalidFormat(id, error.expectedFormat.toString())
+    private fun parseScopeId(id: String): Either<ScopeManagementApplicationError, ScopeId> = ScopeId.create(id).mapLeft { error ->
+        mapIdError(error, id)
     }
 
-    private suspend fun applyUpdates(
-        scope: Scope, 
-        command: UpdateScopeCommand, 
-        scopeId: ScopeId
-    ): Either<ScopeManagementApplicationError, Scope> = either {
+    private fun mapIdError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError, id: String): ScopeManagementApplicationError =
+        when (error) {
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
+                ScopeInputError.IdBlank(id)
+            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
+                ScopeInputError.IdInvalidFormat(id, "${error.expectedFormat} format")
+        }
+
+    private suspend fun applyUpdates(scope: Scope, command: UpdateScopeCommand, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
         var updatedScope = scope
-        
+
         command.title?.let { title ->
             updatedScope = updateTitle(updatedScope, title, scopeId).bind()
         }
-        
+
         command.description?.let { description ->
             updatedScope = updateDescription(updatedScope, description, scopeId).bind()
         }
-        
+
         if (command.metadata.isNotEmpty()) {
             updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
         }
-        
+
         updatedScope
     }
 
