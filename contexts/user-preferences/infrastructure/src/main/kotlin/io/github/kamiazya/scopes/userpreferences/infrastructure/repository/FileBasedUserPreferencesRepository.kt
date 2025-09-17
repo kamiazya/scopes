@@ -6,6 +6,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import io.github.kamiazya.scopes.userpreferences.domain.aggregate.UserPreferencesAggregate
 import io.github.kamiazya.scopes.userpreferences.domain.entity.UserPreferences
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
@@ -22,7 +23,13 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger) : UserPreferencesRepository {
+class FileBasedUserPreferencesRepository(
+    configPathStr: String,
+    private val logger: Logger,
+    private val timeProvider: TimeProvider = object : TimeProvider {
+        override fun now() = Clock.System.now()
+    },
+) : UserPreferencesRepository {
 
     private val configPath = Path(configPathStr)
     private val configFile = Path(configPathStr, UserPreferencesConfig.CONFIG_FILE_NAME)
@@ -30,15 +37,23 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
     private val currentUserAggregateId = AggregateId.Simple.generate()
 
     init {
-        configPath.createDirectories()
+        // Ensure config directory exists, but don't fail hard on permission or IO errors.
+        // This allows tests to verify graceful error handling during save operations.
+        try {
+            configPath.createDirectories()
+        } catch (e: Exception) {
+            logger.error("Failed to initialize config directory at $configPath: ${e.message}")
+            // Continue without throwing; write operations will handle errors gracefully.
+        }
     }
 
     override suspend fun save(aggregate: UserPreferencesAggregate): Either<UserPreferencesError, Unit> = either {
         withContext(Dispatchers.IO) {
+            // Validate aggregate before attempting any IO so domain errors are not masked
+            val preferences = aggregate.preferences
+                ?: raise(UserPreferencesError.PreferencesNotInitialized)
             try {
-                val preferences = aggregate.preferences
-                    ?: raise(UserPreferencesError.PreferencesNotInitialized)
-
+                
                 val config = UserPreferencesConfig(
                     version = UserPreferencesConfig.CURRENT_VERSION,
                     hierarchyPreferences = HierarchyPreferencesConfig(
@@ -96,7 +111,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                     maxChildrenPerScope = config.hierarchyPreferences.maxChildrenPerScope,
                 ).bind()
 
-                val now = Clock.System.now()
+                val now = timeProvider.now()
                 val preferences = UserPreferences(
                     hierarchyPreferences = hierarchyPreferences,
                     createdAt = now,
