@@ -124,62 +124,63 @@ fun ContextError.toApplicationError(): ScopeManagementApplicationError = when (t
 
 /**
  * Maps ScopeInputError to ApplicationError.ScopeInputError
+ * Note: This mapping loses the attempted value, which should be provided by the calling code
  */
-fun DomainScopeInputError.toApplicationError(): ScopeManagementApplicationError = when (this) {
+fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManagementApplicationError = when (this) {
     is DomainScopeInputError.IdError.EmptyId ->
-        AppScopeInputError.IdBlank("empty-id")
+        AppScopeInputError.IdBlank(attemptedValue = attemptedValue)
 
     is DomainScopeInputError.IdError.InvalidIdFormat ->
         AppScopeInputError.IdInvalidFormat(
-            attemptedValue = this.id,
+            attemptedValue = attemptedValue,
             expectedFormat = scopeInputErrorPresenter.presentIdFormat(this.expectedFormat),
         )
 
     is DomainScopeInputError.TitleError.EmptyTitle ->
-        AppScopeInputError.TitleEmpty("empty-title")
+        AppScopeInputError.TitleEmpty(attemptedValue = attemptedValue)
 
     is DomainScopeInputError.TitleError.TitleTooShort ->
         AppScopeInputError.TitleTooShort(
-            attemptedValue = "too-short",
+            attemptedValue = attemptedValue,
             minimumLength = this.minLength,
         )
 
     is DomainScopeInputError.TitleError.TitleTooLong ->
         AppScopeInputError.TitleTooLong(
-            attemptedValue = "too-long",
+            attemptedValue = attemptedValue,
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.TitleError.InvalidTitleFormat ->
         AppScopeInputError.TitleContainsProhibitedCharacters(
-            attemptedValue = this.title,
+            attemptedValue = attemptedValue,
             prohibitedCharacters = listOf('<', '>', '&', '"'),
         )
 
     is DomainScopeInputError.DescriptionError.DescriptionTooLong ->
         AppScopeInputError.DescriptionTooLong(
-            attemptedValue = "too-long",
+            attemptedValue = attemptedValue,
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.AliasError.EmptyAlias ->
-        AppScopeInputError.AliasEmpty("empty-alias")
+        AppScopeInputError.AliasEmpty(alias = attemptedValue)
 
     is DomainScopeInputError.AliasError.AliasTooShort ->
         AppScopeInputError.AliasTooShort(
-            attemptedValue = "too-short",
+            alias = attemptedValue,
             minimumLength = this.minLength,
         )
 
     is DomainScopeInputError.AliasError.AliasTooLong ->
         AppScopeInputError.AliasTooLong(
-            attemptedValue = "too-long",
+            alias = attemptedValue,
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.AliasError.InvalidAliasFormat ->
         AppScopeInputError.AliasInvalidFormat(
-            attemptedValue = this.alias,
+            alias = attemptedValue,
             expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.expectedPattern),
         )
 }
@@ -221,7 +222,7 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
         AppScopeAliasError.AliasGenerationValidationFailed(
             scopeId = "scope-id",
             reason = this.reason,
-            attemptedValue = this.alias,
+            alias = this.alias,
         )
 
     is DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope ->
@@ -245,7 +246,7 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
 fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()
     is ContextError -> this.toApplicationError()
-    is DomainScopeInputError -> this.toApplicationError()
+    is DomainScopeInputError -> this.toApplicationError("") // Empty string as fallback when attemptedValue is not available
     is DomainScopeAliasError -> this.toApplicationError()
 
     // Map hierarchy errors to appropriate application errors

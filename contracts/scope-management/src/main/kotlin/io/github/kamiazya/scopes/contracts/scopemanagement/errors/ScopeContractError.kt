@@ -33,6 +33,16 @@ public sealed interface ScopeContractError {
     }
 
     /**
+     * Specific validation failures for alias.
+     */
+    public sealed interface AliasValidationFailure {
+        public data object Empty : AliasValidationFailure
+        public data class TooShort(public val minimumLength: Int, public val actualLength: Int) : AliasValidationFailure
+        public data class TooLong(public val maximumLength: Int, public val actualLength: Int) : AliasValidationFailure
+        public data class InvalidFormat(public val expectedPattern: String) : AliasValidationFailure
+    }
+
+    /**
      * Specific types of hierarchy violations.
      */
     public sealed interface HierarchyViolationType {
@@ -107,6 +117,13 @@ public sealed interface ScopeContractError {
          * @property expectedFormat Optional description of expected format
          */
         public data class InvalidParentId(public val parentId: String, public val expectedFormat: String? = null) : InputError
+
+        /**
+         * Invalid scope alias.
+         * @property alias The invalid alias value
+         * @property validationFailure Specific reason for validation failure
+         */
+        public data class InvalidAlias(public val alias: String, public val validationFailure: AliasValidationFailure) : InputError
     }
 
     /**
@@ -175,6 +192,14 @@ public sealed interface ScopeContractError {
          * The canonical alias is the primary identifier and cannot be removed.
          */
         public data object CannotRemoveCanonicalAlias : BusinessError
+
+        /**
+         * Alias belongs to a different scope.
+         * @property alias The alias
+         * @property expectedScopeId The expected scope ID
+         * @property actualScopeId The actual scope ID that owns the alias
+         */
+        public data class AliasOfDifferentScope(public val alias: String, public val expectedScopeId: String, public val actualScopeId: String) : BusinessError
     }
 
     /**

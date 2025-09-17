@@ -9,7 +9,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
-import kotlin.reflect.KClass
 
 /**
  * JSON-based implementation of EventSerializer.
@@ -78,8 +77,5 @@ class JsonEventSerializer(
      * Get the stable type identifier for a domain event.
      * This is used by the repository when persisting events.
      */
-    fun getEventType(event: DomainEvent): String {
-        @Suppress("UNCHECKED_CAST")
-        return eventTypeMapping.getTypeId(event::class as KClass<out DomainEvent>)
-    }
+    fun getEventType(event: DomainEvent): String = eventTypeMapping.getTypeId(event::class)
 }

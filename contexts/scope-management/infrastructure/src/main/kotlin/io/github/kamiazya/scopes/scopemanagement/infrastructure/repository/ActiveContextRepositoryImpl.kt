@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.repository
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.scopemanagement.db.Context_views
 import io.github.kamiazya.scopes.scopemanagement.db.GetActiveContext
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
@@ -148,41 +147,6 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
                 )
             }
         }
-    }
-
-    private fun rowToContextView(row: Context_views): ContextView {
-        val id = ContextViewId.create(row.id).fold(
-            ifLeft = { error("Invalid id in database: $it") },
-            ifRight = { it },
-        )
-        val key = ContextViewKey.create(row.key).fold(
-            ifLeft = { error("Invalid key in database: $it") },
-            ifRight = { it },
-        )
-        val name = ContextViewName.create(row.name).fold(
-            ifLeft = { error("Invalid name in database: $it") },
-            ifRight = { it },
-        )
-        val description = row.description?.let { desc ->
-            ContextViewDescription.create(desc).fold(
-                ifLeft = { error("Invalid description in database: $it") },
-                ifRight = { it },
-            )
-        }
-        val filter = ContextViewFilter.create(row.filter).fold(
-            ifLeft = { error("Invalid filter in database: $it") },
-            ifRight = { it },
-        )
-
-        return ContextView(
-            id = id,
-            key = key,
-            name = name,
-            description = description,
-            filter = filter,
-            createdAt = Instant.fromEpochMilliseconds(row.created_at),
-            updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
-        )
     }
 
     private fun activeContextToContextView(row: GetActiveContext): ContextView? {

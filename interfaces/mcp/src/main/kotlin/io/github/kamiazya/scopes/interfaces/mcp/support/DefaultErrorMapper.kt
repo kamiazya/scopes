@@ -57,13 +57,15 @@ internal class DefaultErrorMapper : ErrorMapper {
         is ScopeContractError.BusinessError.DuplicateTitle,
         -> -32012 // Duplicate
         is ScopeContractError.BusinessError.HierarchyViolation -> -32013 // Hierarchy violation
-        is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> -32013 // Hierarchy violation (alias constraint)
+        is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias,
+        is ScopeContractError.BusinessError.AliasOfDifferentScope,
+        -> -32013 // Hierarchy violation (alias constraint)
         is ScopeContractError.BusinessError.AlreadyDeleted,
         is ScopeContractError.BusinessError.ArchivedScope,
+        is ScopeContractError.BusinessError.NotArchived,
         -> -32014 // State conflict
         is ScopeContractError.BusinessError.HasChildren -> -32010 // Business constraint violation
         is ScopeContractError.SystemError -> -32000 // Server error
-        else -> -32010 // Generic business error
     }
 
     private fun mapContractErrorMessage(error: ScopeContractError): String = when (error) {
@@ -71,7 +73,9 @@ internal class DefaultErrorMapper : ErrorMapper {
         is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
         is ScopeContractError.BusinessError.DuplicateAlias -> "Duplicate alias: ${error.alias}"
         is ScopeContractError.BusinessError.DuplicateTitle -> "Duplicate title"
+        is ScopeContractError.BusinessError.AliasOfDifferentScope -> "Alias belongs to different scope: ${error.alias}"
         is ScopeContractError.InputError.InvalidId -> "Invalid id: ${error.id}"
+        is ScopeContractError.InputError.InvalidAlias -> "Invalid alias: ${error.alias}"
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout -> "Timeout: ${error.operation}"
         is ScopeContractError.SystemError.ConcurrentModification -> "Concurrent modification"

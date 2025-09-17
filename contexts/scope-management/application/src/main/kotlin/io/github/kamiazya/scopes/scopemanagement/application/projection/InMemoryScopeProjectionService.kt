@@ -219,7 +219,7 @@ class InMemoryScopeProjectionService : ScopeProjectionService {
             // Create ScopeId from string for the error
             ScopeId.create(scopeId).fold(
                 { it.toGenericApplicationError().left() },
-                { validScopeId ->
+                { _ ->
                     ScopeManagementApplicationError.PersistenceError.NotFound(
                         entityType = "Scope",
                         entityId = scopeId,

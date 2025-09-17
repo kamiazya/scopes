@@ -67,7 +67,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                 }
             }
             is AspectType.Ordered -> {
-                val orderedType = definition.type as AspectType.Ordered
+                val orderedType = definition.type
                 if (!orderedType.allowedValues.contains(value)) {
                     ScopesError.ValidationFailed(
                         field = definition.key.value,

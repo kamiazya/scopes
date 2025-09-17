@@ -43,6 +43,15 @@ object ErrorMessageMapper {
             }
             is ScopeContractError.InputError.InvalidParentId ->
                 "Invalid parent ID: ${error.parentId}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
+            is ScopeContractError.InputError.InvalidAlias -> when (val failure = error.validationFailure) {
+                is ScopeContractError.AliasValidationFailure.Empty -> "Alias cannot be empty"
+                is ScopeContractError.AliasValidationFailure.TooShort ->
+                    "Alias too short: minimum ${failure.minimumLength} characters"
+                is ScopeContractError.AliasValidationFailure.TooLong ->
+                    "Alias too long: maximum ${failure.maximumLength} characters"
+                is ScopeContractError.AliasValidationFailure.InvalidFormat ->
+                    "Invalid alias format (expected: ${failure.expectedPattern})"
+            }
         }
         is ScopeContractError.BusinessError -> when (error) {
             is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
@@ -69,6 +78,8 @@ object ErrorMessageMapper {
             is ScopeContractError.BusinessError.DuplicateAlias -> "Alias already exists: ${error.alias}"
             is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias ->
                 "Cannot remove canonical alias"
+            is ScopeContractError.BusinessError.AliasOfDifferentScope ->
+                "Alias '${error.alias}' belongs to different scope"
         }
         is ScopeContractError.SystemError -> when (error) {
             is ScopeContractError.SystemError.ServiceUnavailable ->

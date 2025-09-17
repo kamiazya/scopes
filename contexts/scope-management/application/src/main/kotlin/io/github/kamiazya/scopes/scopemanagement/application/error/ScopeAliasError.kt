@@ -8,7 +8,7 @@ sealed class ScopeAliasError : ScopeManagementApplicationError() {
     data class AliasNotFound(val aliasName: String) : ScopeAliasError()
     data class CannotRemoveCanonicalAlias(val scopeId: String, val aliasName: String) : ScopeAliasError()
     data class AliasGenerationFailed(val scopeId: String, val retryCount: Int) : ScopeAliasError()
-    data class AliasGenerationValidationFailed(val scopeId: String, val reason: String, val attemptedValue: String) : ScopeAliasError()
+    data class AliasGenerationValidationFailed(val scopeId: String, val reason: String, val alias: String) : ScopeAliasError()
 
     /**
      * Data inconsistency errors representing broken data relationships.

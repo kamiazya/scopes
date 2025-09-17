@@ -36,6 +36,15 @@ object ContractErrorMessageMapper {
             val formatHint = error.expectedFormat?.let { " (expected: $it)" } ?: ""
             "Invalid parent scope ID: ${error.parentId}$formatHint"
         }
+        is ScopeContractError.InputError.InvalidAlias -> when (val failure = error.validationFailure) {
+            is ScopeContractError.AliasValidationFailure.Empty -> "Alias cannot be empty"
+            is ScopeContractError.AliasValidationFailure.TooShort ->
+                "Alias is too short (minimum ${failure.minimumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.AliasValidationFailure.TooLong ->
+                "Alias is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.AliasValidationFailure.InvalidFormat ->
+                "Invalid alias format (expected: ${failure.expectedPattern})"
+        }
 
         is ScopeContractError.BusinessError.NotFound -> {
             if (debug) {
@@ -79,6 +88,8 @@ object ContractErrorMessageMapper {
         is ScopeContractError.BusinessError.DuplicateAlias -> "Alias already exists: ${error.alias}"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias ->
             "Cannot remove canonical alias. Set a different alias as canonical first."
+        is ScopeContractError.BusinessError.AliasOfDifferentScope ->
+            "Alias '${error.alias}' belongs to a different scope (expected: ${error.expectedScopeId}, actual: ${error.actualScopeId})"
 
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout -> "Operation timed out: ${error.operation}"
