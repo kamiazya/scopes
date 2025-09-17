@@ -250,51 +250,118 @@ function Test-SBOM {
     
     Write-Header "SBOM Verification"
     
-    $sbomJson = "sbom-$Platform-$Arch.json"
-    $sbomXml = "sbom-$Platform-$Arch.xml"
+    $sbomBuildJson = "sbom-build-$Platform-$Arch.json"
+    $sbomBuildXml = "sbom-build-$Platform-$Arch.xml"
+    $sbomImageJson = "sbom-image-$Platform-$Arch.cyclonedx.json"
     
     # Try to download SBOM files if not present and auto-download is enabled
-    if ((-not (Test-Path $sbomJson)) -and $AutoDownload -and $Version) {
+    if ($AutoDownload -and $Version) {
         Write-Status "Downloading SBOM files..."
         $baseUrl = "https://github.com/$GitHubRepo/releases/download/$Version"
-        try {
-            Invoke-WebRequest -Uri "$baseUrl/$sbomJson" -OutFile $sbomJson -ErrorAction Stop
-            Invoke-WebRequest -Uri "$baseUrl/$sbomXml" -OutFile $sbomXml -ErrorAction SilentlyContinue
-        } catch {
-            Write-Warning "Failed to download SBOM files: $_"
+        
+        # Download build-time SBOMs
+        if (-not (Test-Path $sbomBuildJson)) {
+            try {
+                Invoke-WebRequest -Uri "$baseUrl/$sbomBuildJson" -OutFile $sbomBuildJson -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to download $sbomBuildJson : $_"
+            }
+        }
+        if (-not (Test-Path $sbomBuildXml)) {
+            try {
+                Invoke-WebRequest -Uri "$baseUrl/$sbomBuildXml" -OutFile $sbomBuildXml -ErrorAction SilentlyContinue
+            } catch {
+                Write-Warning "Failed to download $sbomBuildXml : $_"
+            }
+        }
+        
+        # Download binary SBOM (from Syft)
+        if (-not (Test-Path $sbomImageJson)) {
+            try {
+                Invoke-WebRequest -Uri "$baseUrl/$sbomImageJson" -OutFile $sbomImageJson -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to download $sbomImageJson : $_"
+            }
         }
     }
     
-    if (Test-Path $sbomJson) {
-        Write-Status "Verifying SBOM JSON format..."
+    $sbomVerified = $false
+    
+    # Verify build-time SBOM (CycloneDX from Gradle)
+    if (Test-Path $sbomBuildJson) {
+        Write-Status "Verifying build-time SBOM (from Gradle build)..."
         $cycloneDx = Get-Command cyclonedx -ErrorAction SilentlyContinue
         if ($cycloneDx) {
-            $result = & cyclonedx validate $sbomJson 2>&1
+            $result = & cyclonedx validate $sbomBuildJson 2>&1
             if ($LASTEXITCODE -eq 0) {
-                Write-Status "✅ SBOM JSON validation PASSED"
+                Write-Status "✅ Build-time SBOM JSON validation PASSED"
             } else {
-                Write-Error "❌ SBOM JSON validation FAILED"
+                Write-Error "❌ Build-time SBOM JSON validation FAILED"
                 Write-Error $result
             }
         } else {
             Write-Warning "CycloneDX CLI not found, skipping SBOM validation"
         }
         
-        # Verify SBOM hash if hash file contains it
-        if ((Test-Path $HashFile) -and (Select-String -Path $HashFile -Pattern $sbomJson -Quiet)) {
-            Write-Status "Verifying SBOM hash..."
-            $sbomHashEntry = Select-String -Path $HashFile -Pattern $sbomJson
+        # Verify build-time SBOM hash if hash file contains it
+        if ((Test-Path $HashFile) -and (Select-String -Path $HashFile -Pattern $sbomBuildJson -Quiet)) {
+            Write-Status "Verifying build-time SBOM hash..."
+            $sbomHashEntry = Select-String -Path $HashFile -Pattern $sbomBuildJson
             $expectedSbomHash = ($sbomHashEntry.Line -split ':')[1].Trim()
-            $calculatedSbomHash = Get-FileHash256 -FilePath $sbomJson
+            $calculatedSbomHash = Get-FileHash256 -FilePath $sbomBuildJson
             
             if ($calculatedSbomHash -eq $expectedSbomHash) {
-                Write-Status "✅ SBOM hash verification PASSED"
+                Write-Status "✅ Build-time SBOM hash verification PASSED"
             } else {
-                Write-Error "❌ SBOM hash verification FAILED"
+                Write-Error "❌ Build-time SBOM hash verification FAILED"
             }
         }
+        $sbomVerified = $true
     } else {
-        Write-Warning "SBOM JSON file not found: $sbomJson"
+        Write-Warning "Build-time SBOM JSON file not found: $sbomBuildJson"
+    }
+    
+    # Verify binary SBOM (from Syft)
+    if (Test-Path $sbomImageJson) {
+        Write-Status "Verifying binary SBOM (from Syft binary analysis)..."
+        $cycloneDx = Get-Command cyclonedx -ErrorAction SilentlyContinue
+        if ($cycloneDx) {
+            $result = & cyclonedx validate $sbomImageJson 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Status "✅ Binary SBOM JSON validation PASSED"
+            } else {
+                Write-Error "❌ Binary SBOM JSON validation FAILED"
+                Write-Error $result
+            }
+        } else {
+            Write-Warning "CycloneDX CLI not found, skipping SBOM validation"
+        }
+        
+        # Verify binary SBOM hash if hash file contains it
+        if ((Test-Path $HashFile) -and (Select-String -Path $HashFile -Pattern $sbomImageJson -Quiet)) {
+            Write-Status "Verifying binary SBOM hash..."
+            $sbomHashEntry = Select-String -Path $HashFile -Pattern $sbomImageJson
+            $expectedSbomHash = ($sbomHashEntry.Line -split ':')[1].Trim()
+            $calculatedSbomHash = Get-FileHash256 -FilePath $sbomImageJson
+            
+            if ($calculatedSbomHash -eq $expectedSbomHash) {
+                Write-Status "✅ Binary SBOM hash verification PASSED"
+            } else {
+                Write-Error "❌ Binary SBOM hash verification FAILED"
+            }
+        }
+        $sbomVerified = $true
+        
+        Write-Status "📋 SBOM Types Available:"
+        Write-Status "  Build-time SBOM: Gradle dependencies and declared components"
+        Write-Status "  Binary SBOM: Binary analysis of final native executable"
+    } else {
+        Write-Warning "Binary SBOM not found: $sbomImageJson"
+    }
+    
+    
+    if (-not $sbomVerified) {
+        Write-Warning "No SBOM files found for verification"
     }
 }
 
