@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
@@ -43,7 +44,7 @@ class ScopeDeleteToolHandler : ToolHandler {
                 }
                 putJsonObject("idempotencyKey") {
                     put("type", "string")
-                    put("pattern", "^[A-Za-z0-9_-]{8,128}$")
+                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING)
                     put("description", "Idempotency key to prevent duplicate operations")
                 }
             }
