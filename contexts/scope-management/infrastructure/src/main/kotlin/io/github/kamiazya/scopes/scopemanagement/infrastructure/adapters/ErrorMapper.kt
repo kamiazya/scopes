@@ -31,6 +31,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
     }
 
+    private fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType): String = when (patternType) {
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase with hyphens (e.g., my-alias)"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters only"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
+    }
+
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError -> mapIdError(domainError)
@@ -53,8 +60,8 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopesError.Conflict -> mapConflictError(domainError)
         is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = domainError.aggregateId,
-            expectedVersion = domainError.expectedVersion?.toLong() ?: 0,
-            actualVersion = domainError.actualVersion?.toLong() ?: 0,
+            expectedVersion = domainError.expectedVersion?.toLong() ?: -1L,
+            actualVersion = domainError.actualVersion?.toLong() ?: -1L,
         )
         is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
@@ -115,29 +122,29 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
     }
 
-    private fun mapAliasError(domainError: ScopeInputError.AliasError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
-        is ScopeInputError.AliasError.EmptyAlias -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+    private fun mapAliasError(domainError: ScopeInputError.AliasError): ScopeContractError.InputError.InvalidAlias = when (domainError) {
+        is ScopeInputError.AliasError.EmptyAlias -> ScopeContractError.InputError.InvalidAlias(
+            alias = "",
+            validationFailure = ScopeContractError.AliasValidationFailure.Empty,
         )
-        is ScopeInputError.AliasError.AliasTooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+        is ScopeInputError.AliasError.AliasTooShort -> ScopeContractError.InputError.InvalidAlias(
+            alias = "",
+            validationFailure = ScopeContractError.AliasValidationFailure.TooShort(
                 minimumLength = domainError.minLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.AliasTooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+        is ScopeInputError.AliasError.AliasTooLong -> ScopeContractError.InputError.InvalidAlias(
+            alias = "",
+            validationFailure = ScopeContractError.AliasValidationFailure.TooLong(
                 maximumLength = domainError.maxLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidTitle(
-            title = domainError.alias,
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = emptyList(),
+        is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidAlias(
+            alias = domainError.alias,
+            validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
+                expectedPattern = presentAliasPattern(domainError.expectedPattern),
             ),
         )
     }
@@ -200,9 +207,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             alias = domainError.alias,
         )
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-        is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.DataInconsistencyError,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
+        is ScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidTitle(
@@ -214,6 +219,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.scopeId.toString(),
+        )
+        is ScopeAliasError.DataInconsistencyError -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
         )
     }
 

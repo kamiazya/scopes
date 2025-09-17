@@ -88,46 +88,46 @@ class ErrorMapperTest :
                     failure.maximumLength shouldBe 500
                 }
 
-                it("should map ScopeInputError.AliasError.EmptyAlias to InvalidTitle") {
+                it("should map ScopeInputError.AliasError.EmptyAlias to InvalidAlias") {
                     val domainError = ScopeInputError.AliasError.EmptyAlias
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    result.title shouldBe ""
-                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.Empty>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidAlias>()
+                    result.alias shouldBe ""
+                    result.validationFailure.shouldBeInstanceOf<ScopeContractError.AliasValidationFailure.Empty>()
                 }
 
-                it("should map ScopeInputError.AliasError.AliasTooShort to InvalidTitle") {
+                it("should map ScopeInputError.AliasError.AliasTooShort to InvalidAlias") {
                     val domainError = ScopeInputError.AliasError.AliasTooShort(minLength = 3)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    result.title shouldBe ""
-                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooShort>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidAlias>()
+                    result.alias shouldBe ""
+                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.AliasValidationFailure.TooShort>()
                     failure.minimumLength shouldBe 3
                 }
 
-                it("should map ScopeInputError.AliasError.AliasTooLong to InvalidTitle") {
+                it("should map ScopeInputError.AliasError.AliasTooLong to InvalidAlias") {
                     val domainError = ScopeInputError.AliasError.AliasTooLong(maxLength = 50)
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    result.title shouldBe ""
-                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.TooLong>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidAlias>()
+                    result.alias shouldBe ""
+                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.AliasValidationFailure.TooLong>()
                     failure.maximumLength shouldBe 50
                 }
 
-                it("should map ScopeInputError.AliasError.InvalidAliasFormat to InvalidTitle") {
+                it("should map ScopeInputError.AliasError.InvalidAliasFormat to InvalidAlias") {
                     val domainError = ScopeInputError.AliasError.InvalidAliasFormat(
                         alias = "invalid@alias",
                         expectedPattern = ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS,
                     )
                     val contractError = errorMapper.mapToContractError(domainError)
 
-                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidTitle>()
-                    result.title shouldBe "invalid@alias"
-                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.TitleValidationFailure.InvalidCharacters>()
-                    failure.prohibitedCharacters shouldBe emptyList<Char>()
+                    val result = contractError.shouldBeInstanceOf<ScopeContractError.InputError.InvalidAlias>()
+                    result.alias shouldBe "invalid@alias"
+                    val failure = result.validationFailure.shouldBeInstanceOf<ScopeContractError.AliasValidationFailure.InvalidFormat>()
+                    failure.expectedPattern shouldBe "lowercase with hyphens (e.g., my-alias)"
                 }
             }
 

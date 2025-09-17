@@ -222,11 +222,33 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
 
         // PersistenceError
-        is ScopeManagementApplicationError.PersistenceError.ConcurrencyConflict -> ScopeContractError.SystemError.ConcurrentModification(
-            scopeId = domainError.entityId,
-            expectedVersion = domainError.expectedVersion.toLongOrNull() ?: 0,
-            actualVersion = domainError.actualVersion.toLongOrNull() ?: 0,
-        )
+        is ScopeManagementApplicationError.PersistenceError.ConcurrencyConflict -> {
+            val expectedVersion = domainError.expectedVersion.toLongOrNull() ?: run {
+                logger.warn(
+                    "Failed to parse expected version to Long, using sentinel value",
+                    mapOf(
+                        "entityId" to domainError.entityId,
+                        "expectedVersion" to domainError.expectedVersion,
+                    ),
+                )
+                -1L
+            }
+            val actualVersion = domainError.actualVersion.toLongOrNull() ?: run {
+                logger.warn(
+                    "Failed to parse actual version to Long, using sentinel value",
+                    mapOf(
+                        "entityId" to domainError.entityId,
+                        "actualVersion" to domainError.actualVersion,
+                    ),
+                )
+                -1L
+            }
+            ScopeContractError.SystemError.ConcurrentModification(
+                scopeId = domainError.entityId,
+                expectedVersion = expectedVersion,
+                actualVersion = actualVersion,
+            )
+        }
         is ScopeManagementApplicationError.PersistenceError.DataCorruption -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "scope-management",
         )
