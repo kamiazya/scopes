@@ -18,6 +18,18 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
  * ensuring consistent error translation to the contract layer.
  */
 class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementApplicationError, ScopeContractError>(logger) {
+
+    private fun parseVersionToLong(entityId: String, version: String, versionType: String): Long = version.toLongOrNull() ?: run {
+        logger.warn(
+            "Failed to parse $versionType version to Long, using sentinel value",
+            mapOf(
+                "entityId" to entityId,
+                "${versionType}Version" to version,
+            ),
+        )
+        -1L
+    }
+
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
         // ID validation errors
         is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidId(
@@ -223,26 +235,8 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
         // PersistenceError
         is ScopeManagementApplicationError.PersistenceError.ConcurrencyConflict -> {
-            val expectedVersion = domainError.expectedVersion.toLongOrNull() ?: run {
-                logger.warn(
-                    "Failed to parse expected version to Long, using sentinel value",
-                    mapOf(
-                        "entityId" to domainError.entityId,
-                        "expectedVersion" to domainError.expectedVersion,
-                    ),
-                )
-                -1L
-            }
-            val actualVersion = domainError.actualVersion.toLongOrNull() ?: run {
-                logger.warn(
-                    "Failed to parse actual version to Long, using sentinel value",
-                    mapOf(
-                        "entityId" to domainError.entityId,
-                        "actualVersion" to domainError.actualVersion,
-                    ),
-                )
-                -1L
-            }
+            val expectedVersion = parseVersionToLong(domainError.entityId, domainError.expectedVersion, "expected")
+            val actualVersion = parseVersionToLong(domainError.entityId, domainError.actualVersion, "actual")
             ScopeContractError.SystemError.ConcurrentModification(
                 scopeId = domainError.entityId,
                 expectedVersion = expectedVersion,

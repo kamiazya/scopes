@@ -185,13 +185,17 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             ),
         )
         is ScopeHierarchyError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
                 scopeId = domainError.scopeId.value,
+                attemptedDepth = domainError.currentDepth + 1,
+                maximumDepth = domainError.maxDepth,
             ),
         )
         is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
-                scopeId = domainError.parentId.value,
+            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
+                parentId = domainError.parentId.value,
+                currentChildrenCount = domainError.currentCount,
+                maximumChildren = domainError.maxChildren,
             ),
         )
         is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
