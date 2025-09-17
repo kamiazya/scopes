@@ -47,7 +47,7 @@ class ListCommand :
         completionCandidates = CompletionCandidates.Custom.fromStdout("scopes _complete-aspects"),
     ).multiple()
 
-    private suspend fun listRootScopesWithFiltering(aspectFilters: Map<String, String>) {
+    private suspend fun listRootScopesWithFiltering(aspectFilters: Map<String, List<String>>) {
         scopeQueryAdapter.listRootScopes(offset, limit).fold(
             { error ->
                 handleContractError(error)

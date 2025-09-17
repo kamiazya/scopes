@@ -220,6 +220,7 @@ object ErrorMessageMapper {
             "Repository error during $operation operation on ${error.entityType ?: "entity"}"
         }
         is ScopesError.ScopeStatusTransitionError -> "Invalid status transition from ${error.from} to ${error.to}: ${error.reason}"
+        else -> "Unknown error: ${error::class.simpleName}"
     }
 
     private fun getValidationFailedMessage(error: ScopesError.ValidationFailed): String {
