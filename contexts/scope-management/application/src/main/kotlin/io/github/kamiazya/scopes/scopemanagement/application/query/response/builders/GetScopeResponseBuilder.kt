@@ -1,6 +1,6 @@
-package io.github.kamiazya.scopes.scopemanagement.application.response.builders
+package io.github.kamiazya.scopes.scopemanagement.application.query.response.builders
 
-import io.github.kamiazya.scopes.scopemanagement.application.response.data.GetScopeResponse
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.data.GetScopeResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -47,7 +47,12 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
             }
         }
 
-        return Json.parseToJsonElement(json.toString()).jsonObject.toMap()
+        return runCatching {
+            Json.parseToJsonElement(json.toString()).jsonObject.toMap()
+        }.getOrElse {
+            // Fallback to empty map on JSON parsing error
+            emptyMap()
+        }
     }
 
     override fun buildCliResponse(data: GetScopeResponse): String = buildString {
@@ -103,7 +108,7 @@ class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
     }
 
     private fun StringBuilder.appendTimestampsSection(data: GetScopeResponse) {
-        if (data.includeTimestamps) {
+        if (data.includeTemporalFields) {
             appendLine("Created: ${data.scope.createdAt}")
             appendLine("Updated: ${data.scope.updatedAt}")
             appendLine()

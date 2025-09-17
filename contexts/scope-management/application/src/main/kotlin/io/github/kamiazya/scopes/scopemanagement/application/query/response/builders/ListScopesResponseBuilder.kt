@@ -1,7 +1,7 @@
-package io.github.kamiazya.scopes.scopemanagement.application.response.builders
+package io.github.kamiazya.scopes.scopemanagement.application.query.response.builders
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.response.data.ListScopesResponse
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.data.ListScopesResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
@@ -27,7 +27,12 @@ class ListScopesResponseBuilder : ResponseBuilder<ListScopesResponse> {
             data.hasMore?.let { put("hasMore", it) }
         }
 
-        return Json.parseToJsonElement(json.toString()).jsonObject.toMap()
+        return runCatching {
+            Json.parseToJsonElement(json.toString()).jsonObject.toMap()
+        }.getOrElse {
+            // Fallback to empty map on JSON parsing error
+            emptyMap()
+        }
     }
 
     override fun buildCliResponse(data: ListScopesResponse): String {

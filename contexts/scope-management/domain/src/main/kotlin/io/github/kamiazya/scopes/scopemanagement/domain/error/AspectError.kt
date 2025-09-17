@@ -21,7 +21,7 @@ sealed class AspectError {
         }
     }
 
-    data class InvalidAspectFormat(val entry: String, val reason: FormatError) : AspectError() {
+    data class InvalidAspectFormat(val reason: FormatError) : AspectError() {
         enum class FormatError {
             NO_DELIMITER,
             MULTIPLE_DELIMITERS,

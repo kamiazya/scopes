@@ -47,13 +47,13 @@ class ValidationService(private val strictMode: Boolean = true) {
      * @param limit The limit value
      * @return Either validation error or valid pagination parameters
      */
-    fun validatePagination(offset: Int, limit: Int): Either<DomainValidationError.InvalidPagination, Pair<Int, Int>> = when {
+    fun validatePagination(offset: Int, limit: Int): Either<DomainValidationError.PaginationViolation, Pair<Int, Int>> = when {
         offset < MIN_OFFSET ->
-            Either.Left(DomainValidationError.InvalidPagination.OffsetTooSmall(offset, MIN_OFFSET))
+            Either.Left(DomainValidationError.PaginationViolation.OffsetTooSmall(offset, MIN_OFFSET))
         limit < MIN_LIMIT ->
-            Either.Left(DomainValidationError.InvalidPagination.LimitTooSmall(limit, MIN_LIMIT))
+            Either.Left(DomainValidationError.PaginationViolation.LimitTooSmall(limit, MIN_LIMIT))
         limit > MAX_LIMIT ->
-            Either.Left(DomainValidationError.InvalidPagination.LimitTooLarge(limit, MAX_LIMIT))
+            Either.Left(DomainValidationError.PaginationViolation.LimitTooLarge(limit, MAX_LIMIT))
         else ->
             Either.Right(offset to limit)
     }

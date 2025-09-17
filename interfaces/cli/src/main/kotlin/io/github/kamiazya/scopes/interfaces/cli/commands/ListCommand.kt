@@ -68,11 +68,11 @@ class ListCommand :
         validationService.validatePagination(offset, limit).fold(
             { error ->
                 val message = when (error) {
-                    is DomainValidationError.InvalidPagination.OffsetTooSmall ->
+                    is DomainValidationError.PaginationViolation.OffsetTooSmall ->
                         "Offset must be at least ${error.minOffset}, but was ${error.offset}"
-                    is DomainValidationError.InvalidPagination.LimitTooSmall ->
+                    is DomainValidationError.PaginationViolation.LimitTooSmall ->
                         "Limit must be at least ${error.minLimit}, but was ${error.limit}"
-                    is DomainValidationError.InvalidPagination.LimitTooLarge ->
+                    is DomainValidationError.PaginationViolation.LimitTooLarge ->
                         "Limit must not exceed ${error.maxLimit}, but was ${error.limit}"
                 }
                 fail(message, ExitCode.USAGE_ERROR)

@@ -3,10 +3,10 @@ package io.github.kamiazya.scopes.scopemanagement.application.services
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasInfo
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.response.builders.GetScopeResponseBuilder
-import io.github.kamiazya.scopes.scopemanagement.application.response.builders.ListScopesResponseBuilder
-import io.github.kamiazya.scopes.scopemanagement.application.response.data.GetScopeResponse
-import io.github.kamiazya.scopes.scopemanagement.application.response.data.ListScopesResponse
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.builders.GetScopeResponseBuilder
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.builders.ListScopesResponseBuilder
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.data.GetScopeResponse
+import io.github.kamiazya.scopes.scopemanagement.application.query.response.data.ListScopesResponse
 
 /**
  * Application service that provides response formatting using ResponseBuilders.
@@ -54,7 +54,7 @@ class ResponseFormatterService {
             scope = scope,
             aliases = aliases,
             includeDebug = false,
-            includeTimestamps = true,
+            includeTemporalFields = true,
         )
         return getScopeBuilder.buildMcpResponse(response)
     }
@@ -90,12 +90,12 @@ class ResponseFormatterService {
     /**
      * Format single scope for CLI response.
      */
-    fun formatScopeForCli(scope: ScopeResult, aliases: List<AliasInfo>? = null, includeDebug: Boolean = false, includeTimestamps: Boolean = true): String {
+    fun formatScopeForCli(scope: ScopeResult, aliases: List<AliasInfo>? = null, includeDebug: Boolean = false, includeTemporalFields: Boolean = true): String {
         val response = GetScopeResponse(
             scope = scope,
             aliases = aliases,
             includeDebug = includeDebug,
-            includeTimestamps = includeTimestamps,
+            includeTemporalFields = includeTemporalFields,
         )
         return getScopeBuilder.buildCliResponse(response)
     }

@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.response.data
+package io.github.kamiazya.scopes.scopemanagement.application.query.response.data
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 

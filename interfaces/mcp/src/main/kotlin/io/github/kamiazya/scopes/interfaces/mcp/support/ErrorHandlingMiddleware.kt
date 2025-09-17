@@ -264,21 +264,21 @@ internal class ErrorHandlingMiddleware(private val logger: Logger) {
                 userMessage = "The provided ID '${error.value}' is not a valid ULID format",
                 details = mapOf("value" to error.value),
             )
-        is DomainValidationError.InvalidPagination.OffsetTooSmall ->
+        is DomainValidationError.PaginationViolation.OffsetTooSmall ->
             ErrorResponse(
                 code = "INVALID_OFFSET",
                 message = "Offset too small",
                 userMessage = "Offset must be at least ${error.minOffset}, but was ${error.offset}",
                 details = mapOf("offset" to error.offset, "minOffset" to error.minOffset),
             )
-        is DomainValidationError.InvalidPagination.LimitTooSmall ->
+        is DomainValidationError.PaginationViolation.LimitTooSmall ->
             ErrorResponse(
                 code = "INVALID_LIMIT",
                 message = "Limit too small",
                 userMessage = "Limit must be at least ${error.minLimit}, but was ${error.limit}",
                 details = mapOf("limit" to error.limit, "minLimit" to error.minLimit),
             )
-        is DomainValidationError.InvalidPagination.LimitTooLarge ->
+        is DomainValidationError.PaginationViolation.LimitTooLarge ->
             ErrorResponse(
                 code = "INVALID_LIMIT",
                 message = "Limit too large",
@@ -370,17 +370,17 @@ internal class ErrorHandlingMiddleware(private val logger: Logger) {
                 message = "Invalid aspect format",
                 userMessage = when (error.reason) {
                     AspectError.InvalidAspectFormat.FormatError.NO_DELIMITER ->
-                        "Aspect entry '${error.entry}' must contain '=' or ':' delimiter"
+                        "Aspect entry must contain '=' or ':' delimiter"
                     AspectError.InvalidAspectFormat.FormatError.MULTIPLE_DELIMITERS ->
-                        "Aspect entry '${error.entry}' contains multiple delimiters"
+                        "Aspect entry contains multiple delimiters"
                     AspectError.InvalidAspectFormat.FormatError.EMPTY_KEY ->
-                        "Aspect entry '${error.entry}' has an empty key"
+                        "Aspect entry has an empty key"
                     AspectError.InvalidAspectFormat.FormatError.EMPTY_VALUE ->
-                        "Aspect entry '${error.entry}' has an empty value"
+                        "Aspect entry has an empty value"
                     AspectError.InvalidAspectFormat.FormatError.MALFORMED ->
-                        "Aspect entry '${error.entry}' is malformed"
+                        "Aspect entry is malformed"
                 },
-                details = mapOf("entry" to error.entry, "reason" to error.reason.name),
+                details = mapOf("reason" to error.reason.name),
             )
     }
 }

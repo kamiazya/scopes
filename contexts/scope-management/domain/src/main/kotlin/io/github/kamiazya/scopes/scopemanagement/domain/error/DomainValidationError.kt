@@ -3,10 +3,10 @@ package io.github.kamiazya.scopes.scopemanagement.domain.error
 sealed class DomainValidationError {
     data class InvalidULID(val value: String) : DomainValidationError()
 
-    sealed class InvalidPagination : DomainValidationError() {
-        data class OffsetTooSmall(val offset: Int, val minOffset: Int) : InvalidPagination()
-        data class LimitTooSmall(val limit: Int, val minLimit: Int) : InvalidPagination()
-        data class LimitTooLarge(val limit: Int, val maxLimit: Int) : InvalidPagination()
+    sealed class PaginationViolation : DomainValidationError() {
+        data class OffsetTooSmall(val offset: Int, val minOffset: Int) : PaginationViolation()
+        data class LimitTooSmall(val limit: Int, val minLimit: Int) : PaginationViolation()
+        data class LimitTooLarge(val limit: Int, val maxLimit: Int) : PaginationViolation()
     }
 
     data class EmptyField(val fieldName: String) : DomainValidationError()

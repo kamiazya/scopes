@@ -54,7 +54,7 @@ class GetCommand :
                                             scope = scope,
                                             aliases = null,
                                             includeDebug = debugContext.debug,
-                                            includeTimestamps = true,
+                                            includeTemporalFields = true,
                                         ),
                                     )
                                 },
@@ -65,7 +65,7 @@ class GetCommand :
                                             scope = scope,
                                             aliases = aliasResult.aliases,
                                             includeDebug = debugContext.debug,
-                                            includeTimestamps = true,
+                                            includeTemporalFields = true,
                                         ),
                                     )
                                 },
