@@ -34,8 +34,11 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         -1L
     }
 
-    private fun mapSystemError(_error: ScopeManagementApplicationError): ScopeContractError =
-        ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
+    private fun mapSystemError(): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
+
+    private fun mapAliasNotFoundError(alias: String): ScopeContractError = ScopeContractError.BusinessError.AliasNotFound(alias = alias)
+
+    private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
         // Group errors by type
@@ -44,7 +47,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ScopeAliasError -> mapScopeAliasError(domainError)
         is ScopeHierarchyApplicationError -> mapHierarchyError(domainError)
         is ScopeUniquenessError -> mapUniquenessError(domainError)
-        is CrossAggregateValidationError -> mapSystemError(domainError)
+        is CrossAggregateValidationError -> mapSystemError()
         is ScopeManagementApplicationError.PersistenceError -> mapPersistenceError(domainError)
     }
 
@@ -121,9 +124,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
 
         // Alias business errors
-        is AppScopeInputError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
-            alias = error.alias,
-        )
+        is AppScopeInputError.AliasNotFound -> mapAliasNotFoundError(error.alias)
         is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.alias,
         )
@@ -135,9 +136,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
 
         // Other input errors
-        is AppScopeInputError.InvalidAlias -> ScopeContractError.BusinessError.AliasNotFound(
-            alias = error.alias,
-        )
+        is AppScopeInputError.InvalidAlias -> mapAliasNotFoundError(error.alias)
         is AppScopeInputError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
             parentId = error.parentId,
             expectedFormat = "Valid ULID format",
@@ -148,18 +147,13 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         // System errors
         is ContextError.ContextInUse,
         is ContextError.ContextUpdateConflict,
-        is ContextError.InvalidFilter -> mapSystemError(error)
+        is ContextError.InvalidFilter,
+        -> mapSystemError()
 
         // Not found errors
-        is ContextError.ContextNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = error.key,
-        )
-        is ContextError.InvalidContextSwitch -> ScopeContractError.BusinessError.NotFound(
-            scopeId = error.key,
-        )
-        is ContextError.StateNotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = error.contextId,
-        )
+        is ContextError.ContextNotFound -> mapNotFoundError(error.key)
+        is ContextError.InvalidContextSwitch -> mapNotFoundError(error.key)
+        is ContextError.StateNotFound -> mapNotFoundError(error.contextId)
 
         // Other errors
         is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateAlias(
@@ -175,15 +169,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         // System errors
         is ScopeAliasError.AliasGenerationFailed,
         is ScopeAliasError.AliasGenerationValidationFailed,
-        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> mapSystemError(error)
+        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound,
+        -> mapSystemError()
 
         // Business errors
         is ScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.aliasName,
         )
-        is ScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
-            alias = error.aliasName,
-        )
+        is ScopeAliasError.AliasNotFound -> mapAliasNotFoundError(error.aliasName)
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
     }
 
@@ -249,10 +242,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             )
         }
         is ScopeManagementApplicationError.PersistenceError.DataCorruption,
-        is ScopeManagementApplicationError.PersistenceError.StorageUnavailable -> mapSystemError(error)
+        is ScopeManagementApplicationError.PersistenceError.StorageUnavailable,
+        -> mapSystemError()
 
-        is ScopeManagementApplicationError.PersistenceError.NotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = error.entityId ?: "",
-        )
+        is ScopeManagementApplicationError.PersistenceError.NotFound -> mapNotFoundError(error.entityId ?: "")
     }
 }
