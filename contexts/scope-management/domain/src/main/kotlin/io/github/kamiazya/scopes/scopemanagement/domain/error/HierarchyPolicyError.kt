@@ -17,4 +17,14 @@ sealed class HierarchyPolicyError : ScopesError() {
      * Error when maximum children per scope value is invalid.
      */
     data class InvalidMaxChildrenPerScope(val attemptedValue: Int) : HierarchyPolicyError()
+
+    /**
+     * Error when hierarchy depth is exceeded.
+     */
+    data class DepthExceeded(val currentDepth: Int, val maxAllowed: Int) : HierarchyPolicyError()
+
+    /**
+     * Error when too many children are added to a scope.
+     */
+    data class TooManyChildren(val currentCount: Int, val maxAllowed: Int) : HierarchyPolicyError()
 }

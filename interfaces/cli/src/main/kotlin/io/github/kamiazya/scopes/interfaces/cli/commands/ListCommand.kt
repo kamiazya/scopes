@@ -17,6 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFo
 import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.ValidationService
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Pagination
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -65,7 +66,7 @@ class ListCommand :
     }
 
     private fun validatePaginationInputs() {
-        validationService.validatePagination(offset, limit).fold(
+        Pagination.create(offset, limit).fold(
             { error ->
                 val message = when (error) {
                     is DomainValidationError.PaginationViolation.OffsetTooSmall ->
