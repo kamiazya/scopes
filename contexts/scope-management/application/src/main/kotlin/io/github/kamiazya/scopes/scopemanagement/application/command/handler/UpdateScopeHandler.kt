@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
+import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
@@ -9,9 +10,11 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
@@ -45,76 +48,31 @@ class UpdateScopeHandler(
         transactionManager.inTransaction {
             either {
                 // Parse scope ID
-                val scopeId = ScopeId.create(command.id).mapLeft { it.toGenericApplicationError() }.bind()
+                val scopeId = ScopeId.create(command.id).mapLeft { error ->
+                    when (error) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
+                            ScopeInputError.IdBlank(command.id)
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
+                            ScopeInputError.IdInvalidFormat(command.id, error.expectedFormat.toString())
+                    }
+                }.bind()
 
                 // Find existing scope
-                val existingScope = ensureNotNull(scopeRepository.findById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()) {
-                    logger.warn("Scope not found for update", mapOf("scopeId" to command.id))
-                    ScopeNotFoundError(
-                        scopeId = scopeId,
-                    ).toGenericApplicationError()
-                }
+                val existingScope = findExistingScope(scopeId).bind()
 
+                // Apply updates
                 var updatedScope = existingScope
 
-                // Update title if provided
                 if (command.title != null) {
-                    val newTitle = ScopeTitle.create(command.title).mapLeft { it.toGenericApplicationError() }.bind()
-
-                    // Use specification to validate title uniqueness
-                    titleUniquenessSpec.isSatisfiedByForUpdate(
-                        newTitle = newTitle,
-                        currentTitle = existingScope.title,
-                        parentId = existingScope.parentId,
-                        scopeId = scopeId,
-                        titleExistsChecker = { title, parentId ->
-                            scopeRepository.findIdByParentIdAndTitle(parentId, title.value).getOrNull()
-                        },
-                    ).mapLeft { it.toGenericApplicationError() }.bind()
-
-                    updatedScope = updatedScope.updateTitle(command.title, Clock.System.now()).mapLeft { it.toGenericApplicationError() }.bind()
-                    logger.debug(
-                        "Title updated",
-                        mapOf(
-                            "scopeId" to scopeId.value,
-                            "newTitle" to command.title,
-                        ),
-                    )
+                    updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
                 }
 
-                // Update description if provided
                 if (command.description != null) {
-                    updatedScope = updatedScope.updateDescription(command.description, Clock.System.now()).mapLeft { it.toGenericApplicationError() }.bind()
-                    logger.debug(
-                        "Description updated",
-                        mapOf(
-                            "scopeId" to scopeId.value,
-                            "hasDescription" to command.description.isNotEmpty().toString(),
-                        ),
-                    )
+                    updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
                 }
 
-                // Update metadata/aspects if provided
                 if (command.metadata.isNotEmpty()) {
-                    val aspects = command.metadata.mapNotNull { (key, value) ->
-                        val aspectKey = AspectKey.create(key).getOrNull()
-                        val aspectValue = AspectValue.create(value).getOrNull()
-                        if (aspectKey != null && aspectValue != null) {
-                            aspectKey to nonEmptyListOf(aspectValue)
-                        } else {
-                            logger.debug("Skipping invalid aspect", mapOf("key" to key, "value" to value))
-                            null
-                        }
-                    }.toMap()
-
-                    updatedScope = updatedScope.updateAspects(Aspects.from(aspects), Clock.System.now())
-                    logger.debug(
-                        "Aspects updated",
-                        mapOf(
-                            "scopeId" to scopeId.value,
-                            "aspectCount" to aspects.size.toString(),
-                        ),
-                    )
+                    updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
                 }
 
                 // Save the updated scope
@@ -133,4 +91,97 @@ class UpdateScopeHandler(
             ),
         )
     }
+
+    private suspend fun findExistingScope(scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
+        val scope = scopeRepository.findById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+        ensureNotNull(scope) {
+            logger.warn("Scope not found for update", mapOf("scopeId" to scopeId.value))
+            ScopeNotFoundError(scopeId = scopeId).toGenericApplicationError()
+        }
+    }
+
+    private suspend fun updateTitle(scope: Scope, newTitle: String, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
+        val title = ScopeTitle.create(newTitle).mapLeft { error ->
+            when (error) {
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.EmptyTitle ->
+                    ScopeInputError.TitleEmpty(newTitle)
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.TitleTooShort ->
+                    ScopeInputError.TitleTooShort(newTitle, error.minLength)
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.TitleTooLong ->
+                    ScopeInputError.TitleTooLong(newTitle, error.maxLength)
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.InvalidTitleFormat ->
+                    ScopeInputError.TitleContainsProhibitedCharacters(newTitle, listOf('<', '>', '&', '"'))
+            }
+        }.bind()
+
+        // Use specification to validate title uniqueness
+        titleUniquenessSpec.isSatisfiedByForUpdate(
+            newTitle = title,
+            currentTitle = scope.title,
+            parentId = scope.parentId,
+            scopeId = scopeId,
+            titleExistsChecker = { checkTitle, parentId ->
+                scopeRepository.findIdByParentIdAndTitle(parentId, checkTitle.value).getOrNull()
+            },
+        ).mapLeft { it.toGenericApplicationError() }.bind()
+
+        val updated = scope.updateTitle(newTitle, Clock.System.now()).mapLeft { it.toGenericApplicationError() }.bind()
+
+        logger.debug(
+            "Title updated",
+            mapOf(
+                "scopeId" to scopeId.value,
+                "newTitle" to newTitle,
+            ),
+        )
+
+        updated
+    }
+
+    private fun updateDescription(scope: Scope, newDescription: String, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
+        val updated = scope.updateDescription(newDescription, Clock.System.now())
+            .mapLeft { error ->
+                when (error) {
+                    is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.DescriptionError.DescriptionTooLong ->
+                        ScopeInputError.DescriptionTooLong(newDescription, error.maxLength)
+                    else -> error.toGenericApplicationError()
+                }
+            }.bind()
+
+        logger.debug(
+            "Description updated",
+            mapOf(
+                "scopeId" to scopeId.value,
+                "hasDescription" to newDescription.isNotEmpty().toString(),
+            ),
+        )
+
+        updated
+    }
+
+    private fun updateAspects(scope: Scope, metadata: Map<String, String>, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
+        val aspects = buildAspects(metadata)
+        val updated = scope.updateAspects(Aspects.from(aspects), Clock.System.now())
+
+        logger.debug(
+            "Aspects updated",
+            mapOf(
+                "scopeId" to scopeId.value,
+                "aspectCount" to aspects.size.toString(),
+            ),
+        )
+
+        updated
+    }
+
+    private fun buildAspects(metadata: Map<String, String>): Map<AspectKey, NonEmptyList<AspectValue>> = metadata.mapNotNull { (key, value) ->
+        val aspectKey = AspectKey.create(key).getOrNull()
+        val aspectValue = AspectValue.create(value).getOrNull()
+        if (aspectKey != null && aspectValue != null) {
+            aspectKey to nonEmptyListOf(aspectValue)
+        } else {
+            logger.debug("Skipping invalid aspect", mapOf("key" to key, "value" to value))
+            null
+        }
+    }.toMap()
 }

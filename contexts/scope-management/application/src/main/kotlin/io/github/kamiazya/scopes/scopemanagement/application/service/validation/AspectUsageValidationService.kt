@@ -21,7 +21,7 @@ class AspectUsageValidationService(private val scopeRepository: ScopeRepository)
     suspend fun ensureNotInUse(aspectKey: AspectKey): Either<ScopeManagementApplicationError, Unit> = either {
         // Check if any scopes are using this aspect
         val count = scopeRepository.countByAspectKey(aspectKey).fold(
-            { error ->
+            { _ ->
                 raise(
                     ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
                         operation = "count-aspect-usage",

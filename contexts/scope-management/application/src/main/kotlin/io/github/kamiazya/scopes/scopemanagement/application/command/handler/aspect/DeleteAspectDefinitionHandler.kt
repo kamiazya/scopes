@@ -32,7 +32,7 @@ class DeleteAspectDefinitionHandler(
 
                 // Check if definition exists
                 aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,

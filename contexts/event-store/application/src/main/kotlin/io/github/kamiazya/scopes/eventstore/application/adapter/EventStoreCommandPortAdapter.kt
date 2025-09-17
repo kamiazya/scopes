@@ -18,7 +18,7 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
     override suspend fun createEvent(command: StoreEventCommand): Either<EventStoreContractError, Unit> {
         // Deserialize the event data
         return eventSerializer.deserialize(command.eventType, command.eventData)
-            .mapLeft { error ->
+            .mapLeft { _ ->
                 EventStoreContractError.EventStorageError(
                     aggregateId = command.aggregateId,
                     eventType = command.eventType,
@@ -31,7 +31,7 @@ class EventStoreCommandPortAdapter(private val storeEventHandler: StoreEventHand
                 storeEventHandler(
                     AppStoreEventCommand(event = domainEvent),
                 )
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         EventStoreContractError.EventStorageError(
                             aggregateId = command.aggregateId,
                             eventType = command.eventType,

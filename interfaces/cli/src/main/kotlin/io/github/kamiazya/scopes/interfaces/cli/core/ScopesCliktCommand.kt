@@ -72,10 +72,12 @@ abstract class ScopesCliktCommand(
         is ScopeContractError.BusinessError.HasChildren -> ExitCode.STATE_ERROR
         is ScopeContractError.BusinessError.AliasNotFound -> ExitCode.ALIAS_NOT_FOUND
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.BusinessError.AliasOfDifferentScope -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidTitle -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidDescription -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidId -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidParentId -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.InputError.InvalidAlias -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.SystemError.ServiceUnavailable -> ExitCode.UNAVAILABLE
         is ScopeContractError.SystemError.Timeout -> ExitCode.TEMP_FAIL
         is ScopeContractError.SystemError.ConcurrentModification -> ExitCode.STATE_ERROR

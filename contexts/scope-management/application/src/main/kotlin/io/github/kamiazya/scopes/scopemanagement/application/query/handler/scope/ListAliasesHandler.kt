@@ -41,7 +41,7 @@ class ListAliasesHandler(
 
                 // Get the scope to verify it exists
                 scopeRepository.findById(scopeId)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "scope-repository",
@@ -62,7 +62,7 @@ class ListAliasesHandler(
 
                 // Get all aliases for the scope
                 val aliases = scopeAliasRepository.findByScopeId(scopeId)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "alias-repository",

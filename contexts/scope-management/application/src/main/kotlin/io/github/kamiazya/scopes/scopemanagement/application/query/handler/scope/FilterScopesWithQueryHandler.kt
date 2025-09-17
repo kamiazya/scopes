@@ -60,7 +60,7 @@ class FilterScopesWithQueryHandler(
 
                 // Get all aspect definitions for type-aware comparison
                 val definitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "aspect-repository",
@@ -80,7 +80,7 @@ class FilterScopesWithQueryHandler(
                             .mapLeft { it.toGenericApplicationError() }
                             .bind()
                         scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopesError.SystemError(
                                     errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                     service = SCOPE_REPOSITORY_SERVICE,
@@ -95,7 +95,7 @@ class FilterScopesWithQueryHandler(
                     query.limit != 100 || query.offset > 0 -> {
                         // Use pagination - get all scopes with offset and limit
                         scopeRepository.findAll(query.offset, query.limit)
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopesError.SystemError(
                                     errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                     service = SCOPE_REPOSITORY_SERVICE,
@@ -111,7 +111,7 @@ class FilterScopesWithQueryHandler(
                     else -> {
                         // Default behavior - get root scopes only
                         scopeRepository.findAllRoot()
-                            .mapLeft { error ->
+                            .mapLeft { _ ->
                                 ScopesError.SystemError(
                                     errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                     service = SCOPE_REPOSITORY_SERVICE,

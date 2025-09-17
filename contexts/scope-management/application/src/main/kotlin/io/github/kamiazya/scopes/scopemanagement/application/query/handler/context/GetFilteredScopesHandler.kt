@@ -53,7 +53,7 @@ class GetFilteredScopesHandler(
 
                     // Use specified context
                     contextViewRepository.findByKey(contextViewKey)
-                        .mapLeft { error ->
+                        .mapLeft { _ ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "context-repository",
@@ -65,7 +65,7 @@ class GetFilteredScopesHandler(
                 else -> {
                     // Use active context if available
                     activeContextRepository.getActiveContext()
-                        .mapLeft { error ->
+                        .mapLeft { _ ->
                             ScopesError.SystemError(
                                 errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                                 service = "active-context-repository",
@@ -78,7 +78,7 @@ class GetFilteredScopesHandler(
 
             // Get all scopes with pagination
             val allScopes = scopeRepository.findAll(query.offset, query.limit)
-                .mapLeft { error ->
+                .mapLeft { _ ->
                     ScopesError.SystemError(
                         errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                         service = "scope-repository",
@@ -94,7 +94,7 @@ class GetFilteredScopesHandler(
             val filteredScopes = if (contextView != null) {
                 // Get aspect definitions for type-aware comparison
                 val aspectDefinitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "aspect-repository",
@@ -106,7 +106,7 @@ class GetFilteredScopesHandler(
 
                 // Use the domain-rich filter method
                 val filtered = contextView.filterScopes(allScopes, aspectDefinitions, filterEvaluationService)
-                    .mapLeft { error ->
+                    .mapLeft { _ ->
                         ScopesError.SystemError(
                             errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
                             service = "filter-evaluation",
