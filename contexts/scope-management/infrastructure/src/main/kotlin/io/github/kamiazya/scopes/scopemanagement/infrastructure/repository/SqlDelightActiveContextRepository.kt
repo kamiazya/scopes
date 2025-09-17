@@ -23,7 +23,7 @@ import kotlinx.datetime.Instant
  * SQLite implementation of ActiveContextRepository.
  * Manages the persistence of the currently active context view.
  */
-class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase) : ActiveContextRepository {
+class SqlDelightActiveContextRepository(private val database: ScopeManagementDatabase) : ActiveContextRepository {
 
     @Volatile
     private var initialized = false
@@ -41,7 +41,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     ScopesError.RepositoryError(
-                        repositoryName = "ActiveContextRepositoryImpl",
+                        repositoryName = "SqlDelightActiveContextRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
                         entityType = "ActiveContext",
                         failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
@@ -79,7 +79,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     ScopesError.RepositoryError(
-                        repositoryName = "ActiveContextRepositoryImpl",
+                        repositoryName = "SqlDelightActiveContextRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "ActiveContext",
                         failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
@@ -100,7 +100,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     ScopesError.RepositoryError(
-                        repositoryName = "ActiveContextRepositoryImpl",
+                        repositoryName = "SqlDelightActiveContextRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
                         entityType = "ActiveContext",
                         entityId = contextView.id.value,
@@ -121,7 +121,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     ScopesError.RepositoryError(
-                        repositoryName = "ActiveContextRepositoryImpl",
+                        repositoryName = "SqlDelightActiveContextRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
                         entityType = "ActiveContext",
                         failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
@@ -139,7 +139,7 @@ class ActiveContextRepositoryImpl(private val database: ScopeManagementDatabase)
             } catch (e: Exception) {
                 raise(
                     ScopesError.RepositoryError(
-                        repositoryName = "ActiveContextRepositoryImpl",
+                        repositoryName = "SqlDelightActiveContextRepository",
                         operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
                         entityType = "ActiveContext",
                         failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
