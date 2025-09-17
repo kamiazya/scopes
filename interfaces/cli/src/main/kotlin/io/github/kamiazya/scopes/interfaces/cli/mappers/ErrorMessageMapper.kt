@@ -159,7 +159,9 @@ object ErrorMessageMapper {
         is ContextError.FilterTooLong -> "Context view filter must be at most ${error.maximumLength} characters"
         is ContextError.InvalidFilterSyntax -> "Invalid filter syntax: ${getFilterSyntaxErrorMessage(error.errorType)}"
         is ContextError.InvalidScope -> "Invalid scope '${error.scopeId}': ${presentInvalidScopeType(error.errorType)}"
-        is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${presentInvalidHierarchyType(error.errorType)}"
+        is ContextError.InvalidHierarchy -> "Invalid hierarchy for scope '${error.scopeId}' with parent '${error.parentId}': ${presentInvalidHierarchyType(
+            error.errorType,
+        )}"
         is ContextError.DuplicateScope -> "Duplicate scope title '${error.title}'${error.contextId?.let {
             " in context $it"
         } ?: ""}: ${presentDuplicateScopeType(error.errorType)}"

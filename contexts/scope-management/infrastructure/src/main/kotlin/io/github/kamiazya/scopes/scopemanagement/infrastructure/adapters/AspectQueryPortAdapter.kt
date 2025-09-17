@@ -74,47 +74,38 @@ public class AspectQueryPortAdapter(
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.NotFound ->
             ScopeContractError.BusinessError.NotFound(error.identifier)
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.ValidationFailed ->
+            // For aspect validation errors, we map to a generic InvalidId error with descriptive format
+            // since aspects don't have specific error types in the contract
             when (val constraint = error.constraint) {
                 is ScopesError.ValidationConstraintType.InvalidType ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                            listOf("Expected type: ${constraint.expectedType}, but got: ${constraint.actualType}".first())
-                        ),
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
+                        "Expected type: ${constraint.expectedType}, but got: ${constraint.actualType}",
                     )
                 is ScopesError.ValidationConstraintType.MissingRequired ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.Empty,
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
+                        "Required field '${error.field}' is missing",
                     )
                 is ScopesError.ValidationConstraintType.InvalidFormat ->
-                    ScopeContractError.InputError.InvalidDescription(
-                        error.field,
-                        ScopeContractError.DescriptionValidationFailure.TooLong(
-                            constraint.expectedFormat?.length ?: 1000, 
-                            error.value.length
-                        ),
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
+                        "Invalid format. Expected: ${constraint.expectedFormat ?: "valid format"}",
                     )
                 is ScopesError.ValidationConstraintType.NotInAllowedValues ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        error.field,
-                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                            constraint.allowedValues.map { it.first() }
-                        ),
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
+                        "Value must be one of: ${constraint.allowedValues.joinToString(", ")}",
                     )
                 is ScopesError.ValidationConstraintType.InvalidValue ->
-                    ScopeContractError.InputError.InvalidTitle(
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
                         constraint.reason,
-                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                            listOf(constraint.reason.first())
-                        ),
                     )
                 is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
-                    ScopeContractError.InputError.InvalidTitle(
-                        constraint.field,
-                        ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                            listOf('M') // "Multiple values not allowed"の最初の文字
-                        ),
+                    ScopeContractError.InputError.InvalidId(
+                        error.value,
+                        "Multiple values not allowed for field '${constraint.field}'",
                     )
             }
         else -> ScopeContractError.SystemError.ServiceUnavailable("AspectService")
