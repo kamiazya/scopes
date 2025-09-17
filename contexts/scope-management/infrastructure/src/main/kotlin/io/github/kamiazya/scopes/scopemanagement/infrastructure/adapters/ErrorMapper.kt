@@ -211,8 +211,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             alias = domainError.alias,
         )
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-        is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.DataInconsistencyError -> ScopeContractError.SystemError.ServiceUnavailable(
+        is ScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(
@@ -226,6 +225,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.scopeId.toString(),
+        )
+        is ScopeAliasError.DataInconsistencyError -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
         )
     }
 

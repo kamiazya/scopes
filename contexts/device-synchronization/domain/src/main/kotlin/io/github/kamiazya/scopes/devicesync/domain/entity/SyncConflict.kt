@@ -173,11 +173,11 @@ data class SyncConflict(
                 else -> return null // No conflict
             }
 
-            require(params.localEventId.isNotBlank()) { "Local event ID cannot be blank" }
-            require(params.remoteEventId.isNotBlank()) { "Remote event ID cannot be blank" }
-            require(params.aggregateId.isNotBlank()) { "Aggregate ID cannot be blank" }
-            require(params.localVersion >= 0) { "Local version must be non-negative" }
-            require(params.remoteVersion >= 0) { "Remote version must be non-negative" }
+            require(localEventId.isNotBlank()) { "Local event ID cannot be blank" }
+            require(remoteEventId.isNotBlank()) { "Remote event ID cannot be blank" }
+            require(aggregateId.isNotBlank()) { "Aggregate ID cannot be blank" }
+            require(localVersion >= 0) { "Local version must be non-negative" }
+            require(remoteVersion >= 0) { "Remote version must be non-negative" }
 
             return SyncConflict(
                 localEventId = localEventId,
@@ -191,33 +191,6 @@ data class SyncConflict(
                 detectedAt = detectedAt,
             )
         }
-
-        /**
-         * Detect conflicts between local and remote events.
-         * @deprecated Use detect(DetectionParams) instead
-         */
-        @Deprecated("Use detect(DetectionParams) instead", ReplaceWith("detect(SyncConflict.DetectionParams(localEventId, remoteEventId, aggregateId, localVersion, remoteVersion, localVectorClock, remoteVectorClock, detectedAt))"))
-        fun detect(
-            localEventId: String,
-            remoteEventId: String,
-            aggregateId: String,
-            localVersion: Long,
-            remoteVersion: Long,
-            localVectorClock: VectorClock,
-            remoteVectorClock: VectorClock,
-            detectedAt: Instant,
-        ): SyncConflict? = detect(
-            DetectionParams(
-                localEventId = localEventId,
-                remoteEventId = remoteEventId,
-                aggregateId = aggregateId,
-                localVersion = localVersion,
-                remoteVersion = remoteVersion,
-                localVectorClock = localVectorClock,
-                remoteVectorClock = remoteVectorClock,
-                detectedAt = detectedAt,
-            )
-        )
     }
 }
 

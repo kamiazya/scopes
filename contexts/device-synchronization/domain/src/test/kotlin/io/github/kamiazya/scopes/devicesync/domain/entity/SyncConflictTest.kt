@@ -340,14 +340,16 @@ class SyncConflictTest :
                     val remoteAfter = VectorClock(mapOf("device-a" to 5L, "device-b" to 2L))
 
                     val conflict = SyncConflict.detect(
-                        localEventId = "event-1",
-                        remoteEventId = "event-2",
-                        aggregateId = "aggregate-1",
-                        localVersion = 2,
-                        remoteVersion = 3,
-                        localVectorClock = localBefore,
-                        remoteVectorClock = remoteAfter,
-                        detectedAt = testTime,
+                        SyncConflict.DetectionParams(
+                            localEventId = "event-1",
+                            remoteEventId = "event-2",
+                            aggregateId = "aggregate-1",
+                            localVersion = 2,
+                            remoteVersion = 3,
+                            localVectorClock = localBefore,
+                            remoteVectorClock = remoteAfter,
+                            detectedAt = testTime,
+                        ),
                     )
 
                     conflict shouldBe null
@@ -358,14 +360,16 @@ class SyncConflictTest :
                     val remoteBefore = VectorClock.single(deviceB, 3)
 
                     val conflict = SyncConflict.detect(
-                        localEventId = "event-1",
-                        remoteEventId = "event-2",
-                        aggregateId = "aggregate-1",
-                        localVersion = 2,
-                        remoteVersion = 3,
-                        localVectorClock = localAfter,
-                        remoteVectorClock = remoteBefore,
-                        detectedAt = testTime,
+                        SyncConflict.DetectionParams(
+                            localEventId = "event-1",
+                            remoteEventId = "event-2",
+                            aggregateId = "aggregate-1",
+                            localVersion = 2,
+                            remoteVersion = 3,
+                            localVectorClock = localAfter,
+                            remoteVectorClock = remoteBefore,
+                            detectedAt = testTime,
+                        ),
                     )
 
                     conflict shouldBe null
@@ -376,14 +380,16 @@ class SyncConflictTest :
                     val concurrentRemote = VectorClock(mapOf("device-a" to 3L, "device-b" to 4L))
 
                     val conflict = SyncConflict.detect(
-                        localEventId = "event-1",
-                        remoteEventId = "event-2",
-                        aggregateId = "aggregate-1",
-                        localVersion = 2,
-                        remoteVersion = 3,
-                        localVectorClock = concurrentLocal,
-                        remoteVectorClock = concurrentRemote,
-                        detectedAt = testTime,
+                        SyncConflict.DetectionParams(
+                            localEventId = "event-1",
+                            remoteEventId = "event-2",
+                            aggregateId = "aggregate-1",
+                            localVersion = 2,
+                            remoteVersion = 3,
+                            localVectorClock = concurrentLocal,
+                            remoteVectorClock = concurrentRemote,
+                            detectedAt = testTime,
+                        ),
                     )
 
                     conflict shouldNotBe null
@@ -394,14 +400,16 @@ class SyncConflictTest :
                     val clock = VectorClock.single(deviceA, 5)
 
                     val conflict = SyncConflict.detect(
-                        localEventId = "event-1",
-                        remoteEventId = "event-2",
-                        aggregateId = "aggregate-1",
-                        localVersion = 2,
-                        remoteVersion = 2,
-                        localVectorClock = clock,
-                        remoteVectorClock = clock,
-                        detectedAt = testTime,
+                        SyncConflict.DetectionParams(
+                            localEventId = "event-1",
+                            remoteEventId = "event-2",
+                            aggregateId = "aggregate-1",
+                            localVersion = 2,
+                            remoteVersion = 2,
+                            localVectorClock = clock,
+                            remoteVectorClock = clock,
+                            detectedAt = testTime,
+                        ),
                     )
 
                     conflict shouldBe null
