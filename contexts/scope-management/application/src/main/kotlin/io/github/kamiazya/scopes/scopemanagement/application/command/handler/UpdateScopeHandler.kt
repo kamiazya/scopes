@@ -36,6 +36,16 @@ class UpdateScopeHandler(
 ) : CommandHandler<UpdateScopeCommand, ScopeManagementApplicationError, ScopeDto> {
 
     override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
+        logUpdateStart(command)
+        
+        val result = executeUpdate(command).bind()
+        
+        result
+    }.onLeft { error ->
+        logUpdateError(error)
+    }
+
+    private fun logUpdateStart(command: UpdateScopeCommand) {
         logger.info(
             "Updating scope",
             mapOf(
@@ -44,52 +54,73 @@ class UpdateScopeHandler(
                 "hasDescription" to (command.description != null).toString(),
             ),
         )
+    }
 
-        transactionManager.inTransaction {
-            either {
-                // Parse scope ID
-                val scopeId = ScopeId.create(command.id).mapLeft { error ->
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
-                            ScopeInputError.IdBlank(command.id)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
-                            ScopeInputError.IdInvalidFormat(command.id, error.expectedFormat.toString())
-                    }
-                }.bind()
-
-                // Find existing scope
-                val existingScope = findExistingScope(scopeId).bind()
-
-                // Apply updates
-                var updatedScope = existingScope
-
-                if (command.title != null) {
-                    updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
-                }
-
-                if (command.description != null) {
-                    updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
-                }
-
-                if (command.metadata.isNotEmpty()) {
-                    updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
-                }
-
-                // Save the updated scope
-                val savedScope = scopeRepository.save(updatedScope).mapLeft { it.toGenericApplicationError() }.bind()
-                logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
-
-                ScopeMapper.toDto(savedScope)
-            }
-        }.bind()
-    }.onLeft { error ->
+    private fun logUpdateError(error: ScopeManagementApplicationError) {
         logger.error(
             "Failed to update scope",
             mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "error" to getErrorClassName(error),
                 "message" to error.toString(),
             ),
         )
+    }
+
+    private fun getErrorClassName(error: ScopeManagementApplicationError): String =
+        error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+
+    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> =
+        transactionManager.inTransaction {
+            performUpdate(command)
+        }
+
+    private suspend fun performUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
+        val scopeId = parseScopeId(command.id).bind()
+        val existingScope = findExistingScope(scopeId).bind()
+        
+        val updatedScope = applyUpdates(existingScope, command, scopeId).bind()
+        
+        val savedScope = scopeRepository.save(updatedScope).mapLeft { it.toGenericApplicationError() }.bind()
+        logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
+        
+        ScopeMapper.toDto(savedScope)
+    }
+
+    private fun parseScopeId(id: String): Either<ScopeManagementApplicationError, ScopeId> =
+        ScopeId.create(id).mapLeft { error ->
+            mapIdError(error, id)
+        }
+
+    private fun mapIdError(
+        error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError, 
+        id: String
+    ): ScopeManagementApplicationError = when (error) {
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
+            ScopeInputError.IdBlank(id)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
+            ScopeInputError.IdInvalidFormat(id, error.expectedFormat.toString())
+    }
+
+    private suspend fun applyUpdates(
+        scope: Scope, 
+        command: UpdateScopeCommand, 
+        scopeId: ScopeId
+    ): Either<ScopeManagementApplicationError, Scope> = either {
+        var updatedScope = scope
+        
+        command.title?.let { title ->
+            updatedScope = updateTitle(updatedScope, title, scopeId).bind()
+        }
+        
+        command.description?.let { description ->
+            updatedScope = updateDescription(updatedScope, description, scopeId).bind()
+        }
+        
+        if (command.metadata.isNotEmpty()) {
+            updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
+        }
+        
+        updatedScope
     }
 
     private suspend fun findExistingScope(scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
