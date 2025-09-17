@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQu
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
@@ -15,7 +16,7 @@ import kotlinx.serialization.json.*
  *
  * This tool retrieves all child scopes of a parent scope.
  */
-class ScopeChildrenToolHandler : ToolHandler {
+class ScopeChildrenToolHandler(private val responseFormatter: ResponseFormatterService = ResponseFormatterService()) : ToolHandler {
 
     override val name: String = "scopes.children"
 

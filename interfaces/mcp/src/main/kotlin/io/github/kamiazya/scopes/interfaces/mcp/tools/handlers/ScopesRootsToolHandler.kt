@@ -2,8 +2,10 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetRootScopesQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.JsonMapConverter.toJsonObject
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
+import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
@@ -14,7 +16,7 @@ import kotlinx.serialization.json.*
  *
  * This tool retrieves all scopes that have no parent (root scopes).
  */
-class ScopesRootsToolHandler : ToolHandler {
+class ScopesRootsToolHandler(private val responseFormatter: ResponseFormatterService = ResponseFormatterService()) : ToolHandler {
 
     override val name: String = "scopes.roots"
 
@@ -74,17 +76,28 @@ class ScopesRootsToolHandler : ToolHandler {
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)
             is Either.Right -> {
-                val rootsResult = result.value
+                val responseMap = responseFormatter.formatRootScopesForMcp(result.value)
+                // Convert Map to JSON string
                 val json = buildJsonObject {
-                    putJsonArray("roots") {
-                        rootsResult.scopes.forEach { scope ->
-                            add(
-                                buildJsonObject {
-                                    put("canonicalAlias", scope.canonicalAlias)
-                                    put("title", scope.title)
-                                    scope.description?.let { put("description", it) }
-                                },
-                            )
+                    responseMap.forEach { (key, value) ->
+                        when (value) {
+                            is List<*> -> putJsonArray(key) {
+                                value.forEach { item ->
+                                    when (item) {
+                                        is Map<*, *> -> add(item.toJsonObject())
+                                        else -> add(JsonPrimitive(item.toString()))
+                                    }
+                                }
+                            }
+                            is Map<*, *> -> putJsonObject(key) {
+                                value.forEach { (k, v) ->
+                                    put(k.toString(), JsonPrimitive(v.toString()))
+                                }
+                            }
+                            is Number -> put(key, JsonPrimitive(value))
+                            is Boolean -> put(key, JsonPrimitive(value))
+                            is String -> put(key, JsonPrimitive(value))
+                            else -> put(key, JsonPrimitive(value.toString()))
                         }
                     }
                 }
