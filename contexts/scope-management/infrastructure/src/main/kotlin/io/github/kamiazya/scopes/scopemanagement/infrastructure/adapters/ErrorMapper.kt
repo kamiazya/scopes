@@ -27,7 +27,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
     private val errorPresenter = ScopeInputErrorPresenter()
 
-    private fun mapSystemError(): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+    override fun getServiceName(): String = SCOPE_MANAGEMENT_SERVICE
+
+    override fun createServiceUnavailableError(serviceName: String): ScopeContractError =
+        ScopeContractError.SystemError.ServiceUnavailable(service = serviceName)
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
@@ -202,10 +205,6 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.scopeId.toString(),
         )
-        // Handle generic DataInconsistencyError and AliasGenerationFailed
-        is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.DataInconsistencyError,
-        -> mapSystemError()
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
@@ -215,6 +214,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.AliasNotFoundById -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.aliasId.value,
         )
+        // Handle generic DataInconsistencyError and AliasGenerationFailed together
+        is ScopeAliasError.AliasGenerationFailed,
+        is ScopeAliasError.DataInconsistencyError,
+        -> mapSystemError()
     }
 
     private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {

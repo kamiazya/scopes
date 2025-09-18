@@ -17,6 +17,17 @@ import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesErr
  */
 class ErrorMapper(logger: Logger) : BaseErrorMapper<UserPreferencesError, UserPreferencesContractError>(logger) {
 
+    companion object {
+        private const val SERVICE_NAME = "user-preferences"
+    }
+
+    override fun getServiceName(): String = SERVICE_NAME
+
+    override fun createServiceUnavailableError(serviceName: String): UserPreferencesContractError = UserPreferencesContractError.DataError.PreferencesCorrupted(
+        details = "Service temporarily unavailable: $serviceName",
+        configPath = null,
+    )
+
     override fun mapToContractError(domainError: UserPreferencesError): UserPreferencesContractError = when (domainError) {
         is UserPreferencesError.InvalidPreferenceValue -> {
             val validationDetails = when (domainError.validationError) {

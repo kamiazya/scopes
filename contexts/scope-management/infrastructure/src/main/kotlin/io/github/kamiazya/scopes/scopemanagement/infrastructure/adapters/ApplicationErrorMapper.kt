@@ -23,6 +23,11 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         private const val SERVICE_NAME = "scope-management"
     }
 
+    override fun getServiceName(): String = SERVICE_NAME
+
+    override fun createServiceUnavailableError(serviceName: String): ScopeContractError =
+        ScopeContractError.SystemError.ServiceUnavailable(service = serviceName)
+
     private fun parseVersionToLong(entityId: String, version: String, versionType: String): Long = version.toLongOrNull() ?: run {
         logger.warn(
             "Failed to parse $versionType version to Long, using sentinel value",
@@ -33,8 +38,6 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
         -1L
     }
-
-    private fun mapSystemError(): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
 
     private fun mapAliasNotFoundError(alias: String): ScopeContractError = ScopeContractError.BusinessError.AliasNotFound(alias = alias)
 
@@ -207,12 +210,6 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     }
 
     private fun mapContextError(error: ContextError): ScopeContractError = when (error) {
-        // System errors
-        is ContextError.ContextInUse,
-        is ContextError.ContextUpdateConflict,
-        is ContextError.InvalidFilter,
-        -> mapSystemError()
-
         // Not found errors
         is ContextError.ContextNotFound,
         is ContextError.InvalidContextSwitch,
@@ -227,21 +224,27 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             id = error.attemptedKey,
             expectedFormat = "Valid context key format",
         )
+
+        // System errors
+        is ContextError.ContextInUse,
+        is ContextError.ContextUpdateConflict,
+        is ContextError.InvalidFilter,
+        -> mapSystemError()
     }
 
     private fun mapScopeAliasError(error: ScopeAliasError): ScopeContractError = when (error) {
-        // System errors
-        is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.AliasGenerationValidationFailed,
-        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound,
-        -> mapSystemError()
-
         // Business errors
         is ScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.aliasName,
         )
         is ScopeAliasError.AliasNotFound -> mapAliasNotFoundError(error.aliasName)
         is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+
+        // System errors
+        is ScopeAliasError.AliasGenerationFailed,
+        is ScopeAliasError.AliasGenerationValidationFailed,
+        is ScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound,
+        -> mapSystemError()
     }
 
     private fun mapHierarchyError(error: ScopeHierarchyApplicationError): ScopeContractError = when (error) {
@@ -305,10 +308,11 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 actualVersion = actualVersion,
             )
         }
+        is ScopeManagementApplicationError.PersistenceError.NotFound -> mapNotFoundError(error.entityId ?: "")
+
+        // System errors
         is ScopeManagementApplicationError.PersistenceError.DataCorruption,
         is ScopeManagementApplicationError.PersistenceError.StorageUnavailable,
         -> mapSystemError()
-
-        is ScopeManagementApplicationError.PersistenceError.NotFound -> mapNotFoundError(error.entityId ?: "")
     }
 }
