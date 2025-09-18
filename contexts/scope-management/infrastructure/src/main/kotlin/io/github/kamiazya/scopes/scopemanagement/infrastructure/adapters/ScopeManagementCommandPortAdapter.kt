@@ -64,9 +64,7 @@ class ScopeManagementCommandPortAdapter(
             generateAlias = command.generateAlias,
             customAlias = command.customAlias,
         ),
-    ).mapLeft { error ->
-        applicationErrorMapper.mapToContractError(error)
-    }.map { result ->
+    ).map { result ->
         CreateScopeResult(
             id = result.id,
             title = result.title,

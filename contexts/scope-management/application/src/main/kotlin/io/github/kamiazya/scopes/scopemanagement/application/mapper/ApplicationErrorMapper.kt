@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
+package io.github.kamiazya.scopes.scopemanagement.application.mapper
 
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
@@ -200,7 +200,10 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.alias,
         )
-        is AppScopeInputError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+        is AppScopeInputError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+            scopeId = "",  // No scopeId in application error
+            aliasName = ""  // No aliasName in application error
+        )
         is AppScopeInputError.AliasOfDifferentScope -> ScopeContractError.BusinessError.AliasOfDifferentScope(
             alias = error.alias,
             expectedScopeId = error.expectedScopeId,
@@ -237,8 +240,13 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.aliasName,
         )
-        is ScopeAliasError.AliasNotFound -> mapAliasNotFoundError(error.aliasName)
-        is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+        is ScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = error.aliasName,
+        )
+        is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+            scopeId = error.scopeId,
+            aliasName = error.aliasName
+        )
 
         // System errors
         is ScopeAliasError.AliasGenerationFailed,

@@ -184,14 +184,25 @@ public sealed interface ScopeContractError {
         /**
          * Alias already exists.
          * @property alias The alias that already exists
+         * @property existingScopeId The ID of the scope that already has this alias (optional)
+         * @property attemptedScopeId The ID of the scope that tried to use this alias (optional)
          */
-        public data class DuplicateAlias(public val alias: String) : BusinessError
+        public data class DuplicateAlias(
+            public val alias: String,
+            public val existingScopeId: String? = null,
+            public val attemptedScopeId: String? = null
+        ) : BusinessError
 
         /**
          * Cannot remove canonical alias.
          * The canonical alias is the primary identifier and cannot be removed.
+         * @property scopeId The ID of the scope
+         * @property aliasName The canonical alias that cannot be removed
          */
-        public data object CannotRemoveCanonicalAlias : BusinessError
+        public data class CannotRemoveCanonicalAlias(
+            public val scopeId: String,
+            public val aliasName: String
+        ) : BusinessError
 
         /**
          * Alias belongs to a different scope.
@@ -200,6 +211,21 @@ public sealed interface ScopeContractError {
          * @property actualScopeId The actual scope ID that owns the alias
          */
         public data class AliasOfDifferentScope(public val alias: String, public val expectedScopeId: String, public val actualScopeId: String) : BusinessError
+
+        /**
+         * Alias generation failed after retries.
+         * @property scopeId The scope ID for which alias generation failed
+         * @property retryCount Number of retries attempted
+         */
+        public data class AliasGenerationFailed(public val scopeId: String, public val retryCount: Int) : BusinessError
+
+        /**
+         * Generated alias failed validation.
+         * @property scopeId The scope ID for which alias was generated
+         * @property alias The alias that failed validation
+         * @property reason The reason for validation failure
+         */
+        public data class AliasGenerationValidationFailed(public val scopeId: String, public val alias: String, public val reason: String) : BusinessError
     }
 
     /**

@@ -36,6 +36,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.validation.
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeHierarchyValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.ScopeUniquenessValidationService
 import io.github.kamiazya.scopes.scopemanagement.application.usecase.ValidateAspectValueUseCase
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.ScopeAliasPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.service.filter.FilterEvaluationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
@@ -127,6 +128,7 @@ val scopeManagementModule = module {
             aliasGenerationService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -330,5 +332,5 @@ val scopeManagementModule = module {
     }
 
     // Error Mappers
-    // EventStoreErrorMapper is now created internally in infrastructure layer
+    single { ApplicationErrorMapper(get()) }
 }
