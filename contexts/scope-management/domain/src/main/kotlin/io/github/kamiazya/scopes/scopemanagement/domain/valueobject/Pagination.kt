@@ -65,7 +65,16 @@ data class Pagination private constructor(
     /**
      * Create pagination for the next page.
      */
-    fun nextPage(): Either<DomainValidationError.PaginationViolation, Pagination> = create(offset + limit, limit)
+    fun nextPage(): Either<DomainValidationError.PaginationViolation, Pagination> {
+        // Check for overflow before adding
+        val nextOffset = try {
+            Math.addExact(offset, limit)
+        } catch (e: ArithmeticException) {
+            // If overflow would occur, return MAX_VALUE which will fail validation
+            Int.MAX_VALUE
+        }
+        return create(nextOffset, limit)
+    }
 
     /**
      * Create pagination for the previous page.

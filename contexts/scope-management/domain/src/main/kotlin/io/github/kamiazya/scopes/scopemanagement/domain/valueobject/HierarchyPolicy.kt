@@ -77,12 +77,12 @@ data class HierarchyPolicy private constructor(
     /**
      * Calculate remaining depth available.
      */
-    fun remainingDepth(currentDepth: Int): Int? = maxDepth?.let { it - currentDepth }
+    fun remainingDepth(currentDepth: Int): Int? = maxDepth?.let { maxOf(0, it - currentDepth) }
 
     /**
      * Calculate remaining children slots available.
      */
-    fun remainingChildrenSlots(currentCount: Int): Int? = maxChildrenPerScope?.let { it - currentCount }
+    fun remainingChildrenSlots(currentCount: Int): Int? = maxChildrenPerScope?.let { maxOf(0, it - currentCount) }
 
     /**
      * Check if this policy is more restrictive than another policy.

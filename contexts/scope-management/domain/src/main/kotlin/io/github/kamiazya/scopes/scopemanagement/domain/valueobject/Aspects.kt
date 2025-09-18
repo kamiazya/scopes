@@ -209,17 +209,6 @@ data class Aspects private constructor(private val map: Map<AspectKey, NonEmptyL
             values.any { value -> pattern.matches(value.toString()) }
         })
 
-    /**
-     * Group aspects by value type (based on AspectValue type).
-     */
-    fun groupByValueType(): Map<String, Aspects> {
-        return map.entries.groupBy { (_, values) ->
-            // Group by the type of the first value (assuming homogeneous values per key)
-            values.head.javaClass.simpleName
-        }.mapValues { (_, entries) ->
-            Aspects(entries.associate { it.key to it.value })
-        }
-    }
 
     /**
      * Find aspects that have multiple values (useful for finding multi-valued properties).

@@ -63,9 +63,9 @@ class ValidationService(private val strictMode: Boolean = true) {
     fun validateIdempotencyKey(key: String): Either<DomainValidationError.InvalidIdempotencyKey, String> {
         // Idempotency keys should be UUIDs or similar unique identifiers
         val keyRegex = if (strictMode) {
-            Regex("^[a-zA-Z0-9-_]{1,64}$") // Strict: alphanumeric with hyphens and underscores
+            Regex("^[a-zA-Z0-9_-]{1,64}$") // Strict: alphanumeric with hyphens and underscores
         } else {
-            Regex("^[a-zA-Z0-9-_.]{1,64}$") // Lenient: also allow dots
+            Regex("^[a-zA-Z0-9_.-]{1,64}$") // Lenient: also allow dots
         }
 
         return when {
