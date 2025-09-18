@@ -27,6 +27,8 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     }
     private val errorPresenter = ScopeInputErrorPresenter()
 
+    private fun mapSystemError(): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError -> mapIdError(domainError)
@@ -52,14 +54,12 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             expectedVersion = domainError.expectedVersion?.toLong() ?: -1L,
             actualVersion = domainError.actualVersion?.toLong() ?: -1L,
         )
-        is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        is ScopesError.RepositoryError -> mapSystemError()
 
         // Default fallback for unmapped errors
         else -> handleUnmappedError(
             domainError,
-            ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE),
+            mapSystemError(),
         )
     }
 
@@ -187,9 +187,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 maximumChildren = domainError.maxChildren,
             ),
         )
-        is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        is ScopeHierarchyError.HierarchyUnavailable -> mapSystemError()
     }
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
@@ -207,9 +205,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         // Handle generic DataInconsistencyError and AliasGenerationFailed
         is ScopeAliasError.AliasGenerationFailed,
         is ScopeAliasError.DataInconsistencyError,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        -> mapSystemError()
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
@@ -263,9 +259,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 childrenCount = null,
             )
             "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+            else -> mapSystemError()
         }
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+        else -> mapSystemError()
     }
 
     private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {

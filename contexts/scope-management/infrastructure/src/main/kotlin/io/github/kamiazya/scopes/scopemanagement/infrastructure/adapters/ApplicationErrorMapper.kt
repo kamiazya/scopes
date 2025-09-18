@@ -101,26 +101,29 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         else -> error("Unexpected ID error type: $error")
     }
 
+    private fun createInvalidTitle(title: String, validationFailure: ScopeContractError.TitleValidationFailure): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(title = title, validationFailure = validationFailure)
+
     private fun mapTitleInputError(error: AppScopeInputError): ScopeContractError.InputError.InvalidTitle = when (error) {
-        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
+        is AppScopeInputError.TitleEmpty -> createInvalidTitle(
             title = error.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+        is AppScopeInputError.TitleTooShort -> createInvalidTitle(
             title = error.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
                 minimumLength = error.minimumLength,
                 actualLength = error.attemptedValue.length,
             ),
         )
-        is AppScopeInputError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
+        is AppScopeInputError.TitleTooLong -> createInvalidTitle(
             title = error.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
                 maximumLength = error.maximumLength,
                 actualLength = error.attemptedValue.length,
             ),
         )
-        is AppScopeInputError.TitleContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
+        is AppScopeInputError.TitleContainsProhibitedCharacters -> createInvalidTitle(
             title = error.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
                 prohibitedCharacters = error.prohibitedCharacters,
@@ -138,26 +141,29 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ),
         )
 
+    private fun createInvalidAlias(alias: String, validationFailure: ScopeContractError.AliasValidationFailure): ScopeContractError.InputError.InvalidAlias =
+        ScopeContractError.InputError.InvalidAlias(alias = alias, validationFailure = validationFailure)
+
     private fun mapAliasValidationError(error: AppScopeInputError): ScopeContractError.InputError.InvalidAlias = when (error) {
-        is AppScopeInputError.AliasEmpty -> ScopeContractError.InputError.InvalidAlias(
+        is AppScopeInputError.AliasEmpty -> createInvalidAlias(
             alias = error.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.Empty,
         )
-        is AppScopeInputError.AliasTooShort -> ScopeContractError.InputError.InvalidAlias(
+        is AppScopeInputError.AliasTooShort -> createInvalidAlias(
             alias = error.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.TooShort(
                 minimumLength = error.minimumLength,
                 actualLength = error.alias.length,
             ),
         )
-        is AppScopeInputError.AliasTooLong -> ScopeContractError.InputError.InvalidAlias(
+        is AppScopeInputError.AliasTooLong -> createInvalidAlias(
             alias = error.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.TooLong(
                 maximumLength = error.maximumLength,
                 actualLength = error.alias.length,
             ),
         )
-        is AppScopeInputError.AliasInvalidFormat -> ScopeContractError.InputError.InvalidAlias(
+        is AppScopeInputError.AliasInvalidFormat -> createInvalidAlias(
             alias = error.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
                 expectedPattern = error.expectedPattern,
