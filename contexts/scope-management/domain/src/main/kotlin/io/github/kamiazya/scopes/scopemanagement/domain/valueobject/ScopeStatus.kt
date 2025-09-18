@@ -104,6 +104,36 @@ sealed class ScopeStatus {
      */
     fun canBeEdited(): Boolean = this is Draft || this is Active
 
+    /**
+     * Checks if the scope is in a working state (Draft or Active).
+     */
+    fun isWorking(): Boolean = this is Draft || this is Active
+
+    /**
+     * Checks if the scope is in a finished state (Completed or Archived).
+     */
+    fun isFinished(): Boolean = this is Completed || this is Archived
+
+    /**
+     * Checks if the scope can be transitioned to Completed state.
+     */
+    fun canBeCompleted(): Boolean = this is Active
+
+    /**
+     * Checks if the scope can be transitioned to Active state.
+     */
+    fun canBeActivated(): Boolean = this is Draft || this is Completed || this is Archived
+
+    /**
+     * Returns all valid transition targets from current status.
+     */
+    fun validTransitions(): List<ScopeStatus> = when (this) {
+        is Draft -> listOf(Active, Archived)
+        is Active -> listOf(Completed, Archived)
+        is Completed -> listOf(Active, Archived)
+        is Archived -> listOf(Active)
+    }
+
     companion object {
         /**
          * Creates a scope status from string representation.

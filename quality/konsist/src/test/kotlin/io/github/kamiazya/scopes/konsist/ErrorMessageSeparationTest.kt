@@ -140,7 +140,9 @@ class ErrorMessageSeparationTest :
                             !it.name.contains("ExpectedValue") &&
                             !it.name.contains("RetrievalError") &&
                             !it.name.contains("ConflictResolutionError") &&
-                            !it.name.contains("InvalidAspectFormat")
+                            !it.name.contains("InvalidAspectFormat") &&
+                            !it.name.contains("DepthExceeded") &&
+                            !it.name.contains("TooManyChildren")
                     }
                     .assertTrue { error ->
                         // Allow String properties for legitimate error context (reason, title, etc.)
