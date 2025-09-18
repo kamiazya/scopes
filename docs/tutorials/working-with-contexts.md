@@ -1,6 +1,6 @@
 # Working with Contexts Tutorial
 
-> ⚠️ **Note**: Context CLI commands are partially implemented. Backend support exists, but some CLI subcommands (`context current --clear`) are not yet functional. Treat this tutorial as preview documentation.
+> ⚠️ **Note**: Context CLI commands are partially implemented. Backend support exists, but some CLI subcommands (particularly `context current --clear`) are not yet functional. The `--no-context` flag works as an alternative. Treat this tutorial as preview documentation.
 
 This tutorial teaches you how to use context views to organize and filter your scopes for different work situations. Contexts are like saved searches or workspaces that help you focus on relevant tasks.
 
@@ -199,20 +199,11 @@ backend-api         Backend API development       type=work priority=high focus=
 fitness            Fitness goals                 type=personal priority=medium focus=today
 ```
 
-## Step 7: Clear Context (View Everything)
+## Step 7: View Everything Without Context
 
-To see all scopes without filtering:
+> **Note**: The `context current --clear` command is planned but not yet implemented.
 
-```bash
-scopes context current --clear
-```
-
-Output:
-```
-✓ Current context cleared. All scopes will be visible.
-```
-
-Now `scopes list` shows everything:
+To see all scopes without filtering while a context is active, use the `--no-context` flag:
 
 ```bash
 scopes list
@@ -321,8 +312,8 @@ scopes aspect set backend-api status=in-progress
 ### End of Day Review
 
 ```bash
-# 1. Clear context to see everything
-scopes context current --clear
+# 1. View everything without context filter
+scopes list --no-context
 
 # 2. Review all tasks
 scopes list
@@ -433,8 +424,10 @@ You've learned how to:
 
 ## Next Steps
 
+- Read the [Context Command Reference](../reference/cli-quick-reference.md#context-management)
+<!-- Future documentation:
 - Explore [Focus Management](./focus-management.md) for even more precise control
 - Learn about [Organizing with Hierarchies](./organizing-with-hierarchies.md)
-- Read the [Context Command Reference](../reference/cli-quick-reference.md#context-management)
+-->
 
 Contexts are powerful tools for managing attention and organizing work. Use them to create personalized workflows that match your working style!

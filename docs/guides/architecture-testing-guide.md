@@ -53,7 +53,7 @@ contexts.forEach { context ->
         .assertFalse { file ->
             // Should not import from other contexts directly
             otherContexts.any { other ->
-                file.imports.any { it.contains("contexts.$other") }
+                file.imports.any { it.name.contains("contexts.$other") }
             }
         }
 }
@@ -379,5 +379,5 @@ To add new architecture tests:
 
 - [Clean Architecture](../explanation/clean-architecture.md) - Architecture principles
 - [Domain-Driven Design](../explanation/domain-driven-design.md) - DDD patterns
-- [Testing Guide](./testing-guide.md) - General testing practices
+<!-- - [Testing Guide](./testing-guide.md) - General testing practices (planned) -->
 - [Contributing Guide](../CONTRIBUTING.md) - Development workflow

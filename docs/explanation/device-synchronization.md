@@ -366,15 +366,18 @@ sync:
   encryption: true
 ```
 
-### Device Pairing
+### Device Pairing (Planned - Not Yet Implemented)
+
+> **Note**: These CLI commands are planned but not yet implemented. Device synchronization currently exists only as infrastructure code without user-facing functionality.
+
 ```bash
-# Pair with another device
+# Pair with another device (planned)
 scopes device pair <device-code>
 
-# List paired devices
+# List paired devices (planned)
 scopes device list
 
-# Remove device
+# Remove device (planned)
 scopes device remove <device-id>
 ```
 

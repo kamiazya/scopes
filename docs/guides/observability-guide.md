@@ -430,7 +430,9 @@ ORDER BY timestamp
 
 ## Related Documentation
 
+<!-- Future documentation:
 - [Error Handling Guidelines](../guidelines/error-handling.md) - Error handling patterns
 - [Performance Guidelines](../guidelines/performance.md) - Performance optimization
 - [Security Best Practices](../guidelines/security.md) - Security considerations
 - [Testing Guide](../guides/testing-guide.md) - Testing observability
+-->
