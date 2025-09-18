@@ -113,10 +113,15 @@ See @docs/explanation/adr/ for all Architecture Decision Records:
 - @docs/tutorials/getting-started-with-aliases.md - Alias deep dive
 
 #### Doing (How-to Guides)
-- @docs/guides/using-aliases.md - Alias best practices
+- @docs/guides/development/ - Modular development guidelines:
+  - @docs/guides/development/README.md - Development guide index (start here)
+  - @docs/guides/development/error-handling.md - Error handling patterns
+  - @docs/guides/development/testing.md - Testing strategies
+  - @docs/guides/development/dto-guidelines.md - DTO conventions
+- @docs/guides/use-case-style-guide.md - UseCase pattern implementation
+- @docs/guides/using-aliases.md - Alias system best practices
 - @docs/guides/observability-guide.md - Logging and monitoring
-- @docs/guides/architecture-testing-guide.md - Konsist usage
-- @docs/guides/development-guidelines.md - Contributing
+- @docs/guides/architecture-testing-guide.md - Konsist architecture validation
 
 #### Looking Up (Reference)
 - @docs/reference/cli-quick-reference.md - All CLI commands
@@ -128,6 +133,8 @@ See @docs/explanation/adr/ for all Architecture Decision Records:
 - @docs/explanation/domain-driven-design.md - DDD implementation
 - @docs/explanation/event-sourcing-architecture.md - Event store (foundation only)
 - @docs/explanation/device-synchronization.md - Sync design (not implemented)
+- @docs/explanation/setup/ - Technical setup guides (GraalVM, shell completion, etc.)
+- @docs/explanation/security/ - Security documentation (SLSA verification, SBOM, etc.)
 
 ## 🤖 AI Collaboration Guidelines
 
@@ -262,7 +269,7 @@ For new AI assistants working on Scopes:
 - All changes must pass Konsist architecture validation
 
 ### Error Handling Guidelines
-Follow the error handling patterns defined in [Error Handling Guidelines](./docs/guidelines/error-handling.md).
+Follow the error handling patterns defined in [Error Handling Guidelines](./docs/guides/development/error-handling.md).
 
 Key points:
 - Use Kotlin's `error()`, `check()`, `require()` instead of throwing exceptions directly

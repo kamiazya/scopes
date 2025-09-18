@@ -324,4 +324,3 @@ When updating existing code:
 
 - [Arrow Core Documentation](https://arrow-kt.io/docs/core/)
 - [Error Handling Guidelines](./error-handling.md)
-- [Domain Modeling Guide](./domain-modeling.md)
