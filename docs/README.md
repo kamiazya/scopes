@@ -5,15 +5,15 @@ Welcome to the Scopes project documentation. This documentation follows the [Di�
 ## 🚀 Quick Start
 
 ### New to Scopes?
-1. Start with [Getting Started with Aliases](./tutorials/getting-started-with-aliases.md) - Hands-on tutorial
+1. Start with [Getting Started](./tutorials/getting-started.md) - Complete beginner's tutorial
 2. Review the [CLI Quick Reference](./reference/cli-quick-reference.md) - All commands at a glance
 3. Follow [Using Aliases Guide](./guides/using-aliases.md) - Best practices and workflows
 
 ### Need Help With...
-- **Creating your first scope?** → [Alias Tutorial](./tutorials/getting-started-with-aliases.md)
+- **Installing Scopes?** → [Getting Started Tutorial](./tutorials/getting-started.md)
+- **Managing multiple projects?** → [Working with Contexts](./tutorials/working-with-contexts.md)
+- **Understanding aliases?** → [Alias System Tutorial](./tutorials/getting-started-with-aliases.md)
 - **Migrating from another tool?** → [Migration Guide](./guides/migrating-to-aliases.md)
-- **Understanding the architecture?** → [Alias System Architecture](./explanation/alias-system-architecture.md)
-- **API integration?** → [API Reference](./reference/api/alias-api-reference.md)
 
 ## Documentation Categories
 
@@ -23,7 +23,9 @@ Learning-oriented guides for newcomers
 
 Step-by-step learning materials to get you started with Scopes.
 
-- [Getting Started with Aliases](./tutorials/getting-started-with-aliases.md) - Your first steps with the alias system
+- [Getting Started](./tutorials/getting-started.md) - Complete introduction from installation to first use
+- [Working with Contexts](./tutorials/working-with-contexts.md) - Learn to organize work with context views
+- [Getting Started with Aliases](./tutorials/getting-started-with-aliases.md) - Deep dive into the alias system
 
 ### 📖 [How-to Guides](./guides/)
 
@@ -33,7 +35,10 @@ Practical guides for accomplishing specific tasks and solving problems.
 
 - [Using Aliases](./guides/using-aliases.md) - Best practices for alias management
 - [Migrating to Aliases](./guides/migrating-to-aliases.md) - Transition from other systems
+- [Observability Guide](./guides/observability-guide.md) - Logging, metrics, and monitoring
+- [Architecture Testing Guide](./guides/architecture-testing-guide.md) - Automated architecture verification with Konsist
 - [Use Case Style Guide](./guides/use-case-style-guide.md) - Guidelines for implementing use cases
+- [Development Guidelines](./guides/development-guidelines.md) - Contributing and development practices
 
 ### 📋 [Reference](./reference/)
 
@@ -43,7 +48,10 @@ Technical reference materials for quick lookup and detailed specifications.
 
 - [CLI Quick Reference](./reference/cli-quick-reference.md) - All CLI commands
 - [CLI Alias Commands](./reference/cli-alias-commands.md) - Comprehensive alias command reference
-- [Alias API Reference](./reference/api/alias-api-reference.md) - Technical API documentation
+- [MCP Implementation Guide](./reference/mcp-implementation-guide.md) - Complete MCP server documentation
+- [MCP Resources](./reference/mcp-resources.md) - MCP resource specifications
+- [API Reference](./reference/api/) - Programmatic interfaces
+- [Domain Model](./reference/domain-model/) - Technical domain specifications
 
 ### 💡 [Explanation](./explanation/)
 
@@ -53,8 +61,10 @@ In-depth explanations of concepts, architecture decisions, and design rationale.
 
 - [Domain Overview](./explanation/domain-overview.md) - Core concepts and domain model
 - [Alias System Architecture](./explanation/alias-system-architecture.md) - Technical design of aliases
-- [Clean Architecture](./explanation/clean-architecture.md) - Architectural layers and principles  
+- [Clean Architecture](./explanation/clean-architecture.md) - Architectural layers and principles
 - [Domain-Driven Design](./explanation/domain-driven-design.md) - DDD implementation with functional programming
+- [Event Sourcing Architecture](./explanation/event-sourcing-architecture.md) - Event-driven foundation (infrastructure only)
+- [Device Synchronization](./explanation/device-synchronization.md) - Multi-device sync architecture (planned)
 - [Architecture Decision Records](./explanation/adr/) - Documented architectural decisions
 - [Automated Release Process](./explanation/automated-release-process.md) - CI/CD and release automation
 
