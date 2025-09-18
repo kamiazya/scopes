@@ -140,10 +140,21 @@ Read @docs/reference/domain-model/
 Understand the bounded context structure
 ```
 
-#### 2. Use Sub-Agents for Efficiency
-- **file-analyzer**: For reading large files or logs
-- **code-analyzer**: For searching code, tracing logic
-- **test-runner**: For executing and analyzing tests
+#### 2. USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
+
+##### Always use the file-analyzer sub-agent when asked to read files
+The file-analyzer agent is an expert in extracting and summarizing critical information from files, particularly log files and verbose outputs. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+
+##### Always use the code-analyzer sub-agent when asked to search code, analyze code, research bugs, or trace logic flow
+The code-analyzer agent is an expert in code analysis, logic tracing, and vulnerability detection. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
+
+##### Always use the test-runner sub-agent to run tests and analyze the test results
+Using the test-runner agent ensures:
+- Full test output is captured for debugging
+- Main conversation stays clean and focused
+- Context usage is optimized
+- All issues are properly surfaced
+- No approval dialogs interrupt the workflow
 
 #### 3. Follow Established Patterns
 Check existing implementations before creating new ones:
@@ -242,22 +253,35 @@ For new AI assistants working on Scopes:
 
 ## 🚨 Critical Rules
 
+### Philosophy
+> Think carefully and implement the most concise solution that changes as little code as possible.
+
 ### Quality Standards
 - Run `./gradlew konsistTest` to verify architectural compliance
 - Architecture tests validate Clean Architecture and DDD principles
 - All changes must pass Konsist architecture validation
 
-### Error Handling
-- Use Kotlin's `error()`, `check()`, `require()` instead of throwing exceptions
+### Error Handling Guidelines
+Follow the error handling patterns defined in [Error Handling Guidelines](./docs/guidelines/error-handling.md).
+
+Key points:
+- Use Kotlin's `error()`, `check()`, `require()` instead of throwing exceptions directly
 - Never use "unknown" or default fallbacks that mask data corruption
 - Use Arrow's Either for functional error handling
 - Fail-fast for data integrity issues
 
+Error handling approach:
+- **Fail fast** for critical configuration (missing text model)
+- **Log and continue** for optional features (extraction model)
+- **Graceful degradation** when external services unavailable
+- **User-friendly messages** through resilience layer
+
 ### Testing Philosophy
 - Always use the test-runner agent to execute tests
 - Do not use mock services for anything ever
-- Tests must be verbose for debugging
-- Every function needs a test
+- Do not move on to the next test until the current test is complete
+- If the test fails, consider checking if the test is structured correctly before deciding we need to refactor the codebase
+- Tests to be verbose so we can use them for debugging
 
 ## 📋 Absolute Rules
 
