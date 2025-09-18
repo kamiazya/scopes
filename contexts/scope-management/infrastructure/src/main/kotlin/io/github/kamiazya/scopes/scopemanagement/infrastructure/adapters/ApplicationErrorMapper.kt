@@ -40,6 +40,24 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
+    private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
+        val alias = when (error) {
+            is AppScopeInputError.AliasNotFound -> error.alias
+            is AppScopeInputError.InvalidAlias -> error.alias
+            else -> error("Unexpected error type: $error")
+        }
+        return mapAliasNotFoundError(alias)
+    }
+
+    private fun mapContextToNotFound(error: ContextError): ScopeContractError {
+        val key = when (error) {
+            is ContextError.ContextNotFound -> error.key
+            is ContextError.InvalidContextSwitch -> error.key
+            else -> error("Unexpected error type: $error")
+        }
+        return mapNotFoundError(key)
+    }
+
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
         // Group errors by type
         is AppScopeInputError -> mapInputError(domainError)
@@ -173,8 +191,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     }
 
     private fun mapAliasBusinessError(error: AppScopeInputError): ScopeContractError = when (error) {
-        is AppScopeInputError.AliasNotFound -> mapAliasNotFoundError(error.alias)
-        is AppScopeInputError.InvalidAlias -> mapAliasNotFoundError(error.alias)
+        is AppScopeInputError.AliasNotFound,
+        is AppScopeInputError.InvalidAlias,
+        -> mapAliasToNotFound(error)
         is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.alias,
         )
@@ -195,8 +214,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         -> mapSystemError()
 
         // Not found errors
-        is ContextError.ContextNotFound -> mapNotFoundError(error.key)
-        is ContextError.InvalidContextSwitch -> mapNotFoundError(error.key)
+        is ContextError.ContextNotFound,
+        is ContextError.InvalidContextSwitch,
+        -> mapContextToNotFound(error)
         is ContextError.StateNotFound -> mapNotFoundError(error.contextId)
 
         // Other errors
