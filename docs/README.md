@@ -34,6 +34,7 @@ Practical guides for accomplishing specific tasks and solving problems.
 - [Using Aliases](./guides/using-aliases.md) - Best practices for alias management
 - [Migrating to Aliases](./guides/migrating-to-aliases.md) - Transition from other systems
 - [Use Case Style Guide](./guides/use-case-style-guide.md) - Guidelines for implementing use cases
+- [Architecture Testing Guide](./guides/architecture-testing-guide.md) - Automated architecture verification with Konsist
 
 ### 📋 [Reference](./reference/)
 
@@ -43,6 +44,9 @@ Technical reference materials for quick lookup and detailed specifications.
 
 - [CLI Quick Reference](./reference/cli-quick-reference.md) - All CLI commands
 - [CLI Alias Commands](./reference/cli-alias-commands.md) - Comprehensive alias command reference
+- [MCP Implementation Guide](./reference/mcp-implementation-guide.md) - Complete MCP server documentation
+- [MCP Resources](./reference/mcp-resources.md) - MCP resource specifications
+- [Observability Guide](./reference/observability-guide.md) - Logging, metrics, and monitoring
 - [Alias API Reference](./reference/api/alias-api-reference.md) - Technical API documentation
 
 ### 💡 [Explanation](./explanation/)
@@ -53,8 +57,10 @@ In-depth explanations of concepts, architecture decisions, and design rationale.
 
 - [Domain Overview](./explanation/domain-overview.md) - Core concepts and domain model
 - [Alias System Architecture](./explanation/alias-system-architecture.md) - Technical design of aliases
-- [Clean Architecture](./explanation/clean-architecture.md) - Architectural layers and principles  
+- [Clean Architecture](./explanation/clean-architecture.md) - Architectural layers and principles
 - [Domain-Driven Design](./explanation/domain-driven-design.md) - DDD implementation with functional programming
+- [Event Sourcing Architecture](./explanation/event-sourcing-architecture.md) - Event-driven foundation (infrastructure only)
+- [Device Synchronization](./explanation/device-synchronization.md) - Multi-device sync architecture (planned)
 - [Architecture Decision Records](./explanation/adr/) - Documented architectural decisions
 - [Automated Release Process](./explanation/automated-release-process.md) - CI/CD and release automation
 
