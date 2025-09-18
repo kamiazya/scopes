@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
@@ -34,6 +35,8 @@ class UpdateScopeHandler(
     private val logger: Logger,
     private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
 ) : CommandHandler<UpdateScopeCommand, ScopeManagementApplicationError, ScopeDto> {
+
+    private val errorMappingService = ScopeInputErrorMappingService()
 
     override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
         logUpdateStart(command)
@@ -87,12 +90,7 @@ class UpdateScopeHandler(
     }
 
     private fun mapIdError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError, id: String): ScopeManagementApplicationError =
-        when (error) {
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.EmptyId ->
-                ScopeInputError.IdBlank(id)
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError.InvalidIdFormat ->
-                ScopeInputError.IdInvalidFormat(id, "${error.expectedFormat} format")
-        }
+        errorMappingService.mapIdError(error, id)
 
     private suspend fun applyUpdates(scope: Scope, command: UpdateScopeCommand, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
         var updatedScope = scope
@@ -122,16 +120,7 @@ class UpdateScopeHandler(
 
     private suspend fun updateTitle(scope: Scope, newTitle: String, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
         val title = ScopeTitle.create(newTitle).mapLeft { error ->
-            when (error) {
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.EmptyTitle ->
-                    ScopeInputError.TitleEmpty(newTitle)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.TitleTooShort ->
-                    ScopeInputError.TitleTooShort(newTitle, error.minLength)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.TitleTooLong ->
-                    ScopeInputError.TitleTooLong(newTitle, error.maxLength)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.TitleError.InvalidTitleFormat ->
-                    ScopeInputError.TitleContainsProhibitedCharacters(newTitle, listOf('<', '>', '&', '"'))
-            }
+            errorMappingService.mapTitleError(error, newTitle)
         }.bind()
 
         // Use specification to validate title uniqueness
@@ -162,8 +151,8 @@ class UpdateScopeHandler(
         val updated = scope.updateDescription(newDescription, Clock.System.now())
             .mapLeft { error ->
                 when (error) {
-                    is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.DescriptionError.DescriptionTooLong ->
-                        ScopeInputError.DescriptionTooLong(newDescription, error.maxLength)
+                    is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.DescriptionError ->
+                        errorMappingService.mapDescriptionError(error, newDescription)
                     else -> error.toGenericApplicationError()
                 }
             }.bind()

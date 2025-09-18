@@ -53,6 +53,43 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapInputError(error: AppScopeInputError): ScopeContractError = when (error) {
         // ID validation errors
+        is AppScopeInputError.IdBlank,
+        is AppScopeInputError.IdInvalidFormat,
+        -> mapIdInputError(error)
+
+        // Title validation errors
+        is AppScopeInputError.TitleEmpty,
+        is AppScopeInputError.TitleTooShort,
+        is AppScopeInputError.TitleTooLong,
+        is AppScopeInputError.TitleContainsProhibitedCharacters,
+        -> mapTitleInputError(error)
+
+        // Description validation errors
+        is AppScopeInputError.DescriptionTooLong -> mapDescriptionInputError(error)
+
+        // Alias validation errors
+        is AppScopeInputError.AliasEmpty,
+        is AppScopeInputError.AliasTooShort,
+        is AppScopeInputError.AliasTooLong,
+        is AppScopeInputError.AliasInvalidFormat,
+        -> mapAliasValidationError(error)
+
+        // Alias business errors
+        is AppScopeInputError.AliasNotFound,
+        is AppScopeInputError.AliasDuplicate,
+        is AppScopeInputError.CannotRemoveCanonicalAlias,
+        is AppScopeInputError.AliasOfDifferentScope,
+        is AppScopeInputError.InvalidAlias,
+        -> mapAliasBusinessError(error)
+
+        // Other input errors
+        is AppScopeInputError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
+            parentId = error.parentId,
+            expectedFormat = "Valid ULID format",
+        )
+    }
+
+    private fun mapIdInputError(error: AppScopeInputError): ScopeContractError.InputError.InvalidId = when (error) {
         is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedValue,
             expectedFormat = "Non-empty ULID format",
@@ -61,8 +98,10 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             id = error.attemptedValue,
             expectedFormat = error.expectedFormat,
         )
+        else -> error("Unexpected ID error type: $error")
+    }
 
-        // Title validation errors
+    private fun mapTitleInputError(error: AppScopeInputError): ScopeContractError.InputError.InvalidTitle = when (error) {
         is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
             title = error.attemptedValue,
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
@@ -87,9 +126,11 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 prohibitedCharacters = error.prohibitedCharacters,
             ),
         )
+        else -> error("Unexpected title error type: $error")
+    }
 
-        // Description validation errors
-        is AppScopeInputError.DescriptionTooLong -> ScopeContractError.InputError.InvalidDescription(
+    private fun mapDescriptionInputError(error: AppScopeInputError.DescriptionTooLong): ScopeContractError.InputError.InvalidDescription =
+        ScopeContractError.InputError.InvalidDescription(
             descriptionText = error.attemptedValue,
             validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
                 maximumLength = error.maximumLength,
@@ -97,7 +138,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ),
         )
 
-        // Alias validation errors
+    private fun mapAliasValidationError(error: AppScopeInputError): ScopeContractError.InputError.InvalidAlias = when (error) {
         is AppScopeInputError.AliasEmpty -> ScopeContractError.InputError.InvalidAlias(
             alias = error.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.Empty,
@@ -122,9 +163,12 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 expectedPattern = error.expectedPattern,
             ),
         )
+        else -> error("Unexpected alias validation error type: $error")
+    }
 
-        // Alias business errors
+    private fun mapAliasBusinessError(error: AppScopeInputError): ScopeContractError = when (error) {
         is AppScopeInputError.AliasNotFound -> mapAliasNotFoundError(error.alias)
+        is AppScopeInputError.InvalidAlias -> mapAliasNotFoundError(error.alias)
         is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.alias,
         )
@@ -134,13 +178,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             expectedScopeId = error.expectedScopeId,
             actualScopeId = error.actualScopeId,
         )
-
-        // Other input errors
-        is AppScopeInputError.InvalidAlias -> mapAliasNotFoundError(error.alias)
-        is AppScopeInputError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
-            parentId = error.parentId,
-            expectedFormat = "Valid ULID format",
-        )
+        else -> error("Unexpected alias business error type: $error")
     }
 
     private fun mapContextError(error: ContextError): ScopeContractError = when (error) {

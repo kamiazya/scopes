@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
 
 /**
@@ -24,19 +25,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     companion object {
         private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
     }
-    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
-    }
-
-    private fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType): String = when (patternType) {
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase with hyphens (e.g., my-alias)"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters only"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
-    }
+    private val errorPresenter = ScopeInputErrorPresenter()
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
@@ -81,7 +70,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
             id = domainError.id,
-            expectedFormat = presentIdFormat(domainError.expectedFormat),
+            expectedFormat = errorPresenter.presentIdFormat(domainError.expectedFormat),
         )
     }
 
@@ -144,7 +133,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidAlias(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
-                expectedPattern = presentAliasPattern(domainError.expectedPattern),
+                expectedPattern = errorPresenter.presentAliasPattern(domainError.expectedPattern),
             ),
         )
     }
