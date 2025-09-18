@@ -75,11 +75,11 @@ users          User management
 - [Domain Overview](docs/explanation/domain-overview.md) - Core concepts and domain model
 - [Clean Architecture](docs/explanation/clean-architecture.md) - Architectural layers and principles
 - [Domain-Driven Design](docs/explanation/domain-driven-design.md) - DDD implementation approach
-- [Architecture Decision Records](docs/explanation/adr/) - Key architectural decisions
+<!-- Coming soon: Architecture Decision Records - Key architectural decisions -->
 - [Use Case Style Guide](docs/guides/use-case-style-guide.md) - Implementation patterns
 
 ### Reference
-- [CLI Alias Commands](docs/reference/cli-alias-commands.md) - Complete alias command reference
+- [CLI Quick Reference](docs/reference/cli-quick-reference.md) - All commands including aliases
 
 ## 🏗️ Architecture
 
@@ -103,7 +103,7 @@ Each context follows DDD with three layers:
 - **contracts-***: Inter-context communication interfaces
 - **interfaces-***: User-facing adapters (CLI, API)
 
-For detailed dependency rules, see [Architecture Guidelines](docs/architecture/guidelines/dependency-rules.md).
+For detailed dependency rules, see [Dependency Rules](docs/explanation/dependency-rules.md).
 
 ## 🤝 Contributing
 
@@ -115,7 +115,7 @@ This is a greenfield project inheriting the best ideas from Project Manager whil
 2. Write property-based tests for value objects and events
 3. Run `./gradlew konsistTest` to verify architectural compliance
 4. Document architectural decisions in ADRs
-5. Respect module dependency rules - see [dependency-rules.md](docs/architecture/guidelines/dependency-rules.md)
+5. Respect module dependency rules - see [dependency-rules.md](docs/explanation/dependency-rules.md)
 6. Run static checks: `./gradlew detekt ktlintFormat`
 
 ## 📄 License
