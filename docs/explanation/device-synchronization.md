@@ -168,7 +168,8 @@ class DeltaSync {
     ): List<SyncEvent> {
         return eventStore.getEventsSince(lastSyncTime)
             .filter { event ->
-                !peerVectorClock.includes(event.vectorClock)
+                // Event not yet seen by peer if it doesn't happen before peer's clock
+                !event.vectorClock.happensBefore(peerVectorClock)
             }
     }
 }
@@ -393,5 +394,5 @@ scopes device remove <device-id>
 
 - [Event Sourcing Architecture](./event-sourcing-architecture.md) - Foundation for sync
 - [Local-First Architecture](./adr/0001-local-first-architecture.md) - Design principles
-- [Security Model](./security-model.md) - Encryption and authentication
+- <!-- [Security Model](./security-model.md) - Encryption and authentication (Coming soon) -->
 - [CLI Reference](../reference/cli-quick-reference.md) - Device commands

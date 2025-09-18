@@ -140,7 +140,7 @@ Read @docs/reference/domain-model/
 Understand the bounded context structure
 ```
 
-#### 2. USE SUB-AGENTS FOR CONTEXT OPTIMIZATION
+#### 2. Use Sub-Agents for Context Optimization
 
 ##### Always use the file-analyzer sub-agent when asked to read files
 The file-analyzer agent is an expert in extracting and summarizing critical information from files, particularly log files and verbose outputs. It provides concise, actionable summaries that preserve essential information while dramatically reducing context usage.
@@ -270,7 +270,8 @@ Key points:
 - Use Arrow's Either for functional error handling
 - Fail-fast for data integrity issues
 
-Error handling approach:
+### Error Handling Approach
+
 - **Fail fast** for critical configuration (missing text model)
 - **Log and continue** for optional features (extraction model)
 - **Graceful degradation** when external services unavailable

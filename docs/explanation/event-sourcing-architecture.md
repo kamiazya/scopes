@@ -143,11 +143,14 @@ CREATE TABLE events (
     event_data TEXT NOT NULL,  -- JSON serialized
     event_metadata TEXT,        -- Optional metadata
     occurred_at INTEGER NOT NULL,
-    version INTEGER NOT NULL,
-
-    INDEX idx_aggregate (aggregate_id, version),
-    INDEX idx_occurred_at (occurred_at)
+    version INTEGER NOT NULL
 );
+
+-- Create indexes separately (SQLite requires this)
+CREATE INDEX idx_events_aggregate ON events (aggregate_id, version);
+CREATE INDEX idx_events_occurred_at ON events (occurred_at);
+-- Optional: enforce version ordering uniqueness per aggregate
+CREATE UNIQUE INDEX idx_events_aggregate_version ON events (aggregate_id, version);
 ```
 
 ### Event Processing Pipeline

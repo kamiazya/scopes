@@ -21,8 +21,25 @@ This tutorial will guide you through your first steps with Scopes, from installa
 
 ### Quick Install (Recommended)
 
-Download and run the installation script:
+For security, we recommend downloading and verifying the installation script before executing:
 
+```bash
+# 1. Download the installation script and checksum
+wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh
+wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh.sha256
+
+# 2. Verify the checksum
+sha256sum -c install.sh.sha256
+
+# 3. Review the script (optional but recommended)
+less install.sh
+
+# 4. Make executable and run
+chmod +x install.sh
+./install.sh
+```
+
+For convenience (if you trust the source), you can use the one-liner:
 ```bash
 curl -fsSL https://github.com/kamiazya/scopes/releases/latest/download/install.sh | bash
 ```

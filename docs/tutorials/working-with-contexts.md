@@ -1,5 +1,7 @@
 # Working with Contexts Tutorial
 
+> ⚠️ **Note**: Context CLI commands are partially implemented. Backend support exists, but some CLI subcommands (`context current --clear`) are not yet functional. Treat this tutorial as preview documentation.
+
 This tutorial teaches you how to use context views to organize and filter your scopes for different work situations. Contexts are like saved searches or workspaces that help you focus on relevant tasks.
 
 ## What You'll Learn
