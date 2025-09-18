@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.service
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Pagination
 
 /**
  * Domain service for centralized validation logic.
