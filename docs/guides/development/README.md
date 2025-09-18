@@ -5,20 +5,20 @@ This directory contains modular development guidelines for the Scopes project. E
 ## Quick Links
 
 ### Core Architecture
-- [Clean Architecture Patterns](./clean-architecture-patterns.md) - Layer responsibilities and dependency rules
 - [Error Handling](./error-handling.md) - Comprehensive error handling strategies
-- [Repository Patterns](./repository-patterns.md) - Repository interfaces and implementations
+- [Arrow Style Guide](./arrow-style-guide.md) - Functional programming patterns with Arrow
 
 ### Implementation Guidelines
-- [DTO Guidelines](./dto-guidelines.md) - Data Transfer Object naming and placement
-- [Testing Patterns](./testing.md) - Testing strategies and patterns
-- [Arrow Style Guide](./arrow-style-guide.md) - Functional programming patterns with Arrow
-- [Validation Patterns](./validation-patterns.md) - Validation service architecture
+<!-- Coming soon: Additional implementation guides -->
+<!-- - [DTO Guidelines](./dto-guidelines.md) - Data Transfer Object naming and placement -->
+<!-- - [Testing Patterns](./testing.md) - Testing strategies and patterns -->
+<!-- - [Validation Patterns](./validation-patterns.md) - Validation service architecture -->
 
 ### Advanced Topics
-- [Contracts Slim Policy](./contracts-slim-policy.md) - Contract layer design principles
-- [Platform Abstractions](./platform-abstractions.md) - Platform layer minimization
-- [Suspend Either Guidelines](./suspend-either-patterns.md) - Async error handling
+<!-- Coming soon: Advanced development topics -->
+<!-- - [Contracts Slim Policy](./contracts-slim-policy.md) - Contract layer design principles -->
+<!-- - [Platform Abstractions](./platform-abstractions.md) - Platform layer minimization -->
+<!-- - [Suspend Either Guidelines](./suspend-either-patterns.md) - Async error handling -->
 
 ## Overview
 
@@ -34,9 +34,9 @@ Scopes follows **Clean Architecture** principles with **Domain-Driven Design (DD
 
 For new developers, read these guides in order:
 
-1. [Clean Architecture Patterns](./clean-architecture-patterns.md) - Understand the overall structure
-2. [Error Handling](./error-handling.md) - Learn error handling approach
-3. [Testing Patterns](./testing.md) - Understand testing philosophy
+1. [Error Handling](./error-handling.md) - Learn error handling approach
+2. [Arrow Style Guide](./arrow-style-guide.md) - Functional programming patterns
+3. Review the main architecture documentation for broader context
 
 ## Architecture Summary
 

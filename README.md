@@ -75,11 +75,11 @@ users          User management
 - [Domain Overview](docs/explanation/domain-overview.md) - Core concepts and domain model
 - [Clean Architecture](docs/explanation/clean-architecture.md) - Architectural layers and principles
 - [Domain-Driven Design](docs/explanation/domain-driven-design.md) - DDD implementation approach
-- [Architecture Decision Records](docs/explanation/adr/) - Key architectural decisions
+<!-- Coming soon: Architecture Decision Records - Key architectural decisions -->
 - [Use Case Style Guide](docs/guides/use-case-style-guide.md) - Implementation patterns
 
 ### Reference
-- [CLI Alias Commands](docs/reference/cli-alias-commands.md) - Complete alias command reference
+- [CLI Quick Reference](docs/reference/cli-quick-reference.md) - All commands including aliases
 
 ## 🏗️ Architecture
 
