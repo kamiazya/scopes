@@ -12,52 +12,49 @@ import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasA
 import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for setting a canonical alias for a scope.
  * Automatically demotes the previous canonical alias to a custom alias.
  * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
-class SetCanonicalAliasHandler(
-    private val scopeAliasService: ScopeAliasApplicationService,
-    transactionManager: TransactionManager,
-    logger: Logger,
-) : BaseCommandHandler<SetCanonicalAliasCommand, Unit>(transactionManager, logger) {
+class SetCanonicalAliasHandler(private val scopeAliasService: ScopeAliasApplicationService, transactionManager: TransactionManager, logger: Logger) :
+    BaseCommandHandler<SetCanonicalAliasCommand, Unit>(transactionManager, logger) {
 
     private val errorMappingService = CentralizedErrorMappingService()
 
     override suspend fun executeCommand(command: SetCanonicalAliasCommand): Either<ScopeManagementApplicationError, Unit> = either {
-            logger.debug(
-                "Setting canonical alias",
-                mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newCanonicalAlias" to command.newCanonicalAlias,
-                ),
-            )
+        logger.debug(
+            "Setting canonical alias",
+            mapOf(
+                "currentAlias" to command.currentAlias,
+                "newCanonicalAlias" to command.newCanonicalAlias,
+            ),
+        )
 
-            // Validate and find aliases
-            val currentAliasName = validateAliasName(command.currentAlias, "current").bind()
-            val currentAlias = findAlias(currentAliasName, command.currentAlias).bind()
-            val scopeId = currentAlias.scopeId
+        // Validate and find aliases
+        val currentAliasName = validateAliasName(command.currentAlias, "current").bind()
+        val currentAlias = findAlias(currentAliasName, command.currentAlias).bind()
+        val scopeId = currentAlias.scopeId
 
-            val newCanonicalAliasName = validateAliasName(command.newCanonicalAlias, "new canonical").bind()
-            val newCanonicalAlias = findAlias(newCanonicalAliasName, command.newCanonicalAlias).bind()
+        val newCanonicalAliasName = validateAliasName(command.newCanonicalAlias, "new canonical").bind()
+        val newCanonicalAlias = findAlias(newCanonicalAliasName, command.newCanonicalAlias).bind()
 
-            // Verify aliases belong to same scope
-            verifySameScope(currentAlias, newCanonicalAlias, command).bind()
+        // Verify aliases belong to same scope
+        verifySameScope(currentAlias, newCanonicalAlias, command).bind()
 
-            // Set as canonical
-            setCanonicalAlias(scopeId, newCanonicalAliasName, command).bind()
+        // Set as canonical
+        setCanonicalAlias(scopeId, newCanonicalAliasName, command).bind()
 
-            logger.info(
-                "Successfully set canonical alias",
-                mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newCanonicalAlias" to command.newCanonicalAlias,
-                    "scopeId" to scopeId.value,
-                ),
-            )
-        }
+        logger.info(
+            "Successfully set canonical alias",
+            mapOf(
+                "currentAlias" to command.currentAlias,
+                "newCanonicalAlias" to command.newCanonicalAlias,
+                "scopeId" to scopeId.value,
+            ),
+        )
     }
 
     private fun validateAliasName(alias: String, aliasType: String): Either<ScopeManagementApplicationError, AliasName> =

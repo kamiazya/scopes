@@ -18,47 +18,37 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
  * Handler for adding custom aliases to scopes.
  * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
-class AddAliasHandler(
-    private val scopeAliasService: ScopeAliasApplicationService,
-    transactionManager: TransactionManager,
-    logger: Logger,
-) : BaseCommandHandler<AddAliasCommand, Unit>(transactionManager, logger) {
-    
+class AddAliasHandler(private val scopeAliasService: ScopeAliasApplicationService, transactionManager: TransactionManager, logger: Logger) :
+    BaseCommandHandler<AddAliasCommand, Unit>(transactionManager, logger) {
+
     private val errorPresenter = ScopeInputErrorPresenter()
     private val errorMappingService = CentralizedErrorMappingService()
 
     override suspend fun executeCommand(command: AddAliasCommand): Either<ScopeManagementApplicationError, Unit> = either {
-            // Validate existingAlias
-            val existingAliasName = AliasName.create(command.existingAlias)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "add-alias-existing")
-                }
-                .bind()
-
-            // Find the scope ID through application service
-            val alias = ensureNotNull(
-                scopeAliasService.findAliasByName(existingAliasName)
-                    .mapLeft { error -> errorMappingService.mapDomainError(error, "add-alias-find") }
-                    .bind(),
-            ) {
-                ScopeInputError.AliasNotFound(command.existingAlias)
+        // Validate existingAlias
+        val existingAliasName = AliasName.create(command.existingAlias)
+            .mapLeft { error ->
+                errorMappingService.mapAliasError(error, command.existingAlias)
             }
+            .bind()
 
-            val scopeId = alias.scopeId
-
-            // Validate newAlias
-            val newAliasName = AliasName.create(command.newAlias)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "add-alias-new")
-                }
-                .bind()
-
-            // Add alias through application service
-            scopeAliasService.createCustomAlias(scopeId, newAliasName)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "add-alias-create")
-                }
-                .bind()
+        // Find the scope ID through application service
+        val alias = ensureNotNull(
+            scopeAliasService.findAliasByName(existingAliasName).bind(),
+        ) {
+            ScopeInputError.AliasNotFound(command.existingAlias)
         }
+
+        val scopeId = alias.scopeId
+
+        // Validate newAlias
+        val newAliasName = AliasName.create(command.newAlias)
+            .mapLeft { error ->
+                errorMappingService.mapAliasError(error, command.newAlias)
+            }
+            .bind()
+
+        // Add alias through application service
+        scopeAliasService.createCustomAlias(scopeId, newAliasName).bind()
     }
 }

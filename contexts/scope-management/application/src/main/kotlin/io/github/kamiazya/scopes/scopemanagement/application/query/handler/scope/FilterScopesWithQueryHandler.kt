@@ -38,60 +38,64 @@ class FilterScopesWithQueryHandler(
     }
 
     override suspend fun executeQuery(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> = either {
-                // Parse the query
-                val ast = parser.parse(query.query).fold(
-                    { _ ->
-                        raise(
-                            ScopesError.InvalidOperation(
-                                operation = "filter-scopes-with-query",
-                                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                            ).toGenericApplicationError(),
-                        )
-                    },
+        fun raiseStorageError(operation: String): Nothing = raise(ScopeManagementApplicationError.PersistenceError.StorageUnavailable(operation))
+        // Parse the query
+        val ast = parser.parse(query.query).fold(
+            { _ ->
+                raise(
+                    ScopesError.InvalidOperation(
+                        operation = "filter-scopes-with-query",
+                        reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
+                    ).toGenericApplicationError(),
+                )
+            },
+            { it },
+        )
+
+        // Get all aspect definitions for type-aware comparison
+        val definitions = aspectDefinitionRepository.findAll().fold(
+            { _ -> raiseStorageError("find-aspect-definitions") },
+            { it },
+        ).associateBy { it.key.value }
+
+        // Create evaluator with definitions
+        val evaluator = AspectQueryEvaluator(definitions)
+
+        // Get scopes to filter
+        val scopesToFilter = when {
+            query.parentId != null -> {
+                val parentScopeId = ScopeId.create(query.parentId)
+                    .mapLeft { it.toGenericApplicationError() }
+                    .bind()
+                scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000).fold(
+                    { _ -> raiseStorageError("find-scopes-by-parent") },
                     { it },
                 )
-
-                // Get all aspect definitions for type-aware comparison
-                val definitions = aspectDefinitionRepository.findAll()
-                    .mapLeft { error -> errorMappingService.mapRepositoryError(error, "filter-scopes-definitions") }
-                    .bind()
-                    .associateBy { it.key.value }
-
-                // Create evaluator with definitions
-                val evaluator = AspectQueryEvaluator(definitions)
-
-                // Get scopes to filter
-                val scopesToFilter = when {
-                    query.parentId != null -> {
-                        val parentScopeId = ScopeId.create(query.parentId)
-                            .mapLeft { it.toGenericApplicationError() }
-                            .bind()
-                        scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                            .mapLeft { error -> errorMappingService.mapRepositoryError(error, "filter-scopes-by-parent") }
-                            .bind()
-                    }
-                    query.limit != 100 || query.offset > 0 -> {
-                        // Use pagination - get all scopes with offset and limit
-                        scopeRepository.findAll(query.offset, query.limit)
-                            .mapLeft { error -> errorMappingService.mapRepositoryError(error, "filter-scopes-findall") }
-                            .bind()
-                    }
-                    else -> {
-                        // Default behavior - get root scopes only
-                        scopeRepository.findAllRoot()
-                            .mapLeft { error -> errorMappingService.mapRepositoryError(error, "filter-scopes-findroot") }
-                            .bind()
-                    }
-                }
-
-                // Filter scopes based on the query
-                val filteredScopes = scopesToFilter.filter { scope ->
-                    evaluator.evaluate(ast, scope.aspects)
-                }
-
-                // Map to DTOs
-                filteredScopes.map { scope ->
-                    ScopeMapper.toDto(scope)
-                }
             }
+            query.limit != 100 || query.offset > 0 -> {
+                // Use pagination - get all scopes with offset and limit
+                scopeRepository.findAll(query.offset, query.limit).fold(
+                    { _ -> raiseStorageError("find-all-scopes") },
+                    { it },
+                )
+            }
+            else -> {
+                // Default behavior - get root scopes only
+                scopeRepository.findAllRoot().fold(
+                    { _ -> raiseStorageError("find-root-scopes") },
+                    { it },
+                )
+            }
+        }
+
+        // Filter scopes based on the query
+        val filteredScopes = scopesToFilter.filter { scope ->
+            evaluator.evaluate(ast, scope.aspects)
+        }
+
+        // Map to DTOs
+        filteredScopes.map { scope ->
+            ScopeMapper.toDto(scope)
+        }
+    }
 }

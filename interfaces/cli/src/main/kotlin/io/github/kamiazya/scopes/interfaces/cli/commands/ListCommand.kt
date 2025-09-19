@@ -156,43 +156,43 @@ class ListCommand :
     }
 
     private suspend fun displayFilteredScopes(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>) {
-        val filteredScopes = applyAspectFilters(scopes, aspectFilters)
-        displayScopesOutput(filteredScopes) {
-            responseFormatter.formatPagedScopesForCli(
-                result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
-                    scopes = filteredScopes,
-                    totalCount = scopes.size,
-                    offset = offset,
-                    limit = limit,
-                ),
-                includeDebug = debugContext.debug,
-                includeAliases = false,
-            )
-        }
+        displayScopesWithCommonLogic(scopes, aspectFilters, scopes.size, offset, limit)
     }
 
     private suspend fun displayPagedScopes(scopes: List<ScopeResult>, aspectFilters: Map<String, List<String>>, isRoot: Boolean) {
+        if (isRoot) {
+            displayScopesWithCommonLogic(scopes, aspectFilters, scopes.size, 0, scopes.size, useRootFormatter = true)
+        } else {
+            displayScopesWithCommonLogic(scopes, aspectFilters, scopes.size, offset, limit)
+        }
+    }
+
+    private suspend fun displayScopesWithCommonLogic(
+        scopes: List<ScopeResult>,
+        aspectFilters: Map<String, List<String>>,
+        totalCount: Int,
+        displayOffset: Int,
+        displayLimit: Int,
+        useRootFormatter: Boolean = false,
+    ) {
         val filteredScopes = applyAspectFilters(scopes, aspectFilters)
         displayScopesOutput(filteredScopes) {
-            if (isRoot) {
+            val result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
+                scopes = filteredScopes,
+                totalCount = totalCount,
+                offset = displayOffset,
+                limit = displayLimit,
+            )
+
+            if (useRootFormatter) {
                 responseFormatter.formatRootScopesForCli(
-                    result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
-                        scopes = filteredScopes,
-                        totalCount = filteredScopes.size,
-                        offset = 0,
-                        limit = filteredScopes.size,
-                    ),
+                    result = result,
                     includeDebug = debugContext.debug,
                     includeAliases = false,
                 )
             } else {
                 responseFormatter.formatPagedScopesForCli(
-                    result = io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult(
-                        scopes = filteredScopes,
-                        totalCount = filteredScopes.size,
-                        offset = offset,
-                        limit = limit,
-                    ),
+                    result = result,
                     includeDebug = debugContext.debug,
                     includeAliases = false,
                 )

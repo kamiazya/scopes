@@ -15,10 +15,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManageme
  * - Error handling patterns
  * - Template method pattern for consistent structure
  */
-abstract class BaseQueryHandler<Q, R>(
-    protected val transactionManager: TransactionManager, 
-    protected val logger: Logger
-) : QueryHandler<Q, ScopeManagementApplicationError, R> {
+abstract class BaseQueryHandler<Q, R>(protected val transactionManager: TransactionManager, protected val logger: Logger) :
+    QueryHandler<Q, ScopeManagementApplicationError, R> {
 
     /**
      * Template method that provides common structure for all queries.
@@ -96,6 +94,5 @@ abstract class BaseQueryHandler<Q, R>(
     /**
      * Get error class name for consistent error logging.
      */
-    protected fun getErrorClassName(error: ScopeManagementApplicationError): String = 
-        error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    protected fun getErrorClassName(error: ScopeManagementApplicationError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
 }

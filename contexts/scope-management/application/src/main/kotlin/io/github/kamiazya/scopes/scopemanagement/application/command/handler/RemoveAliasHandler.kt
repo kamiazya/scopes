@@ -17,39 +17,27 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
  * Ensures canonical aliases cannot be removed.
  * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
-class RemoveAliasHandler(
-    private val scopeAliasService: ScopeAliasApplicationService,
-    transactionManager: TransactionManager,
-    logger: Logger,
-) : BaseCommandHandler<RemoveAliasCommand, Unit>(transactionManager, logger) {
+class RemoveAliasHandler(private val scopeAliasService: ScopeAliasApplicationService, transactionManager: TransactionManager, logger: Logger) :
+    BaseCommandHandler<RemoveAliasCommand, Unit>(transactionManager, logger) {
 
     private val errorMappingService = CentralizedErrorMappingService()
 
     override suspend fun executeCommand(command: RemoveAliasCommand): Either<ScopeManagementApplicationError, Unit> = either {
-            // Validate aliasName
-            val aliasName = AliasName.create(command.aliasName)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "remove-alias-validate")
-                }
-                .bind()
-
-            // Find alias by name first
-            val alias = scopeAliasService.findAliasByName(aliasName)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "remove-alias-find")
-                }
-                .bind()
-
-            if (alias == null) {
-                raise(ScopeInputError.AliasNotFound(command.aliasName))
+        // Validate aliasName
+        val aliasName = AliasName.create(command.aliasName)
+            .mapLeft { error ->
+                errorMappingService.mapAliasError(error, command.aliasName)
             }
+            .bind()
 
-            // Remove alias through application service
-            scopeAliasService.deleteAlias(alias.id)
-                .mapLeft { error ->
-                    errorMappingService.mapDomainError(error, "remove-alias-delete")
-                }
-                .bind()
+        // Find alias by name first
+        val alias = scopeAliasService.findAliasByName(aliasName).bind()
+
+        if (alias == null) {
+            raise(ScopeInputError.AliasNotFound(command.aliasName))
         }
+
+        // Remove alias through application service
+        scopeAliasService.deleteAlias(alias.id).bind()
     }
 }

@@ -43,11 +43,16 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
+    private fun createHierarchyViolation(violation: ScopeContractError.HierarchyViolationType): ScopeContractError =
+        ScopeContractError.BusinessError.HierarchyViolation(violation = violation)
+
+    private fun unexpectedErrorType(category: String, error: Any): Nothing = error("Unexpected $category error type: $error")
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.alias
             is AppScopeInputError.InvalidAlias -> error.alias
-            else -> error("Unexpected error type: $error")
+            else -> unexpectedErrorType("alias", error)
         }
         return mapAliasNotFoundError(alias)
     }
@@ -56,7 +61,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         val key = when (error) {
             is ContextError.ContextNotFound -> error.key
             is ContextError.InvalidContextSwitch -> error.key
-            else -> error("Unexpected error type: $error")
+            else -> unexpectedErrorType("context", error)
         }
         return mapNotFoundError(key)
     }
@@ -119,7 +124,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             id = error.attemptedValue,
             expectedFormat = error.expectedFormat,
         )
-        else -> error("Unexpected ID error type: $error")
+        else -> unexpectedErrorType("ID", error)
     }
 
     private fun createInvalidTitle(title: String, validationFailure: ScopeContractError.TitleValidationFailure): ScopeContractError.InputError.InvalidTitle =
@@ -150,7 +155,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 prohibitedCharacters = error.prohibitedCharacters,
             ),
         )
-        else -> error("Unexpected title error type: $error")
+        else -> unexpectedErrorType("title", error)
     }
 
     private fun mapDescriptionInputError(error: AppScopeInputError.DescriptionTooLong): ScopeContractError.InputError.InvalidDescription =
@@ -190,7 +195,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 expectedPattern = error.expectedPattern,
             ),
         )
-        else -> error("Unexpected alias validation error type: $error")
+        else -> unexpectedErrorType("alias validation", error)
     }
 
     private fun mapAliasBusinessError(error: AppScopeInputError): ScopeContractError = when (error) {
@@ -206,7 +211,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             expectedScopeId = error.expectedScopeId,
             actualScopeId = error.actualScopeId,
         )
-        else -> error("Unexpected alias business error type: $error")
+        else -> unexpectedErrorType("alias business", error)
     }
 
     private fun mapContextError(error: ContextError): ScopeContractError = when (error) {
@@ -248,8 +253,8 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     }
 
     private fun mapHierarchyError(error: ScopeHierarchyApplicationError): ScopeContractError = when (error) {
-        is ScopeHierarchyApplicationError.CircularReference -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.CircularReference(
+        is ScopeHierarchyApplicationError.CircularReference -> createHierarchyViolation(
+            ScopeContractError.HierarchyViolationType.CircularReference(
                 scopeId = error.scopeId,
                 parentId = error.cyclePath.firstOrNull() ?: "",
                 cyclePath = error.cyclePath,
@@ -263,28 +268,28 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             parentId = error.invalidId,
             expectedFormat = "Valid ULID format",
         )
-        is ScopeHierarchyApplicationError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
+        is ScopeHierarchyApplicationError.MaxChildrenExceeded -> createHierarchyViolation(
+            ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
                 parentId = error.parentScopeId,
                 currentChildrenCount = error.currentChildrenCount,
                 maximumChildren = error.maximumChildren,
             ),
         )
-        is ScopeHierarchyApplicationError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
+        is ScopeHierarchyApplicationError.MaxDepthExceeded -> createHierarchyViolation(
+            ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
                 scopeId = error.scopeId,
                 attemptedDepth = error.attemptedDepth,
                 maximumDepth = error.maximumDepth,
             ),
         )
-        is ScopeHierarchyApplicationError.ParentNotFound -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.ParentNotFound(
+        is ScopeHierarchyApplicationError.ParentNotFound -> createHierarchyViolation(
+            ScopeContractError.HierarchyViolationType.ParentNotFound(
                 scopeId = error.scopeId,
                 parentId = error.parentId,
             ),
         )
-        is ScopeHierarchyApplicationError.SelfParenting -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
+        is ScopeHierarchyApplicationError.SelfParenting -> createHierarchyViolation(
+            ScopeContractError.HierarchyViolationType.SelfParenting(
                 scopeId = error.scopeId,
             ),
         )

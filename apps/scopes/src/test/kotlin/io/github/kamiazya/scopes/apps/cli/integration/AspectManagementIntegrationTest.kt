@@ -65,9 +65,9 @@ class AspectManagementIntegrationTest :
                 }
 
                 // Initialize handlers
-                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager)
+                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager, logger)
                 getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
-                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager)
+                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
                 deleteAspectDefinitionHandler =
                     DeleteAspectDefinitionHandler(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
                 listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager, logger)

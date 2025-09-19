@@ -23,57 +23,48 @@ import kotlinx.datetime.Clock
  * This handler validates the input, ensures the key is unique,
  * validates the filter syntax, and persists the new context view.
  */
-class CreateContextViewHandler(
-    private val contextViewRepository: ContextViewRepository,
-    transactionManager: TransactionManager,
-    logger: Logger,
-) : BaseCommandHandler<CreateContextViewCommand, ContextViewDto>(transactionManager, logger) {
+class CreateContextViewHandler(private val contextViewRepository: ContextViewRepository, transactionManager: TransactionManager, logger: Logger) :
+    BaseCommandHandler<CreateContextViewCommand, ContextViewDto>(transactionManager, logger) {
 
     private val errorMappingService = CentralizedErrorMappingService()
 
     override suspend fun executeCommand(command: CreateContextViewCommand): Either<ScopeManagementApplicationError, ContextViewDto> = either {
-                // Validate and create value objects
-                val key = ContextViewKey.create(command.key)
-                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-key") }
-                    .bind()
-                val name = ContextViewName.create(command.name)
-                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-name") }
-                    .bind()
-                val filter = ContextViewFilter.create(command.filter)
-                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-filter") }
-                    .bind()
+        fun raiseStorageError(operation: String): Nothing = raise(ScopeManagementApplicationError.PersistenceError.StorageUnavailable(operation))
+        // Validate and create value objects
+        val key = ContextViewKey.create(command.key)
+            .mapLeft { errorMappingService.mapDomainError(it, "create-context-key") }
+            .bind()
+        val name = ContextViewName.create(command.name)
+            .mapLeft { errorMappingService.mapDomainError(it, "create-context-name") }
+            .bind()
+        val filter = ContextViewFilter.create(command.filter)
+            .mapLeft { errorMappingService.mapDomainError(it, "create-context-filter") }
+            .bind()
 
-                // Create the context view
-                val contextView = ContextView.create(
-                    key = key,
-                    name = name,
-                    filter = filter,
-                    description = command.description,
-                    now = Clock.System.now(),
-                ).mapLeft { errorMappingService.mapDomainError(it, "create-context-entity") }.bind()
+        // Create the context view
+        val contextView = ContextView.create(
+            key = key,
+            name = name,
+            filter = filter,
+            description = command.description,
+            now = Clock.System.now(),
+        ).mapLeft { errorMappingService.mapDomainError(it, "create-context-entity") }.bind()
 
-                // Save to repository
-                val saved = contextViewRepository.save(contextView).fold(
-                    { _ ->
-                        raise(
-                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                operation = "save-context-view",
-                            ),
-                        )
-                    },
-                    { it },
-                )
+        // Save to repository
+        val saved = contextViewRepository.save(contextView).fold(
+            { _ -> raiseStorageError("save-context-view") },
+            { it },
+        )
 
-                // Map to DTO
-                ContextViewDto(
-                    id = saved.id.value.toString(),
-                    key = saved.key.value,
-                    name = saved.name.value,
-                    filter = saved.filter.expression,
-                    description = saved.description?.value,
-                    createdAt = saved.createdAt,
-                    updatedAt = saved.updatedAt,
-                )
-            }
-        }
+        // Map to DTO
+        ContextViewDto(
+            id = saved.id.value.toString(),
+            key = saved.key.value,
+            name = saved.name.value,
+            filter = saved.filter.expression,
+            description = saved.description?.value,
+            createdAt = saved.createdAt,
+            updatedAt = saved.updatedAt,
+        )
+    }
 }

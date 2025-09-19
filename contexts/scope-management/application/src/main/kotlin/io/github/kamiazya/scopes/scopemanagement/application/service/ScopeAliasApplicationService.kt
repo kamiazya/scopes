@@ -29,6 +29,11 @@ class ScopeAliasApplicationService(
     private val aliasPolicy: ScopeAliasPolicy = ScopeAliasPolicy(),
 ) {
 
+    private fun <T> Either<*, T>.mapDomainError(): Either<ScopeManagementApplicationError, T> = mapLeft {
+        (it as? io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError)?.toGenericApplicationError()
+            ?: ScopeManagementApplicationError.PersistenceError.StorageUnavailable("unknown-operation")
+    }
+
     /**
      * Assigns a canonical alias to a scope.
      *
@@ -38,8 +43,8 @@ class ScopeAliasApplicationService(
      */
     suspend fun assignCanonicalAlias(scopeId: ScopeId, aliasName: AliasName): Either<ScopeManagementApplicationError, ScopeAlias> = either {
         // Fetch necessary data from repository
-        val existingAliasWithName = aliasRepository.findByAliasName(aliasName).mapLeft { it.toGenericApplicationError() }.bind()
-        val existingCanonicalForScope = aliasRepository.findCanonicalByScopeId(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+        val existingAliasWithName = aliasRepository.findByAliasName(aliasName).mapDomainError().bind()
+        val existingCanonicalForScope = aliasRepository.findCanonicalByScopeId(scopeId).mapDomainError().bind()
 
         // Use pure domain service to determine operation
         val operation = aliasPolicy.determineCanonicalAliasOperation(
@@ -52,27 +57,27 @@ class ScopeAliasApplicationService(
         // Execute the operation
         when (operation) {
             is AliasOperation.Create -> {
-                aliasRepository.save(operation.alias).mapLeft { it.toGenericApplicationError() }.bind()
+                aliasRepository.save(operation.alias).mapDomainError().bind()
                 operation.alias
             }
             is AliasOperation.Replace -> {
                 // Demote old canonical to custom using domain method
                 val demotedAlias = operation.oldAlias.demoteToCustom(Clock.System.now())
-                aliasRepository.update(demotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                aliasRepository.update(demotedAlias).mapDomainError().bind()
 
                 // Save new canonical
-                aliasRepository.save(operation.newAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                aliasRepository.save(operation.newAlias).mapDomainError().bind()
                 operation.newAlias
             }
             is AliasOperation.Promote -> {
                 // Promote existing custom alias to canonical
                 val promotedAlias = operation.existingAlias.promoteToCanonical(Clock.System.now())
-                aliasRepository.update(promotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                aliasRepository.update(promotedAlias).mapDomainError().bind()
 
                 // If there's an existing canonical, demote it to custom
                 if (existingCanonicalForScope != null) {
                     val demotedAlias = existingCanonicalForScope.demoteToCustom(Clock.System.now())
-                    aliasRepository.update(demotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                    aliasRepository.update(demotedAlias).mapDomainError().bind()
                 }
 
                 promotedAlias
@@ -96,17 +101,17 @@ class ScopeAliasApplicationService(
      */
     suspend fun createCustomAlias(scopeId: ScopeId, aliasName: AliasName): Either<ScopeManagementApplicationError, ScopeAlias> = either {
         // Check if alias name is available
-        val existingAliasWithName = aliasRepository.findByAliasName(aliasName).mapLeft { it.toGenericApplicationError() }.bind()
+        val existingAliasWithName = aliasRepository.findByAliasName(aliasName).mapDomainError().bind()
 
         // Use pure domain service to validate
         val newAlias = aliasPolicy.validateCustomAliasCreation(
             scopeId = scopeId,
             aliasName = aliasName,
             existingAliasWithName = existingAliasWithName,
-        ).mapLeft { it.toGenericApplicationError() }.bind()
+        ).mapDomainError().bind()
 
         // Save to repository
-        aliasRepository.save(newAlias).mapLeft { it.toGenericApplicationError() }.bind()
+        aliasRepository.save(newAlias).mapDomainError().bind()
         newAlias
     }
 
@@ -122,11 +127,11 @@ class ScopeAliasApplicationService(
 
         while (retryCount < maxRetries) {
             // Generate a new alias name
-            val generatedName = aliasGenerationService.generateRandomAlias().mapLeft { it.toGenericApplicationError() }.bind()
+            val generatedName = aliasGenerationService.generateRandomAlias().mapDomainError().bind()
 
             // Always fetch existing alias and canonical to properly evaluate all cases
-            val existingAliasWithName = aliasRepository.findByAliasName(generatedName).mapLeft { it.toGenericApplicationError() }.bind()
-            val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+            val existingAliasWithName = aliasRepository.findByAliasName(generatedName).mapDomainError().bind()
+            val existingCanonical = aliasRepository.findCanonicalByScopeId(scopeId).mapDomainError().bind()
 
             // Let the policy decide the appropriate operation with full information
             val operation = aliasPolicy.determineCanonicalAliasOperation(
@@ -139,24 +144,24 @@ class ScopeAliasApplicationService(
             when (operation) {
                 is AliasOperation.Create -> {
                     // Terminal case: create new alias
-                    aliasRepository.save(operation.alias).mapLeft { it.toGenericApplicationError() }.bind()
+                    aliasRepository.save(operation.alias).mapDomainError().bind()
                     return@either operation.alias
                 }
                 is AliasOperation.Replace -> {
                     // Terminal case: replace existing canonical
                     val demotedAlias = operation.oldAlias.demoteToCustom(Clock.System.now())
-                    aliasRepository.update(demotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
-                    aliasRepository.save(operation.newAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                    aliasRepository.update(demotedAlias).mapDomainError().bind()
+                    aliasRepository.save(operation.newAlias).mapDomainError().bind()
                     return@either operation.newAlias
                 }
                 is AliasOperation.Promote -> {
                     // Terminal case: promote existing custom alias to canonical
                     val promotedAlias = operation.existingAlias.promoteToCanonical(Clock.System.now())
-                    aliasRepository.update(promotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                    aliasRepository.update(promotedAlias).mapDomainError().bind()
 
                     if (existingCanonical != null) {
                         val demotedAlias = existingCanonical.demoteToCustom(Clock.System.now())
-                        aliasRepository.update(demotedAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                        aliasRepository.update(demotedAlias).mapDomainError().bind()
                     }
 
                     return@either promotedAlias
@@ -195,7 +200,7 @@ class ScopeAliasApplicationService(
      * @return Either an error or Unit
      */
     suspend fun deleteAlias(aliasId: AliasId): Either<ScopeManagementApplicationError, Unit> = either {
-        val alias = ensureNotNull(aliasRepository.findById(aliasId).mapLeft { it.toGenericApplicationError() }.bind()) {
+        val alias = ensureNotNull(aliasRepository.findById(aliasId).mapDomainError().bind()) {
             ScopeAliasError.AliasNotFound(
                 aliasName = "ID:${aliasId.value}",
             )
@@ -210,7 +215,7 @@ class ScopeAliasApplicationService(
         }
 
         // Delete from repository and ensure it was actually removed
-        val removed = aliasRepository.removeById(alias.id).mapLeft { it.toGenericApplicationError() }.bind()
+        val removed = aliasRepository.removeById(alias.id).mapDomainError().bind()
         ensure(removed) {
             ScopeAliasError.AliasNotFound(
                 aliasName = alias.aliasName.value,
@@ -225,7 +230,7 @@ class ScopeAliasApplicationService(
      * @return Either an error or list of aliases
      */
     suspend fun listAliasesForScope(scopeId: ScopeId): Either<ScopeManagementApplicationError, List<ScopeAlias>> =
-        aliasRepository.findByScopeId(scopeId).mapLeft { it.toGenericApplicationError() }
+        aliasRepository.findByScopeId(scopeId).mapDomainError()
 
     /**
      * Finds an alias by name.
@@ -234,5 +239,5 @@ class ScopeAliasApplicationService(
      * @return Either an error or the alias (if found)
      */
     suspend fun findAliasByName(aliasName: AliasName): Either<ScopeManagementApplicationError, ScopeAlias?> =
-        aliasRepository.findByAliasName(aliasName).mapLeft { it.toGenericApplicationError() }
+        aliasRepository.findByAliasName(aliasName).mapDomainError()
 }

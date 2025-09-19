@@ -19,6 +19,30 @@ class ValidateAspectValueUseCase(
     private val validationService: AspectValueValidationService,
 ) : UseCase<ValidateAspectValueUseCase.Query, ScopeManagementApplicationError, AspectValue> {
 
+    private fun createAspectKey(key: String): Either<ScopeManagementApplicationError, AspectKey> =
+        AspectKey.create(key).mapLeft { it.toGenericApplicationError() }
+
+    private fun createAspectValue(value: String): Either<ScopeManagementApplicationError, AspectValue> =
+        AspectValue.create(value).mapLeft { it.toGenericApplicationError() }
+
+    private suspend fun findAspectDefinition(
+        key: String,
+        aspectKey: AspectKey,
+    ): Either<ScopeManagementApplicationError, io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition> =
+        aspectDefinitionRepository.findByKey(aspectKey).fold(
+            {
+                ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
+                    operation = "find-aspect-definition",
+                ).left()
+            },
+            {
+                it?.right() ?: ScopeManagementApplicationError.PersistenceError.NotFound(
+                    entityType = "AspectDefinition",
+                    entityId = key,
+                ).left()
+            },
+        )
+
     // Query classes for different validation scenarios
     data class Query(val key: String, val value: String)
 
@@ -26,29 +50,20 @@ class ValidateAspectValueUseCase(
 
     override suspend operator fun invoke(input: Query): Either<ScopeManagementApplicationError, AspectValue> {
         // Parse the aspect key
-        val aspectKey = AspectKey.create(input.key).fold(
-            { return it.toGenericApplicationError().left() },
+        val aspectKey = createAspectKey(input.key).fold(
+            { return it.left() },
             { it },
         )
 
         // Find the aspect definition
-        val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
-            {
-                return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                    operation = "find-aspect-definition",
-                ).left()
-            },
-            {
-                it ?: return ScopeManagementApplicationError.PersistenceError.NotFound(
-                    entityType = "AspectDefinition",
-                    entityId = input.key,
-                ).left()
-            },
+        val definition = findAspectDefinition(input.key, aspectKey).fold(
+            { return it.left() },
+            { it },
         )
 
         // Create the aspect value
-        val aspectValue = AspectValue.create(input.value).fold(
-            { return it.toGenericApplicationError().left() },
+        val aspectValue = createAspectValue(input.value).fold(
+            { return it.left() },
             { it },
         )
 
@@ -83,24 +98,15 @@ class ValidateAspectValueUseCase(
 
         for ((key, valueList) in values) {
             // Parse the aspect key
-            val aspectKey = AspectKey.create(key).fold(
-                { return it.toGenericApplicationError().left() },
+            val aspectKey = createAspectKey(key).fold(
+                { return it.left() },
                 { it },
             )
 
             // Find the aspect definition
-            val definition = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                {
-                    return ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                        operation = "find-aspect-definition",
-                    ).left()
-                },
-                {
-                    it ?: return ScopeManagementApplicationError.PersistenceError.NotFound(
-                        entityType = "AspectDefinition",
-                        entityId = key,
-                    ).left()
-                },
+            val definition = findAspectDefinition(key, aspectKey).fold(
+                { return it.left() },
+                { it },
             )
 
             // Check if multiple values are allowed using domain service
@@ -112,8 +118,8 @@ class ValidateAspectValueUseCase(
             // Validate each value
             val validatedList = mutableListOf<AspectValue>()
             for (value in valueList) {
-                val aspectValue = AspectValue.create(value).fold(
-                    { return it.toGenericApplicationError().left() },
+                val aspectValue = createAspectValue(value).fold(
+                    { return it.left() },
                     { it },
                 )
 

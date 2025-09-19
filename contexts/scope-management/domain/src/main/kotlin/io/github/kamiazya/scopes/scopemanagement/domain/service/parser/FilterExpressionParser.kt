@@ -120,14 +120,8 @@ class FilterExpressionParser {
                     position++
                 }
 
-                // Support documented field:value syntax
-                expression[position] == ':' -> {
-                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
-                    position++
-                }
-
-                // Support single '=' (must check after '==' and '!=' to avoid conflicts)
-                expression[position] == '=' -> {
+                // Support both ':' and '=' for equality (documented field:value syntax and standard =)
+                expression[position] == ':' || expression[position] == '=' -> {
                     tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
                     position++
                 }
@@ -181,6 +175,12 @@ class FilterExpressionParser {
         fun hasMoreTokens(): Boolean = position < tokens.size
 
         fun currentPosition(): Int = if (position < tokens.size) tokens[position].position else 0
+
+        private fun extractTokenValue(token: Token): String = when (token) {
+            is Token.StringLiteral -> token.value
+            is Token.Identifier -> token.value
+            else -> error("Unexpected token type: ${token::class.simpleName}")
+        }
 
         fun parseExpression(): FilterExpressionAST = parseOr()
 
@@ -251,14 +251,10 @@ class FilterExpressionParser {
                     }
 
                     val value = when (val valueToken = tokens[position]) {
-                        is Token.StringLiteral -> {
+                        is Token.StringLiteral, is Token.Identifier -> {
+                            // Allow both quoted strings and unquoted identifiers as values
                             position++
-                            valueToken.value
-                        }
-                        is Token.Identifier -> {
-                            // Allow unquoted identifiers as values (e.g., status:active)
-                            position++
-                            valueToken.value
+                            extractTokenValue(valueToken)
                         }
                         else -> error("Expected value after operator, but got: $valueToken")
                     }

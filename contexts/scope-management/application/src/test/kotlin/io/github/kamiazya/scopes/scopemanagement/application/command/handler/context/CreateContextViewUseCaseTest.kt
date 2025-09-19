@@ -31,7 +31,8 @@ class CreateContextViewUseCaseTest :
         describe("CreateContextViewHandler") {
             val contextViewRepository = mockk<ContextViewRepository>()
             val transactionManager = mockk<TransactionManager>()
-            val handler = CreateContextViewHandler(contextViewRepository, transactionManager)
+            val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
+            val handler = CreateContextViewHandler(contextViewRepository, transactionManager, logger)
 
             beforeEach {
                 // Clear all mocks before each test

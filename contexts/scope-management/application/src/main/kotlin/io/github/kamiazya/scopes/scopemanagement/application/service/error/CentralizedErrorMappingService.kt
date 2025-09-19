@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.service.error
 
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
@@ -60,4 +61,22 @@ class CentralizedErrorMappingService {
      */
     fun mapRepositoryError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError, operation: String): ScopeManagementApplicationError =
         error.toGenericApplicationError()
+
+    /**
+     * Map alias validation errors with consistent context.
+     */
+    fun mapAliasError(
+        error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError,
+        alias: String,
+        context: String = "alias-operation",
+    ): ScopeInputError = when (error) {
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
+            ScopeInputError.AliasEmpty(alias)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
+            ScopeInputError.AliasTooShort(alias, error.minLength)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
+            ScopeInputError.AliasTooLong(alias, error.maxLength)
+        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
+            ScopeInputError.AliasInvalidFormat(alias, error.expectedPattern.toString())
+    }
 }

@@ -77,26 +77,28 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
     }
 
+    private fun createInvalidTitleError(
+        title: String = "",
+        validationFailure: ScopeContractError.TitleValidationFailure,
+    ): ScopeContractError.InputError.InvalidTitle = ScopeContractError.InputError.InvalidTitle(title = title, validationFailure = validationFailure)
+
     private fun mapTitleError(domainError: ScopeInputError.TitleError): ScopeContractError.InputError.InvalidTitle = when (domainError) {
-        is ScopeInputError.TitleError.EmptyTitle -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
+        is ScopeInputError.TitleError.EmptyTitle -> createInvalidTitleError(
             validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeInputError.TitleError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
+        is ScopeInputError.TitleError.TitleTooShort -> createInvalidTitleError(
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
                 minimumLength = domainError.minLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
+        is ScopeInputError.TitleError.TitleTooLong -> createInvalidTitleError(
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
                 maximumLength = domainError.maxLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.TitleError.InvalidTitleFormat -> ScopeContractError.InputError.InvalidTitle(
+        is ScopeInputError.TitleError.InvalidTitleFormat -> createInvalidTitleError(
             title = domainError.title,
             validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
                 prohibitedCharacters = emptyList(),
@@ -114,26 +116,28 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
     }
 
+    private fun createInvalidAliasError(
+        alias: String = "",
+        validationFailure: ScopeContractError.AliasValidationFailure,
+    ): ScopeContractError.InputError.InvalidAlias = ScopeContractError.InputError.InvalidAlias(alias = alias, validationFailure = validationFailure)
+
     private fun mapAliasError(domainError: ScopeInputError.AliasError): ScopeContractError.InputError.InvalidAlias = when (domainError) {
-        is ScopeInputError.AliasError.EmptyAlias -> ScopeContractError.InputError.InvalidAlias(
-            alias = "",
+        is ScopeInputError.AliasError.EmptyAlias -> createInvalidAliasError(
             validationFailure = ScopeContractError.AliasValidationFailure.Empty,
         )
-        is ScopeInputError.AliasError.AliasTooShort -> ScopeContractError.InputError.InvalidAlias(
-            alias = "",
+        is ScopeInputError.AliasError.AliasTooShort -> createInvalidAliasError(
             validationFailure = ScopeContractError.AliasValidationFailure.TooShort(
                 minimumLength = domainError.minLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.AliasTooLong -> ScopeContractError.InputError.InvalidAlias(
-            alias = "",
+        is ScopeInputError.AliasError.AliasTooLong -> createInvalidAliasError(
             validationFailure = ScopeContractError.AliasValidationFailure.TooLong(
                 maximumLength = domainError.maxLength,
                 actualLength = 0,
             ),
         )
-        is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidAlias(
+        is ScopeInputError.AliasError.InvalidAliasFormat -> createInvalidAliasError(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
                 expectedPattern = errorPresenter.presentAliasPattern(domainError.expectedPattern),
