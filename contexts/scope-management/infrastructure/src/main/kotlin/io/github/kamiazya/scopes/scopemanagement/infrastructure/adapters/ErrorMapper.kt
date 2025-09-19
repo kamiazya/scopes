@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
 
 /**
@@ -24,19 +25,12 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     companion object {
         private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
     }
-    private fun presentIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
-        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
-    }
+    private val errorPresenter = ScopeInputErrorPresenter()
 
-    private fun presentAliasPattern(patternType: ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType): String = when (patternType) {
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase with hyphens (e.g., my-alias)"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters only"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
-        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
-    }
+    override fun getServiceName(): String = SCOPE_MANAGEMENT_SERVICE
+
+    override fun createServiceUnavailableError(serviceName: String): ScopeContractError =
+        ScopeContractError.SystemError.ServiceUnavailable(service = serviceName)
 
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
@@ -63,14 +57,12 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             expectedVersion = domainError.expectedVersion?.toLong() ?: -1L,
             actualVersion = domainError.actualVersion?.toLong() ?: -1L,
         )
-        is ScopesError.RepositoryError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        is ScopesError.RepositoryError -> mapSystemError()
 
         // Default fallback for unmapped errors
         else -> handleUnmappedError(
             domainError,
-            ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE),
+            mapSystemError(),
         )
     }
 
@@ -81,7 +73,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
             id = domainError.id,
-            expectedFormat = presentIdFormat(domainError.expectedFormat),
+            expectedFormat = errorPresenter.presentIdFormat(domainError.expectedFormat),
         )
     }
 
@@ -144,7 +136,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeInputError.AliasError.InvalidAliasFormat -> ScopeContractError.InputError.InvalidAlias(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
-                expectedPattern = presentAliasPattern(domainError.expectedPattern),
+                expectedPattern = errorPresenter.presentAliasPattern(domainError.expectedPattern),
             ),
         )
     }
@@ -198,9 +190,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 maximumChildren = domainError.maxChildren,
             ),
         )
-        is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        is ScopeHierarchyError.HierarchyUnavailable -> mapSystemError()
     }
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
@@ -215,12 +205,6 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.scopeId.toString(),
         )
-        // Handle generic DataInconsistencyError and AliasGenerationFailed
-        is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.DataInconsistencyError,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
@@ -230,6 +214,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.AliasNotFoundById -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.aliasId.value,
         )
+        // Handle generic DataInconsistencyError and AliasGenerationFailed together
+        is ScopeAliasError.AliasGenerationFailed,
+        is ScopeAliasError.DataInconsistencyError,
+        -> mapSystemError()
     }
 
     private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {
@@ -274,9 +262,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 childrenCount = null,
             )
             "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+            else -> mapSystemError()
         }
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+        else -> mapSystemError()
     }
 
     private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {

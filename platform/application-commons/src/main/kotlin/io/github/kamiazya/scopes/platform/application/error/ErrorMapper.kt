@@ -37,8 +37,29 @@ interface ErrorMapper<TDomainError : Any, TContractError : Any> {
  *
  * Bounded contexts should extend this class instead of implementing ErrorMapper directly
  * to get consistent error logging behavior.
+ *
+ * @param TDomainError The domain error type
+ * @param TContractError The contract error type (must have a SystemError.ServiceUnavailable type)
  */
 abstract class BaseErrorMapper<TDomainError : Any, TContractError : Any>(protected val logger: Logger) : ErrorMapper<TDomainError, TContractError> {
+
+    /**
+     * Returns the service name for this error mapper.
+     * Override this in concrete implementations to provide the correct service name.
+     */
+    protected abstract fun getServiceName(): String
+
+    /**
+     * Maps to a system error indicating service unavailability.
+     * Concrete implementations should ensure TContractError has this capability.
+     */
+    protected abstract fun createServiceUnavailableError(serviceName: String): TContractError
+
+    /**
+     * Default implementation for mapping to system error.
+     * Can be overridden if different behavior is needed.
+     */
+    protected open fun mapSystemError(): TContractError = createServiceUnavailableError(getServiceName())
 
     /**
      * Logs an unmapped error and returns a fallback error.

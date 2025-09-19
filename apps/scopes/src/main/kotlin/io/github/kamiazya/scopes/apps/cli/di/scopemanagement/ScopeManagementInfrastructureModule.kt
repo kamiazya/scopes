@@ -18,7 +18,7 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMa
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.ActiveContextRepositoryImpl
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeAliasRepository
@@ -70,11 +70,11 @@ val scopeManagementInfrastructureModule = module {
     }
 
     // Active Context Repository
-    single<ActiveContextRepositoryImpl> {
+    single<SqlDelightActiveContextRepository> {
         val database: ScopeManagementDatabase = get(named("scopeManagement"))
-        ActiveContextRepositoryImpl(database)
+        SqlDelightActiveContextRepository(database)
     }
-    single<ActiveContextRepository> { get<ActiveContextRepositoryImpl>() }
+    single<ActiveContextRepository> { get<SqlDelightActiveContextRepository>() }
 
     // TransactionManager for this bounded context
     single<TransactionManager> {

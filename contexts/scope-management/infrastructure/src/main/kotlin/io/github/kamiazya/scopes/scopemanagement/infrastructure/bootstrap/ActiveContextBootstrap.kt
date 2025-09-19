@@ -4,7 +4,7 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper
 import io.github.kamiazya.scopes.platform.application.lifecycle.BootstrapError
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.ActiveContextRepositoryImpl
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 
 /**
  * Bootstrapper for initializing the ActiveContext repository.
@@ -13,7 +13,7 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.Activ
  * initialized at application startup, replacing the previous pattern
  * of using runBlocking in module creation.
  */
-class ActiveContextBootstrap(private val activeContextRepository: ActiveContextRepositoryImpl, private val logger: Logger) : ApplicationBootstrapper {
+class ActiveContextBootstrap(private val activeContextRepository: SqlDelightActiveContextRepository, private val logger: Logger) : ApplicationBootstrapper {
     override val name: String = "ActiveContextBootstrap"
     override val priority: Int = 90 // Lower priority than database initialization but before features
 

@@ -130,20 +130,35 @@ data class SyncConflict(
      */
     fun merge(now: Instant): SyncConflict = resolve(ResolutionAction.MERGED, now)
 
+    /**
+     * Parameters for detecting sync conflicts.
+     */
+    data class DetectionParams(
+        val localEventId: String,
+        val remoteEventId: String,
+        val aggregateId: String,
+        val localVersion: Long,
+        val remoteVersion: Long,
+        val localVectorClock: VectorClock,
+        val remoteVectorClock: VectorClock,
+        val detectedAt: Instant,
+    )
+
     companion object {
         /**
          * Detect conflicts between local and remote events.
          */
-        fun detect(
-            localEventId: String,
-            remoteEventId: String,
-            aggregateId: String,
-            localVersion: Long,
-            remoteVersion: Long,
-            localVectorClock: VectorClock,
-            remoteVectorClock: VectorClock,
-            detectedAt: Instant,
-        ): SyncConflict? {
+        fun detect(params: DetectionParams): SyncConflict? {
+            val (
+                localEventId,
+                remoteEventId,
+                aggregateId,
+                localVersion,
+                remoteVersion,
+                localVectorClock,
+                remoteVectorClock,
+                detectedAt,
+            ) = params
             // No conflict if vector clocks show clear causality
             if (localVectorClock.happenedBefore(remoteVectorClock) ||
                 remoteVectorClock.happenedBefore(localVectorClock)
