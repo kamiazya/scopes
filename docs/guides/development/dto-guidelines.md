@@ -21,62 +21,74 @@ DTOs serve as data structures for transferring information between architectural
 
 **Convention**: Use `Dto` suffix for data structures within application boundaries
 
-```kotlin
-// ✅ Application Layer DTO examples
-data class ScopeDto(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val canonicalAlias: String?,
-    val customAliases: List<String> = emptyList(),
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val aspects: Map<String, List<String>> = emptyMap(),
-)
+```mermaid
+graph LR
+    subgraph "Application DTOs"
+        subgraph "Naming Pattern"
+            QR[Query Results<br/>*Dto suffix]
+            CI[Command Inputs<br/>*Input suffix]
+            OR[Operation Results<br/>*Result suffix]
+        end
 
-data class CreateScopeResult(
-    val scope: ScopeDto,
-    val generatedAlias: String?
-)
+        subgraph "Common Fields"
+            CF[id: String<br/>title: String<br/>description: String?<br/>timestamps: Instant<br/>collections: List/Map]
+        end
+    end
+
+    QR --> |examples| QRE[ScopeDto<br/>AliasDto<br/>ContextViewDto]
+    CI --> |examples| CIE[CreateScopeInput<br/>UpdateScopeInput]
+    OR --> |examples| ORE[CreateScopeResult<br/>FilteredScopesResult]
+
+    classDef pattern fill:#e3f2fd,stroke:#2196f3
+    classDef example fill:#fff3e0,stroke:#ff9800
+
+    class QR,CI,OR pattern
+    class QRE,CIE,ORE example
 ```
 
-**Types**:
-- **Query Results**: `ScopeDto`, `AliasDto`, `ContextViewDto`
-- **Command Inputs**: `CreateScopeInput`, `UpdateScopeInput`
-- **Operation Results**: `CreateScopeResult`, `FilteredScopesResult`
+**Key Characteristics**:
+- Rich internal representation with optional fields
+- Primitive types only (no domain objects)
+- Default values for collections
+- Implement DTO marker interface
 
 ### Contract Layer DTOs
 
 **Convention**: Use semantic suffixes based on purpose
 
-```kotlin
-// ✅ Contract Layer DTO examples
-data class ScopeResult(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val canonicalAlias: String,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val isArchived: Boolean = false,
-    val aspects: Map<String, List<String>> = emptyMap(),
-)
+```mermaid
+graph TB
+    subgraph "Contract DTOs"
+        subgraph "Semantic Naming"
+            CR[Query Results<br/>*Result suffix]
+            CC[Commands<br/>*Command suffix]
+            CQ[Queries<br/>*Query suffix]
+        end
 
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null,
-    val generateAlias: Boolean = true,
-    val customAlias: String? = null,
-)
+        subgraph "Design Principles"
+            DP1[Minimal API Surface]
+            DP2[Stable Public Interface]
+            DP3[Required Fields Explicit]
+            DP4[Backward Compatible]
+        end
+    end
+
+    CR --> |examples| CRE[ScopeResult<br/>AliasListResult]
+    CC --> |examples| CCE[CreateScopeCommand<br/>UpdateScopeCommand]
+    CQ --> |examples| CQE[GetScopeQuery<br/>ListAliasesQuery]
+
+    classDef contract fill:#fce4ec,stroke:#e91e63
+    classDef example fill:#fff3e0,stroke:#ff9800
+
+    class CR,CC,CQ contract
+    class CRE,CCE,CQE example
 ```
 
-**Types**:
-- **Query Results**: `Result` suffix (e.g., `ScopeResult`, `AliasListResult`)
-- **Commands**: `Command` suffix (e.g., `CreateScopeCommand`, `UpdateScopeCommand`)
-- **Queries**: `Query` suffix (e.g., `GetScopeQuery`, `ListAliasesQuery`)
+**Key Characteristics**:
+- Minimal stable external representation
+- Public visibility modifiers
+- Required fields without defaults where appropriate
+- Focus on API stability over internal flexibility
 
 ## DTO Placement Structure
 
@@ -208,79 +220,90 @@ data class BadScopeDto(
 
 ## Mapping Between Layers
 
-### Domain to Application Mapping
+### Data Transformation Flow
 
-```kotlin
-object ScopeMapper {
-    fun toScopeDto(scope: Scope): ScopeDto = ScopeDto(
-        id = scope.id.value,                     // Extract primitive from value object
-        title = scope.title.value,               // Extract primitive from value object  
-        description = scope.description?.value,  // Handle optional value objects
-        parentId = scope.parentId?.value,        // Extract primitive from optional ID
-        canonicalAlias = scope.canonicalAlias?.value,
-        customAliases = scope.customAliases.map { it.value },
-        createdAt = scope.createdAt,
-        updatedAt = scope.updatedAt,
-        aspects = scope.aspects.mapValues { (_, values) -> 
-            values.map { it.toString() }        // Convert complex types to strings
-        }
-    )
-}
+```mermaid
+flowchart LR
+    subgraph "Domain Layer"
+        DE[Domain Entity<br/>• ScopeId value object<br/>• ScopeTitle value object<br/>• Rich types]
+    end
+
+    subgraph "Mappers"
+        M1[ScopeMapper<br/>.toScopeDto()]
+        M2[ContractMapper<br/>.toScopeResult()]
+    end
+
+    subgraph "Application Layer"
+        AD[Application DTO<br/>• id: String<br/>• title: String<br/>• Primitives only]
+    end
+
+    subgraph "Contract Layer"
+        CD[Contract DTO<br/>• Stable API<br/>• Public fields<br/>• External format]
+    end
+
+    subgraph "External"
+        JSON[JSON/XML Response]
+    end
+
+    DE -->|Extract primitives| M1
+    M1 --> AD
+    AD -->|Add defaults| M2
+    M2 --> CD
+    CD -->|Serialize| JSON
+
+    classDef domain fill:#e8f5e9,stroke:#4caf50
+    classDef application fill:#e3f2fd,stroke:#2196f3
+    classDef contract fill:#fce4ec,stroke:#e91e63
+    classDef external fill:#f5f5f5,stroke:#9e9e9e
+
+    class DE domain
+    class AD application
+    class CD contract
+    class JSON external
 ```
 
-### Application to Contract Mapping
+### Mapping Patterns
 
-```kotlin
-object ScopeContractMapper {
-    fun toScopeResult(scopeDto: ScopeDto): ScopeResult = ScopeResult(
-        id = scopeDto.id,
-        title = scopeDto.title,
-        description = scopeDto.description,
-        parentId = scopeDto.parentId,
-        canonicalAlias = scopeDto.canonicalAlias ?: "", // Handle optionals
-        createdAt = scopeDto.createdAt,
-        updatedAt = scopeDto.updatedAt,
-        isArchived = false, // Set contract-specific defaults
-        aspects = scopeDto.aspects
-    )
-    
-    fun fromCreateScopeCommand(command: CreateScopeCommand): CreateScopeInput =
-        CreateScopeInput(
-            title = command.title,
-            description = command.description,
-            parentId = command.parentId,
-            generateAlias = command.generateAlias,
-            customAlias = command.customAlias
-        )
-}
-```
+#### Key Transformation Rules
 
-### Complete Data Flow Example
+| From (Domain) | Operation | To (DTO) | Example |
+|--------------|-----------|----------|----------|
+| Value Object | `.value` extraction | Primitive | `ScopeId` → `String` |
+| Optional Value Object | `?.value` | Nullable Primitive | `ScopeDescription?` → `String?` |
+| Collection of Value Objects | `.map { it.value }` | Collection of Primitives | `List<Alias>` → `List<String>` |
+| Complex Types | `.toString()` | String representation | `AspectValue` → `String` |
+| Missing in source | Default value | Contract requirement | N/A → `isArchived = false` |
 
-```kotlin
-// Step 1: Domain Entity (with rich domain types)
-val scope = Scope(
-    id = ScopeId.generate(),
-    title = ScopeTitle.from("Project Alpha"),
-    description = ScopeDescription.from("Strategic project"),
-    parentId = ScopeId.from("parent-123"),
-    createdAt = Clock.System.now(),
-    metadata = mutableMapOf("priority" to "high")
-)
+#### Mapper Responsibilities
 
-// Step 2: Mapper transforms domain entity to DTO
-val dto = ScopeMapper.toCreateScopeResult(scope)
-// Result: CreateScopeResult(
-//   id = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-//   title = "Project Alpha", 
-//   description = "Strategic project",
-//   parentId = "parent-123",
-//   createdAt = 2024-01-15T10:30:00Z,
-//   metadata = mapOf("priority" to "high")
-// )
+**Domain to Application Mapper:**
+- Extract primitives from value objects
+- Handle nullable types safely
+- Transform collections
+- No business logic
 
-// Step 3: Handler returns DTO wrapped in Either
-return dto.right()
+**Application to Contract Mapper:**
+- Add contract-specific defaults
+- Handle optional to required field conversions
+- Ensure backward compatibility
+- Format for external consumption
+
+### Complete Data Flow
+
+```mermaid
+sequenceDiagram
+    participant Domain
+    participant Mapper
+    participant Application
+    participant Contract
+    participant Client
+
+    Domain->>Mapper: Entity with value objects
+    Note over Mapper: Extract primitives
+    Mapper->>Application: Application DTO
+    Application->>Mapper: Process & validate
+    Mapper->>Contract: Contract DTO
+    Contract->>Client: JSON Response
 ```
 
 ## Validation and Documentation

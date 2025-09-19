@@ -141,11 +141,7 @@ See @docs/explanation/adr/ for all Architecture Decision Records:
 ### Context Engineering Best Practices
 
 #### 1. Prime Context Before Major Tasks
-```
-Read @docs/explanation/clean-architecture.md
-Read @docs/reference/domain-model/
-Understand the bounded context structure
-```
+Before starting major implementation work, review the relevant architecture documentation and domain model specifications to understand the bounded context structure and design patterns being used.
 
 #### 2. Use Sub-Agents for Context Optimization
 

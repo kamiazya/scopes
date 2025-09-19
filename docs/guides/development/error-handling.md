@@ -57,44 +57,45 @@ suspend fun processData(input: String): Either<ScopesError, Result> = either {
 
 ### Service-Specific Error Hierarchies
 
-Each service defines its own detailed error hierarchy:
+Each service defines its own detailed error hierarchy with rich context information:
 
-```kotlin
-// Title validation with specific error context
-sealed class TitleValidationError : DomainError() {
-    object EmptyTitle : TitleValidationError()
-    data class TitleTooShort(
-        val minLength: Int, 
-        val actualLength: Int, 
-        val title: String
-    ) : TitleValidationError()
-    data class TitleTooLong(
-        val maxLength: Int, 
-        val actualLength: Int, 
-        val title: String
-    ) : TitleValidationError()
-    data class InvalidCharacters(
-        val title: String, 
-        val invalidCharacters: Set<Char>, 
-        val position: Int
-    ) : TitleValidationError()
-}
+```mermaid
+graph TB
+    subgraph "Domain Error Types"
+        DomainError[DomainError<br/>Base Class]
 
-// Business rule validation errors
-sealed class ScopeBusinessRuleError : ScopesError() {
-    data class MaxDepthExceeded(
-        val scopeId: ScopeId,
-        val currentDepth: Int,
-        val maxDepth: Int
-    ) : ScopeBusinessRuleError()
-    
-    data class MaxChildrenExceeded(
-        val parentId: ScopeId,
-        val currentCount: Int,
-        val maxChildren: Int
-    ) : ScopeBusinessRuleError()
-}
+        subgraph "Validation Errors"
+            TitleValidation[TitleValidationError]
+            TitleValidation --> EmptyTitle[EmptyTitle]
+            TitleValidation --> TooShort[TitleTooShort<br/>• minLength<br/>• actualLength<br/>• title]
+            TitleValidation --> TooLong[TitleTooLong<br/>• maxLength<br/>• actualLength<br/>• title]
+            TitleValidation --> InvalidChars[InvalidCharacters<br/>• invalidCharacters<br/>• position]
+        end
+
+        subgraph "Business Rule Errors"
+            BusinessRule[ScopeBusinessRuleError]
+            BusinessRule --> MaxDepth[MaxDepthExceeded<br/>• scopeId<br/>• currentDepth<br/>• maxDepth]
+            BusinessRule --> MaxChildren[MaxChildrenExceeded<br/>• parentId<br/>• currentCount<br/>• maxChildren]
+        end
+
+        DomainError --> TitleValidation
+        DomainError --> BusinessRule
+    end
+
+    classDef base fill:#f9f9f9,stroke:#666,stroke-width:2px
+    classDef category fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    classDef specific fill:#fff3e0,stroke:#ff9800,stroke-width:1px
+
+    class DomainError base
+    class TitleValidation,BusinessRule category
+    class EmptyTitle,TooShort,TooLong,InvalidChars,MaxDepth,MaxChildren specific
 ```
+
+**Key Principles:**
+- Each error type carries contextual information needed for debugging and user feedback
+- Errors are organized in sealed hierarchies for exhaustive pattern matching
+- Specific error types include all data necessary to understand what went wrong
+- Domain errors use domain types (e.g., `ScopeId`) to maintain type safety
 
 ### Layer-Specific Error Types
 
@@ -124,60 +125,99 @@ flowchart TD
 
 Systematic error translation from service-specific errors to use case errors:
 
-```kotlin
-sealed class CreateScopeError {
-    data class TitleValidationFailed(
-        val titleError: ScopeInputError.TitleError
-    ) : CreateScopeError()
-    
-    data class HierarchyViolationFailed(
-        val hierarchyError: ScopeHierarchyError
-    ) : CreateScopeError()
-    
-    data class DuplicateTitleFailed(
-        val uniquenessError: ScopeUniquenessError
-    ) : CreateScopeError()
-    
-    object ParentNotFound : CreateScopeError()
-    
-    data class SaveFailure(
-        val repositoryError: SaveScopeError
-    ) : CreateScopeError()
-}
+```mermaid
+flowchart LR
+    subgraph "Service Errors"
+        SE1[TitleValidationError]
+        SE2[ScopeHierarchyError]
+        SE3[ScopeUniquenessError]
+        SE4[RepositoryError]
+    end
 
-// Translation in use case handlers
-private fun validateTitleWithServiceErrors(
-    title: String
-): Either<CreateScopeError, Unit> =
-    applicationScopeValidationService.validateTitleFormat(title)
-        .mapLeft { titleError -> 
-            CreateScopeError.TitleValidationFailed(titleError) 
-        }
+    subgraph "Translation Layer"
+        TL[Error Mapper<br/>mapLeft]
+    end
+
+    subgraph "Use Case Errors"
+        UE1[TitleValidationFailed]
+        UE2[HierarchyViolationFailed]
+        UE3[DuplicateTitleFailed]
+        UE4[ParentNotFound]
+        UE5[SaveFailure]
+    end
+
+    SE1 -->|mapLeft| UE1
+    SE2 -->|mapLeft| UE2
+    SE3 -->|mapLeft| UE3
+    SE4 -->|mapLeft| UE4
+    SE4 -->|mapLeft| UE5
+
+    classDef service fill:#e8f5e9,stroke:#4caf50
+    classDef usecase fill:#e3f2fd,stroke:#2196f3
+    classDef mapper fill:#fff3e0,stroke:#ff9800
+
+    class SE1,SE2,SE3,SE4 service
+    class UE1,UE2,UE3,UE4,UE5 usecase
+    class TL mapper
 ```
+
+**Translation Pattern:**
+```kotlin
+// General pattern for error translation
+applicationService.operation(input)
+    .mapLeft { serviceError ->
+        UseCaseError.SpecificError(serviceError)
+    }
+```
+
+**Key Points:**
+- Service errors are wrapped in use case-specific error types
+- Context is preserved during translation
+- Use `mapLeft` from Arrow's Either for functional error handling
+- Each use case defines its own error hierarchy
 
 ### Domain to Application Mapping
 
-Extension functions for error mapping between layers:
+Extension functions provide systematic error mapping between layers while preserving context:
 
-```kotlin
-fun DomainPersistenceError.toApplicationError(): ApplicationError = 
-    when (this) {
-        is DomainPersistenceError.StorageUnavailable ->
-            AppPersistenceError.StorageUnavailable(
-                operation = this.operation,
-                cause = this.cause?.toString(),
-            )
-        
-        is DomainPersistenceError.DataCorruption ->
-            AppPersistenceError.DataCorruption(
-                entityType = this.entityType,
-                entityId = this.entityId,
-                reason = this.reason,
-            )
-        
-        // ... other mappings
-    }
+```mermaid
+flowchart TB
+    subgraph "Mapping Strategy"
+        D[Domain Error] --> EF[Extension Function]
+        EF --> A[Application Error]
+
+        D2[DomainPersistenceError] --> EF2[.toApplicationError()]
+        EF2 --> A2[AppPersistenceError]
+
+        D3[DomainScopeError] --> EF3[.toApplicationError()]
+        EF3 --> A3[AppScopeError]
+    end
+
+    subgraph "Context Preservation"
+        CP1[operation: String]
+        CP2[entityType: String]
+        CP3[entityId: String]
+        CP4[reason: String]
+
+        D2 -.->|preserves| CP1
+        D2 -.->|preserves| CP2
+        D2 -.->|preserves| CP3
+        D2 -.->|preserves| CP4
+    end
+
+    classDef domain fill:#e8f5e9
+    classDef application fill:#e3f2fd
+    classDef extension fill:#fff3e0
+
+    class D,D2,D3 domain
+    class A,A2,A3 application
+    class EF,EF2,EF3 extension
 ```
+
+**Key Pattern:**
+- Extension functions transform domain types to primitives
+- All contextual information is preserved during mapping
+- Mapping is exhaustive using `when` expressions
 
 ### Application to Contract Mapping
 

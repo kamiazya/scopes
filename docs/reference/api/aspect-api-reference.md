@@ -1,469 +1,379 @@
-# Aspect API Reference
+# Aspect System API Reference
 
-This document provides technical reference for the Aspect Management API in Scopes. All aspect operations use the domain-driven design patterns with clean architecture.
+This document provides a conceptual overview and interface reference for the Aspect Management system in Scopes, focusing on flexible metadata classification and querying.
 
-## Core Types
+## Overview
 
-### AspectType
+The aspect system enables flexible metadata classification for scopes through typed key-value pairs, supporting complex querying and filtering operations.
 
-Sealed class hierarchy representing the supported aspect types:
+```mermaid
+graph TB
+    subgraph "Aspect System Architecture"
+        subgraph "Domain Layer"
+            AT[AspectType<br/>Value Object]
+            AV[AspectValue<br/>Value Object]
+            AD[AspectDefinition<br/>Entity]
+        end
 
-```kotlin
-sealed class AspectType {
-    data object Text : AspectType()
-    data object Numeric : AspectType()  
-    data object BooleanType : AspectType()
-    data class Ordered(val allowedValues: List<AspectValue>) : AspectType()
-    data object Duration : AspectType()
-}
+        subgraph "Application Layer"
+            DAH[DefineAspectHandler]
+            SAH[SetAspectHandler]
+            QAH[QueryAspectsHandler]
+            VAH[ValidateAspectHandler]
+        end
+
+        subgraph "Infrastructure Layer"
+            ADR[AspectDefinitionRepository]
+            AQE[AspectQueryEngine]
+            AVS[AspectValidationService]
+        end
+    end
+
+    User[User] --> DAH
+    DAH --> AD
+    AD --> AT
+    AD --> AV
+    SAH --> ADR
+    QAH --> AQE
+
+    classDef domain fill:#e8f5e9,stroke:#4caf50
+    classDef application fill:#e3f2fd,stroke:#2196f3
+    classDef infrastructure fill:#fce4ec,stroke:#e91e63
+
+    class AT,AV,AD domain
+    class DAH,SAH,QAH,VAH application
+    class ADR,AQE,AVS infrastructure
 ```
 
-#### Type Validation Rules
+## Aspect Types System
 
-| Type | Valid Values | Examples |
-|------|-------------|----------|
-| `Text` | Any non-empty string | `"in-progress"`, `"feature"`, `"John Doe"` |
-| `Numeric` | Valid numeric strings | `"42"`, `"3.14"`, `"-10"`, `"0"` |
-| `BooleanType` | Boolean-like strings | `"true"`, `"false"`, `"yes"`, `"no"`, `"1"`, `"0"` |
-| `Ordered` | Values from defined list | Defined order: `"low" < "medium" < "high"` |
-| `Duration` | ISO 8601 duration format | `"P1D"`, `"PT2H30M"`, `"P1W"` |
+```mermaid
+graph TB
+    subgraph "Aspect Type Hierarchy"
+        AspectType[AspectType<br/>Base Type]
 
-### AspectValue
+        AspectType --> Text[Text Type<br/>Any string value]
+        AspectType --> Numeric[Numeric Type<br/>Number validation]
+        AspectType --> Boolean[Boolean Type<br/>True/false variants]
+        AspectType --> Ordered[Ordered Type<br/>Custom value sequence]
+        AspectType --> Duration[Duration Type<br/>ISO 8601 format]
 
-Value object for aspect values with type-aware parsing:
+        Text --> TextEx["priority=high<br/>status=in-progress<br/>assignee=alice"]
+        Numeric --> NumEx["estimate=8<br/>storypoints=5<br/>progress=75"]
+        Boolean --> BoolEx["completed=true<br/>blocked=no<br/>critical=1"]
+        Ordered --> OrdEx["priority: low&lt;medium&lt;high<br/>size: s&lt;m&lt;l&lt;xl"]
+        Duration --> DurEx["timeSpent=PT2H30M<br/>estimate=P3D<br/>deadline=P1W"]
+    end
+
+    classDef base fill:#f5f5f5,stroke:#9e9e9e,stroke-width:3px
+    classDef type fill:#e3f2fd,stroke:#2196f3
+    classDef example fill:#fff3e0,stroke:#ff9800
+
+    class AspectType base
+    class Text,Numeric,Boolean,Ordered,Duration type
+    class TextEx,NumEx,BoolEx,OrdEx,DurEx example
+```
+
+## Type Validation Rules
+
+| Type | Validation | Valid Examples | Invalid Examples |
+|------|------------|----------------|------------------|
+| **Text** | Non-empty string | `"in-progress"`, `"John Doe"` | `""`, `null` |
+| **Numeric** | Parse as number | `"42"`, `"3.14"`, `"-10"` | `"abc"`, `"12.34.56"` |
+| **Boolean** | Boolean-like values | `"true"`, `"yes"`, `"1"`, `"false"`, `"no"`, `"0"` | `"maybe"`, `"2"` |
+| **Ordered** | Defined value list | `"high"` (if in allowed values) | `"urgent"` (if not defined) |
+| **Duration** | ISO 8601 duration | `"P1D"`, `"PT2H30M"`, `"P1W"` | `"2 hours"`, `"1d"` |
+
+## Core Operations
+
+### Define Aspect Types
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Handler
+    participant Validator
+    participant Repository
+
+    User->>Handler: defineAspect(name, type, description)
+    Handler->>Validator: validateAspectName(name)
+    Validator-->>Handler: Valid
+    Handler->>Validator: validateAspectType(type)
+    Validator-->>Handler: Valid
+    Handler->>Repository: save(aspectDefinition)
+    Repository-->>Handler: Success
+    Handler-->>User: AspectDefinitionResult
+```
+
+### Set Aspect Values
 
 ```kotlin
-class AspectValue private constructor(val value: String) {
-    companion object {
-        fun create(value: String): Either<ScopesError, AspectValue>
+// Command pattern for setting aspects
+data class SetAspectCommand(
+    val scopeAlias: String,
+    val aspectKey: String,
+    val aspectValue: String
+)
+
+// Result with validation
+sealed class SetAspectResult {
+    data class Success(val key: String, val value: String) : SetAspectResult()
+    sealed class Error : SetAspectResult() {
+        object ScopeNotFound : Error()
+        object AspectNotDefined : Error()
+        data class ValidationFailed(val reason: String) : Error()
     }
-    
-    // Type checking methods
-    fun isNumeric(): Boolean
-    fun isBoolean(): Boolean
-    fun isDuration(): Boolean
-    
-    // Type conversion methods
-    fun toNumericValue(): Double?
-    fun toBooleanValue(): Boolean?
-    fun parseDuration(): Duration
 }
 ```
 
-### AspectDefinition
+### Query Operations
 
-Domain entity representing aspect definitions:
+```mermaid
+graph LR
+    subgraph "Query Types"
+        Simple[Simple Query<br/>key=value]
+        Comparison[Comparison Query<br/>key&gt;=value]
+        Logical[Logical Query<br/>AND/OR/NOT]
+        Complex[Complex Query<br/>(a=1 AND b&gt;2) OR c=3]
+    end
+
+    subgraph "Query Engine"
+        Parser[Query Parser]
+        Validator[Query Validator]
+        Optimizer[Query Optimizer]
+        Executor[Query Executor]
+    end
+
+    Simple --> Parser
+    Comparison --> Parser
+    Logical --> Parser
+    Complex --> Parser
+
+    Parser --> Validator
+    Validator --> Optimizer
+    Optimizer --> Executor
+
+    classDef query fill:#e8f5e9,stroke:#4caf50
+    classDef engine fill:#e3f2fd,stroke:#2196f3
+
+    class Simple,Comparison,Logical,Complex query
+    class Parser,Validator,Optimizer,Executor engine
+```
+
+## Query Syntax
+
+### Basic Queries
+```bash
+# Simple equality
+priority=high
+
+# Comparison operators
+estimate>=5
+storypoints<8
+progress!=100
+
+# Boolean queries
+completed=true
+blocked=no
+```
+
+### Complex Queries
+```bash
+# Logical AND
+priority=high AND status=in-progress
+
+# Logical OR
+assignee=alice OR assignee=bob
+
+# Grouping with parentheses
+(priority=high OR priority=critical) AND NOT completed=true
+
+# Mixed operators
+estimate<=8 AND (type=feature OR type=bug) AND NOT blocked=yes
+```
+
+### Ordered Type Queries
+```bash
+# Assumes priority definition: low < medium < high < critical
+priority>=medium    # Returns: medium, high, critical
+priority<high       # Returns: low, medium
+```
+
+## Aspect Definitions
+
+### Definition Management
 
 ```kotlin
-class AspectDefinition private constructor(
-    val key: AspectKey,
+// Define new aspect type
+data class DefineAspectCommand(
+    val key: String,
     val type: AspectType,
-    val description: String? = null,
+    val description: String,
     val allowMultiple: Boolean = false
-) {
-    companion object {
-        // Factory methods for each type
-        fun createText(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition
-        fun createNumeric(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition
-        fun createBoolean(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition
-        fun createOrdered(key: AspectKey, allowedValues: List<AspectValue>, description: String? = null, allowMultiple: Boolean = false): Either<ScopesError, AspectDefinition>
-        fun createDuration(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition
-    }
-    
-    // Validation methods
-    fun isValidValue(value: AspectValue): Boolean
-    fun compareValues(value1: AspectValue, value2: AspectValue): Int
-}
-```
-
-## Use Cases
-
-### DefineAspectUseCase
-
-Creates new aspect definitions with type validation:
-
-```kotlin
-class DefineAspectUseCase(
-    private val aspectDefinitionRepository: AspectDefinitionRepository,
-    private val transactionManager: TransactionManager
-) {
-    suspend fun execute(
-        key: String,
-        description: String?,
-        type: AspectType
-    ): Either<ScopesError, AspectDefinition>
-}
-```
-
-**Usage Examples:**
-```kotlin
-// Define text aspect
-val result = defineAspectUseCase.execute(
-    key = "status",
-    description = "Task status",
-    type = AspectType.Text
 )
 
-// Define ordered aspect
-val priorityValues = listOf("low", "medium", "high").map { 
-    AspectValue.create(it).getOrNull()!! 
-}
-val result = defineAspectUseCase.execute(
-    key = "priority", 
-    description = "Task priority",
-    type = AspectType.Ordered(priorityValues)
-)
-
-// Define duration aspect
-val result = defineAspectUseCase.execute(
-    key = "estimatedTime",
-    description = "Estimated completion time", 
-    type = AspectType.Duration
+// Update existing definition
+data class UpdateAspectDefinitionCommand(
+    val key: String,
+    val description: String? = null,
+    val allowMultiple: Boolean? = null
 )
 ```
 
-### ValidateAspectValueUseCase
+### Built-in Aspect Types
 
-Validates aspect values against their definitions:
+| Aspect | Type | Values | Description |
+|--------|------|--------|-------------|
+| `priority` | Ordered | `low < medium < high < critical` | Task priority level |
+| `status` | Text | Any string | Current status |
+| `type` | Text | Any string | Classification type |
+| `completed` | Boolean | `true/false`, `yes/no`, `1/0` | Completion status |
+| `estimate` | Numeric | Hours/points | Effort estimate |
+| `timeSpent` | Duration | ISO 8601 | Actual time spent |
 
-```kotlin
-class ValidateAspectValueUseCase(
-    private val aspectDefinitionRepository: AspectDefinitionRepository
-) {
-    suspend fun execute(key: String, value: String): Either<ScopesError, AspectValue>
-    
-    suspend fun executeMultiple(
-        aspects: Map<String, List<String>>
-    ): Either<ScopesError, Map<String, List<AspectValue>>>
-}
+## Advanced Features
+
+### Multi-Value Aspects
+
+```mermaid
+graph TB
+    subgraph "Multi-Value Support"
+        Scope[Scope: "Frontend Task"]
+        Scope --> A1[tags=frontend]
+        Scope --> A2[tags=javascript]
+        Scope --> A3[tags=react]
+
+        Query[Query: tags=react]
+        Query --> Result[Returns: "Frontend Task"]
+    end
+
+    classDef scope fill:#e8f5e9,stroke:#4caf50
+    classDef aspect fill:#fff3e0,stroke:#ff9800
+    classDef query fill:#e3f2fd,stroke:#2196f3
+
+    class Scope scope
+    class A1,A2,A3 aspect
+    class Query,Result query
 ```
 
-**Validation Rules:**
-
-| Type | Validation Logic |
-|------|-----------------|
-| Text | Any non-empty string after trimming |
-| Numeric | Must parse as valid `Double` |
-| Boolean | Must be one of: `true`, `false`, `yes`, `no`, `1`, `0` (case-insensitive) |
-| Ordered | Must exist in the defined `allowedValues` list |
-| Duration | Must be valid ISO 8601 duration format |
-
-**Error Cases:**
-```kotlin
-sealed class ValidationError {
-    data class InvalidNumericValue(val key: String, val value: String) : ValidationError()
-    data class InvalidBooleanValue(val key: String, val value: String) : ValidationError()
-    data class InvalidOrderedValue(val key: String, val value: String, val allowedValues: List<String>) : ValidationError()
-    data class InvalidDurationValue(val key: String, val value: String) : ValidationError()
-    data class MultipleValuesNotAllowed(val key: String) : ValidationError()
-    data class AspectNotFound(val key: String) : ValidationError()
-}
-```
-
-### Query System
-
-#### AspectQueryParser
-
-Parses query strings into Abstract Syntax Tree (AST):
+### Dynamic Validation
 
 ```kotlin
-class AspectQueryParser {
-    fun parse(query: String): Either<ScopesError, AspectQueryAST>
-}
+// Validation based on aspect definition
+interface AspectValidationService {
+    suspend fun validateValue(
+        aspectKey: String,
+        value: String
+    ): Either<ValidationError, AspectValue>
 
-sealed class AspectQueryAST {
-    data class Comparison(
-        val key: String,
-        val operator: ComparisonOperator,
-        val value: String
-    ) : AspectQueryAST()
-    
-    data class And(
-        val left: AspectQueryAST,
-        val right: AspectQueryAST
-    ) : AspectQueryAST()
-    
-    data class Or(
-        val left: AspectQueryAST,
-        val right: AspectQueryAST  
-    ) : AspectQueryAST()
-    
-    data class Not(
-        val expression: AspectQueryAST
-    ) : AspectQueryAST()
-}
-
-enum class ComparisonOperator(val symbol: String) {
-    EQUALS("="),
-    NOT_EQUALS("!="),
-    GREATER_THAN(">"),
-    GREATER_THAN_OR_EQUALS(">="),
-    LESS_THAN("<"),
-    LESS_THAN_OR_EQUALS("<=")
-}
-```
-
-**Query Grammar:**
-```bnf
-Query ::= Expression
-Expression ::= Term ((AND | OR) Term)*
-Term ::= NOT? (Comparison | '(' Expression ')')
-Comparison ::= Identifier Operator Value
-Operator ::= '=' | '!=' | '<' | '<=' | '>' | '>='
-Value ::= QuotedString | UnquotedString
-Identifier ::= [a-zA-Z][a-zA-Z0-9_]*
-```
-
-#### AspectQueryEvaluator
-
-Evaluates parsed queries against aspect collections:
-
-```kotlin
-class AspectQueryEvaluator(
-    private val aspectDefinitions: Map<String, AspectDefinition>
-) {
-    fun evaluate(query: AspectQueryAST, aspects: Aspects): Boolean
-}
-```
-
-**Type-Aware Comparison Rules:**
-
-| Aspect Type | Comparison Logic |
-|-------------|------------------|
-| Text | String comparison (case-sensitive) |
-| Numeric | Numeric comparison after parsing to `Double` |
-| Boolean | Boolean comparison after parsing |
-| Ordered | Positional comparison based on `allowedValues` order |
-| Duration | Duration comparison after parsing ISO 8601 |
-
-### FilterScopesWithQueryUseCase
-
-Filters scopes using the query system:
-
-```kotlin
-class FilterScopesWithQueryUseCase(
-    private val scopeRepository: ScopeRepository,
-    private val aspectDefinitionRepository: AspectDefinitionRepository,
-    private val parser: AspectQueryParser
-) {
-    suspend fun execute(query: String): Either<ScopesError, List<Scope>>
+    suspend fun validateQuery(
+        query: String
+    ): Either<QueryValidationError, ParsedQuery>
 }
 ```
 
 ## Error Handling
 
-### ScopesError Hierarchy
+### Validation Errors
 
-```kotlin
-sealed class ScopesError {
-    // Validation errors
-    data class ValidationFailed(
-        val message: String,
-        val details: ValidationError
-    ) : ScopesError()
-    
-    // Query parsing errors
-    data class QueryParseError(
-        val message: String,
-        val position: Int? = null
-    ) : ScopesError()
-    
-    // Aspect definition errors
-    data class AspectAlreadyExists(val key: String) : ScopesError()
-    data class AspectNotFound(val key: String) : ScopesError()
-    data class InvalidAspectDefinition(val message: String) : ScopesError()
-    
-    // Repository errors
-    data class RepositoryError(val cause: String) : ScopesError()
-    
-    // Generic errors
-    data class InvalidOperation(val message: String) : ScopesError()
-}
+```mermaid
+graph TB
+    subgraph "Aspect Validation Errors"
+        VE[ValidationError]
+
+        VE --> ANF[AspectNotFound<br/>Undefined aspect key]
+        VE --> ITM[InvalidTypeMapping<br/>Value doesn't match type]
+        VE --> IVF[InvalidValueFormat<br/>Format validation failed]
+        VE --> OOR[OutOfRange<br/>Numeric range violation]
+        VE --> UOV[UnknownOrderedValue<br/>Value not in ordered list]
+    end
+
+    classDef error fill:#ffebee,stroke:#f44336
+    class VE,ANF,ITM,IVF,OOR,UOV error
 ```
 
-### Error Response Patterns
+### Query Errors
 
-All use cases follow consistent error handling:
+```mermaid
+graph TB
+    subgraph "Query Validation Errors"
+        QE[QueryError]
 
-```kotlin
-// Success case
-val result: Either<ScopesError, T> = useCase.execute(...)
-result.fold(
-    { error -> /* Handle error */ },
-    { value -> /* Handle success */ }
-)
+        QE --> SE[SyntaxError<br/>Invalid query syntax]
+        QE --> UAK[UnknownAspectKey<br/>Aspect not defined]
+        QE --> IO[InvalidOperator<br/>Operator not supported for type]
+        QE --> UP[UnmatchedParentheses<br/>Parentheses mismatch]
+        QE --> IE[InvalidExpression<br/>Malformed expression]
+    end
 
-// Specific error handling
-when (val error = result.leftOrNull()) {
-    is ScopesError.ValidationFailed -> handleValidationError(error)
-    is ScopesError.AspectNotFound -> handleNotFound(error)
-    is ScopesError.QueryParseError -> handleQueryError(error)
-    else -> handleGenericError(error)
-}
+    classDef error fill:#ffebee,stroke:#f44336
+    class QE,SE,UAK,IO,UP,IE error
 ```
 
-## Repository Contracts
+## Integration Points
 
-### AspectDefinitionRepository
+### Repository Interfaces
 
 ```kotlin
 interface AspectDefinitionRepository {
-    suspend fun save(definition: AspectDefinition): Either<Any, AspectDefinition>
-    suspend fun findByKey(key: AspectKey): Either<Any, AspectDefinition?>
-    suspend fun findAll(): Either<Any, List<AspectDefinition>>
-    suspend fun existsByKey(key: AspectKey): Either<Any, Boolean>
-    suspend fun deleteByKey(key: AspectKey): Either<Any, Boolean>
+    suspend fun save(definition: AspectDefinition): Either<Error, Unit>
+    suspend fun findByKey(key: String): Either<Error, AspectDefinition?>
+    suspend fun findAll(): Either<Error, List<AspectDefinition>>
+    suspend fun delete(key: String): Either<Error, Unit>
+}
+
+interface AspectQueryRepository {
+    suspend fun findScopesWithAspects(
+        query: ParsedQuery
+    ): Either<Error, List<ScopeId>>
 }
 ```
 
-### Transaction Management
-
-All write operations are transactional:
+### Event Publishing
 
 ```kotlin
-interface TransactionManager {
-    suspend fun <T> runInTransaction(block: suspend () -> Either<ScopesError, T>): Either<ScopesError, T>
+sealed class AspectEvent : DomainEvent {
+    data class AspectDefined(val key: String, val type: AspectType) : AspectEvent()
+    data class AspectSet(val scopeId: ScopeId, val key: String, val value: String) : AspectEvent()
+    data class AspectRemoved(val scopeId: ScopeId, val key: String) : AspectEvent()
 }
 ```
 
-## Duration Type Implementation
+## CLI Integration
 
-### ISO 8601 Parsing
+```bash
+# Define new aspect
+scopes aspect define priority --type ordered --values "low,medium,high,critical"
 
-The Duration type supports ISO 8601 format with the following components:
+# Set aspect values
+scopes aspect set my-scope priority=high
+scopes aspect set my-scope estimate=8
 
-```kotlin
-// In AspectValue class
-private fun parseISO8601Duration(iso8601: String): Duration {
-    require(iso8601.startsWith("P")) { "ISO 8601 duration must start with 'P'" }
-    
-    var totalSeconds = 0.0
-    var timePart = false
-    var current = ""
-    
-    for (i in 1 until iso8601.length) {
-        val char = iso8601[i]
-        when (char) {
-            'T' -> timePart = true
-            'W' -> { totalSeconds += current.toDouble() * 7 * 24 * 3600; current = "" }
-            'D' -> { totalSeconds += current.toDouble() * 24 * 3600; current = "" }
-            'H' -> { totalSeconds += current.toDouble() * 3600; current = "" }
-            'M' -> { 
-                if (timePart) totalSeconds += current.toDouble() * 60
-                else throw IllegalArgumentException("Month units not supported")
-                current = ""
-            }
-            'S' -> { totalSeconds += current.toDouble(); current = "" }
-            else -> current += char
-        }
-    }
-    
-    return totalSeconds.seconds
-}
+# Query scopes by aspects
+scopes list -a priority=high
+scopes list -a "priority>=medium AND estimate<=8"
+
+# List aspect definitions
+scopes aspect definitions
+
+# Show specific aspect definition
+scopes aspect show priority
 ```
 
-**Supported Formats:**
-- `P1D` - 1 day
-- `PT2H` - 2 hours
-- `PT30M` - 30 minutes
-- `PT45S` - 45 seconds
-- `P1W` - 1 week
-- `P1DT2H30M45S` - Complex duration
-- `P0D` - Zero duration (valid)
+## Performance Optimization
 
-**Unsupported Formats:**
-- Month units (`P1M`) - Due to variable month lengths
-- Year units (`P1Y`) - Due to leap years
-- Fractional seconds with decimals
-
-### Duration Comparison
-
-Durations are compared by converting to total seconds:
-
-```kotlin
-private fun evaluateDurationComparison(
-    actualValue: AspectValue,
-    operator: ComparisonOperator, 
-    expectedValue: String
-): Boolean {
-    val actual = actualValue.parseDuration()
-    val expected = AspectValue.create(expectedValue).getOrNull()?.parseDuration() ?: return false
-    
-    return when (operator) {
-        ComparisonOperator.EQ -> actual == expected
-        ComparisonOperator.NE -> actual != expected
-        ComparisonOperator.LT -> actual < expected
-        ComparisonOperator.LE -> actual <= expected
-        ComparisonOperator.GT -> actual > expected
-        ComparisonOperator.GE -> actual >= expected
-    }
-}
-```
-
-## Testing Support
-
-### Property-Based Testing
-
-The aspect system includes property-based tests to ensure correctness:
-
-```kotlin
-// Example property test for AspectValue creation
-class AspectValuePropertyTest : DescribeSpec({
-    describe("AspectValue Property Tests") {
-        it("should create aspect values for non-empty strings") {
-            forAll(Arb.string(1, 100).filterNot { it.isBlank() }) { input ->
-                val result = AspectValue.create(input)
-                result.isRight()
-            }
-        }
-        
-        it("should validate duration formats correctly") {
-            val validDurations = listOf("P1D", "PT2H", "PT30M", "P1DT2H30M", "P1W")
-            validDurations.forEach { durationStr ->
-                val aspectValue = AspectValue.create(durationStr).getOrNull()!!
-                aspectValue.isDuration() shouldBe true
-            }
-        }
-    }
-})
-```
-
-## Performance Considerations
+### Indexing Strategy
+- **Aspect Keys**: Index on frequently queried aspects
+- **Value Types**: Optimize storage based on type (numeric vs text)
+- **Query Patterns**: Cache common query results
 
 ### Query Optimization
+- **Parse Once**: Cache parsed queries for repeated use
+- **Early Filtering**: Apply most selective filters first
+- **Index Usage**: Leverage database indexes for range queries
 
-- Aspect definitions are cached during query evaluation
-- Type-specific comparisons avoid unnecessary parsing
-- Query AST is reusable across multiple evaluations
+## Related Documentation
 
-### Memory Management
-
-- AspectValue uses string interning for common values
-- Duration parsing results are cached within AspectValue instances
-- Repository implementations support batch operations
-
-## Migration and Compatibility
-
-### Adding New Aspect Types
-
-To add a new aspect type:
-
-1. Extend the `AspectType` sealed class
-2. Add validation logic to `AspectDefinition`
-3. Add parsing support to `AspectValue`
-4. Add comparison logic to `AspectQueryEvaluator`
-5. Update CLI commands and documentation
-
-### Breaking Changes Policy
-
-- Aspect type additions are non-breaking
-- Query syntax extensions are non-breaking
-- Repository interface changes require major version bump
-- Value parsing changes require careful migration
-
-## See Also
-
-- [CLI Quick Reference](../cli-quick-reference.md) - Command-line interface
-- [Duration Aspects Guide](../../guides/duration-aspects-guide.md) - Practical usage
-- [Clean Architecture](../../explanation/clean-architecture.md) - Architecture patterns
-- [Domain-Driven Design](../../explanation/domain-driven-design.md) - Design principles
+- [Aspect System Architecture](../../explanation/aspect-system-architecture.md) - Design concepts
+- [CLI Quick Reference](../cli-quick-reference.md) - Command examples
+- [Query Language Guide](../../guides/aspect-query-language.md) - Advanced querying

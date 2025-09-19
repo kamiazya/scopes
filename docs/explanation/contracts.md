@@ -6,6 +6,36 @@ The Contracts layer provides stable, well-defined interfaces between bounded con
 
 ## Purpose and Role
 
+```mermaid
+graph TB
+    subgraph "Contracts Layer Benefits"
+        DC[Decoupling<br/>Bounded Contexts]
+        SA[Stable API<br/>Contracts]
+        ET[Error<br/>Translation]
+        TS[Type<br/>Safety]
+        DOC[Living<br/>Documentation]
+    end
+
+    subgraph "Key Features"
+        IF[Interface<br/>Definitions]
+        ER[Error<br/>Mapping]
+        VER[Versioning<br/>Support]
+        INT[Integration<br/>Points]
+    end
+
+    DC --> IF
+    SA --> VER
+    ET --> ER
+    TS --> IF
+    DOC --> INT
+
+    classDef benefit fill:#e8f5e9,stroke:#4caf50
+    classDef feature fill:#e3f2fd,stroke:#2196f3
+
+    class DC,SA,ET,TS,DOC benefit
+    class IF,ER,VER,INT feature
+```
+
 The Contracts layer serves several critical purposes:
 
 1. **Decoupling Bounded Contexts**: Provides explicit interfaces that prevent direct dependencies between contexts
@@ -18,59 +48,92 @@ The Contracts layer serves several critical purposes:
 
 ```mermaid
 graph TB
-    subgraph "Apps Layer"
-        CLI[CLI Application]
-        DAEMON[Daemon Service]
-    end
-    
-    subgraph "Interfaces Layer"
-        FACADE[Facades & Adapters]
-    end
-    
-    subgraph "Contracts Layer"
-        SMP[ScopeManagementPort]
-        UPP[UserPreferencesPort]
-        WMP[WorkspaceManagementPort]
-    end
-    
-    subgraph "Bounded Contexts"
-        subgraph "Scope Management"
-            SM_APP[Application]
-            SM_DOM[Domain]
-            SM_INFRA[Infrastructure]
+    subgraph "System Architecture"
+        subgraph "Apps Layer"
+            CLI[CLI Application]
+            DAEMON[Daemon Service]
         end
-        
-        subgraph "User Preferences"
-            UP_APP[Application]
-            UP_DOM[Domain]
-            UP_INFRA[Infrastructure]
+
+        subgraph "Interfaces Layer"
+            FACADE[Facades & Adapters]
+        end
+
+        subgraph "Contracts Layer"
+            SMP[ScopeManagementPort]
+            UPP[UserPreferencesPort]
+            WMP[WorkspaceManagementPort]
+        end
+
+        subgraph "Bounded Contexts"
+            subgraph "Scope Management"
+                SM_APP[Application Layer]
+                SM_INFRA[Infrastructure Layer]
+            end
+
+            subgraph "User Preferences"
+                UP_APP[Application Layer]
+            end
         end
     end
-    
+
     CLI --> FACADE
     DAEMON --> FACADE
-    
+
     FACADE --> SMP
     FACADE --> UPP
-    
+
     SMP --> SM_APP
     UPP --> UP_APP
-    
+
     SM_INFRA --> UPP
-    
+
     classDef contracts fill:#ffe3ba,stroke:#333,stroke-width:3px
+    classDef app fill:#e1f5fe,stroke:#01579b
+    classDef interface fill:#e8f5e9,stroke:#2e7d32
+    classDef context fill:#fff3e0,stroke:#e65100
+
     class SMP,UPP,WMP contracts
+    class CLI,DAEMON app
+    class FACADE interface
+    class SM_APP,SM_INFRA,UP_APP context
 ```
 
 ## Port Interface Pattern
 
-All port interfaces follow a consistent pattern using Arrow's `Either` type for explicit error handling:
+All port interfaces follow a consistent pattern for reliability and type safety:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Port
+    participant Handler
+    participant Domain
+
+    Client->>Port: executeCommand(command)
+    activate Port
+
+    Port->>Handler: process(command)
+    activate Handler
+
+    Handler->>Domain: execute business logic
+    Domain-->>Handler: Either<DomainError, Result>
+
+    Handler->>Port: map errors & results
+    deactivate Handler
+
+    Port-->>Client: Either<ContractError, ContractResult>
+    deactivate Port
+
+    Note over Client,Domain: All operations use Either for explicit error handling
+```
+
+### Port Interface Template
 
 ```kotlin
 interface SomeContextPort {
     // Commands return Either<Error, Result>
     suspend fun executeCommand(command: Command): Either<ContractError, CommandResult>
-    
+
     // Queries return Either<Error, Result?>
     suspend fun executeQuery(query: Query): Either<ContractError, QueryResult?>
 }
@@ -85,360 +148,329 @@ interface SomeContextPort {
 
 ## Bounded Context Coordination Patterns
 
-### 1. Customer-Supplier Relationship
+### Context Relationship Types
 
-User Preferences acts as a supplier to other contexts:
+```mermaid
+graph LR
+    subgraph "Coordination Patterns"
+        subgraph "Customer-Supplier"
+            UP[User Preferences<br/>Supplier] --> |provides settings| SM[Scope Management<br/>Customer]
+            UP --> |provides settings| WM[Workspace Management<br/>Customer]
+        end
 
-```kotlin
-// In Scope Management infrastructure layer
-class UserPreferencesToHierarchyPolicyAdapter(
-    private val userPreferencesPort: UserPreferencesPort
-) : HierarchyPolicyProvider {
-    
-    override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
-        // Map contract error to domain error before binding
-        val result = userPreferencesPort.getPreference(
-            GetPreferenceQuery(PreferenceType.HIERARCHY)
-        ).mapLeft { contractError ->
-            // Map contract error to domain integration error
-            ErrorMapper.mapUserPreferencesToDomainError(contractError)
-        }.bind()
-        
-        when (result) {
-            is PreferenceResult.HierarchyPreferences -> 
-                HierarchyPolicy.create(
-                    maxDepth = result.maxDepth,
-                    maxChildrenPerScope = result.maxChildrenPerScope
-                ).bind()
-        }
-    }
-}
+        subgraph "Partnership"
+            SM <--> |mutual dependency| WM
+        end
 
-// Error mapping helper
-object ErrorMapper {
-    fun mapUserPreferencesToDomainError(
-        contractError: UserPreferencesContractError
-    ): UserPreferencesIntegrationError = when (contractError) {
-        is UserPreferencesContractError.SystemError.ServiceUnavailable ->
-            UserPreferencesIntegrationError.PreferencesServiceUnavailable(
-                occurredAt = Clock.System.now()
-            )
-        is UserPreferencesContractError.DataError.PreferencesCorrupted ->
-            UserPreferencesIntegrationError.MalformedPreferencesResponse(
-                occurredAt = Clock.System.now(),
-                expectedFormat = "Valid preferences",
-                actualContent = contractError.details
-            )
-        else ->
-            UserPreferencesIntegrationError.PreferencesServiceUnavailable(
-                occurredAt = Clock.System.now()
-            )
-    }
-}
+        subgraph "Shared Kernel"
+            P[Platform<br/>Commons] --> SM
+            P --> UP
+            P --> WM
+        end
+    end
+
+    classDef supplier fill:#e8f5e9,stroke:#4caf50
+    classDef customer fill:#e3f2fd,stroke:#2196f3
+    classDef partnership fill:#fff3e0,stroke:#ff9800
+    classDef shared fill:#f5f5f5,stroke:#9e9e9e
+
+    class UP supplier
+    class SM,WM customer
+    class P shared
 ```
 
-Alternative implementation using fold:
+### Integration Adapter Pattern
 
-```kotlin
-override suspend fun getPolicy(): Either<ScopesError, HierarchyPolicy> = either {
-    // Alternative: Use fold to handle error mapping
-    val result = userPreferencesPort.getPreference(
-        GetPreferenceQuery(PreferenceType.HIERARCHY)
-    ).fold(
-        { contractError ->
-            // Map and raise domain error
-            raise(ErrorMapper.mapUserPreferencesToDomainError(contractError))
-        },
-        { preferenceResult ->
-            preferenceResult
-        }
-    )
-    
-    when (result) {
-        is PreferenceResult.HierarchyPreferences -> 
-            HierarchyPolicy.create(
-                maxDepth = result.maxDepth,
-                maxChildrenPerScope = result.maxChildrenPerScope
-            ).bind()
-    }
-}
+```mermaid
+graph TB
+    subgraph "Cross-Context Integration"
+        subgraph "Scope Management Context"
+            SMD[Domain Layer]
+            SMA[Application Layer]
+            SMI[Infrastructure Layer]
+        end
+
+        subgraph "User Preferences Context"
+            UPC[UserPreferencesPort<br/>Contract Interface]
+        end
+
+        subgraph "Integration Adapter"
+            ADAPTER[UserPreferencesToHierarchyPolicyAdapter]
+            ERROR_MAP[Error Mapper]
+        end
+    end
+
+    SMI --> ADAPTER
+    ADAPTER --> UPC
+    ADAPTER --> ERROR_MAP
+    ERROR_MAP --> SMA
+
+    ADAPTER -.->|translates| HPP[HierarchyPolicyProvider<br/>Domain Interface]
+
+    classDef domain fill:#e8f5e9,stroke:#4caf50
+    classDef contract fill:#ffe3ba,stroke:#ff6f00
+    classDef adapter fill:#e3f2fd,stroke:#2196f3
+
+    class SMD,SMA,SMI,HPP domain
+    class UPC contract
+    class ADAPTER,ERROR_MAP adapter
 ```
 
-### 2. Anti-Corruption Layer
-
-Each context maintains its own domain model and uses adapters for translation:
-
-```kotlin
-// Contract layer defines its own types
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null
-)
-
-// Application layer has different types
-data class CreateScope(
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val generateAlias: Boolean = true
-)
-
-// Adapter translates between them
-class ScopeManagementPortAdapter : ScopeManagementPort {
-    override suspend fun createScope(
-        command: CreateScopeCommand
-    ): Either<ScopeContractError, CreateScopeResult> = 
-        createScopeHandler(
-            CreateScope(
-                title = command.title,
-                description = command.description,
-                parentId = command.parentId
-            )
-        ).mapLeft { error ->
-            ErrorMapper.mapToContractError(error)
-        }
-}
-```
+**Adapter Responsibilities:**
+- Translate between contract types and domain types
+- Map contract errors to domain errors
+- Handle null/missing data appropriately
+- Provide fallback behavior when external context is unavailable
 
 ## Error Mapping Strategy
 
-### Error Hierarchy
+### Error Hierarchy Design
 
-Contract errors follow a hierarchical structure for better categorization:
+```mermaid
+graph TB
+    subgraph "Contract Error Hierarchy"
+        CE[ContractError<br/>Base Interface]
 
-```kotlin
-sealed interface ScopeContractError {
-    val message: String
-    
-    sealed interface InputError : ScopeContractError
-    sealed interface BusinessError : ScopeContractError  
-    sealed interface SystemError : ScopeContractError
-}
+        CE --> IE[InputError<br/>Client input problems]
+        CE --> BE[BusinessError<br/>Business rule violations]
+        CE --> SE[SystemError<br/>Infrastructure issues]
+
+        IE --> IT[InvalidTitle]
+        IE --> IF[InvalidFormat]
+        IE --> MF[MissingField]
+
+        BE --> NF[NotFound]
+        BE --> AC[AccessDenied]
+        BE --> RV[RuleViolation]
+
+        SE --> SU[ServiceUnavailable]
+        SE --> TO[Timeout]
+        SE --> IC[InternalError]
+    end
+
+    classDef base fill:#f5f5f5,stroke:#9e9e9e,stroke-width:3px
+    classDef category fill:#e3f2fd,stroke:#2196f3
+    classDef specific fill:#fff3e0,stroke:#ff9800
+
+    class CE base
+    class IE,BE,SE category
+    class IT,IF,MF,NF,AC,RV,SU,TO,IC specific
+```
+
+### Error Translation Flow
+
+```mermaid
+sequenceDiagram
+    participant Domain
+    participant ErrorMapper
+    participant Contract
+    participant Client
+
+    Domain->>ErrorMapper: DomainError
+    activate ErrorMapper
+
+    ErrorMapper->>ErrorMapper: Categorize error type
+    ErrorMapper->>ErrorMapper: Extract relevant context
+    ErrorMapper->>ErrorMapper: Create contract error
+
+    ErrorMapper->>Contract: ContractError
+    deactivate ErrorMapper
+
+    Contract->>Client: Either.Left(ContractError)
+
+    Note over Domain,Client: Preserves essential information while hiding implementation details
 ```
 
 ### Mapping Principles
 
 1. **Preserve Context**: Include relevant information from domain errors
 2. **Hide Implementation**: Don't expose internal types or structures
-3. **Categorize Appropriately**: Map to the correct error category
-4. **Provide Clear Messages**: Ensure error messages are understandable
+3. **Categorize Appropriately**: Map to the correct error category (Input/Business/System)
+4. **Provide Clear Messages**: Ensure error messages are understandable to consumers
 
-### Error Mapper Example
+## Contract Definition Structure
+
+### Commands and Queries
+
+```mermaid
+graph LR
+    subgraph "CQRS in Contracts"
+        subgraph "Commands"
+            CC[CreateScopeCommand]
+            UC[UpdateScopeCommand]
+            DC[DeleteScopeCommand]
+        end
+
+        subgraph "Queries"
+            GQ[GetScopeQuery]
+            LQ[ListScopesQuery]
+            SQ[SearchScopesQuery]
+        end
+
+        subgraph "Results"
+            CR[CreateScopeResult]
+            SR[ScopeResult]
+            LR[ScopeListResult]
+        end
+    end
+
+    CC --> CR
+    UC --> SR
+    DC --> SR
+    GQ --> SR
+    LQ --> LR
+    SQ --> LR
+
+    classDef command fill:#ffe0e0,stroke:#d32f2f
+    classDef query fill:#e0f0ff,stroke:#1976d2
+    classDef result fill:#e8f5e9,stroke:#388e3c
+
+    class CC,UC,DC command
+    class GQ,LQ,SQ query
+    class CR,SR,LR result
+```
+
+### Type Safety Requirements
+
+| Component | Requirements | Examples |
+|-----------|-------------|----------|
+| **Commands** | Immutable data classes | `CreateScopeCommand(title, description)` |
+| **Queries** | Parameter objects | `GetScopeQuery(scopeId)` |
+| **Results** | Serializable DTOs | `ScopeResult(id, title, createdAt)` |
+| **Errors** | Sealed hierarchies | `InputError`, `BusinessError`, `SystemError` |
+
+## Integration Examples
+
+### Port Implementation Pattern
 
 ```kotlin
-object ErrorMapper {
-    fun mapToContractError(error: ScopesError): ScopeContractError = when (error) {
-        // Input validation errors
-        is ScopeInputError.TitleError.TooLong -> 
-            ScopeContractError.InputError.InvalidTitle(
-                title = error.attemptedValue,
-                reason = "Title is too long (maximum ${error.maximumLength} characters)"
-            )
-            
-        // Business rule violations
-        is ScopeError.NotFound -> 
-            ScopeContractError.BusinessError.NotFound(
-                scopeId = error.scopeId.value
-            )
-            
-        // System errors
-        is PersistenceError.StorageUnavailable -> 
-            ScopeContractError.SystemError.ServiceUnavailable(
-                service = "storage",
-                message = "Storage unavailable during ${error.operation}"
-            )
-            
-        // Catch-all for unmapped errors
-        else -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = "scope-management",
-            message = "An internal error occurred"
-        )
+// Contract interface
+interface ScopeManagementPort {
+    suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
+}
+
+// Infrastructure adapter implementation
+class ScopeManagementPortAdapter(
+    private val createScopeHandler: CreateScopeHandler,
+    private val errorMapper: ApplicationErrorMapper
+) : ScopeManagementPort {
+
+    override suspend fun createScope(command: CreateScopeCommand) =
+        createScopeHandler(command.toDomainCommand())
+            .mapLeft { error -> errorMapper.map(error) }
+            .map { result -> result.toContractResult() }
+}
+```
+
+### Cross-Context Communication
+
+```mermaid
+sequenceDiagram
+    participant Facade
+    participant ScopePort
+    participant UserPrefPort
+    participant ScopeContext
+    participant UserPrefContext
+
+    Facade->>UserPrefPort: getHierarchyPrefs()
+    UserPrefPort->>UserPrefContext: query preferences
+    UserPrefContext-->>UserPrefPort: Either<Error, Preferences>
+    UserPrefPort-->>Facade: Contract result
+
+    Facade->>ScopePort: createScope(command, preferences)
+    ScopePort->>ScopeContext: execute with preferences
+    ScopeContext-->>ScopePort: Either<Error, Scope>
+    ScopePort-->>Facade: Contract result
+
+    Note over Facade,UserPrefContext: Contexts remain decoupled through contracts
+```
+
+## Versioning Strategy
+
+### Contract Evolution
+
+```mermaid
+graph TB
+    subgraph "Contract Versioning"
+        V1[Contract v1.0<br/>Initial API]
+        V2[Contract v2.0<br/>Added features]
+        V3[Contract v2.1<br/>Backward compatible]
+
+        V1 --> |Breaking changes| V2
+        V2 --> |Additive changes| V3
+    end
+
+    subgraph "Implementation"
+        I1[Implementation v1.0]
+        I2[Implementation v2.0]
+        I3[Implementation v2.1]
+    end
+
+    V1 -.-> I1
+    V2 -.-> I2
+    V3 -.-> I3
+
+    classDef contract fill:#ffe3ba,stroke:#ff6f00
+    classDef impl fill:#e3f2fd,stroke:#2196f3
+
+    class V1,V2,V3 contract
+    class I1,I2,I3 impl
+```
+
+### Compatibility Guidelines
+
+1. **Additive Changes**: New optional fields, new methods with defaults
+2. **Backward Compatible**: Maintain existing method signatures
+3. **Breaking Changes**: Require major version increment
+4. **Deprecation**: Mark old methods as deprecated before removal
+
+## Testing Contracts
+
+### Contract Compliance Testing
+
+```kotlin
+// Test that implementations fulfill contract requirements
+class ScopeManagementPortComplianceTest {
+    @Test
+    fun `should handle all error cases defined in contract`() {
+        // Test all contract error scenarios
+    }
+
+    @Test
+    fun `should return proper types as defined in contract`() {
+        // Verify return type compliance
     }
 }
 ```
 
-## Implementation Examples
-
-### ScopeManagementPort
-
-The main interface for scope operations:
+### Cross-Context Integration Testing
 
 ```kotlin
-interface ScopeManagementPort {
-    // Commands
-    suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
-    suspend fun updateScope(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult>
-    suspend fun deleteScope(command: DeleteScopeCommand): Either<ScopeContractError, Unit>
-    
-    // Queries
-    suspend fun getScope(query: GetScopeQuery): Either<ScopeContractError, ScopeResult?>
-    suspend fun getChildren(query: GetChildrenQuery): Either<ScopeContractError, List<ScopeResult>>
-    suspend fun getRootScopes(): Either<ScopeContractError, List<ScopeResult>>
-}
-```
-
-### UserPreferencesPort
-
-Interface for user preferences with fail-safe defaults:
-
-```kotlin
-interface UserPreferencesPort {
-    /**
-     * Retrieves user preferences with fail-safe defaults.
-     * 
-     * Returns Either<UserPreferencesContractError, PreferenceResult> where:
-     * - Left(UserPreferencesContractError) only for unrecoverable errors:
-     *   - Invalid query parameters (e.g., unknown preference key)
-     *   - Data corruption that prevents reading preferences
-     * - Right(PreferenceResult) is returned in all other cases:
-     *   - When preferences exist: returns actual preference values
-     *   - When preferences don't exist: returns sensible defaults
-     *   - When system is temporarily unavailable: returns fail-safe defaults
-     * 
-     * This fail-safe approach ensures other contexts can always proceed with
-     * sensible defaults, maintaining system stability even when the preferences
-     * service is unavailable or preferences haven't been configured yet.
-     */
-    suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult>
-}
-```
-
-## Architecture Benefits
-
-### 1. Independent Evolution
-- Bounded contexts can change internal implementations without affecting consumers
-- Contract interfaces provide version boundaries for API evolution
-
-### 2. Clear Integration Points
-- Explicit contracts make integration requirements obvious
-- Self-documenting interfaces reduce integration errors
-
-### 3. Error Resilience
-- Explicit error handling prevents unexpected failures
-- Fail-safe patterns (like UserPreferencesPort) ensure system stability
-
-### 4. Testing Support
-- Contract interfaces are easy to mock for testing
-- Integration tests can verify contract compliance
-
-### 5. Documentation
-- Contracts serve as living documentation of context capabilities
-- Error types document all possible failure modes
-
-## Best Practices
-
-### 1. Keep Contracts Minimal
-```kotlin
-// ❌ Bad: Exposing too much detail
-data class CreateScopeCommand(
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val aspects: Map<String, List<String>>,
-    val metadata: Map<String, Any>,
-    val tags: List<String>,
-    // ... many more fields
-)
-
-// ✅ Good: Only essential fields
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null
-)
-```
-
-### 2. Use Contract-Specific Types
-```kotlin
-// ❌ Bad: Exposing domain types
-interface ScopeManagementPort {
-    suspend fun createScope(scope: Scope): Either<ScopesError, Scope>
-}
-
-// ✅ Good: Contract-specific types
-interface ScopeManagementPort {
-    suspend fun createScope(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult>
-}
-```
-
-### 3. Implement Fail-Safe Patterns
-```kotlin
-// For non-critical dependencies, provide defaults for system failures only
-class UserPreferencesPortAdapter : UserPreferencesPort {
-    override suspend fun getPreference(query: GetPreferenceQuery): Either<UserPreferencesContractError, PreferenceResult> {
-        return try {
-            // Attempt to get preferences
-            handler.getPreference(query)
-        } catch (e: Exception) {
-            when (e) {
-                // Map domain/input validation errors to Left
-                is InvalidPreferenceKeyError -> 
-                    Either.Left(UserPreferencesContractError.InputError.InvalidPreferenceKey(e.key))
-                is PreferencesCorruptedError ->
-                    Either.Left(UserPreferencesContractError.DataError.PreferencesCorrupted(
-                        details = e.message,
-                        configPath = e.path
-                    ))
-                // For system-level failures, return defaults
-                is IOException, is TimeoutException, is DatabaseException ->
-                    Either.Right(PreferenceResult.HierarchyPreferences())
-                // Propagate unexpected errors
-                else -> throw e
-            }
-        }
+class CrossContextIntegrationTest {
+    @Test
+    fun `scope creation should integrate with user preferences`() {
+        // Test actual cross-context communication
+        // through contract interfaces
     }
 }
 ```
 
-### 4. Version Your Contracts
-```kotlin
-// Future: Support multiple contract versions
-interface ScopeManagementPortV2 : ScopeManagementPort {
-    suspend fun archiveScope(command: ArchiveScopeCommand): Either<ScopeContractError, ArchiveScopeResult>
-}
-```
+## Benefits
 
-## Integration with Other Layers
+### Development Benefits
+- **Independent Evolution**: Contexts can evolve without breaking others
+- **Clear Boundaries**: Explicit integration points reduce coupling
+- **Type Safety**: Compile-time verification of inter-context communication
+- **Testing**: Contract interfaces enable easy mocking and testing
 
-### Apps Layer
-- Apps depend on contract interfaces, not implementations
-- Dependency injection wires implementations at runtime
+### Operational Benefits
+- **Monitoring**: Contract calls can be monitored and measured
+- **Debugging**: Clear boundaries make issues easier to isolate
+- **Versioning**: Independent deployment and versioning of contexts
+- **Documentation**: Self-documenting integration points
 
-### Interfaces Layer
-- Facades coordinate multiple port calls
-- Adapters implement cross-cutting concerns
+## Related Documentation
 
-### Bounded Contexts
-- Each context provides port implementations
-- Infrastructure layer contains adapter implementations
-
-## Future Considerations
-
-### 1. Contract Versioning
-- Support multiple contract versions simultaneously
-- Deprecation strategies for old contracts
-
-### 2. Contract Testing
-- Contract test suites that implementations must pass
-- Consumer-driven contract testing
-
-### 3. Event Contracts
-- Define event contracts for asynchronous integration
-- Event sourcing integration patterns
-
-### 4. External Integration
-- REST API contracts based on port interfaces
-- GraphQL schema generation from contracts
-- MCP protocol mapping
-
-## Summary
-
-The Contracts layer is a crucial architectural component that enables:
-- Clean separation between bounded contexts
-- Stable integration points
-- Explicit error handling
-- Independent context evolution
-- Clear documentation of capabilities
-
-By maintaining clear contracts, the system remains maintainable and evolvable while ensuring reliable integration between its various parts.
+- [Clean Architecture](./clean-architecture.md) - Overall architecture principles
+- [Domain-Driven Design](./domain-driven-design.md) - Bounded context concepts
+- [Error Handling Guidelines](../guides/development/error-handling.md) - Error handling patterns

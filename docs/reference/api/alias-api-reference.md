@@ -1,667 +1,281 @@
 # Alias System API Reference
 
-This document provides a comprehensive API reference for the alias system in Scopes, covering domain objects, application services, and infrastructure components.
+This document provides a conceptual overview and interface reference for the alias system in Scopes, focusing on core concepts and usage patterns.
 
-## Domain Layer
+## Overview
 
-### Value Objects
+The alias system provides human-readable identifiers for scopes, enabling intuitive access and management without exposing internal ULIDs.
 
-#### AliasName
+```mermaid
+graph TB
+    subgraph "Alias System Architecture"
+        subgraph "Domain Layer"
+            AN[AliasName<br/>Value Object]
+            SA[ScopeAlias<br/>Entity]
+            AGS[AliasGenerationService<br/>Interface]
+        end
 
-Represents a validated alias name with normalization.
+        subgraph "Application Layer"
+            AAH[AddAliasHandler]
+            RAH[RemoveAliasHandler]
+            SCAH[SetCanonicalAliasHandler]
+            ARH[AliasResolutionHandler]
+        end
 
-```kotlin
-package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
+        subgraph "Infrastructure Layer"
+            AR[AliasRepository<br/>Implementation]
+            AGI[AliasGenerationService<br/>Implementation]
+            WP[WordProvider<br/>Implementations]
+        end
+    end
 
-@JvmInline
-value class AliasName private constructor(val value: String) {
-    companion object {
-        fun create(value: String): Either<ScopeInputError.AliasError, AliasName>
-    }
-    
-    override fun toString(): String = value
-}
+    User[User] --> AAH
+    AAH --> SA
+    SA --> AN
+    AAH --> AR
+    AGS --> WP
+    AGI --> WP
+
+    classDef domain fill:#e8f5e9,stroke:#4caf50
+    classDef application fill:#e3f2fd,stroke:#2196f3
+    classDef infrastructure fill:#fce4ec,stroke:#e91e63
+
+    class AN,SA,AGS domain
+    class AAH,RAH,SCAH,ARH application
+    class AR,AGI,WP infrastructure
 ```
 
-**Validation Rules:**
-- Length: 2-64 characters
-- Pattern: `^[a-z][a-z0-9-_]{1,63}$`
-- Normalized to lowercase
-- No consecutive special characters (`--` or `__`)
+## Core Concepts
 
-**Example:**
-```kotlin
-// Valid
-AliasName.create("auth-system")     // Right(AliasName("auth-system"))
-AliasName.create("AUTH-SYSTEM")     // Right(AliasName("auth-system"))
-AliasName.create("user_mgmt_v2")    // Right(AliasName("user_mgmt_v2"))
+### Alias Types
 
-// Invalid
-AliasName.create("a")               // Left(TooShort)
-AliasName.create("1start")          // Left(InvalidFormat)
-AliasName.create("test--alias")     // Left(InvalidFormat)
+```mermaid
+graph LR
+    subgraph "Alias Hierarchy"
+        S[Scope] --> CA[Canonical Alias<br/>One per scope]
+        S --> CUA[Custom Aliases<br/>Multiple allowed]
+
+        CA --> |Auto-generated| AG[quiet-river-x7k]
+        CA --> |User-provided| UP[auth-system]
+
+        CUA --> |Additional refs| A1[sprint-42]
+        CUA --> |Team naming| A2[backend-auth]
+        CUA --> |Version refs| A3[v2-system]
+    end
+
+    classDef canonical fill:#e8f5e9,stroke:#4caf50,stroke-width:3px
+    classDef custom fill:#fff3e0,stroke:#ff9800
+
+    class CA,AG,UP canonical
+    class CUA,A1,A2,A3 custom
 ```
 
-#### AliasId
+### Validation Rules
 
-Unique identifier for alias entities using ULID format.
+| Component | Rule | Example |
+|-----------|------|---------|
+| **Length** | 2-64 characters | `auth` ✅, `a` ❌ |
+| **Pattern** | `^[a-z][a-z0-9-_]{1,63}$` | `auth-v2` ✅, `2auth` ❌ |
+| **Normalization** | Lowercase | `AUTH` → `auth` |
+| **Uniqueness** | Across all scopes | Each alias maps to one scope |
 
+## Command Operations
+
+### Add Alias
 ```kotlin
-@JvmInline
-value class AliasId private constructor(val value: String) {
-    companion object {
-        fun create(value: String): Either<ScopeInputError.IdError, AliasId>
-        fun generate(): AliasId
-    }
-    
-    fun toAggregateId(): Either<AggregateIdError, AggregateId>
-    override fun toString(): String = value
-}
-```
+// Command pattern
+data class AddAliasCommand(
+    val scopeAlias: String,
+    val newAlias: String
+)
 
-**Example:**
-```kotlin
-// Generate new ID
-val aliasId = AliasId.generate()  // AliasId("01ARZ3NDEKTSV4RRFFQ69G5FAV")
-
-// Create from existing ULID
-val result = AliasId.create("01ARZ3NDEKTSV4RRFFQ69G5FAV")  // Right(AliasId(...))
-
-// Convert to AggregateId
-val aggregateId = aliasId.toAggregateId()  // Right(AggregateId("gid://scopes/Alias/..."))
-```
-
-#### AliasType
-
-Enumeration distinguishing alias types.
-
-```kotlin
-enum class AliasType {
-    CANONICAL,  // Primary, auto-generated alias
-    CUSTOM      // User-defined additional alias
-}
-```
-
-### Entities
-
-#### ScopeAlias
-
-Represents the relationship between a scope and its alias.
-
-```kotlin
-data class ScopeAlias(
-    val id: AliasId,
-    val scopeId: ScopeId,
-    val aliasName: AliasName,
-    val aliasType: AliasType,
-    val createdAt: Instant,
-    val updatedAt: Instant
-) {
-    companion object {
-        fun createCanonical(
-            scopeId: ScopeId,
-            aliasName: AliasName,
-            createdAt: Instant = Clock.System.now()
-        ): ScopeAlias
-        
-        fun createCustom(
-            scopeId: ScopeId,
-            aliasName: AliasName,
-            createdAt: Instant = Clock.System.now()
-        ): ScopeAlias
+// Result
+sealed class AddAliasResult {
+    data class Success(val aliasAdded: String) : AddAliasResult()
+    sealed class Error : AddAliasResult() {
+        object AliasAlreadyExists : Error()
+        object InvalidAliasFormat : Error()
+        object ScopeNotFound : Error()
     }
 }
 ```
 
-**Example:**
+### Set Canonical Alias
 ```kotlin
-// Create canonical alias
-val canonical = ScopeAlias.createCanonical(
-    scopeId = ScopeId.generate(),
-    aliasName = AliasName.create("quiet-river-x7k").getOrNull()!!
-)
-
-// Create custom alias
-val custom = ScopeAlias.createCustom(
-    scopeId = scopeId,
-    aliasName = AliasName.create("auth-system").getOrNull()!!
+data class SetCanonicalAliasCommand(
+    val currentAlias: String,
+    val newCanonicalAlias: String
 )
 ```
 
-### Domain Services
-
-#### AliasGenerationService
-
-Service for generating alias names.
-
-```kotlin
-interface AliasGenerationService {
-    suspend fun generateCanonicalAlias(
-        aliasId: AliasId
-    ): Either<ScopeInputError.AliasError, AliasName>
-    
-    suspend fun generateRandomAlias(): Either<ScopeInputError.AliasError, AliasName>
-}
-```
-
-#### AliasGenerationStrategy
-
-Strategy interface for alias generation algorithms.
-
-```kotlin
-interface AliasGenerationStrategy {
-    fun generate(seed: Long, wordProvider: WordProvider): String
-    fun generateRandom(wordProvider: WordProvider): String
-    fun getName(): String
-}
-```
-
-#### WordProvider
-
-Interface for providing words for alias generation.
-
-```kotlin
-interface WordProvider {
-    fun getAdjectives(): List<String>
-    fun getNouns(): List<String>
-    fun getAdditionalWords(category: String): List<String>
-    fun getAvailableCategories(): List<String>
-}
-```
-
-### Repository Interfaces
-
-#### ScopeAliasRepository
-
-Repository for alias persistence operations.
-
-```kotlin
-interface ScopeAliasRepository {
-    suspend fun save(alias: ScopeAlias): Either<PersistenceError, Unit>
-    suspend fun findByAliasName(aliasName: AliasName): Either<PersistenceError, ScopeAlias?>
-    suspend fun findById(id: AliasId): Either<PersistenceError, ScopeAlias?>
-    suspend fun findByScopeId(scopeId: ScopeId): Either<PersistenceError, List<ScopeAlias>>
-    suspend fun findCanonicalByScopeId(scopeId: ScopeId): Either<PersistenceError, ScopeAlias?>
-    suspend fun findByScopeIdAndType(
-        scopeId: ScopeId,
-        type: AliasType
-    ): Either<PersistenceError, List<ScopeAlias>>
-    suspend fun findByAliasNamePrefix(
-        prefix: String,
-        limit: Int
-    ): Either<PersistenceError, List<ScopeAlias>>
-    suspend fun existsByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean>
-    suspend fun removeByAliasName(aliasName: AliasName): Either<PersistenceError, Boolean>
-    suspend fun removeByScopeId(scopeId: ScopeId): Either<PersistenceError, Int>
-    suspend fun update(alias: ScopeAlias): Either<PersistenceError, Boolean>
-    suspend fun count(): Either<PersistenceError, Long>
-    suspend fun listAll(offset: Long, limit: Int): Either<PersistenceError, List<ScopeAlias>>
-}
-```
-
-### Domain Errors
-
-```kotlin
-sealed class ScopeAliasError : DomainError() {
-    data class DuplicateAlias(
-        val aliasName: String,
-        val existingScopeId: ScopeId,
-        val attemptedScopeId: ScopeId,
-        override val occurredAt: Instant = Clock.System.now()
-    ) : ScopeAliasError()
-    
-    data class AliasNotFound(
-        val aliasName: String,
-        override val occurredAt: Instant = Clock.System.now()
-    ) : ScopeAliasError()
-    
-    data class CannotRemoveCanonicalAlias(
-        val scopeId: ScopeId,
-        val aliasName: String,
-        override val occurredAt: Instant = Clock.System.now()
-    ) : ScopeAliasError()
-    
-    data class AliasGenerationFailed(
-        val scopeId: ScopeId,
-        val retryCount: Int,
-        override val occurredAt: Instant = Clock.System.now()
-    ) : ScopeAliasError()
-}
-```
-
-## Application Layer
-
-### Commands
-
-#### AddCustomAliasCommand
-```kotlin
-data class AddCustomAliasCommand(
-    val scopeId: ScopeId,
-    val aliasName: String
-)
-```
-
-#### RemoveAliasCommand
+### Remove Alias
 ```kotlin
 data class RemoveAliasCommand(
-    val aliasName: String
+    val alias: String
 )
 ```
 
-#### GenerateCanonicalAliasCommand
-```kotlin
-data class GenerateCanonicalAliasCommand(
-    val scopeId: ScopeId
-)
+## Query Operations
+
+### Alias Resolution Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Handler
+    participant Repository
+    participant ValidationService
+
+    Client->>Handler: resolveAlias("auth")
+    Handler->>ValidationService: validateFormat("auth")
+    ValidationService-->>Handler: Valid
+    Handler->>Repository: findByAlias("auth")
+    Repository-->>Handler: ScopeAlias(scopeId, "auth")
+    Handler-->>Client: ScopeResult(id, title, ...)
+
+    Note over Client,ValidationService: Supports prefix matching when unique
 ```
 
-### Queries
-
-#### GetScopeByAliasQuery
+### List Operations
 ```kotlin
-data class GetScopeByAliasQuery(
-    val aliasName: String
-)
+// List all aliases for scope
+data class ListAliasesQuery(val scopeAlias: String)
+
+// Search aliases by prefix
+data class SearchAliasesQuery(val prefix: String)
 ```
 
-#### GetAliasesByScopeIdQuery
-```kotlin
-data class GetAliasesByScopeIdQuery(
-    val scopeId: ScopeId
-)
+## Generation Strategies
+
+### Canonical Alias Generation
+
+```mermaid
+graph LR
+    subgraph "Generation Pipeline"
+        Input[ULID Seed] --> Strategy[Generation Strategy]
+        Strategy --> Adjective[Adjective Pool]
+        Strategy --> Noun[Noun Pool]
+        Strategy --> Token[Random Token]
+
+        Adjective --> Combine[Combine Components]
+        Noun --> Combine
+        Token --> Combine
+
+        Combine --> Validate[Format Validation]
+        Validate --> Unique[Uniqueness Check]
+        Unique --> Result[Generated Alias]
+    end
+
+    classDef process fill:#e3f2fd,stroke:#2196f3
+    classDef data fill:#fff3e0,stroke:#ff9800
+    classDef result fill:#e8f5e9,stroke:#4caf50
+
+    class Strategy,Combine,Validate,Unique process
+    class Adjective,Noun,Token data
+    class Result result
 ```
 
-#### SearchAliasesQuery
-```kotlin
-data class SearchAliasesQuery(
-    val prefix: String,
-    val limit: Int = 10
-)
+**Generation Pattern**: `{adjective}-{noun}-{token}`
+- **Adjectives**: quiet, brave, swift, gentle, wise...
+- **Nouns**: river, mountain, ocean, star, cloud...
+- **Tokens**: 3-character alphanumeric (x7k, b2m, c9p...)
+
+### Strategy Implementations
+
+| Strategy | Pattern | Use Case |
+|----------|---------|----------|
+| **Haikunator** | adjective-noun-token | Default canonical aliases |
+| **Custom** | User-defined | Manual alias creation |
+| **Incremental** | base-name-{number} | Conflict resolution |
+
+## Error Handling
+
+### Validation Errors
+```mermaid
+graph TB
+    subgraph "Alias Validation Errors"
+        VE[ValidationError]
+        VE --> TS[TooShort<br/>min: 2 chars]
+        VE --> TL[TooLong<br/>max: 64 chars]
+        VE --> IF[InvalidFormat<br/>pattern mismatch]
+        VE --> IC[InvalidCharacters<br/>non-alphanumeric]
+        VE --> CC[ConsecutiveSpecial<br/>-- or __]
+    end
+
+    classDef error fill:#ffebee,stroke:#f44336
+    class VE,TS,TL,IF,IC,CC error
 ```
 
-### Command Handlers
+### Business Rule Errors
+- **AliasAlreadyExists**: Alias is already assigned to another scope
+- **CanonicalAliasRequired**: Cannot remove the last alias from a scope
+- **ScopeNotFound**: Referenced scope does not exist
 
-#### AddCustomAliasCommandHandler
+## Integration Points
 
+### Repository Interface
 ```kotlin
-class AddCustomAliasCommandHandler(
-    private val scopeRepository: ScopeRepository,
-    private val aliasRepository: ScopeAliasRepository,
-    private val transactionManager: TransactionManager
-) : CommandHandler<AddCustomAliasCommand, ScopeAlias> {
-    
-    override suspend fun handle(
-        command: AddCustomAliasCommand
-    ): Either<ApplicationError, ScopeAlias> = either {
-        // 1. Validate alias format
-        val aliasName = AliasName.create(command.aliasName)
-            .mapLeft { it.toApplicationError() }
-            .bind()
-            
-        // 2. Check scope exists
-        val scope = scopeRepository.findById(command.scopeId)
-            .mapLeft { it.toApplicationError() }
-            .bind()
-            ?: raise(ApplicationError.NotFound.Scope(command.scopeId.toString()))
-            
-        // 3. Check for duplicates
-        val exists = aliasRepository.existsByAliasName(aliasName)
-            .mapLeft { it.toApplicationError() }
-            .bind()
-            
-        if (exists) {
-            raise(ApplicationError.AliasDuplicate(command.aliasName))
-        }
-        
-        // 4. Create and save alias
-        val alias = ScopeAlias.createCustom(command.scopeId, aliasName)
-        
-        transactionManager.inTransaction {
-            aliasRepository.save(alias)
-                .mapLeft { it.toApplicationError() }
-        }.bind()
-        
-        alias
-    }
+interface AliasRepository {
+    suspend fun save(alias: ScopeAlias): Either<Error, Unit>
+    suspend fun findByName(name: AliasName): Either<Error, ScopeAlias?>
+    suspend fun findByScopeId(scopeId: ScopeId): Either<Error, List<ScopeAlias>>
+    suspend fun delete(aliasId: AliasId): Either<Error, Unit>
+    suspend fun existsByName(name: AliasName): Either<Error, Boolean>
 }
 ```
 
-### DTOs
-
-#### ScopeDto with Aliases
+### Event Publishing
 ```kotlin
-data class ScopeDto(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val canonicalAlias: String,
-    val customAliases: List<String>,
-    val createdAt: Instant,
-    val updatedAt: Instant
-)
-```
-
-#### AliasDto
-```kotlin
-data class AliasDto(
-    val aliasName: String,
-    val scopeId: String,
-    val scopeTitle: String,
-    val aliasType: String,
-    val createdAt: Instant
-)
-```
-
-### Application Errors
-
-```kotlin
-sealed class ScopeAliasError(
-    recoverable: Boolean = true
-) : ApplicationError(recoverable) {
-    
-    data class AliasDuplicate(
-        val aliasName: String,
-        val existingScopeId: String,
-        val attemptedScopeId: String
-    ) : ScopeAliasError()
-    
-    data class AliasNotFound(
-        val aliasName: String
-    ) : ScopeAliasError()
-    
-    data class CannotRemoveCanonicalAlias(
-        val scopeId: String,
-        val aliasName: String
-    ) : ScopeAliasError()
-    
-    data class AliasGenerationFailed(
-        val scopeId: String,
-        val retryCount: Int
-    ) : ScopeAliasError(recoverable = false)
-}
-```
-
-## Infrastructure Layer
-
-### DefaultAliasGenerationService
-
-```kotlin
-class DefaultAliasGenerationService(
-    private val strategy: AliasGenerationStrategy,
-    private val wordProvider: WordProvider
-) : AliasGenerationService {
-    
-    override suspend fun generateCanonicalAlias(
-        aliasId: AliasId
-    ): Either<ScopeInputError.AliasError, AliasName> = try {
-        val seed = aliasId.value.hashCode().toLong()
-        val aliasString = strategy.generate(seed, wordProvider)
-        AliasName.create(aliasString)
-    } catch (e: Exception) {
-        ScopeInputError.AliasError.InvalidFormat(
-            occurredAt = currentTimestamp(),
-            attemptedValue = e.message ?: "generation failed",
-            expectedPattern = "[a-z][a-z0-9-_]{1,63}"
-        ).left()
-    }
-}
-```
-
-### HaikunatorStrategy
-
-```kotlin
-class HaikunatorStrategy : AliasGenerationStrategy {
-    
-    override fun generate(seed: Long, wordProvider: WordProvider): String {
-        val random = Random(seed)
-        val adjective = wordProvider.getAdjectives()[
-            random.nextInt(wordProvider.getAdjectives().size)
-        ]
-        val noun = wordProvider.getNouns()[
-            random.nextInt(wordProvider.getNouns().size)
-        ]
-        val token = generateToken(random, 3)
-        return "$adjective-$noun-$token"
-    }
-    
-    private fun generateToken(random: Random, length: Int): String {
-        val chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-        return (1..length)
-            .map { chars[random.nextInt(chars.length)] }
-            .joinToString("")
-    }
-}
-```
-
-### InMemoryScopeAliasRepository
-
-```kotlin
-class InMemoryScopeAliasRepository : ScopeAliasRepository {
-    private val aliases = mutableMapOf<AliasName, ScopeAlias>()
-    private val mutex = Mutex()
-    
-    override suspend fun save(alias: ScopeAlias): Either<PersistenceError, Unit> = 
-        either {
-            mutex.withLock {
-                aliases[alias.aliasName] = alias
-            }
-        }
-        
-    override suspend fun findByAliasName(
-        aliasName: AliasName
-    ): Either<PersistenceError, ScopeAlias?> = 
-        either {
-            mutex.withLock {
-                aliases[aliasName]
-            }
-        }
-    
-    // ... other methods
+// Domain events for alias operations
+sealed class AliasEvent : DomainEvent {
+    data class AliasAdded(val scopeId: ScopeId, val aliasName: AliasName) : AliasEvent()
+    data class AliasRemoved(val scopeId: ScopeId, val aliasName: AliasName) : AliasEvent()
+    data class CanonicalAliasChanged(val scopeId: ScopeId, val oldAlias: AliasName, val newAlias: AliasName) : AliasEvent()
 }
 ```
 
 ## Usage Examples
 
-### Creating a Scope with Custom Alias
+### CLI Integration
+```bash
+# Add custom alias
+scopes alias add quiet-river-x7k auth-system
 
-```kotlin
-// In command handler
-val createCommand = CreateScopeCommand(
-    title = "Authentication System",
-    canonicalAlias = "auth-system"
-)
+# Set canonical alias
+scopes alias set-canonical quiet-river-x7k authentication
 
-val result = createScopeHandler.handle(createCommand)
-result.fold(
-    { error -> println("Failed: $error") },
-    { scope -> println("Created scope with alias: ${scope.canonicalAlias}") }
-)
+# Remove alias
+scopes alias rm auth-system
+
+# List aliases for scope
+scopes alias list authentication
+
+# Search by prefix
+scopes alias search auth
 ```
 
-### Adding Multiple Aliases
-
-```kotlin
-// Add custom aliases
-val commands = listOf(
-    AddCustomAliasCommand(scopeId, "auth"),
-    AddCustomAliasCommand(scopeId, "authentication"),
-    AddCustomAliasCommand(scopeId, "security-module")
-)
-
-commands.forEach { command ->
-    addAliasHandler.handle(command).fold(
-        { error -> println("Failed to add alias: $error") },
-        { alias -> println("Added alias: ${alias.aliasName}") }
-    )
-}
-```
-
-### Searching for Aliases
-
-```kotlin
-val searchQuery = SearchAliasesQuery(prefix = "auth", limit = 10)
-val results = searchAliasesHandler.handle(searchQuery)
-
-results.fold(
-    { error -> println("Search failed: $error") },
-    { aliases -> 
-        aliases.forEach { dto ->
-            println("${dto.aliasName} -> ${dto.scopeTitle}")
-        }
-    }
-)
-```
-
-### Alias Resolution
-
-```kotlin
-suspend fun resolveAlias(input: String): Either<ApplicationError, Scope> {
-    // Try exact match first
-    val exactQuery = GetScopeByAliasQuery(input)
-    val exactResult = getScopeByAliasHandler.handle(exactQuery)
-    
-    if (exactResult.isRight()) {
-        return exactResult
-    }
-    
-    // Try prefix match
-    val searchQuery = SearchAliasesQuery(input, limit = 2)
-    val searchResult = searchAliasesHandler.handle(searchQuery)
-    
-    return searchResult.flatMap { aliases ->
-        when (aliases.size) {
-            0 -> ApplicationError.NotFound.Alias(input).left()
-            1 -> getScopeByAliasHandler.handle(
-                GetScopeByAliasQuery(aliases.first().aliasName)
-            )
-            else -> ApplicationError.AmbiguousAlias(
-                input, 
-                aliases.map { it.aliasName }
-            ).left()
-        }
-    }
-}
-```
-
-## Testing
-
-### Unit Test Example
-
-```kotlin
-class AliasNameTest : DescribeSpec({
-    describe("AliasName creation") {
-        it("should normalize to lowercase") {
-            val result = AliasName.create("AUTH-SYSTEM")
-            result.shouldBeRight()
-            result.getOrNull()!!.value shouldBe "auth-system"
-        }
-        
-        it("should reject invalid patterns") {
-            val invalidNames = listOf("", "a", "1start", "-start", "test--alias")
-            invalidNames.forEach { name ->
-                AliasName.create(name).shouldBeLeft()
-            }
-        }
-    }
-})
-```
-
-### Integration Test Example
-
-```kotlin
-class AliasIntegrationTest : DescribeSpec({
-    lateinit var context: IntegrationTestContext
-    
-    beforeSpec {
-        IntegrationTestFixture.setupTestDependencies()
-        context = IntegrationTestFixture.createTestContext()
-    }
-    
-    describe("Full alias workflow") {
-        it("should create scope with custom alias and find it") {
-            // Create scope
-            val createResult = context.createScopeHandler.handle(
-                CreateScopeCommand(
-                    title = "Test Scope",
-                    canonicalAlias = "test-scope"
-                )
-            )
-            createResult.shouldBeRight()
-            
-            // Find by alias
-            val findResult = context.getScopeByAliasHandler.handle(
-                GetScopeByAliasQuery("test-scope")
-            )
-            findResult.shouldBeRight()
-            findResult.getOrNull()!!.title shouldBe "Test Scope"
-        }
-    }
-})
-```
+### MCP Tool Integration
+The alias system is exposed through MCP tools:
+- `aliases.add` - Add new alias
+- `aliases.remove` - Remove alias
+- `aliases.setCanonical` - Change canonical alias
+- `aliases.list` - List scope aliases
+- `aliases.resolve` - Resolve alias to scope
 
 ## Performance Considerations
 
-### Indexing
-- Primary index on `aliasName` for O(1) lookups
-- Secondary index on `scopeId` for listing aliases
-- Prefix index for search operations
+### Indexing Strategy
+- **Primary Index**: `alias_name` (unique)
+- **Secondary Index**: `scope_id` (for listing scope aliases)
+- **Search Optimization**: Prefix matching with LIKE queries
 
 ### Caching
-- LRU cache for frequently accessed aliases
-- Cache invalidation on updates
-- TTL-based expiration
+- **Alias Resolution**: In-memory cache for frequently accessed aliases
+- **Generation**: Cache word pools to avoid repeated file reads
+- **Validation**: Cache regex patterns for format validation
 
-### Batch Operations
-```kotlin
-// Efficient bulk import
-suspend fun importAliases(
-    mappings: List<Pair<String, String>>
-): Either<ApplicationError, Int> = either {
-    var successCount = 0
-    
-    transactionManager.inTransaction {
-        mappings.forEach { (aliasName, scopeId) ->
-            // Batch validation and insertion
-            successCount++
-        }
-        successCount.right()
-    }.bind()
-}
-```
+## Related Documentation
 
-## Security
-
-### Input Validation
-- Pattern matching prevents injection attacks
-- Length limits prevent DoS
-- Character restrictions ensure URL safety
-
-### Authorization
-```kotlin
-// Example authorization check
-suspend fun authorizedAliasOperation(
-    userId: UserId,
-    scopeId: ScopeId,
-    operation: AliasOperation
-): Either<AuthorizationError, Unit> = either {
-    val scope = scopeRepository.findById(scopeId).bind()
-    val hasPermission = authService.checkPermission(userId, scope, operation)
-    
-    if (!hasPermission) {
-        raise(AuthorizationError.InsufficientPermissions(operation))
-    }
-}
-```
-
-## Versioning
-
-The alias system API follows semantic versioning:
-- **1.0.0**: Initial release with core functionality
-- **1.1.0**: Added bulk import/export
-- **1.2.0**: Added search capabilities
-- **2.0.0**: Breaking change - lowercase normalization
-
-## Migration
-
-See [Migrating to Aliases](../../guides/migrating-to-aliases.md) for upgrade paths.
+- [Alias System Architecture](../../explanation/alias-system-architecture.md) - Design concepts
+- [CLI Quick Reference](../cli-quick-reference.md) - Command examples
+- [MCP Implementation Guide](../mcp-implementation-guide.md) - AI integration
