@@ -49,7 +49,10 @@ class GetScopeByAliasHandler(
             // Find alias entity
             val scopeAlias = scopeAliasRepository.findByAliasName(aliasName)
                 .mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(error)
+                    applicationErrorMapper.mapDomainError(
+                        error,
+                        ErrorMappingContext(attemptedValue = query.aliasName),
+                    )
                 }
                 .bind()
 
@@ -57,7 +60,10 @@ class GetScopeByAliasHandler(
             scopeAlias?.let { alias ->
                 val scope = scopeRepository.findById(alias.scopeId)
                     .mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error)
+                        applicationErrorMapper.mapDomainError(
+                            error,
+                            ErrorMappingContext(attemptedValue = alias.scopeId.toString()),
+                        )
                     }
                     .bind()
 
@@ -69,7 +75,10 @@ class GetScopeByAliasHandler(
                         // Need to fetch the canonical alias
                         val canonical = scopeAliasRepository.findCanonicalByScopeId(s.id)
                             .mapLeft { error ->
-                                applicationErrorMapper.mapDomainError(error)
+                                applicationErrorMapper.mapDomainError(
+                                    error,
+                                    ErrorMappingContext(attemptedValue = s.id.toString()),
+                                )
                             }
                             .bind()
 
