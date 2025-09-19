@@ -112,7 +112,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             // SQLite has a limit on the number of variables in a single query
             // Chunk the IDs to avoid hitting this limit
             val scopeIdValues = scopeIds.map { it.value }
-            
+
             val allResults = if (scopeIdValues.size <= SQLITE_VARIABLE_LIMIT) {
                 // Single query for small lists
                 database.scopeAliasQueries.findCanonicalAliasesBatch(scopeIdValues).executeAsList()
@@ -122,7 +122,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
                     database.scopeAliasQueries.findCanonicalAliasesBatch(chunk).executeAsList()
                 }
             }
-            
+
             allResults.map { rowToScopeAlias(it) }.right()
         }
     } catch (e: Exception) {

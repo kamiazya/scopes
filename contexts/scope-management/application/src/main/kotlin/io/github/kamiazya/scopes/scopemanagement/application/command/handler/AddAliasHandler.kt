@@ -26,29 +26,29 @@ class AddAliasHandler(
     private val logger: Logger,
 ) : CommandHandler<AddAliasCommand, ScopeContractError, Unit> {
 
-    override suspend operator fun invoke(command: AddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(input: AddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Adding alias to scope",
                 mapOf(
-                    "existingAlias" to command.existingAlias,
-                    "newAlias" to command.newAlias,
+                    "existingAlias".to(input.existingAlias),
+                    "newAlias".to(input.newAlias),
                 ),
             )
 
             // Validate existingAlias
-            val existingAliasName = AliasName.create(command.existingAlias)
+            val existingAliasName = AliasName.create(input.existingAlias)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid existing alias name",
                         mapOf(
-                            "existingAlias" to command.existingAlias,
+                            "existingAlias" to input.existingAlias,
                             "error" to error.toString(),
                         ),
                     )
                     applicationErrorMapper.mapDomainError(
                         error,
-                        ErrorMappingContext(attemptedValue = command.existingAlias),
+                        ErrorMappingContext(attemptedValue = input.existingAlias),
                     )
                 }
                 .bind()
@@ -60,7 +60,7 @@ class AddAliasHandler(
                         logger.error(
                             "Failed to find existing alias",
                             mapOf(
-                                "existingAlias" to command.existingAlias,
+                                "existingAlias" to input.existingAlias,
                                 "error" to error.toString(),
                             ),
                         )
@@ -70,26 +70,26 @@ class AddAliasHandler(
             ) {
                 logger.warn(
                     "Existing alias not found",
-                    mapOf("existingAlias" to command.existingAlias),
+                    mapOf("existingAlias" to input.existingAlias),
                 )
-                ScopeContractError.BusinessError.AliasNotFound(alias = command.existingAlias)
+                ScopeContractError.BusinessError.AliasNotFound(alias = input.existingAlias)
             }
 
             val scopeId = alias.scopeId
 
             // Validate newAlias
-            val newAliasName = AliasName.create(command.newAlias)
+            val newAliasName = AliasName.create(input.newAlias)
                 .mapLeft { error ->
                     logger.error(
                         "Invalid new alias name",
                         mapOf(
-                            "newAlias" to command.newAlias,
+                            "newAlias" to input.newAlias,
                             "error" to error.toString(),
                         ),
                     )
                     applicationErrorMapper.mapDomainError(
                         error,
-                        ErrorMappingContext(attemptedValue = command.newAlias),
+                        ErrorMappingContext(attemptedValue = input.newAlias),
                     )
                 }
                 .bind()
@@ -100,8 +100,8 @@ class AddAliasHandler(
                     logger.error(
                         "Failed to add alias",
                         mapOf(
-                            "existingAlias" to command.existingAlias,
-                            "newAlias" to command.newAlias,
+                            "existingAlias" to input.existingAlias,
+                            "newAlias" to input.newAlias,
                             "scopeId" to scopeId.value,
                             "error" to error.toString(),
                         ),
@@ -113,8 +113,8 @@ class AddAliasHandler(
             logger.info(
                 "Successfully added alias",
                 mapOf(
-                    "existingAlias" to command.existingAlias,
-                    "newAlias" to command.newAlias,
+                    "existingAlias" to input.existingAlias,
+                    "newAlias" to input.newAlias,
                     "scopeId" to scopeId.value,
                 ),
             )

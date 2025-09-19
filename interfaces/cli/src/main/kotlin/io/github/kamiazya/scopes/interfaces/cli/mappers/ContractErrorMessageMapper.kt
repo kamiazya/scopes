@@ -12,7 +12,7 @@ object ContractErrorMessageMapper {
      */
     fun getMessage(error: ScopeContractError, debug: Boolean = false): String = when (error) {
         is ScopeContractError.InputError.InvalidId -> {
-            val formatHint = error.expectedFormat?.let { " (expected: $it)" } ?: ""
+            val formatHint = error.expectedFormat?.run { " (expected: $this)" } ?: ""
             if (debug) {
                 "Invalid scope ID format: '${error.id}'$formatHint [provided value: ${error.id}]"
             } else {
@@ -22,7 +22,7 @@ object ContractErrorMessageMapper {
         is ScopeContractError.InputError.InvalidTitle -> ValidationMessageFormatter.formatTitleValidationFailure(error.validationFailure)
         is ScopeContractError.InputError.InvalidDescription -> ValidationMessageFormatter.formatDescriptionValidationFailure(error.validationFailure)
         is ScopeContractError.InputError.InvalidParentId -> {
-            val formatHint = error.expectedFormat?.let { " (expected: $it)" } ?: ""
+            val formatHint = error.expectedFormat?.run { " (expected: $this)" } ?: ""
             "Invalid parent scope ID: ${error.parentId}$formatHint"
         }
         is ScopeContractError.InputError.InvalidAlias -> ValidationMessageFormatter.formatAliasValidationFailure(error.validationFailure)
@@ -33,7 +33,7 @@ object ContractErrorMessageMapper {
             // Add expression context for InvalidSyntax case
             val failure = error.validationFailure
             if (failure is ScopeContractError.ContextFilterValidationFailure.InvalidSyntax) {
-                "Invalid filter syntax in '${failure.expression}': ${failure.errorType}${failure.position?.let { " at position $it" } ?: ""}"
+                "Invalid filter syntax in '${failure.expression}': ${failure.errorType}${failure.position?.run { " at position $this" } ?: ""}"
             } else {
                 formatted
             }
@@ -47,7 +47,7 @@ object ContractErrorMessageMapper {
             }
         }
         is ScopeContractError.BusinessError.DuplicateTitle -> {
-            val location = error.parentId?.let { "under parent $it" } ?: "at root level"
+            val location = error.parentId?.run { "under parent $this" } ?: "at root level"
             if (debug) {
                 "A scope with title '${error.title}' already exists $location [parent ULID: ${error.parentId ?: "root"}]"
             } else {
@@ -59,7 +59,7 @@ object ContractErrorMessageMapper {
         is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
         is ScopeContractError.BusinessError.NotArchived -> "Scope is not archived: ${error.scopeId}"
         is ScopeContractError.BusinessError.HasChildren -> {
-            val countInfo = error.childrenCount?.let { " (has $it children)" } ?: ""
+            val countInfo = error.childrenCount?.run { " (has $this children)" } ?: ""
             "Cannot delete scope with children: ${error.scopeId}$countInfo"
         }
         is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"

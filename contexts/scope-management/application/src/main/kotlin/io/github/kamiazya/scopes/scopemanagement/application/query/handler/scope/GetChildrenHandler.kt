@@ -26,19 +26,19 @@ class GetChildrenHandler(
     private val logger: Logger,
 ) : QueryHandler<GetChildren, ScopeContractError, ScopeListResult> {
 
-    override suspend operator fun invoke(query: GetChildren): Either<ScopeContractError, ScopeListResult> = transactionManager.inReadOnlyTransaction {
+    override suspend operator fun invoke(input: GetChildren): Either<ScopeContractError, ScopeListResult> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting children of scope",
             mapOf(
-                "parentId" to (query.parentId ?: "null"),
-                "offset" to query.offset,
-                "limit" to query.limit,
+                "parentId" to (input.parentId ?: "null"),
+                "offset" to input.offset,
+                "limit" to input.limit,
             ),
         )
 
         either {
             // Parse parent ID if provided
-            val parentId = query.parentId?.let { parentIdString ->
+            val parentId = input.parentId?.let { parentIdString ->
                 ScopeId.create(parentIdString)
                     .mapLeft { error ->
                         applicationErrorMapper.mapDomainError(
@@ -50,7 +50,7 @@ class GetChildrenHandler(
             }
 
             // Get children from repository with database-side pagination
-            val children = scopeRepository.findByParentId(parentId, query.offset, query.limit)
+            val children = scopeRepository.findByParentId(parentId, input.offset, input.limit)
                 .mapLeft { error ->
                     applicationErrorMapper.mapDomainError(error)
                 }
@@ -107,8 +107,8 @@ class GetChildrenHandler(
 
             val result = ScopeListResult(
                 scopes = scopeResults,
-                offset = query.offset,
-                limit = query.limit,
+                offset = input.offset,
+                limit = input.limit,
                 totalCount = totalCount,
             )
 
@@ -118,8 +118,8 @@ class GetChildrenHandler(
                     "parentId" to (parentId?.value?.toString() ?: "null"),
                     "count" to result.scopes.size,
                     "totalCount" to totalCount,
-                    "offset" to query.offset,
-                    "limit" to query.limit,
+                    "offset" to input.offset,
+                    "limit" to input.limit,
                 ),
             )
 
@@ -129,7 +129,7 @@ class GetChildrenHandler(
         logger.error(
             "Failed to get children of scope",
             mapOf(
-                "parentId" to (query.parentId ?: "null"),
+                "parentId" to (input.parentId ?: "null"),
                 "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
