@@ -2,14 +2,14 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RenameAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 
@@ -17,17 +17,17 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
  * Handler for renaming existing aliases.
  * This operation is atomic and preserves the alias type (canonical/custom).
  * The rename is performed in a single transaction to prevent data loss.
+ * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
 class RenameAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
-    private val transactionManager: TransactionManager,
-    private val logger: Logger,
-) : CommandHandler<RenameAliasCommand, ScopeManagementApplicationError, Unit> {
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<RenameAliasCommand, Unit>(transactionManager, logger) {
 
-    private val errorPresenter = ScopeInputErrorPresenter()
+    private val errorMappingService = CentralizedErrorMappingService()
 
-    override suspend operator fun invoke(command: RenameAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
-        either {
+    override suspend fun executeCommand(command: RenameAliasCommand): Either<ScopeManagementApplicationError, Unit> = either {
             logger.debug(
                 "Renaming alias",
                 mapOf(

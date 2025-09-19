@@ -2,32 +2,31 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
+import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for setting a canonical alias for a scope.
  * Automatically demotes the previous canonical alias to a custom alias.
+ * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
 class SetCanonicalAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
-    private val transactionManager: TransactionManager,
-    private val logger: Logger,
-) : CommandHandler<SetCanonicalAliasCommand, ScopeManagementApplicationError, Unit> {
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<SetCanonicalAliasCommand, Unit>(transactionManager, logger) {
 
-    private val errorMappingService = ScopeInputErrorMappingService()
+    private val errorMappingService = CentralizedErrorMappingService()
 
-    override suspend operator fun invoke(command: SetCanonicalAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
-        either {
+    override suspend fun executeCommand(command: SetCanonicalAliasCommand): Either<ScopeManagementApplicationError, Unit> = either {
             logger.debug(
                 "Setting canonical alias",
                 mapOf(
