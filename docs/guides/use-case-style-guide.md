@@ -25,26 +25,47 @@ fun interface UseCase<I, T> {
 
 ### 2. Command/Query Separation (CQRS)
 
+```mermaid
+graph TB
+    subgraph "CQRS Pattern"
+        subgraph "Commands - Write Operations"
+            CMD[Command Interface<br/>Marker for state changes]
+            CMD --> CS[CreateScope]
+            CMD --> US[UpdateScope]
+            CMD --> DS[DeleteScope]
+        end
+
+        subgraph "Queries - Read Operations"
+            QRY[Query Interface<br/>Marker for read-only]
+            QRY --> GS[GetScopeById]
+            QRY --> LS[ListScopes]
+            QRY --> SS[SearchScopes]
+        end
+    end
+
+    CMD -.->|Changes State| DB[(Database)]
+    QRY -.->|Reads State| DB
+
+    classDef command fill:#ffe0e0,stroke:#ff0000
+    classDef query fill:#e0e0ff,stroke:#0000ff
+
+    class CMD,CS,US,DS command
+    class QRY,GS,LS,SS query
+```
+
 #### Commands (Write Operations)
 ```kotlin
 interface Command  // Marker interface for state-changing operations
-
-data class CreateScope(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null,
-    val metadata: Map<String, String> = emptyMap(),
-) : Command
 ```
+
+Commands encapsulate all information needed to perform a state change. They are immutable data structures that represent user intent.
 
 #### Queries (Read Operations)
 ```kotlin
 interface Query    // Marker interface for read-only operations
-
-data class GetScopeById(
-    val id: String
-) : Query
 ```
+
+Queries retrieve data without modifying system state. They should be idempotent and side-effect free.
 
 ### 3. Handlers
 
@@ -159,6 +180,41 @@ class CreateScopeHandler(...) : UseCase<CreateScope, CreateScopeResult> {
 - **Testability**: Mapping logic can be tested independently
 - **Maintainability**: Changes to DTO structure are centralized in mappers
 - **Architecture Compliance**: Enforces Clean Architecture boundary rules
+
+## UseCase Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant CLI
+    participant Handler
+    participant ValidationService
+    participant Repository
+    participant DomainEntity
+    participant Mapper
+
+    CLI->>Handler: invoke(CreateScope command)
+    activate Handler
+
+    Handler->>ValidationService: validateTitleFormat(title)
+    ValidationService-->>Handler: Either<Error, Unit>
+
+    Handler->>ValidationService: validateHierarchyConstraints(parentId)
+    ValidationService-->>Handler: Either<Error, Unit>
+
+    Handler->>DomainEntity: Scope.create(validatedData)
+    DomainEntity-->>Handler: Either<Error, Scope>
+
+    Handler->>Repository: save(scope)
+    Repository-->>Handler: Either<Error, Unit>
+
+    Handler->>Mapper: toCreateScopeResult(scope)
+    Mapper-->>Handler: CreateScopeResult
+
+    deactivate Handler
+    Handler-->>CLI: Either<Error, CreateScopeResult>
+
+    Note over CLI,Mapper: Transaction boundary encompasses entire handler execution
+```
 
 ## Directory Structure
 
