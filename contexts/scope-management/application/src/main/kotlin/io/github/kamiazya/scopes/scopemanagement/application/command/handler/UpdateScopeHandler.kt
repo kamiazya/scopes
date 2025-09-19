@@ -5,18 +5,15 @@ import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -28,69 +25,34 @@ import kotlinx.datetime.Clock
 
 /**
  * Handler for updating an existing scope.
+ * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
 class UpdateScopeHandler(
     private val scopeRepository: ScopeRepository,
-    private val transactionManager: TransactionManager,
-    private val logger: Logger,
+    transactionManager: TransactionManager,
+    logger: Logger,
     private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
-) : CommandHandler<UpdateScopeCommand, ScopeManagementApplicationError, ScopeDto> {
+) : BaseCommandHandler<UpdateScopeCommand, ScopeDto>(transactionManager, logger) {
 
-    private val errorMappingService = ScopeInputErrorMappingService()
+    private val errorMappingService = CentralizedErrorMappingService()
 
-    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
-        logUpdateStart(command)
-
-        executeUpdate(command).bind()
-    }.onLeft { error ->
-        logUpdateError(error)
-    }
-
-    private fun logUpdateStart(command: UpdateScopeCommand) {
-        logger.info(
-            "Updating scope",
-            mapOf(
-                "scopeId" to command.id,
-                "hasTitle" to (command.title != null).toString(),
-                "hasDescription" to (command.description != null).toString(),
-            ),
-        )
-    }
-
-    private fun logUpdateError(error: ScopeManagementApplicationError) {
-        logger.error(
-            "Failed to update scope",
-            mapOf(
-                "code" to getErrorClassName(error),
-                "message" to error.toString().take(500),
-            ),
-        )
-    }
-
-    private fun getErrorClassName(error: ScopeManagementApplicationError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
-
-    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = transactionManager.inTransaction {
-        performUpdate(command)
-    }
-
-    private suspend fun performUpdate(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
+    override suspend fun executeCommand(command: UpdateScopeCommand): Either<ScopeManagementApplicationError, ScopeDto> = either {
         val scopeId = parseScopeId(command.id).bind()
         val existingScope = findExistingScope(scopeId).bind()
 
         val updatedScope = applyUpdates(existingScope, command, scopeId).bind()
 
-        val savedScope = scopeRepository.save(updatedScope).mapLeft { it.toGenericApplicationError() }.bind()
+        val savedScope = scopeRepository.save(updatedScope).mapLeft {
+            errorMappingService.mapRepositoryError(it, "update-scope-save")
+        }.bind()
         logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
 
         ScopeMapper.toDto(savedScope)
     }
 
     private fun parseScopeId(id: String): Either<ScopeManagementApplicationError, ScopeId> = ScopeId.create(id).mapLeft { error ->
-        mapIdError(error, id)
+        errorMappingService.mapScopeIdError(error, id, "update-scope")
     }
-
-    private fun mapIdError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.IdError, id: String): ScopeManagementApplicationError =
-        errorMappingService.mapIdError(error, id)
 
     private suspend fun applyUpdates(scope: Scope, command: UpdateScopeCommand, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
         var updatedScope = scope
@@ -111,16 +73,18 @@ class UpdateScopeHandler(
     }
 
     private suspend fun findExistingScope(scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
-        val scope = scopeRepository.findById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+        val scope = scopeRepository.findById(scopeId).mapLeft {
+            errorMappingService.mapRepositoryError(it, "find-scope-for-update")
+        }.bind()
         ensureNotNull(scope) {
             logger.warn("Scope not found for update", mapOf("scopeId" to scopeId.value))
-            ScopeNotFoundError(scopeId = scopeId).toGenericApplicationError()
+            errorMappingService.mapScopeNotFoundError(scopeId, "update-scope")
         }
     }
 
     private suspend fun updateTitle(scope: Scope, newTitle: String, scopeId: ScopeId): Either<ScopeManagementApplicationError, Scope> = either {
         val title = ScopeTitle.create(newTitle).mapLeft { error ->
-            errorMappingService.mapTitleError(error, newTitle)
+            errorMappingService.mapTitleError(error, newTitle, "update-scope-title")
         }.bind()
 
         // Use specification to validate title uniqueness
@@ -132,9 +96,13 @@ class UpdateScopeHandler(
             titleExistsChecker = { checkTitle, parentId ->
                 scopeRepository.findIdByParentIdAndTitle(parentId, checkTitle.value).getOrNull()
             },
-        ).mapLeft { it.toGenericApplicationError() }.bind()
+        ).mapLeft {
+            errorMappingService.mapDomainError(it, "update-scope-title-uniqueness")
+        }.bind()
 
-        val updated = scope.updateTitle(newTitle, Clock.System.now()).mapLeft { it.toGenericApplicationError() }.bind()
+        val updated = scope.updateTitle(newTitle, Clock.System.now()).mapLeft {
+            errorMappingService.mapDomainError(it, "update-scope-title-entity")
+        }.bind()
 
         logger.debug(
             "Title updated",
@@ -153,7 +121,7 @@ class UpdateScopeHandler(
                 when (error) {
                     is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.DescriptionError ->
                         errorMappingService.mapDescriptionError(error, newDescription)
-                    else -> error.toGenericApplicationError()
+                    else -> errorMappingService.mapDomainError(error, "update-scope-description")
                 }
             }.bind()
 

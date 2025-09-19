@@ -3,62 +3,52 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeHierarchyApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeNotFoundError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
+import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for deleting a scope.
+ * Uses BaseCommandHandler for common functionality and centralized error mapping.
  */
-class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    CommandHandler<DeleteScopeCommand, ScopeManagementApplicationError, Unit> {
+class DeleteScopeHandler(private val scopeRepository: ScopeRepository, transactionManager: TransactionManager, logger: Logger) :
+    BaseCommandHandler<DeleteScopeCommand, Unit>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: DeleteScopeCommand): Either<ScopeManagementApplicationError, Unit> = either {
-        logger.info(
-            "Deleting scope",
-            mapOf(
-                "scopeId" to command.id,
-                "cascade" to command.cascade.toString(),
-            ),
-        )
+    private val errorMappingService = CentralizedErrorMappingService()
 
-        transactionManager.inTransaction {
-            either {
-                val scopeId = ScopeId.create(command.id).mapLeft { it.toGenericApplicationError() }.bind()
-                validateScopeExists(scopeId).bind()
-                handleChildrenDeletion(scopeId, command.cascade).bind()
-                scopeRepository.deleteById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
-                logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
-            }
+    override suspend fun executeCommand(command: DeleteScopeCommand): Either<ScopeManagementApplicationError, Unit> = either {
+        val scopeId = ScopeId.create(command.id).mapLeft {
+            errorMappingService.mapScopeIdError(it, command.id, "delete-scope")
         }.bind()
-    }.onLeft { error ->
-        logger.error(
-            "Failed to delete scope",
-            mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                "message" to error.toString(),
-            ),
-        )
+
+        validateScopeExists(scopeId).bind()
+        handleChildrenDeletion(scopeId, command.cascade).bind()
+        scopeRepository.deleteById(scopeId).mapLeft {
+            errorMappingService.mapRepositoryError(it, "delete-scope-final")
+        }.bind()
+
+        logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
     }
 
     private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopeManagementApplicationError, Unit> = either {
-        val existingScope = scopeRepository.findById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+        val existingScope = scopeRepository.findById(scopeId).mapLeft {
+            errorMappingService.mapRepositoryError(it, "delete-scope-validation")
+        }.bind()
         ensure(existingScope != null) {
             logger.warn("Scope not found for deletion", mapOf("scopeId" to scopeId.value))
-            ScopeNotFoundError(scopeId = scopeId).toGenericApplicationError()
+            errorMappingService.mapScopeNotFoundError(scopeId, "delete-scope")
         }
     }
 
     private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopeManagementApplicationError, Unit> = either {
         val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000)
-            .mapLeft { it.toGenericApplicationError() }.bind()
+            .mapLeft { errorMappingService.mapRepositoryError(it, "delete-scope-find-children") }.bind()
 
         if (children.isNotEmpty()) {
             if (cascade) {
@@ -92,7 +82,9 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
 
     private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopeManagementApplicationError, Unit> = either {
         // Find children of this scope
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).mapLeft { it.toGenericApplicationError() }.bind()
+        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).mapLeft {
+            errorMappingService.mapRepositoryError(it, "delete-scope-recursive-find-children")
+        }.bind()
 
         // Recursively delete all children
         for (child in children) {
@@ -100,7 +92,9 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, private v
         }
 
         // Delete this scope
-        scopeRepository.deleteById(scopeId).mapLeft { it.toGenericApplicationError() }.bind()
+        scopeRepository.deleteById(scopeId).mapLeft {
+            errorMappingService.mapRepositoryError(it, "delete-scope-recursive")
+        }.bind()
         logger.debug("Recursively deleted scope", mapOf("scopeId" to scopeId.value))
     }
 }

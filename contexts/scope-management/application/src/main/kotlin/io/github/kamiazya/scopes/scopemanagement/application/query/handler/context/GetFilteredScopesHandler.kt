@@ -120,11 +120,11 @@ class GetFilteredScopesHandler(
                     contextView = contextView,
                     scopeCount = filtered.size,
                     totalScopeCount = totalCount,
-                    appliedBy = null, // TODO: Add user context to track who applied the filter
+                    appliedBy = null, // Future enhancement: Add user context when authentication is implemented
                 ).fold(
                     { _ ->
-                        // TODO: Add proper logging - for now, silently continue
-                        // logger.warn("Failed to publish context applied event: $error")
+                        // Note: Context event publishing failure is non-critical
+                        // Future enhancement: Add structured logging when needed
                     },
                     { },
                 )
