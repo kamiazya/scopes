@@ -48,13 +48,18 @@ object TestDataHelper {
         scopeRepository: ScopeRepository,
         aliasRepository: ScopeAliasRepository,
         timestamp: kotlinx.datetime.Instant = Clock.System.now(),
-    ): List<ScopeAlias> = scopesWithAliases.map { (scope, aliasName) ->
-        createScopeWithCanonicalAlias(
-            scope = scope,
-            aliasName = aliasName,
-            scopeRepository = scopeRepository,
-            aliasRepository = aliasRepository,
-            timestamp = timestamp,
-        )
+    ): List<ScopeAlias> {
+        val aliases = mutableListOf<ScopeAlias>()
+        for ((scope, aliasName) in scopesWithAliases) {
+            val alias = createScopeWithCanonicalAlias(
+                scope = scope,
+                aliasName = aliasName,
+                scopeRepository = scopeRepository,
+                aliasRepository = aliasRepository,
+                timestamp = timestamp,
+            )
+            aliases.add(alias)
+        }
+        return aliases
     }
 }

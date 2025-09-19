@@ -10,6 +10,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
@@ -72,21 +73,18 @@ class DeleteScopeHandler(
     }
 
     private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopeContractError, Unit> = either {
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000)
-            .mapLeft { error ->
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
+        val allChildren = fetchAllChildren(scopeId).bind()
 
-        if (children.isNotEmpty()) {
+        if (allChildren.isNotEmpty()) {
             if (cascade) {
                 logger.debug(
                     "Cascade deleting children",
                     mapOf(
                         "parentId" to scopeId.value,
-                        "childCount" to children.size.toString(),
+                        "childCount" to allChildren.size.toString(),
                     ),
                 )
-                for (child in children) {
+                for (child in allChildren) {
                     deleteRecursive(child.id).bind()
                 }
             } else {
@@ -94,13 +92,13 @@ class DeleteScopeHandler(
                     "Cannot delete scope with children",
                     mapOf(
                         "scopeId" to scopeId.value,
-                        "childCount" to children.size.toString(),
+                        "childCount" to allChildren.size.toString(),
                     ),
                 )
                 raise(
                     ScopeContractError.BusinessError.HasChildren(
                         scopeId = scopeId.value,
-                        childrenCount = children.size,
+                        childrenCount = allChildren.size,
                     ),
                 )
             }
@@ -108,13 +106,11 @@ class DeleteScopeHandler(
     }
 
     private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
-        // Find children of this scope
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
+        // Find all children of this scope using proper pagination
+        val allChildren = fetchAllChildren(scopeId).bind()
 
         // Recursively delete all children
-        for (child in children) {
+        for (child in allChildren) {
             deleteRecursive(child.id).bind()
         }
 
@@ -123,5 +119,36 @@ class DeleteScopeHandler(
             applicationErrorMapper.mapDomainError(error)
         }.bind()
         logger.debug("Recursively deleted scope", mapOf("scopeId" to scopeId.value))
+    }
+
+    /**
+     * Fetch all children of a scope using pagination to avoid the limit of 1000.
+     * This ensures complete cascade deletion without leaving orphaned records.
+     */
+    private suspend fun fetchAllChildren(parentId: ScopeId): Either<ScopeContractError, List<Scope>> = either {
+        val allChildren = mutableListOf<Scope>()
+        var offset = 0
+        val batchSize = 1000
+
+        do {
+            val batch = scopeRepository.findByParentId(parentId, offset = offset, limit = batchSize)
+                .mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error)
+                }.bind()
+
+            allChildren.addAll(batch)
+            offset += batch.size
+
+            logger.debug(
+                "Fetched children batch",
+                mapOf(
+                    "parentId" to parentId.value,
+                    "batchSize" to batch.size.toString(),
+                    "totalSoFar" to allChildren.size.toString(),
+                ),
+            )
+        } while (batch.size == batchSize) // Continue if we got a full batch
+
+        allChildren
     }
 }

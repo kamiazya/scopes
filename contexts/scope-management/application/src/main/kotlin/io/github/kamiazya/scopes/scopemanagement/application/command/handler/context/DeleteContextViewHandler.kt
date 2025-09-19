@@ -53,8 +53,9 @@ class DeleteContextViewHandler(
             val currentContext = activeContextService.getCurrentContext()
             if (currentContext != null && currentContext.key.value == command.key) {
                 raise(
-                    ScopeContractError.BusinessError.NotFound(
-                        scopeId = "Cannot delete an active context: ${command.key}",
+                    ScopeContractError.BusinessError.DuplicateContextKey(
+                        contextKey = command.key,
+                        existingContextId = "active", // Indicates the context is currently active
                     ),
                 )
             }

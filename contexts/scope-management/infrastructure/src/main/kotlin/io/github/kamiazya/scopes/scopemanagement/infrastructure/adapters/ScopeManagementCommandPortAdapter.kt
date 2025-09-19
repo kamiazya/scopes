@@ -133,11 +133,19 @@ class ScopeManagementCommandPortAdapter(
         val existingAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
             { scope ->
-                scope?.canonicalAlias ?: return@inTransaction Either.Left(
-                    ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                        scopeId = command.scopeId,
-                    ),
-                )
+                when {
+                    scope == null -> return@inTransaction Either.Left(
+                        ScopeContractError.BusinessError.NotFound(
+                            scopeId = command.scopeId,
+                        ),
+                    )
+                    scope.canonicalAlias == null -> return@inTransaction Either.Left(
+                        ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                            scopeId = command.scopeId,
+                        ),
+                    )
+                    else -> scope.canonicalAlias
+                }
             },
         )
 
@@ -160,11 +168,19 @@ class ScopeManagementCommandPortAdapter(
         val currentAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
             { scope ->
-                scope?.canonicalAlias ?: return@inTransaction Either.Left(
-                    ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                        scopeId = command.scopeId,
-                    ),
-                )
+                when {
+                    scope == null -> return@inTransaction Either.Left(
+                        ScopeContractError.BusinessError.NotFound(
+                            scopeId = command.scopeId,
+                        ),
+                    )
+                    scope.canonicalAlias == null -> return@inTransaction Either.Left(
+                        ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                            scopeId = command.scopeId,
+                        ),
+                    )
+                    else -> scope.canonicalAlias
+                }
             },
         )
 
