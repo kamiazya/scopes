@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListContextVi
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetContextView
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListContextViews
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler

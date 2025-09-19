@@ -2,29 +2,31 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RemoveAliasCommand
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 
 /**
  * Handler for removing aliases from scopes.
  * Ensures canonical aliases cannot be removed.
+ *
+ * Note: This handler returns contract errors directly as part of the
+ * architecture simplification to eliminate duplicate error definitions.
  */
 class RemoveAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
     private val transactionManager: TransactionManager,
+    private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
-) : CommandHandler<RemoveAliasCommand, ScopeManagementApplicationError, Unit> {
+) : CommandHandler<RemoveAliasCommand, ScopeContractError, Unit> {
 
-    private val errorPresenter = ScopeInputErrorPresenter()
-
-    override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: RemoveAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         either {
             logger.debug(
                 "Removing alias",
@@ -41,16 +43,10 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    when (error) {
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
-                            ScopeInputError.AliasEmpty(command.aliasName)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
-                            ScopeInputError.AliasTooShort(command.aliasName, error.minLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
-                            ScopeInputError.AliasTooLong(command.aliasName, error.maxLength)
-                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
-                            ScopeInputError.AliasInvalidFormat(command.aliasName, errorPresenter.presentAliasPattern(error.expectedPattern))
-                    }
+                    applicationErrorMapper.mapDomainError(
+                        error,
+                        ErrorMappingContext(attemptedValue = command.aliasName),
+                    )
                 }
                 .bind()
 
@@ -64,7 +60,7 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error
+                    applicationErrorMapper.mapToContractError(error)
                 }
                 .bind()
 
@@ -73,7 +69,7 @@ class RemoveAliasHandler(
                     "Alias not found",
                     mapOf("aliasName" to command.aliasName),
                 )
-                raise(ScopeInputError.AliasNotFound(command.aliasName))
+                raise(ScopeContractError.BusinessError.AliasNotFound(alias = command.aliasName))
             }
 
             // Remove alias through application service
@@ -86,7 +82,7 @@ class RemoveAliasHandler(
                             "error" to error.toString(),
                         ),
                     )
-                    error
+                    applicationErrorMapper.mapToContractError(error)
                 }
                 .bind()
 

@@ -20,6 +20,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Rem
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
@@ -82,9 +83,7 @@ class ScopeManagementCommandPortAdapter(
             title = command.title,
             description = command.description,
         ),
-    ).mapLeft { error ->
-        applicationErrorMapper.mapToContractError(error)
-    }.map { scopeDto ->
+    ).map { scopeDto ->
         UpdateScopeResult(
             id = scopeDto.id,
             title = scopeDto.title,
@@ -100,14 +99,12 @@ class ScopeManagementCommandPortAdapter(
         DeleteScopeCommand(
             id = command.id,
         ),
-    ).mapLeft { error ->
-        applicationErrorMapper.mapToContractError(error)
-    }
+    )
 
     override suspend fun addAlias(command: ContractAddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val existingAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
-            { error -> return@inTransaction Either.Left(applicationErrorMapper.mapToContractError(error)) },
-            { scope -> scope?.canonicalAlias ?: scope?.id ?: command.scopeId },
+            { error -> return@inTransaction Either.Left(error) },
+            { scope -> scope?.canonicalAlias ?: command.scopeId },
         )
 
         addAliasHandler(
@@ -115,23 +112,19 @@ class ScopeManagementCommandPortAdapter(
                 existingAlias = existingAlias,
                 newAlias = command.aliasName,
             ),
-        ).mapLeft { error ->
-            applicationErrorMapper.mapToContractError(error)
-        }
+        )
     }
 
     override suspend fun removeAlias(command: ContractRemoveAliasCommand): Either<ScopeContractError, Unit> = removeAliasHandler(
         RemoveAliasCommand(
             aliasName = command.aliasName,
         ),
-    ).mapLeft { error ->
-        applicationErrorMapper.mapToContractError(error)
-    }
+    )
 
     override suspend fun setCanonicalAlias(command: ContractSetCanonicalAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val currentAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
-            { error -> return@inTransaction Either.Left(applicationErrorMapper.mapToContractError(error)) },
-            { scope -> scope?.canonicalAlias ?: scope?.id ?: command.scopeId },
+            { error -> return@inTransaction Either.Left(error) },
+            { scope -> scope?.canonicalAlias ?: command.scopeId },
         )
 
         setCanonicalAliasHandler(
@@ -139,9 +132,7 @@ class ScopeManagementCommandPortAdapter(
                 currentAlias = currentAlias,
                 newCanonicalAlias = command.aliasName,
             ),
-        ).mapLeft { error ->
-            applicationErrorMapper.mapToContractError(error)
-        }
+        )
     }
 
     override suspend fun renameAlias(command: ContractRenameAliasCommand): Either<ScopeContractError, Unit> = renameAliasHandler(
@@ -149,7 +140,5 @@ class ScopeManagementCommandPortAdapter(
             currentAlias = command.oldAliasName,
             newAliasName = command.newAliasName,
         ),
-    ).mapLeft { error ->
-        applicationErrorMapper.mapToContractError(error)
-    }
+    )
 }

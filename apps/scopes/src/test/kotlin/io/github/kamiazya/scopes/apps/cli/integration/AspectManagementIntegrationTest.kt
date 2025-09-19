@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
+import arrow.core.getOrElse
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
@@ -9,6 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.UpdateAspectDefinitionHandler
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
@@ -39,6 +41,7 @@ class AspectManagementIntegrationTest :
             lateinit var scopeRepository: ScopeRepository
             lateinit var transactionManager: NoOpTransactionManager
             lateinit var logger: Logger
+            lateinit var applicationErrorMapper: ApplicationErrorMapper
 
             // Handlers
             lateinit var defineAspectHandler: DefineAspectHandler
@@ -63,13 +66,19 @@ class AspectManagementIntegrationTest :
                     override fun withContext(context: Map<String, Any>): Logger = this
                     override fun withName(name: String): Logger = this
                 }
+                applicationErrorMapper = ApplicationErrorMapper(logger)
 
                 // Initialize handlers
-                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager)
+                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager, applicationErrorMapper)
                 getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
-                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager)
+                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, applicationErrorMapper)
                 deleteAspectDefinitionHandler =
-                    DeleteAspectDefinitionHandler(aspectDefinitionRepository, AspectUsageValidationService(scopeRepository), transactionManager)
+                    DeleteAspectDefinitionHandler(
+                        aspectDefinitionRepository,
+                        AspectUsageValidationService(scopeRepository),
+                        transactionManager,
+                        applicationErrorMapper,
+                    )
                 listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager, logger)
                 validationService = AspectValueValidationService()
                 validateAspectValueUseCase = ValidateAspectValueUseCase(aspectDefinitionRepository, validationService)
@@ -88,11 +97,10 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definition ->
-                            definition.key.value shouldBe "description"
-                            definition.type shouldBe AspectType.Text
-                            definition.description shouldBe "Task description"
-                        }
+                        val definition = result.getOrElse { error("Expected success but got $it") }
+                        definition.key.value shouldBe "description"
+                        definition.type shouldBe AspectType.Text
+                        definition.description shouldBe "Task description"
                     }
                 }
 
@@ -108,10 +116,9 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definition ->
-                            definition.key.value shouldBe "estimatedHours"
-                            definition.type shouldBe AspectType.Numeric
-                        }
+                        val definition = result.getOrElse { error("Expected success but got $it") }
+                        definition.key.value shouldBe "estimatedHours"
+                        definition.type shouldBe AspectType.Numeric
                     }
                 }
 
@@ -127,10 +134,9 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definition ->
-                            definition.key.value shouldBe "isCompleted"
-                            definition.type shouldBe AspectType.BooleanType
-                        }
+                        val definition = result.getOrElse { error("Expected success but got $it") }
+                        definition.key.value shouldBe "isCompleted"
+                        definition.type shouldBe AspectType.BooleanType
                     }
                 }
 
@@ -151,11 +157,10 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definition ->
-                            definition.key.value shouldBe "priority"
-                            val orderedType = definition.type as AspectType.Ordered
-                            orderedType.allowedValues shouldContainExactlyInAnyOrder values
-                        }
+                        val definition = result.getOrElse { error("Expected success but got $it") }
+                        definition.key.value shouldBe "priority"
+                        val orderedType = definition.type as AspectType.Ordered
+                        orderedType.allowedValues shouldContainExactlyInAnyOrder values
                     }
                 }
 
@@ -171,10 +176,9 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definition ->
-                            definition.key.value shouldBe "timeSpent"
-                            definition.type shouldBe AspectType.Duration
-                        }
+                        val definition = result.getOrElse { error("Expected success but got $it") }
+                        definition.key.value shouldBe "timeSpent"
+                        definition.type shouldBe AspectType.Duration
                     }
                 }
 
@@ -202,7 +206,7 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        val definition = result.getOrNull()
+                        val definition = result.getOrElse { error("Expected success but got $it") }
                         definition shouldNotBe null
                         definition?.key shouldBe "category"
                     }
@@ -222,9 +226,8 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { updated ->
-                            updated.description shouldBe "Updated task label"
-                        }
+                        val updated = result.getOrElse { error("Expected success but got $it") }
+                        updated.description shouldBe "Updated task label"
                     }
                 }
 
@@ -243,7 +246,8 @@ class AspectManagementIntegrationTest :
                         // Verify deletion
                         val getResult = getAspectDefinitionHandler(GetAspectDefinition("temp"))
                         getResult.shouldBeRight()
-                        getResult.getOrNull() shouldBe null
+                        val definition = getResult.getOrElse { error("Expected success but got $it") }
+                        definition shouldBe null
                     }
                 }
 
@@ -260,10 +264,9 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { definitions ->
-                            definitions.size shouldBe 3
-                            definitions.map { it.key } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
-                        }
+                        val definitions = result.getOrElse { error("Expected success but got $it") }
+                        definitions.size shouldBe 3
+                        definitions.map { it.key } shouldContainExactlyInAnyOrder listOf("aspect1", "aspect2", "aspect3")
                     }
                 }
             }
@@ -280,7 +283,8 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.value shouldBe "This is a valid note"
+                        val validatedValue = result.getOrElse { error("Expected success but got $it") }
+                        validatedValue.value shouldBe "This is a valid note"
                     }
                 }
 
@@ -375,10 +379,9 @@ class AspectManagementIntegrationTest :
 
                         // Assert
                         result.shouldBeRight()
-                        result.getOrNull()?.let { validated ->
-                            val tagsKey = AspectKey.create("tags").getOrNull()!!
-                            validated[tagsKey]?.size shouldBe 3
-                        }
+                        val validated = result.getOrElse { error("Expected success but got $it") }
+                        val tagsKeyForAssertion = AspectKey.create("tags").getOrElse { error("Failed to create tags key") }
+                        validated[tagsKeyForAssertion]?.size shouldBe 3
                     }
                 }
 

@@ -2,87 +2,135 @@ package io.github.kamiazya.scopes.scopemanagement.application.query.handler.scop
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.dto.common.PagedResult
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetChildren
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for getting children of a scope.
  */
-class GetChildrenHandler(private val scopeRepository: ScopeRepository, private val transactionManager: TransactionManager, private val logger: Logger) :
-    QueryHandler<GetChildren, ScopeManagementApplicationError, PagedResult<ScopeDto>> {
+class GetChildrenHandler(
+    private val scopeRepository: ScopeRepository,
+    private val aliasRepository: ScopeAliasRepository,
+    private val transactionManager: TransactionManager,
+    private val applicationErrorMapper: ApplicationErrorMapper,
+    private val logger: Logger,
+) : QueryHandler<GetChildren, ScopeContractError, ScopeListResult> {
 
-    override suspend operator fun invoke(query: GetChildren): Either<ScopeManagementApplicationError, PagedResult<ScopeDto>> =
-        transactionManager.inReadOnlyTransaction {
-            logger.debug(
-                "Getting children of scope",
+    override suspend operator fun invoke(query: GetChildren): Either<ScopeContractError, ScopeListResult> = transactionManager.inReadOnlyTransaction {
+        logger.debug(
+            "Getting children of scope",
+            mapOf(
+                "parentId" to (query.parentId ?: "null"),
+                "offset" to query.offset,
+                "limit" to query.limit,
+            ),
+        )
+
+        either {
+            // Parse parent ID if provided
+            val parentId = query.parentId?.let { parentIdString ->
+                ScopeId.create(parentIdString)
+                    .mapLeft { error ->
+                        applicationErrorMapper.mapDomainError(
+                            error,
+                            ErrorMappingContext(attemptedValue = parentIdString),
+                        )
+                    }
+                    .bind()
+            }
+
+            // Get children from repository with database-side pagination
+            val children = scopeRepository.findByParentId(parentId, query.offset, query.limit)
+                .mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error)
+                }
+                .bind()
+            val totalCount = scopeRepository.countByParentId(parentId)
+                .mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error)
+                }
+                .bind()
+
+            // Get all canonical aliases for the children in batch
+            val scopeIds = children.map { it.id }
+            val canonicalAliasesMap = if (scopeIds.isNotEmpty()) {
+                aliasRepository.findCanonicalByScopeIds(scopeIds)
+                    .mapLeft { error ->
+                        applicationErrorMapper.mapDomainError(error)
+                    }
+                    .bind()
+                    .associateBy { it.scopeId }
+            } else {
+                emptyMap()
+            }
+
+            val scopeResults = children.map { scope ->
+                // Get canonical alias from batch result
+                val canonicalAlias = canonicalAliasesMap[scope.id]
+
+                // Missing canonical alias is a data consistency error
+                if (canonicalAlias == null) {
+                    raise(ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                        scopeId = scope.id.toString()
+                    ))
+                }
+
+                // Map to Contract DTO
+                ScopeResult(
+                    id = scope.id.toString(),
+                    title = scope.title.value,
+                    description = scope.description?.value,
+                    parentId = scope.parentId?.toString(),
+                    canonicalAlias = canonicalAlias.aliasName.value,
+                    createdAt = scope.createdAt,
+                    updatedAt = scope.updatedAt,
+                    isArchived = false,
+                    aspects = scope.aspects.toMap().mapKeys { (key, _) ->
+                        key.value
+                    }.mapValues { (_, values) ->
+                        values.map { it.value }
+                    },
+                )
+            }
+
+            val result = ScopeListResult(
+                scopes = scopeResults,
+                offset = query.offset,
+                limit = query.limit,
+                totalCount = totalCount,
+            )
+
+            logger.info(
+                "Successfully retrieved children of scope",
                 mapOf(
-                    "parentId" to (query.parentId ?: "null"),
+                    "parentId" to (parentId?.value?.toString() ?: "null"),
+                    "count" to result.scopes.size,
+                    "totalCount" to totalCount,
                     "offset" to query.offset,
                     "limit" to query.limit,
                 ),
             )
 
-            either {
-                // Parse parent ID if provided
-                val parentId = query.parentId?.let { parentIdString ->
-                    ScopeId.create(parentIdString)
-                        .mapLeft { it.toGenericApplicationError() }
-                        .bind()
-                }
-
-                // Get children from repository with database-side pagination
-                val children = scopeRepository.findByParentId(parentId, query.offset, query.limit)
-                    .mapLeft { _ ->
-                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                            operation = "findByParentId",
-                        )
-                    }
-                    .bind()
-                val totalCount = scopeRepository.countByParentId(parentId)
-                    .mapLeft { _ ->
-                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                            operation = "countByParentId",
-                        )
-                    }
-                    .bind()
-
-                val result = PagedResult(
-                    items = children.map(ScopeMapper::toDto),
-                    offset = query.offset,
-                    limit = query.limit,
-                    totalCount = totalCount,
-                )
-
-                logger.info(
-                    "Successfully retrieved children of scope",
-                    mapOf(
-                        "parentId" to (parentId?.value?.toString() ?: "null"),
-                        "count" to result.items.size,
-                        "totalCount" to totalCount,
-                        "offset" to query.offset,
-                        "limit" to query.limit,
-                    ),
-                )
-
-                result
-            }
-        }.onLeft { error ->
-            logger.error(
-                "Failed to get children of scope",
-                mapOf(
-                    "parentId" to (query.parentId ?: "null"),
-                    "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                    "message" to error.toString(),
-                ),
-            )
+            result
         }
+    }.onLeft { error ->
+        logger.error(
+            "Failed to get children of scope",
+            mapOf(
+                "parentId" to (query.parentId ?: "null"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "message" to error.toString(),
+            ),
+        )
+    }
 }

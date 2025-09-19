@@ -200,7 +200,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeAliasError.AliasNotFoundByName -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.alias,
         )
-        is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
+        is ScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+            scopeId = domainError.scopeId.value,
+            aliasName = domainError.alias,
+        )
         // Handle specific DataInconsistencyError subtypes first
         is ScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.scopeId.toString(),
@@ -217,7 +220,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         // Handle generic DataInconsistencyError and AliasGenerationFailed together
         is ScopeAliasError.AliasGenerationFailed,
         is ScopeAliasError.DataInconsistencyError,
-        -> mapSystemError()
+        -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
+        )
     }
 
     private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {
@@ -261,10 +266,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 scopeId = domainError.entityId ?: "",
                 childrenCount = null,
             )
-            "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias
-            else -> mapSystemError()
+            "removeCanonicalAlias" -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+                scopeId = domainError.entityId ?: "",
+                aliasName = "",
+            )
+            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
         }
-        else -> mapSystemError()
+        else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
     }
 
     private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {

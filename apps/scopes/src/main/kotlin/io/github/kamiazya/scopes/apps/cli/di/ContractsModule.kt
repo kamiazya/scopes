@@ -88,7 +88,6 @@ val contractsModule = module {
             defineAspectHandler = get(),
             updateAspectDefinitionHandler = get(),
             deleteAspectDefinitionHandler = get(),
-            logger = get(),
         )
     }
 

@@ -2,12 +2,11 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.co
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.error.CrossAggregateValidationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
@@ -22,29 +21,29 @@ class DeleteContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
     private val transactionManager: TransactionManager,
     private val activeContextService: ActiveContextService,
-) : CommandHandler<DeleteContextViewCommand, ScopeManagementApplicationError, Unit> {
+    private val applicationErrorMapper: ApplicationErrorMapper,
+) : CommandHandler<DeleteContextViewCommand, ScopeContractError, Unit> {
 
-    override suspend operator fun invoke(command: DeleteContextViewCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
+    override suspend operator fun invoke(command: DeleteContextViewCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         either {
             // Validate and create key value object
             val contextKey = ContextViewKey.create(command.key)
-                .mapLeft { it.toGenericApplicationError() }
+                .mapLeft { applicationErrorMapper.mapDomainError(it) }
                 .bind()
 
             // Check if context view exists
             val existingContext = contextViewRepository.findByKey(contextKey).fold(
                 { _ ->
                     raise(
-                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                            operation = "retrieve-context-view",
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "context-view-repository",
                         ),
                     )
                 },
                 { context ->
                     context ?: raise(
-                        ScopeManagementApplicationError.PersistenceError.NotFound(
-                            entityType = "ContextView",
-                            entityId = command.key,
+                        ScopeContractError.BusinessError.ContextNotFound(
+                            contextKey = command.key,
                         ),
                     )
                 },
@@ -54,10 +53,8 @@ class DeleteContextViewHandler(
             val currentContext = activeContextService.getCurrentContext()
             if (currentContext != null && currentContext.key.value == command.key) {
                 raise(
-                    CrossAggregateValidationError.InvariantViolation(
-                        invariantName = "active-context-deletion",
-                        aggregateIds = listOf(existingContext.id.toString()),
-                        violationDescription = "Cannot delete an active context",
+                    ScopeContractError.BusinessError.NotFound(
+                        scopeId = "Cannot delete an active context: ${command.key}",
                     ),
                 )
             }
@@ -66,8 +63,8 @@ class DeleteContextViewHandler(
             contextViewRepository.deleteById(existingContext.id).fold(
                 { _ ->
                     raise(
-                        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                            operation = "delete-context-view",
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "context-view-repository",
                         ),
                     )
                 },

@@ -13,7 +13,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGener
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationStrategy
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.FilterExpressionValidator
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
@@ -97,10 +96,6 @@ val scopeManagementInfrastructureModule = module {
     // Error mappers
     single<ErrorMapper> {
         ErrorMapper(logger = get())
-    }
-
-    single<ApplicationErrorMapper> {
-        ApplicationErrorMapper(logger = get())
     }
 
     // Event Sourcing Repository using contracts

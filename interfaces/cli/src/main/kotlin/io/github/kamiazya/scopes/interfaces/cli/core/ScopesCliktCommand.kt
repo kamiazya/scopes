@@ -73,11 +73,19 @@ abstract class ScopesCliktCommand(
         is ScopeContractError.BusinessError.AliasNotFound -> ExitCode.ALIAS_NOT_FOUND
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.BusinessError.AliasOfDifferentScope -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.BusinessError.AliasGenerationFailed -> ExitCode.UNAVAILABLE
+        is ScopeContractError.BusinessError.AliasGenerationValidationFailed -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.BusinessError.ContextNotFound -> ExitCode.SCOPE_NOT_FOUND
+        is ScopeContractError.BusinessError.DuplicateContextKey -> ExitCode.DUPLICATE_RESOURCE
         is ScopeContractError.InputError.InvalidTitle -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidDescription -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidId -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidParentId -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidAlias -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.InputError.InvalidContextKey -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.InputError.InvalidContextName -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.InputError.InvalidContextFilter -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> ExitCode.UNAVAILABLE
         is ScopeContractError.SystemError.ServiceUnavailable -> ExitCode.UNAVAILABLE
         is ScopeContractError.SystemError.Timeout -> ExitCode.TEMP_FAIL
         is ScopeContractError.SystemError.ConcurrentModification -> ExitCode.STATE_ERROR

@@ -45,6 +45,31 @@ object ContractErrorMessageMapper {
             is ScopeContractError.AliasValidationFailure.InvalidFormat ->
                 "Invalid alias format (expected: ${failure.expectedPattern})"
         }
+        is ScopeContractError.InputError.InvalidContextKey -> when (val failure = error.validationFailure) {
+            is ScopeContractError.ContextKeyValidationFailure.Empty -> "Context key cannot be empty"
+            is ScopeContractError.ContextKeyValidationFailure.TooShort ->
+                "Context key is too short (minimum ${failure.minimumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.ContextKeyValidationFailure.TooLong ->
+                "Context key is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.ContextKeyValidationFailure.InvalidFormat ->
+                "Invalid context key format: ${failure.invalidType}"
+        }
+        is ScopeContractError.InputError.InvalidContextName -> when (val failure = error.validationFailure) {
+            is ScopeContractError.ContextNameValidationFailure.Empty -> "Context name cannot be empty"
+            is ScopeContractError.ContextNameValidationFailure.TooLong ->
+                "Context name is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
+        }
+        is ScopeContractError.InputError.InvalidContextFilter -> when (val failure = error.validationFailure) {
+            is ScopeContractError.ContextFilterValidationFailure.Empty -> "Context filter cannot be empty"
+            is ScopeContractError.ContextFilterValidationFailure.TooShort ->
+                "Context filter is too short (minimum ${failure.minimumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.ContextFilterValidationFailure.TooLong ->
+                "Context filter is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
+            is ScopeContractError.ContextFilterValidationFailure.InvalidSyntax -> {
+                val position = failure.position?.let { " at position $it" } ?: ""
+                "Invalid filter syntax in '${failure.expression}': ${failure.errorType}$position"
+            }
+        }
 
         is ScopeContractError.BusinessError.NotFound -> {
             if (debug) {
@@ -90,6 +115,16 @@ object ContractErrorMessageMapper {
             "Cannot remove canonical alias. Set a different alias as canonical first."
         is ScopeContractError.BusinessError.AliasOfDifferentScope ->
             "Alias '${error.alias}' belongs to a different scope (expected: ${error.expectedScopeId}, actual: ${error.actualScopeId})"
+        is ScopeContractError.BusinessError.AliasGenerationFailed ->
+            "Failed to generate alias for scope ${error.scopeId} after ${error.retryCount} retries"
+        is ScopeContractError.BusinessError.AliasGenerationValidationFailed ->
+            "Generated alias '${error.alias}' failed validation: ${error.reason}"
+        is ScopeContractError.BusinessError.ContextNotFound -> "Context view not found: ${error.contextKey}"
+        is ScopeContractError.BusinessError.DuplicateContextKey ->
+            "Context key already exists: ${error.contextKey}"
+
+        is ScopeContractError.DataInconsistency.MissingCanonicalAlias ->
+            "Data inconsistency detected: Scope ${error.scopeId} is missing its canonical alias. This indicates data corruption."
 
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout -> "Operation timed out: ${error.operation}"

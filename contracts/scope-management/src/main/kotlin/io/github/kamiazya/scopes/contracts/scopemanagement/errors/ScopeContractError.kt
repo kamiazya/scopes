@@ -43,6 +43,35 @@ public sealed interface ScopeContractError {
     }
 
     /**
+     * Specific validation failures for context view key.
+     */
+    public sealed interface ContextKeyValidationFailure {
+        public data object Empty : ContextKeyValidationFailure
+        public data class TooShort(public val minimumLength: Int, public val actualLength: Int) : ContextKeyValidationFailure
+        public data class TooLong(public val maximumLength: Int, public val actualLength: Int) : ContextKeyValidationFailure
+        public data class InvalidFormat(public val invalidType: String) : ContextKeyValidationFailure
+    }
+
+    /**
+     * Specific validation failures for context view name.
+     */
+    public sealed interface ContextNameValidationFailure {
+        public data object Empty : ContextNameValidationFailure
+        public data class TooLong(public val maximumLength: Int, public val actualLength: Int) : ContextNameValidationFailure
+    }
+
+    /**
+     * Specific validation failures for context view filter.
+     */
+    public sealed interface ContextFilterValidationFailure {
+        public data object Empty : ContextFilterValidationFailure
+        public data class TooShort(public val minimumLength: Int, public val actualLength: Int) : ContextFilterValidationFailure
+        public data class TooLong(public val maximumLength: Int, public val actualLength: Int) : ContextFilterValidationFailure
+        public data class InvalidSyntax(public val expression: String, public val errorType: String, public val position: Int? = null) :
+            ContextFilterValidationFailure
+    }
+
+    /**
      * Specific types of hierarchy violations.
      */
     public sealed interface HierarchyViolationType {
@@ -124,6 +153,27 @@ public sealed interface ScopeContractError {
          * @property validationFailure Specific reason for validation failure
          */
         public data class InvalidAlias(public val alias: String, public val validationFailure: AliasValidationFailure) : InputError
+
+        /**
+         * Invalid context view key.
+         * @property key The invalid context key value
+         * @property validationFailure Specific reason for validation failure
+         */
+        public data class InvalidContextKey(public val key: String, public val validationFailure: ContextKeyValidationFailure) : InputError
+
+        /**
+         * Invalid context view name.
+         * @property name The invalid context name value
+         * @property validationFailure Specific reason for validation failure
+         */
+        public data class InvalidContextName(public val name: String, public val validationFailure: ContextNameValidationFailure) : InputError
+
+        /**
+         * Invalid context view filter.
+         * @property filter The invalid filter expression
+         * @property validationFailure Specific reason for validation failure
+         */
+        public data class InvalidContextFilter(public val filter: String, public val validationFailure: ContextFilterValidationFailure) : InputError
     }
 
     /**
@@ -187,11 +237,8 @@ public sealed interface ScopeContractError {
          * @property existingScopeId The ID of the scope that already has this alias (optional)
          * @property attemptedScopeId The ID of the scope that tried to use this alias (optional)
          */
-        public data class DuplicateAlias(
-            public val alias: String,
-            public val existingScopeId: String? = null,
-            public val attemptedScopeId: String? = null
-        ) : BusinessError
+        public data class DuplicateAlias(public val alias: String, public val existingScopeId: String? = null, public val attemptedScopeId: String? = null) :
+            BusinessError
 
         /**
          * Cannot remove canonical alias.
@@ -199,10 +246,7 @@ public sealed interface ScopeContractError {
          * @property scopeId The ID of the scope
          * @property aliasName The canonical alias that cannot be removed
          */
-        public data class CannotRemoveCanonicalAlias(
-            public val scopeId: String,
-            public val aliasName: String
-        ) : BusinessError
+        public data class CannotRemoveCanonicalAlias(public val scopeId: String, public val aliasName: String) : BusinessError
 
         /**
          * Alias belongs to a different scope.
@@ -226,6 +270,33 @@ public sealed interface ScopeContractError {
          * @property reason The reason for validation failure
          */
         public data class AliasGenerationValidationFailed(public val scopeId: String, public val alias: String, public val reason: String) : BusinessError
+
+        /**
+         * Context view not found.
+         * @property contextKey The context view key that was not found
+         */
+        public data class ContextNotFound(public val contextKey: String) : BusinessError
+
+        /**
+         * Context view key already exists.
+         * @property contextKey The context key that already exists
+         * @property existingContextId The ID of the existing context view (optional)
+         */
+        public data class DuplicateContextKey(public val contextKey: String, public val existingContextId: String? = null) : BusinessError
+    }
+
+    /**
+     * Data inconsistency detected.
+     * Indicates a violation of data integrity constraints that should never happen in normal operation.
+     * This typically indicates a bug or data corruption that requires investigation.
+     */
+    public sealed interface DataInconsistency : ScopeContractError {
+        /**
+         * Missing canonical alias for a scope.
+         * Every scope must have a canonical alias; this error indicates data corruption.
+         * @property scopeId The scope ID missing its canonical alias
+         */
+        public data class MissingCanonicalAlias(public val scopeId: String) : DataInconsistency
     }
 
     /**

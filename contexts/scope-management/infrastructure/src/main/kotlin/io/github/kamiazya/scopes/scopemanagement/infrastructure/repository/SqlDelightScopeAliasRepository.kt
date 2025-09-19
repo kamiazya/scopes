@@ -100,6 +100,24 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         ).left()
     }
 
+    override suspend fun findCanonicalByScopeIds(scopeIds: List<ScopeId>): Either<ScopesError, List<ScopeAlias>> = try {
+        if (scopeIds.isEmpty()) {
+            emptyList<ScopeAlias>().right()
+        } else {
+            // Use batch query with IN clause for better performance
+            val scopeIdValues = scopeIds.map { it.value }
+            val results = database.scopeAliasQueries.findCanonicalAliasesBatch(scopeIdValues).executeAsList()
+            results.map { rowToScopeAlias(it) }.right()
+        }
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+        ).left()
+    }
+
     override suspend fun findByScopeIdAndType(scopeId: ScopeId, aliasType: AliasType): Either<ScopesError, List<ScopeAlias>> = try {
         val results = database.scopeAliasQueries.findByTypeForScope(scopeId.value, aliasType.name).executeAsList()
         results.map { rowToScopeAlias(it) }.right()

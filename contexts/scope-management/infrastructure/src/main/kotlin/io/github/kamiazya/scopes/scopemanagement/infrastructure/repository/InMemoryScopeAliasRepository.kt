@@ -53,6 +53,16 @@ class InMemoryScopeAliasRepository : ScopeAliasRepository {
         canonicalAlias.right()
     }
 
+    override suspend fun findCanonicalByScopeIds(scopeIds: List<ScopeId>): Either<PersistenceError, List<ScopeAlias>> = mutex.withLock {
+        val canonicalAliases = scopeIds.mapNotNull { scopeId ->
+            val aliasIds = scopeIdIndex[scopeId] ?: emptySet()
+            aliasIds
+                .mapNotNull { aliases[it] }
+                .find { it.aliasType == AliasType.CANONICAL }
+        }
+        canonicalAliases.right()
+    }
+
     override suspend fun findByScopeIdAndType(scopeId: ScopeId, aliasType: AliasType): Either<PersistenceError, List<ScopeAlias>> = mutex.withLock {
         val aliasIds = scopeIdIndex[scopeId] ?: emptySet()
         val filteredAliases = aliasIds
