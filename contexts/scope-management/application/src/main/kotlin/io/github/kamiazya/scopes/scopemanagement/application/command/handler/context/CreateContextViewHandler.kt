@@ -2,12 +2,13 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.co
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
+import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
@@ -17,25 +18,29 @@ import kotlinx.datetime.Clock
 
 /**
  * Handler for creating a new context view.
+ * Uses BaseCommandHandler for common functionality and centralized error mapping.
  *
  * This handler validates the input, ensures the key is unique,
  * validates the filter syntax, and persists the new context view.
  */
-class CreateContextViewHandler(private val contextViewRepository: ContextViewRepository, private val transactionManager: TransactionManager) :
-    CommandHandler<CreateContextViewCommand, ScopeManagementApplicationError, ContextViewDto> {
+class CreateContextViewHandler(
+    private val contextViewRepository: ContextViewRepository,
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<CreateContextViewCommand, ContextViewDto>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: CreateContextViewCommand): Either<ScopeManagementApplicationError, ContextViewDto> =
-        transactionManager.inTransaction {
-            either {
+    private val errorMappingService = CentralizedErrorMappingService()
+
+    override suspend fun executeCommand(command: CreateContextViewCommand): Either<ScopeManagementApplicationError, ContextViewDto> = either {
                 // Validate and create value objects
                 val key = ContextViewKey.create(command.key)
-                    .mapLeft { it.toGenericApplicationError() }
+                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-key") }
                     .bind()
                 val name = ContextViewName.create(command.name)
-                    .mapLeft { it.toGenericApplicationError() }
+                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-name") }
                     .bind()
                 val filter = ContextViewFilter.create(command.filter)
-                    .mapLeft { it.toGenericApplicationError() }
+                    .mapLeft { errorMappingService.mapDomainError(it, "create-context-filter") }
                     .bind()
 
                 // Create the context view
@@ -45,7 +50,7 @@ class CreateContextViewHandler(private val contextViewRepository: ContextViewRep
                     filter = filter,
                     description = command.description,
                     now = Clock.System.now(),
-                ).mapLeft { it.toGenericApplicationError() }.bind()
+                ).mapLeft { errorMappingService.mapDomainError(it, "create-context-entity") }.bind()
 
                 // Save to repository
                 val saved = contextViewRepository.save(contextView).fold(
