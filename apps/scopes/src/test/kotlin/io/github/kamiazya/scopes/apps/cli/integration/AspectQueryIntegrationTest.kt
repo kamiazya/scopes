@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import arrow.core.toNonEmptyListOrNull
+import io.github.kamiazya.scopes.apps.cli.test.TestDataHelper
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
@@ -131,15 +132,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope1)
-                    
-                    // Create canonical alias for scope1
-                    val alias1 = ScopeAlias.createCanonical(
-                        scopeId = scope1.id,
-                        aliasName = AliasName.create("task-1").getOrNull()!!,
-                        timestamp = Clock.System.now()
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope1,
+                        aliasName = "task-1",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository
                     )
-                    aliasRepository.save(alias1)
 
                     scope2 = Scope(
                         id = ScopeId.generate(),
@@ -158,15 +156,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope2)
-                    
-                    // Create canonical alias for scope2
-                    val alias2 = ScopeAlias.createCanonical(
-                        scopeId = scope2.id,
-                        aliasName = AliasName.create("task-2").getOrNull()!!,
-                        timestamp = Clock.System.now()
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope2,
+                        aliasName = "task-2",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository
                     )
-                    aliasRepository.save(alias2)
 
                     scope3 = Scope(
                         id = ScopeId.generate(),
@@ -185,15 +180,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope3)
-                    
-                    // Create canonical alias for scope3
-                    val alias3 = ScopeAlias.createCanonical(
-                        scopeId = scope3.id,
-                        aliasName = AliasName.create("task-3").getOrNull()!!,
-                        timestamp = Clock.System.now()
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope3,
+                        aliasName = "task-3",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository
                     )
-                    aliasRepository.save(alias3)
 
                     scope4 = Scope(
                         id = ScopeId.generate(),
@@ -211,15 +203,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope4)
-                    
-                    // Create canonical alias for scope4
-                    val alias4 = ScopeAlias.createCanonical(
-                        scopeId = scope4.id,
-                        aliasName = AliasName.create("task-4").getOrNull()!!,
-                        timestamp = Clock.System.now()
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope4,
+                        aliasName = "task-4",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository
                     )
-                    aliasRepository.save(alias4)
                 }
             }
 

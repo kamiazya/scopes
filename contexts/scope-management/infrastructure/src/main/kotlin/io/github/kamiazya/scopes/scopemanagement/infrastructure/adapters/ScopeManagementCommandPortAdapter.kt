@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 
 import arrow.core.Either
+import arrow.core.flatMap
 import io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
@@ -23,6 +24,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Upd
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult as AppCreateScopeResult
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand as ContractCreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand as ContractDeleteScopeCommand
@@ -65,16 +68,28 @@ class ScopeManagementCommandPortAdapter(
             generateAlias = command.generateAlias,
             customAlias = command.customAlias,
         ),
-    ).map { result ->
-        CreateScopeResult(
-            id = result.id,
-            title = result.title,
-            description = result.description,
-            parentId = result.parentId,
-            canonicalAlias = result.canonicalAlias ?: result.id,
-            createdAt = result.createdAt,
-            updatedAt = result.createdAt,
-        )
+    ).flatMap { result: AppCreateScopeResult ->
+        // Fail fast at contract boundary for data integrity
+        val canonicalAlias = result.canonicalAlias
+        if (canonicalAlias == null) {
+            Either.Left(
+                ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                    scopeId = result.id
+                )
+            )
+        } else {
+            Either.Right(
+                CreateScopeResult(
+                    id = result.id,
+                    title = result.title,
+                    description = result.description,
+                    parentId = result.parentId,
+                    canonicalAlias = canonicalAlias,
+                    createdAt = result.createdAt,
+                    updatedAt = result.createdAt, // Note: Application result doesn't have updatedAt field
+                )
+            )
+        }
     }
 
     override suspend fun updateScope(command: ContractUpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult> = updateScopeHandler(
@@ -83,16 +98,28 @@ class ScopeManagementCommandPortAdapter(
             title = command.title,
             description = command.description,
         ),
-    ).map { scopeDto ->
-        UpdateScopeResult(
-            id = scopeDto.id,
-            title = scopeDto.title,
-            description = scopeDto.description,
-            parentId = scopeDto.parentId,
-            canonicalAlias = scopeDto.canonicalAlias ?: scopeDto.id,
-            createdAt = scopeDto.createdAt,
-            updatedAt = scopeDto.updatedAt,
-        )
+    ).flatMap { scopeDto: ScopeDto ->
+        // Fail fast at contract boundary for data integrity
+        val canonicalAlias = scopeDto.canonicalAlias
+        if (canonicalAlias == null) {
+            Either.Left(
+                ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                    scopeId = scopeDto.id
+                )
+            )
+        } else {
+            Either.Right(
+                UpdateScopeResult(
+                    id = scopeDto.id,
+                    title = scopeDto.title,
+                    description = scopeDto.description,
+                    parentId = scopeDto.parentId,
+                    canonicalAlias = canonicalAlias,
+                    createdAt = scopeDto.createdAt,
+                    updatedAt = scopeDto.updatedAt,
+                )
+            )
+        }
     }
 
     override suspend fun deleteScope(command: ContractDeleteScopeCommand): Either<ScopeContractError, Unit> = deleteScopeHandler(
@@ -102,9 +129,16 @@ class ScopeManagementCommandPortAdapter(
     )
 
     override suspend fun addAlias(command: ContractAddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
-        val existingAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
+        val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))
+        val existingAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
-            { scope -> scope?.canonicalAlias ?: command.scopeId },
+            { scope -> 
+                scope?.canonicalAlias ?: return@inTransaction Either.Left(
+                    ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                        scopeId = command.scopeId
+                    )
+                )
+            },
         )
 
         addAliasHandler(
@@ -122,9 +156,16 @@ class ScopeManagementCommandPortAdapter(
     )
 
     override suspend fun setCanonicalAlias(command: ContractSetCanonicalAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
-        val currentAlias = getScopeByIdHandler(GetScopeById(command.scopeId)).fold(
+        val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))
+        val currentAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
-            { scope -> scope?.canonicalAlias ?: command.scopeId },
+            { scope -> 
+                scope?.canonicalAlias ?: return@inTransaction Either.Left(
+                    ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                        scopeId = command.scopeId
+                    )
+                )
+            },
         )
 
         setCanonicalAliasHandler(

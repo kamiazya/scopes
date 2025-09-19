@@ -28,53 +28,67 @@ object ErrorMessageMapper {
         is ScopeContractError.InputError -> when (error) {
             is ScopeContractError.InputError.InvalidId ->
                 "Invalid ID format: ${error.id}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
-            is ScopeContractError.InputError.InvalidTitle -> when (val failure = error.validationFailure) {
-                is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
-                is ScopeContractError.TitleValidationFailure.TooShort ->
-                    "Title too short: minimum ${failure.minimumLength} characters"
-                is ScopeContractError.TitleValidationFailure.TooLong ->
-                    "Title too long: maximum ${failure.maximumLength} characters"
-                is ScopeContractError.TitleValidationFailure.InvalidCharacters ->
-                    "Title contains invalid characters: ${failure.prohibitedCharacters.joinToString()}"
+            is ScopeContractError.InputError.InvalidTitle -> {
+                // Use shorter message format for CLI
+                val fullMessage = ValidationMessageFormatter.formatTitleValidationFailure(error.validationFailure)
+                val failure = error.validationFailure
+                when (failure) {
+                    is ScopeContractError.TitleValidationFailure.TooShort ->
+                        "Title too short: minimum ${failure.minimumLength} characters"
+                    is ScopeContractError.TitleValidationFailure.TooLong ->
+                        "Title too long: maximum ${failure.maximumLength} characters"
+                    else -> fullMessage
+                }
             }
-            is ScopeContractError.InputError.InvalidDescription -> when (val failure = error.validationFailure) {
-                is ScopeContractError.DescriptionValidationFailure.TooLong ->
-                    "Description too long: maximum ${failure.maximumLength} characters"
+            is ScopeContractError.InputError.InvalidDescription -> {
+                // Use shorter message format for CLI
+                "Description too long: maximum ${(error.validationFailure as ScopeContractError.DescriptionValidationFailure.TooLong).maximumLength} characters"
             }
             is ScopeContractError.InputError.InvalidParentId ->
                 "Invalid parent ID: ${error.parentId}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
-            is ScopeContractError.InputError.InvalidAlias -> when (val failure = error.validationFailure) {
-                is ScopeContractError.AliasValidationFailure.Empty -> "Alias cannot be empty"
-                is ScopeContractError.AliasValidationFailure.TooShort ->
-                    "Alias too short: minimum ${failure.minimumLength} characters"
-                is ScopeContractError.AliasValidationFailure.TooLong ->
-                    "Alias too long: maximum ${failure.maximumLength} characters"
-                is ScopeContractError.AliasValidationFailure.InvalidFormat ->
-                    "Invalid alias format (expected: ${failure.expectedPattern})"
+            is ScopeContractError.InputError.InvalidAlias -> {
+                // Use shorter message format for CLI  
+                val fullMessage = ValidationMessageFormatter.formatAliasValidationFailure(error.validationFailure)
+                val failure = error.validationFailure
+                when (failure) {
+                    is ScopeContractError.AliasValidationFailure.TooShort ->
+                        "Alias too short: minimum ${failure.minimumLength} characters"
+                    is ScopeContractError.AliasValidationFailure.TooLong ->
+                        "Alias too long: maximum ${failure.maximumLength} characters"
+                    else -> fullMessage
+                }
             }
-            is ScopeContractError.InputError.InvalidContextKey -> when (val failure = error.validationFailure) {
-                is ScopeContractError.ContextKeyValidationFailure.Empty -> "Context key cannot be empty"
-                is ScopeContractError.ContextKeyValidationFailure.TooShort ->
-                    "Context key too short: minimum ${failure.minimumLength} characters"
-                is ScopeContractError.ContextKeyValidationFailure.TooLong ->
-                    "Context key too long: maximum ${failure.maximumLength} characters"
-                is ScopeContractError.ContextKeyValidationFailure.InvalidFormat ->
-                    "Invalid context key format: ${failure.invalidType}"
+            is ScopeContractError.InputError.InvalidContextKey -> {
+                // Use shorter message format for CLI
+                val failure = error.validationFailure
+                when (failure) {
+                    is ScopeContractError.ContextKeyValidationFailure.TooShort ->
+                        "Context key too short: minimum ${failure.minimumLength} characters"
+                    is ScopeContractError.ContextKeyValidationFailure.TooLong ->
+                        "Context key too long: maximum ${failure.maximumLength} characters"
+                    is ScopeContractError.ContextKeyValidationFailure.InvalidFormat ->
+                        "Invalid context key format: ${failure.invalidType}"
+                    else -> ValidationMessageFormatter.formatContextKeyValidationFailure(failure)
+                }
             }
-            is ScopeContractError.InputError.InvalidContextName -> when (val failure = error.validationFailure) {
-                is ScopeContractError.ContextNameValidationFailure.Empty -> "Context name cannot be empty"
-                is ScopeContractError.ContextNameValidationFailure.TooLong ->
+            is ScopeContractError.InputError.InvalidContextName -> {
+                // Use shorter message format for CLI
+                val failure = error.validationFailure
+                if (failure is ScopeContractError.ContextNameValidationFailure.TooLong) {
                     "Context name too long: maximum ${failure.maximumLength} characters"
+                } else {
+                    ValidationMessageFormatter.formatContextNameValidationFailure(failure)
+                }
             }
-            is ScopeContractError.InputError.InvalidContextFilter -> when (val failure = error.validationFailure) {
-                is ScopeContractError.ContextFilterValidationFailure.Empty -> "Context filter cannot be empty"
-                is ScopeContractError.ContextFilterValidationFailure.TooShort ->
-                    "Context filter too short: minimum ${failure.minimumLength} characters"
-                is ScopeContractError.ContextFilterValidationFailure.TooLong ->
-                    "Context filter too long: maximum ${failure.maximumLength} characters"
-                is ScopeContractError.ContextFilterValidationFailure.InvalidSyntax -> {
-                    val position = failure.position?.let { " at position $it" } ?: ""
-                    "Invalid filter syntax: ${failure.errorType}$position"
+            is ScopeContractError.InputError.InvalidContextFilter -> {
+                // Use shorter message format for CLI
+                val failure = error.validationFailure
+                when (failure) {
+                    is ScopeContractError.ContextFilterValidationFailure.TooShort ->
+                        "Context filter too short: minimum ${failure.minimumLength} characters"
+                    is ScopeContractError.ContextFilterValidationFailure.TooLong ->
+                        "Context filter too long: maximum ${failure.maximumLength} characters"
+                    else -> ValidationMessageFormatter.formatContextFilterValidationFailure(failure)
                 }
             }
         }
@@ -82,17 +96,18 @@ object ErrorMessageMapper {
             is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
             is ScopeContractError.BusinessError.DuplicateTitle ->
                 "Duplicate title '${error.title}'${error.parentId?.let { " under parent $it" } ?: " at root level"}"
-            is ScopeContractError.BusinessError.HierarchyViolation -> when (val violation = error.violation) {
-                is ScopeContractError.HierarchyViolationType.CircularReference ->
-                    "Circular reference detected: ${violation.scopeId} -> ${violation.parentId}"
-                is ScopeContractError.HierarchyViolationType.MaxDepthExceeded ->
-                    "Maximum depth exceeded: ${violation.attemptedDepth} (max: ${violation.maximumDepth})"
-                is ScopeContractError.HierarchyViolationType.MaxChildrenExceeded ->
-                    "Maximum children exceeded for ${violation.parentId}: ${violation.currentChildrenCount} (max: ${violation.maximumChildren})"
-                is ScopeContractError.HierarchyViolationType.SelfParenting ->
-                    "Cannot set scope ${violation.scopeId} as its own parent"
-                is ScopeContractError.HierarchyViolationType.ParentNotFound ->
-                    "Parent ${violation.parentId} not found for scope ${violation.scopeId}"
+            is ScopeContractError.BusinessError.HierarchyViolation -> {
+                // Use shorter format for CLI
+                val violation = error.violation
+                when (violation) {
+                    is ScopeContractError.HierarchyViolationType.CircularReference ->
+                        "Circular reference detected: ${violation.scopeId} -> ${violation.parentId}"
+                    is ScopeContractError.HierarchyViolationType.MaxDepthExceeded ->
+                        "Maximum depth exceeded: ${violation.attemptedDepth} (max: ${violation.maximumDepth})"
+                    is ScopeContractError.HierarchyViolationType.MaxChildrenExceeded ->
+                        "Maximum children exceeded for ${violation.parentId}: ${violation.currentChildrenCount} (max: ${violation.maximumChildren})"
+                    else -> ValidationMessageFormatter.formatHierarchyViolation(violation)
+                }
             }
             is ScopeContractError.BusinessError.AlreadyDeleted -> "Already deleted: ${error.scopeId}"
             is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
@@ -113,7 +128,7 @@ object ErrorMessageMapper {
             is ScopeContractError.BusinessError.DuplicateContextKey -> "Context key already exists: ${error.contextKey}"
         }
         is ScopeContractError.DataInconsistency.MissingCanonicalAlias ->
-            "Data inconsistency: Scope ${error.scopeId} is missing its canonical alias"
+            "Data inconsistency: Scope ${error.scopeId} is missing its canonical alias. Contact administrator to rebuild aliases."
         is ScopeContractError.SystemError -> when (error) {
             is ScopeContractError.SystemError.ServiceUnavailable ->
                 "Service unavailable: ${error.service}"
