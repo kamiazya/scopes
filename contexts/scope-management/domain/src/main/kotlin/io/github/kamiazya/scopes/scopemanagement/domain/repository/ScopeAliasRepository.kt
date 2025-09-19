@@ -57,6 +57,15 @@ interface ScopeAliasRepository {
     suspend fun findCanonicalByScopeId(scopeId: ScopeId): Either<ScopesError, ScopeAlias?>
 
     /**
+     * Finds the canonical aliases for multiple scopes in batch.
+     * This is more efficient than calling findCanonicalByScopeId multiple times.
+     *
+     * @param scopeIds The scope IDs to search for
+     * @return Either a persistence error or the list of canonical aliases
+     */
+    suspend fun findCanonicalByScopeIds(scopeIds: List<ScopeId>): Either<ScopesError, List<ScopeAlias>>
+
+    /**
      * Finds aliases by type for a specific scope.
      *
      * @param scopeId The scope ID to search for

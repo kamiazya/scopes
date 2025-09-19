@@ -12,6 +12,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.service.ActiveContextService
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand as AppCreateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.DeleteContextViewCommand as AppDeleteContextViewCommand
@@ -40,7 +41,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }
@@ -56,7 +57,7 @@ public class ContextViewCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }
@@ -65,7 +66,7 @@ public class ContextViewCommandPortAdapter(
         val result = deleteContextViewHandler(AppDeleteContextViewCommand(command.key))
 
         return result.fold(
-            ifLeft = { error -> applicationErrorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }

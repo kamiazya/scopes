@@ -2,73 +2,107 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.as
 
 import arrow.core.Either
 import arrow.core.raise.either
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DeleteAspectDefinitionCommand
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.service.validation.AspectUsageValidationService
-import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 
 /**
  * Handler for deleting an aspect definition.
  * Validates that the aspect is not in use before allowing deletion.
+ * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
+ * for error mapping to contract errors.
  */
 class DeleteAspectDefinitionHandler(
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val aspectUsageValidationService: AspectUsageValidationService,
-    private val transactionManager: TransactionManager,
-) : CommandHandler<DeleteAspectDefinitionCommand, ScopeManagementApplicationError, Unit> {
+    private val applicationErrorMapper: ApplicationErrorMapper,
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<DeleteAspectDefinitionCommand, Unit>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: DeleteAspectDefinitionCommand): Either<ScopeManagementApplicationError, Unit> =
-        transactionManager.inTransaction {
-            either {
-                // Validate and create aspect key
-                val aspectKey = AspectKey.create(command.key)
-                    .mapLeft { it.toGenericApplicationError() }
-                    .bind()
-
-                // Check if definition exists
-                aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    {
-                        raise(
-                            ScopesError.SystemError(
-                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "aspect-repository",
-                                context = mapOf("operation" to "retrieve-aspect-definition", "key" to command.key),
-                            ).toGenericApplicationError(),
-                        )
-                    },
-                    { definition ->
-                        definition ?: raise(
-                            ScopesError.NotFound(
-                                entityType = "AspectDefinition",
-                                identifier = command.key,
-                                identifierType = "key",
-                            ).toGenericApplicationError(),
-                        )
-                    },
+    override suspend fun executeCommand(command: DeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> = either {
+        logger.info(
+            "Deleting aspect definition",
+            mapOf("aspectKey" to command.key),
+        )
+        
+        // Validate and create aspect key
+        val aspectKey = AspectKey.create(command.key)
+            .mapLeft { error ->
+                logger.error(
+                    "Invalid aspect key",
+                    mapOf(
+                        "key" to command.key,
+                        "error" to error.toString(),
+                    ),
                 )
-
-                // Check if aspect is in use by any scopes
-                aspectUsageValidationService.ensureNotInUse(aspectKey)
-                    .bind()
-
-                // Delete from repository
-                aspectDefinitionRepository.deleteByKey(aspectKey).fold(
-                    {
-                        raise(
-                            ScopesError.SystemError(
-                                errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                service = "aspect-repository",
-                                context = mapOf("operation" to "delete-aspect-definition", "key" to command.key),
-                            ).toGenericApplicationError(),
-                        )
-                    },
-                    { Unit },
-                )
+                applicationErrorMapper.mapDomainError(error)
             }
+            .bind()
+
+        // Check if definition exists
+        val existing = aspectDefinitionRepository.findByKey(aspectKey)
+            .mapLeft { error ->
+                logger.error(
+                    "Failed to find aspect definition",
+                    mapOf(
+                        "key" to command.key,
+                        "error" to error.toString(),
+                    ),
+                )
+                applicationErrorMapper.mapDomainError(error)
+            }
+            .bind()
+        
+        if (existing == null) {
+            logger.error(
+                "Aspect definition not found",
+                mapOf("key" to command.key),
+            )
+            raise(
+                ScopeContractError.BusinessError.NotFound(
+                    scopeId = command.key,
+                ),
+            )
         }
+
+        // Check if aspect is in use by any scopes
+        aspectUsageValidationService.ensureNotInUse(aspectKey)
+            .mapLeft { error ->
+                logger.error(
+                    "Aspect is in use",
+                    mapOf(
+                        "key" to command.key,
+                        "error" to error.toString(),
+                    ),
+                )
+                applicationErrorMapper.mapToContractError(error)
+            }
+            .bind()
+
+        // Delete from repository
+        aspectDefinitionRepository.deleteByKey(aspectKey)
+            .mapLeft { error ->
+                logger.error(
+                    "Failed to delete aspect definition",
+                    mapOf(
+                        "key" to command.key,
+                        "error" to error.toString(),
+                    ),
+                )
+                applicationErrorMapper.mapDomainError(error)
+            }
+            .bind()
+        
+        logger.info(
+            "Aspect definition deleted successfully",
+            mapOf("aspectKey" to command.key),
+        )
+    }
 }

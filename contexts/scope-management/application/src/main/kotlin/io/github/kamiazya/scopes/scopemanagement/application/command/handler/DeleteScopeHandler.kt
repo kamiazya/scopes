@@ -3,63 +3,79 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeHierarchyApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
-import io.github.kamiazya.scopes.scopemanagement.application.service.error.CentralizedErrorMappingService
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
+import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for deleting a scope.
- * Uses BaseCommandHandler for common functionality and centralized error mapping.
+ * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
+ * for error mapping to contract errors.
+ * Supports cascade deletion of child scopes.
  */
-class DeleteScopeHandler(private val scopeRepository: ScopeRepository, transactionManager: TransactionManager, logger: Logger) :
-    BaseCommandHandler<DeleteScopeCommand, Unit>(transactionManager, logger) {
+class DeleteScopeHandler(
+    private val scopeRepository: ScopeRepository,
+    private val applicationErrorMapper: ApplicationErrorMapper,
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<DeleteScopeCommand, Unit>(transactionManager, logger) {
 
-    private val errorMappingService = CentralizedErrorMappingService()
+    override suspend fun executeCommand(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = either {
+        logger.info(
+            "Deleting scope",
+            mapOf(
+                "scopeId" to command.id,
+                "cascade" to command.cascade.toString(),
+            ),
+        )
 
-    override suspend fun executeCommand(command: DeleteScopeCommand): Either<ScopeManagementApplicationError, Unit> = either {
-        val scopeId = ScopeId.create(command.id).mapLeft {
-            errorMappingService.mapScopeIdError(it, command.id, "delete-scope")
+        val scopeId = ScopeId.create(command.id).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(
+                error,
+                ErrorMappingContext(attemptedValue = command.id),
+            )
         }.bind()
-
+        
         validateScopeExists(scopeId).bind()
         handleChildrenDeletion(scopeId, command.cascade).bind()
-        scopeRepository.deleteById(scopeId).mapLeft {
-            errorMappingService.mapRepositoryError(it, "delete-scope-final")
+        
+        scopeRepository.deleteById(scopeId).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
         }.bind()
-
+        
         logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
     }
 
-    private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopeManagementApplicationError, Unit> = either {
-        val existingScope = scopeRepository.findById(scopeId).mapLeft {
-            errorMappingService.mapRepositoryError(it, "delete-scope-validation")
+    private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
+        val existingScope = scopeRepository.findById(scopeId).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
         }.bind()
         ensure(existingScope != null) {
             logger.warn("Scope not found for deletion", mapOf("scopeId" to scopeId.value))
-            errorMappingService.mapScopeNotFoundError(scopeId, "delete-scope")
+            ScopeContractError.BusinessError.NotFound(scopeId = scopeId.value)
         }
     }
 
-    private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopeManagementApplicationError, Unit> = either {
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000)
-            .mapLeft { errorMappingService.mapRepositoryError(it, "delete-scope-find-children") }.bind()
+    private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopeContractError, Unit> = either {
+        val allChildren = fetchAllChildren(scopeId).bind()
 
-        if (children.isNotEmpty()) {
+        if (allChildren.isNotEmpty()) {
             if (cascade) {
                 logger.debug(
                     "Cascade deleting children",
                     mapOf(
                         "parentId" to scopeId.value,
-                        "childCount" to children.size.toString(),
+                        "childCount" to allChildren.size.toString(),
                     ),
                 )
-                for (child in children) {
+                for (child in allChildren) {
                     deleteRecursive(child.id).bind()
                 }
             } else {
@@ -67,34 +83,63 @@ class DeleteScopeHandler(private val scopeRepository: ScopeRepository, transacti
                     "Cannot delete scope with children",
                     mapOf(
                         "scopeId" to scopeId.value,
-                        "childCount" to children.size.toString(),
+                        "childCount" to allChildren.size.toString(),
                     ),
                 )
                 raise(
-                    ScopeHierarchyApplicationError.HasChildren(
+                    ScopeContractError.BusinessError.HasChildren(
                         scopeId = scopeId.value,
-                        childCount = children.size,
+                        childrenCount = allChildren.size,
                     ),
                 )
             }
         }
     }
 
-    private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopeManagementApplicationError, Unit> = either {
-        // Find children of this scope
-        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).mapLeft {
-            errorMappingService.mapRepositoryError(it, "delete-scope-recursive-find-children")
-        }.bind()
+    private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
+        // Find all children of this scope using proper pagination
+        val allChildren = fetchAllChildren(scopeId).bind()
 
         // Recursively delete all children
-        for (child in children) {
+        for (child in allChildren) {
             deleteRecursive(child.id).bind()
         }
 
         // Delete this scope
-        scopeRepository.deleteById(scopeId).mapLeft {
-            errorMappingService.mapRepositoryError(it, "delete-scope-recursive")
+        scopeRepository.deleteById(scopeId).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
         }.bind()
         logger.debug("Recursively deleted scope", mapOf("scopeId" to scopeId.value))
+    }
+
+    /**
+     * Fetch all children of a scope using pagination to avoid the limit of 1000.
+     * This ensures complete cascade deletion without leaving orphaned records.
+     */
+    private suspend fun fetchAllChildren(parentId: ScopeId): Either<ScopeContractError, List<Scope>> = either {
+        val allChildren = mutableListOf<Scope>()
+        var offset = 0
+        val batchSize = 1000
+
+        do {
+            val batch = scopeRepository.findByParentId(parentId, offset = offset, limit = batchSize)
+                .mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error)
+                }.bind()
+
+            allChildren.addAll(batch)
+            offset += batch.size
+
+            logger.debug(
+                "Fetched children batch",
+                mapOf(
+                    "parentId" to parentId.value,
+                    "batchSize" to batch.size.toString(),
+                    "totalSoFar" to allChildren.size.toString(),
+                ),
+            )
+        } while (batch.size == batchSize) // Continue if we got a full batch
+
+        allChildren
     }
 }

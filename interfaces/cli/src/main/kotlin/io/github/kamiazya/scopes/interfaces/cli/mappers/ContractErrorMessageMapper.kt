@@ -19,31 +19,24 @@ object ContractErrorMessageMapper {
                 "Invalid scope ID format: ${error.id}$formatHint"
             }
         }
-        is ScopeContractError.InputError.InvalidTitle -> when (val failure = error.validationFailure) {
-            is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
-            is ScopeContractError.TitleValidationFailure.TooShort ->
-                "Title is too short (minimum ${failure.minimumLength} characters, got ${failure.actualLength})"
-            is ScopeContractError.TitleValidationFailure.TooLong ->
-                "Title is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
-            is ScopeContractError.TitleValidationFailure.InvalidCharacters ->
-                "Title contains prohibited characters: ${failure.prohibitedCharacters.joinToString(", ")}"
-        }
-        is ScopeContractError.InputError.InvalidDescription -> when (val failure = error.validationFailure) {
-            is ScopeContractError.DescriptionValidationFailure.TooLong ->
-                "Description is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
-        }
+        is ScopeContractError.InputError.InvalidTitle -> ValidationMessageFormatter.formatTitleValidationFailure(error.validationFailure)
+        is ScopeContractError.InputError.InvalidDescription -> ValidationMessageFormatter.formatDescriptionValidationFailure(error.validationFailure)
         is ScopeContractError.InputError.InvalidParentId -> {
             val formatHint = error.expectedFormat?.let { " (expected: $it)" } ?: ""
             "Invalid parent scope ID: ${error.parentId}$formatHint"
         }
-        is ScopeContractError.InputError.InvalidAlias -> when (val failure = error.validationFailure) {
-            is ScopeContractError.AliasValidationFailure.Empty -> "Alias cannot be empty"
-            is ScopeContractError.AliasValidationFailure.TooShort ->
-                "Alias is too short (minimum ${failure.minimumLength} characters, got ${failure.actualLength})"
-            is ScopeContractError.AliasValidationFailure.TooLong ->
-                "Alias is too long (maximum ${failure.maximumLength} characters, got ${failure.actualLength})"
-            is ScopeContractError.AliasValidationFailure.InvalidFormat ->
-                "Invalid alias format (expected: ${failure.expectedPattern})"
+        is ScopeContractError.InputError.InvalidAlias -> ValidationMessageFormatter.formatAliasValidationFailure(error.validationFailure)
+        is ScopeContractError.InputError.InvalidContextKey -> ValidationMessageFormatter.formatContextKeyValidationFailure(error.validationFailure)
+        is ScopeContractError.InputError.InvalidContextName -> ValidationMessageFormatter.formatContextNameValidationFailure(error.validationFailure)
+        is ScopeContractError.InputError.InvalidContextFilter -> {
+            val formatted = ValidationMessageFormatter.formatContextFilterValidationFailure(error.validationFailure)
+            // Add expression context for InvalidSyntax case
+            val failure = error.validationFailure
+            if (failure is ScopeContractError.ContextFilterValidationFailure.InvalidSyntax) {
+                "Invalid filter syntax in '${failure.expression}': ${failure.errorType}${failure.position?.let { " at position $it" } ?: ""}"
+            } else {
+                formatted
+            }
         }
 
         is ScopeContractError.BusinessError.NotFound -> {
@@ -61,22 +54,7 @@ object ContractErrorMessageMapper {
                 "A scope with title '${error.title}' already exists $location"
             }
         }
-        is ScopeContractError.BusinessError.HierarchyViolation -> when (val violation = error.violation) {
-            is ScopeContractError.HierarchyViolationType.CircularReference -> {
-                val pathInfo = violation.cyclePath?.let { path ->
-                    " (cycle: ${path.joinToString(" -> ")})"
-                } ?: ""
-                "Circular reference detected: scope ${violation.scopeId} cannot have parent ${violation.parentId}$pathInfo"
-            }
-            is ScopeContractError.HierarchyViolationType.MaxDepthExceeded ->
-                "Maximum hierarchy depth exceeded: attempted ${violation.attemptedDepth}, maximum ${violation.maximumDepth}"
-            is ScopeContractError.HierarchyViolationType.MaxChildrenExceeded ->
-                "Maximum children exceeded for parent ${violation.parentId}: current ${violation.currentChildrenCount}, maximum ${violation.maximumChildren}"
-            is ScopeContractError.HierarchyViolationType.SelfParenting ->
-                "Cannot set scope ${violation.scopeId} as its own parent"
-            is ScopeContractError.HierarchyViolationType.ParentNotFound ->
-                "Parent scope ${violation.parentId} not found for scope ${violation.scopeId}"
-        }
+        is ScopeContractError.BusinessError.HierarchyViolation -> ValidationMessageFormatter.formatHierarchyViolation(error.violation)
         is ScopeContractError.BusinessError.AlreadyDeleted -> "Scope is already deleted: ${error.scopeId}"
         is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
         is ScopeContractError.BusinessError.NotArchived -> "Scope is not archived: ${error.scopeId}"
@@ -90,6 +68,16 @@ object ContractErrorMessageMapper {
             "Cannot remove canonical alias. Set a different alias as canonical first."
         is ScopeContractError.BusinessError.AliasOfDifferentScope ->
             "Alias '${error.alias}' belongs to a different scope (expected: ${error.expectedScopeId}, actual: ${error.actualScopeId})"
+        is ScopeContractError.BusinessError.AliasGenerationFailed ->
+            "Failed to generate alias for scope ${error.scopeId} after ${error.retryCount} retries"
+        is ScopeContractError.BusinessError.AliasGenerationValidationFailed ->
+            "Generated alias '${error.alias}' failed validation: ${error.reason}"
+        is ScopeContractError.BusinessError.ContextNotFound -> "Context view not found: ${error.contextKey}"
+        is ScopeContractError.BusinessError.DuplicateContextKey ->
+            "Context key already exists: ${error.contextKey}"
+
+        is ScopeContractError.DataInconsistency.MissingCanonicalAlias ->
+            "Data inconsistency detected: Scope ${error.scopeId} is missing its canonical alias. This indicates data corruption. Contact administrator to rebuild aliases."
 
         is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout -> "Operation timed out: ${error.operation}"

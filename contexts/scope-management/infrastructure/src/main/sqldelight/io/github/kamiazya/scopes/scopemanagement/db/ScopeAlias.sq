@@ -51,6 +51,13 @@ FROM scope_aliases
 WHERE scope_id = ? AND alias_type = 'CANONICAL'
 LIMIT 1;
 
+-- Find canonical aliases for multiple scopes (batch operation)
+findCanonicalAliasesBatch:
+SELECT *
+FROM scope_aliases
+WHERE scope_id IN ? AND alias_type = 'CANONICAL'
+ORDER BY scope_id;
+
 -- Find aliases by type
 findByTypeForScope:
 SELECT *

@@ -3,12 +3,12 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.co
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.CreateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ContextError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
@@ -31,8 +31,9 @@ class CreateContextViewUseCaseTest :
         describe("CreateContextViewHandler") {
             val contextViewRepository = mockk<ContextViewRepository>()
             val transactionManager = mockk<TransactionManager>()
+            val applicationErrorMapper = mockk<ApplicationErrorMapper>()
             val logger = mockk<io.github.kamiazya.scopes.platform.observability.logging.Logger>(relaxed = true)
-            val handler = CreateContextViewHandler(contextViewRepository, transactionManager, logger)
+            val handler = CreateContextViewHandler(contextViewRepository, applicationErrorMapper, transactionManager, logger)
 
             beforeEach {
                 // Clear all mocks before each test
@@ -40,11 +41,11 @@ class CreateContextViewUseCaseTest :
 
                 // Setup transaction manager to execute the block directly
                 coEvery {
-                    transactionManager.inTransaction<ScopeManagementApplicationError, ContextViewDto>(any())
+                    transactionManager.inTransaction<ScopeContractError, ContextViewDto>(any())
                 } coAnswers {
                     val block = arg<
                         suspend io.github.kamiazya.scopes.platform.application.port.TransactionContext.() ->
-                        Either<ScopeManagementApplicationError, ContextViewDto>,
+                        Either<ScopeContractError, ContextViewDto>,
                         >(0)
                     // Create a mock transaction context
                     val transactionContext =
@@ -132,13 +133,25 @@ class CreateContextViewUseCaseTest :
                         description = null,
                     )
 
+                    // Mock the mapper to return appropriate contract error
+                    coEvery {
+                        applicationErrorMapper.mapDomainError(any<io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError>())
+                    } returns ScopeContractError.InputError.InvalidContextKey(
+                        key = "",
+                        validationFailure = ScopeContractError.ContextKeyValidationFailure.Empty,
+                    )
+
                     // When
                     val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.KeyInvalidFormat) shouldBe true
+                    (error is ScopeContractError.InputError.InvalidContextKey) shouldBe true
+                    if (error is ScopeContractError.InputError.InvalidContextKey) {
+                        error.key shouldBe ""
+                        error.validationFailure shouldBe ScopeContractError.ContextKeyValidationFailure.Empty
+                    }
                 }
 
                 it("should return validation error for invalid filter syntax") {
@@ -150,15 +163,28 @@ class CreateContextViewUseCaseTest :
                         description = null,
                     )
 
+                    // Mock the mapper to return appropriate contract error
+                    coEvery {
+                        applicationErrorMapper.mapDomainError(any<io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError>())
+                    } returns ScopeContractError.InputError.InvalidContextFilter(
+                        filter = "((unclosed parenthesis",
+                        validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
+                            expression = "((unclosed parenthesis",
+                            errorType = "UnbalancedParentheses",
+                        ),
+                    )
+
                     // When
                     val result = handler(command)
 
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ContextError.InvalidFilter) shouldBe true
-                    if (error is ContextError.InvalidFilter) {
+                    (error is ScopeContractError.InputError.InvalidContextFilter) shouldBe true
+                    if (error is ScopeContractError.InputError.InvalidContextFilter) {
                         error.filter shouldBe "((unclosed parenthesis"
+                        val failure = error.validationFailure as? ScopeContractError.ContextFilterValidationFailure.InvalidSyntax
+                        failure?.errorType shouldBe "UnbalancedParentheses"
                     }
                 }
 
@@ -186,9 +212,10 @@ class CreateContextViewUseCaseTest :
                     // Then
                     result.shouldBeLeft()
                     val error = result.leftOrNull()!!
-                    (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) shouldBe true
-                    if (error is ScopeManagementApplicationError.PersistenceError.StorageUnavailable) {
-                        error.operation shouldBe "save-context-view"
+                    // Since repository errors are mapped to ServiceUnavailable in the handler
+                    (error is ScopeContractError.SystemError.ServiceUnavailable) shouldBe true
+                    if (error is ScopeContractError.SystemError.ServiceUnavailable) {
+                        error.service shouldBe "context-view-repository"
                     }
                 }
             }

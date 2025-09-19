@@ -2,10 +2,10 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 
 /**
  * Abstract base class for scope management command handlers.
@@ -16,13 +16,13 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManageme
  * - Template method pattern for consistent structure
  */
 abstract class BaseCommandHandler<C, R>(protected val transactionManager: TransactionManager, protected val logger: Logger) :
-    CommandHandler<C, ScopeManagementApplicationError, R> {
+    CommandHandler<C, ScopeContractError, R> {
 
     /**
      * Template method that provides common structure for all commands.
      * Subclasses implement executeCommand for specific business logic.
      */
-    override suspend operator fun invoke(command: C): Either<ScopeManagementApplicationError, R> = either {
+    override suspend operator fun invoke(command: C): Either<ScopeContractError, R> = either {
         logCommandStart(command)
 
         val result = transactionManager.inTransaction {
@@ -39,7 +39,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
      * Abstract method for subclasses to implement specific command logic.
      * This runs within a transaction boundary.
      */
-    protected abstract suspend fun executeCommand(command: C): Either<ScopeManagementApplicationError, R>
+    protected abstract suspend fun executeCommand(command: C): Either<ScopeContractError, R>
 
     /**
      * Template method for command start logging.
@@ -73,7 +73,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
      * Template method for error logging.
      * Subclasses can override for specific logging needs.
      */
-    protected open fun logCommandError(command: C, error: ScopeManagementApplicationError) {
+    protected open fun logCommandError(command: C, error: ScopeContractError) {
         logger.error(
             "Command execution failed",
             mapOf(
@@ -94,5 +94,5 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
     /**
      * Get error class name for consistent error logging.
      */
-    protected fun getErrorClassName(error: ScopeManagementApplicationError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    protected fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
 }

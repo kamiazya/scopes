@@ -8,7 +8,6 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateAspect
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateAspectDefinitionCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DefineAspectHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.aspect.DeleteAspectDefinitionHandler
@@ -24,9 +23,7 @@ public class AspectCommandPortAdapter(
     private val defineAspectHandler: DefineAspectHandler,
     private val updateAspectDefinitionHandler: UpdateAspectDefinitionHandler,
     private val deleteAspectDefinitionHandler: DeleteAspectDefinitionHandler,
-    logger: Logger,
 ) : AspectCommandPort {
-    private val errorMapper = ApplicationErrorMapper(logger)
 
     override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         val result = defineAspectHandler(
@@ -44,7 +41,7 @@ public class AspectCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }
@@ -58,7 +55,7 @@ public class AspectCommandPortAdapter(
         )
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }
@@ -67,7 +64,7 @@ public class AspectCommandPortAdapter(
         val result = deleteAspectDefinitionHandler(AppDeleteAspectDefinitionCommand(command.key))
 
         return result.fold(
-            ifLeft = { error -> errorMapper.mapToContractError(error).left() },
+            ifLeft = { error -> error.left() },
             ifRight = { Unit.right() },
         )
     }

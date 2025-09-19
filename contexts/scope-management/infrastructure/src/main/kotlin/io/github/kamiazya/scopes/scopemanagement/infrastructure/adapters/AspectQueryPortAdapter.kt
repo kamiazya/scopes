@@ -11,6 +11,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ValidateAspec
 import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinition
 import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler

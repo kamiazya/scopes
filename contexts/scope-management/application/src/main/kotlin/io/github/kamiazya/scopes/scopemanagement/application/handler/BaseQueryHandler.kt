@@ -2,10 +2,10 @@ package io.github.kamiazya.scopes.scopemanagement.application.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 
 /**
  * Abstract base class for scope management query handlers.
@@ -16,13 +16,13 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManageme
  * - Template method pattern for consistent structure
  */
 abstract class BaseQueryHandler<Q, R>(protected val transactionManager: TransactionManager, protected val logger: Logger) :
-    QueryHandler<Q, ScopeManagementApplicationError, R> {
+    QueryHandler<Q, ScopeContractError, R> {
 
     /**
      * Template method that provides common structure for all queries.
      * Subclasses implement executeQuery for specific business logic.
      */
-    override suspend operator fun invoke(query: Q): Either<ScopeManagementApplicationError, R> = either {
+    override suspend operator fun invoke(query: Q): Either<ScopeContractError, R> = either {
         logQueryStart(query)
 
         val result = transactionManager.inReadOnlyTransaction {
@@ -39,7 +39,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
      * Abstract method for subclasses to implement specific query logic.
      * This runs within a read-only transaction boundary.
      */
-    protected abstract suspend fun executeQuery(query: Q): Either<ScopeManagementApplicationError, R>
+    protected abstract suspend fun executeQuery(query: Q): Either<ScopeContractError, R>
 
     /**
      * Template method for query start logging.
@@ -73,7 +73,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
      * Template method for error logging.
      * Subclasses can override for specific logging needs.
      */
-    protected open fun logQueryError(query: Q, error: ScopeManagementApplicationError) {
+    protected open fun logQueryError(query: Q, error: ScopeContractError) {
         logger.error(
             "Query execution failed",
             mapOf(
@@ -94,5 +94,5 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
     /**
      * Get error class name for consistent error logging.
      */
-    protected fun getErrorClassName(error: ScopeManagementApplicationError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    protected fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
 }
