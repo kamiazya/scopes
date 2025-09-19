@@ -21,11 +21,10 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Rem
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.UpdateScopeHandler
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult as AppCreateScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand as ContractCreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand as ContractDeleteScopeCommand
@@ -33,6 +32,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasC
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RenameAliasCommand as ContractRenameAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonicalAliasCommand as ContractSetCanonicalAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand as ContractUpdateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult as AppCreateScopeResult
 
 /**
  * Command port adapter implementing the ScopeManagementCommandPort interface.
@@ -74,8 +74,8 @@ class ScopeManagementCommandPortAdapter(
         if (canonicalAlias == null) {
             Either.Left(
                 ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                    scopeId = result.id
-                )
+                    scopeId = result.id,
+                ),
             )
         } else {
             Either.Right(
@@ -87,7 +87,7 @@ class ScopeManagementCommandPortAdapter(
                     canonicalAlias = canonicalAlias,
                     createdAt = result.createdAt,
                     updatedAt = result.createdAt, // Note: Application result doesn't have updatedAt field
-                )
+                ),
             )
         }
     }
@@ -104,8 +104,8 @@ class ScopeManagementCommandPortAdapter(
         if (canonicalAlias == null) {
             Either.Left(
                 ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                    scopeId = scopeDto.id
-                )
+                    scopeId = scopeDto.id,
+                ),
             )
         } else {
             Either.Right(
@@ -117,7 +117,7 @@ class ScopeManagementCommandPortAdapter(
                     canonicalAlias = canonicalAlias,
                     createdAt = scopeDto.createdAt,
                     updatedAt = scopeDto.updatedAt,
-                )
+                ),
             )
         }
     }
@@ -132,11 +132,11 @@ class ScopeManagementCommandPortAdapter(
         val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))
         val existingAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
-            { scope -> 
+            { scope ->
                 scope?.canonicalAlias ?: return@inTransaction Either.Left(
                     ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                        scopeId = command.scopeId
-                    )
+                        scopeId = command.scopeId,
+                    ),
                 )
             },
         )
@@ -159,11 +159,11 @@ class ScopeManagementCommandPortAdapter(
         val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))
         val currentAlias = scopeResult.fold(
             { error -> return@inTransaction Either.Left(error) },
-            { scope -> 
+            { scope ->
                 scope?.canonicalAlias ?: return@inTransaction Either.Left(
                     ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                        scopeId = command.scopeId
-                    )
+                        scopeId = command.scopeId,
+                    ),
                 )
             },
         )

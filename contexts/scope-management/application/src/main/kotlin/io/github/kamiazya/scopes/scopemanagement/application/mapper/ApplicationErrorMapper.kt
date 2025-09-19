@@ -241,11 +241,28 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             expectedFormat = "Valid context key format",
         )
 
-        // System errors
-        is ContextError.ContextInUse,
-        is ContextError.ContextUpdateConflict,
-        is ContextError.InvalidFilter,
-        -> mapSystemError()
+        // Context in use - map to business error for better user experience
+        is ContextError.ContextInUse -> ScopeContractError.BusinessError.DuplicateContextKey(
+            contextKey = error.key,
+            existingContextId = null, // Context is in use but we don't have the specific context ID
+        )
+
+        // Context update conflict - map to concurrency error with context key as identifier
+        is ContextError.ContextUpdateConflict -> ScopeContractError.SystemError.ConcurrentModification(
+            scopeId = error.key, // Use context key as the identifier for the conflict
+            expectedVersion = 0L, // We don't have version information from the application error
+            actualVersion = 1L,
+        )
+
+        // Invalid filter - map to input validation error
+        is ContextError.InvalidFilter -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = error.filter,
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
+                expression = error.filter,
+                errorType = error.reason,
+                position = null, // Position not available from application error
+            ),
+        )
     }
 
     private fun mapScopeAliasError(error: AppScopeAliasError): ScopeContractError = when (error) {

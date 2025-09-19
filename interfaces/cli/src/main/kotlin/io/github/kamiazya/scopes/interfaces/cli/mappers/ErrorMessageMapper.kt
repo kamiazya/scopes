@@ -47,7 +47,7 @@ object ErrorMessageMapper {
             is ScopeContractError.InputError.InvalidParentId ->
                 "Invalid parent ID: ${error.parentId}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
             is ScopeContractError.InputError.InvalidAlias -> {
-                // Use shorter message format for CLI  
+                // Use shorter message format for CLI
                 val fullMessage = ValidationMessageFormatter.formatAliasValidationFailure(error.validationFailure)
                 val failure = error.validationFailure
                 when (failure) {

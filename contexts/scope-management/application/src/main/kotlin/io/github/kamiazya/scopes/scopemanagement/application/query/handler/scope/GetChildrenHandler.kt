@@ -80,9 +80,11 @@ class GetChildrenHandler(
 
                 // Missing canonical alias is a data consistency error
                 if (canonicalAlias == null) {
-                    raise(ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                        scopeId = scope.id.toString()
-                    ))
+                    raise(
+                        ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                            scopeId = scope.id.toString(),
+                        ),
+                    )
                 }
 
                 // Map to Contract DTO

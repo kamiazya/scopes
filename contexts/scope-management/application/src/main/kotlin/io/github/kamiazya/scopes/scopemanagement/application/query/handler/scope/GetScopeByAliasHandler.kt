@@ -75,9 +75,11 @@ class GetScopeByAliasHandler(
 
                         // Missing canonical alias is a data consistency error
                         if (canonical == null) {
-                            raise(ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                                scopeId = s.id.toString()
-                            ))
+                            raise(
+                                ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                                    scopeId = s.id.toString(),
+                                ),
+                            )
                         }
                         canonical.aliasName.value
                     }

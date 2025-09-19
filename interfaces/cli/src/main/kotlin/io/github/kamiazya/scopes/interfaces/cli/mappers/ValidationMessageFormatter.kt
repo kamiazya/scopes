@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
  * between different error mappers.
  */
 internal object ValidationMessageFormatter {
-    
+
     fun formatTitleValidationFailure(failure: ScopeContractError.TitleValidationFailure): String = when (failure) {
         is ScopeContractError.TitleValidationFailure.Empty -> "Title cannot be empty"
         is ScopeContractError.TitleValidationFailure.TooShort ->

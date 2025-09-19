@@ -10,12 +10,10 @@ import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterSco
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
@@ -136,7 +134,7 @@ class AspectQueryIntegrationTest :
                         scope = scope1,
                         aliasName = "task-1",
                         scopeRepository = scopeRepository,
-                        aliasRepository = aliasRepository
+                        aliasRepository = aliasRepository,
                     )
 
                     scope2 = Scope(
@@ -160,7 +158,7 @@ class AspectQueryIntegrationTest :
                         scope = scope2,
                         aliasName = "task-2",
                         scopeRepository = scopeRepository,
-                        aliasRepository = aliasRepository
+                        aliasRepository = aliasRepository,
                     )
 
                     scope3 = Scope(
@@ -184,7 +182,7 @@ class AspectQueryIntegrationTest :
                         scope = scope3,
                         aliasName = "task-3",
                         scopeRepository = scopeRepository,
-                        aliasRepository = aliasRepository
+                        aliasRepository = aliasRepository,
                     )
 
                     scope4 = Scope(
@@ -207,7 +205,7 @@ class AspectQueryIntegrationTest :
                         scope = scope4,
                         aliasName = "task-4",
                         scopeRepository = scopeRepository,
-                        aliasRepository = aliasRepository
+                        aliasRepository = aliasRepository,
                     )
                 }
             }
