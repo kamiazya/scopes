@@ -2,11 +2,11 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.as
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.UpdateAspectDefinitionCommand
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -16,31 +16,33 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
  * Currently only supports updating the description, as changing the type
  * could break existing data.
  */
-class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: AspectDefinitionRepository, private val transactionManager: TransactionManager) :
-    CommandHandler<UpdateAspectDefinitionCommand, ScopeManagementApplicationError, AspectDefinition> {
+class UpdateAspectDefinitionHandler(
+    private val aspectDefinitionRepository: AspectDefinitionRepository,
+    private val transactionManager: TransactionManager,
+    private val applicationErrorMapper: ApplicationErrorMapper,
+) : CommandHandler<UpdateAspectDefinitionCommand, ScopeContractError, AspectDefinition> {
 
-    override suspend operator fun invoke(command: UpdateAspectDefinitionCommand): Either<ScopeManagementApplicationError, AspectDefinition> =
+    override suspend operator fun invoke(command: UpdateAspectDefinitionCommand): Either<ScopeContractError, AspectDefinition> =
         transactionManager.inTransaction {
             either {
                 // Validate and create aspect key
                 val aspectKey = AspectKey.create(command.key)
-                    .mapLeft { it.toGenericApplicationError() }
+                    .mapLeft { applicationErrorMapper.mapDomainError(it) }
                     .bind()
 
                 // Find existing definition
                 val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { _ ->
+                    { error ->
                         raise(
-                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                operation = "retrieve-aspect-definition",
+                            ScopeContractError.SystemError.ServiceUnavailable(
+                                service = "aspect-definition-repository",
                             ),
                         )
                     },
                     { definition ->
                         definition ?: raise(
-                            ScopeManagementApplicationError.PersistenceError.NotFound(
-                                entityType = "AspectDefinition",
-                                entityId = command.key,
+                            ScopeContractError.BusinessError.NotFound(
+                                scopeId = command.key,
                             ),
                         )
                     },
@@ -55,10 +57,10 @@ class UpdateAspectDefinitionHandler(private val aspectDefinitionRepository: Aspe
 
                 // Save updated definition
                 aspectDefinitionRepository.save(updated).fold(
-                    { _ ->
+                    { error ->
                         raise(
-                            ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                                operation = "update-aspect-definition",
+                            ScopeContractError.SystemError.ServiceUnavailable(
+                                service = "aspect-definition-repository",
                             ),
                         )
                     },

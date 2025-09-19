@@ -1,14 +1,17 @@
 package io.github.kamiazya.scopes.apps.cli.integration
 
 import arrow.core.toNonEmptyListOrNull
+import io.github.kamiazya.scopes.apps.cli.test.TestDataHelper
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.NoOpTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.LogLevel
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -17,6 +20,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeRepository
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -30,9 +34,11 @@ class AspectQueryIntegrationTest :
         describe("Aspect Query Integration") {
             lateinit var aspectDefinitionRepository: AspectDefinitionRepository
             lateinit var scopeRepository: ScopeRepository
+            lateinit var aliasRepository: ScopeAliasRepository
             lateinit var filterScopesWithQueryHandler: FilterScopesWithQueryHandler
             lateinit var parser: AspectQueryParser
             lateinit var logger: Logger
+            lateinit var applicationErrorMapper: ApplicationErrorMapper
 
             // Test scopes
             lateinit var scope1: Scope
@@ -44,6 +50,7 @@ class AspectQueryIntegrationTest :
                 // Initialize repositories
                 aspectDefinitionRepository = InMemoryAspectDefinitionRepository()
                 scopeRepository = InMemoryScopeRepository()
+                aliasRepository = InMemoryScopeAliasRepository()
                 parser = AspectQueryParser()
                 logger = object : Logger {
                     override fun debug(message: String, context: Map<String, Any>) {}
@@ -54,10 +61,13 @@ class AspectQueryIntegrationTest :
                     override fun withContext(context: Map<String, Any>): Logger = this
                     override fun withName(name: String): Logger = this
                 }
+                applicationErrorMapper = ApplicationErrorMapper(logger)
                 filterScopesWithQueryHandler = FilterScopesWithQueryHandler(
                     scopeRepository,
+                    aliasRepository,
                     aspectDefinitionRepository,
                     NoOpTransactionManager(),
+                    applicationErrorMapper,
                     logger,
                 )
 
@@ -120,7 +130,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope1)
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope1,
+                        aliasName = "task-1",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository,
+                    )
 
                     scope2 = Scope(
                         id = ScopeId.generate(),
@@ -139,7 +154,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope2)
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope2,
+                        aliasName = "task-2",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository,
+                    )
 
                     scope3 = Scope(
                         id = ScopeId.generate(),
@@ -158,7 +178,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope3)
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope3,
+                        aliasName = "task-3",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository,
+                    )
 
                     scope4 = Scope(
                         id = ScopeId.generate(),
@@ -176,7 +201,12 @@ class AspectQueryIntegrationTest :
                         createdAt = Clock.System.now(),
                         updatedAt = Clock.System.now(),
                     )
-                    scopeRepository.save(scope4)
+                    TestDataHelper.createScopeWithCanonicalAlias(
+                        scope = scope4,
+                        aliasName = "task-4",
+                        scopeRepository = scopeRepository,
+                        aliasRepository = aliasRepository,
+                    )
                 }
             }
 

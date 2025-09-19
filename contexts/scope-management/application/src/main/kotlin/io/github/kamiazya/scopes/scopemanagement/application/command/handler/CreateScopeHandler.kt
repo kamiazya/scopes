@@ -3,16 +3,15 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeHierarchyApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
@@ -31,6 +30,10 @@ import kotlinx.datetime.Clock
  * - Delegates scope creation to ScopeFactory
  * - Retrieves hierarchy policy from external context via port
  * - Maintains clear separation of concerns with minimal orchestration logic
+ *
+ * Note: This handler returns contract errors directly as part of a pilot
+ * to simplify error handling architecture. It uses ApplicationErrorMapper
+ * for factory errors as a pragmatic compromise during the transition.
  */
 class CreateScopeHandler(
     private val scopeFactory: ScopeFactory,
@@ -39,10 +42,11 @@ class CreateScopeHandler(
     private val aliasGenerationService: AliasGenerationService,
     private val transactionManager: TransactionManager,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
+    private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
-) : CommandHandler<CreateScopeCommand, ScopeManagementApplicationError, CreateScopeResult> {
+) : CommandHandler<CreateScopeCommand, ScopeContractError, CreateScopeResult> {
 
-    override suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeManagementApplicationError, CreateScopeResult> = either {
+    override suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = either {
         logger.info(
             "Creating new scope",
             mapOf(
@@ -53,7 +57,9 @@ class CreateScopeHandler(
         )
 
         // Get hierarchy policy from external context
-        val hierarchyPolicy = hierarchyPolicyProvider.getPolicy().bind()
+        val hierarchyPolicy = hierarchyPolicyProvider.getPolicy()
+            .mapLeft { error -> applicationErrorMapper.mapDomainError(error) }
+            .bind()
         logger.debug(
             "Hierarchy policy loaded",
             mapOf(
@@ -68,8 +74,9 @@ class CreateScopeHandler(
                 val parentId = command.parentId?.let { parentIdString ->
                     ScopeId.create(parentIdString).mapLeft { idError ->
                         logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
-                        ScopeHierarchyApplicationError.InvalidParentId(
-                            invalidId = parentIdString,
+                        applicationErrorMapper.mapDomainError(
+                            idError,
+                            ErrorMappingContext(attemptedValue = parentIdString),
                         )
                     }.bind()
                 }
@@ -80,13 +87,18 @@ class CreateScopeHandler(
                     description = command.description,
                     parentId = parentId,
                     hierarchyPolicy = hierarchyPolicy,
-                ).bind()
+                ).mapLeft { error ->
+                    // Map application error to contract error
+                    applicationErrorMapper.mapToContractError(error)
+                }.bind()
 
                 // Extract the scope from aggregate
                 val scope = scopeAggregate.scope!!
 
                 // Save the scope
-                val savedScope = scopeRepository.save(scope).mapLeft { it.toGenericApplicationError() }.bind()
+                val savedScope = scopeRepository.save(scope).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error)
+                }.bind()
                 logger.info("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
 
                 // Handle alias generation and storage
@@ -106,40 +118,49 @@ class CreateScopeHandler(
                         logger.debug("Validating custom alias", mapOf("customAlias" to command.customAlias))
                         AliasName.create(command.customAlias).mapLeft { aliasError ->
                             logger.warn("Invalid custom alias format", mapOf("alias" to command.customAlias, "error" to aliasError.toString()))
-                            aliasError.toGenericApplicationError()
+                            applicationErrorMapper.mapDomainError(
+                                aliasError,
+                                ErrorMappingContext(attemptedValue = command.customAlias),
+                            )
                         }.bind()
                     } else {
                         // Generate alias automatically
                         logger.debug("Generating automatic alias")
                         aliasGenerationService.generateRandomAlias().mapLeft { aliasError ->
                             logger.error("Failed to generate alias", mapOf("scopeId" to savedScope.id.value, "error" to aliasError.toString()))
-                            aliasError.toGenericApplicationError()
+                            applicationErrorMapper.mapDomainError(
+                                aliasError,
+                                ErrorMappingContext(scopeId = savedScope.id.value),
+                            )
                         }.bind()
                     }
 
                     // Check if alias already exists
                     // Check if alias already exists and get the existing scope ID if it does
-                    val existingAlias = scopeAliasRepository.findByAliasName(aliasName).mapLeft { it.toGenericApplicationError() }.bind()
+                    val existingAlias = scopeAliasRepository.findByAliasName(aliasName).mapLeft { error ->
+                        applicationErrorMapper.mapDomainError(error)
+                    }.bind()
                     ensure(existingAlias == null) {
-                        val duplicateError = ScopeAliasError.AliasDuplicate(
-                            aliasName = aliasName.value,
-                            existingScopeId = existingAlias!!.scopeId.value, // The actual scope that owns this alias
-                            attemptedScopeId = savedScope.id.value, // The new scope that tried to use it
-                        )
                         logger.warn(
                             "Alias already exists",
                             mapOf(
                                 "alias" to aliasName.value,
-                                "existingScopeId" to existingAlias.scopeId.value,
+                                "existingScopeId" to existingAlias!!.scopeId.value,
                                 "attemptedScopeId" to savedScope.id.value,
                             ),
                         )
-                        duplicateError
+                        ScopeContractError.BusinessError.DuplicateAlias(
+                            alias = aliasName.value,
+                            existingScopeId = existingAlias.scopeId.value,
+                            attemptedScopeId = savedScope.id.value,
+                        )
                     }
 
                     // Create and save the canonical alias
                     val scopeAlias = ScopeAlias.createCanonical(savedScope.id, aliasName, Clock.System.now())
-                    scopeAliasRepository.save(scopeAlias).mapLeft { it.toGenericApplicationError() }.bind()
+                    scopeAliasRepository.save(scopeAlias).mapLeft { error ->
+                        applicationErrorMapper.mapDomainError(error)
+                    }.bind()
 
                     logger.info("Canonical alias created successfully", mapOf("alias" to aliasName.value, "scopeId" to savedScope.id.value))
                     aliasName.value

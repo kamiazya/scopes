@@ -19,6 +19,11 @@ import kotlinx.datetime.Instant
  */
 class SqlDelightScopeAliasRepository(private val database: ScopeManagementDatabase) : ScopeAliasRepository {
 
+    companion object {
+        // SQLite has a limit of 999 variables in a single query
+        private const val SQLITE_VARIABLE_LIMIT = 999
+    }
+
     override suspend fun save(alias: ScopeAlias): Either<ScopesError, Unit> = try {
         val existing = database.scopeAliasQueries.findById(alias.id.value).executeAsOneOrNull()
 
@@ -91,6 +96,35 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     override suspend fun findCanonicalByScopeId(scopeId: ScopeId): Either<ScopesError, ScopeAlias?> = try {
         val result = database.scopeAliasQueries.findCanonicalAlias(scopeId.value).executeAsOneOrNull()
         result?.let { rowToScopeAlias(it) }.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "SqlDelightScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.FIND,
+            entityType = "ScopeAlias",
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+        ).left()
+    }
+
+    override suspend fun findCanonicalByScopeIds(scopeIds: List<ScopeId>): Either<ScopesError, List<ScopeAlias>> = try {
+        if (scopeIds.isEmpty()) {
+            emptyList<ScopeAlias>().right()
+        } else {
+            // SQLite has a limit on the number of variables in a single query
+            // Chunk the IDs to avoid hitting this limit
+            val scopeIdValues = scopeIds.map { it.value }
+            
+            val allResults = if (scopeIdValues.size <= SQLITE_VARIABLE_LIMIT) {
+                // Single query for small lists
+                database.scopeAliasQueries.findCanonicalAliasesBatch(scopeIdValues).executeAsList()
+            } else {
+                // Multiple queries for large lists
+                scopeIdValues.chunked(SQLITE_VARIABLE_LIMIT).flatMap { chunk ->
+                    database.scopeAliasQueries.findCanonicalAliasesBatch(chunk).executeAsList()
+                }
+            }
+            
+            allResults.map { rowToScopeAlias(it) }.right()
+        }
     } catch (e: Exception) {
         ScopesError.RepositoryError(
             repositoryName = "SqlDelightScopeAliasRepository",

@@ -49,6 +49,13 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
                         put("title", error.title)
                         error.existingScopeId?.let { put("existingScopeId", it) }
                     }
+                    is ScopeContractError.BusinessError.ContextNotFound -> {
+                        put("contextKey", error.contextKey)
+                    }
+                    is ScopeContractError.BusinessError.DuplicateContextKey -> {
+                        put("contextKey", error.contextKey)
+                        error.existingContextId?.let { put("existingContextId", it) }
+                    }
                     else -> Unit
                 }
             }
@@ -81,6 +88,13 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         is ScopeContractError.BusinessError.NotArchived,
         -> -32014 // State conflict
         is ScopeContractError.BusinessError.HasChildren -> -32010 // Business constraint violation
+        is ScopeContractError.BusinessError.AliasGenerationFailed,
+        is ScopeContractError.BusinessError.AliasGenerationValidationFailed,
+        -> -32015 // Alias generation error
+        is ScopeContractError.BusinessError.ContextNotFound,
+        is ScopeContractError.BusinessError.DuplicateContextKey,
+        -> -32011 // Not found / Duplicate for context
+        is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> -32016 // Data consistency error
         is ScopeContractError.SystemError -> -32000 // Server error
     }
 
@@ -104,6 +118,14 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         is ScopeContractError.BusinessError.NotArchived -> "Not archived"
         is ScopeContractError.BusinessError.HasChildren -> "Has children"
         is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias -> "Cannot remove canonical alias"
+        is ScopeContractError.BusinessError.AliasGenerationFailed -> "Failed to generate alias for scope: ${error.scopeId}"
+        is ScopeContractError.BusinessError.AliasGenerationValidationFailed -> "Generated alias failed validation: ${error.alias}"
+        is ScopeContractError.BusinessError.ContextNotFound -> "Context not found: ${error.contextKey}"
+        is ScopeContractError.BusinessError.DuplicateContextKey -> "Duplicate context key: ${error.contextKey}"
+        is ScopeContractError.InputError.InvalidContextKey -> "Invalid context key: ${error.key}"
+        is ScopeContractError.InputError.InvalidContextName -> "Invalid context name: ${error.name}"
+        is ScopeContractError.InputError.InvalidContextFilter -> "Invalid context filter: ${error.filter}"
+        is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> "Data inconsistency: Missing canonical alias for scope ${error.scopeId}"
     }
 
     override fun successResult(content: String): CallToolResult = CallToolResult(content = listOf(TextContent(content)), isError = false)

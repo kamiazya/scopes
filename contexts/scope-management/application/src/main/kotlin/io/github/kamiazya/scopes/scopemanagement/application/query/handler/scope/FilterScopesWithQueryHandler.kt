@@ -2,16 +2,17 @@ package io.github.kamiazya.scopes.scopemanagement.application.query.handler.scop
 
 import arrow.core.Either
 import arrow.core.raise.either
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.FilterScopesWithQuery
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryEvaluator
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
@@ -23,17 +24,19 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  */
 class FilterScopesWithQueryHandler(
     private val scopeRepository: ScopeRepository,
+    private val aliasRepository: ScopeAliasRepository,
     private val aspectDefinitionRepository: AspectDefinitionRepository,
     private val transactionManager: TransactionManager,
+    private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
     private val parser: AspectQueryParser = AspectQueryParser(),
-) : QueryHandler<FilterScopesWithQuery, ScopeManagementApplicationError, List<ScopeDto>> {
+) : QueryHandler<FilterScopesWithQuery, ScopeContractError, List<ScopeResult>> {
 
     companion object {
         private const val SCOPE_REPOSITORY_SERVICE = "scope-repository"
     }
 
-    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeManagementApplicationError, List<ScopeDto>> =
+    override suspend operator fun invoke(query: FilterScopesWithQuery): Either<ScopeContractError, List<ScopeResult>> =
         transactionManager.inReadOnlyTransaction {
             logger.debug(
                 "Filtering scopes with query",
@@ -49,10 +52,12 @@ class FilterScopesWithQueryHandler(
                 val ast = parser.parse(query.query).fold(
                     { _ ->
                         raise(
-                            ScopesError.InvalidOperation(
-                                operation = "filter-scopes-with-query",
-                                reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
-                            ).toGenericApplicationError(),
+                            applicationErrorMapper.mapDomainError(
+                                ScopesError.InvalidOperation(
+                                    operation = "filter-scopes-with-query",
+                                    reason = ScopesError.InvalidOperation.InvalidOperationReason.INVALID_INPUT,
+                                ),
+                            ),
                         )
                     },
                     { it },
@@ -61,11 +66,9 @@ class FilterScopesWithQueryHandler(
                 // Get all aspect definitions for type-aware comparison
                 val definitions = aspectDefinitionRepository.findAll()
                     .mapLeft { _ ->
-                        ScopesError.SystemError(
-                            errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                            service = "aspect-repository",
-                            context = mapOf("operation" to "findAll"),
-                        ).toGenericApplicationError()
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "Aspect definition service",
+                        )
                     }
                     .bind()
                     .associateBy { it.key.value }
@@ -77,46 +80,32 @@ class FilterScopesWithQueryHandler(
                 val scopesToFilter = when {
                     query.parentId != null -> {
                         val parentScopeId = ScopeId.create(query.parentId)
-                            .mapLeft { it.toGenericApplicationError() }
+                            .mapLeft { error ->
+                                applicationErrorMapper.mapDomainError(
+                                    error,
+                                    ErrorMappingContext(attemptedValue = query.parentId),
+                                )
+                            }
                             .bind()
                         scopeRepository.findByParentId(parentScopeId, offset = 0, limit = 1000)
-                            .mapLeft { _ ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf(
-                                        "operation" to "findByParentId",
-                                        "parentId" to parentScopeId.value.toString(),
-                                    ),
-                                ).toGenericApplicationError()
+                            .mapLeft { error ->
+                                applicationErrorMapper.mapDomainError(error)
                             }
                             .bind()
                     }
                     query.limit != 100 || query.offset > 0 -> {
                         // Use pagination - get all scopes with offset and limit
                         scopeRepository.findAll(query.offset, query.limit)
-                            .mapLeft { _ ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf(
-                                        "operation" to "findAll",
-                                        "offset" to query.offset,
-                                        "limit" to query.limit,
-                                    ),
-                                ).toGenericApplicationError()
+                            .mapLeft { error ->
+                                applicationErrorMapper.mapDomainError(error)
                             }
                             .bind()
                     }
                     else -> {
                         // Default behavior - get root scopes only
                         scopeRepository.findAllRoot()
-                            .mapLeft { _ ->
-                                ScopesError.SystemError(
-                                    errorType = ScopesError.SystemError.SystemErrorType.EXTERNAL_SERVICE_ERROR,
-                                    service = SCOPE_REPOSITORY_SERVICE,
-                                    context = mapOf("operation" to "findAllRoot"),
-                                ).toGenericApplicationError()
+                            .mapLeft { error ->
+                                applicationErrorMapper.mapDomainError(error)
                             }
                             .bind()
                     }
@@ -127,9 +116,48 @@ class FilterScopesWithQueryHandler(
                     evaluator.evaluate(ast, scope.aspects)
                 }
 
-                // Map to DTOs
+                // Get all canonical aliases for the filtered scopes in batch
+                val filteredScopeIds = filteredScopes.map { it.id }
+                val canonicalAliasesMap = if (filteredScopeIds.isNotEmpty()) {
+                    aliasRepository.findCanonicalByScopeIds(filteredScopeIds)
+                        .mapLeft { error ->
+                            applicationErrorMapper.mapDomainError(error)
+                        }
+                        .bind()
+                        .associateBy { it.scopeId }
+                } else {
+                    emptyMap()
+                }
+
+                // Map to Contract DTOs
                 val result = filteredScopes.map { scope ->
-                    ScopeMapper.toDto(scope)
+                    // Get canonical alias from batch result
+                    val canonicalAlias = canonicalAliasesMap[scope.id]
+
+                    // Missing canonical alias is a data consistency error
+                    if (canonicalAlias == null) {
+                        raise(
+                            ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                                scopeId = scope.id.toString(),
+                            ),
+                        )
+                    }
+
+                    ScopeResult(
+                        id = scope.id.toString(),
+                        title = scope.title.value,
+                        description = scope.description?.value,
+                        parentId = scope.parentId?.toString(),
+                        canonicalAlias = canonicalAlias.aliasName.value,
+                        createdAt = scope.createdAt,
+                        updatedAt = scope.updatedAt,
+                        isArchived = false,
+                        aspects = scope.aspects.toMap().mapKeys { (key, _) ->
+                            key.value
+                        }.mapValues { (_, values) ->
+                            values.map { it.value }
+                        },
+                    )
                 }
 
                 logger.info(

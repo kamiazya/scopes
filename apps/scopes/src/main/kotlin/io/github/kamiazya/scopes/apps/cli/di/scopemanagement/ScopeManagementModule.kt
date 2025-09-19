@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.DeleteContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.context.UpdateContextViewHandler
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
@@ -127,6 +128,7 @@ val scopeManagementModule = module {
             aliasGenerationService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -135,6 +137,7 @@ val scopeManagementModule = module {
         UpdateScopeHandler(
             scopeRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -143,6 +146,7 @@ val scopeManagementModule = module {
         DeleteScopeHandler(
             scopeRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -150,7 +154,9 @@ val scopeManagementModule = module {
     single {
         GetScopeByIdHandler(
             scopeRepository = get(),
+            aliasRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -158,7 +164,9 @@ val scopeManagementModule = module {
     single {
         GetChildrenHandler(
             scopeRepository = get(),
+            aliasRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -166,7 +174,9 @@ val scopeManagementModule = module {
     single {
         GetRootScopesHandler(
             scopeRepository = get(),
+            aliasRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -176,6 +186,7 @@ val scopeManagementModule = module {
             scopeAliasRepository = get(),
             scopeRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -185,6 +196,7 @@ val scopeManagementModule = module {
         AddAliasHandler(
             scopeAliasService = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -193,6 +205,7 @@ val scopeManagementModule = module {
         RemoveAliasHandler(
             scopeAliasService = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -202,6 +215,7 @@ val scopeManagementModule = module {
             scopeAliasRepository = get(),
             scopeRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -210,6 +224,7 @@ val scopeManagementModule = module {
         SetCanonicalAliasHandler(
             scopeAliasService = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -218,6 +233,7 @@ val scopeManagementModule = module {
         RenameAliasHandler(
             scopeAliasService = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -227,6 +243,7 @@ val scopeManagementModule = module {
         DefineAspectHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -242,6 +259,7 @@ val scopeManagementModule = module {
         UpdateAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -250,6 +268,7 @@ val scopeManagementModule = module {
             aspectDefinitionRepository = get(),
             aspectUsageValidationService = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -272,8 +291,10 @@ val scopeManagementModule = module {
     single {
         FilterScopesWithQueryHandler(
             scopeRepository = get(),
+            aliasRepository = get(),
             aspectDefinitionRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
             logger = get(),
         )
     }
@@ -283,6 +304,7 @@ val scopeManagementModule = module {
         CreateContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -318,6 +340,7 @@ val scopeManagementModule = module {
         UpdateContextViewHandler(
             contextViewRepository = get(),
             transactionManager = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -326,9 +349,10 @@ val scopeManagementModule = module {
             contextViewRepository = get(),
             transactionManager = get(),
             activeContextService = get(),
+            applicationErrorMapper = get(),
         )
     }
 
     // Error Mappers
-    // EventStoreErrorMapper is now created internally in infrastructure layer
+    single { ApplicationErrorMapper(get()) }
 }
