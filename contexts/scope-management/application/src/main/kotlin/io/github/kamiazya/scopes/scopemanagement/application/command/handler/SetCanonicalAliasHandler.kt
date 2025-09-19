@@ -7,7 +7,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.SetCanonicalAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
+import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorMappingService
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
@@ -24,7 +24,7 @@ class SetCanonicalAliasHandler(
     private val logger: Logger,
 ) : CommandHandler<SetCanonicalAliasCommand, ScopeManagementApplicationError, Unit> {
 
-    private val errorPresenter = ScopeInputErrorPresenter()
+    private val errorMappingService = ScopeInputErrorMappingService()
 
     override suspend operator fun invoke(command: SetCanonicalAliasCommand): Either<ScopeManagementApplicationError, Unit> = transactionManager.inTransaction {
         either {
@@ -74,16 +74,7 @@ class SetCanonicalAliasHandler(
         }
 
     private fun mapAliasError(error: io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError, alias: String): ScopeInputError =
-        when (error) {
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.EmptyAlias ->
-                ScopeInputError.AliasEmpty(alias)
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooShort ->
-                ScopeInputError.AliasTooShort(alias, error.minLength)
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.AliasTooLong ->
-                ScopeInputError.AliasTooLong(alias, error.maxLength)
-            is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError.AliasError.InvalidAliasFormat ->
-                ScopeInputError.AliasInvalidFormat(alias, errorPresenter.presentAliasPattern(error.expectedPattern))
-        }
+        errorMappingService.mapAliasError(error, alias)
 
     private suspend fun findAlias(aliasName: AliasName, aliasString: String): Either<ScopeManagementApplicationError, ScopeAlias> = either {
         val alias = scopeAliasService.findAliasByName(aliasName)
