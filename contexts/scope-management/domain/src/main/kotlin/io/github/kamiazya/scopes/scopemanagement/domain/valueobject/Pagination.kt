@@ -52,7 +52,11 @@ data class Pagination private constructor(val offset: Int, val limit: Int) {
     /**
      * Check if this pagination would have a next page given total count.
      */
-    fun hasNextPage(totalCount: Int): Boolean = offset + limit < totalCount
+    fun hasNextPage(totalCount: Int): Boolean = try {
+        Math.addExact(offset, limit) < totalCount
+    } catch (e: ArithmeticException) {
+        false // If overflow would occur, there's no next page
+    }
 
     /**
      * Check if this pagination would have a previous page.
