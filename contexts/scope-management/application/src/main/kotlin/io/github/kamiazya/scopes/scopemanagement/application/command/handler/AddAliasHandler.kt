@@ -31,8 +31,8 @@ class AddAliasHandler(
             logger.debug(
                 "Adding alias to scope",
                 mapOf(
-                    "existingAlias".to(input.existingAlias),
-                    "newAlias".to(input.newAlias),
+                    "existingAlias" to input.existingAlias,
+                    "newAlias" to input.newAlias,
                 ),
             )
 
