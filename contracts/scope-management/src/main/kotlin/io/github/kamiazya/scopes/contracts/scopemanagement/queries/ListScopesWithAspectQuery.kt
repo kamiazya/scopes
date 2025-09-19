@@ -10,9 +10,9 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.queries
  * @property limit Maximum number of items to return
  */
 public data class ListScopesWithAspectQuery(
-    val aspectKey: String,
-    val aspectValue: String,
-    val parentId: String? = null,
-    val offset: Int = 0,
-    val limit: Int = 20,
+    public val aspectKey: String,
+    public val aspectValue: String,
+    public val parentId: String? = null,
+    public val offset: Int = 0,
+    public val limit: Int = 20,
 )
