@@ -28,20 +28,20 @@ class GetScopeByAliasHandler(
     private val logger: Logger,
 ) : QueryHandler<GetScopeByAlias, ScopeContractError, ScopeResult?> {
 
-    override suspend operator fun invoke(input: GetScopeByAlias): Either<ScopeContractError, ScopeResult?> = transactionManager.inReadOnlyTransaction {
+    override suspend operator fun invoke(query: GetScopeByAlias): Either<ScopeContractError, ScopeResult?> = transactionManager.inReadOnlyTransaction {
         logger.debug(
             "Getting scope by alias",
             mapOf(
-                "aliasName" to input.aliasName,
+                "aliasName" to query.aliasName,
             ),
         )
         either {
             // Validate and create alias value object
-            val aliasName = AliasName.create(input.aliasName)
+            val aliasName = AliasName.create(query.aliasName)
                 .mapLeft { error ->
                     applicationErrorMapper.mapDomainError(
                         error,
-                        ErrorMappingContext(attemptedValue = input.aliasName),
+                        ErrorMappingContext(attemptedValue = query.aliasName),
                     )
                 }
                 .bind()
@@ -51,7 +51,7 @@ class GetScopeByAliasHandler(
                 .mapLeft { error ->
                     applicationErrorMapper.mapDomainError(
                         error,
-                        ErrorMappingContext(attemptedValue = input.aliasName),
+                        ErrorMappingContext(attemptedValue = query.aliasName),
                     )
                 }
                 .bind()
@@ -134,7 +134,7 @@ class GetScopeByAliasHandler(
         logger.error(
             "Failed to get scope by alias",
             mapOf(
-                "aliasName" to input.aliasName,
+                "aliasName" to query.aliasName,
                 "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
