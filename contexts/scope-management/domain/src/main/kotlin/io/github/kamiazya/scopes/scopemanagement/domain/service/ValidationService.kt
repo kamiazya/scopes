@@ -16,7 +16,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationEr
  */
 class ValidationService(private val strictMode: Boolean = true) {
 
-
     /**
      * Validate a non-empty string.
      *

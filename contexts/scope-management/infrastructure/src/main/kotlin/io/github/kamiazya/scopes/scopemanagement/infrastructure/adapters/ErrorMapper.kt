@@ -217,7 +217,8 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         // Handle generic DataInconsistencyError and AliasGenerationFailed
         is ScopeAliasError.AliasGenerationFailed,
-        is ScopeAliasError.DataInconsistencyError -> ScopeContractError.SystemError.ServiceUnavailable(
+        is ScopeAliasError.DataInconsistencyError,
+        -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
         is ScopeAliasError.AliasError -> ScopeContractError.InputError.InvalidAlias(

@@ -27,4 +27,6 @@ value class AspectKey private constructor(val value: String) {
             else -> AspectKey(value).right()
         }
     }
+
+    override fun toString(): String = value
 }

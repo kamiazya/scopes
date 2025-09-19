@@ -30,7 +30,8 @@ value class AliasId private constructor(val value: String) {
             }
 
             return if (ULID.isValid(trimmed)) {
-                AliasId(trimmed).right()
+                // Store in uppercase for consistency
+                AliasId(trimmed.uppercase()).right()
             } else {
                 ScopeInputError.IdError.InvalidIdFormat(
                     id = trimmed,
