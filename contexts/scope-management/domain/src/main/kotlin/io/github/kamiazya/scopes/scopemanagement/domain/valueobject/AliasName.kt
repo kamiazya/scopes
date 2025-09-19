@@ -21,7 +21,7 @@ value class AliasName private constructor(val value: String) {
     companion object {
         private const val MIN_LENGTH = 2
         private const val MAX_LENGTH = 64
-        private val VALID_PATTERN = Regex("^[a-z][a-z0-9-_]{1,63}$")
+        private val VALID_PATTERN = Regex("^[a-z]([a-z0-9-_]*[a-z0-9])?$")
         private val CONSECUTIVE_SPECIAL_CHARS = Regex("[-_]{2,}")
 
         fun create(value: String): Either<ScopeInputError.AliasError, AliasName> {

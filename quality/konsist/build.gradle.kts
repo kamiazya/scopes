@@ -26,4 +26,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+    // Increase memory allocation for Konsist tests which analyze the entire codebase
+    jvmArgs("-Xmx2g", "-XX:MaxMetaspaceSize=512m")
+
+    // Set test timeout to prevent hanging
+    systemProperty("kotest.framework.test.timeout", "300000") // 5 minutes in milliseconds
 }
