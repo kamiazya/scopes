@@ -33,14 +33,14 @@ class UpdateContextViewHandler(
     override suspend fun executeCommand(command: UpdateContextViewCommand): Either<ScopeContractError, ContextViewDto> = either {
         logger.info(
             "Updating context view",
-            mapOf(
+            mapOf<String, Any>(
                 "key" to command.key,
-                "name" to command.name,
-                "filter" to command.filter,
-                "description" to command.description,
+                "name" to (command.name ?: "unchanged"),
+                "filter" to (command.filter ?: "unchanged"),
+                "description" to (command.description ?: "unchanged"),
             ),
         )
-        
+
         // Validate and create key value object
         val key = ContextViewKey.create(command.key)
             .mapLeft { error ->

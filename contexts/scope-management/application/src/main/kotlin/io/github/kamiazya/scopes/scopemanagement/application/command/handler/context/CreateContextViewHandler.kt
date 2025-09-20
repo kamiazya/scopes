@@ -34,19 +34,19 @@ class CreateContextViewHandler(
     override suspend fun executeCommand(command: CreateContextViewCommand): Either<ScopeContractError, ContextViewDto> = either {
         logger.info(
             "Creating new context view",
-            mapOf(
+            mapOf<String, Any>(
                 "key" to command.key,
                 "name" to command.name,
                 "filter" to command.filter,
             ),
         )
-        
+
         // Validate and create value objects
         val key = ContextViewKey.create(command.key)
             .mapLeft { error ->
                 logger.error(
                     "Invalid context view key",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -54,12 +54,12 @@ class CreateContextViewHandler(
                 applicationErrorMapper.mapDomainError(error)
             }
             .bind()
-            
+
         val name = ContextViewName.create(command.name)
             .mapLeft { error ->
                 logger.error(
                     "Invalid context view name",
-                    mapOf(
+                    mapOf<String, Any>(
                         "name" to command.name,
                         "error" to error.toString(),
                     ),
@@ -67,12 +67,12 @@ class CreateContextViewHandler(
                 applicationErrorMapper.mapDomainError(error)
             }
             .bind()
-            
+
         val filter = ContextViewFilter.create(command.filter)
             .mapLeft { error ->
                 logger.error(
                     "Invalid context view filter",
-                    mapOf(
+                    mapOf<String, Any>(
                         "filter" to command.filter,
                         "error" to error.toString(),
                     ),
@@ -91,7 +91,7 @@ class CreateContextViewHandler(
         ).mapLeft { error ->
             logger.error(
                 "Failed to create context view entity",
-                mapOf(
+                mapOf<String, Any>(
                     "key" to command.key,
                     "error" to error.toString(),
                 ),
@@ -104,23 +104,26 @@ class CreateContextViewHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to save context view",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "context-view-repository",
+                )
             }
             .bind()
 
         logger.info(
             "Context view created successfully",
-            mapOf(
+            mapOf<String, Any>(
                 "id" to saved.id.value.toString(),
                 "key" to saved.key.value,
             ),
         )
-        
+
         // Map to DTO
         ContextViewDto(
             id = saved.id.value.toString(),

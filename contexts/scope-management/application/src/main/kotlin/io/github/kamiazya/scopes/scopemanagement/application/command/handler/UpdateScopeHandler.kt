@@ -1,8 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
-import arrow.core.NonEmptyList
-import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
@@ -14,12 +12,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommand
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
@@ -34,7 +27,6 @@ class UpdateScopeHandler(
     private val applicationErrorMapper: ApplicationErrorMapper,
     transactionManager: TransactionManager,
     logger: Logger,
-    private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
 ) : BaseCommandHandler<UpdateScopeCommand, ScopeDto>(transactionManager, logger) {
 
     override suspend fun executeCommand(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = either {
@@ -59,53 +51,65 @@ class UpdateScopeHandler(
         val updatedTitle = if (command.title != null && command.title != existingScope.title.value) {
             val newTitle = ScopeTitle.create(command.title).mapLeft { error ->
                 logger.warn("Invalid title format", mapOf("title" to command.title))
-                applicationErrorMapper.mapDomainError(error)
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext(attemptedValue = command.title))
             }.bind()
 
-            // Check title uniqueness
-            titleUniquenessSpec.isSatisfiedBy(
-                newTitle.value,
+            // Check title uniqueness at the same level
+            val existingScopeIdWithTitle = scopeRepository.findIdByParentIdAndTitle(
                 existingScope.parentId,
-                excludeId = existingScope.id,
+                newTitle.value,
             ).mapLeft { error ->
+                logger.error(
+                    "Failed to check title uniqueness",
+                    mapOf(
+                        "title" to command.title,
+                        "parentId" to (existingScope.parentId?.toString() ?: "null"),
+                        "error" to error.toString(),
+                    ),
+                )
+                when (error) {
+                    is io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError ->
+                        applicationErrorMapper.mapDomainError(error)
+                    else -> ScopeContractError.SystemError.ServiceUnavailable(service = "scope-repository")
+                }
+            }.bind()
+
+            // If another scope with same title exists (and it's not this scope), it's a conflict
+            if (existingScopeIdWithTitle != null && existingScopeIdWithTitle != existingScope.id) {
                 logger.warn(
                     "Title uniqueness violation",
                     mapOf(
                         "title" to command.title,
                         "parentId" to (existingScope.parentId?.toString() ?: "null"),
+                        "conflictingScopeId" to existingScopeIdWithTitle.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
+                raise(
+                    ScopeContractError.BusinessError.DuplicateTitle(
+                        title = command.title,
+                        parentId = existingScope.parentId?.toString(),
+                        existingScopeId = existingScopeIdWithTitle.toString(),
+                    ),
+                )
+            }
 
             newTitle
         } else {
             existingScope.title
         }
 
-        // Process aspects if provided
-        val updatedAspects = if (!command.aspects.isNullOrEmpty()) {
-            val aspectsList = command.aspects.flatMap { (key, values) ->
-                values.map { value ->
-                    AspectKey.create(key).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error)
-                    }.bind() to AspectValue.create(value).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error)
-                    }.bind()
-                }
-            }
-            val aspectMap = aspectsList.groupBy({ it.first }, { it.second }).mapValues { (_, values) ->
-                NonEmptyList.fromListUnsafe(values)
-            }
-            Aspects.from(aspectMap)
-        } else {
-            existingScope.aspects
-        }
+        // Process description if provided
+        val updatedDescription = command.description?.let { desc ->
+            io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription.create(desc).mapLeft { error ->
+                logger.warn("Invalid description format", mapOf("description" to desc))
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext(attemptedValue = desc))
+            }.bind()
+        } ?: existingScope.description
 
         // Create updated scope
         val updatedScope = existingScope.copy(
             title = updatedTitle,
-            aspects = updatedAspects,
+            description = updatedDescription,
             updatedAt = Clock.System.now(),
         )
 
@@ -117,6 +121,6 @@ class UpdateScopeHandler(
 
         // Map to DTO and return
         logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
-        ScopeMapper.toScopeDto(savedScope)
+        ScopeMapper.toDto(savedScope)
     }
 }

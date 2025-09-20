@@ -29,18 +29,18 @@ class UpdateAspectDefinitionHandler(
     override suspend fun executeCommand(command: UpdateAspectDefinitionCommand): Either<ScopeContractError, AspectDefinition> = either {
         logger.info(
             "Updating aspect definition",
-            mapOf(
+            mapOf<String, Any>(
                 "aspectKey" to command.key,
-                "newDescription" to command.description,
+                "newDescription" to (command.description ?: "none"),
             ),
         )
-        
+
         // Validate and create aspect key
         val aspectKey = AspectKey.create(command.key)
             .mapLeft { error ->
                 logger.error(
                     "Invalid aspect key",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -54,19 +54,22 @@ class UpdateAspectDefinitionHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to find aspect definition",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
-        
+
         if (existing == null) {
             logger.error(
                 "Aspect definition not found",
-                mapOf("key" to command.key),
+                mapOf<String, Any>("key" to command.key),
             )
             raise(
                 ScopeContractError.BusinessError.NotFound(
@@ -79,7 +82,7 @@ class UpdateAspectDefinitionHandler(
         if (command.description == null || command.description == existing.description) {
             logger.info(
                 "No changes to aspect definition",
-                mapOf("key" to command.key),
+                mapOf<String, Any>("key" to command.key),
             )
             return@either existing
         }
@@ -91,23 +94,26 @@ class UpdateAspectDefinitionHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to save updated aspect definition",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
-        
+
         logger.info(
             "Aspect definition updated successfully",
-            mapOf(
+            mapOf<String, Any>(
                 "aspectKey" to saved.key.value,
-                "newDescription" to saved.description,
+                "newDescription" to (saved.description ?: "none"),
             ),
         )
-        
+
         saved
     }
 }

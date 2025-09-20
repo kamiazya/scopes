@@ -27,7 +27,7 @@ import kotlinx.datetime.Clock
  * Handler for CreateScope command.
  * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
  * for error mapping to contract errors.
- * 
+ *
  * Following Clean Architecture and DDD principles:
  * - Uses TransactionManager for atomic operations
  * - Delegates scope creation to ScopeFactory
@@ -59,7 +59,7 @@ class CreateScopeHandler(
         val hierarchyPolicy = hierarchyPolicyProvider.getPolicy()
             .mapLeft { error -> applicationErrorMapper.mapDomainError(error) }
             .bind()
-        
+
         logger.debug(
             "Hierarchy policy loaded",
             mapOf(
@@ -131,7 +131,7 @@ class CreateScopeHandler(
             val existingAlias = scopeAliasRepository.findByAliasName(aliasName).mapLeft {
                 applicationErrorMapper.mapDomainError(it)
             }.bind()
-            
+
             ensure(existingAlias == null) {
                 val duplicateError = ScopeAliasError.AliasDuplicate(
                     aliasName = aliasName.value,
@@ -153,7 +153,7 @@ class CreateScopeHandler(
             val alias = ScopeAlias.createCanonical(
                 scopeId = savedScope.id,
                 aliasName = aliasName,
-                createdAt = Clock.System.now(),
+                timestamp = Clock.System.now(),
             )
             scopeAliasRepository.save(alias).mapLeft {
                 logger.error("Failed to save alias", mapOf("scopeId" to savedScope.id.value, "alias" to aliasName.value, "error" to it.toString()))

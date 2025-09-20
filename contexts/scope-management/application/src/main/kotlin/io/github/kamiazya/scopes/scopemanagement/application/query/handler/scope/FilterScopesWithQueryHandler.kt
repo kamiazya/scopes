@@ -48,7 +48,7 @@ class FilterScopesWithQueryHandler(
                 "limit" to query.limit,
             ),
         )
-        
+
         // Parse the query
         val ast = parser.parse(query.query).fold(
             { parseError ->

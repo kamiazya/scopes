@@ -29,15 +29,15 @@ class DeleteAspectDefinitionHandler(
     override suspend fun executeCommand(command: DeleteAspectDefinitionCommand): Either<ScopeContractError, Unit> = either {
         logger.info(
             "Deleting aspect definition",
-            mapOf("aspectKey" to command.key),
+            mapOf<String, Any>("aspectKey" to command.key),
         )
-        
+
         // Validate and create aspect key
         val aspectKey = AspectKey.create(command.key)
             .mapLeft { error ->
                 logger.error(
                     "Invalid aspect key",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -51,19 +51,22 @@ class DeleteAspectDefinitionHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to find aspect definition",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
-        
+
         if (existing == null) {
             logger.error(
                 "Aspect definition not found",
-                mapOf("key" to command.key),
+                mapOf<String, Any>("key" to command.key),
             )
             raise(
                 ScopeContractError.BusinessError.NotFound(
@@ -77,7 +80,7 @@ class DeleteAspectDefinitionHandler(
             .mapLeft { error ->
                 logger.error(
                     "Aspect is in use",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -91,18 +94,21 @@ class DeleteAspectDefinitionHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to delete aspect definition",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
-        
+
         logger.info(
             "Aspect definition deleted successfully",
-            mapOf("aspectKey" to command.key),
+            mapOf<String, Any>("aspectKey" to command.key),
         )
     }
 }

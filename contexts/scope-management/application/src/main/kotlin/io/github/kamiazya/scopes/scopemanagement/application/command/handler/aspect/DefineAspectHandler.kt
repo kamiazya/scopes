@@ -29,19 +29,19 @@ class DefineAspectHandler(
     override suspend fun executeCommand(command: DefineAspectCommand): Either<ScopeContractError, AspectDefinition> = either {
         logger.info(
             "Defining new aspect",
-            mapOf(
+            mapOf<String, Any>(
                 "aspectKey" to command.key,
-                "aspectType" to command.type::class.simpleName,
-                "description" to command.description,
+                "aspectType" to (command.type::class.simpleName ?: "unknown"),
+                "description" to (command.description ?: "none"),
             ),
         )
-        
+
         // Validate and create aspect key
         val aspectKey = AspectKey.create(command.key)
             .mapLeft { error ->
                 logger.error(
                     "Invalid aspect key",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -55,19 +55,22 @@ class DefineAspectHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to check existing aspect",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
 
         if (existing != null) {
             logger.error(
                 "Aspect already exists",
-                mapOf("key" to command.key),
+                mapOf<String, Any>("key" to command.key),
             )
             raise(
                 ScopeContractError.BusinessError.DuplicateTitle(
@@ -98,7 +101,7 @@ class DefineAspectHandler(
             ).mapLeft { error ->
                 logger.error(
                     "Failed to create ordered aspect",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
@@ -116,23 +119,26 @@ class DefineAspectHandler(
             .mapLeft { error ->
                 logger.error(
                     "Failed to save aspect definition",
-                    mapOf(
+                    mapOf<String, Any>(
                         "key" to command.key,
                         "error" to error.toString(),
                     ),
                 )
-                applicationErrorMapper.mapDomainError(error)
+                // Repository errors should be mapped to ServiceUnavailable
+                ScopeContractError.SystemError.ServiceUnavailable(
+                    service = "aspect-definition-repository",
+                )
             }
             .bind()
-        
+
         logger.info(
             "Aspect definition created successfully",
-            mapOf(
+            mapOf<String, Any>(
                 "aspectKey" to saved.key.value,
-                "aspectType" to saved.type::class.simpleName,
+                "aspectType" to (saved.type::class.simpleName ?: "unknown"),
             ),
         )
-        
+
         saved
     }
 }

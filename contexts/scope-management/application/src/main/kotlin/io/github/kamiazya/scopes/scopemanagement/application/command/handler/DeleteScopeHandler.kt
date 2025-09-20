@@ -42,14 +42,14 @@ class DeleteScopeHandler(
                 ErrorMappingContext(attemptedValue = command.id),
             )
         }.bind()
-        
+
         validateScopeExists(scopeId).bind()
         handleChildrenDeletion(scopeId, command.cascade).bind()
-        
+
         scopeRepository.deleteById(scopeId).mapLeft { error ->
             applicationErrorMapper.mapDomainError(error)
         }.bind()
-        
+
         logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
     }
 
