@@ -352,9 +352,10 @@ val scopeManagementModule = module {
     single {
         DeleteContextViewHandler(
             contextViewRepository = get(),
-            transactionManager = get(),
             activeContextService = get(),
             applicationErrorMapper = get(),
+            transactionManager = get(),
+            logger = get(),
         )
     }
 

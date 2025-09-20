@@ -6,10 +6,10 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.BaseQueryHandler
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId

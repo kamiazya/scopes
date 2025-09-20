@@ -6,7 +6,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.aspect.DefineAspectCommand
-import io.github.kamiazya.scopes.scopemanagement.application.handler.BaseCommandHandler
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.AspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -31,7 +31,7 @@ class DefineAspectHandler(
             "Defining new aspect",
             mapOf<String, Any>(
                 "aspectKey" to command.key,
-                "aspectType" to (command.type::class.simpleName ?: "unknown"),
+                "aspectType" to checkNotNull(command.type::class.simpleName) { "AspectType class name should not be null" },
                 "description" to (command.description ?: "none"),
             ),
         )
@@ -135,7 +135,7 @@ class DefineAspectHandler(
             "Aspect definition created successfully",
             mapOf<String, Any>(
                 "aspectKey" to saved.key.value,
-                "aspectType" to (saved.type::class.simpleName ?: "unknown"),
+                "aspectType" to checkNotNull(saved.type::class.simpleName) { "AspectType class name should not be null" },
             ),
         )
 

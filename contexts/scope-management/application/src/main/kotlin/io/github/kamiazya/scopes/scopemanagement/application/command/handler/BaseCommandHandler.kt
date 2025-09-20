@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -50,7 +50,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Executing command",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to (command!!::class.simpleName ?: "Unknown"),
+                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
             ),
         )
     }
@@ -64,7 +64,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command executed successfully",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to (command!!::class.simpleName ?: "Unknown"),
+                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
             ),
         )
     }
@@ -78,7 +78,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command execution failed",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to (command!!::class.simpleName ?: "Unknown"),
+                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -89,10 +89,11 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
      * Get a meaningful command name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getCommandName(command: C): String = command!!::class.simpleName ?: "UnknownCommand"
+    protected open fun getCommandName(command: C): String = checkNotNull(command!!::class.simpleName) { "Command class name should not be null" }
 
     /**
      * Get error class name for consistent error logging.
      */
-    protected fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    protected fun getErrorClassName(error: ScopeContractError): String =
+        error::class.qualifiedName ?: error::class.simpleName ?: error("Error class name must not be null")
 }

@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.scopemanagement.application.handler
+package io.github.kamiazya.scopes.scopemanagement.application.query.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
@@ -50,7 +50,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Executing query",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
             ),
         )
     }
@@ -64,7 +64,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query executed successfully",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
             ),
         )
     }
@@ -78,7 +78,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query execution failed",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -89,10 +89,11 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
      * Get a meaningful query name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getQueryName(query: Q): String = query?.let { it::class.simpleName } ?: "UnknownQuery"
+    protected open fun getQueryName(query: Q): String = query?.let { it::class.simpleName } ?: error("Query must not be null")
 
     /**
      * Get error class name for consistent error logging.
      */
-    protected fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    protected fun getErrorClassName(error: ScopeContractError): String =
+        error::class.qualifiedName ?: error::class.simpleName ?: error("Error class name must not be null")
 }
