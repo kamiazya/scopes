@@ -40,6 +40,27 @@ class CreateContextViewHandler(
                 .mapLeft { applicationErrorMapper.mapDomainError(it) }
                 .bind()
 
+            // Check if a context with the same key already exists
+            contextViewRepository.findByKey(key).fold(
+                { error ->
+                    raise(
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "context-view-repository",
+                        ),
+                    )
+                },
+                { existing ->
+                    if (existing != null) {
+                        raise(
+                            ScopeContractError.BusinessError.DuplicateContextKey(
+                                contextKey = key.value,
+                                existingContextId = existing.id.value.toString(),
+                            ),
+                        )
+                    }
+                },
+            )
+
             // Create the context view
             val contextView = ContextView.create(
                 key = key,

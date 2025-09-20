@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.toTypeString
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -51,7 +52,7 @@ class GetAspectDefinitionHandler(
                 val result = aspectDefinition?.let {
                     AspectDefinitionDto(
                         key = it.key.value,
-                        type = it.type.toString(),
+                        type = it.type.toTypeString(),
                         description = it.description,
                         allowMultiple = it.allowMultiple,
                     )

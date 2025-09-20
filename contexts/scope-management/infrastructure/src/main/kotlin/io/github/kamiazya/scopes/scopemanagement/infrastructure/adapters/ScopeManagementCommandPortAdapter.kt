@@ -125,6 +125,7 @@ class ScopeManagementCommandPortAdapter(
     override suspend fun deleteScope(command: ContractDeleteScopeCommand): Either<ScopeContractError, Unit> = deleteScopeHandler(
         DeleteScopeCommand(
             id = command.id,
+            cascade = command.cascade,
         ),
     )
 

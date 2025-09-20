@@ -271,6 +271,12 @@ fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = w
         entityId = this.identifier,
     )
 
+    is ScopesError.ValidationFailed -> AppScopeInputError.ValidationFailed(
+        field = this.field,
+        value = this.value,
+        reason = "Validation failed: ${this.constraint}",
+    )
+
     // For other errors, create a generic persistence error
     // This should be replaced with context-specific errors in actual handlers
     else -> AppPersistenceError.StorageUnavailable(

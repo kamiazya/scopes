@@ -71,11 +71,11 @@ class ScopeCommandAdapter(
     /**
      * Deletes a scope with cleanup
      */
-    suspend fun deleteScope(id: String): Either<ScopeContractError, Unit> {
+    suspend fun deleteScope(id: String, cascade: Boolean = false): Either<ScopeContractError, Unit> {
         // Future: Clean up workspace before deletion
         // workspaceManagementPort?.cleanupWorkspace(id)
 
-        val command = DeleteScopeCommand(id = id)
+        val command = DeleteScopeCommand(id = id, cascade = cascade)
         return scopeManagementCommandPort.deleteScope(command)
     }
 

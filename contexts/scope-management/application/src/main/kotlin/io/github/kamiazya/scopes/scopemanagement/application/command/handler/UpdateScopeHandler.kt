@@ -15,6 +15,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationE
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
@@ -32,6 +33,7 @@ import kotlinx.datetime.Clock
  */
 class UpdateScopeHandler(
     private val scopeRepository: ScopeRepository,
+    private val scopeAliasRepository: ScopeAliasRepository,
     private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
@@ -103,7 +105,12 @@ class UpdateScopeHandler(
             }.bind()
             logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
 
-            ScopeMapper.toDto(savedScope)
+            // Fetch aliases to include in the result
+            val aliases = scopeAliasRepository.findByScopeId(savedScope.id).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error)
+            }.bind()
+
+            ScopeMapper.toDto(savedScope, aliases)
         }
     }
 

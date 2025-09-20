@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.toTypeString
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 
@@ -43,7 +44,7 @@ class ListAspectDefinitionsHandler(
                 val result = definitions.map { definition ->
                     AspectDefinitionDto(
                         key = definition.key.value,
-                        type = definition.type.toString(),
+                        type = definition.type.toTypeString(),
                         description = definition.description,
                         allowMultiple = definition.allowMultiple,
                     )

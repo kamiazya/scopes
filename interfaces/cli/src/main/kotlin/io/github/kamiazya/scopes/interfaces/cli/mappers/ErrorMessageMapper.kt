@@ -91,6 +91,29 @@ object ErrorMessageMapper {
                     else -> ValidationMessageFormatter.formatContextFilterValidationFailure(failure)
                 }
             }
+            is ScopeContractError.InputError.ValidationFailure -> {
+                val constraintMessage = when (val constraint = error.constraint) {
+                    is ScopeContractError.ValidationConstraint.Empty -> "must not be empty"
+                    is ScopeContractError.ValidationConstraint.TooShort ->
+                        "too short: minimum ${constraint.minimumLength} characters"
+                    is ScopeContractError.ValidationConstraint.TooLong ->
+                        "too long: maximum ${constraint.maximumLength} characters"
+                    is ScopeContractError.ValidationConstraint.InvalidFormat ->
+                        "invalid format"
+                    is ScopeContractError.ValidationConstraint.InvalidType ->
+                        "invalid type: expected ${constraint.expectedType}"
+                    is ScopeContractError.ValidationConstraint.InvalidValue ->
+                        "invalid value: ${constraint.actualValue}" +
+                            (constraint.expectedValues?.run { " (allowed: ${joinToString(", ")})" } ?: "")
+                    is ScopeContractError.ValidationConstraint.EmptyValues ->
+                        "cannot be empty"
+                    is ScopeContractError.ValidationConstraint.MultipleValuesNotAllowed ->
+                        "multiple values not allowed"
+                    is ScopeContractError.ValidationConstraint.RequiredField ->
+                        "is required"
+                }
+                "${error.field.replaceFirstChar { it.uppercase() }} $constraintMessage"
+            }
         }
         is ScopeContractError.BusinessError -> when (error) {
             is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
