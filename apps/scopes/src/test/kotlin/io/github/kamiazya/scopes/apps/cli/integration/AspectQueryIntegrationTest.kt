@@ -66,8 +66,8 @@ class AspectQueryIntegrationTest :
                     scopeRepository,
                     aliasRepository,
                     aspectDefinitionRepository,
-                    NoOpTransactionManager(),
                     applicationErrorMapper,
+                    NoOpTransactionManager(),
                     logger,
                 )
 

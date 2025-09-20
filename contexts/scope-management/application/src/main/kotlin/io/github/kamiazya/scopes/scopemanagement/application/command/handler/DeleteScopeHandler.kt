@@ -4,10 +4,10 @@ import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
@@ -16,18 +16,18 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
  * Handler for deleting a scope.
- *
- * Note: This handler returns contract errors directly as part of the
- * architecture simplification to eliminate duplicate error definitions.
+ * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
+ * for error mapping to contract errors.
+ * Supports cascade deletion of child scopes.
  */
 class DeleteScopeHandler(
     private val scopeRepository: ScopeRepository,
-    private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger,
-) : CommandHandler<DeleteScopeCommand, ScopeContractError, Unit> {
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<DeleteScopeCommand, Unit>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = either {
+    override suspend fun executeCommand(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = either {
         logger.info(
             "Deleting scope",
             mapOf(
@@ -36,30 +36,21 @@ class DeleteScopeHandler(
             ),
         )
 
-        transactionManager.inTransaction {
-            either {
-                val scopeId = ScopeId.create(command.id).mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(
-                        error,
-                        ErrorMappingContext(attemptedValue = command.id),
-                    )
-                }.bind()
-                validateScopeExists(scopeId).bind()
-                handleChildrenDeletion(scopeId, command.cascade).bind()
-                scopeRepository.deleteById(scopeId).mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(error)
-                }.bind()
-                logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
-            }
+        val scopeId = ScopeId.create(command.id).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(
+                error,
+                ErrorMappingContext(attemptedValue = command.id),
+            )
         }.bind()
-    }.onLeft { error ->
-        logger.error(
-            "Failed to delete scope",
-            mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
-                "message" to error.toString(),
-            ),
-        )
+
+        validateScopeExists(scopeId).bind()
+        handleChildrenDeletion(scopeId, command.cascade).bind()
+
+        scopeRepository.deleteById(scopeId).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
+        }.bind()
+
+        logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
     }
 
     private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {

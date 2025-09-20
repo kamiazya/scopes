@@ -3,10 +3,10 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.SetCanonicalAliasCommand
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
@@ -17,50 +17,47 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 /**
  * Handler for setting a canonical alias for a scope.
  * Automatically demotes the previous canonical alias to a custom alias.
- *
- * Note: This handler returns contract errors directly as part of the
- * architecture simplification to eliminate duplicate error definitions.
+ * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
+ * for error mapping to contract errors.
  */
 class SetCanonicalAliasHandler(
     private val scopeAliasService: ScopeAliasApplicationService,
-    private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger,
-) : CommandHandler<SetCanonicalAliasCommand, ScopeContractError, Unit> {
+    transactionManager: TransactionManager,
+    logger: Logger,
+) : BaseCommandHandler<SetCanonicalAliasCommand, Unit>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: SetCanonicalAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
-        either {
-            logger.debug(
-                "Setting canonical alias",
-                mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newCanonicalAlias" to command.newCanonicalAlias,
-                ),
-            )
+    override suspend fun executeCommand(command: SetCanonicalAliasCommand): Either<ScopeContractError, Unit> = either {
+        logger.debug(
+            "Setting canonical alias",
+            mapOf(
+                "currentAlias" to command.currentAlias,
+                "newCanonicalAlias" to command.newCanonicalAlias,
+            ),
+        )
 
-            // Validate and find aliases
-            val currentAliasName = validateAliasName(command.currentAlias, "current").bind()
-            val currentAlias = findAlias(currentAliasName, command.currentAlias).bind()
-            val scopeId = currentAlias.scopeId
+        // Validate and find aliases
+        val currentAliasName = validateAliasName(command.currentAlias, "current").bind()
+        val currentAlias = findAlias(currentAliasName, command.currentAlias).bind()
+        val scopeId = currentAlias.scopeId
 
-            val newCanonicalAliasName = validateAliasName(command.newCanonicalAlias, "new canonical").bind()
-            val newCanonicalAlias = findAlias(newCanonicalAliasName, command.newCanonicalAlias).bind()
+        val newCanonicalAliasName = validateAliasName(command.newCanonicalAlias, "new canonical").bind()
+        val newCanonicalAlias = findAlias(newCanonicalAliasName, command.newCanonicalAlias).bind()
 
-            // Verify aliases belong to same scope
-            verifySameScope(currentAlias, newCanonicalAlias, command).bind()
+        // Verify aliases belong to same scope
+        verifySameScope(currentAlias, newCanonicalAlias, command).bind()
 
-            // Set as canonical
-            setCanonicalAlias(scopeId, newCanonicalAliasName, command).bind()
+        // Set as canonical
+        setCanonicalAlias(scopeId, newCanonicalAliasName, command).bind()
 
-            logger.info(
-                "Successfully set canonical alias",
-                mapOf(
-                    "currentAlias" to command.currentAlias,
-                    "newCanonicalAlias" to command.newCanonicalAlias,
-                    "scopeId" to scopeId.value,
-                ),
-            )
-        }
+        logger.info(
+            "Successfully set canonical alias",
+            mapOf(
+                "currentAlias" to command.currentAlias,
+                "newCanonicalAlias" to command.newCanonicalAlias,
+                "scopeId" to scopeId.value,
+            ),
+        )
     }
 
     private fun validateAliasName(alias: String, aliasType: String): Either<ScopeContractError, AliasName> = AliasName.create(alias).mapLeft { error ->

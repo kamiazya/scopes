@@ -69,15 +69,16 @@ class AspectManagementIntegrationTest :
                 applicationErrorMapper = ApplicationErrorMapper(logger)
 
                 // Initialize handlers
-                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, transactionManager, applicationErrorMapper)
+                defineAspectHandler = DefineAspectHandler(aspectDefinitionRepository, applicationErrorMapper, transactionManager, logger)
                 getAspectDefinitionHandler = GetAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, logger)
-                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, transactionManager, applicationErrorMapper)
+                updateAspectDefinitionHandler = UpdateAspectDefinitionHandler(aspectDefinitionRepository, applicationErrorMapper, transactionManager, logger)
                 deleteAspectDefinitionHandler =
                     DeleteAspectDefinitionHandler(
                         aspectDefinitionRepository,
                         AspectUsageValidationService(scopeRepository),
-                        transactionManager,
                         applicationErrorMapper,
+                        transactionManager,
+                        logger,
                     )
                 listAspectDefinitionsHandler = ListAspectDefinitionsHandler(aspectDefinitionRepository, transactionManager, logger)
                 validationService = AspectValueValidationService()

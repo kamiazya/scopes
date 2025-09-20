@@ -127,8 +127,12 @@ class ArchitectureUniformityTest :
 
                 commandHandlers.assertTrue { handler ->
                     // Should implement or extend CommandHandler (check both exact name and generic versions)
+                    // Also accept BaseCommandHandler which implements CommandHandler
                     handler.parents().any { parent ->
-                        parent.name == "CommandHandler" || parent.name.startsWith("CommandHandler<")
+                        parent.name == "CommandHandler" ||
+                            parent.name.startsWith("CommandHandler<") ||
+                            parent.name == "BaseCommandHandler" ||
+                            parent.name.startsWith("BaseCommandHandler<")
                     }
                 }
             }
@@ -147,8 +151,12 @@ class ArchitectureUniformityTest :
 
                 queryHandlers.assertTrue { handler ->
                     // Should implement or extend QueryHandler (check both exact name and generic versions)
+                    // Also accept BaseQueryHandler which implements QueryHandler
                     handler.parents().any { parent ->
-                        parent.name == "QueryHandler" || parent.name.startsWith("QueryHandler<")
+                        parent.name == "QueryHandler" ||
+                            parent.name.startsWith("QueryHandler<") ||
+                            parent.name == "BaseQueryHandler" ||
+                            parent.name.startsWith("BaseQueryHandler<")
                     }
                 }
             }

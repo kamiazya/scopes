@@ -153,29 +153,14 @@ class DefaultDeviceSynchronizationService(
         conflicts.forEach { conflict ->
             when (strategy) {
                 ConflictResolutionStrategy.LOCAL_WINS -> {
-                    resolved.add(
-                        ResolvedConflict(
-                            conflict = conflict,
-                            resolution = ResolutionAction.KEPT_LOCAL,
-                        ),
-                    )
+                    resolved.add(createResolvedConflict(conflict, ResolutionAction.KEPT_LOCAL))
                 }
                 ConflictResolutionStrategy.REMOTE_WINS -> {
-                    resolved.add(
-                        ResolvedConflict(
-                            conflict = conflict,
-                            resolution = ResolutionAction.ACCEPTED_REMOTE,
-                        ),
-                    )
+                    resolved.add(createResolvedConflict(conflict, ResolutionAction.ACCEPTED_REMOTE))
                 }
                 ConflictResolutionStrategy.LAST_WRITE_WINS -> {
                     // Simplified - would need timestamp comparison
-                    resolved.add(
-                        ResolvedConflict(
-                            conflict = conflict,
-                            resolution = ResolutionAction.KEPT_LOCAL,
-                        ),
-                    )
+                    resolved.add(createResolvedConflict(conflict, ResolutionAction.KEPT_LOCAL))
                 }
                 ConflictResolutionStrategy.MANUAL -> {
                     unresolved.add(conflict)
@@ -195,4 +180,9 @@ class DefaultDeviceSynchronizationService(
             ),
         )
     }
+
+    private fun createResolvedConflict(conflict: EventConflict, action: ResolutionAction): ResolvedConflict = ResolvedConflict(
+        conflict = conflict,
+        resolution = action,
+    )
 }

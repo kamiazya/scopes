@@ -27,6 +27,9 @@ class ActiveContextService(
     private val contextAuditService: ContextAuditService,
 ) {
 
+    private fun createStorageUnavailableError(operation: String): ScopeManagementApplicationError.PersistenceError.StorageUnavailable =
+        ScopeManagementApplicationError.PersistenceError.StorageUnavailable(operation = operation)
+
     /**
      * Get the currently active context.
      * Returns null if no context is active.
@@ -50,9 +53,7 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                        operation = "setActiveContext",
-                    )
+                    else -> createStorageUnavailableError("setActiveContext")
                 }
             }
             .bind()
@@ -84,9 +85,7 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                        operation = "clearActiveContext",
-                    )
+                    else -> createStorageUnavailableError("clearActiveContext")
                 }
             }
             .bind()
@@ -123,9 +122,7 @@ class ActiveContextService(
             .mapLeft { error ->
                 when (error) {
                     is DomainPersistenceError -> error.toApplicationError()
-                    else -> ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
-                        operation = "findByKey",
-                    )
+                    else -> createStorageUnavailableError("findByKey")
                 }
             }
             .bind()

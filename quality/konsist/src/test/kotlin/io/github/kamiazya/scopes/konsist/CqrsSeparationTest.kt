@@ -52,6 +52,11 @@ class CqrsSeparationTest :
                                 // Check if handler uses transaction manager in method calls
                                 function.text?.contains("transactionManager") == true ||
                                     function.text?.contains("inTransaction") == true
+                            } ||
+                            // Check if handler extends BaseCommandHandler which provides TransactionManager
+                            commandHandler.parents().any { parent ->
+                                parent.name == "BaseCommandHandler" ||
+                                    parent.name.startsWith("BaseCommandHandler<")
                             }
                     }
             }

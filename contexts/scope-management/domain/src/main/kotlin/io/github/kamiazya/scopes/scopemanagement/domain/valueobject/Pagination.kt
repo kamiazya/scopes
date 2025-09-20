@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
-import kotlin.ConsistentCopyVisibility
 
 /**
  * Value object for pagination parameters with validation.
