@@ -50,7 +50,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Executing query",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query!!::class.simpleName ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
             ),
         )
     }
@@ -64,7 +64,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query executed successfully",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query!!::class.simpleName ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
             ),
         )
     }
@@ -78,7 +78,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query execution failed",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query!!::class.simpleName ?: "Unknown"),
+                "queryType" to (query?.let { it::class.simpleName } ?: "Unknown"),
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -89,7 +89,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
      * Get a meaningful query name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getQueryName(query: Q): String = query!!::class.simpleName ?: "UnknownQuery"
+    protected open fun getQueryName(query: Q): String = query?.let { it::class.simpleName } ?: "UnknownQuery"
 
     /**
      * Get error class name for consistent error logging.
