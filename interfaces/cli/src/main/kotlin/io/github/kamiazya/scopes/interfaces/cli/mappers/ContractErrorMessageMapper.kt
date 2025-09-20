@@ -38,6 +38,29 @@ object ContractErrorMessageMapper {
                 formatted
             }
         }
+        is ScopeContractError.InputError.ValidationFailure -> {
+            val constraintMessage = when (val constraint = error.constraint) {
+                is ScopeContractError.ValidationConstraint.Empty -> "must not be empty"
+                is ScopeContractError.ValidationConstraint.TooShort ->
+                    "must be at least ${constraint.minimumLength} characters (current: ${constraint.actualLength})"
+                is ScopeContractError.ValidationConstraint.TooLong ->
+                    "must be at most ${constraint.maximumLength} characters (current: ${constraint.actualLength})"
+                is ScopeContractError.ValidationConstraint.InvalidFormat ->
+                    "has invalid format (expected: ${constraint.expectedFormat})"
+                is ScopeContractError.ValidationConstraint.InvalidType ->
+                    "has invalid type (expected: ${constraint.expectedType}, actual: ${constraint.actualType})"
+                is ScopeContractError.ValidationConstraint.InvalidValue ->
+                    "has invalid value '${constraint.actualValue}'" +
+                        (constraint.expectedValues?.run { " (allowed: ${joinToString(", ")})" } ?: "")
+                is ScopeContractError.ValidationConstraint.EmptyValues ->
+                    "cannot have empty values"
+                is ScopeContractError.ValidationConstraint.MultipleValuesNotAllowed ->
+                    "does not allow multiple values"
+                is ScopeContractError.ValidationConstraint.RequiredField ->
+                    "is required"
+            }
+            "Validation failed for ${error.field}: $constraintMessage"
+        }
 
         is ScopeContractError.BusinessError.NotFound -> {
             if (debug) {

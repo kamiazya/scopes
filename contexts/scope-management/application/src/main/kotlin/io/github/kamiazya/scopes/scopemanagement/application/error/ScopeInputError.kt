@@ -35,4 +35,6 @@ sealed class ScopeInputError : ScopeManagementApplicationError() {
     data class AliasOfDifferentScope(val alias: String, val expectedScopeId: String, val actualScopeId: String) : ScopeInputError()
 
     data class InvalidParentId(val parentId: String) : ScopeInputError()
+
+    data class ValidationFailed(val field: String, val value: String, val reason: String) : ScopeInputError()
 }

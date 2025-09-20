@@ -27,6 +27,9 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
     testImplementation(libs.koin.test)
+    testImplementation(project(":platform-infrastructure"))
+    testImplementation(project(":platform-observability"))
+    testImplementation(project(":scope-management-infrastructure"))
 }
 
 tasks.test {

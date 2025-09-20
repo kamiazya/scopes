@@ -18,4 +18,6 @@ sealed class ValidationError : ScopesError() {
     data class RequiredAspectsMissing(val missingKeys: Set<AspectKey>) : ValidationError()
 
     data class InvalidDurationValue(val aspectKey: AspectKey, val value: AspectValue) : ValidationError()
+
+    data class EmptyValuesList(val aspectKey: AspectKey) : ValidationError()
 }

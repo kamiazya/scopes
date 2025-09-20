@@ -9,6 +9,19 @@ import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDe
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
+
+/**
+ * Extension function to convert AspectType to the lowercase string representation
+ * expected by the contract layer.
+ */
+private fun AspectType.toTypeString(): String = when (this) {
+    is AspectType.Text -> "text"
+    is AspectType.Numeric -> "numeric"
+    is AspectType.BooleanType -> "boolean"
+    is AspectType.Duration -> "duration"
+    is AspectType.Ordered -> "ordered"
+}
 
 /**
  * Handler for listing all aspect definitions.
@@ -43,7 +56,7 @@ class ListAspectDefinitionsHandler(
                 val result = definitions.map { definition ->
                     AspectDefinitionDto(
                         key = definition.key.value,
-                        type = definition.type.toString(),
+                        type = definition.type.toTypeString(),
                         description = definition.description,
                         allowMultiple = definition.allowMultiple,
                     )

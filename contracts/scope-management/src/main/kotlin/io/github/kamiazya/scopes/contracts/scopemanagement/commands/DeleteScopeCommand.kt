@@ -6,4 +6,4 @@ package io.github.kamiazya.scopes.contracts.scopemanagement.commands
  * This is a minimal contract for scope deletion that contains only
  * the essential fields needed by external consumers.
  */
-public data class DeleteScopeCommand(public val id: String)
+public data class DeleteScopeCommand(public val id: String, public val cascade: Boolean = false)

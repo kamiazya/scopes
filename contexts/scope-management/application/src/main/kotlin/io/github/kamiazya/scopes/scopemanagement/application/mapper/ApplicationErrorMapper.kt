@@ -121,6 +121,27 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             parentId = error.parentId,
             expectedFormat = "Valid ULID format",
         )
+
+        is AppScopeInputError.ValidationFailed -> {
+            // Check if this is specifically an alias validation
+            if (error.field.contains("alias", ignoreCase = true)) {
+                ScopeContractError.InputError.InvalidAlias(
+                    alias = error.value,
+                    validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
+                        expectedPattern = error.reason,
+                    ),
+                )
+            } else {
+                // Use generic validation failure for non-alias fields
+                ScopeContractError.InputError.ValidationFailure(
+                    field = error.field,
+                    value = error.value,
+                    constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = error.reason,
+                    ),
+                )
+            }
+        }
     }
 
     private fun mapIdInputError(error: AppScopeInputError): ScopeContractError.InputError.InvalidId = when (error) {
@@ -233,8 +254,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ContextError.StateNotFound -> mapNotFoundError(error.contextId)
 
         // Other errors
-        is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = error.key,
+        is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateContextKey(
+            contextKey = error.key,
+            existingContextId = null,
         )
         is ContextError.KeyInvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedKey,
@@ -617,18 +639,45 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ScopesError.SystemError -> ScopeContractError.SystemError.ServiceUnavailable(
             service = domainError.service ?: SERVICE_NAME,
         )
-        is ScopesError.ValidationFailed -> when (val constraint = domainError.constraint) {
-            is ScopesError.ValidationConstraintType.InvalidType -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedType,
-            )
-            is ScopesError.ValidationConstraintType.InvalidFormat -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedFormat,
-            )
-            else -> ScopeContractError.InputError.InvalidTitle(
-                title = domainError.value,
-                validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        is ScopesError.ValidationFailed -> {
+            // Map domain validation constraint to contract validation constraint
+            val contractConstraint = when (val constraint = domainError.constraint) {
+                is ScopesError.ValidationConstraintType.InvalidType ->
+                    ScopeContractError.ValidationConstraint.InvalidType(
+                        expectedType = constraint.expectedType,
+                        actualType = constraint.actualType,
+                    )
+                is ScopesError.ValidationConstraintType.InvalidFormat ->
+                    ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = constraint.expectedFormat,
+                    )
+                is ScopesError.ValidationConstraintType.NotInAllowedValues ->
+                    ScopeContractError.ValidationConstraint.InvalidValue(
+                        expectedValues = constraint.allowedValues,
+                        actualValue = domainError.value,
+                    )
+                is ScopesError.ValidationConstraintType.MissingRequired ->
+                    ScopeContractError.ValidationConstraint.RequiredField(
+                        field = constraint.requiredFields.firstOrNull() ?: domainError.field,
+                    )
+                is ScopesError.ValidationConstraintType.MultipleValuesNotAllowed ->
+                    ScopeContractError.ValidationConstraint.MultipleValuesNotAllowed(
+                        field = constraint.field,
+                    )
+                is ScopesError.ValidationConstraintType.EmptyValues ->
+                    ScopeContractError.ValidationConstraint.EmptyValues(
+                        field = constraint.field,
+                    )
+                is ScopesError.ValidationConstraintType.InvalidValue ->
+                    ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = constraint.reason,
+                    )
+            }
+
+            ScopeContractError.InputError.ValidationFailure(
+                field = domainError.field,
+                value = domainError.value,
+                constraint = contractConstraint,
             )
         }
         is ScopesError.Conflict -> when (domainError.conflictType) {
