@@ -56,6 +56,18 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
+    /**
+     * Helper method to create InvalidDescription with TooLong validation failure.
+     */
+    private fun createInvalidDescriptionTooLong(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidDescription =
+        ScopeContractError.InputError.InvalidDescription(
+            descriptionText = "",
+            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
+                maximumLength = maxLength,
+                actualLength = actualLength,
+            ),
+        )
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.alias
@@ -558,36 +570,15 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
 
         // AspectValue validation errors
-        is AspectValidationError.EmptyAspectValue -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = 0,
-                actualLength = 0,
-            ),
-        )
-        is AspectValidationError.AspectValueTooShort -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = 1,
-                actualLength = 0,
-            ),
-        )
-        is AspectValidationError.AspectValueTooLong -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = domainError.maxLength,
-                actualLength = domainError.actualLength,
-            ),
+        is AspectValidationError.EmptyAspectValue -> createInvalidDescriptionTooLong(0, 0)
+        is AspectValidationError.AspectValueTooShort -> createInvalidDescriptionTooLong(1, 0)
+        is AspectValidationError.AspectValueTooLong -> createInvalidDescriptionTooLong(
+            domainError.maxLength,
+            domainError.actualLength,
         )
 
         // AspectDefinition validation errors
-        is AspectValidationError.EmptyAspectAllowedValues -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = 0,
-                actualLength = 0,
-            ),
-        )
+        is AspectValidationError.EmptyAspectAllowedValues -> createInvalidDescriptionTooLong(0, 0)
         is AspectValidationError.DuplicateAspectAllowedValues -> ScopeContractError.BusinessError.DuplicateTitle(
             title = "Duplicate allowed values",
             parentId = null,
@@ -608,15 +599,11 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ScopesError.NotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.identifier,
         )
-        is ScopesError.InvalidOperation -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
+        is ScopesError.InvalidOperation -> createServiceUnavailableError(SERVICE_NAME)
         is ScopesError.AlreadyExists -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
         )
-        is ScopesError.SystemError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = domainError.service ?: SERVICE_NAME,
-        )
+        is ScopesError.SystemError -> createServiceUnavailableError(domainError.service ?: SERVICE_NAME)
         is ScopesError.ValidationFailed -> when (val constraint = domainError.constraint) {
             is ScopesError.ValidationConstraintType.InvalidType -> ScopeContractError.InputError.InvalidId(
                 id = domainError.value,
@@ -655,20 +642,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ScopesError.RepositoryError.RepositoryFailure.ACCESS_DENIED,
             ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ScopesError.RepositoryError.RepositoryFailure.CORRUPTED_DATA,
-            -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            -> createServiceUnavailableError(SERVICE_NAME)
             ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION -> ScopeContractError.BusinessError.DuplicateTitle(
                 title = context?.attemptedValue ?: "",
                 parentId = context?.parentId,
             )
-            null -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            null -> createServiceUnavailableError(SERVICE_NAME)
         }
-        is ScopesError.ScopeStatusTransitionError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
+        is ScopesError.ScopeStatusTransitionError -> createServiceUnavailableError(SERVICE_NAME)
 
         // Domain-specific errors that extend ScopesError (delegation through inheritance)
         is ScopeInputError -> {
@@ -809,9 +790,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                     "message" to domainError.toString(),
                 ),
             )
-            ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            createServiceUnavailableError(SERVICE_NAME)
         }
     }
 }
