@@ -8,22 +8,10 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.toTypeString
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetAspectDefinition
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
-
-/**
- * Extension function to convert AspectType to the lowercase string representation
- * expected by the contract layer.
- */
-private fun AspectType.toTypeString(): String = when (this) {
-    is AspectType.Text -> "text"
-    is AspectType.Numeric -> "numeric"
-    is AspectType.BooleanType -> "boolean"
-    is AspectType.Duration -> "duration"
-    is AspectType.Ordered -> "ordered"
-}
 
 /**
  * Handler for retrieving an aspect definition by key.

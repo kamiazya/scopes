@@ -27,17 +27,18 @@ public class AspectCommandPortAdapter(
 
     override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
         // Validate aspect type first
-        val aspectType = when (command.type.lowercase()) {
+        val aspectType = when (command.type.lowercase(java.util.Locale.ROOT)) {
             "text" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
             "numeric" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Numeric
             "boolean" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.BooleanType
             "duration" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Duration
+            "ordered" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Ordered(emptyList())
             else -> {
                 return ScopeContractError.InputError.ValidationFailure(
                     field = "type",
                     value = command.type,
                     constraint = ScopeContractError.ValidationConstraint.InvalidValue(
-                        expectedValues = listOf("text", "numeric", "boolean", "duration"),
+                        expectedValues = listOf("text", "numeric", "boolean", "duration", "ordered"),
                         actualValue = command.type,
                     ),
                 ).left()

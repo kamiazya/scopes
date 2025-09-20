@@ -669,8 +669,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                         field = constraint.field,
                     )
                 is ScopesError.ValidationConstraintType.InvalidValue ->
-                    ScopeContractError.ValidationConstraint.InvalidFormat(
-                        expectedFormat = constraint.reason,
+                    ScopeContractError.ValidationConstraint.InvalidValue(
+                        expectedValues = null, // Generic invalid value without specific allowed values
+                        actualValue = domainError.value,
                     )
             }
 
