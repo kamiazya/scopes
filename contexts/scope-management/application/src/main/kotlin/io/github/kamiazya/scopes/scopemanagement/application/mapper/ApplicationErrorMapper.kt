@@ -68,6 +68,56 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ),
         )
 
+    /**
+     * Helper method to create InvalidTitle with TooLong validation failure.
+     */
+    private fun createInvalidTitleTooLong(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = maxLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    /**
+     * Helper method to create InvalidTitle with TooShort validation failure.
+     */
+    private fun createInvalidTitleTooShort(minLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = minLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    /**
+     * Helper method to create InvalidTitle with Empty validation failure.
+     */
+    private fun createInvalidTitleEmpty(): ScopeContractError.InputError.InvalidTitle = ScopeContractError.InputError.InvalidTitle(
+        title = "",
+        validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+    )
+
+    /**
+     * Helper method to create InvalidTitle with InvalidCharacters validation failure.
+     */
+    private fun createInvalidTitleInvalidCharacters(): ScopeContractError.InputError.InvalidTitle = ScopeContractError.InputError.InvalidTitle(
+        title = "",
+        validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+            prohibitedCharacters = listOf(),
+        ),
+    )
+
+    /**
+     * Helper method to create InvalidId with specific format.
+     */
+    private fun createInvalidId(id: String, expectedFormat: String): ScopeContractError.InputError.InvalidId = ScopeContractError.InputError.InvalidId(
+        id = id,
+        expectedFormat = expectedFormat,
+    )
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.alias
@@ -531,12 +581,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 actualLength = domainError.actualLength,
             ),
         )
-        is AspectKeyError.InvalidFormat -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = listOf(),
-            ),
-        )
+        is AspectKeyError.InvalidFormat -> createInvalidTitleInvalidCharacters()
     }
 
     /**
@@ -544,30 +589,13 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      */
     fun mapDomainError(domainError: AspectValidationError): ScopeContractError = when (domainError) {
         // AspectKey validation errors
-        is AspectValidationError.EmptyAspectKey -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        is AspectValidationError.EmptyAspectKey -> createInvalidTitleEmpty()
+        is AspectValidationError.AspectKeyTooShort -> createInvalidTitleTooShort(1, 0)
+        is AspectValidationError.AspectKeyTooLong -> createInvalidTitleTooLong(
+            domainError.maxLength,
+            domainError.actualLength,
         )
-        is AspectValidationError.AspectKeyTooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = 1,
-                actualLength = 0,
-            ),
-        )
-        is AspectValidationError.AspectKeyTooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maxLength,
-                actualLength = domainError.actualLength,
-            ),
-        )
-        is AspectValidationError.InvalidAspectKeyFormat -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = listOf(),
-            ),
-        )
+        is AspectValidationError.InvalidAspectKeyFormat -> createInvalidTitleInvalidCharacters()
 
         // AspectValue validation errors
         is AspectValidationError.EmptyAspectValue -> createInvalidDescriptionTooLong(0, 0)
@@ -605,18 +633,15 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
         is ScopesError.SystemError -> createServiceUnavailableError(domainError.service ?: SERVICE_NAME)
         is ScopesError.ValidationFailed -> when (val constraint = domainError.constraint) {
-            is ScopesError.ValidationConstraintType.InvalidType -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedType,
+            is ScopesError.ValidationConstraintType.InvalidType -> createInvalidId(
+                domainError.value,
+                constraint.expectedType,
             )
-            is ScopesError.ValidationConstraintType.InvalidFormat -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedFormat,
+            is ScopesError.ValidationConstraintType.InvalidFormat -> createInvalidId(
+                domainError.value,
+                constraint.expectedFormat,
             )
-            else -> ScopeContractError.InputError.InvalidTitle(
-                title = domainError.value,
-                validationFailure = ScopeContractError.TitleValidationFailure.Empty,
-            )
+            else -> createInvalidTitleEmpty()
         }
         is ScopesError.Conflict -> when (domainError.conflictType) {
             ScopesError.Conflict.ConflictType.DUPLICATE_KEY -> ScopeContractError.BusinessError.DuplicateTitle(
