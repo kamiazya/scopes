@@ -32,7 +32,7 @@ class DefineAspectHandler(
             mapOf<String, Any>(
                 "aspectKey" to command.key,
                 "aspectType" to checkNotNull(command.type::class.simpleName) { "AspectType class name should not be null" },
-                "description" to (command.description ?: "none"),
+                "description" to command.description,
             ),
         )
 

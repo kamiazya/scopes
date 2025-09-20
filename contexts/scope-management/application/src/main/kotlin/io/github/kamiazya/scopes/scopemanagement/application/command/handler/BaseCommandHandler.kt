@@ -18,6 +18,10 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 abstract class BaseCommandHandler<C, R>(protected val transactionManager: TransactionManager, protected val logger: Logger) :
     CommandHandler<C, ScopeContractError, R> {
 
+    companion object {
+        private const val COMMAND_CLASS_NAME_NULL_ERROR = "Command class name should not be null"
+    }
+
     /**
      * Template method that provides common structure for all commands.
      * Subclasses implement executeCommand for specific business logic.
@@ -50,7 +54,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Executing command",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
+                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
             ),
         )
     }
@@ -64,7 +68,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command executed successfully",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
+                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
             ),
         )
     }
@@ -78,7 +82,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command execution failed",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { "Command class name should not be null" },
+                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -89,7 +93,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
      * Get a meaningful command name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getCommandName(command: C): String = checkNotNull(command!!::class.simpleName) { "Command class name should not be null" }
+    protected open fun getCommandName(command: C): String = checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR }
 
     /**
      * Get error class name for consistent error logging.

@@ -18,6 +18,10 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 abstract class BaseQueryHandler<Q, R>(protected val transactionManager: TransactionManager, protected val logger: Logger) :
     QueryHandler<Q, ScopeContractError, R> {
 
+    companion object {
+        private const val QUERY_NULL_ERROR = "Query must not be null"
+    }
+
     /**
      * Template method that provides common structure for all queries.
      * Subclasses implement executeQuery for specific business logic.
@@ -50,7 +54,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Executing query",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
+                "queryType" to (query?.let { it::class.simpleName } ?: error(QUERY_NULL_ERROR)),
             ),
         )
     }
@@ -64,7 +68,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query executed successfully",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
+                "queryType" to (query?.let { it::class.simpleName } ?: error(QUERY_NULL_ERROR)),
             ),
         )
     }
@@ -78,7 +82,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
             "Query execution failed",
             mapOf(
                 "query" to getQueryName(query),
-                "queryType" to (query?.let { it::class.simpleName } ?: error("Query must not be null")),
+                "queryType" to (query?.let { it::class.simpleName } ?: error(QUERY_NULL_ERROR)),
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -89,7 +93,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
      * Get a meaningful query name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getQueryName(query: Q): String = query?.let { it::class.simpleName } ?: error("Query must not be null")
+    protected open fun getQueryName(query: Q): String = query?.let { it::class.simpleName } ?: error(QUERY_NULL_ERROR)
 
     /**
      * Get error class name for consistent error logging.
