@@ -12,7 +12,7 @@ graph TB
         subgraph "Domain Layer"
             AN[AliasName<br/>Value Object]
             SA[ScopeAlias<br/>Entity]
-            AGS[AliasGenerationService<br/>Interface]
+            AGS["AliasGenerationService<br/>Interface<br/>(Internal)"]
         end
 
         subgraph "Application Layer"
@@ -22,10 +22,10 @@ graph TB
             ARH[AliasResolutionHandler]
         end
 
-        subgraph "Infrastructure Layer"
-            AR[AliasRepository<br/>Implementation]
-            AGI[AliasGenerationService<br/>Implementation]
-            WP[WordProvider<br/>Implementations]
+        subgraph "Infrastructure Layer (Internal)"
+            AR["AliasRepository<br/>Implementation<br/>(Internal)"]
+            AGI["AliasGenerationService<br/>Implementation<br/>(Internal)"]
+            WP["WordProvider<br/>Implementations<br/>(Internal)"]
         end
     end
 
@@ -44,6 +44,8 @@ graph TB
     class AAH,RAH,SCAH,ARH application
     class AR,AGI,WP infrastructure
 ```
+
+> **Note**: Components marked as "Internal" (AliasGenerationService, WordProvider, Repository implementations) are not part of the public API. They are implementation details that may change without notice. Only the command handlers and their input/output types form the stable public interface.
 
 ## Core Concepts
 

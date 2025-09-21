@@ -433,6 +433,6 @@ object ScopeMapper {
 
 ## Related Documentation
 
-- [Clean Architecture Patterns](./clean-architecture-patterns.md) - Layer responsibilities
+- [Clean Architecture](../../explanation/clean-architecture.md) - Architecture principles
 - [Error Handling](./error-handling.md) - Error DTO patterns
-- [Contracts Slim Policy](./contracts-slim-policy.md) - Contract layer design
+- [Domain-Driven Design](../../explanation/domain-driven-design.md) - DDD patterns

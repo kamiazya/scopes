@@ -9,10 +9,7 @@ import kotlin.ConsistentCopyVisibility
  * Encapsulates the business rules for valid pagination values.
  */
 @ConsistentCopyVisibility
-data class Pagination private constructor(
-    val offset: Int,
-    val limit: Int
-) {
+data class Pagination private constructor(val offset: Int, val limit: Int) {
     companion object {
         private const val MIN_OFFSET = 0
         private const val MIN_LIMIT = 1
@@ -81,6 +78,6 @@ data class Pagination private constructor(
      */
     fun previousPage(): Either<DomainValidationError.PaginationViolation, Pagination> = create(
         maxOf(0, offset - limit),
-        limit
+        limit,
     )
 }

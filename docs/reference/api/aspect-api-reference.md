@@ -1,6 +1,8 @@
 # Aspect System API Reference
 
-This document provides a conceptual overview and interface reference for the Aspect Management system in Scopes, focusing on flexible metadata classification and querying.
+This document provides a conceptual overview and current interface reference for Aspect Management.
+
+> **Note**: The query DSL (parser/AST/grammar) shown in some diagrams represents conceptual/future work. The current implementation uses simpler key-value filtering without a full query engine.
 
 ## Overview
 
@@ -322,9 +324,11 @@ interface AspectDefinitionRepository {
     suspend fun delete(key: String): Either<Error, Unit>
 }
 
+// Note: This interface represents future functionality
+// Current implementation uses simpler filtering without ParsedQuery
 interface AspectQueryRepository {
     suspend fun findScopesWithAspects(
-        query: ParsedQuery
+        query: ParsedQuery  // Future: Will use parsed query objects
     ): Either<Error, List<ScopeId>>
 }
 ```

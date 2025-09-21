@@ -411,17 +411,21 @@ describe("title validation error translation") {
     it("should translate TitleTooShort to ValidationFailed") {
         val command = CreateScope(
             title = "ab",
-            description = "Test description", 
+            description = "Test description",
             parentId = null,
             metadata = emptyMap()
         )
 
-        coEvery { 
-            mockValidationService.validateTitleFormat("ab") 
-        } returns TitleValidationError.TitleTooShort(3, 2, "ab").left()
-        
+        // Use test double instead of mock
+        val fakeValidationService = object : ApplicationScopeValidationService {
+            override suspend fun validateTitleFormat(title: String) =
+                TitleValidationError.TitleTooShort(3, 2, "ab").left()
+            // Implement other required methods as needed
+        }
+
+        val handler = CreateScopeHandler(repository, fakeValidationService)
         val result = handler.invoke(command)
-        
+
         result.isLeft() shouldBe true
         val error = result.leftOrNull()
             .shouldBeInstanceOf<CreateScopeError.TitleValidationFailed>()
@@ -489,6 +493,6 @@ When implementing error handling:
 
 ## Related Documentation
 
-- [Clean Architecture Patterns](./clean-architecture-patterns.md) - Layer responsibilities
-- [Repository Patterns](./repository-patterns.md) - Repository error handling
+- [Clean Architecture](../../explanation/clean-architecture.md) - Layer responsibilities
 - [Testing Patterns](./testing.md) - Error testing strategies
+- [Domain-Driven Design](../../explanation/domain-driven-design.md) - DDD patterns

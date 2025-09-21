@@ -57,7 +57,7 @@ data class HierarchyPolicy private constructor(
         ensure(isDepthAllowed(depth)) {
             HierarchyPolicyError.DepthExceeded(
                 currentDepth = depth,
-                maxAllowed = maxDepth ?: Int.MAX_VALUE
+                maxAllowed = maxDepth ?: Int.MAX_VALUE,
             )
         }
     }
@@ -69,7 +69,7 @@ data class HierarchyPolicy private constructor(
         ensure(isChildrenCountAllowed(count)) {
             HierarchyPolicyError.TooManyChildren(
                 currentCount = count,
-                maxAllowed = maxChildrenPerScope ?: Int.MAX_VALUE
+                maxAllowed = maxChildrenPerScope ?: Int.MAX_VALUE,
             )
         }
     }
@@ -90,15 +90,15 @@ data class HierarchyPolicy private constructor(
     fun isMoreRestrictiveThan(other: HierarchyPolicy): Boolean {
         val depthMoreRestrictive = when {
             this.maxDepth == null && other.maxDepth == null -> false
-            this.maxDepth == null -> false  // unlimited is less restrictive
-            other.maxDepth == null -> true   // any limit is more restrictive than unlimited
+            this.maxDepth == null -> false // unlimited is less restrictive
+            other.maxDepth == null -> true // any limit is more restrictive than unlimited
             else -> this.maxDepth < other.maxDepth
         }
 
         val childrenMoreRestrictive = when {
             this.maxChildrenPerScope == null && other.maxChildrenPerScope == null -> false
-            this.maxChildrenPerScope == null -> false  // unlimited is less restrictive
-            other.maxChildrenPerScope == null -> true   // any limit is more restrictive than unlimited
+            this.maxChildrenPerScope == null -> false // unlimited is less restrictive
+            other.maxChildrenPerScope == null -> true // any limit is more restrictive than unlimited
             else -> this.maxChildrenPerScope < other.maxChildrenPerScope
         }
 
@@ -131,7 +131,7 @@ data class HierarchyPolicy private constructor(
      */
     fun increaseLimits(depthIncrease: Int = 0, childrenIncrease: Int = 0): HierarchyPolicy = copy(
         maxDepth = maxDepth?.let { it + depthIncrease },
-        maxChildrenPerScope = maxChildrenPerScope?.let { it + childrenIncrease }
+        maxChildrenPerScope = maxChildrenPerScope?.let { it + childrenIncrease },
     )
 
     /**

@@ -272,7 +272,7 @@ application/
 
 ### ✅ Testing
 - [ ] Unit tests for handler logic
-- [ ] Mock all dependencies
+- [ ] Use test doubles/fakes instead of mocks (per project policy)
 - [ ] Test error paths
 - [ ] Test successful scenarios
 

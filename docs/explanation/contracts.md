@@ -67,11 +67,13 @@ graph TB
         subgraph "Bounded Contexts"
             subgraph "Scope Management"
                 SM_APP[Application Layer]
+                SM_DOM[Domain Layer]
                 SM_INFRA[Infrastructure Layer]
             end
 
             subgraph "User Preferences"
                 UP_APP[Application Layer]
+                UP_DOM[Domain Layer]
             end
         end
     end
@@ -85,17 +87,23 @@ graph TB
     SMP --> SM_APP
     UPP --> UP_APP
 
+    SM_APP --> SM_DOM
+    SM_INFRA --> SM_DOM
+    UP_APP --> UP_DOM
+
     SM_INFRA --> UPP
 
     classDef contracts fill:#ffe3ba,stroke:#333,stroke-width:3px
     classDef app fill:#e1f5fe,stroke:#01579b
     classDef interface fill:#e8f5e9,stroke:#2e7d32
     classDef context fill:#fff3e0,stroke:#e65100
+    classDef domain fill:#e8f5e9,stroke:#4caf50
 
     class SMP,UPP,WMP contracts
     class CLI,DAEMON app
     class FACADE interface
     class SM_APP,SM_INFRA,UP_APP context
+    class SM_DOM,UP_DOM domain
 ```
 
 ## Port Interface Pattern
