@@ -196,6 +196,56 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ),
         )
 
+    /**
+     * Creates an InvalidTitle error with Empty validation failure.
+     * This is commonly used for empty key/title errors.
+     */
+    private fun createEmptyTitleError(): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        )
+
+    /**
+     * Creates an InvalidTitle error with TooShort validation failure.
+     */
+    private fun createTooShortTitleError(
+        minLength: Int,
+        actualLength: Int,
+    ): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = minLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    /**
+     * Creates an InvalidTitle error with TooLong validation failure.
+     */
+    private fun createTooLongTitleError(
+        maxLength: Int,
+        actualLength: Int,
+    ): ScopeContractError.InputError.InvalidTitle =
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = maxLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    /**
+     * Creates a ServiceUnavailable error.
+     */
+    private fun createServiceUnavailableError(
+        service: String? = null,
+    ): ScopeContractError.SystemError.ServiceUnavailable =
+        ScopeContractError.SystemError.ServiceUnavailable(
+            service = service ?: SERVICE_NAME,
+        )
+
     private fun mapTitleInputError(error: AppScopeInputError): ScopeContractError.InputError.InvalidTitle = when (error) {
         is AppScopeInputError.TitleEmpty -> createInvalidTitle(
             title = error.preview,
@@ -560,23 +610,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      * Maps domain aspect key errors to contract errors.
      */
     fun mapDomainError(domainError: AspectKeyError): ScopeContractError = when (domainError) {
-        is AspectKeyError.EmptyKey -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        is AspectKeyError.EmptyKey -> createEmptyTitleError()
+        is AspectKeyError.TooShort -> createTooShortTitleError(
+            minLength = domainError.minLength,
+            actualLength = domainError.actualLength,
         )
-        is AspectKeyError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minLength,
-                actualLength = domainError.actualLength,
-            ),
-        )
-        is AspectKeyError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maxLength,
-                actualLength = domainError.actualLength,
-            ),
+        is AspectKeyError.TooLong -> createTooLongTitleError(
+            maxLength = domainError.maxLength,
+            actualLength = domainError.actualLength,
         )
         is AspectKeyError.InvalidFormat -> createInvalidTitleWithInvalidCharacters()
     }
@@ -586,23 +627,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      */
     fun mapDomainError(domainError: AspectValidationError): ScopeContractError = when (domainError) {
         // AspectKey validation errors
-        is AspectValidationError.EmptyAspectKey -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+        is AspectValidationError.EmptyAspectKey -> createEmptyTitleError()
+        is AspectValidationError.AspectKeyTooShort -> createTooShortTitleError(
+            minLength = 1,
+            actualLength = 0,
         )
-        is AspectValidationError.AspectKeyTooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = 1,
-                actualLength = 0,
-            ),
-        )
-        is AspectValidationError.AspectKeyTooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maxLength,
-                actualLength = domainError.actualLength,
-            ),
+        is AspectValidationError.AspectKeyTooLong -> createTooLongTitleError(
+            maxLength = domainError.maxLength,
+            actualLength = domainError.actualLength,
         )
         is AspectValidationError.InvalidAspectKeyFormat -> createInvalidTitleWithInvalidCharacters()
 
@@ -657,14 +689,12 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ScopesError.NotFound -> ScopeContractError.BusinessError.NotFound(
             scopeId = domainError.identifier,
         )
-        is ScopesError.InvalidOperation -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
+        is ScopesError.InvalidOperation -> createServiceUnavailableError()
         is ScopesError.AlreadyExists -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
         )
-        is ScopesError.SystemError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = domainError.service ?: SERVICE_NAME,
+        is ScopesError.SystemError -> createServiceUnavailableError(
+            service = domainError.service,
         )
         is ScopesError.ValidationFailed -> {
             // Map domain validation constraint to contract validation constraint
@@ -717,9 +747,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 scopeId = domainError.resourceId,
                 childrenCount = 1,
             )
-            else -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            else -> createServiceUnavailableError()
         }
         is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = domainError.aggregateId,
@@ -732,20 +760,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ScopesError.RepositoryError.RepositoryFailure.ACCESS_DENIED,
             ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ScopesError.RepositoryError.RepositoryFailure.CORRUPTED_DATA,
-            -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            -> createServiceUnavailableError()
             ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION -> ScopeContractError.BusinessError.DuplicateTitle(
                 title = InputSanitizer.createPreview(context?.attemptedValue ?: ""),
                 parentId = context?.parentId,
             )
-            null -> ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            null -> createServiceUnavailableError()
         }
-        is ScopesError.ScopeStatusTransitionError -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
+        is ScopesError.ScopeStatusTransitionError -> createServiceUnavailableError()
 
         // Domain-specific errors that extend ScopesError (delegation through inheritance)
         is ScopeInputError -> {
@@ -818,7 +840,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                         ),
                     )
                 is ScopeHierarchyError.HierarchyUnavailable ->
-                    ScopeContractError.SystemError.ServiceUnavailable(
+                    createServiceUnavailableError(
                         service = "Scope hierarchy service",
                     )
             }
@@ -868,9 +890,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                     aliasName = InputSanitizer.createPreview(domainError.alias),
                 )
                 is DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope ->
-                    ScopeContractError.SystemError.ServiceUnavailable(
-                        service = SERVICE_NAME,
-                    )
+                    createServiceUnavailableError()
                 is DomainScopeAliasError.DataInconsistencyError -> error(
                     "Unmapped DataInconsistencyError subtype: ${domainError::class.simpleName}",
                 )
@@ -886,9 +906,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                     "message" to domainError.toString(),
                 ),
             )
-            ScopeContractError.SystemError.ServiceUnavailable(
-                service = SERVICE_NAME,
-            )
+            createServiceUnavailableError()
         }
     }
 }

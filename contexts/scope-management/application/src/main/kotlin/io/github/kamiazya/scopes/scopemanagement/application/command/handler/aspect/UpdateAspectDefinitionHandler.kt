@@ -32,7 +32,7 @@ class UpdateAspectDefinitionHandler(
 
                 // Find existing definition
                 val existing = aspectDefinitionRepository.findByKey(aspectKey).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeContractError.SystemError.ServiceUnavailable(
                                 service = "aspect-definition-repository",
@@ -57,7 +57,7 @@ class UpdateAspectDefinitionHandler(
 
                 // Save updated definition
                 aspectDefinitionRepository.save(updated).fold(
-                    { error ->
+                    { _ ->
                         raise(
                             ScopeContractError.SystemError.ServiceUnavailable(
                                 service = "aspect-definition-repository",

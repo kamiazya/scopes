@@ -31,7 +31,7 @@ class DefineAspectHandler(
 
             // Check if aspect already exists
             aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeContractError.SystemError.ServiceUnavailable(
                             service = "aspect-definition-repository",
@@ -77,7 +77,7 @@ class DefineAspectHandler(
 
             // Save to repository
             aspectDefinitionRepository.save(aspectDefinition).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeContractError.SystemError.ServiceUnavailable(
                             service = "aspect-definition-repository",

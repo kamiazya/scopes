@@ -31,7 +31,8 @@ class ListAspectDefinitionsHandler(
             )
             either {
                 // Note: Current implementation returns all definitions
-                // TODO: Implement pagination support in repository
+                // Pagination support would require adding findAll(offset, limit) to AspectDefinitionRepository interface
+                // For now, returning all definitions as aspect counts are typically small
                 val definitions = aspectDefinitionRepository.findAll()
                     .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(

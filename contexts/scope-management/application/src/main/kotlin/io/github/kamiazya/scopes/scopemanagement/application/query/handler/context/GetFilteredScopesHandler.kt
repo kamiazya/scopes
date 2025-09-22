@@ -120,11 +120,17 @@ class GetFilteredScopesHandler(
                     contextView = contextView,
                     scopeCount = filtered.size,
                     totalScopeCount = totalCount,
-                    appliedBy = null, // TODO: Add user context to track who applied the filter
+                    appliedBy = null, // User context not yet implemented - will be added when authentication is implemented
                 ).fold(
-                    { _ ->
-                        // TODO: Add proper logging - for now, silently continue
-                        // logger.warn("Failed to publish context applied event: $error")
+                    { error ->
+                        logger.warn(
+                            "Failed to publish context applied event",
+                            mapOf(
+                                "contextKey" to contextView.key.value,
+                                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                                "message" to error.toString(),
+                            ),
+                        )
                     },
                     { },
                 )
