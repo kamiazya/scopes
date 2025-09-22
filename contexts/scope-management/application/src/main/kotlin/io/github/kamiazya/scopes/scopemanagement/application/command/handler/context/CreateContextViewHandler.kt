@@ -72,12 +72,21 @@ class CreateContextViewHandler(
 
             // Save to repository
             val saved = contextViewRepository.save(contextView).fold(
-                { _ ->
-                    raise(
-                        ScopeContractError.SystemError.ServiceUnavailable(
-                            service = "context-view-repository",
-                        ),
-                    )
+                { err ->
+                    when (err) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError -> when (err.failure) {
+                            io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION ->
+                                raise(
+                                    ScopeContractError.BusinessError.DuplicateContextKey(
+                                        contextKey = key.value,
+                                        existingContextId = null,
+                                    ),
+                                )
+                            else ->
+                                raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                        }
+                        else -> raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                    }
                 },
                 { it },
             )
