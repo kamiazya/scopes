@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.aggregate
 
 import arrow.core.Either
+import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
@@ -11,10 +12,14 @@ import io.github.kamiazya.scopes.platform.domain.event.evolveWithPending
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasAssigned
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasEvent
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasNameChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasReplaced
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
@@ -26,11 +31,30 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+
+/**
+ * Internal data structure for managing aliases within the ScopeAggregate.
+ * This replaces the external ScopeAlias Entity.
+ */
+data class AliasRecord(
+    val aliasId: AliasId,
+    val aliasName: AliasName,
+    val aliasType: AliasType,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+)
 
 /**
  * Scope aggregate root implementing event sourcing pattern.
@@ -44,13 +68,24 @@ import kotlinx.datetime.Instant
  * - Business rules are validated before generating events
  * - The aggregate can be reconstructed from its event history
  * - Commands return new instances (immutability)
+ * - Scope state is managed internally (no external Entity dependency)
  */
 data class ScopeAggregate(
     override val id: AggregateId,
     override val version: AggregateVersion,
     val createdAt: Instant,
     val updatedAt: Instant,
-    val scope: Scope?,
+    // Core Scope properties (previously in Scope Entity)
+    val scopeId: ScopeId?,
+    val title: ScopeTitle?,
+    val description: ScopeDescription?,
+    val parentId: ScopeId?,
+    val status: ScopeStatus,
+    val aspects: Aspects,
+    // Alias management (previously external Entity)
+    val aliases: Map<AliasId, AliasRecord> = emptyMap(),
+    val canonicalAliasId: AliasId? = null,
+    // Aggregate-level state
     val isDeleted: Boolean = false,
     val isArchived: Boolean = false,
 ) : AggregateRoot<ScopeAggregate, ScopeEvent>() {
@@ -89,7 +124,14 @@ data class ScopeAggregate(
                 version = AggregateVersion.initial(),
                 createdAt = now,
                 updatedAt = now,
-                scope = null,
+                scopeId = null,
+                title = null,
+                description = null,
+                parentId = null,
+                status = ScopeStatus.default(),
+                aspects = Aspects.empty(),
+                aliases = emptyMap(),
+                canonicalAliasId = null,
                 isDeleted = false,
                 isArchived = false,
             )
@@ -118,7 +160,14 @@ data class ScopeAggregate(
                 version = AggregateVersion.initial(),
                 createdAt = now,
                 updatedAt = now,
-                scope = null,
+                scopeId = null,
+                title = null,
+                description = null,
+                parentId = null,
+                status = ScopeStatus.default(),
+                aspects = Aspects.empty(),
+                aliases = emptyMap(),
+                canonicalAliasId = null,
                 isDeleted = false,
                 isArchived = false,
             )
@@ -128,7 +177,6 @@ data class ScopeAggregate(
                 aggregateId = aggregateId,
                 eventId = EventId.generate(),
                 occurredAt = now,
-
                 aggregateVersion = AggregateVersion.initial(), // Dummy version
                 scopeId = scopeId,
                 title = validatedTitle,
@@ -149,6 +197,79 @@ data class ScopeAggregate(
         }
 
         /**
+         * Creates a scope with a canonical alias using decide/evolve pattern.
+         * Returns an AggregateResult with the new aggregate and pending events.
+         */
+        fun handleCreateWithAlias(
+            title: String,
+            description: String? = null,
+            parentId: ScopeId? = null,
+            aliasName: AliasName,
+            scopeId: ScopeId? = null,
+            now: Instant = Clock.System.now(),
+        ): Either<ScopesError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
+            val validatedTitle = ScopeTitle.create(title).bind()
+            val validatedDescription = ScopeDescription.create(description).bind()
+            val scopeId = scopeId ?: ScopeId.generate()
+            val aggregateId = scopeId.toAggregateId().bind()
+            val aliasId = AliasId.generate()
+
+            val initialAggregate = ScopeAggregate(
+                id = aggregateId,
+                version = AggregateVersion.initial(),
+                createdAt = now,
+                updatedAt = now,
+                scopeId = null,
+                title = null,
+                description = null,
+                parentId = null,
+                status = ScopeStatus.default(),
+                aspects = Aspects.empty(),
+                aliases = emptyMap(),
+                canonicalAliasId = null,
+                isDeleted = false,
+                isArchived = false,
+            )
+
+            // Create events - first scope creation, then alias assignment
+            val scopeCreatedEvent = ScopeCreated(
+                aggregateId = aggregateId,
+                eventId = EventId.generate(),
+                occurredAt = now,
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
+                scopeId = scopeId,
+                title = validatedTitle,
+                description = validatedDescription,
+                parentId = parentId,
+            )
+
+            val aliasAssignedEvent = AliasAssigned(
+                aggregateId = aggregateId,
+                eventId = EventId.generate(),
+                occurredAt = now,
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
+                aliasId = aliasId,
+                aliasName = aliasName,
+                scopeId = scopeId,
+                aliasType = AliasType.CANONICAL,
+            )
+
+            val pendingEvents = listOf(
+                EventEnvelope.Pending(scopeCreatedEvent),
+                EventEnvelope.Pending(aliasAssignedEvent),
+            )
+
+            // Evolve phase - apply events to aggregate
+            val evolvedAggregate = initialAggregate.evolveWithPending(pendingEvents)
+
+            AggregateResult(
+                aggregate = evolvedAggregate,
+                events = pendingEvents,
+                baseVersion = AggregateVersion.initial(),
+            )
+        }
+
+        /**
          * Creates an empty aggregate for event replay.
          * Used when loading an aggregate from the event store.
          */
@@ -157,7 +278,14 @@ data class ScopeAggregate(
             version = AggregateVersion.initial(),
             createdAt = Instant.DISTANT_PAST,
             updatedAt = Instant.DISTANT_PAST,
-            scope = null,
+            scopeId = null,
+            title = null,
+            description = null,
+            parentId = null,
+            status = ScopeStatus.default(),
+            aspects = Aspects.empty(),
+            aliases = emptyMap(),
+            canonicalAliasId = null,
             isDeleted = false,
             isArchived = false,
         )
@@ -168,16 +296,18 @@ data class ScopeAggregate(
      * Ensures the scope exists and is not deleted.
      */
     fun updateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
+        ensureNotNull(this@ScopeAggregate.title) {
+            ScopeError.NotFound(scopeId!!)
+        }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (currentScope.title == newTitle) {
+        if (this@ScopeAggregate.title == newTitle) {
             return@either this@ScopeAggregate
         }
 
@@ -185,10 +315,9 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
-            oldTitle = currentScope.title,
+            scopeId = scopeId!!,
+            oldTitle = this@ScopeAggregate.title!!,
             newTitle = newTitle,
         )
 
@@ -200,16 +329,18 @@ data class ScopeAggregate(
      * Returns pending events or empty list if no change needed.
      */
     fun decideUpdateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
+        ensureNotNull(this@ScopeAggregate.title) {
+            ScopeError.NotFound(scopeId!!)
+        }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (currentScope.title == newTitle) {
+        if (this@ScopeAggregate.title == newTitle) {
             return@either emptyList()
         }
 
@@ -217,10 +348,9 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = AggregateVersion.initial(), // Dummy version
-            scopeId = currentScope.id,
-            oldTitle = currentScope.title,
+            scopeId = scopeId!!,
+            oldTitle = this@ScopeAggregate.title!!,
             newTitle = newTitle,
         )
 
@@ -258,16 +388,15 @@ data class ScopeAggregate(
      * Updates the scope description after validation.
      */
     fun updateDescription(description: String?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
 
         val newDescription = ScopeDescription.create(description).bind()
-        if (currentScope.description == newDescription) {
+        if (this@ScopeAggregate.description == newDescription) {
             return@either this@ScopeAggregate
         }
 
@@ -275,10 +404,9 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
-            oldDescription = currentScope.description,
+            scopeId = scopeId!!,
+            oldDescription = this@ScopeAggregate.description,
             newDescription = newDescription,
         )
 
@@ -290,15 +418,14 @@ data class ScopeAggregate(
      * Validates hierarchy constraints before applying the change.
      */
     fun changeParent(newParentId: ScopeId?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
 
-        if (currentScope.parentId == newParentId) {
+        if (this@ScopeAggregate.parentId == newParentId) {
             return@either this@ScopeAggregate
         }
 
@@ -306,10 +433,9 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
-            oldParentId = currentScope.parentId,
+            scopeId = scopeId!!,
+            oldParentId = this@ScopeAggregate.parentId,
             newParentId = newParentId,
         )
 
@@ -321,21 +447,19 @@ data class ScopeAggregate(
      * Soft delete that marks the scope as deleted.
      */
     fun delete(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
 
         val event = ScopeDeleted(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
+            scopeId = scopeId!!,
         )
 
         this@ScopeAggregate.raiseEvent(event)
@@ -346,24 +470,22 @@ data class ScopeAggregate(
      * Archived scopes are hidden but can be restored.
      */
     fun archive(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
         ensure(!isArchived) {
-            ScopeError.AlreadyArchived(currentScope.id)
+            ScopeError.AlreadyArchived(scopeId!!)
         }
 
         val event = ScopeArchived(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
+            scopeId = scopeId!!,
             reason = null,
         )
 
@@ -374,24 +496,290 @@ data class ScopeAggregate(
      * Restores an archived scope.
      */
     fun restore(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        val currentScope = scope
-        ensureNotNull(currentScope) {
+        ensureNotNull(scopeId) {
             ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
         }
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(currentScope.id)
+            ScopeError.AlreadyDeleted(scopeId!!)
         }
         ensure(isArchived) {
-            ScopeError.NotArchived(currentScope.id)
+            ScopeError.NotArchived(scopeId!!)
         }
 
         val event = ScopeRestored(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-
             aggregateVersion = version.increment(),
-            scopeId = currentScope.id,
+            scopeId = scopeId!!,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    // ===== ALIAS MANAGEMENT =====
+
+    /**
+     * Adds a new alias to the scope.
+     * The first alias added becomes the canonical alias.
+     */
+    fun addAlias(aliasName: AliasName, aliasType: AliasType = AliasType.CUSTOM, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        // Check if alias name already exists
+        val existingAlias = aliases.values.find { it.aliasName == aliasName }
+        ensure(existingAlias == null) {
+            ScopeError.DuplicateAlias(aliasName.value, scopeId!!)
+        }
+
+        val aliasId = AliasId.generate()
+        val finalAliasType = if (canonicalAliasId == null) AliasType.CANONICAL else aliasType
+
+        val event = AliasAssigned(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            aliasId = aliasId,
+            aliasName = aliasName,
+            scopeId = scopeId!!,
+            aliasType = finalAliasType,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Removes an alias from the scope.
+     * Canonical aliases cannot be removed, only replaced.
+     */
+    fun removeAlias(aliasId: AliasId, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        val aliasRecord = aliases[aliasId]
+        ensureNotNull(aliasRecord) {
+            ScopeError.AliasNotFound(aliasId.value, scopeId!!)
+        }
+
+        // Cannot remove canonical alias
+        ensure(aliasRecord.aliasType != AliasType.CANONICAL) {
+            ScopeError.CannotRemoveCanonicalAlias(aliasId.value, scopeId!!)
+        }
+
+        val event = AliasRemoved(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            aliasId = aliasId,
+            aliasName = aliasRecord.aliasName,
+            scopeId = scopeId!!,
+            aliasType = aliasRecord.aliasType,
+            removedAt = now,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Replaces the canonical alias with a new one.
+     * The old canonical alias becomes a custom alias.
+     */
+    fun replaceCanonicalAlias(newAliasName: AliasName, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensureNotNull(canonicalAliasId) {
+            ScopeError.NoCanonicalAlias(scopeId!!)
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        val currentCanonical = aliases[canonicalAliasId!!]!!
+        val newAliasId = AliasId.generate()
+
+        val event = CanonicalAliasReplaced(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            scopeId = scopeId!!,
+            oldAliasId = canonicalAliasId!!,
+            oldAliasName = currentCanonical.aliasName,
+            newAliasId = newAliasId,
+            newAliasName = newAliasName,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Gets the canonical alias for the scope.
+     */
+    fun getCanonicalAlias(): AliasRecord? = canonicalAliasId?.let { aliases[it] }
+
+    /**
+     * Gets all custom aliases for the scope.
+     */
+    fun getCustomAliases(): List<AliasRecord> = aliases.values.filter { it.aliasType == AliasType.CUSTOM }
+
+    /**
+     * Gets all aliases for the scope.
+     */
+    fun getAllAliases(): List<AliasRecord> = aliases.values.toList()
+
+    /**
+     * Finds an alias by name.
+     */
+    fun findAliasByName(aliasName: AliasName): AliasRecord? = aliases.values.find { it.aliasName == aliasName }
+
+    /**
+     * Changes the name of an existing alias.
+     * Both canonical and custom aliases can be renamed.
+     */
+    fun changeAliasName(aliasId: AliasId, newAliasName: AliasName, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        val aliasRecord = aliases[aliasId]
+        ensureNotNull(aliasRecord) {
+            ScopeError.AliasNotFound(aliasId.value, scopeId!!)
+        }
+
+        // Check if new alias name already exists
+        val existingAlias = aliases.values.find { it.aliasName == newAliasName && it.aliasId != aliasId }
+        ensure(existingAlias == null) {
+            ScopeError.DuplicateAlias(newAliasName.value, scopeId!!)
+        }
+
+        val event = AliasNameChanged(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            aliasId = aliasId,
+            scopeId = scopeId!!,
+            oldAliasName = aliasRecord.aliasName,
+            newAliasName = newAliasName,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    // ===== ASPECT MANAGEMENT =====
+
+    /**
+     * Adds an aspect value to the scope.
+     */
+    fun addAspect(aspectKey: AspectKey, aspectValues: NonEmptyList<AspectValue>, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        val event = ScopeAspectAdded(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            scopeId = scopeId!!,
+            aspectKey = aspectKey,
+            aspectValues = aspectValues,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Removes an aspect from the scope.
+     */
+    fun removeAspect(aspectKey: AspectKey, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        // Check if aspect exists
+        ensure(aspects.contains(aspectKey)) {
+            ScopeError.AspectNotFound(aspectKey.value, scopeId!!)
+        }
+
+        val event = ScopeAspectRemoved(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            scopeId = scopeId!!,
+            aspectKey = aspectKey,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Clears all aspects from the scope.
+     */
+    fun clearAspects(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        val event = ScopeAspectsCleared(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            scopeId = scopeId!!,
+        )
+
+        this@ScopeAggregate.raiseEvent(event)
+    }
+
+    /**
+     * Updates multiple aspects at once.
+     */
+    fun updateAspects(newAspects: Aspects, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
+        ensureNotNull(scopeId) {
+            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
+        }
+        ensure(!isDeleted) {
+            ScopeError.AlreadyDeleted(scopeId!!)
+        }
+
+        if (aspects == newAspects) {
+            return@either this@ScopeAggregate
+        }
+
+        val event = ScopeAspectsUpdated(
+            aggregateId = id,
+            eventId = EventId.generate(),
+            occurredAt = now,
+            aggregateVersion = version.increment(),
+            scopeId = scopeId!!,
+            oldAspects = aspects,
+            newAspects = newAspects,
         )
 
         this@ScopeAggregate.raiseEvent(event)
@@ -410,41 +798,30 @@ data class ScopeAggregate(
             version = version.increment(),
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
-            scope = Scope(
-                id = event.scopeId,
-                title = event.title,
-                description = event.description,
-                parentId = event.parentId,
-                createdAt = event.occurredAt,
-                updatedAt = event.occurredAt,
-            ),
+            scopeId = event.scopeId,
+            title = event.title,
+            description = event.description,
+            parentId = event.parentId,
+            status = ScopeStatus.default(),
+            aspects = Aspects.empty(),
         )
 
         is ScopeTitleUpdated -> copy(
             version = version.increment(),
             updatedAt = event.occurredAt,
-            scope = scope?.copy(
-                title = event.newTitle,
-                updatedAt = event.occurredAt,
-            ),
+            title = event.newTitle,
         )
 
         is ScopeDescriptionUpdated -> copy(
             version = version.increment(),
             updatedAt = event.occurredAt,
-            scope = scope?.copy(
-                description = event.newDescription,
-                updatedAt = event.occurredAt,
-            ),
+            description = event.newDescription,
         )
 
         is ScopeParentChanged -> copy(
             version = version.increment(),
             updatedAt = event.occurredAt,
-            scope = scope?.copy(
-                parentId = event.newParentId,
-                updatedAt = event.occurredAt,
-            ),
+            parentId = event.newParentId,
         )
 
         is ScopeDeleted -> copy(
@@ -465,11 +842,92 @@ data class ScopeAggregate(
             isArchived = false,
         )
 
-        is ScopeAspectAdded,
-        is ScopeAspectRemoved,
-        is ScopeAspectsCleared,
-        is ScopeAspectsUpdated,
-        -> this@ScopeAggregate // Not implemented yet
+        // Alias Events
+        is AliasAssigned -> {
+            val aliasRecord = AliasRecord(
+                aliasId = event.aliasId,
+                aliasName = event.aliasName,
+                aliasType = event.aliasType,
+                createdAt = event.occurredAt,
+                updatedAt = event.occurredAt,
+            )
+            copy(
+                version = version.increment(),
+                updatedAt = event.occurredAt,
+                aliases = aliases + (event.aliasId to aliasRecord),
+                canonicalAliasId = if (event.aliasType == AliasType.CANONICAL) event.aliasId else canonicalAliasId,
+            )
+        }
+
+        is AliasRemoved -> copy(
+            version = version.increment(),
+            updatedAt = event.occurredAt,
+            aliases = aliases - event.aliasId,
+        )
+
+        is CanonicalAliasReplaced -> {
+            // Add new canonical alias and demote old to custom
+            val oldAliasRecord = aliases[event.oldAliasId]!!.copy(
+                aliasType = AliasType.CUSTOM,
+                updatedAt = event.occurredAt,
+            )
+            val newAliasRecord = AliasRecord(
+                aliasId = event.newAliasId,
+                aliasName = event.newAliasName,
+                aliasType = AliasType.CANONICAL,
+                createdAt = event.occurredAt,
+                updatedAt = event.occurredAt,
+            )
+            copy(
+                version = version.increment(),
+                updatedAt = event.occurredAt,
+                aliases = aliases + (event.oldAliasId to oldAliasRecord) + (event.newAliasId to newAliasRecord),
+                canonicalAliasId = event.newAliasId,
+            )
+        }
+
+        is AliasNameChanged -> {
+            val updatedAlias = aliases[event.aliasId]!!.copy(
+                aliasName = event.newAliasName,
+                updatedAt = event.occurredAt,
+            )
+            copy(
+                version = version.increment(),
+                updatedAt = event.occurredAt,
+                aliases = aliases + (event.aliasId to updatedAlias),
+            )
+        }
+
+        // Aspect Events
+        is ScopeAspectAdded -> {
+            val updatedAspects = aspects.add(event.aspectKey, event.aspectValues)
+            copy(
+                version = version.increment(),
+                updatedAt = event.occurredAt,
+                aspects = updatedAspects,
+            )
+        }
+
+        is ScopeAspectRemoved -> {
+            val updatedAspects = aspects.remove(event.aspectKey)
+            copy(
+                version = version.increment(),
+                updatedAt = event.occurredAt,
+                aspects = updatedAspects,
+            )
+        }
+
+        is ScopeAspectsCleared -> copy(
+            version = version.increment(),
+            updatedAt = event.occurredAt,
+            aspects = Aspects.empty(),
+        )
+
+        is ScopeAspectsUpdated -> copy(
+            version = version.increment(),
+            updatedAt = event.occurredAt,
+            aspects = event.newAspects,
+        )
     }
 
     fun validateVersion(expectedVersion: Long, now: Instant = Clock.System.now()): Either<ScopesError, Unit> = either {
@@ -477,7 +935,7 @@ data class ScopeAggregate(
         if (versionValue.toLong() != expectedVersion) {
             raise(
                 ScopeError.VersionMismatch(
-                    scopeId = scope?.id ?: ScopeId.create(id.value.substringAfterLast("/")).bind(),
+                    scopeId = scopeId ?: ScopeId.create(id.value.substringAfterLast("/")).bind(),
                     expectedVersion = expectedVersion,
                     actualVersion = versionValue.toLong(),
                 ),

@@ -71,6 +71,21 @@ data class Aspects private constructor(private val map: Map<AspectKey, NonEmptyL
     }
 
     /**
+     * Add multiple values to an aspect key.
+     * If the key doesn't exist, creates a new aspect with the values.
+     * If the key exists, merges the new values with existing ones.
+     * Pure function that returns a new instance.
+     */
+    fun add(key: AspectKey, values: NonEmptyList<AspectValue>): Aspects {
+        val existingValues = map[key]
+        return if (existingValues != null) {
+            copy(map = map + (key to (existingValues + values)))
+        } else {
+            set(key, values)
+        }
+    }
+
+    /**
      * Remove an aspect key entirely.
      * Pure function that returns a new instance.
      */

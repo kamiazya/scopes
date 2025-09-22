@@ -92,8 +92,17 @@ class CreateScopeHandler(
                     applicationErrorMapper.mapToContractError(error)
                 }.bind()
 
-                // Extract the scope from aggregate
-                val scope = scopeAggregate.scope!!
+                // Extract the scope data from aggregate
+                val scope = io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope(
+                    id = scopeAggregate.scopeId!!,
+                    title = scopeAggregate.title!!,
+                    description = scopeAggregate.description,
+                    parentId = scopeAggregate.parentId,
+                    status = scopeAggregate.status,
+                    aspects = scopeAggregate.aspects,
+                    createdAt = scopeAggregate.createdAt,
+                    updatedAt = scopeAggregate.updatedAt,
+                )
 
                 // Save the scope
                 val savedScope = scopeRepository.save(scope).mapLeft { error ->

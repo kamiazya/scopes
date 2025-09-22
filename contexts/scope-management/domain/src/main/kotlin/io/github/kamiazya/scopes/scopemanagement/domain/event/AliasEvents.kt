@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.domain.event
 import arrow.core.Either
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
+import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
@@ -15,9 +16,12 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
 
 /**
- * Events related to ScopeAlias aggregate.
+ * Events related to alias management within ScopeAggregate.
+ * These are now part of ScopeEvent hierarchy since aliases are managed within the ScopeAggregate.
  */
-sealed class AliasEvent : DomainEvent
+sealed class AliasEvent : ScopeEvent() {
+    override val metadata: EventMetadata? = null
+}
 
 /**
  * Event fired when an alias is assigned to a scope.

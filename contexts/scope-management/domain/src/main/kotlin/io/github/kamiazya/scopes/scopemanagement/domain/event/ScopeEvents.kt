@@ -22,6 +22,7 @@ import kotlinx.datetime.Instant
 
 /**
  * Events related to Scope aggregate.
+ * This includes both scope-specific events and alias events as they are part of the same aggregate.
  */
 sealed class ScopeEvent : DomainEvent {
     abstract override val metadata: EventMetadata?

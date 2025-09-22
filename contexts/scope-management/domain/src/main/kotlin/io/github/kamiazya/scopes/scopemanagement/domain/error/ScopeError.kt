@@ -41,4 +41,33 @@ sealed class ScopeError : ScopesError() {
      * Version mismatch error for optimistic concurrency control.
      */
     data class VersionMismatch(val scopeId: ScopeId, val expectedVersion: Long, val actualVersion: Long) : ScopeError()
+
+    // ===== ALIAS RELATED ERRORS =====
+
+    /**
+     * Duplicate alias error - alias name already exists for another scope.
+     */
+    data class DuplicateAlias(val aliasName: String, val scopeId: ScopeId) : ScopeError()
+
+    /**
+     * Alias not found error - specified alias does not exist for this scope.
+     */
+    data class AliasNotFound(val aliasId: String, val scopeId: ScopeId) : ScopeError()
+
+    /**
+     * Cannot remove canonical alias error - canonical aliases cannot be removed, only replaced.
+     */
+    data class CannotRemoveCanonicalAlias(val aliasId: String, val scopeId: ScopeId) : ScopeError()
+
+    /**
+     * No canonical alias error - scope does not have a canonical alias.
+     */
+    data class NoCanonicalAlias(val scopeId: ScopeId) : ScopeError()
+
+    // ===== ASPECT RELATED ERRORS =====
+
+    /**
+     * Aspect not found error - specified aspect does not exist for this scope.
+     */
+    data class AspectNotFound(val aspectKey: String, val scopeId: ScopeId) : ScopeError()
 }
