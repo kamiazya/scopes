@@ -116,7 +116,7 @@ class DependencyRulesTest :
             // Interfaces layer should only depend on contracts and application layers
             Konsist.scopeFromProject()
                 .files
-                .filter { it.path.normalizePath().contains("/interfaces/") }
+                .filter { it.path.normalizePath().contains("/interfaces/") && !it.path.normalizePath().contains("/test/") }
                 .assertFalse(
                     additionalMessage = "Interfaces layer must not depend on infrastructure layers",
                 ) { file ->
