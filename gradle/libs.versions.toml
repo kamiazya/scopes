@@ -21,7 +21,7 @@ slf4j = "2.0.17"
 logback = "1.5.18"
 
 graalvm-buildtools = "0.11.0"
-graalvm-sdk = "24.2.2"
+graalvm-sdk = "25.0.0"
 ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
 gradle-develocity = "4.2"
