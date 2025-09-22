@@ -3,9 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import arrow.core.toNonEmptyListOrNull
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import kotlin.ConsistentCopyVisibility
 
 /**
  * Value Object representing a collection of aspects for a Scope.

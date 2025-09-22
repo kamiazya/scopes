@@ -40,6 +40,27 @@ class CreateContextViewHandler(
                 .mapLeft { applicationErrorMapper.mapDomainError(it) }
                 .bind()
 
+            // Check if a context with the same key already exists
+            contextViewRepository.findByKey(key).fold(
+                { error ->
+                    raise(
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "context-view-repository",
+                        ),
+                    )
+                },
+                { existing ->
+                    if (existing != null) {
+                        raise(
+                            ScopeContractError.BusinessError.DuplicateContextKey(
+                                contextKey = key.value,
+                                existingContextId = existing.id.value.toString(),
+                            ),
+                        )
+                    }
+                },
+            )
+
             // Create the context view
             val contextView = ContextView.create(
                 key = key,
@@ -51,12 +72,21 @@ class CreateContextViewHandler(
 
             // Save to repository
             val saved = contextViewRepository.save(contextView).fold(
-                { _ ->
-                    raise(
-                        ScopeContractError.SystemError.ServiceUnavailable(
-                            service = "context-view-repository",
-                        ),
-                    )
+                { err ->
+                    when (err) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError -> when (err.failure) {
+                            io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION ->
+                                raise(
+                                    ScopeContractError.BusinessError.DuplicateContextKey(
+                                        contextKey = key.value,
+                                        existingContextId = null,
+                                    ),
+                                )
+                            else ->
+                                raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                        }
+                        else -> raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                    }
                 },
                 { it },
             )

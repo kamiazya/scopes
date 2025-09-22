@@ -1,4 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
+import io.github.kamiazya.scopes.scopemanagement.application.util.InputSanitizer
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
 
 /**
@@ -11,35 +12,35 @@ class ScopeInputErrorMappingService {
 
     fun mapIdError(error: DomainScopeInputError.IdError, id: String): ScopeInputError = when (error) {
         is DomainScopeInputError.IdError.EmptyId ->
-            ScopeInputError.IdBlank(id)
+            ScopeInputError.IdBlank(InputSanitizer.createPreview(id))
         is DomainScopeInputError.IdError.InvalidIdFormat ->
-            ScopeInputError.IdInvalidFormat(id, errorPresenter.presentIdFormat(error.expectedFormat))
+            ScopeInputError.IdInvalidFormat(InputSanitizer.createPreview(id), errorPresenter.presentIdFormat(error.expectedFormat))
     }
 
     fun mapTitleError(error: DomainScopeInputError.TitleError, title: String): ScopeInputError = when (error) {
         is DomainScopeInputError.TitleError.EmptyTitle ->
-            ScopeInputError.TitleEmpty(title)
+            ScopeInputError.TitleEmpty(InputSanitizer.createPreview(title))
         is DomainScopeInputError.TitleError.TitleTooShort ->
-            ScopeInputError.TitleTooShort(title, error.minLength)
+            ScopeInputError.TitleTooShort(InputSanitizer.createPreview(title), error.minLength)
         is DomainScopeInputError.TitleError.TitleTooLong ->
-            ScopeInputError.TitleTooLong(title, error.maxLength)
+            ScopeInputError.TitleTooLong(InputSanitizer.createPreview(title), error.maxLength)
         is DomainScopeInputError.TitleError.InvalidTitleFormat ->
-            ScopeInputError.TitleContainsProhibitedCharacters(title, listOf('<', '>', '&', '"'))
+            ScopeInputError.TitleContainsProhibitedCharacters(InputSanitizer.createPreview(title), listOf('<', '>', '&', '"'))
     }
 
     fun mapAliasError(error: DomainScopeInputError.AliasError, alias: String): ScopeInputError = when (error) {
         is DomainScopeInputError.AliasError.EmptyAlias ->
-            ScopeInputError.AliasEmpty(alias)
+            ScopeInputError.AliasEmpty(InputSanitizer.createPreview(alias))
         is DomainScopeInputError.AliasError.AliasTooShort ->
-            ScopeInputError.AliasTooShort(alias, error.minLength)
+            ScopeInputError.AliasTooShort(InputSanitizer.createPreview(alias), error.minLength)
         is DomainScopeInputError.AliasError.AliasTooLong ->
-            ScopeInputError.AliasTooLong(alias, error.maxLength)
+            ScopeInputError.AliasTooLong(InputSanitizer.createPreview(alias), error.maxLength)
         is DomainScopeInputError.AliasError.InvalidAliasFormat ->
-            ScopeInputError.AliasInvalidFormat(alias, errorPresenter.presentAliasPattern(error.expectedPattern))
+            ScopeInputError.AliasInvalidFormat(InputSanitizer.createPreview(alias), errorPresenter.presentAliasPattern(error.expectedPattern))
     }
 
     fun mapDescriptionError(error: DomainScopeInputError.DescriptionError, description: String): ScopeInputError = when (error) {
         is DomainScopeInputError.DescriptionError.DescriptionTooLong ->
-            ScopeInputError.DescriptionTooLong(description, error.maxLength)
+            ScopeInputError.DescriptionTooLong(InputSanitizer.createPreview(description), error.maxLength)
     }
 }

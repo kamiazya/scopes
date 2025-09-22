@@ -26,17 +26,30 @@ public class AspectCommandPortAdapter(
 ) : AspectCommandPort {
 
     override suspend fun createAspectDefinition(command: CreateAspectDefinitionCommand): Either<ScopeContractError, Unit> {
+        // Validate aspect type first
+        val aspectType = when (command.type.lowercase(java.util.Locale.ROOT)) {
+            "text" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
+            "numeric" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Numeric
+            "boolean" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.BooleanType
+            "duration" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Duration
+            "ordered" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Ordered(emptyList())
+            else -> {
+                return ScopeContractError.InputError.ValidationFailure(
+                    field = "type",
+                    value = command.type,
+                    constraint = ScopeContractError.ValidationConstraint.InvalidValue(
+                        expectedValues = listOf("text", "numeric", "boolean", "duration", "ordered"),
+                        actualValue = command.type,
+                    ),
+                ).left()
+            }
+        }
+
         val result = defineAspectHandler(
             DefineAspectCommand(
                 key = command.key,
                 description = command.description,
-                type = when (command.type.lowercase()) {
-                    "text" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
-                    "numeric" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Numeric
-                    "boolean" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.BooleanType
-                    "duration" -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Duration
-                    else -> io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType.Text
-                },
+                type = aspectType,
             ),
         )
 

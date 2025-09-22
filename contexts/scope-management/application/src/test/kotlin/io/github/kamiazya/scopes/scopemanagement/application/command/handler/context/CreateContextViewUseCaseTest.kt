@@ -74,6 +74,7 @@ class CreateContextViewUseCaseTest :
                         updatedAt = now,
                     )
 
+                    coEvery { contextViewRepository.findByKey(any()) } returns null.right()
                     coEvery { contextViewRepository.save(any()) } returns contextView.right()
 
                     // When
@@ -111,6 +112,7 @@ class CreateContextViewUseCaseTest :
                         updatedAt = now,
                     )
 
+                    coEvery { contextViewRepository.findByKey(any()) } returns null.right()
                     coEvery { contextViewRepository.save(any()) } returns contextView.right()
 
                     // When
@@ -203,6 +205,7 @@ class CreateContextViewUseCaseTest :
                         expectedVersion = "1",
                         actualVersion = "2",
                     )
+                    coEvery { contextViewRepository.findByKey(any()) } returns null.right()
                     coEvery { contextViewRepository.save(any()) } returns persistenceError.left()
 
                     // When

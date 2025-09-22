@@ -85,6 +85,7 @@ abstract class ScopesCliktCommand(
         is ScopeContractError.InputError.InvalidContextKey -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidContextName -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.InputError.InvalidContextFilter -> ExitCode.VALIDATION_ERROR
+        is ScopeContractError.InputError.ValidationFailure -> ExitCode.VALIDATION_ERROR
         is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> ExitCode.UNAVAILABLE
         is ScopeContractError.SystemError.ServiceUnavailable -> ExitCode.UNAVAILABLE
         is ScopeContractError.SystemError.Timeout -> ExitCode.TEMP_FAIL

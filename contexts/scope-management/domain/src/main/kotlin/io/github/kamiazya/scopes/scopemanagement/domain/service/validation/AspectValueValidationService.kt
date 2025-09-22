@@ -112,8 +112,18 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
      * @param valueCount Number of values being validated
      * @return Either an error or Unit if multiple values are allowed
      */
-    fun validateMultipleValuesAllowed(definition: AspectDefinition, valueCount: Int): Either<ScopesError, Unit> =
-        if (valueCount > 1 && !definition.allowMultiple) {
+    fun validateMultipleValuesAllowed(definition: AspectDefinition, valueCount: Int): Either<ScopesError, Unit> = when {
+        valueCount == 0 -> {
+            ScopesError.ValidationFailed(
+                field = definition.key.value,
+                value = "empty",
+                constraint = ScopesError.ValidationConstraintType.EmptyValues(
+                    field = definition.key.value,
+                ),
+                details = mapOf("error" to ValidationError.EmptyValuesList(definition.key)),
+            ).left()
+        }
+        valueCount > 1 && !definition.allowMultiple -> {
             ScopesError.ValidationFailed(
                 field = definition.key.value,
                 value = valueCount.toString(),
@@ -122,9 +132,9 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                 ),
                 details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key)),
             ).left()
-        } else {
-            Unit.right()
         }
+        else -> Unit.right()
+    }
 
     /**
      * Validate required aspects are present.

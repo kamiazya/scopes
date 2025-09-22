@@ -81,6 +81,7 @@ sealed class ScopesError {
         data class InvalidFormat(val expectedFormat: String) : ValidationConstraintType
         data class MissingRequired(val requiredFields: List<String>) : ValidationConstraintType
         data class MultipleValuesNotAllowed(val field: String) : ValidationConstraintType
+        data class EmptyValues(val field: String) : ValidationConstraintType
         data class InvalidValue(val reason: String) : ValidationConstraintType
     }
 

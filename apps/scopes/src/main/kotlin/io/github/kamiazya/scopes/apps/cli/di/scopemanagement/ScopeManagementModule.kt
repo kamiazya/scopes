@@ -136,6 +136,7 @@ val scopeManagementModule = module {
     single {
         UpdateScopeHandler(
             scopeRepository = get(),
+            scopeAliasRepository = get(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),

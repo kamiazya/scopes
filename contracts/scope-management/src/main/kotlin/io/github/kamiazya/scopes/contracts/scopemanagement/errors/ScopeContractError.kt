@@ -72,6 +72,21 @@ public sealed interface ScopeContractError {
     }
 
     /**
+     * Generic validation constraint types for field validation failures.
+     */
+    public sealed interface ValidationConstraint {
+        public data object Empty : ValidationConstraint
+        public data class TooShort(public val minimumLength: Int, public val actualLength: Int) : ValidationConstraint
+        public data class TooLong(public val maximumLength: Int, public val actualLength: Int) : ValidationConstraint
+        public data class InvalidFormat(public val expectedFormat: String) : ValidationConstraint
+        public data class InvalidType(public val expectedType: String, public val actualType: String) : ValidationConstraint
+        public data class InvalidValue(public val expectedValues: List<String>?, public val actualValue: String) : ValidationConstraint
+        public data class EmptyValues(public val field: String) : ValidationConstraint
+        public data class MultipleValuesNotAllowed(public val field: String) : ValidationConstraint
+        public data class RequiredField(public val field: String) : ValidationConstraint
+    }
+
+    /**
      * Specific types of hierarchy violations.
      */
     public sealed interface HierarchyViolationType {
@@ -174,6 +189,15 @@ public sealed interface ScopeContractError {
          * @property validationFailure Specific reason for validation failure
          */
         public data class InvalidContextFilter(public val filter: String, public val validationFailure: ContextFilterValidationFailure) : InputError
+
+        /**
+         * Generic validation failure for any field.
+         * Use this when no specific error type exists for the field.
+         * @property field The field name that failed validation
+         * @property value The value that failed validation
+         * @property constraint The specific constraint that was violated
+         */
+        public data class ValidationFailure(public val field: String, public val value: String, public val constraint: ValidationConstraint) : InputError
     }
 
     /**

@@ -80,6 +80,12 @@ value class ContextViewFilter private constructor(val expression: String) {
                 return ContextError.FilterSyntaxErrorType.EmptyOperator
             }
 
+            // Check for invalid operators like "===" or other invalid syntax
+            val invalidOperatorPattern = "={3,}|!={2,}|<{2,}|>{2,}".toRegex()
+            if (invalidOperatorPattern.containsMatchIn(expression)) {
+                return ContextError.FilterSyntaxErrorType.InvalidSyntax
+            }
+
             return null // No errors found
         }
 

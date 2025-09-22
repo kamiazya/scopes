@@ -75,7 +75,7 @@ public class AspectQueryPortAdapter(
     private fun io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto.toContractAspectDefinition() = AspectDefinition(
         key = this.key,
         description = this.description ?: "",
-        type = this.type.toString(),
+        type = this.type,
         createdAt = timeProvider.now(),
         updatedAt = timeProvider.now(),
     )

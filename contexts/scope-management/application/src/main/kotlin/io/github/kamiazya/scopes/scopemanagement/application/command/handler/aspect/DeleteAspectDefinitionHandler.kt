@@ -31,7 +31,7 @@ class DeleteAspectDefinitionHandler(
 
             // Check if definition exists
             aspectDefinitionRepository.findByKey(aspectKey).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeContractError.SystemError.ServiceUnavailable(
                             service = "aspect-definition-repository",
@@ -54,7 +54,7 @@ class DeleteAspectDefinitionHandler(
 
             // Delete from repository
             aspectDefinitionRepository.deleteByKey(aspectKey).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeContractError.SystemError.ServiceUnavailable(
                             service = "aspect-definition-repository",
