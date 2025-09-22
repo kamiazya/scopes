@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.spotless)
-    id("org.cyclonedx.bom") version "2.3.1"
+    id("org.cyclonedx.bom") version "2.4.0"
     id("org.spdx.sbom") version "0.9.0"
 }
 
@@ -25,7 +25,7 @@ allprojects {
     // Force Netty HTTP/2 to patched version to fix security vulnerability GHSA-prj3-ccx8-p6x4
     configurations.configureEach {
         resolutionStrategy {
-            force("io.netty:netty-codec-http2:4.1.124.Final")
+            force("io.netty:netty-codec-http2:4.2.6.Final")
         }
     }
 }
@@ -53,7 +53,7 @@ subprojects {
         resolutionStrategy {
             preferProjectModules()
             // Force Netty to patched version to fix GHSA-prj3-ccx8-p6x4 vulnerability
-            force("io.netty:netty-codec-http2:4.1.124.Final")
+            force("io.netty:netty-codec-http2:4.2.6.Final")
         }
     }
 }

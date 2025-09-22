@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.dto.aspect.AspectDefinitionDto
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
+import io.github.kamiazya.scopes.scopemanagement.application.mapper.toTypeString
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.ListAspectDefinitions
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
 
@@ -30,7 +31,8 @@ class ListAspectDefinitionsHandler(
             )
             either {
                 // Note: Current implementation returns all definitions
-                // Future enhancement: Implement pagination support when repository supports it
+                // Pagination support would require adding findAll(offset, limit) to AspectDefinitionRepository interface
+                // For now, returning all definitions as aspect counts are typically small
                 val definitions = aspectDefinitionRepository.findAll()
                     .mapLeft { _ ->
                         ScopeManagementApplicationError.PersistenceError.StorageUnavailable(
@@ -43,7 +45,7 @@ class ListAspectDefinitionsHandler(
                 val result = definitions.map { definition ->
                     AspectDefinitionDto(
                         key = definition.key.value,
-                        type = definition.type.toString(),
+                        type = definition.type.toTypeString(),
                         description = definition.description,
                         allowMultiple = definition.allowMultiple,
                     )

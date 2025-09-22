@@ -125,6 +125,7 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         is ScopeContractError.InputError.InvalidContextKey -> "Invalid context key: ${error.key}"
         is ScopeContractError.InputError.InvalidContextName -> "Invalid context name: ${error.name}"
         is ScopeContractError.InputError.InvalidContextFilter -> "Invalid context filter: ${error.filter}"
+        is ScopeContractError.InputError.ValidationFailure -> "Validation failed for ${error.field}: ${error.value}"
         is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> "Data inconsistency: Missing canonical alias for scope ${error.scopeId}"
     }
 

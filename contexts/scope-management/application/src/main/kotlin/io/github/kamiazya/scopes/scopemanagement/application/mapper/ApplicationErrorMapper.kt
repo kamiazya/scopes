@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.CrossAggregat
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeHierarchyApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError
+import io.github.kamiazya.scopes.scopemanagement.application.util.InputSanitizer
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectKeyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValidationError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
@@ -52,242 +53,27 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         -1L
     }
 
-    // ==============================================
-    // Generic Validation Error Creators
-    // ==============================================
+    private fun mapAliasNotFoundError(alias: String): ScopeContractError = ScopeContractError.BusinessError.AliasNotFound(alias = alias)
 
-    /**
-     * Generic interface for validation error creation
-     */
-    private sealed interface ValidationErrorCreator<T> {
-        fun createEmpty(): T
-        fun createTooShort(minLength: Int, actualLength: Int): T
-        fun createTooLong(maxLength: Int, actualLength: Int): T
-        fun createInvalidFormat(): T
+    private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
+
+    private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
+        val alias = when (error) {
+            is AppScopeInputError.AliasNotFound -> error.preview
+            is AppScopeInputError.InvalidAlias -> error.preview
+            else -> error("Unexpected error type: $error")
+        }
+        return mapAliasNotFoundError(alias)
     }
 
-    /**
-     * Title validation error creator
-     */
-    private object TitleValidationErrorCreator : ValidationErrorCreator<ScopeContractError.InputError.InvalidTitle> {
-        override fun createEmpty() = ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
-        )
-
-        override fun createTooShort(minLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = minLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = maxLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createInvalidFormat() = ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = listOf(),
-            ),
-        )
+    private fun mapContextToNotFound(error: ContextError): ScopeContractError {
+        val key = when (error) {
+            is ContextError.ContextNotFound -> error.key
+            is ContextError.InvalidContextSwitch -> error.key
+            else -> error("Unexpected error type: $error")
+        }
+        return mapNotFoundError(key)
     }
-
-    /**
-     * Description validation error creator
-     */
-    private object DescriptionValidationErrorCreator : ValidationErrorCreator<ScopeContractError.InputError.InvalidDescription> {
-        override fun createEmpty() = ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = 0,
-                actualLength = 0,
-            ),
-        )
-
-        override fun createTooShort(minLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = minLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = maxLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createInvalidFormat() = createEmpty() // Description doesn't have invalid format
-    }
-
-    /**
-     * Generic validation error creator for aspect-related errors.
-     * Since contract doesn't have specific aspect error types, all map to ServiceUnavailable.
-     */
-    private class AspectValidationErrorCreator(private val service: String = "aspect-validation") : ValidationErrorCreator<ScopeContractError> {
-        override fun createEmpty() = ScopeContractError.SystemError.ServiceUnavailable(service = service)
-        override fun createTooShort(minLength: Int, actualLength: Int) = ScopeContractError.SystemError.ServiceUnavailable(service = service)
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.SystemError.ServiceUnavailable(service = service)
-        override fun createInvalidFormat() = ScopeContractError.SystemError.ServiceUnavailable(service = service)
-    }
-
-    /**
-     * Aspect Key validation error creator
-     */
-    private val aspectKeyValidationErrorCreator = AspectValidationErrorCreator()
-
-    /**
-     * Aspect Value validation error creator
-     */
-    private val aspectValueValidationErrorCreator = AspectValidationErrorCreator()
-
-    /**
-     * Context Key validation error creator
-     */
-    private object ContextKeyValidationErrorCreator : ValidationErrorCreator<ScopeContractError.InputError.InvalidContextKey> {
-        override fun createEmpty() = ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.Empty,
-        )
-
-        override fun createTooShort(minLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooShort(
-                minimumLength = minLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooLong(
-                maximumLength = maxLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createInvalidFormat() = ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.InvalidFormat("unknown"),
-        )
-    }
-
-    /**
-     * Context Name validation error creator
-     */
-    private object ContextNameValidationErrorCreator : ValidationErrorCreator<ScopeContractError.InputError.InvalidContextName> {
-        override fun createEmpty() = ScopeContractError.InputError.InvalidContextName(
-            name = "",
-            validationFailure = ScopeContractError.ContextNameValidationFailure.Empty,
-        )
-
-        override fun createTooShort(minLength: Int, actualLength: Int) = createEmpty() // Context name doesn't have too short
-
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidContextName(
-            name = "",
-            validationFailure = ScopeContractError.ContextNameValidationFailure.TooLong(
-                maximumLength = maxLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createInvalidFormat() = createEmpty() // Context name doesn't have invalid format
-    }
-
-    /**
-     * Context Filter validation error creator
-     */
-    private object ContextFilterValidationErrorCreator : ValidationErrorCreator<ScopeContractError.InputError.InvalidContextFilter> {
-        override fun createEmpty() = ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.Empty,
-        )
-
-        override fun createTooShort(minLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooShort(
-                minimumLength = minLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createTooLong(maxLength: Int, actualLength: Int) = ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooLong(
-                maximumLength = maxLength,
-                actualLength = actualLength,
-            ),
-        )
-
-        override fun createInvalidFormat() = ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
-                expression = "",
-                errorType = "unknown",
-                position = null,
-            ),
-        )
-    }
-
-    // ==============================================
-    // Generic Validation Mappers
-    // ==============================================
-
-    /**
-     * Maps common validation error patterns using the appropriate creator
-     */
-    private fun <T> mapValidationError(error: Any, creator: ValidationErrorCreator<T>): T = when (error) {
-        // Empty patterns
-        is AspectKeyError.EmptyKey,
-        is AspectValidationError.EmptyAspectKey,
-        is AspectValidationError.EmptyAspectValue,
-        is AspectValidationError.EmptyAspectAllowedValues,
-        is DomainContextError.EmptyKey,
-        is DomainContextError.EmptyName,
-        is DomainContextError.EmptyDescription,
-        is DomainContextError.EmptyFilter,
-        -> creator.createEmpty()
-
-        // Too short patterns
-        is AspectKeyError.TooShort -> creator.createTooShort(error.minLength, error.actualLength)
-        is AspectValidationError.AspectKeyTooShort -> creator.createTooShort(1, 0)
-        is AspectValidationError.AspectValueTooShort -> creator.createTooShort(1, 0)
-        is DomainContextError.KeyTooShort -> creator.createTooShort(error.minimumLength, 0)
-        is DomainContextError.FilterTooShort -> creator.createTooShort(error.minimumLength, 0)
-        is DomainContextError.DescriptionTooShort -> creator.createTooShort(error.minimumLength, 0)
-
-        // Too long patterns
-        is AspectKeyError.TooLong -> creator.createTooLong(error.maxLength, error.actualLength)
-        is AspectValidationError.AspectKeyTooLong -> creator.createTooLong(error.maxLength, error.actualLength)
-        is AspectValidationError.AspectValueTooLong -> creator.createTooLong(error.maxLength, error.actualLength)
-        is DomainContextError.KeyTooLong -> creator.createTooLong(error.maximumLength, 0)
-        is DomainContextError.NameTooLong -> creator.createTooLong(error.maximumLength, 0)
-        is DomainContextError.DescriptionTooLong -> creator.createTooLong(error.maximumLength, 0)
-        is DomainContextError.FilterTooLong -> creator.createTooLong(error.maximumLength, 0)
-
-        // Invalid format patterns
-        is AspectKeyError.InvalidFormat,
-        is AspectValidationError.InvalidAspectKeyFormat,
-        is DomainContextError.InvalidKeyFormat,
-        is DomainContextError.InvalidFilterSyntax,
-        -> creator.createInvalidFormat()
-
-        else -> error("Unexpected error type: $error")
-    }
-
-    // ==============================================
-    // Main Error Mapping
-    // ==============================================
 
     override fun mapToContractError(domainError: ScopeManagementApplicationError): ScopeContractError = when (domainError) {
         // Group errors by type
@@ -321,168 +107,222 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is AppScopeInputError.AliasTooShort,
         is AppScopeInputError.AliasTooLong,
         is AppScopeInputError.AliasInvalidFormat,
-        -> mapAliasInputError(error)
+        -> mapAliasValidationError(error)
 
-        // Business rule errors - map to NotFound
+        // Alias business errors
         is AppScopeInputError.AliasNotFound,
+        is AppScopeInputError.AliasDuplicate,
+        is AppScopeInputError.CannotRemoveCanonicalAlias,
+        is AppScopeInputError.AliasOfDifferentScope,
         is AppScopeInputError.InvalidAlias,
-        -> mapAliasToNotFound(error)
+        -> mapAliasBusinessError(error)
 
-        is AppScopeInputError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(scopeId = "", aliasName = "")
-
-        // Invalid parent ID
+        // Other input errors
         is AppScopeInputError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
-            parentId = error.parentId,
-            expectedFormat = "ULID format",
+            parentId = error.preview,
+            expectedFormat = "Valid ULID format",
         )
 
-        // Duplicate alias
-        is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = error.alias,
-            existingScopeId = null,
-            attemptedScopeId = null,
-        )
-
-        // Alias belongs to different scope
-        is AppScopeInputError.AliasOfDifferentScope -> ScopeContractError.BusinessError.AliasOfDifferentScope(
-            alias = error.alias,
-            expectedScopeId = error.expectedScopeId,
-            actualScopeId = error.actualScopeId,
-        )
+        is AppScopeInputError.ValidationFailed -> {
+            // Check if this is specifically an alias validation
+            val isAliasField = error.field == "alias" || 
+                               error.field == "customAlias" || 
+                               error.field == "newAlias" ||
+                               error.field == "canonicalAlias" ||
+                               error.field.endsWith("Alias")
+            
+            if (isAliasField) {
+                ScopeContractError.InputError.InvalidAlias(
+                    alias = error.preview,
+                    validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
+                        expectedPattern = error.reason,
+                    ),
+                )
+            } else {
+                // Use generic validation failure for non-alias fields
+                ScopeContractError.InputError.ValidationFailure(
+                    field = error.field,
+                    value = error.preview,
+                    constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = error.reason,
+                    ),
+                )
+            }
+        }
     }
 
     private fun mapIdInputError(error: AppScopeInputError): ScopeContractError = when (error) {
-        is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidId(
-            id = "",
-            expectedFormat = "ULID format",
+        is AppScopeInputError.IdBlank -> ScopeContractError.InputError.InvalidScopeId(
+            scopeId = "",
+            expectedFormat = "Non-empty ULID format",
         )
-        is AppScopeInputError.IdInvalidFormat -> ScopeContractError.InputError.InvalidId(
-            id = error.attemptedValue,
-            expectedFormat = error.expectedFormat,
+        is AppScopeInputError.IdInvalidFormat -> ScopeContractError.InputError.InvalidScopeId(
+            scopeId = error.preview,
+            expectedFormat = "Valid ULID format",
         )
-        else -> error("Unexpected error type: $error")
+        else -> error("Unexpected ID error type: $error")
     }
 
     private fun mapTitleInputError(error: AppScopeInputError): ScopeContractError = when (error) {
-        is AppScopeInputError.TitleEmpty -> TitleValidationErrorCreator.createEmpty()
-        is AppScopeInputError.TitleTooShort -> TitleValidationErrorCreator.createTooShort(error.minimumLength, error.attemptedValue.length)
-        is AppScopeInputError.TitleTooLong -> TitleValidationErrorCreator.createTooLong(error.maximumLength, error.attemptedValue.length)
-        is AppScopeInputError.TitleContainsProhibitedCharacters -> TitleValidationErrorCreator.createInvalidFormat()
-        else -> error("Unexpected error type: $error")
-    }
-
-    private fun mapDescriptionInputError(error: AppScopeInputError): ScopeContractError = when (error) {
-        is AppScopeInputError.DescriptionTooLong -> DescriptionValidationErrorCreator.createTooLong(
-            error.maximumLength,
-            error.attemptedValue.length,
+        is AppScopeInputError.TitleEmpty -> ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        else -> error("Unexpected error type: $error")
+        is AppScopeInputError.TitleTooShort -> ScopeContractError.InputError.InvalidTitle(
+            title = error.preview,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = error.minimumLength,
+                actualLength = error.actualLength,
+            ),
+        )
+        is AppScopeInputError.TitleTooLong -> ScopeContractError.InputError.InvalidTitle(
+            title = error.preview,
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = error.maximumLength,
+                actualLength = error.actualLength,
+            ),
+        )
+        is AppScopeInputError.TitleContainsProhibitedCharacters -> ScopeContractError.InputError.InvalidTitle(
+            title = error.preview,
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                prohibitedCharacters = error.prohibitedCharacters,
+            ),
+        )
+        else -> error("Unexpected title error type: $error")
     }
 
-    private fun mapAliasInputError(error: AppScopeInputError): ScopeContractError = when (error) {
+    private fun mapDescriptionInputError(error: AppScopeInputError.DescriptionTooLong): ScopeContractError =
+        ScopeContractError.InputError.InvalidDescription(
+            descriptionText = error.preview,
+            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
+                maximumLength = error.maximumLength,
+                actualLength = error.actualLength,
+            ),
+        )
+
+    private fun mapAliasValidationError(error: AppScopeInputError): ScopeContractError = when (error) {
         is AppScopeInputError.AliasEmpty -> ScopeContractError.InputError.InvalidAlias(
-            alias = error.alias,
+            alias = "",
             validationFailure = ScopeContractError.AliasValidationFailure.Empty,
         )
         is AppScopeInputError.AliasTooShort -> ScopeContractError.InputError.InvalidAlias(
-            alias = error.alias,
+            alias = error.preview,
             validationFailure = ScopeContractError.AliasValidationFailure.TooShort(
                 minimumLength = error.minimumLength,
-                actualLength = error.alias.length,
+                actualLength = error.actualLength,
             ),
         )
         is AppScopeInputError.AliasTooLong -> ScopeContractError.InputError.InvalidAlias(
-            alias = error.alias,
+            alias = error.preview,
             validationFailure = ScopeContractError.AliasValidationFailure.TooLong(
                 maximumLength = error.maximumLength,
-                actualLength = error.alias.length,
+                actualLength = error.actualLength,
             ),
         )
         is AppScopeInputError.AliasInvalidFormat -> ScopeContractError.InputError.InvalidAlias(
-            alias = error.alias,
+            alias = error.preview,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
                 expectedPattern = error.expectedPattern,
             ),
         )
-        else -> error("Unexpected error type: $error")
+        else -> error("Unexpected alias validation error type: $error")
     }
 
-    private fun mapAliasNotFoundError(alias: String): ScopeContractError = ScopeContractError.BusinessError.AliasNotFound(alias = alias)
+    private fun mapAliasBusinessError(error: AppScopeInputError): ScopeContractError = when (error) {
+        is AppScopeInputError.AliasNotFound,
+        is AppScopeInputError.InvalidAlias,
+        -> mapAliasToNotFound(error)
 
-    private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
-        val alias = when (error) {
-            is AppScopeInputError.AliasNotFound -> error.alias
-            is AppScopeInputError.InvalidAlias -> error.alias
-            else -> error("Unexpected error type: $error")
-        }
-        return mapAliasNotFoundError(alias)
+        is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = error.preview,
+        )
+        is AppScopeInputError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotModifyCanonicalAlias(
+            scopeId = error.scopeId,
+            canonicalAlias = error.canonicalAlias,
+            operation = "remove",
+        )
+        is AppScopeInputError.AliasOfDifferentScope -> ScopeContractError.BusinessError.InvalidAliasTarget(
+            alias = error.alias,
+            targetScopeId = error.targetScopeId,
+            actualScopeId = error.actualScopeId,
+        )
+        else -> error("Unexpected alias business error type: $error")
+    }
+
+    private fun mapContextError(error: ContextError): ScopeContractError = when (error) {
+        is ContextError.KeyInvalidFormat -> ScopeContractError.InputError.InvalidContextKey(
+            key = InputSanitizer.createPreview(error.attemptedKey),
+            validationFailure = ScopeContractError.ContextKeyValidationFailure.InvalidFormat(
+                expectedPattern = "Valid context key format",
+            ),
+        )
+        is ContextError.StateNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = error.contextId,
+        )
+        is ContextError.InvalidFilter -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = InputSanitizer.createPreview(error.filter),
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
+                expression = error.filter,
+                errorType = "syntax_error",
+                position = null,
+            ),
+        )
+        is ContextError.ContextInUse -> ScopeContractError.BusinessError.OperationNotAllowed(
+            resource = "context",
+            resourceId = error.key,
+            operation = "delete",
+            reason = "Context is currently active",
+        )
+        is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateContextKey(
+            key = error.key,
+        )
+        is ContextError.ContextNotFound,
+        is ContextError.InvalidContextSwitch,
+        -> mapContextToNotFound(error)
+
+        is ContextError.ContextUpdateConflict -> ScopeContractError.BusinessError.UpdateConflict(
+            resourceType = "context",
+            resourceId = error.key,
+            reason = error.reason,
+        )
     }
 
     private fun mapScopeAliasError(error: AppScopeAliasError): ScopeContractError = when (error) {
-        is AppScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = error.aliasName,
-            existingScopeId = error.existingScopeId,
-            attemptedScopeId = error.attemptedScopeId,
-        )
-        is AppScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(alias = error.aliasName)
-        is AppScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
-            scopeId = error.scopeId,
-            aliasName = error.aliasName,
-        )
-        is AppScopeAliasError.AliasGenerationFailed -> ScopeContractError.BusinessError.AliasGenerationFailed(
-            scopeId = error.scopeId,
-            retryCount = error.retryCount,
-        )
-        is AppScopeAliasError.AliasGenerationValidationFailed -> ScopeContractError.BusinessError.AliasGenerationValidationFailed(
-            scopeId = error.scopeId,
+        is AppScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = error.alias,
-            reason = error.reason,
         )
-        is AppScopeAliasError.DataInconsistencyError.AliasExistsButScopeNotFound -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
+        is AppScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
+            alias = error.alias,
+        )
+        is AppScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotModifyCanonicalAlias(
+            scopeId = error.scopeId,
+            canonicalAlias = error.canonicalAlias,
+            operation = "remove",
+        )
+        is AppScopeAliasError.AliasGenerationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "alias-generation",
         )
     }
 
     private fun mapHierarchyError(error: ScopeHierarchyApplicationError): ScopeContractError = when (error) {
-        is ScopeHierarchyApplicationError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
-                scopeId = error.scopeId,
-                attemptedDepth = error.attemptedDepth,
-                maximumDepth = error.maximumDepth,
-            ),
-        )
-        is ScopeHierarchyApplicationError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
-                parentId = error.parentScopeId,
-                currentChildrenCount = error.currentChildrenCount,
-                maximumChildren = error.maximumChildren,
-            ),
-        )
-        is ScopeHierarchyApplicationError.ParentNotFound -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.ParentNotFound(
-                scopeId = error.scopeId,
-                parentId = error.parentId,
-            ),
-        )
-        is ScopeHierarchyApplicationError.CircularReference -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.CircularReference(
-                scopeId = error.scopeId,
-                parentId = error.cyclePath.lastOrNull() ?: "",
-                cyclePath = error.cyclePath,
-            ),
-        )
-        is ScopeHierarchyApplicationError.SelfParenting -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.SelfParenting(
-                scopeId = error.scopeId,
-            ),
-        )
-        is ScopeHierarchyApplicationError.InvalidParentId -> ScopeContractError.InputError.InvalidParentId(
-            parentId = error.invalidId,
-            expectedFormat = "ULID format",
-        )
-        is ScopeHierarchyApplicationError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
+        is ScopeHierarchyApplicationError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyDepthExceeded(
+            currentDepth = error.currentDepth,
+            maxDepth = error.maxDepth,
             scopeId = error.scopeId,
-            childrenCount = error.childCount,
+            ancestorChain = error.ancestorChain.map { it.toString() },
+        )
+        is ScopeHierarchyApplicationError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyWidthExceeded(
+            currentCount = error.currentCount,
+            maxChildren = error.maxChildren,
+            parentId = error.parentId,
+        )
+        is ScopeHierarchyApplicationError.CircularReference -> ScopeContractError.BusinessError.CircularHierarchy(
+            scopeId = error.scopeId,
+            parentId = error.parentId,
+            conflictPath = error.conflictPath.map { it.toString() },
+        )
+        is ScopeHierarchyApplicationError.ParentNotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = error.parentId,
         )
     }
 
@@ -494,178 +334,199 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
     }
 
-    private fun mapContextError(error: ContextError): ScopeContractError = when (error) {
-        // Context view errors
-        is ContextError.ContextNotFound -> mapContextToNotFound(error)
-        is ContextError.InvalidContextSwitch -> mapContextToNotFound(error)
-        is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateContextKey(
-            contextKey = error.key,
-        )
-        is ContextError.KeyInvalidFormat -> ScopeContractError.InputError.InvalidContextKey(
-            key = error.attemptedKey,
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.InvalidFormat("invalid format"),
-        )
-        is ContextError.StateNotFound -> ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
-        is ContextError.InvalidFilter -> ScopeContractError.InputError.InvalidContextFilter(
-            filter = error.filter,
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
-                expression = error.filter,
-                errorType = error.reason,
-                position = null,
-            ),
-        )
-        is ContextError.ContextInUse,
-        is ContextError.ContextUpdateConflict,
-        -> ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
-    }
-
-    private fun mapNotFoundError(key: String): ScopeContractError = ScopeContractError.BusinessError.ContextNotFound(contextKey = key)
-
-    private fun mapContextToNotFound(error: ContextError): ScopeContractError {
-        val key = when (error) {
-            is ContextError.ContextNotFound -> error.key
-            is ContextError.InvalidContextSwitch -> error.key
-            else -> error("Unexpected error type: $error")
-        }
-        return mapNotFoundError(key)
-    }
-
-    override fun mapSystemError(): ScopeContractError = createServiceUnavailableError(SERVICE_NAME)
-
     private fun mapPersistenceError(error: ScopeManagementApplicationError.PersistenceError): ScopeContractError = when (error) {
+        // All persistence errors map to ServiceUnavailable for security
         is ScopeManagementApplicationError.PersistenceError.StorageUnavailable,
         is ScopeManagementApplicationError.PersistenceError.DataCorruption,
-        is ScopeManagementApplicationError.PersistenceError.ConcurrencyConflict,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
-        is ScopeManagementApplicationError.PersistenceError.NotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = "",
-        )
-    }
-
-    /**
-     * Maps domain input errors to contract errors.
-     */
-    fun mapDomainError(domainError: ScopeInputError): ScopeContractError = when (domainError) {
-        // Title errors
-        is ScopeInputError.TitleError.EmptyTitle -> TitleValidationErrorCreator.createEmpty()
-        is ScopeInputError.TitleError.TitleTooShort -> TitleValidationErrorCreator.createTooShort(
-            domainError.minLength,
-            0, // actual length not available in domain error
-        )
-        is ScopeInputError.TitleError.TitleTooLong -> TitleValidationErrorCreator.createTooLong(
-            domainError.maxLength,
-            0, // actual length not available in domain error
-        )
-        is ScopeInputError.TitleError.InvalidTitleFormat -> TitleValidationErrorCreator.createInvalidFormat()
-
-        // Description errors
-        is ScopeInputError.DescriptionError.DescriptionTooLong -> DescriptionValidationErrorCreator.createTooLong(
-            domainError.maxLength,
-            0, // actual length not available in domain error
-        )
-
-        // ID errors
-        is ScopeInputError.IdError.EmptyId -> ScopeContractError.InputError.InvalidId(
-            id = "",
-            expectedFormat = "ULID format",
-        )
-        is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
-            id = domainError.id,
-            expectedFormat = when (domainError.expectedFormat) {
-                ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
-                ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
-                ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "Numeric ID"
-                ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "Custom format"
-            },
-        )
-
-        // Alias errors
-        is ScopeInputError.AliasError.EmptyAlias,
-        is ScopeInputError.AliasError.AliasTooShort,
-        is ScopeInputError.AliasError.AliasTooLong,
-        is ScopeInputError.AliasError.InvalidAliasFormat,
-        -> ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
-    }
-
-    /**
-     * Maps domain scope alias errors to contract errors.
-     */
-    fun mapDomainError(domainError: DomainScopeAliasError): ScopeContractError = when (domainError) {
-        is DomainScopeAliasError.AliasNotFoundById -> mapAliasNotFoundError("")
-        is DomainScopeAliasError.AliasNotFoundByName -> mapAliasNotFoundError(domainError.alias)
-        is DomainScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = domainError.alias,
-            existingScopeId = domainError.scopeId.toString(),
-            attemptedScopeId = "",
-        )
-        is DomainScopeAliasError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
-            scopeId = domainError.scopeId.toString(),
-            aliasName = domainError.alias,
-        )
-        is DomainScopeAliasError.AliasGenerationFailed,
-        is DomainScopeAliasError.DataInconsistencyError.AliasReferencesNonExistentScope,
-        is DomainScopeAliasError.AliasError,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
+        is ScopeManagementApplicationError.PersistenceError.ConcurrencyConflict -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SERVICE_NAME,
         )
     }
+
+    private fun mapSystemError(): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(
+        service = SERVICE_NAME,
+    )
 
     /**
      * Maps domain context errors to contract errors.
+     * This function enables command handlers to use contract errors directly
+     * by mapping domain errors.
      */
     fun mapDomainError(domainError: DomainContextError): ScopeContractError = when (domainError) {
         // Context key validation errors
-        is DomainContextError.EmptyKey,
-        is DomainContextError.KeyTooShort,
-        is DomainContextError.KeyTooLong,
-        is DomainContextError.InvalidKeyFormat,
-        -> mapValidationError(domainError, ContextKeyValidationErrorCreator)
-
-        // Context name validation errors
-        is DomainContextError.EmptyName -> ContextNameValidationErrorCreator.createEmpty()
-        is DomainContextError.NameTooLong -> ContextNameValidationErrorCreator.createTooLong(domainError.maximumLength, 0)
-
-        // Context description validation errors
-        is DomainContextError.EmptyDescription,
-        is DomainContextError.DescriptionTooShort,
-        is DomainContextError.DescriptionTooLong,
-        -> mapValidationError(domainError, DescriptionValidationErrorCreator)
-
-        // Context filter validation errors
-        is DomainContextError.EmptyFilter,
-        is DomainContextError.FilterTooShort,
-        is DomainContextError.FilterTooLong,
-        is DomainContextError.InvalidFilterSyntax,
-        -> mapValidationError(domainError, ContextFilterValidationErrorCreator)
-
-        // Business rule validation errors
-        is DomainContextError.InvalidScope -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId)
-        is DomainContextError.InvalidHierarchy -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.ParentNotFound(
-                scopeId = domainError.scopeId,
-                parentId = domainError.parentId,
+        is DomainContextError.EmptyKey -> ScopeContractError.InputError.InvalidContextKey(
+            key = "",
+            validationFailure = ScopeContractError.ContextKeyValidationFailure.Empty,
+        )
+        is DomainContextError.KeyTooShort -> ScopeContractError.InputError.InvalidContextKey(
+            key = "",
+            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooShort(
+                minimumLength = domainError.minimumLength,
+                actualLength = 0,
             ),
         )
-        is DomainContextError.DuplicateScope -> ScopeContractError.BusinessError.DuplicateTitle(
-            title = domainError.title,
-            parentId = domainError.contextId,
+        is DomainContextError.KeyTooLong -> ScopeContractError.InputError.InvalidContextKey(
+            key = "",
+            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooLong(
+                maximumLength = domainError.maximumLength,
+                actualLength = 0,
+            ),
+        )
+        is DomainContextError.InvalidKeyFormat -> ScopeContractError.InputError.InvalidContextKey(
+            key = "",
+            validationFailure = ScopeContractError.ContextKeyValidationFailure.InvalidFormat(
+                expectedPattern = "Valid context key format",
+            ),
+        )
+
+        // Context name validation errors
+        is DomainContextError.EmptyName -> ScopeContractError.InputError.InvalidContextName(
+            name = "",
+            validationFailure = ScopeContractError.ContextNameValidationFailure.Empty,
+        )
+        is DomainContextError.NameTooLong -> ScopeContractError.InputError.InvalidContextName(
+            name = "",
+            validationFailure = ScopeContractError.ContextNameValidationFailure.TooLong(
+                maximumLength = domainError.maximumLength,
+                actualLength = 0,
+            ),
+        )
+
+        // Context description validation errors
+        is DomainContextError.EmptyDescription -> ScopeContractError.InputError.InvalidContextDescription(
+            description = "",
+            validationFailure = ScopeContractError.ContextDescriptionValidationFailure.Empty,
+        )
+        is DomainContextError.DescriptionTooShort -> ScopeContractError.InputError.InvalidContextDescription(
+            description = "",
+            validationFailure = ScopeContractError.ContextDescriptionValidationFailure.TooShort(
+                minimumLength = domainError.minimumLength,
+                actualLength = 0,
+            ),
+        )
+        is DomainContextError.DescriptionTooLong -> ScopeContractError.InputError.InvalidContextDescription(
+            description = "",
+            validationFailure = ScopeContractError.ContextDescriptionValidationFailure.TooLong(
+                maximumLength = domainError.maximumLength,
+                actualLength = 0,
+            ),
+        )
+
+        // Context filter validation errors
+        is DomainContextError.EmptyFilter -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = "",
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.Empty,
+        )
+        is DomainContextError.FilterTooShort -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = "",
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooShort(
+                minimumLength = domainError.minimumLength,
+                actualLength = 0,
+            ),
+        )
+        is DomainContextError.FilterTooLong -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = "",
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooLong(
+                maximumLength = domainError.maximumLength,
+                actualLength = 0,
+            ),
+        )
+        is DomainContextError.InvalidFilterSyntax -> ScopeContractError.InputError.InvalidContextFilter(
+            filter = "",
+            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
+                expression = "",
+                errorType = "syntax_error",
+                position = null,
+            ),
         )
     }
 
     /**
      * Maps domain aspect key errors to contract errors.
-     * Since contract doesn't have specific aspect error types, map to generic system error.
      */
-    fun mapDomainError(domainError: AspectKeyError): ScopeContractError = ScopeContractError.SystemError.ServiceUnavailable(service = "aspect-validation")
+    fun mapDomainError(domainError: AspectKeyError): ScopeContractError = when (domainError) {
+        is AspectKeyError.EmptyKey -> createEmptyTitleError()
+        is AspectKeyError.TooShort -> createTooShortTitleError(
+            minLength = domainError.minLength,
+            actualLength = domainError.actualLength,
+        )
+        is AspectKeyError.TooLong -> createTooLongTitleError(
+            maxLength = domainError.maxLength,
+            actualLength = domainError.actualLength,
+        )
+        is AspectKeyError.InvalidFormat -> createInvalidTitleWithInvalidCharacters()
+    }
 
     /**
      * Maps domain aspect validation errors to contract errors.
-     * Since contract doesn't have specific aspect error types, map to generic system error.
      */
-    fun mapDomainError(domainError: AspectValidationError): ScopeContractError =
-        ScopeContractError.SystemError.ServiceUnavailable(service = "aspect-validation")
+    fun mapDomainError(domainError: AspectValidationError): ScopeContractError = when (domainError) {
+        // AspectKey validation errors
+        is AspectValidationError.EmptyAspectKey -> createEmptyTitleError()
+        is AspectValidationError.AspectKeyTooShort -> createTooShortTitleError(
+            minLength = 1,
+            actualLength = 0,
+        )
+        is AspectValidationError.AspectKeyTooLong -> createTooLongTitleError(
+            maxLength = domainError.maxLength,
+            actualLength = domainError.actualLength,
+        )
+        is AspectValidationError.InvalidAspectKeyFormat -> createInvalidTitleWithInvalidCharacters()
+
+        // AspectValue validation errors
+        is AspectValidationError.EmptyAspectValue -> createRequiredFieldError(
+            field = "aspectValue",
+        )
+        is AspectValidationError.AspectValueTooShort -> ScopeContractError.InputError.ValidationFailure(
+            field = "aspectValue",
+            value = "",
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "At least 1 character",
+            ),
+        )
+        is AspectValidationError.AspectValueTooLong -> ScopeContractError.InputError.ValidationFailure(
+            field = "aspectValue",
+            value = "",
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "At most ${domainError.maxLength} characters",
+            ),
+        )
+
+        // AspectValue pattern validation errors
+        is AspectValidationError.InvalidAspectValueFormat -> ScopeContractError.InputError.ValidationFailure(
+            field = "aspectValue",
+            value = "",
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "Valid aspect value format",
+            ),
+        )
+
+        // AllowedValues validation errors
+        is AspectValidationError.EmptyAspectAllowedValues -> createRequiredFieldError(
+            field = "allowedValues",
+        )
+        is AspectValidationError.DuplicateAllowedValues -> ScopeContractError.InputError.ValidationFailure(
+            field = "allowedValues",
+            value = domainError.duplicateValue,
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "No duplicate values allowed",
+            ),
+        )
+        is AspectValidationError.TooManyAllowedValues -> ScopeContractError.InputError.ValidationFailure(
+            field = "allowedValues",
+            value = "${domainError.actualCount} values",
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "At most ${domainError.maxCount} values allowed",
+            ),
+        )
+        is AspectValidationError.InvalidAllowedValueFormat -> ScopeContractError.InputError.ValidationFailure(
+            field = "allowedValues",
+            value = domainError.invalidValue,
+            constraint = ScopeContractError.ValidationConstraint.InvalidFormat(
+                expectedFormat = "Valid allowed value format",
+            ),
+        )
+    }
 
     /**
      * Generic mapper for any ScopesError to contract errors.
@@ -678,97 +539,107 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is AspectValidationError -> mapDomainError(domainError)
 
         // Common domain errors
-        is ScopesError.NotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.identifier)
-        is ScopesError.InvalidOperation -> createServiceUnavailableError(SERVICE_NAME)
+        is ScopesError.NotFound -> ScopeContractError.BusinessError.NotFound(
+            scopeId = domainError.identifier,
+        )
+        is ScopesError.InvalidOperation -> createServiceUnavailableError()
         is ScopesError.AlreadyExists -> ScopeContractError.BusinessError.DuplicateAlias(
             alias = domainError.identifier,
-            existingScopeId = "",
-            attemptedScopeId = "",
         )
-        is ScopesError.SystemError -> createServiceUnavailableError(domainError.service ?: SERVICE_NAME)
-        is ScopesError.ValidationFailed -> when (val constraint = domainError.constraint) {
-            is ScopesError.ValidationConstraintType.InvalidType -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedType,
-            )
-            is ScopesError.ValidationConstraintType.InvalidFormat -> ScopeContractError.InputError.InvalidId(
-                id = domainError.value,
-                expectedFormat = constraint.expectedFormat,
-            )
-            else -> TitleValidationErrorCreator.createEmpty()
-        }
-        is ScopesError.Conflict -> when (domainError.conflictType) {
-            ScopesError.Conflict.ConflictType.DUPLICATE_KEY -> ScopeContractError.BusinessError.DuplicateTitle(
-                title = domainError.resourceId,
-                parentId = null,
-            )
-            ScopesError.Conflict.ConflictType.HAS_DEPENDENCIES -> ScopeContractError.BusinessError.HasChildren(
-                scopeId = domainError.resourceId,
-                childrenCount = 1,
-            )
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SERVICE_NAME)
-        }
-        is ScopesError.ConcurrencyError -> ScopeContractError.SystemError.ConcurrentModification(
-            scopeId = domainError.aggregateId,
-            expectedVersion = domainError.expectedVersion?.toLong() ?: -1L,
-            actualVersion = domainError.actualVersion?.toLong() ?: -1L,
+        is ScopesError.SystemError -> createServiceUnavailableError(
+            service = domainError.service,
         )
-        is ScopesError.RepositoryError -> when (domainError.failure) {
-            ScopesError.RepositoryError.RepositoryFailure.STORAGE_UNAVAILABLE,
-            ScopesError.RepositoryError.RepositoryFailure.TIMEOUT,
-            ScopesError.RepositoryError.RepositoryFailure.ACCESS_DENIED,
-            ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION,
-            ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-            ScopesError.RepositoryError.RepositoryFailure.CORRUPTED_DATA,
-            null,
-            -> createServiceUnavailableError(SERVICE_NAME)
+        is ScopesError.ValidationFailed -> {
+            // Map domain validation constraint to contract validation constraint
+            val contractConstraint = when (val constraint = domainError.constraint) {
+                is ScopesError.ValidationConstraintType.InvalidType ->
+                    ScopeContractError.ValidationConstraint.InvalidType(
+                        expectedType = constraint.expectedType,
+                        actualType = constraint.actualType,
+                    )
+
+                is ScopesError.ValidationConstraintType.InvalidFormat ->
+                    ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = constraint.expectedFormat,
+                    )
+
+                is ScopesError.ValidationConstraintType.OutOfRange ->
+                    ScopeContractError.ValidationConstraint.OutOfRange(
+                        minimum = constraint.minimum?.toString(),
+                        maximum = constraint.maximum?.toString(),
+                        actual = constraint.actual?.toString(),
+                    )
+
+                is ScopesError.ValidationConstraintType.Required ->
+                    ScopeContractError.ValidationConstraint.Required
+
+                is ScopesError.ValidationConstraintType.Custom ->
+                    ScopeContractError.ValidationConstraint.InvalidFormat(
+                        expectedFormat = constraint.description,
+                    )
+            }
+
+            ScopeContractError.InputError.ValidationFailure(
+                field = domainError.field,
+                value = context?.attemptedValue ?: "[unknown]",
+                constraint = contractConstraint,
+            )
         }
 
-        // Delegate to specific domain error mappers
-        is ScopeInputError -> mapDomainError(domainError)
-        is DomainScopeAliasError -> mapDomainError(domainError)
-        is ScopeHierarchyError -> mapDomainHierarchyError(domainError)
-        is DomainScopeUniquenessError -> mapDomainUniquenessError(domainError)
-
-        // Handle other domain errors
-        else -> createServiceUnavailableError(SERVICE_NAME)
+        // For unknown domain errors, fail fast to ensure proper error mapping
+        else -> {
+            logUnmappedError(domainError)
+            createServiceUnavailableError()
+        }
     }
 
-    private fun mapDomainHierarchyError(domainError: ScopeHierarchyError): ScopeContractError = when (domainError) {
-        is ScopeHierarchyError.MaxDepthExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxDepthExceeded(
-                scopeId = domainError.scopeId.toString(),
-                attemptedDepth = domainError.currentDepth,
-                maximumDepth = domainError.maxDepth,
-            ),
+    // Helper error creation functions that use consistent error patterns
+    private fun createEmptyTitleError(): ScopeContractError.InputError.InvalidTitle = 
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
         )
-        is ScopeHierarchyError.MaxChildrenExceeded -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.MaxChildrenExceeded(
-                parentId = domainError.parentId.toString(),
-                currentChildrenCount = domainError.currentCount,
-                maximumChildren = domainError.maxChildren,
-            ),
-        )
-        is ScopeHierarchyError.CircularDependency -> ScopeContractError.BusinessError.HierarchyViolation(
-            violation = ScopeContractError.HierarchyViolationType.CircularReference(
-                scopeId = domainError.scopeId.toString(),
-                parentId = domainError.ancestorId.toString(),
-                cyclePath = emptyList(),
-            ),
-        )
-        is ScopeHierarchyError.HierarchyUnavailable -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SERVICE_NAME,
-        )
-    }
 
-    private fun mapDomainUniquenessError(domainError: DomainScopeUniquenessError): ScopeContractError = when (domainError) {
-        is DomainScopeUniquenessError.DuplicateTitleInContext -> ScopeContractError.BusinessError.DuplicateTitle(
-            title = domainError.title,
-            parentId = domainError.parentId?.toString(),
+    private fun createTooShortTitleError(minLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle = 
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
+                minimumLength = minLength,
+                actualLength = actualLength,
+            ),
         )
-        is DomainScopeUniquenessError.DuplicateIdentifier -> ScopeContractError.BusinessError.DuplicateTitle(
-            title = domainError.identifier,
-            parentId = null,
+
+    private fun createTooLongTitleError(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle = 
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
+                maximumLength = maxLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    private fun createInvalidTitleWithInvalidCharacters(): ScopeContractError.InputError.InvalidTitle = 
+        ScopeContractError.InputError.InvalidTitle(
+            title = "",
+            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+                prohibitedCharacters = listOf(),
+            ),
+        )
+
+    private fun createRequiredFieldError(field: String): ScopeContractError.InputError.ValidationFailure = 
+        ScopeContractError.InputError.ValidationFailure(
+            field = field,
+            value = "",
+            constraint = ScopeContractError.ValidationConstraint.Required,
+        )
+
+    private fun logUnmappedError(error: Any) {
+        logger.error(
+            "Unmapped domain error detected",
+            mapOf(
+                "errorType" to error::class.qualifiedName,
+                "errorMessage" to error.toString(),
+            ),
         )
     }
 }

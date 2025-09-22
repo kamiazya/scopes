@@ -9,6 +9,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
+import io.github.kamiazya.scopes.scopemanagement.application.util.InputSanitizer
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
 
 // Create singleton presenter instances
@@ -128,59 +129,59 @@ fun ContextError.toApplicationError(): ScopeManagementApplicationError = when (t
  */
 fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManagementApplicationError = when (this) {
     is DomainScopeInputError.IdError.EmptyId ->
-        AppScopeInputError.IdBlank(attemptedValue = attemptedValue)
+        AppScopeInputError.IdBlank(preview = InputSanitizer.createPreview(attemptedValue))
 
     is DomainScopeInputError.IdError.InvalidIdFormat ->
         AppScopeInputError.IdInvalidFormat(
-            attemptedValue = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             expectedFormat = scopeInputErrorPresenter.presentIdFormat(this.expectedFormat),
         )
 
     is DomainScopeInputError.TitleError.EmptyTitle ->
-        AppScopeInputError.TitleEmpty(attemptedValue = attemptedValue)
+        AppScopeInputError.TitleEmpty(preview = InputSanitizer.createPreview(attemptedValue))
 
     is DomainScopeInputError.TitleError.TitleTooShort ->
         AppScopeInputError.TitleTooShort(
-            attemptedValue = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             minimumLength = this.minLength,
         )
 
     is DomainScopeInputError.TitleError.TitleTooLong ->
         AppScopeInputError.TitleTooLong(
-            attemptedValue = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.TitleError.InvalidTitleFormat ->
         AppScopeInputError.TitleContainsProhibitedCharacters(
-            attemptedValue = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             prohibitedCharacters = listOf('<', '>', '&', '"'),
         )
 
     is DomainScopeInputError.DescriptionError.DescriptionTooLong ->
         AppScopeInputError.DescriptionTooLong(
-            attemptedValue = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.AliasError.EmptyAlias ->
-        AppScopeInputError.AliasEmpty(alias = attemptedValue)
+        AppScopeInputError.AliasEmpty(preview = InputSanitizer.createPreview(attemptedValue))
 
     is DomainScopeInputError.AliasError.AliasTooShort ->
         AppScopeInputError.AliasTooShort(
-            alias = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             minimumLength = this.minLength,
         )
 
     is DomainScopeInputError.AliasError.AliasTooLong ->
         AppScopeInputError.AliasTooLong(
-            alias = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             maximumLength = this.maxLength,
         )
 
     is DomainScopeInputError.AliasError.InvalidAliasFormat ->
         AppScopeInputError.AliasInvalidFormat(
-            alias = attemptedValue,
+            preview = InputSanitizer.createPreview(attemptedValue),
             expectedPattern = scopeInputErrorPresenter.presentAliasPattern(this.expectedPattern),
         )
 }
@@ -269,6 +270,12 @@ fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = w
     is ScopesError.NotFound -> AppPersistenceError.NotFound(
         entityType = this.entityType,
         entityId = this.identifier,
+    )
+
+    is ScopesError.ValidationFailed -> AppScopeInputError.ValidationFailed(
+        field = this.field,
+        preview = InputSanitizer.createPreview(this.value),
+        reason = "Validation failed: ${this.constraint}",
     )
 
     // For other errors, create a generic persistence error

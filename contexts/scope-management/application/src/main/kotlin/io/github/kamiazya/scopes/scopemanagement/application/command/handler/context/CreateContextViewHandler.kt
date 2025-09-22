@@ -3,10 +3,9 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler.co
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
-import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.context.CreateContextViewCommand
-import io.github.kamiazya.scopes.scopemanagement.application.command.handler.BaseCommandHandler
 import io.github.kamiazya.scopes.scopemanagement.application.dto.context.ContextViewDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
@@ -18,121 +17,90 @@ import kotlinx.datetime.Clock
 
 /**
  * Handler for creating a new context view.
- * Uses BaseCommandHandler for common functionality and ApplicationErrorMapper
- * for error mapping to contract errors.
  *
  * This handler validates the input, ensures the key is unique,
  * validates the filter syntax, and persists the new context view.
  */
 class CreateContextViewHandler(
     private val contextViewRepository: ContextViewRepository,
+    private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
-    transactionManager: TransactionManager,
-    logger: Logger,
-) : BaseCommandHandler<CreateContextViewCommand, ContextViewDto>(transactionManager, logger) {
+) : CommandHandler<CreateContextViewCommand, ScopeContractError, ContextViewDto> {
 
-    override suspend fun executeCommand(command: CreateContextViewCommand): Either<ScopeContractError, ContextViewDto> = either {
-        logger.info(
-            "Creating new context view",
-            mapOf<String, Any>(
-                "key" to command.key,
-                "name" to command.name,
-                "filter" to command.filter,
-            ),
-        )
+    override suspend operator fun invoke(command: CreateContextViewCommand): Either<ScopeContractError, ContextViewDto> = transactionManager.inTransaction {
+        either {
+            // Validate and create value objects
+            val key = ContextViewKey.create(command.key)
+                .mapLeft { applicationErrorMapper.mapDomainError(it) }
+                .bind()
+            val name = ContextViewName.create(command.name)
+                .mapLeft { applicationErrorMapper.mapDomainError(it) }
+                .bind()
+            val filter = ContextViewFilter.create(command.filter)
+                .mapLeft { applicationErrorMapper.mapDomainError(it) }
+                .bind()
 
-        // Validate and create value objects
-        val key = ContextViewKey.create(command.key)
-            .mapLeft { error ->
-                logger.error(
-                    "Invalid context view key",
-                    mapOf<String, Any>(
-                        "key" to command.key,
-                        "error" to error.toString(),
-                    ),
-                )
-                applicationErrorMapper.mapDomainError(error)
-            }
-            .bind()
-
-        val name = ContextViewName.create(command.name)
-            .mapLeft { error ->
-                logger.error(
-                    "Invalid context view name",
-                    mapOf<String, Any>(
-                        "name" to command.name,
-                        "error" to error.toString(),
-                    ),
-                )
-                applicationErrorMapper.mapDomainError(error)
-            }
-            .bind()
-
-        val filter = ContextViewFilter.create(command.filter)
-            .mapLeft { error ->
-                logger.error(
-                    "Invalid context view filter",
-                    mapOf<String, Any>(
-                        "filter" to command.filter,
-                        "error" to error.toString(),
-                    ),
-                )
-                applicationErrorMapper.mapDomainError(error)
-            }
-            .bind()
-
-        // Create the context view
-        val contextView = ContextView.create(
-            key = key,
-            name = name,
-            filter = filter,
-            description = command.description,
-            now = Clock.System.now(),
-        ).mapLeft { error ->
-            logger.error(
-                "Failed to create context view entity",
-                mapOf<String, Any>(
-                    "key" to command.key,
-                    "error" to error.toString(),
-                ),
+            // Check if a context with the same key already exists
+            contextViewRepository.findByKey(key).fold(
+                { error ->
+                    raise(
+                        ScopeContractError.SystemError.ServiceUnavailable(
+                            service = "context-view-repository",
+                        ),
+                    )
+                },
+                { existing ->
+                    if (existing != null) {
+                        raise(
+                            ScopeContractError.BusinessError.DuplicateContextKey(
+                                contextKey = key.value,
+                                existingContextId = existing.id.value.toString(),
+                            ),
+                        )
+                    }
+                },
             )
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
 
-        // Save to repository
-        val saved = contextViewRepository.save(contextView)
-            .mapLeft { error ->
-                logger.error(
-                    "Failed to save context view",
-                    mapOf<String, Any>(
-                        "key" to command.key,
-                        "error" to error.toString(),
-                    ),
-                )
-                // Repository errors should be mapped to ServiceUnavailable
-                ScopeContractError.SystemError.ServiceUnavailable(
-                    service = "context-view-repository",
-                )
-            }
-            .bind()
+            // Create the context view
+            val contextView = ContextView.create(
+                key = key,
+                name = name,
+                filter = filter,
+                description = command.description,
+                now = Clock.System.now(),
+            ).mapLeft { applicationErrorMapper.mapDomainError(it) }.bind()
 
-        logger.info(
-            "Context view created successfully",
-            mapOf<String, Any>(
-                "id" to saved.id.value.toString(),
-                "key" to saved.key.value,
-            ),
-        )
+            // Save to repository
+            val saved = contextViewRepository.save(contextView).fold(
+                { err ->
+                    when (err) {
+                        is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError -> when (err.failure) {
+                            io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION ->
+                                raise(
+                                    ScopeContractError.BusinessError.DuplicateContextKey(
+                                        contextKey = key.value,
+                                        existingContextId = null,
+                                    ),
+                                )
+                            else ->
+                                raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                        }
+                        else -> raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                    }
+                },
+                { it },
+            )
 
-        // Map to DTO
-        ContextViewDto(
-            id = saved.id.value.toString(),
-            key = saved.key.value,
-            name = saved.name.value,
-            filter = saved.filter.expression,
-            description = saved.description?.value,
-            createdAt = saved.createdAt,
-            updatedAt = saved.updatedAt,
-        )
+            // Map to DTO
+            ContextViewDto(
+                id = saved.id.value.toString(),
+                key = saved.key.value,
+                name = saved.name.value,
+                filter = saved.filter.expression,
+                description = saved.description?.value,
+                createdAt = saved.createdAt,
+                updatedAt = saved.updatedAt,
+            )
+        }
     }
 }
