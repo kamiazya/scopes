@@ -118,6 +118,86 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         expectedFormat = expectedFormat,
     )
 
+    // Context-related helper methods
+    private fun createInvalidContextKey(
+        key: String,
+        validationFailure: ScopeContractError.ContextKeyValidationFailure,
+    ): ScopeContractError.InputError.InvalidContextKey = ScopeContractError.InputError.InvalidContextKey(key = key, validationFailure = validationFailure)
+
+    private fun createInvalidContextKeyEmpty(): ScopeContractError.InputError.InvalidContextKey =
+        createInvalidContextKey("", ScopeContractError.ContextKeyValidationFailure.Empty)
+
+    private fun createInvalidContextKeyTooShort(minLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidContextKey = createInvalidContextKey(
+        "",
+        ScopeContractError.ContextKeyValidationFailure.TooShort(
+            minimumLength = minLength,
+            actualLength = actualLength,
+        ),
+    )
+
+    private fun createInvalidContextKeyTooLong(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidContextKey = createInvalidContextKey(
+        "",
+        ScopeContractError.ContextKeyValidationFailure.TooLong(
+            maximumLength = maxLength,
+            actualLength = actualLength,
+        ),
+    )
+
+    private fun createInvalidContextKeyFormat(invalidType: String): ScopeContractError.InputError.InvalidContextKey =
+        createInvalidContextKey("", ScopeContractError.ContextKeyValidationFailure.InvalidFormat(invalidType = invalidType))
+
+    private fun createInvalidContextName(
+        name: String,
+        validationFailure: ScopeContractError.ContextNameValidationFailure,
+    ): ScopeContractError.InputError.InvalidContextName = ScopeContractError.InputError.InvalidContextName(name = name, validationFailure = validationFailure)
+
+    private fun createInvalidContextNameEmpty(): ScopeContractError.InputError.InvalidContextName =
+        createInvalidContextName("", ScopeContractError.ContextNameValidationFailure.Empty)
+
+    private fun createInvalidContextNameTooLong(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidContextName = createInvalidContextName(
+        "",
+        ScopeContractError.ContextNameValidationFailure.TooLong(
+            maximumLength = maxLength,
+            actualLength = actualLength,
+        ),
+    )
+
+    private fun createInvalidContextFilter(
+        filter: String,
+        validationFailure: ScopeContractError.ContextFilterValidationFailure,
+    ): ScopeContractError.InputError.InvalidContextFilter =
+        ScopeContractError.InputError.InvalidContextFilter(filter = filter, validationFailure = validationFailure)
+
+    private fun createInvalidContextFilterEmpty(): ScopeContractError.InputError.InvalidContextFilter =
+        createInvalidContextFilter("", ScopeContractError.ContextFilterValidationFailure.Empty)
+
+    private fun createInvalidContextFilterTooShort(minLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidContextFilter =
+        createInvalidContextFilter(
+            "",
+            ScopeContractError.ContextFilterValidationFailure.TooShort(
+                minimumLength = minLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    private fun createInvalidContextFilterTooLong(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidContextFilter =
+        createInvalidContextFilter(
+            "",
+            ScopeContractError.ContextFilterValidationFailure.TooLong(
+                maximumLength = maxLength,
+                actualLength = actualLength,
+            ),
+        )
+
+    private fun createInvalidContextFilterInvalidSyntax(errorType: String): ScopeContractError.InputError.InvalidContextFilter = createInvalidContextFilter(
+        "",
+        ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
+            expression = "",
+            errorType = errorType,
+            position = null,
+        ),
+    )
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.alias
@@ -423,125 +503,52 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      */
     fun mapDomainError(domainError: DomainContextError): ScopeContractError = when (domainError) {
         // Context key validation errors
-        is DomainContextError.EmptyKey -> ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.Empty,
-        )
-        is DomainContextError.KeyTooShort -> ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.KeyTooLong -> ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.InvalidKeyFormat -> ScopeContractError.InputError.InvalidContextKey(
-            key = "",
-            validationFailure = ScopeContractError.ContextKeyValidationFailure.InvalidFormat(
-                invalidType = when (domainError.errorType) {
-                    DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_CHARACTERS -> "invalid-characters"
-                    DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.RESERVED_KEYWORD -> "reserved-keyword"
-                    DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.STARTS_WITH_NUMBER -> "starts-with-number"
-                    DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.CONTAINS_SPACES -> "contains-spaces"
-                    DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_PATTERN -> "invalid-pattern"
-                },
-            ),
-        )
+        is DomainContextError.EmptyKey -> createInvalidContextKeyEmpty()
+        is DomainContextError.KeyTooShort -> createInvalidContextKeyTooShort(domainError.minimumLength, 0)
+        is DomainContextError.KeyTooLong -> createInvalidContextKeyTooLong(domainError.maximumLength, 0)
+        is DomainContextError.InvalidKeyFormat -> {
+            val invalidType = when (domainError.errorType) {
+                DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_CHARACTERS -> "invalid-characters"
+                DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.RESERVED_KEYWORD -> "reserved-keyword"
+                DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.STARTS_WITH_NUMBER -> "starts-with-number"
+                DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.CONTAINS_SPACES -> "contains-spaces"
+                DomainContextError.InvalidKeyFormat.InvalidKeyFormatType.INVALID_PATTERN -> "invalid-pattern"
+            }
+            createInvalidContextKeyFormat(invalidType)
+        }
 
         // Context name validation errors
-        is DomainContextError.EmptyName -> ScopeContractError.InputError.InvalidContextName(
-            name = "",
-            validationFailure = ScopeContractError.ContextNameValidationFailure.Empty,
-        )
-        is DomainContextError.NameTooLong -> ScopeContractError.InputError.InvalidContextName(
-            name = "",
-            validationFailure = ScopeContractError.ContextNameValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = 0,
-            ),
-        )
+        is DomainContextError.EmptyName -> createInvalidContextNameEmpty()
+        is DomainContextError.NameTooLong -> createInvalidContextNameTooLong(domainError.maximumLength, 0)
 
         // Context description validation errors
-        is DomainContextError.EmptyDescription -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = 0,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.DescriptionTooShort -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = domainError.minimumLength,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.DescriptionTooLong -> ScopeContractError.InputError.InvalidDescription(
-            descriptionText = "",
-            validationFailure = ScopeContractError.DescriptionValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = 0,
-            ),
-        )
+        is DomainContextError.EmptyDescription -> createInvalidDescriptionTooLong(0, 0)
+        is DomainContextError.DescriptionTooShort -> createInvalidDescriptionTooLong(domainError.minimumLength, 0)
+        is DomainContextError.DescriptionTooLong -> createInvalidDescriptionTooLong(domainError.maximumLength, 0)
 
         // Context filter validation errors
-        is DomainContextError.EmptyFilter -> ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.Empty,
-        )
-        is DomainContextError.FilterTooShort -> ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooShort(
-                minimumLength = domainError.minimumLength,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.FilterTooLong -> ScopeContractError.InputError.InvalidContextFilter(
-            filter = "",
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.TooLong(
-                maximumLength = domainError.maximumLength,
-                actualLength = 0,
-            ),
-        )
-        is DomainContextError.InvalidFilterSyntax -> ScopeContractError.InputError.InvalidContextFilter(
-            filter = domainError.expression,
-            validationFailure = ScopeContractError.ContextFilterValidationFailure.InvalidSyntax(
-                expression = domainError.expression,
-                errorType = when (domainError.errorType) {
-                    is DomainContextError.FilterSyntaxErrorType.EmptyQuery -> "empty-query"
-                    is DomainContextError.FilterSyntaxErrorType.EmptyExpression -> "empty-expression"
-                    is DomainContextError.FilterSyntaxErrorType.UnexpectedCharacter -> "unexpected-character"
-                    is DomainContextError.FilterSyntaxErrorType.UnterminatedString -> "unterminated-string"
-                    is DomainContextError.FilterSyntaxErrorType.UnexpectedToken -> "unexpected-token"
-                    is DomainContextError.FilterSyntaxErrorType.MissingClosingParen -> "missing-closing-paren"
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedExpression -> "expected-expression"
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedIdentifier -> "expected-identifier"
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedOperator -> "expected-operator"
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedValue -> "expected-value"
-                    is DomainContextError.FilterSyntaxErrorType.UnbalancedParentheses -> "unbalanced-parentheses"
-                    is DomainContextError.FilterSyntaxErrorType.UnbalancedQuotes -> "unbalanced-quotes"
-                    is DomainContextError.FilterSyntaxErrorType.EmptyOperator -> "empty-operator"
-                    is DomainContextError.FilterSyntaxErrorType.InvalidSyntax -> "invalid-syntax"
-                },
-                position = when (val errorType = domainError.errorType) {
-                    is DomainContextError.FilterSyntaxErrorType.UnexpectedCharacter -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.UnterminatedString -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.UnexpectedToken -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.MissingClosingParen -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedExpression -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedIdentifier -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedOperator -> errorType.position
-                    is DomainContextError.FilterSyntaxErrorType.ExpectedValue -> errorType.position
-                    else -> null
-                },
-            ),
-        )
+        is DomainContextError.EmptyFilter -> createInvalidContextFilterEmpty()
+        is DomainContextError.FilterTooShort -> createInvalidContextFilterTooShort(domainError.minimumLength, 0)
+        is DomainContextError.FilterTooLong -> createInvalidContextFilterTooLong(domainError.maximumLength, 0)
+        is DomainContextError.InvalidFilterSyntax -> {
+            val errorType = when (domainError.errorType) {
+                is DomainContextError.FilterSyntaxErrorType.EmptyQuery -> "empty-query"
+                is DomainContextError.FilterSyntaxErrorType.EmptyExpression -> "empty-expression"
+                is DomainContextError.FilterSyntaxErrorType.UnexpectedCharacter -> "unexpected-character"
+                is DomainContextError.FilterSyntaxErrorType.UnterminatedString -> "unterminated-string"
+                is DomainContextError.FilterSyntaxErrorType.UnexpectedToken -> "unexpected-token"
+                is DomainContextError.FilterSyntaxErrorType.MissingClosingParen -> "missing-closing-paren"
+                is DomainContextError.FilterSyntaxErrorType.ExpectedExpression -> "expected-expression"
+                is DomainContextError.FilterSyntaxErrorType.ExpectedIdentifier -> "expected-identifier"
+                is DomainContextError.FilterSyntaxErrorType.ExpectedOperator -> "expected-operator"
+                is DomainContextError.FilterSyntaxErrorType.ExpectedValue -> "expected-value"
+                is DomainContextError.FilterSyntaxErrorType.UnbalancedParentheses -> "unbalanced-parentheses"
+                is DomainContextError.FilterSyntaxErrorType.UnbalancedQuotes -> "unbalanced-quotes"
+                is DomainContextError.FilterSyntaxErrorType.EmptyOperator -> "empty-operator"
+                is DomainContextError.FilterSyntaxErrorType.InvalidSyntax -> "invalid-syntax"
+            }
+            createInvalidContextFilterInvalidSyntax(errorType)
+        }
 
         // Business rule validation errors
         is DomainContextError.InvalidScope -> ScopeContractError.BusinessError.NotFound(
@@ -563,24 +570,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      * Maps domain aspect key errors to contract errors.
      */
     fun mapDomainError(domainError: AspectKeyError): ScopeContractError = when (domainError) {
-        is AspectKeyError.EmptyKey -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
-        )
-        is AspectKeyError.TooShort -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
-                minimumLength = domainError.minLength,
-                actualLength = domainError.actualLength,
-            ),
-        )
-        is AspectKeyError.TooLong -> ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
-                maximumLength = domainError.maxLength,
-                actualLength = domainError.actualLength,
-            ),
-        )
+        is AspectKeyError.EmptyKey -> createInvalidTitleEmpty()
+        is AspectKeyError.TooShort -> createInvalidTitleTooShort(domainError.minLength, domainError.actualLength)
+        is AspectKeyError.TooLong -> createInvalidTitleTooLong(domainError.maxLength, domainError.actualLength)
         is AspectKeyError.InvalidFormat -> createInvalidTitleInvalidCharacters()
     }
 
