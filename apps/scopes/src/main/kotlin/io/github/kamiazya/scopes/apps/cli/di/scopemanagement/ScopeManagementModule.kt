@@ -243,9 +243,8 @@ val scopeManagementModule = module {
     single {
         DefineAspectHandler(
             aspectDefinitionRepository = get(),
-            applicationErrorMapper = get(),
             transactionManager = get(),
-            logger = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -260,9 +259,8 @@ val scopeManagementModule = module {
     single {
         UpdateAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
-            applicationErrorMapper = get(),
             transactionManager = get(),
-            logger = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -270,9 +268,8 @@ val scopeManagementModule = module {
         DeleteAspectDefinitionHandler(
             aspectDefinitionRepository = get(),
             aspectUsageValidationService = get(),
-            applicationErrorMapper = get(),
             transactionManager = get(),
-            logger = get(),
+            applicationErrorMapper = get(),
         )
     }
 
@@ -307,9 +304,8 @@ val scopeManagementModule = module {
     single {
         CreateContextViewHandler(
             contextViewRepository = get(),
-            applicationErrorMapper = get(),
             transactionManager = get(),
-            logger = get(),
+            applicationErrorMapper = get(),
         )
     }
 

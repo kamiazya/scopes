@@ -3,7 +3,6 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.error.BaseErrorMapper
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErrorPresenter
 import io.github.kamiazya.scopes.scopemanagement.domain.error.*
 
 /**
@@ -25,7 +24,6 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     companion object {
         private const val SCOPE_MANAGEMENT_SERVICE = "scope-management"
     }
-    private val errorPresenter = ScopeInputErrorPresenter()
 
     override fun getServiceName(): String = SCOPE_MANAGEMENT_SERVICE
 
@@ -73,7 +71,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         )
         is ScopeInputError.IdError.InvalidIdFormat -> ScopeContractError.InputError.InvalidId(
             id = domainError.id,
-            expectedFormat = errorPresenter.presentIdFormat(domainError.expectedFormat),
+            expectedFormat = getExpectedIdFormat(domainError.expectedFormat),
         )
     }
 
@@ -140,7 +138,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeInputError.AliasError.InvalidAliasFormat -> createInvalidAliasError(
             alias = domainError.alias,
             validationFailure = ScopeContractError.AliasValidationFailure.InvalidFormat(
-                expectedPattern = errorPresenter.presentAliasPattern(domainError.expectedPattern),
+                expectedPattern = getExpectedAliasPattern(domainError.expectedPattern),
             ),
         )
     }
@@ -285,5 +283,27 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             childrenCount = null,
         )
         else -> ScopeContractError.BusinessError.DuplicateAlias(alias = domainError.resourceId)
+    }
+
+    /**
+     * Maps domain ID format types to expected format strings.
+     * Direct mapping without presenter dependency.
+     */
+    private fun getExpectedIdFormat(formatType: ScopeInputError.IdError.InvalidIdFormat.IdFormatType): String = when (formatType) {
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.ULID -> "ULID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.UUID -> "UUID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.NUMERIC_ID -> "numeric ID format"
+        ScopeInputError.IdError.InvalidIdFormat.IdFormatType.CUSTOM_FORMAT -> "custom format"
+    }
+
+    /**
+     * Maps domain alias pattern types to expected pattern strings.
+     * Direct mapping without presenter dependency.
+     */
+    private fun getExpectedAliasPattern(patternType: ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType): String = when (patternType) {
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.LOWERCASE_WITH_HYPHENS -> "lowercase with hyphens (e.g., my-alias)"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ALPHANUMERIC -> "alphanumeric characters only"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.ULID_LIKE -> "ULID-like format"
+        ScopeInputError.AliasError.InvalidAliasFormat.AliasPatternType.CUSTOM_PATTERN -> "custom pattern"
     }
 }
