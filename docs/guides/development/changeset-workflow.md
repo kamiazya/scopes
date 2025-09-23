@@ -93,7 +93,7 @@ pnpm tag
 
 ## Bot Installation
 
-The [Changeset Bot](https://github.com/apps/changeset-bot) is installed on this repository to:
+Ensure the [Changeset Bot](https://github.com/apps/changeset-bot) is installed on this repository to:
 - Check if PRs include appropriate changesets
 - Provide helpful comments and links to create changesets
 - Ensure consistent versioning practices

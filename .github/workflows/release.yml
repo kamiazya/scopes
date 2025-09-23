@@ -703,7 +703,7 @@ jobs:
           ```
 
           ### Manual Verification
-          For detailed verification instructions, see our [Security Verification Guide](./docs/guides/security-verification.md).
+          For detailed verification instructions, see our [Security Verification Guide](./docs/explanation/security/security-verification.md).
 
           ## 📦 Artifacts
           - Binary downloads include SHA-256 checksums
@@ -712,8 +712,8 @@ jobs:
 
           ## 📚 Documentation
           - [Installation Guide](./install/README.md)
-          - [Security Verification](./docs/guides/security-verification.md)
-          - [SBOM Verification](./docs/guides/sbom-verification.md)
+          - [Security Verification](./docs/explanation/security/security-verification.md)
+          - [SBOM Verification](./docs/explanation/security/sbom-verification.md)
           EOF
 
           # Store the custom content
