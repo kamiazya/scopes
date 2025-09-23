@@ -97,7 +97,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
 
     /**
      * Get error class name for consistent error logging.
+     * Delegates to shared utility for consistency across handlers.
      */
-    protected fun getErrorClassName(error: ScopeContractError): String =
-        error::class.qualifiedName ?: error::class.simpleName ?: error("Error class name must not be null")
+    protected fun getErrorClassName(error: ScopeContractError): String = ErrorUtilityMethods.getErrorClassName(error)
 }

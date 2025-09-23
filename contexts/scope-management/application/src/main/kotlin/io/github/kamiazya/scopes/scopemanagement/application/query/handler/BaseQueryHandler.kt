@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.platform.application.handler.QueryHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.command.handler.ErrorUtilityMethods
 
 /**
  * Abstract base class for scope management query handlers.
@@ -97,7 +98,7 @@ abstract class BaseQueryHandler<Q, R>(protected val transactionManager: Transact
 
     /**
      * Get error class name for consistent error logging.
+     * Delegates to shared utility for consistency across handlers.
      */
-    protected fun getErrorClassName(error: ScopeContractError): String =
-        error::class.qualifiedName ?: error::class.simpleName ?: error("Error class name must not be null")
+    protected fun getErrorClassName(error: ScopeContractError): String = ErrorUtilityMethods.getErrorClassName(error)
 }
