@@ -1,7 +1,12 @@
 package io.github.kamiazya.scopes.scopemanagement.application.mapper
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasInfoDto
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
@@ -13,16 +18,16 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 object ScopeMapper {
 
     /**
-     * Map Scope entity to CreateScopeResult DTO.
+     * Map Scope entity to CreateScopeResult DTO (contract layer).
      */
-    fun toCreateScopeResult(scope: Scope, canonicalAlias: String? = null): CreateScopeResult = CreateScopeResult(
+    fun toCreateScopeResult(scope: Scope, canonicalAlias: String): CreateScopeResult = CreateScopeResult(
         id = scope.id.toString(),
         title = scope.title.value,
         description = scope.description?.value,
         parentId = scope.parentId?.toString(),
-        createdAt = scope.createdAt,
         canonicalAlias = canonicalAlias,
-        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        createdAt = scope.createdAt,
+        updatedAt = scope.updatedAt,
     )
 
     /**
@@ -84,4 +89,42 @@ object ScopeMapper {
             aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
         )
     }
+
+    /**
+     * Map Scope entity to ScopeResult.
+     * This method maps to the contract layer DTO for external clients.
+     * Returns Either to handle missing canonical alias consistently with the error handling pattern.
+     */
+    fun toScopeResult(scope: Scope, aliases: List<ScopeAlias>): Either<ScopeContractError, ScopeResult> {
+        val canonicalAlias = aliases.find { it.isCanonical() }?.aliasName?.value
+            ?: return ScopeContractError.DataInconsistency.MissingCanonicalAlias(scopeId = scope.id.toString()).left()
+
+        return ScopeResult(
+            id = scope.id.toString(),
+            title = scope.title.value,
+            description = scope.description?.value,
+            parentId = scope.parentId?.toString(),
+            canonicalAlias = canonicalAlias,
+            createdAt = scope.createdAt,
+            updatedAt = scope.updatedAt,
+            isArchived = false, // Default value, can be updated based on business logic
+            aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        ).right()
+    }
+
+    /**
+     * Map Scope entity to ScopeResult with explicit canonical alias.
+     * This method is for cases where the canonical alias is already known.
+     */
+    fun toScopeResult(scope: Scope, canonicalAlias: String): ScopeResult = ScopeResult(
+        id = scope.id.toString(),
+        title = scope.title.value,
+        description = scope.description?.value,
+        parentId = scope.parentId?.toString(),
+        canonicalAlias = canonicalAlias,
+        createdAt = scope.createdAt,
+        updatedAt = scope.updatedAt,
+        isArchived = false, // Default value, can be updated based on business logic
+        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+    )
 }

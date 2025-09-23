@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.interfaces.cli.commands
 
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
@@ -30,8 +29,7 @@ class CreateCommand :
     private val title by argument(help = "Title of the scope")
     private val description by option("-d", "--description", help = "Description of the scope")
     private val parentId by option("-p", "--parent", help = "Parent scope (ULID or alias)")
-    private val noAlias by option("--no-alias", help = "Don't generate an alias").flag()
-    private val customAlias by option("-a", "--alias", help = "Custom alias for the scope")
+    private val customAlias by option("-a", "--alias", help = "Custom alias for the scope (if not provided, one will be auto-generated)")
 
     override fun run() {
         runBlocking {
@@ -64,7 +62,6 @@ class CreateCommand :
                 title = title,
                 description = description,
                 parentId = resolvedParentId,
-                generateAlias = !noAlias && customAlias == null,
                 customAlias = customAlias,
             ).fold(
                 { error ->

@@ -170,34 +170,69 @@ Each context maintains its own domain model and uses adapters for translation:
 
 ```kotlin
 // Contract layer defines its own types
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null
-)
+sealed interface CreateScopeCommand {
+    val title: String
+    val description: String?
+    val parentId: String?
 
-// Application layer has different types
-data class CreateScope(
-    val title: String,
-    val description: String?,
-    val parentId: String?,
-    val generateAlias: Boolean = true
-)
+    data class WithAutoAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+    ) : CreateScopeCommand
+
+    data class WithCustomAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+        val alias: String,
+    ) : CreateScopeCommand
+}
+
+// Application layer mirrors the sealed structure
+sealed interface CreateScope {
+    val title: String
+    val description: String?
+    val parentId: String?
+
+    data class WithAutoAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+    ) : CreateScope
+
+    data class WithCustomAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+        val alias: String,
+    ) : CreateScope
+}
 
 // Adapter translates between them
 class ScopeManagementPortAdapter : ScopeManagementPort {
     override suspend fun createScope(
         command: CreateScopeCommand
-    ): Either<ScopeContractError, CreateScopeResult> = 
-        createScopeHandler(
-            CreateScope(
+    ): Either<ScopeContractError, CreateScopeResult> {
+        val applicationCommand = when (command) {
+            is CreateScopeCommand.WithAutoAlias -> CreateScope.WithAutoAlias(
                 title = command.title,
                 description = command.description,
                 parentId = command.parentId
             )
-        ).mapLeft { error ->
-            ErrorMapper.mapToContractError(error)
+            is CreateScopeCommand.WithCustomAlias -> CreateScope.WithCustomAlias(
+                title = command.title,
+                description = command.description,
+                parentId = command.parentId,
+                alias = command.alias
+            )
         }
+        
+        return createScopeHandler(applicationCommand)
+            .mapLeft { error ->
+                ErrorMapper.mapToContractError(error)
+            }
+    }
 }
 ```
 

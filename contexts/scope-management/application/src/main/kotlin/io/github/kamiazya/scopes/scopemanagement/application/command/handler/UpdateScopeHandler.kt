@@ -6,11 +6,11 @@ import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
@@ -38,9 +38,9 @@ class UpdateScopeHandler(
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
     private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
-) : CommandHandler<UpdateScopeCommand, ScopeContractError, ScopeDto> {
+) : CommandHandler<UpdateScopeCommand, ScopeContractError, ScopeResult> {
 
-    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = either {
+    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, ScopeResult> = either {
         logUpdateStart(command)
 
         executeUpdate(command).bind()
@@ -71,7 +71,7 @@ class UpdateScopeHandler(
 
     private fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
 
-    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = transactionManager.inTransaction {
+    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeContractError, ScopeResult> = transactionManager.inTransaction {
         either {
             // Parse scope ID
             val scopeId = ScopeId.create(command.id).mapLeft { error ->
@@ -110,7 +110,7 @@ class UpdateScopeHandler(
                 applicationErrorMapper.mapDomainError(error)
             }.bind()
 
-            ScopeMapper.toDto(savedScope, aliases)
+            ScopeMapper.toScopeResult(savedScope, aliases).bind()
         }
     }
 

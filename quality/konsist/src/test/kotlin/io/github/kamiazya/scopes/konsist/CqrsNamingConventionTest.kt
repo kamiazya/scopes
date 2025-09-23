@@ -87,7 +87,9 @@ class CqrsNamingConventionTest :
                             command.name == "Command" ||
                             // Allow the Command interface itself
                             // Allow command DTOs without Command suffix when in command.dto package
-                            command.packagee?.name?.contains("command.dto") == true
+                            command.packagee?.name?.contains("command.dto") == true ||
+                            // Allow sealed command variants like WithAutoAlias, WithCustomAlias
+                            (command.name == "WithAutoAlias" || command.name == "WithCustomAlias")
                     }
             }
 
