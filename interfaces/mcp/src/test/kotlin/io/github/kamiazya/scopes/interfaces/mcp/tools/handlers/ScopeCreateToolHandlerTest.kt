@@ -8,6 +8,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.interfaces.mcp.support.TestFixtures
 import io.github.kamiazya.scopes.interfaces.mcp.support.createArgumentCodec
 import io.github.kamiazya.scopes.interfaces.mcp.support.createErrorMapper
 import io.github.kamiazya.scopes.interfaces.mcp.support.createIdempotencyService
@@ -29,7 +30,7 @@ import kotlinx.serialization.json.*
 class ScopeCreateToolHandlerTest :
     StringSpec({
 
-        fun createMockLogger(): Logger = mockk<Logger>(relaxed = true)
+        fun createMockLogger(): Logger = TestFixtures.mockLogger()
 
         "tool has correct name and annotations" {
             val handler = ScopeCreateToolHandler()
@@ -61,17 +62,10 @@ class ScopeCreateToolHandlerTest :
             coEvery { mockCommand.createScope(any()) } returns Either.Right(createdScope)
 
             val handler = ScopeCreateToolHandler()
-            val context = ToolContext(
-                args = buildJsonObject {
-                    put("title", "Test Scope")
-                },
+            val context = TestFixtures.ctx(
+                args = buildJsonObject { put("title", "Test Scope") },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -125,19 +119,14 @@ class ScopeCreateToolHandlerTest :
             coEvery { mockCommand.createScope(any()) } returns Either.Right(createdScope)
 
             val handler = ScopeCreateToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("title", "Child Scope")
                     put("description", "A child scope")
                     put("parentAlias", "parent-scope")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -180,18 +169,13 @@ class ScopeCreateToolHandlerTest :
             coEvery { mockCommand.createScope(any()) } returns Either.Right(createdScope)
 
             val handler = ScopeCreateToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("title", "Custom Alias Scope")
                     put("customAlias", "my-custom-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -220,18 +204,10 @@ class ScopeCreateToolHandlerTest :
             val logger = createMockLogger()
 
             val handler = ScopeCreateToolHandler()
-            val context = ToolContext(
-                args = buildJsonObject {
-                    // Missing title
-                    put("description", "Some description")
-                },
+            val context = TestFixtures.ctx(
+                args = buildJsonObject { put("description", "Some description") },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val exception = shouldThrow<IllegalArgumentException> {
@@ -250,18 +226,13 @@ class ScopeCreateToolHandlerTest :
                 Either.Left(ScopeContractError.BusinessError.AliasNotFound(alias = "non-existent"))
 
             val handler = ScopeCreateToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("title", "Test Scope")
                     put("parentAlias", "non-existent")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -290,14 +261,9 @@ class ScopeCreateToolHandlerTest :
             coEvery { mockCommand.createScope(any()) } returns Either.Right(createdScope)
 
             val handler = ScopeCreateToolHandler()
-            val services = Services(
-                errors = createErrorMapper(),
-                idempotency = createIdempotencyService(createArgumentCodec()),
-                codec = createArgumentCodec(),
-                logger = logger,
-            )
+            val services = TestFixtures.services(logger)
 
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("title", "Test Scope")
                     put("idempotencyKey", "test-key-123")
@@ -322,11 +288,7 @@ class ScopeCreateToolHandlerTest :
         "logs debug information" {
             val mockQuery = mockk<ScopeManagementQueryPort>()
             val mockCommand = mockk<ScopeManagementCommandPort>()
-            val mockLogger = mockk<Logger>(relaxed = true)
-
-            every { mockLogger.isEnabledFor(any()) } returns true
-            every { mockLogger.withContext(any()) } returns mockLogger
-            every { mockLogger.withName(any()) } returns mockLogger
+            val mockLogger = TestFixtures.mockLogger()
 
             val createdScope = CreateScopeResult(
                 id = "new-scope-id",

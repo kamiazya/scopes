@@ -2,14 +2,21 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.RemoveAliasCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
-import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
+import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.scopeAliasProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.withIdempotency
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Tool handler for removing aliases from scopes.
@@ -22,55 +29,18 @@ class AliasesRemoveToolHandler : ToolHandler {
 
     override val description: String = "Remove alias (cannot remove canonical)"
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-    )
+    override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("scopeAlias")
-                add("aliasToRemove")
-            }
-            putJsonObject("properties") {
-                putJsonObject("scopeAlias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Scope alias to look up")
-                }
-                putJsonObject("aliasToRemove") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Alias to remove (cannot be canonical)")
-                }
-                putJsonObject("idempotencyKey") {
-                    put("type", "string")
-                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING)
-                    put("description", "Idempotency key to prevent duplicate operations")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("scopeAlias", "aliasToRemove")) {
+        scopeAliasProperty(description = "Scope alias to look up")
+        stringProperty("aliasToRemove", minLength = 1, description = "Alias to remove (cannot be canonical)")
+        idempotencyKeyProperty()
+    }
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("scopeAlias") { put("type", "string") }
-                putJsonObject("removedAlias") { put("type", "string") }
-            }
-            putJsonArray("required") {
-                add("scopeAlias")
-                add("removedAlias")
-            }
-        },
-    )
+    override val output: Tool.Output = toolOutput(required = listOf("scopeAlias", "removedAlias")) {
+        stringProperty("scopeAlias")
+        stringProperty("removedAlias")
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val scopeAlias = ctx.services.codec.getString(ctx.args, "scopeAlias", required = true)
@@ -83,17 +53,15 @@ class AliasesRemoveToolHandler : ToolHandler {
 
         ctx.services.logger.debug("Removing alias '$aliasToRemove' from scope: $scopeAlias")
 
-        return ctx.services.idempotency.getOrCompute(name, ctx.args, idempotencyKey) {
-            // First get the scope
-            val scopeResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(scopeAlias))
-            val scopeId = when (scopeResult) {
-                is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(scopeResult.value)
-                is Either.Right -> scopeResult.value.id
+        return ctx.withIdempotency(name, idempotencyKey) {
+            val scope = when (val resolved = ctx.getScopeByAliasOrFail(scopeAlias)) {
+                is Either.Left -> return@withIdempotency resolved.value
+                is Either.Right -> resolved.value
             }
 
             // Remove the alias
             val result = ctx.ports.command.removeAlias(
-                RemoveAliasCommand(scopeId = scopeId, aliasName = aliasToRemove),
+                RemoveAliasCommand(scopeId = scope.id, aliasName = aliasToRemove),
             )
 
             when (result) {

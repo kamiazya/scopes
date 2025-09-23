@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonical
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.interfaces.mcp.support.TestFixtures
 import io.github.kamiazya.scopes.interfaces.mcp.support.createArgumentCodec
 import io.github.kamiazya.scopes.interfaces.mcp.support.createErrorMapper
 import io.github.kamiazya.scopes.interfaces.mcp.support.createIdempotencyService
@@ -28,7 +29,7 @@ import kotlinx.serialization.json.*
 class AliasesSetCanonicalCamelToolHandlerTest :
     StringSpec({
 
-        fun createMockLogger(): Logger = mockk<Logger>(relaxed = true)
+        fun createMockLogger(): Logger = TestFixtures.mockLogger()
 
         fun createMockScope(id: String, alias: String, title: String): ScopeResult = ScopeResult(
             id = id,
@@ -65,18 +66,13 @@ class AliasesSetCanonicalCamelToolHandlerTest :
             coEvery { mockCommand.setCanonicalAlias(any()) } returns Either.Right(Unit)
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("scopeAlias", "current-alias")
                     put("newCanonicalAlias", "new-canonical-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -105,17 +101,12 @@ class AliasesSetCanonicalCamelToolHandlerTest :
             val logger = createMockLogger()
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("newCanonicalAlias", "new-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val exception = shouldThrow<IllegalArgumentException> {
@@ -131,17 +122,12 @@ class AliasesSetCanonicalCamelToolHandlerTest :
             val logger = createMockLogger()
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("scopeAlias", "current-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val exception = shouldThrow<IllegalArgumentException> {
@@ -160,18 +146,13 @@ class AliasesSetCanonicalCamelToolHandlerTest :
                 Either.Left(ScopeContractError.BusinessError.AliasNotFound(alias = "non-existent"))
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("scopeAlias", "non-existent")
                     put("newCanonicalAlias", "new-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -194,18 +175,13 @@ class AliasesSetCanonicalCamelToolHandlerTest :
                 Either.Left(ScopeContractError.BusinessError.AliasNotFound(alias = "non-existent-new-alias"))
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val context = ToolContext(
+            val context = TestFixtures.ctx(
                 args = buildJsonObject {
                     put("scopeAlias", "current-alias")
                     put("newCanonicalAlias", "non-existent-new-alias")
                 },
                 ports = Ports(query = mockQuery, command = mockCommand),
-                services = Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                ),
+                services = TestFixtures.services(logger),
             )
 
             val result = runBlocking { handler.handle(context) }
@@ -227,12 +203,7 @@ class AliasesSetCanonicalCamelToolHandlerTest :
             coEvery { mockCommand.setCanonicalAlias(any()) } returns Either.Right(Unit)
 
             val handler = AliasesSetCanonicalCamelToolHandler()
-            val services = Services(
-                errors = createErrorMapper(),
-                idempotency = createIdempotencyService(createArgumentCodec()),
-                codec = createArgumentCodec(),
-                logger = logger,
-            )
+            val services = TestFixtures.services(logger)
 
             val context = ToolContext(
                 args = buildJsonObject {
@@ -261,11 +232,7 @@ class AliasesSetCanonicalCamelToolHandlerTest :
         "logs debug information" {
             val mockQuery = mockk<ScopeManagementQueryPort>()
             val mockCommand = mockk<ScopeManagementCommandPort>()
-            val mockLogger = mockk<Logger>(relaxed = true)
-
-            every { mockLogger.isEnabledFor(any()) } returns true
-            every { mockLogger.withContext(any()) } returns mockLogger
-            every { mockLogger.withName(any()) } returns mockLogger
+            val mockLogger = TestFixtures.mockLogger()
 
             val scope = createMockScope("scope-id", "current-alias", "Test Scope")
 

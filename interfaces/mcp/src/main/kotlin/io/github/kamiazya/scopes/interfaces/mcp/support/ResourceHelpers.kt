@@ -35,6 +35,18 @@ object ResourceHelpers {
         return pureAlias to (depth ?: 1).coerceIn(1, 5)
     }
 
+    /** Overload that allows maxDepth to be specified by caller. */
+    fun parseTreeAlias(alias: String, maxDepth: Int): Pair<String, Int> {
+        val (pure, d) = parseTreeAlias(alias)
+        return pure to d.coerceIn(1, maxDepth)
+    }
+
+    /**
+     * Extract canonical alias from a resource URI based on a fixed prefix.
+     * Returns empty string when the prefix does not match.
+     */
+    fun extractAlias(uri: String, prefix: String): String = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
+
     /**
      * Create an error resource result with proper formatting.
      */
@@ -118,26 +130,7 @@ object ResourceHelpers {
             scope.description?.let { put("description", it) }
             put("createdAt", scope.createdAt.toString())
             put("updatedAt", scope.updatedAt.toString())
-            putJsonArray("links") {
-                add(
-                    buildJsonObject {
-                        put("rel", "self")
-                        put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                    },
-                )
-                add(
-                    buildJsonObject {
-                        put("rel", "tree")
-                        put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                    },
-                )
-                add(
-                    buildJsonObject {
-                        put("rel", "tree.md")
-                        put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                    },
-                )
-            }
+            putJsonArray("links") { scopeLinks(scope.canonicalAlias).forEach { add(it) } }
         }.toString()
 
         val etag = computeEtag(payload)
@@ -152,27 +145,33 @@ object ResourceHelpers {
             _meta = buildJsonObject {
                 put("etag", etag)
                 put("lastModified", scope.updatedAt.toString())
-                putJsonArray("links") {
-                    add(
-                        buildJsonObject {
-                            put("rel", "self")
-                            put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                        },
-                    )
-                    add(
-                        buildJsonObject {
-                            put("rel", "tree")
-                            put("uri", "scopes:/tree/${scope.canonicalAlias}")
-                        },
-                    )
-                    add(
-                        buildJsonObject {
-                            put("rel", "tree.md")
-                            put("uri", "scopes:/tree.md/${scope.canonicalAlias}")
-                        },
-                    )
-                }
+                putJsonArray("links") { scopeLinks(scope.canonicalAlias).forEach { add(it) } }
             },
         )
     }
+
+    /**
+     * Build a single link object { rel, uri }.
+     */
+    fun link(rel: String, uri: String): JsonObject = buildJsonObject {
+        put("rel", rel)
+        put("uri", uri)
+    }
+
+    /**
+     * Standard links for a scope resource.
+     */
+    fun scopeLinks(canonicalAlias: String): List<JsonObject> = listOf(
+        link("self", "scopes:/scope/$canonicalAlias"),
+        link("tree", "scopes:/tree/$canonicalAlias"),
+        link("tree.md", "scopes:/tree.md/$canonicalAlias"),
+    )
+
+    /**
+     * Standard links for a tree resource.
+     */
+    fun treeLinks(canonicalAlias: String, depth: Int): List<JsonObject> = listOf(
+        link("self", "scopes:/tree/$canonicalAlias?depth=$depth"),
+        link("scope", "scopes:/scope/$canonicalAlias"),
+    )
 }

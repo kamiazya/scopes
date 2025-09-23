@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.mcp.resources.ResourceHandler
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers
+import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers.extractAlias
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Services
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
@@ -22,7 +23,7 @@ import kotlinx.serialization.json.*
  *
  * Provides scope hierarchy with configurable depth in JSON format.
  */
-class TreeJsonResourceHandler : ResourceHandler {
+class TreeJsonResourceHandler(private val defaultMaxNodes: Int = 1000, private val defaultMaxDepth: Int = 5) : ResourceHandler {
 
     override val uriPattern: String = "scopes:/tree/{canonicalAlias}"
 
@@ -34,10 +35,9 @@ class TreeJsonResourceHandler : ResourceHandler {
 
     override suspend fun read(req: ReadResourceRequest, ports: Ports, services: Services): ReadResourceResult {
         val uri = req.uri
-        val prefix = "scopes:/tree/"
-        val alias = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else ""
+        val alias = extractAlias(uri, prefix = "scopes:/tree/")
 
-        val (pureAlias, depthValue) = ResourceHelpers.parseTreeAlias(alias)
+        val (pureAlias, depthValue) = ResourceHelpers.parseTreeAlias(alias, defaultMaxDepth)
 
         services.logger.debug("Reading tree JSON for alias: $pureAlias with depth: $depthValue")
 
@@ -45,7 +45,7 @@ class TreeJsonResourceHandler : ResourceHandler {
             return ResourceHelpers.createErrorResourceResult(
                 uri = "scopes:/tree/$pureAlias?depth=$depthValue",
                 code = -32602,
-                message = "Missing or invalid alias in resource URI. Optional ?depth=1..5 supported.",
+                message = io.github.kamiazya.scopes.interfaces.mcp.support.ResourceErrorMessages.MISSING_ALIAS_TREE_JSON,
                 asJson = true,
             )
         }
@@ -62,7 +62,7 @@ class TreeJsonResourceHandler : ResourceHandler {
     }
 
     private suspend fun createTreeJsonResult(scope: ScopeResult, depthValue: Int, ports: Ports, services: Services): ReadResourceResult {
-        val builder = TreeNodeBuilder(ports, services, depthValue)
+        val builder = TreeNodeBuilder(ports, services, depthValue, defaultMaxNodes)
         val json = builder.buildScopeNode(scope.canonicalAlias, 1)
 
         val jsonText = json?.toString() ?: buildJsonObject {
@@ -89,25 +89,12 @@ class TreeJsonResourceHandler : ResourceHandler {
         put("lastModified", latestUpdatedAt.toString())
         put("nodeCount", nodeCount)
         put("maxDepth", depthValue)
-        putJsonArray("links") {
-            add(
-                buildJsonObject {
-                    put("rel", "self")
-                    put("uri", "scopes:/tree/${scope.canonicalAlias}?depth=$depthValue")
-                },
-            )
-            add(
-                buildJsonObject {
-                    put("rel", "scope")
-                    put("uri", "scopes:/scope/${scope.canonicalAlias}")
-                },
-            )
-        }
+        putJsonArray("links") { ResourceHelpers.treeLinks(scope.canonicalAlias, depthValue).forEach { add(it) } }
     }
 
-    private class TreeNodeBuilder(private val ports: Ports, private val services: Services, private val maxDepth: Int) {
+    private class TreeNodeBuilder(private val ports: Ports, private val services: Services, private val maxDepth: Int, private val maxNodesDefault: Int) {
         var nodeCount = 0
-        val maxNodes = 1000
+        val maxNodes = maxNodesDefault
         var latestUpdatedAt: Instant = Instant.DISTANT_PAST
 
         suspend fun buildScopeNode(alias: String, currentDepth: Int): JsonObject? {

@@ -6,6 +6,8 @@ import io.github.kamiazya.scopes.platform.observability.logging.Slf4jLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
@@ -29,7 +31,7 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
             errorResponse.details?.let { details ->
                 putJsonObject("details") {
                     details.forEach { (key, value) ->
-                        put(key, value.toString())
+                        put(key, value.toJsonElementSafe())
                     }
                 }
             }
@@ -144,4 +146,18 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
             asJson = true,
         )
     }
+}
+
+private fun Any?.toJsonElementSafe(): kotlinx.serialization.json.JsonElement = when (this) {
+    null -> kotlinx.serialization.json.JsonNull
+    is Number -> kotlinx.serialization.json.JsonPrimitive(this)
+    is Boolean -> kotlinx.serialization.json.JsonPrimitive(this)
+    is String -> kotlinx.serialization.json.JsonPrimitive(this)
+    is Map<*, *> -> buildJsonObject {
+        this@toJsonElementSafe.forEach { (k, v) ->
+            put(k.toString(), v.toJsonElementSafe())
+        }
+    }
+    is Iterable<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    else -> kotlinx.serialization.json.JsonPrimitive(this.toString())
 }

@@ -3,14 +3,19 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
-import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 /**
  * Tool handler for creating new scopes.
@@ -23,67 +28,38 @@ class ScopeCreateToolHandler : ToolHandler {
 
     override val description: String = "Create a new scope. Parent can be specified by alias."
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-    )
+    override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("title")
-            }
-            putJsonObject("properties") {
-                putJsonObject("title") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Scope title")
-                }
-                putJsonObject("description") {
-                    put("type", "string")
-                    put("description", "Optional scope description")
-                }
-                putJsonObject("parentAlias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Parent scope alias (optional)")
-                }
-                putJsonObject("customAlias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Custom alias instead of generated one (optional)")
-                }
-                putJsonObject("idempotencyKey") {
-                    put("type", "string")
-                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING)
-                    put("description", "Idempotency key to prevent duplicate operations")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("title")) {
+        putJsonObject("title") {
+            put("type", "string")
+            put("minLength", 1)
+            put("description", "Scope title")
+        }
+        putJsonObject("description") {
+            put("type", "string")
+            put("description", "Optional scope description")
+        }
+        putJsonObject("parentAlias") {
+            put("type", "string")
+            put("minLength", 1)
+            put("description", "Parent scope alias (optional)")
+        }
+        putJsonObject("customAlias") {
+            put("type", "string")
+            put("minLength", 1)
+            put("description", "Custom alias instead of generated one (optional)")
+        }
+        idempotencyKeyProperty()
+    }
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("canonicalAlias") { put("type", "string") }
-                putJsonObject("title") { put("type", "string") }
-                putJsonObject("description") { put("type", "string") }
-                putJsonObject("parentAlias") { put("type", "string") }
-                putJsonObject("createdAt") { put("type", "string") }
-            }
-            putJsonArray("required") {
-                add("canonicalAlias")
-                add("title")
-                add("createdAt")
-            }
-        },
-    )
+    override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "title", "createdAt")) {
+        putJsonObject("canonicalAlias") { put("type", "string") }
+        putJsonObject("title") { put("type", "string") }
+        putJsonObject("description") { put("type", "string") }
+        putJsonObject("parentAlias") { put("type", "string") }
+        putJsonObject("createdAt") { put("type", "string") }
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val title = ctx.services.codec.getString(ctx.args, "title", required = true)
