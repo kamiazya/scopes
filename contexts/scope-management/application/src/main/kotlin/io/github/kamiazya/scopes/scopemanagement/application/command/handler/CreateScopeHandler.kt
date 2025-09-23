@@ -2,27 +2,31 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent
 import io.github.kamiazya.scopes.scopemanagement.domain.extensions.persistScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
-import io.github.kamiazya.scopes.scopemanagement.application.port.EventProjector
 import kotlinx.datetime.Clock
 
 /**
@@ -43,12 +47,27 @@ class CreateScopeHandler(
     private val hierarchyService: ScopeHierarchyService,
     private val transactionManager: TransactionManager,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
-    private val eventProjector: EventProjector,
+    private val eventPublisher: EventPublisher,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
 ) : CommandHandler<CreateScopeCommand, ScopeContractError, CreateScopeResult> {
 
     override suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = either {
+        logCommandStart(command)
+
+        val hierarchyPolicy = getHierarchyPolicy().bind()
+
+        transactionManager.inTransaction {
+            either {
+                val validationResult = validateCommand(command).bind()
+                val aggregateResult = createScopeAggregate(command, validationResult).bind()
+                persistScopeAggregate(aggregateResult).bind()
+                buildResult(aggregateResult, validationResult.canonicalAlias)
+            }
+        }.bind()
+    }.onLeft { error -> logCommandFailure(error) }
+
+    private fun logCommandStart(command: CreateScopeCommand) {
         val aliasStrategy = when (command) {
             is CreateScopeCommand.WithAutoAlias -> "auto"
             is CreateScopeCommand.WithCustomAlias -> "custom"
@@ -62,219 +81,234 @@ class CreateScopeHandler(
                 "aliasStrategy" to aliasStrategy,
             ),
         )
+    }
 
-        // Get hierarchy policy from external context
-        val hierarchyPolicy = hierarchyPolicyProvider.getPolicy()
+    private suspend fun getHierarchyPolicy(): Either<ScopeContractError, HierarchyPolicy> = either {
+        hierarchyPolicyProvider.getPolicy()
             .mapLeft { error -> applicationErrorMapper.mapDomainError(error, ErrorMappingContext()) }
             .bind()
+    }
 
-        transactionManager.inTransaction {
-            either {
-                // Parse parent ID if provided
-                val parentId = command.parentId?.let { parentIdString ->
-                    ScopeId.create(parentIdString).mapLeft { idError ->
-                        logger.warn("Invalid parent ID format", mapOf("parentId" to parentIdString))
-                        applicationErrorMapper.mapDomainError(
-                            idError,
-                            ErrorMappingContext(attemptedValue = parentIdString),
-                        )
-                    }.bind()
-                }
+    private data class ValidatedInput(val parentId: ScopeId?, val validatedTitle: ScopeTitle, val newScopeId: ScopeId, val canonicalAlias: String?)
 
-                // Validate title format early
-                val validatedTitle = ScopeTitle.create(command.title)
-                    .mapLeft { titleError ->
-                        applicationErrorMapper.mapDomainError(
-                            titleError,
-                            ErrorMappingContext(attemptedValue = command.title),
-                        )
-                    }.bind()
+    private suspend fun validateCommand(command: CreateScopeCommand): Either<ScopeContractError, ValidatedInput> = either {
+        val parentId = parseParentId(command.parentId).bind()
+        val validatedTitle = validateTitle(command.title).bind()
+        val newScopeId = ScopeId.generate()
 
-                // Generate the scope ID early for error messages
-                val newScopeId = ScopeId.generate()
+        if (parentId != null) {
+            validateHierarchyConstraints(parentId, newScopeId).bind()
+        }
 
-                // Validate hierarchy constraints if parent is specified
-                if (parentId != null) {
-                    // Validate parent exists
-                    val parentExists = scopeRepository.existsById(parentId)
-                        .mapLeft { error ->
-                            applicationErrorMapper.mapDomainError(
-                                error,
-                                ErrorMappingContext(),
-                            )
-                        }.bind()
+        validateTitleUniqueness(parentId, validatedTitle).bind()
 
-                    ensure(parentExists) {
-                        applicationErrorMapper.mapToContractError(
-                            io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError.PersistenceError.NotFound(
-                                entityType = "Scope",
-                                entityId = parentId.value,
-                            ),
-                        )
-                    }
+        val canonicalAlias = when (command) {
+            is CreateScopeCommand.WithCustomAlias -> command.alias
+            is CreateScopeCommand.WithAutoAlias -> null
+        }
 
-                    // Calculate current hierarchy depth
-                    val currentDepth = hierarchyApplicationService.calculateHierarchyDepth(parentId)
-                        .mapLeft { error ->
-                            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                        }.bind()
+        ValidatedInput(parentId, validatedTitle, newScopeId, canonicalAlias)
+    }
 
-                    // Validate depth limit
-                    hierarchyService.validateHierarchyDepth(
-                        newScopeId,
-                        currentDepth,
-                        hierarchyPolicy.maxDepth,
-                    ).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                    }.bind()
+    private suspend fun parseParentId(parentIdString: String?): Either<ScopeContractError, ScopeId?> = either {
+        parentIdString?.let { idString ->
+            ScopeId.create(idString).mapLeft { idError ->
+                logger.warn("Invalid parent ID format", mapOf("parentId" to idString))
+                applicationErrorMapper.mapDomainError(
+                    idError,
+                    ErrorMappingContext(attemptedValue = idString),
+                )
+            }.bind()
+        }
+    }
 
-                    // Get existing children count
-                    val existingChildren = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
-                        .mapLeft { error ->
-                            applicationErrorMapper.mapDomainError(
-                                error,
-                                ErrorMappingContext(),
-                            )
-                        }.bind()
+    private suspend fun validateTitle(title: String): Either<ScopeContractError, ScopeTitle> = either {
+        ScopeTitle.create(title)
+            .mapLeft { titleError ->
+                applicationErrorMapper.mapDomainError(
+                    titleError,
+                    ErrorMappingContext(attemptedValue = title),
+                )
+            }.bind()
+    }
 
-                    // Validate children limit
-                    hierarchyService.validateChildrenLimit(
-                        parentId,
-                        existingChildren.size,
-                        hierarchyPolicy.maxChildrenPerScope,
-                    ).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                    }.bind()
-                }
+    private suspend fun validateHierarchyConstraints(parentId: ScopeId, newScopeId: ScopeId): Either<ScopeContractError, Unit> = either {
+        val hierarchyPolicy = getHierarchyPolicy().bind()
 
-                // Check title uniqueness at the same level
-                val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
-                    parentId,
-                    validatedTitle.value,
-                ).mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(
-                        error,
-                        ErrorMappingContext(),
-                    )
-                }.bind()
+        validateParentExists(parentId).bind()
+        validateDepthLimit(parentId, newScopeId, hierarchyPolicy).bind()
+        validateChildrenLimit(parentId, hierarchyPolicy).bind()
+    }
 
-                ensure(existingScopeId == null) {
-                    applicationErrorMapper.mapToContractError(
-                        io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError.DuplicateTitle(
-                            title = command.title,
-                            parentScopeId = parentId?.value,
-                            existingScopeId = existingScopeId!!.value,
-                        ),
-                    )
-                }
+    private suspend fun validateParentExists(parentId: ScopeId): Either<ScopeContractError, Unit> = either {
+        val parentExists = scopeRepository.existsById(parentId)
+            .mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
 
-                // Always create scope with alias to satisfy contract requirement
-                // Contract expects CreateScopeResult.canonicalAlias to be non-null
-                val (finalAggregateResult, canonicalAlias) = if (command.customAlias != null) {
-                    // Custom alias provided - validate format and create scope with custom alias
-                    val aliasName = AliasName.create(command.customAlias).mapLeft { aliasError ->
-                        logger.warn("Invalid custom alias format", mapOf("alias" to command.customAlias))
-                        applicationErrorMapper.mapDomainError(
-                            aliasError,
-                            ErrorMappingContext(attemptedValue = command.customAlias),
-                        )
-                    }.bind()
+        ensure(parentExists) {
+            applicationErrorMapper.mapToContractError(
+                io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError.PersistenceError.NotFound(
+                    entityType = "Scope",
+                    entityId = parentId.value,
+                ),
+            )
+        }
+    }
 
-                    // Create scope with custom alias in a single atomic operation
-                    val resultWithAlias = ScopeAggregate.handleCreateWithAlias(
-                        title = command.title,
-                        description = command.description,
-                        parentId = parentId,
-                        aliasName = aliasName,
-                        scopeId = newScopeId,
-                        now = Clock.System.now(),
-                    ).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                    }.bind()
-
-                    resultWithAlias to aliasName.value
-                } else {
-                    // Always generate alias automatically to satisfy contract requirement
-                    // Even if generateAlias=false, we still create an alias because contract expects it
-                    val resultWithAutoAlias = ScopeAggregate.handleCreateWithAutoAlias(
-                        title = command.title,
-                        description = command.description,
-                        parentId = parentId,
-                        scopeId = newScopeId,
-                        now = Clock.System.now(),
-                    ).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                    }.bind()
-
-                    // Extract the generated alias from the aggregate
-                    val generatedAlias = resultWithAutoAlias.aggregate.canonicalAliasId?.let { id ->
-                        resultWithAutoAlias.aggregate.aliases[id]?.aliasName?.value
-                    }
-
-                    resultWithAutoAlias to generatedAlias
-                }
-
-                // Persist events to EventStore AND project to RDB in same transaction
-                // This implements the architectural pattern: ES decision + RDB projection
-                eventSourcingRepository.persistScopeAggregate(finalAggregateResult).mapLeft { error ->
-                    logger.error(
-                        "Failed to persist events to EventStore",
-                        mapOf("error" to error.toString()),
-                    )
+    private suspend fun validateDepthLimit(parentId: ScopeId, newScopeId: ScopeId, hierarchyPolicy: HierarchyPolicy): Either<ScopeContractError, Unit> =
+        either {
+            val currentDepth = hierarchyApplicationService.calculateHierarchyDepth(parentId)
+                .mapLeft { error ->
                     applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
                 }.bind()
 
-                // Project all events to RDB in the same transaction
-                // Extract events from envelopes since EventProjector expects List<DomainEvent>
-                val domainEvents = finalAggregateResult.events.map { envelope -> envelope.event }
-                eventProjector.projectEvents(domainEvents).mapLeft { error ->
-                    logger.error(
-                        "Failed to project events to RDB",
-                        mapOf(
-                            "error" to error.toString(),
-                            "eventCount" to domainEvents.size.toString(),
-                        ),
+            hierarchyService.validateHierarchyDepth(
+                newScopeId,
+                currentDepth,
+                hierarchyPolicy.maxDepth,
+            ).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+        }
+
+    private suspend fun validateChildrenLimit(parentId: ScopeId, hierarchyPolicy: HierarchyPolicy): Either<ScopeContractError, Unit> = either {
+        val existingChildren = scopeRepository.findByParentId(parentId, offset = 0, limit = 1000)
+            .mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+        hierarchyService.validateChildrenLimit(
+            parentId,
+            existingChildren.size,
+            hierarchyPolicy.maxChildrenPerScope,
+        ).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+        }.bind()
+    }
+
+    private suspend fun validateTitleUniqueness(parentId: ScopeId?, validatedTitle: ScopeTitle): Either<ScopeContractError, Unit> = either {
+        val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
+            parentId,
+            validatedTitle.value,
+        ).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+        }.bind()
+
+        ensure(existingScopeId == null) {
+            applicationErrorMapper.mapToContractError(
+                io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError.DuplicateTitle(
+                    title = validatedTitle.value,
+                    parentScopeId = parentId?.value,
+                    existingScopeId = existingScopeId!!.value,
+                ),
+            )
+        }
+    }
+
+    private suspend fun createScopeAggregate(
+        command: CreateScopeCommand,
+        validationResult: ValidatedInput,
+    ): Either<ScopeContractError, AggregateResult<ScopeAggregate, ScopeEvent>> = either {
+        when (command) {
+            is CreateScopeCommand.WithCustomAlias -> {
+                val aliasName = AliasName.create(command.alias).mapLeft { aliasError ->
+                    logger.warn("Invalid custom alias format", mapOf("alias" to command.alias))
+                    applicationErrorMapper.mapDomainError(
+                        aliasError,
+                        ErrorMappingContext(attemptedValue = command.alias),
                     )
-                    applicationErrorMapper.mapToContractError(error)
                 }.bind()
 
-                logger.info(
-                    "Scope created successfully using EventSourcing",
-                    mapOf(
-                        "scopeId" to finalAggregateResult.aggregate.scopeId!!.value,
-                        "hasAlias" to (canonicalAlias != null).toString(),
-                    ),
-                )
-
-                // Extract scope data from aggregate for result mapping
-                val aggregate = finalAggregateResult.aggregate
-                val scope = io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope(
-                    id = aggregate.scopeId!!,
-                    title = aggregate.title!!,
-                    description = aggregate.description,
-                    parentId = aggregate.parentId,
-                    status = aggregate.status,
-                    aspects = aggregate.aspects,
-                    createdAt = aggregate.createdAt,
-                    updatedAt = aggregate.updatedAt,
-                )
-
-                val result = ScopeMapper.toCreateScopeResult(scope, canonicalAlias)
-
-                logger.info(
-                    "Scope creation workflow completed",
-                    mapOf(
-                        "scopeId" to scope.id.value,
-                        "title" to scope.title.value,
-                        "canonicalAlias" to (canonicalAlias ?: "none"),
-                        "eventsCount" to domainEvents.size.toString(),
-                    ),
-                )
-
-                result
+                ScopeAggregate.handleCreateWithAlias(
+                    title = command.title,
+                    description = command.description,
+                    parentId = validationResult.parentId,
+                    aliasName = aliasName,
+                    scopeId = validationResult.newScopeId,
+                    now = Clock.System.now(),
+                ).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
             }
+            is CreateScopeCommand.WithAutoAlias -> {
+                ScopeAggregate.handleCreateWithAutoAlias(
+                    title = command.title,
+                    description = command.description,
+                    parentId = validationResult.parentId,
+                    scopeId = validationResult.newScopeId,
+                    now = Clock.System.now(),
+                ).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+            }
+        }
+    }
+
+    private suspend fun persistScopeAggregate(aggregateResult: AggregateResult<ScopeAggregate, ScopeEvent>): Either<ScopeContractError, Unit> = either {
+        eventSourcingRepository.persistScopeAggregate(aggregateResult).mapLeft { error ->
+            logger.error(
+                "Failed to persist events to EventStore",
+                mapOf("error" to error.toString()),
+            )
+            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
         }.bind()
-    }.onLeft { error ->
+
+        val domainEvents = aggregateResult.events.map { envelope -> envelope.event }
+        eventPublisher.projectEvents(domainEvents).mapLeft { error ->
+            logger.error(
+                "Failed to project events to RDB",
+                mapOf(
+                    "error" to error.toString(),
+                    "eventCount" to domainEvents.size.toString(),
+                ),
+            )
+            applicationErrorMapper.mapToContractError(error)
+        }.bind()
+
+        logger.info(
+            "Scope created successfully using EventSourcing",
+            mapOf(
+                "scopeId" to aggregateResult.aggregate.scopeId!!.value,
+                "eventsCount" to domainEvents.size.toString(),
+            ),
+        )
+    }
+
+    private suspend fun buildResult(aggregateResult: AggregateResult<ScopeAggregate, ScopeEvent>, commandCanonicalAlias: String?): CreateScopeResult {
+        val aggregate = aggregateResult.aggregate
+        val canonicalAlias = commandCanonicalAlias ?: run {
+            aggregate.canonicalAliasId?.let { id ->
+                aggregate.aliases[id]?.aliasName?.value
+            }
+        }
+
+        val scope = io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope(
+            id = aggregate.scopeId!!,
+            title = aggregate.title!!,
+            description = aggregate.description,
+            parentId = aggregate.parentId,
+            status = aggregate.status,
+            aspects = aggregate.aspects,
+            createdAt = aggregate.createdAt,
+            updatedAt = aggregate.updatedAt,
+        )
+
+        val result = ScopeMapper.toCreateScopeResult(scope, canonicalAlias)
+
+        logger.info(
+            "Scope creation workflow completed",
+            mapOf(
+                "scopeId" to scope.id.value,
+                "title" to scope.title.value,
+                "canonicalAlias" to (canonicalAlias ?: "none"),
+            ),
+        )
+
+        return result
+    }
+
+    private fun logCommandFailure(error: ScopeContractError) {
         logger.error(
             "Failed to create scope using EventSourcing",
             mapOf(

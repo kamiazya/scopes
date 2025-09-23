@@ -11,7 +11,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.D
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.DeleteScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
-import io.github.kamiazya.scopes.scopemanagement.application.port.EventProjector
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
@@ -28,7 +28,7 @@ import kotlinx.datetime.Clock
  */
 class DeleteScopeHandler(
     private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
-    private val eventProjector: EventProjector,
+    private val eventProjector: EventPublisher,
     private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,

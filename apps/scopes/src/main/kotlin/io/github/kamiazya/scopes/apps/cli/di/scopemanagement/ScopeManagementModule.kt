@@ -17,6 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
@@ -43,7 +44,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeH
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.ContextViewValidationService
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.EventProjector
 import org.koin.dsl.module
 
 /**
@@ -129,7 +129,7 @@ val scopeManagementModule = module {
             hierarchyService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
-            eventProjector = get<EventProjector>(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             applicationErrorMapper = get(),
             logger = get(),
         )
@@ -138,7 +138,7 @@ val scopeManagementModule = module {
     single {
         UpdateScopeHandler(
             eventSourcingRepository = get(),
-            eventProjector = get<EventProjector>(),
+            eventProjector = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),
@@ -148,7 +148,7 @@ val scopeManagementModule = module {
     single {
         DeleteScopeHandler(
             eventSourcingRepository = get(),
-            eventProjector = get<EventProjector>(),
+            eventProjector = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),

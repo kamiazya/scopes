@@ -443,7 +443,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             )
         }
         is ScopeManagementApplicationError.PersistenceError.NotFound -> mapNotFoundError(error.entityId ?: "")
-        
+
         is ScopeManagementApplicationError.PersistenceError.ProjectionFailed -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "event-projection",
         )

@@ -87,6 +87,24 @@ data class ScopeAggregate(
          * Reconstructs a ScopeAggregate from a list of domain events.
          * This is used for event sourcing replay.
          */
+        private fun extractScopeId(event: ScopeEvent): ScopeId = when (event) {
+            is ScopeCreated -> event.scopeId
+            is ScopeDeleted -> event.scopeId
+            is ScopeArchived -> event.scopeId
+            is ScopeRestored -> event.scopeId
+            is ScopeTitleUpdated -> event.scopeId
+            is ScopeDescriptionUpdated -> event.scopeId
+            is ScopeParentChanged -> event.scopeId
+            is ScopeAspectAdded -> event.scopeId
+            is ScopeAspectRemoved -> event.scopeId
+            is ScopeAspectsCleared -> event.scopeId
+            is ScopeAspectsUpdated -> event.scopeId
+            is AliasAssigned -> event.scopeId
+            is AliasRemoved -> event.scopeId
+            is AliasNameChanged -> event.scopeId
+            is CanonicalAliasReplaced -> event.scopeId
+        }
+
         fun fromEvents(events: List<ScopeEvent>): Either<ScopesError, ScopeAggregate?> = either {
             if (events.isEmpty()) {
                 return@either null
@@ -119,7 +137,12 @@ data class ScopeAggregate(
                     else -> {
                         // Apply event to existing aggregate
                         aggregate?.applyEvent(event) ?: raise(
-                            ScopeError.InvalidEventSequence("Cannot apply ${event::class.simpleName} without ScopeCreated event"),
+                            ScopeError.InvalidEventSequence(
+                                scopeId = extractScopeId(event),
+                                expectedEventType = "ScopeCreated",
+                                actualEventType = event::class.simpleName ?: "UnknownEvent",
+                                reason = "Cannot apply event without ScopeCreated event first",
+                            ),
                         )
                     }
                 }
@@ -380,7 +403,7 @@ data class ScopeAggregate(
             val evolvedAggregate = pendingEvents.fold(initialAggregate) { aggregate, eventEnvelope ->
                 val appliedAggregate = aggregate.applyEvent(eventEnvelope.event)
                 // Debug: Ensure the aggregate is not null after applying event
-                appliedAggregate ?: throw IllegalStateException("Aggregate became null after applying event: ${eventEnvelope.event}")
+                appliedAggregate ?: error("Aggregate became null after applying event: ${eventEnvelope.event}")
             }
 
             AggregateResult(

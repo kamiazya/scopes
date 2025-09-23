@@ -1,7 +1,23 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization
 
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
-import io.github.kamiazya.scopes.scopemanagement.domain.event.*
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasAssigned
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasEvent
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasNameChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasReplaced
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass

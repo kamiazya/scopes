@@ -3,8 +3,22 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization
 
 import arrow.core.toNonEmptyListOrNull
-import io.github.kamiazya.scopes.scopemanagement.domain.event.*
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasAssigned
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasNameChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasReplaced
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.ScopeEventSerializerHelpers.deserializeAggregateId
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.ScopeEventSerializerHelpers.deserializeAggregateVersion
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.ScopeEventSerializerHelpers.deserializeAliasId

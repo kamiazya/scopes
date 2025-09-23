@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -25,8 +26,7 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.ActiveContextBootstrap
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.factory.EventSourcingRepositoryFactory
-import io.github.kamiazya.scopes.scopemanagement.application.port.EventProjector as EventProjectorPort
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.EventProjector
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.EventProjectionService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
@@ -110,8 +110,8 @@ val scopeManagementInfrastructureModule = module {
     }
 
     // Event Projector for RDB projection
-    single<EventProjectorPort> {
-        EventProjector(
+    single<EventPublisher> {
+        EventProjectionService(
             scopeRepository = get(),
             scopeAliasRepository = get(),
             logger = get(),

@@ -19,19 +19,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 object ScopeMapper {
 
     /**
-     * Map Scope entity to CreateScopeResult DTO (contract layer).
-     */
-    fun toCreateScopeResult(scope: Scope, canonicalAlias: String): CreateScopeResult = CreateScopeResult(
-        id = scope.id.toString(),
-        title = scope.title.value,
-        description = scope.description?.value,
-        parentId = scope.parentId?.toString(),
-        canonicalAlias = canonicalAlias,
-        createdAt = scope.createdAt,
-        updatedAt = scope.updatedAt,
-    )
-
-    /**
      * Map Scope entity to UpdateScopeResult DTO.
      */
     fun toUpdateScopeResult(scope: Scope, canonicalAlias: String? = null): UpdateScopeResult = UpdateScopeResult(
@@ -141,5 +128,19 @@ object ScopeMapper {
         updatedAt = scope.updatedAt,
         isArchived = false, // Default value, can be updated based on business logic
         aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+    )
+
+    /**
+     * Map Scope entity to CreateScopeResult.
+     * This method is for mapping the result of create scope operation.
+     */
+    fun toCreateScopeResult(scope: Scope, canonicalAlias: String?): CreateScopeResult = CreateScopeResult(
+        id = scope.id.toString(),
+        title = scope.title.value,
+        description = scope.description?.value,
+        parentId = scope.parentId?.toString(),
+        canonicalAlias = canonicalAlias ?: "", // Use empty string if no alias (contract requires non-null)
+        createdAt = scope.createdAt,
+        updatedAt = scope.updatedAt,
     )
 }

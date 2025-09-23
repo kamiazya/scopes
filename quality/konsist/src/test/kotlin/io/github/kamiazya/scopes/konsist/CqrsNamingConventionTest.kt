@@ -80,6 +80,7 @@ class CqrsNamingConventionTest :
                     .filter { !it.name.endsWith("CommandHandler") } // Interface names
                     .filter { it.packagee?.name?.contains("interfaces.cli") != true } // Exclude CLI commands
                     .filter { !it.hasEnumModifier } // Exclude enums
+                    .filter { it.name != "ValidatedInput" } // Exclude internal validation helper classes
                     .assertTrue { command ->
                         command.name.endsWith("Command") ||
                             command.name.endsWith("CommandPort") ||

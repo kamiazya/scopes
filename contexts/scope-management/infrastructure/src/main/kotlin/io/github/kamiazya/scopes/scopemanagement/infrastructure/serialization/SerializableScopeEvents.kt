@@ -1,6 +1,5 @@
 package io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization
 
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

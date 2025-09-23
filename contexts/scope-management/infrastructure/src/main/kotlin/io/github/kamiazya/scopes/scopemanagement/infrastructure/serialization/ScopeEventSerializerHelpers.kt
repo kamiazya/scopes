@@ -3,7 +3,13 @@ package io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.*
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 
 /**
  * Helper functions for deserializing domain value objects from their string representations.
