@@ -6,8 +6,8 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.spotless)
-    id("org.cyclonedx.bom") version "2.4.0"
-    id("org.spdx.sbom") version "0.9.0"
+    alias(libs.plugins.cyclonedx.bom)
+    alias(libs.plugins.spdx.sbom)
 }
 
 group = "io.github.kamiazya"
@@ -25,7 +25,11 @@ allprojects {
     // Force Netty HTTP/2 to patched version to fix security vulnerability GHSA-prj3-ccx8-p6x4
     configurations.configureEach {
         resolutionStrategy {
-            force("io.netty:netty-codec-http2:4.2.6.Final")
+            force(
+                libs.netty.codec.http2
+                    .get()
+                    .toString(),
+            )
         }
     }
 }
@@ -53,7 +57,11 @@ subprojects {
         resolutionStrategy {
             preferProjectModules()
             // Force Netty to patched version to fix GHSA-prj3-ccx8-p6x4 vulnerability
-            force("io.netty:netty-codec-http2:4.2.6.Final")
+            force(
+                libs.netty.codec.http2
+                    .get()
+                    .toString(),
+            )
         }
     }
 }
@@ -108,7 +116,10 @@ tasks.register("checkGraalVM") {
 }
 
 ktlint {
-    version.set("1.5.0")
+    version.set(
+        libs.versions.ktlint.tool
+            .get(),
+    )
     outputToConsole.set(true)
     coloredOutput.set(true)
     verbose.set(true)
@@ -141,24 +152,29 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt")
-        ktlint("1.5.0")
-            .editorConfigOverride(
-                mapOf(
-                    "indent_size" to 4,
-                    "continuation_indent_size" to 4,
-                    "max_line_length" to 160,
-                    "insert_final_newline" to true,
-                    "ktlint_standard_no-wildcard-imports" to "disabled",
-                    "ktlint_standard_package-name" to "disabled",
-                    "ktlint_standard_value-parameter-comment" to "disabled",
-                ),
-            )
+        ktlint(
+            libs.versions.ktlint.tool
+                .get(),
+        ).editorConfigOverride(
+            mapOf(
+                "indent_size" to 4,
+                "continuation_indent_size" to 4,
+                "max_line_length" to 160,
+                "insert_final_newline" to true,
+                "ktlint_standard_no-wildcard-imports" to "disabled",
+                "ktlint_standard_package-name" to "disabled",
+                "ktlint_standard_value-parameter-comment" to "disabled",
+            ),
+        )
         trimTrailingWhitespace()
         endWithNewline()
     }
     kotlinGradle {
         target("**/*.gradle.kts")
-        ktlint("1.5.0")
+        ktlint(
+            libs.versions.ktlint.tool
+                .get(),
+        )
         trimTrailingWhitespace()
         endWithNewline()
     }

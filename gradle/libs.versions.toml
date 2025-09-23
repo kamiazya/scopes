@@ -31,6 +31,14 @@ ktor = "2.3.12"
 okio = "3.16.0"
 kotlinx-io = "0.8.0"
 
+# Build plugins
+cyclonedx-bom = "2.4.0"
+spdx-sbom = "0.9.0"
+ktlint-tool = "1.5.0"
+
+# Security patches
+netty-codec-http2 = "4.2.6.Final"
+
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
@@ -70,6 +78,9 @@ okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 kotlinx-io-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-io-core-jvm", version.ref = "kotlinx-io" }
 
+# Security patches
+netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "netty-codec-http2" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -79,6 +90,8 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 gradle-develocity = { id = "com.gradle.develocity", version.ref = "gradle-develocity" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
+spdx-sbom = { id = "org.spdx.sbom", version.ref = "spdx-sbom" }
 
 [bundles]
 kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-assertions-arrow", "kotest-property"]
