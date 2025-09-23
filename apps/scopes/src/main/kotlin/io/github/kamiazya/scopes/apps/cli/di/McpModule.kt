@@ -43,6 +43,20 @@ import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFo
 import org.koin.dsl.module
 
 /**
+ * Configuration constants for MCP tree resource handlers.
+ */
+private object McpConfiguration {
+    const val TREE_MAX_DEPTH_ENV = "SCOPES_TREE_MAX_DEPTH"
+    const val TREE_MAX_NODES_ENV = "SCOPES_TREE_MAX_NODES"
+    const val DEFAULT_MAX_DEPTH = 5
+    const val DEFAULT_MAX_NODES = 1000
+    const val MIN_DEPTH = 1
+    const val MAX_DEPTH = 10
+    const val MIN_NODES = 100
+    const val MAX_NODES = 100_000
+}
+
+/**
  * MCP (Model Context Protocol) module for the CLI application.
  *
  * This module configures all MCP-related components including:
@@ -97,8 +111,14 @@ val mcpModule = module {
 
     // Resource Handlers
     single {
-        val maxDepth = System.getenv("SCOPES_TREE_MAX_DEPTH")?.toIntOrNull()?.coerceIn(1, 10) ?: 5
-        val maxNodes = System.getenv("SCOPES_TREE_MAX_NODES")?.toIntOrNull()?.coerceIn(100, 100_000) ?: 1000
+        val maxDepth = System.getenv(McpConfiguration.TREE_MAX_DEPTH_ENV)
+            ?.toIntOrNull()
+            ?.coerceIn(McpConfiguration.MIN_DEPTH, McpConfiguration.MAX_DEPTH)
+            ?: McpConfiguration.DEFAULT_MAX_DEPTH
+        val maxNodes = System.getenv(McpConfiguration.TREE_MAX_NODES_ENV)
+            ?.toIntOrNull()
+            ?.coerceIn(McpConfiguration.MIN_NODES, McpConfiguration.MAX_NODES)
+            ?: McpConfiguration.DEFAULT_MAX_NODES
         listOf<ResourceHandler>(
             CliDocResourceHandler(),
             ScopeDetailsResourceHandler(),
