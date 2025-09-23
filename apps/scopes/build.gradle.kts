@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.detekt)
     alias(libs.plugins.graalvm.native)
-    id("org.cyclonedx.bom") version "2.4.0"
-    id("org.spdx.sbom") version "0.9.0"
+    alias(libs.plugins.cyclonedx.bom)
+    alias(libs.plugins.spdx.sbom)
     application
 }
 
