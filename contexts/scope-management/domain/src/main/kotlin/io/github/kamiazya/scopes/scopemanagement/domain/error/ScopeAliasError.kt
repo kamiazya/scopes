@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.error
 
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
+import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 
 /**
@@ -10,8 +11,13 @@ sealed class ScopeAliasError : ScopesError() {
 
     /**
      * Duplicate alias error.
+     * Raised when attempting to create an alias that already exists for a different scope.
+     *
+     * @param aliasName The alias name that caused the conflict
+     * @param existingScopeId The scope that currently owns this alias
+     * @param attemptedScopeId The scope that attempted to use this alias
      */
-    data class DuplicateAlias(val alias: String, val scopeId: ScopeId) : ScopeAliasError()
+    data class DuplicateAlias(val aliasName: AliasName, val existingScopeId: ScopeId, val attemptedScopeId: ScopeId) : ScopeAliasError()
 
     /**
      * Alias not found by name error.

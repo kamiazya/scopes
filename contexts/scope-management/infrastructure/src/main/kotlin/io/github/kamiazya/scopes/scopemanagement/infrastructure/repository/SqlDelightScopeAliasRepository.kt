@@ -6,6 +6,7 @@ import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.db.Scope_aliases
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
@@ -47,13 +48,51 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         }
         Unit.right()
     } catch (e: Exception) {
-        ScopesError.RepositoryError(
-            repositoryName = "SqlDelightScopeAliasRepository",
-            operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
-            entityType = "ScopeAlias",
-            entityId = alias.id.value,
-            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-        ).left()
+        when {
+            // SQLite unique constraint violation detection
+            // Check for constraint violation using multiple detection methods
+            isSqliteUniqueConstraintViolation(e) -> {
+                // Extract the existing scope ID that owns this alias
+                val existingScopeId = try {
+                    database.scopeAliasQueries.findByAliasName(alias.aliasName.value)
+                        .executeAsOneOrNull()?.scope_id?.let { ScopeId.create(it) }
+                        ?.fold(
+                            ifLeft = { null },
+                            ifRight = { it },
+                        )
+                } catch (_: Exception) {
+                    null
+                }
+
+                if (existingScopeId != null) {
+                    // Return business-specific duplicate alias error
+                    ScopeAliasError.DuplicateAlias(
+                        aliasName = alias.aliasName,
+                        existingScopeId = existingScopeId,
+                        attemptedScopeId = alias.scopeId,
+                    ).left()
+                } else {
+                    // Fallback to repository error if we can't determine the existing scope
+                    ScopesError.RepositoryError(
+                        repositoryName = "SqlDelightScopeAliasRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                        entityType = "ScopeAlias",
+                        entityId = alias.id.value,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION,
+                    ).left()
+                }
+            }
+            else -> {
+                // All other database errors
+                ScopesError.RepositoryError(
+                    repositoryName = "SqlDelightScopeAliasRepository",
+                    operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                    entityType = "ScopeAlias",
+                    entityId = alias.id.value,
+                    failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+                ).left()
+            }
+        }
     }
 
     override suspend fun findByAliasName(aliasName: AliasName): Either<ScopesError, ScopeAlias?> = try {
@@ -343,4 +382,30 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         createdAt = Instant.fromEpochMilliseconds(row.created_at),
         updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
     )
+
+    /**
+     * Checks if the given exception represents a SQLite unique constraint violation.
+     *
+     * This method uses multiple detection strategies to identify constraint violations:
+     * 1. Checks for specific error messages that SQLite returns
+     * 2. Checks for SQLite error codes if available (e.g., SQLITE_CONSTRAINT = 19)
+     * 3. Handles variations across different SQLite driver versions
+     *
+     * @param e The exception to check
+     * @return true if this is a unique constraint violation, false otherwise
+     */
+    private fun isSqliteUniqueConstraintViolation(e: Exception): Boolean {
+        val message = e.message ?: return false
+
+        // Check for various SQLite unique constraint error patterns
+        return message.contains("UNIQUE constraint failed", ignoreCase = true) ||
+            message.contains("SQLITE_CONSTRAINT_UNIQUE", ignoreCase = true) ||
+            message.contains("constraint failed", ignoreCase = true) &&
+            message.contains("unique", ignoreCase = true) ||
+            // Some drivers may include the error code directly
+            message.contains("error code 19", ignoreCase = true) ||
+            message.contains("SQLITE_CONSTRAINT", ignoreCase = true) ||
+            // Check the cause chain for nested constraint violations
+            (e.cause?.message?.let { isSqliteUniqueConstraintViolation(Exception(it)) } ?: false)
+    }
 }

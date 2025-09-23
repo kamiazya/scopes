@@ -857,9 +857,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             // Direct mapping to contract error without intermediate app error
             when (domainError) {
                 is DomainScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
-                    alias = InputSanitizer.createPreview(domainError.alias),
-                    existingScopeId = domainError.scopeId.toString(),
-                    attemptedScopeId = null,
+                    alias = domainError.aliasName.value,
+                    existingScopeId = domainError.existingScopeId.value,
+                    attemptedScopeId = domainError.attemptedScopeId.value,
                 )
                 is DomainScopeAliasError.AliasGenerationFailed -> ScopeContractError.BusinessError.AliasGenerationFailed(
                     scopeId = domainError.scopeId.toString(),

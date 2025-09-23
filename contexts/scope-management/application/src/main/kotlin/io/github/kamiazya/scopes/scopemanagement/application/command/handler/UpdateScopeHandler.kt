@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent

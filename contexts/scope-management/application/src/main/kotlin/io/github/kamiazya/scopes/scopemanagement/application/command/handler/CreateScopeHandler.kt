@@ -2,16 +2,13 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
+import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
-import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.CreateScopeCommand
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
-import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
@@ -52,12 +49,17 @@ class CreateScopeHandler(
 ) : CommandHandler<CreateScopeCommand, ScopeContractError, CreateScopeResult> {
 
     override suspend operator fun invoke(command: CreateScopeCommand): Either<ScopeContractError, CreateScopeResult> = either {
+        val aliasStrategy = when (command) {
+            is CreateScopeCommand.WithAutoAlias -> "auto"
+            is CreateScopeCommand.WithCustomAlias -> "custom"
+        }
+
         logger.info(
             "Creating new scope using EventSourcing pattern",
             mapOf(
                 "title" to command.title,
                 "parentId" to (command.parentId ?: "none"),
-                "generateAlias" to command.generateAlias.toString(),
+                "aliasStrategy" to aliasStrategy,
             ),
         )
 

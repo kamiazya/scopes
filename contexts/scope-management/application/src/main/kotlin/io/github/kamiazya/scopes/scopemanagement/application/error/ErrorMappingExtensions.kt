@@ -192,9 +192,9 @@ fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManag
 fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainScopeAliasError.DuplicateAlias ->
         AppScopeAliasError.AliasDuplicate(
-            aliasName = this.alias,
-            existingScopeId = this.scopeId.toString(),
-            attemptedScopeId = "attempted-scope-id", // Domain error doesn't provide attempted scope ID
+            aliasName = this.aliasName.value,
+            existingScopeId = this.existingScopeId.value,
+            attemptedScopeId = this.attemptedScopeId.value,
         )
 
     is DomainScopeAliasError.AliasNotFoundByName ->

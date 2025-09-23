@@ -85,12 +85,10 @@ class ScopeCreateToolHandlerTest :
 
             coVerify {
                 mockCommand.createScope(
-                    CreateScopeCommand(
+                    CreateScopeCommand.WithAutoAlias(
                         title = "Test Scope",
                         description = null,
                         parentId = null,
-                        generateAlias = true,
-                        customAlias = null,
                     ),
                 )
             }
@@ -155,12 +153,10 @@ class ScopeCreateToolHandlerTest :
 
             coVerify {
                 mockCommand.createScope(
-                    CreateScopeCommand(
+                    CreateScopeCommand.WithAutoAlias(
                         title = "Child Scope",
                         description = "A child scope",
                         parentId = "parent-id",
-                        generateAlias = true,
-                        customAlias = null,
                     ),
                 )
             }
@@ -208,12 +204,11 @@ class ScopeCreateToolHandlerTest :
 
             coVerify {
                 mockCommand.createScope(
-                    CreateScopeCommand(
+                    CreateScopeCommand.WithCustomAlias(
                         title = "Custom Alias Scope",
                         description = null,
                         parentId = null,
-                        generateAlias = false,
-                        customAlias = "my-custom-alias",
+                        alias = "my-custom-alias",
                     ),
                 )
             }

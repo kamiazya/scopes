@@ -64,13 +64,24 @@ data class ScopeResult(
     val aspects: Map<String, List<String>> = emptyMap(),
 )
 
-data class CreateScopeCommand(
-    val title: String,
-    val description: String? = null,
-    val parentId: String? = null,
-    val generateAlias: Boolean = true,
-    val customAlias: String? = null,
-)
+sealed interface CreateScopeCommand {
+    val title: String
+    val description: String?
+    val parentId: String?
+
+    data class WithAutoAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+    ) : CreateScopeCommand
+
+    data class WithCustomAlias(
+        override val title: String,
+        override val description: String? = null,
+        override val parentId: String? = null,
+        val alias: String,
+    ) : CreateScopeCommand
+}
 ```
 
 **Types**:
@@ -245,13 +256,20 @@ object ScopeContractMapper {
     )
     
     fun fromCreateScopeCommand(command: CreateScopeCommand): CreateScopeInput =
-        CreateScopeInput(
-            title = command.title,
-            description = command.description,
-            parentId = command.parentId,
-            generateAlias = command.generateAlias,
-            customAlias = command.customAlias
-        )
+        when (command) {
+            is CreateScopeCommand.WithAutoAlias -> CreateScopeInput(
+                title = command.title,
+                description = command.description,
+                parentId = command.parentId,
+                alias = null
+            )
+            is CreateScopeCommand.WithCustomAlias -> CreateScopeInput(
+                title = command.title,
+                description = command.description,
+                parentId = command.parentId,
+                alias = command.alias
+            )
+        }
 }
 ```
 
