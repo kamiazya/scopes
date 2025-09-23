@@ -11,11 +11,15 @@ permissions:
   contents: write
   pull-requests: write
   id-token: write
+  actions: read
 
 jobs:
   version-and-release:
     name: Version and Release
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.semver_tag.outputs.tag }}
+      published: ${{ steps.changesets.outputs.published }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
@@ -54,7 +58,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create and push SemVer tag (vX.Y.Z)
-        if: steps.changesets.outputs.published == 'true' || fromJson(steps.changesets.outputs.publishedPackages)[0] != null
+        id: semver_tag
+        if: steps.changesets.outputs.published == 'true' || steps.changesets.outputs.hasChangesets == 'true'
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
@@ -70,3 +75,13 @@ jobs:
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
           echo "Pushed tag $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  run-release:
+    name: Run Release workflow
+    needs: version-and-release
+    if: needs.version-and-release.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.version-and-release.outputs.tag }}
+    secrets: inherit

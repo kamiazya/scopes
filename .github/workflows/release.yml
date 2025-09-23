@@ -703,7 +703,7 @@ jobs:
           ```
 
           ### Manual Verification
-          For detailed verification instructions, see our [Security Verification Guide](./docs/explanation/security/security-verification.md).
+          For detailed verification instructions, see our [Security Verification Guide](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md).
 
           ## 📦 Artifacts
           - Binary downloads include SHA-256 checksums
@@ -711,9 +711,9 @@ jobs:
           - SBOM files available in CycloneDX format
 
           ## 📚 Documentation
-          - [Installation Guide](./install/README.md)
-          - [Security Verification](./docs/explanation/security/security-verification.md)
-          - [SBOM Verification](./docs/explanation/security/sbom-verification.md)
+          - [Installation Guide](https://github.com/kamiazya/scopes/blob/main/install/README.md)
+          - [Security Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md)
+          - [SBOM Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/sbom-verification.md)
           EOF
 
           # Store the custom content
@@ -783,7 +783,7 @@ jobs:
 
           #### Linux/macOS
           ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install-unified.sh | sh
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
           ```
 
           #### Windows PowerShell
