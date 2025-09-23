@@ -98,7 +98,7 @@ val mcpModule = module {
     // Resource Handlers
     single {
         val maxDepth = System.getenv("SCOPES_TREE_MAX_DEPTH")?.toIntOrNull()?.coerceIn(1, 10) ?: 5
-        val maxNodes = System.getenv("SCOPES_TREE_MAX_NODES")?.toIntOrNull()?.coerceAtLeast(100)?.coerceAtMost(100_000) ?: 1000
+        val maxNodes = System.getenv("SCOPES_TREE_MAX_NODES")?.toIntOrNull()?.coerceIn(100, 100_000) ?: 1000
         listOf<ResourceHandler>(
             CliDocResourceHandler(),
             ScopeDetailsResourceHandler(),

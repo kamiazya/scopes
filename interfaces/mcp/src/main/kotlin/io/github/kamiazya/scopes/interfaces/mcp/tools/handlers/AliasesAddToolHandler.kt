@@ -6,6 +6,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetCanonical
 import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.booleanProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
 import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.newAliasProperty
@@ -36,11 +37,7 @@ class AliasesAddToolHandler : ToolHandler {
     override val input: Tool.Input = toolInput(required = listOf("scopeAlias", "newAlias")) {
         scopeAliasProperty()
         newAliasProperty()
-        // keep same semantics
-        putJsonObject("makeCanonical") {
-            put("type", "boolean")
-            put("description", "Make this the canonical alias (optional, default false)")
-        }
+        booleanProperty("makeCanonical", description = "Make this the canonical alias (optional, default false)")
         idempotencyKeyProperty()
     }
 

@@ -6,7 +6,8 @@ import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.JsonMapConverter.toJsonObject
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
-import io.github.kamiazya.scopes.interfaces.mcp.support.arrayOfObjectsProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.arrayProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.itemsObject
 import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -31,10 +32,12 @@ class ScopesRootsToolHandler(private val responseFormatter: ResponseFormatterSer
     override val input: Tool.Input = toolInput(required = emptyList()) { }
 
     override val output: Tool.Output = toolOutput(required = listOf("roots")) {
-        arrayOfObjectsProperty("roots", itemRequired = listOf("canonicalAlias", "title")) {
-            stringProperty("canonicalAlias")
-            stringProperty("title")
-            stringProperty("description")
+        arrayProperty("roots") {
+            itemsObject(required = listOf("canonicalAlias", "title")) {
+                stringProperty("canonicalAlias")
+                stringProperty("title")
+                stringProperty("description")
+            }
         }
     }
 

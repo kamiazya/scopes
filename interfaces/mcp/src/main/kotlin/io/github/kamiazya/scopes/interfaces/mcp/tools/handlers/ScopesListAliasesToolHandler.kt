@@ -7,8 +7,9 @@ import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
 import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
-import io.github.kamiazya.scopes.interfaces.mcp.support.arrayOfObjectsProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.arrayProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.booleanProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.itemsObject
 import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -40,10 +41,12 @@ class ScopesListAliasesToolHandler : ToolHandler {
     override val output: Tool.Output = toolOutput(required = listOf("scopeAlias", "aliases")) {
         stringProperty("scopeAlias")
         stringProperty("canonicalAlias")
-        arrayOfObjectsProperty("aliases", itemRequired = listOf("aliasName", "isCanonical")) {
-            stringProperty("aliasName")
-            booleanProperty("isCanonical")
-            stringProperty("aliasType")
+        arrayProperty("aliases") {
+            itemsObject(required = listOf("aliasName", "isCanonical")) {
+                stringProperty("aliasName")
+                booleanProperty("isCanonical")
+                stringProperty("aliasType")
+            }
         }
     }
 

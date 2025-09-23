@@ -5,8 +5,11 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeC
 import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.booleanProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
 import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.withIdempotency
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -15,7 +18,6 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Tool handler for deleting scopes.
@@ -31,17 +33,13 @@ class ScopeDeleteToolHandler : ToolHandler {
     override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
     override val input: Tool.Input = toolInput(required = listOf("alias")) {
-        putJsonObject("alias") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "Scope alias to delete")
-        }
+        aliasProperty(description = "Scope alias to delete")
         idempotencyKeyProperty()
     }
 
     override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "deleted")) {
-        putJsonObject("canonicalAlias") { put("type", "string") }
-        putJsonObject("deleted") { put("type", "boolean") }
+        stringProperty("canonicalAlias")
+        booleanProperty("deleted")
     }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {

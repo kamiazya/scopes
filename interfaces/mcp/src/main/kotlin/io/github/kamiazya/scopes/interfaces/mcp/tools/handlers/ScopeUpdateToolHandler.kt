@@ -6,7 +6,9 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAli
 import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
@@ -14,7 +16,6 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Tool handler for updating existing scopes.
@@ -30,28 +31,17 @@ class ScopeUpdateToolHandler : ToolHandler {
     override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
     override val input: Tool.Input = toolInput(required = listOf("alias")) {
-        putJsonObject("alias") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "Scope alias to update")
-        }
-        putJsonObject("title") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "New title (optional)")
-        }
-        putJsonObject("description") {
-            put("type", "string")
-            put("description", "New description (optional)")
-        }
+        aliasProperty(description = "Scope alias to update")
+        stringProperty("title", minLength = 1, description = "New title (optional)")
+        stringProperty("description", description = "New description (optional)")
         idempotencyKeyProperty()
     }
 
     override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "title", "updatedAt")) {
-        putJsonObject("canonicalAlias") { put("type", "string") }
-        putJsonObject("title") { put("type", "string") }
-        putJsonObject("description") { put("type", "string") }
-        putJsonObject("updatedAt") { put("type", "string") }
+        stringProperty("canonicalAlias")
+        stringProperty("title")
+        stringProperty("description")
+        stringProperty("updatedAt")
     }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {

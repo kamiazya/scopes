@@ -150,14 +150,30 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
 
 private fun Any?.toJsonElementSafe(): kotlinx.serialization.json.JsonElement = when (this) {
     null -> kotlinx.serialization.json.JsonNull
+    is kotlinx.serialization.json.JsonElement -> this
     is Number -> kotlinx.serialization.json.JsonPrimitive(this)
     is Boolean -> kotlinx.serialization.json.JsonPrimitive(this)
     is String -> kotlinx.serialization.json.JsonPrimitive(this)
+    is Enum<*> -> kotlinx.serialization.json.JsonPrimitive(this.name)
     is Map<*, *> -> buildJsonObject {
         this@toJsonElementSafe.forEach { (k, v) ->
-            put(k.toString(), v.toJsonElementSafe())
+            val key = when (k) {
+                null -> return@forEach // skip null keys
+                is String -> k
+                else -> k.toString()
+            }
+            put(key, v.toJsonElementSafe())
         }
     }
     is Iterable<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    is Array<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    is IntArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is LongArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is ShortArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is FloatArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is DoubleArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is BooleanArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is CharArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e.toString())) }
+    is Sequence<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
     else -> kotlinx.serialization.json.JsonPrimitive(this.toString())
 }

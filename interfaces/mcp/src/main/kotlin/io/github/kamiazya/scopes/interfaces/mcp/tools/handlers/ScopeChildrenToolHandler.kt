@@ -6,8 +6,9 @@ import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
 import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
-import io.github.kamiazya.scopes.interfaces.mcp.support.arrayOfObjectsProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.arrayProperty
 import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
+import io.github.kamiazya.scopes.interfaces.mcp.support.itemsObject
 import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
@@ -39,10 +40,12 @@ class ScopeChildrenToolHandler(private val responseFormatter: ResponseFormatterS
 
     override val output: Tool.Output = toolOutput(required = listOf("parentAlias", "children")) {
         stringProperty("parentAlias")
-        arrayOfObjectsProperty("children", itemRequired = listOf("canonicalAlias", "title")) {
-            stringProperty("canonicalAlias")
-            stringProperty("title")
-            stringProperty("description")
+        arrayProperty("children") {
+            itemsObject(required = listOf("canonicalAlias", "title")) {
+                stringProperty("canonicalAlias")
+                stringProperty("title")
+                stringProperty("description")
+            }
         }
     }
 

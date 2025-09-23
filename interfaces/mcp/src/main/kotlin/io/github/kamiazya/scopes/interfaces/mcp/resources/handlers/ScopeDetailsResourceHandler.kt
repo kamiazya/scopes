@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.interfaces.mcp.resources.handlers
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.interfaces.mcp.resources.ResourceHandler
+import io.github.kamiazya.scopes.interfaces.mcp.support.McpUriConstants
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers.extractAlias
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
@@ -27,7 +28,7 @@ class ScopeDetailsResourceHandler : ResourceHandler {
 
     override suspend fun read(req: ReadResourceRequest, ports: Ports, services: Services): ReadResourceResult {
         val uri = req.uri
-        val alias = extractAlias(uri, prefix = "scopes:/scope/")
+        val alias = extractAlias(uri, prefix = McpUriConstants.SCOPE_PREFIX)
 
         services.logger.debug("Reading scope details for alias: $alias")
 

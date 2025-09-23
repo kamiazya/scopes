@@ -5,12 +5,14 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQu
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.mcp.resources.ResourceHandler
+import io.github.kamiazya.scopes.interfaces.mcp.support.McpUriConstants
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers.extractAlias
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Services
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceRequest
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Resource handler for scope tree in Markdown format.
@@ -29,7 +31,7 @@ class TreeMarkdownResourceHandler : ResourceHandler {
 
     override suspend fun read(req: ReadResourceRequest, ports: Ports, services: Services): ReadResourceResult {
         val uri = req.uri
-        val alias = extractAlias(uri, prefix = "scopes:/tree.md/")
+        val alias = extractAlias(uri, prefix = McpUriConstants.TREE_MARKDOWN_PREFIX)
 
         services.logger.debug("Reading tree Markdown for alias: $alias")
 
@@ -86,8 +88,8 @@ class TreeMarkdownResourceHandler : ResourceHandler {
             appendLine("\n[JSON] scopes:/tree/${scope.canonicalAlias}")
             appendLine("\n## Links")
             ResourceHelpers.scopeLinks(scope.canonicalAlias).forEach { link ->
-                val rel = link["rel"]?.toString()?.trim('"') ?: "rel"
-                val lnk = link["uri"]?.toString()?.trim('"') ?: "uri"
+                val rel = link["rel"]?.jsonPrimitive?.content ?: "rel"
+                val lnk = link["uri"]?.jsonPrimitive?.content ?: "uri"
                 appendLine("- $rel: $lnk")
             }
         }

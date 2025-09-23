@@ -25,7 +25,7 @@ object SchemaDsl {
         put("type", "object")
         put("additionalProperties", false)
         // Always include required array to keep generated shape uniform
-        put("required", buildJsonArray { required.forEach { add(it) } })
+        required(*required.toTypedArray())
         putJsonObject("properties") { properties() }
     }
 }
@@ -101,7 +101,7 @@ fun JsonObjectBuilder.objectProperty(name: String, required: List<String> = empt
     putJsonObject(name) {
         put("type", "object")
         put("additionalProperties", false)
-        put("required", buildJsonArray { required.forEach { add(it) } })
+        required(*required.toTypedArray())
         putJsonObject("properties") { properties() }
     }
 }
@@ -115,8 +115,29 @@ fun JsonObjectBuilder.arrayOfObjectsProperty(name: String, itemRequired: List<St
         putJsonObject("items") {
             put("type", "object")
             put("additionalProperties", false)
-            put("required", buildJsonArray { itemRequired.forEach { add(it) } })
+            required(*itemRequired.toTypedArray())
             putJsonObject("properties") { itemProperties() }
         }
     }
+}
+
+/** Set the required array on the current object builder. */
+fun JsonObjectBuilder.required(vararg names: String) {
+    put("required", buildJsonArray { names.forEach { add(it) } })
+}
+
+/** Define an array-typed property with a custom items definition. */
+fun JsonObjectBuilder.arrayProperty(name: String, items: JsonObjectBuilder.() -> Unit) {
+    putJsonObject(name) {
+        put("type", "array")
+        putJsonObject("items") { items() }
+    }
+}
+
+/** Within an array's items, define an object with required + properties. */
+fun JsonObjectBuilder.itemsObject(required: List<String> = emptyList(), properties: JsonObjectBuilder.() -> Unit) {
+    put("type", "object")
+    put("additionalProperties", false)
+    put("required", buildJsonArray { required.forEach { add(it) } })
+    putJsonObject("properties") { properties() }
 }

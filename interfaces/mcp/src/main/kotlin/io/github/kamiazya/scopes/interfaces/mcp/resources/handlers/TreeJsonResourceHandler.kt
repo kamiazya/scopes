@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQu
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.mcp.resources.ResourceHandler
+import io.github.kamiazya.scopes.interfaces.mcp.support.McpUriConstants
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers
 import io.github.kamiazya.scopes.interfaces.mcp.support.ResourceHelpers.extractAlias
 import io.github.kamiazya.scopes.interfaces.mcp.tools.Ports
@@ -35,7 +36,7 @@ class TreeJsonResourceHandler(private val defaultMaxNodes: Int = 1000, private v
 
     override suspend fun read(req: ReadResourceRequest, ports: Ports, services: Services): ReadResourceResult {
         val uri = req.uri
-        val alias = extractAlias(uri, prefix = "scopes:/tree/")
+        val alias = extractAlias(uri, prefix = McpUriConstants.TREE_JSON_PREFIX)
 
         val (pureAlias, depthValue) = ResourceHelpers.parseTreeAlias(alias, defaultMaxDepth)
 

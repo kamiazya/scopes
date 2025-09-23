@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
 import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
 import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
@@ -15,7 +16,6 @@ import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonObject
 
 /**
  * Tool handler for creating new scopes.
@@ -31,34 +31,19 @@ class ScopeCreateToolHandler : ToolHandler {
     override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
     override val input: Tool.Input = toolInput(required = listOf("title")) {
-        putJsonObject("title") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "Scope title")
-        }
-        putJsonObject("description") {
-            put("type", "string")
-            put("description", "Optional scope description")
-        }
-        putJsonObject("parentAlias") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "Parent scope alias (optional)")
-        }
-        putJsonObject("customAlias") {
-            put("type", "string")
-            put("minLength", 1)
-            put("description", "Custom alias instead of generated one (optional)")
-        }
+        stringProperty("title", minLength = 1, description = "Scope title")
+        stringProperty("description", description = "Optional scope description")
+        stringProperty("parentAlias", minLength = 1, description = "Parent scope alias (optional)")
+        stringProperty("customAlias", minLength = 1, description = "Custom alias instead of generated one (optional)")
         idempotencyKeyProperty()
     }
 
     override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "title", "createdAt")) {
-        putJsonObject("canonicalAlias") { put("type", "string") }
-        putJsonObject("title") { put("type", "string") }
-        putJsonObject("description") { put("type", "string") }
-        putJsonObject("parentAlias") { put("type", "string") }
-        putJsonObject("createdAt") { put("type", "string") }
+        stringProperty("canonicalAlias")
+        stringProperty("title")
+        stringProperty("description")
+        stringProperty("parentAlias")
+        stringProperty("createdAt")
     }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
