@@ -12,7 +12,7 @@ data class UpdateScopeResult(
     val title: String,
     val description: String?,
     val parentId: String?,
-    val canonicalAlias: String?,
+    val canonicalAlias: String,
     val createdAt: Instant,
     val updatedAt: Instant,
     val aspects: Map<String, List<String>>,

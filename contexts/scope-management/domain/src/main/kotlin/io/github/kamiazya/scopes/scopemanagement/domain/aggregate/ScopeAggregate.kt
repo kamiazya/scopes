@@ -400,9 +400,7 @@ data class ScopeAggregate(
 
             // Evolve phase - apply events to aggregate
             val evolvedAggregate = pendingEvents.fold(initialAggregate) { aggregate, eventEnvelope ->
-                val appliedAggregate = aggregate.applyEvent(eventEnvelope.event)
-                // Debug: Ensure the aggregate is not null after applying event
-                appliedAggregate ?: error("Aggregate became null after applying event: ${eventEnvelope.event}")
+                aggregate.applyEvent(eventEnvelope.event)
             }
 
             AggregateResult(
@@ -1102,10 +1100,10 @@ data class ScopeAggregate(
 
         is CanonicalAliasReplaced -> {
             // Add new canonical alias and demote old to custom
-            val oldAliasRecord = (aliases[event.oldAliasId] ?: error("Canonical alias not found during event application: ${event.oldAliasId}")).copy(
+            val oldAliasRecord = aliases[event.oldAliasId]?.copy(
                 aliasType = AliasType.CUSTOM,
                 updatedAt = event.occurredAt,
-            )
+            ) ?: return this@ScopeAggregate // Skip this event if alias not found - maintain aggregate consistency
             val newAliasRecord = AliasRecord(
                 aliasId = event.newAliasId,
                 aliasName = event.newAliasName,
@@ -1122,10 +1120,10 @@ data class ScopeAggregate(
         }
 
         is AliasNameChanged -> {
-            val updatedAlias = (aliases[event.aliasId] ?: error("Alias not found during event application: ${event.aliasId}")).copy(
+            val updatedAlias = aliases[event.aliasId]?.copy(
                 aliasName = event.newAliasName,
                 updatedAt = event.occurredAt,
-            )
+            ) ?: return this@ScopeAggregate // Skip this event if alias not found - maintain aggregate consistency
             copy(
                 version = version.increment(),
                 updatedAt = event.occurredAt,

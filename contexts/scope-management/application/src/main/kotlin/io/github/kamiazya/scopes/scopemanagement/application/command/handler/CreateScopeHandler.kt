@@ -62,7 +62,7 @@ class CreateScopeHandler(
                 val validationResult = validateCommand(command).bind()
                 val aggregateResult = createScopeAggregate(command, validationResult).bind()
                 persistScopeAggregate(aggregateResult).bind()
-                buildResult(aggregateResult, validationResult.canonicalAlias)
+                buildResult(aggregateResult, validationResult.canonicalAlias).bind()
             }
         }.bind()
     }.onLeft { error -> logCommandFailure(error) }
@@ -275,12 +275,22 @@ class CreateScopeHandler(
         )
     }
 
-    private suspend fun buildResult(aggregateResult: AggregateResult<ScopeAggregate, ScopeEvent>, commandCanonicalAlias: String?): CreateScopeResult {
+    private suspend fun buildResult(
+        aggregateResult: AggregateResult<ScopeAggregate, ScopeEvent>,
+        commandCanonicalAlias: String?,
+    ): Either<ScopeContractError, CreateScopeResult> = either {
         val aggregate = aggregateResult.aggregate
-        val canonicalAlias = commandCanonicalAlias ?: run {
+        val resolvedAlias = commandCanonicalAlias ?: run {
             aggregate.canonicalAliasId?.let { id ->
                 aggregate.aliases[id]?.aliasName?.value
             }
+        }
+
+        ensure(resolvedAlias != null) {
+            // Create の仕様上必ず Canonical Alias が存在するはず。存在しないのは投影/適用不整合。
+            ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+                scopeId = aggregate.scopeId?.value ?: "",
+            )
         }
 
         val scope = io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope(
@@ -294,18 +304,18 @@ class CreateScopeHandler(
             updatedAt = aggregate.updatedAt,
         )
 
-        val result = ScopeMapper.toCreateScopeResult(scope, canonicalAlias)
+        val result = ScopeMapper.toCreateScopeResult(scope, resolvedAlias!!)
 
         logger.info(
             "Scope creation workflow completed",
             mapOf(
                 "scopeId" to scope.id.value,
                 "title" to scope.title.value,
-                "canonicalAlias" to (canonicalAlias ?: "none"),
+                "canonicalAlias" to resolvedAlias,
             ),
         )
 
-        return result
+        result
     }
 
     private fun logCommandFailure(error: ScopeContractError) {

@@ -20,8 +20,9 @@ object ScopeMapper {
 
     /**
      * Map Scope entity to UpdateScopeResult DTO.
+     * Requires canonical alias to be provided as it's now non-null in the DTO.
      */
-    fun toUpdateScopeResult(scope: Scope, canonicalAlias: String? = null): UpdateScopeResult = UpdateScopeResult(
+    fun toUpdateScopeResult(scope: Scope, canonicalAlias: String): UpdateScopeResult = UpdateScopeResult(
         id = scope.id.toString(),
         title = scope.title.value,
         description = scope.description?.value,
@@ -134,12 +135,12 @@ object ScopeMapper {
      * Map Scope entity to CreateScopeResult.
      * This method is for mapping the result of create scope operation.
      */
-    fun toCreateScopeResult(scope: Scope, canonicalAlias: String?): CreateScopeResult = CreateScopeResult(
+    fun toCreateScopeResult(scope: Scope, canonicalAlias: String): CreateScopeResult = CreateScopeResult(
         id = scope.id.toString(),
         title = scope.title.value,
         description = scope.description?.value,
         parentId = scope.parentId?.toString(),
-        canonicalAlias = canonicalAlias ?: "", // Use empty string if no alias (contract requires non-null)
+        canonicalAlias = canonicalAlias,
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
     )

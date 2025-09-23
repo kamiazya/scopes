@@ -12,6 +12,13 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasRepl
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -69,6 +76,13 @@ class EventProjectionService(
             is ScopeTitleUpdated -> projectScopeTitleUpdated(event).bind()
             is ScopeDescriptionUpdated -> projectScopeDescriptionUpdated(event).bind()
             is ScopeDeleted -> projectScopeDeleted(event).bind()
+            is ScopeArchived -> projectScopeArchived(event).bind()
+            is ScopeRestored -> projectScopeRestored(event).bind()
+            is ScopeParentChanged -> projectScopeParentChanged(event).bind()
+            is ScopeAspectAdded -> projectScopeAspectAdded(event).bind()
+            is ScopeAspectRemoved -> projectScopeAspectRemoved(event).bind()
+            is ScopeAspectsCleared -> projectScopeAspectsCleared(event).bind()
+            is ScopeAspectsUpdated -> projectScopeAspectsUpdated(event).bind()
             is AliasAssigned -> projectAliasAssigned(event).bind()
             is AliasNameChanged -> projectAliasNameChanged(event).bind()
             is AliasRemoved -> projectAliasRemoved(event).bind()
@@ -294,6 +308,273 @@ class EventProjectionService(
             "Successfully projected ScopeDeleted to RDB",
             mapOf("scopeId" to event.scopeId.value),
         )
+    }
+
+    private suspend fun projectScopeArchived(event: ScopeArchived): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeArchived event",
+            mapOf("scopeId" to event.scopeId.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeArchived",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for archive: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeArchived",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for archive: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updated = currentScope.archive(event.occurredAt).mapLeft {
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeArchived",
+                aggregateId = event.aggregateId.value,
+                reason = "Invalid status transition to ARCHIVED",
+            )
+        }.bind()
+
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeArchived",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save archived scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeRestored(event: ScopeRestored): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeRestored event",
+            mapOf("scopeId" to event.scopeId.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeRestored",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for restore: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeRestored",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for restore: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updated = currentScope.reactivate(event.occurredAt).mapLeft {
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeRestored",
+                aggregateId = event.aggregateId.value,
+                reason = "Invalid status transition to ACTIVE",
+            )
+        }.bind()
+
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeRestored",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save restored scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeParentChanged(event: ScopeParentChanged): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeParentChanged event",
+            mapOf(
+                "scopeId" to event.scopeId.value,
+                "newParentId" to (event.newParentId?.value ?: "null"),
+            ),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeParentChanged",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for parent change: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeParentChanged",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for parent change: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updated = currentScope.moveToParent(event.newParentId, event.occurredAt).mapLeft {
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeParentChanged",
+                aggregateId = event.aggregateId.value,
+                reason = "Invalid move to parent",
+            )
+        }.bind()
+
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeParentChanged",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save parent-changed scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeAspectAdded(event: ScopeAspectAdded): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeAspectAdded event",
+            mapOf("scopeId" to event.scopeId.value, "aspectKey" to event.aspectKey.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectAdded",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for aspect add: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeAspectAdded",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for aspect add: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        // Merge values into existing aspects
+        val mergedAspects = currentScope.aspects.add(event.aspectKey, event.aspectValues)
+        val updated = currentScope.updateAspects(mergedAspects, event.occurredAt)
+
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectAdded",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save aspect-added scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeAspectRemoved(event: ScopeAspectRemoved): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeAspectRemoved event",
+            mapOf("scopeId" to event.scopeId.value, "aspectKey" to event.aspectKey.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectRemoved",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for aspect remove: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeAspectRemoved",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for aspect remove: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updatedAspects = currentScope.aspects.remove(event.aspectKey)
+        val updated = currentScope.updateAspects(updatedAspects, event.occurredAt)
+
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectRemoved",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save aspect-removed scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeAspectsCleared(event: ScopeAspectsCleared): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeAspectsCleared event",
+            mapOf("scopeId" to event.scopeId.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectsCleared",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for aspects clear: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeAspectsCleared",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for aspects clear: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updated = currentScope.clearAspects(event.occurredAt)
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectsCleared",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save aspects-cleared scope: $repositoryError",
+            )
+        }.bind()
+    }
+
+    private suspend fun projectScopeAspectsUpdated(event: ScopeAspectsUpdated): Either<ScopeManagementApplicationError, Unit> = either {
+        logger.debug(
+            "Projecting ScopeAspectsUpdated event",
+            mapOf("scopeId" to event.scopeId.value),
+        )
+
+        val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectsUpdated",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to load scope for aspects update: $repositoryError",
+            )
+        }.bind()
+
+        if (currentScope == null) {
+            raise(
+                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                    eventType = "ScopeAspectsUpdated",
+                    aggregateId = event.aggregateId.value,
+                    reason = "Scope not found for aspects update: ${event.scopeId.value}",
+                ),
+            )
+        }
+
+        val updated = currentScope.updateAspects(event.newAspects, event.occurredAt)
+        scopeRepository.save(updated).mapLeft { repositoryError ->
+            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                eventType = "ScopeAspectsUpdated",
+                aggregateId = event.aggregateId.value,
+                reason = "Failed to save aspects-updated scope: $repositoryError",
+            )
+        }.bind()
     }
 
     private suspend fun projectAliasAssigned(event: AliasAssigned): Either<ScopeManagementApplicationError, Unit> = either {

@@ -85,4 +85,14 @@ sealed class ScopeError : ScopesError() {
      * Invalid state error - aggregate is in an inconsistent state.
      */
     data class InvalidState(val reason: String) : ScopeError()
+
+    /**
+     * Event application failed error - aggregate became null during event application.
+     */
+    data class EventApplicationFailed(val eventType: String, val aggregateId: String, val reason: String) : ScopeError()
+
+    /**
+     * Alias not found in aggregate state error - alias should exist but is missing from aggregate.
+     */
+    data class AliasRecordNotFound(val aliasId: String, val aggregateId: String, val operation: String) : ScopeError()
 }

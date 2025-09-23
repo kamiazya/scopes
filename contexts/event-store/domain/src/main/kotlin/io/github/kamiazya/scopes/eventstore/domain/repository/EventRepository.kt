@@ -98,4 +98,90 @@ interface EventRepository {
      * @return A list of stored events
      */
     suspend fun findByTimeRange(from: Instant, to: Instant, limit: Int, offset: Int): List<PersistedEventRecord>
+
+    // ===== OPTIMIZATION METHODS FOR LONG-LIVED AGGREGATES =====
+
+    /**
+     * Gets the latest version number for an aggregate.
+     * Optimized for long-lived aggregates to avoid loading all events.
+     *
+     * @param aggregateId The aggregate ID to check
+     * @return Either an error or the latest version number (null if no events exist)
+     */
+    suspend fun getLatestAggregateVersion(aggregateId: AggregateId): Either<EventStoreError, Long?>
+
+    /**
+     * Gets events from a specific version onwards.
+     * Useful for incremental loading of long-lived aggregates.
+     *
+     * @param aggregateId The aggregate ID to filter by
+     * @param fromVersion The minimum version to retrieve (inclusive)
+     * @param limit Optional limit on number of events to retrieve
+     * @return Either an error or a list of stored events
+     */
+    suspend fun getEventsByAggregateFromVersion(
+        aggregateId: AggregateId, 
+        fromVersion: Long, 
+        limit: Int? = null
+    ): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
+     * Gets events within a specific version range.
+     * Useful for partial replay of long-lived aggregates.
+     *
+     * @param aggregateId The aggregate ID to filter by
+     * @param fromVersion The minimum version to retrieve (inclusive)
+     * @param toVersion The maximum version to retrieve (inclusive)
+     * @param limit Optional limit on number of events to retrieve
+     * @return Either an error or a list of stored events
+     */
+    suspend fun getEventsByAggregateVersionRange(
+        aggregateId: AggregateId,
+        fromVersion: Long,
+        toVersion: Long,
+        limit: Int? = null
+    ): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
+     * Gets the latest N events for an aggregate.
+     * Useful for recent activity on long-lived aggregates.
+     *
+     * @param aggregateId The aggregate ID to filter by
+     * @param limit The maximum number of recent events to retrieve
+     * @return Either an error or a list of stored events (newest first)
+     */
+    suspend fun getLatestEventsByAggregate(
+        aggregateId: AggregateId, 
+        limit: Int
+    ): Either<EventStoreError, List<PersistedEventRecord>>
+
+    /**
+     * Counts total events for an aggregate.
+     * Useful for performance monitoring and snapshot decision making.
+     *
+     * @param aggregateId The aggregate ID to count events for
+     * @return Either an error or the total event count
+     */
+    suspend fun countEventsByAggregate(aggregateId: AggregateId): Either<EventStoreError, Long>
+
+    /**
+     * Gets statistical information about an aggregate's events.
+     * Useful for snapshot decision making and performance monitoring.
+     *
+     * @param aggregateId The aggregate ID to analyze
+     * @return Either an error or statistics about the aggregate's events
+     */
+    suspend fun getAggregateEventStats(aggregateId: AggregateId): Either<EventStoreError, AggregateEventStats>
 }
+
+/**
+ * Statistical information about an aggregate's events.
+ * Used for performance monitoring and snapshot optimization decisions.
+ */
+data class AggregateEventStats(
+    val totalEvents: Long,
+    val minVersion: Long?,
+    val maxVersion: Long?,
+    val firstEventTime: Instant?,
+    val lastEventTime: Instant?
+)
