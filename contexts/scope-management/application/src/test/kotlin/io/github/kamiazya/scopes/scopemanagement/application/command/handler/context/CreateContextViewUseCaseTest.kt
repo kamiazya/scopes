@@ -5,10 +5,12 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewK
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewFilter
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewDescription
+import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Simple unit test for the CreateContextViewHandler focusing on validation logic.
@@ -103,12 +105,13 @@ class CreateContextViewUseCaseTest : DescribeSpec({
                     is Either.Right -> validDescResult.value.value shouldBe "Context for client work"
                 }
                 
-                // Given - Empty description should still create a value object
+                // Given - Empty description should fail validation
                 val emptyDescResult = ContextViewDescription.create("")
                 
-                // Then - This might fail or succeed depending on validation rules
-                // If it fails, that's also a valid test result
-                // emptyDescResult should either be Left or Right, both are acceptable outcomes
+                // Then - Should return EmptyDescription error
+                emptyDescResult.shouldBeLeft()
+                val error = emptyDescResult.leftOrNull()
+                error.shouldBeInstanceOf<ContextError.EmptyDescription>()
             }
         }
     }
