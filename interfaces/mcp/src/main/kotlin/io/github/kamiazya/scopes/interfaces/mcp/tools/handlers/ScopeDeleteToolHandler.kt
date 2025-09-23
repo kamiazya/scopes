@@ -2,14 +2,22 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
-import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.booleanProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
+import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.withIdempotency
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Tool handler for deleting scopes.
@@ -22,49 +30,17 @@ class ScopeDeleteToolHandler : ToolHandler {
 
     override val description: String = "Delete a scope (must have no children)"
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-    )
+    override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("alias")
-            }
-            putJsonObject("properties") {
-                putJsonObject("alias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Scope alias to delete")
-                }
-                putJsonObject("idempotencyKey") {
-                    put("type", "string")
-                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING)
-                    put("description", "Idempotency key to prevent duplicate operations")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("alias")) {
+        aliasProperty(description = "Scope alias to delete")
+        idempotencyKeyProperty()
+    }
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("canonicalAlias") { put("type", "string") }
-                putJsonObject("deleted") { put("type", "boolean") }
-            }
-            putJsonArray("required") {
-                add("canonicalAlias")
-                add("deleted")
-            }
-        },
-    )
+    override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "deleted")) {
+        stringProperty("canonicalAlias")
+        booleanProperty("deleted")
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)
@@ -74,22 +50,20 @@ class ScopeDeleteToolHandler : ToolHandler {
 
         ctx.services.logger.debug("Deleting scope: $alias")
 
-        return ctx.services.idempotency.getOrCompute(name, ctx.args, idempotencyKey) {
-            // First get the scope to delete
-            val scopeResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(alias))
-            val (scopeId, canonicalAlias) = when (scopeResult) {
-                is Either.Left -> return@getOrCompute ctx.services.errors.mapContractError(scopeResult.value)
-                is Either.Right -> scopeResult.value.id to scopeResult.value.canonicalAlias
+        return ctx.withIdempotency(name, idempotencyKey) {
+            val scope = when (val resolved = ctx.getScopeByAliasOrFail(alias)) {
+                is Either.Left -> return@withIdempotency resolved.value
+                is Either.Right -> resolved.value
             }
 
             // Delete the scope
-            val result = ctx.ports.command.deleteScope(DeleteScopeCommand(id = scopeId))
+            val result = ctx.ports.command.deleteScope(DeleteScopeCommand(id = scope.id))
 
             when (result) {
                 is Either.Left -> ctx.services.errors.mapContractError(result.value)
                 is Either.Right -> {
                     val json = buildJsonObject {
-                        put("canonicalAlias", canonicalAlias)
+                        put("canonicalAlias", scope.canonicalAlias)
                         put("deleted", true)
                     }
                     ctx.services.errors.successResult(json.toString())

@@ -18,7 +18,7 @@ sealed class ContextError : ScopeManagementApplicationError() {
     /**
      * Error when trying to create a context with a key that already exists
      */
-    data class DuplicateContextKey(val key: String) : ContextError()
+    data class DuplicateContextKey(val key: String, val existingContextId: String? = null) : ContextError()
 
     /**
      * Error when the requested context is not found

@@ -3,13 +3,19 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
-import io.github.kamiazya.scopes.interfaces.mcp.support.IdempotencyService
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.idempotencyKeyProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Tool handler for updating existing scopes.
@@ -22,61 +28,21 @@ class ScopeUpdateToolHandler : ToolHandler {
 
     override val description: String = "Update an existing scope's title or description"
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = false,
-        destructiveHint = true,
-        idempotentHint = false,
-    )
+    override val annotations: ToolAnnotations? = Annotations.destructiveNonIdempotent()
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("alias")
-            }
-            putJsonObject("properties") {
-                putJsonObject("alias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Scope alias to update")
-                }
-                putJsonObject("title") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "New title (optional)")
-                }
-                putJsonObject("description") {
-                    put("type", "string")
-                    put("description", "New description (optional)")
-                }
-                putJsonObject("idempotencyKey") {
-                    put("type", "string")
-                    put("pattern", IdempotencyService.IDEMPOTENCY_KEY_PATTERN_STRING)
-                    put("description", "Idempotency key to prevent duplicate operations")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("alias")) {
+        aliasProperty(description = "Scope alias to update")
+        stringProperty("title", minLength = 1, description = "New title (optional)")
+        stringProperty("description", description = "New description (optional)")
+        idempotencyKeyProperty()
+    }
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("canonicalAlias") { put("type", "string") }
-                putJsonObject("title") { put("type", "string") }
-                putJsonObject("description") { put("type", "string") }
-                putJsonObject("updatedAt") { put("type", "string") }
-            }
-            putJsonArray("required") {
-                add("canonicalAlias")
-                add("title")
-                add("updatedAt")
-            }
-        },
-    )
+    override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "title", "updatedAt")) {
+        stringProperty("canonicalAlias")
+        stringProperty("title")
+        stringProperty("description")
+        stringProperty("updatedAt")
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)

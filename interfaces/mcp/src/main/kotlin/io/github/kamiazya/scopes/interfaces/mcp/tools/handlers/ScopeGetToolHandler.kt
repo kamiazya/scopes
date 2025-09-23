@@ -2,7 +2,11 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
 import io.github.kamiazya.scopes.interfaces.mcp.support.JsonMapConverter.toJsonObject
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
@@ -23,49 +27,19 @@ class ScopeGetToolHandler(private val responseFormatter: ResponseFormatterServic
 
     override val description: String = "Get a scope by alias (exact match)"
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("alias")
-            }
-            putJsonObject("properties") {
-                putJsonObject("alias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Scope alias to look up")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("alias")) {
+        aliasProperty(description = "Scope alias to look up")
+    }
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-    )
+    override val annotations: ToolAnnotations? = Annotations.readOnlyIdempotent()
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("canonicalAlias") { put("type", "string") }
-                putJsonObject("title") { put("type", "string") }
-                putJsonObject("description") { put("type", "string") }
-                putJsonObject("createdAt") { put("type", "string") }
-                putJsonObject("updatedAt") { put("type", "string") }
-            }
-            putJsonArray("required") {
-                add("canonicalAlias")
-                add("title")
-                add("createdAt")
-                add("updatedAt")
-            }
-        },
-    )
+    override val output: Tool.Output = toolOutput(required = listOf("canonicalAlias", "title", "createdAt", "updatedAt")) {
+        putJsonObject("canonicalAlias") { put("type", "string") }
+        putJsonObject("title") { put("type", "string") }
+        putJsonObject("description") { put("type", "string") }
+        putJsonObject("createdAt") { put("type", "string") }
+        putJsonObject("updatedAt") { put("type", "string") }
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val alias = ctx.services.codec.getString(ctx.args, "alias", required = true)

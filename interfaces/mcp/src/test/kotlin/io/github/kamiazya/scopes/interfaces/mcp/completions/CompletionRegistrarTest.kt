@@ -7,6 +7,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.*
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import io.github.kamiazya.scopes.interfaces.mcp.support.TestFixtures
 import io.github.kamiazya.scopes.interfaces.mcp.support.createArgumentCodec
 import io.github.kamiazya.scopes.interfaces.mcp.support.createErrorMapper
 import io.github.kamiazya.scopes.interfaces.mcp.support.createIdempotencyService
@@ -42,7 +43,7 @@ class CompletionRegistrarTest :
             aspects = emptyMap(),
         )
 
-        fun createMockLogger(): Logger = mockk<Logger>(relaxed = true)
+        fun createMockLogger(): Logger = TestFixtures.mockLogger()
 
         "registers completion handler on server" {
             val server = mockk<Server>(relaxed = true)
@@ -50,14 +51,7 @@ class CompletionRegistrarTest :
             val mockCommand = mockk<ScopeManagementCommandPort>()
             val logger = createMockLogger()
 
-            val registrar = CompletionRegistrar {
-                Ports(query = mockQuery, command = mockCommand) to Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                )
-            }
+            val registrar = CompletionRegistrar { Ports(query = mockQuery, command = mockCommand) to TestFixtures.services(logger) }
 
             registrar.register(server)
 
@@ -110,14 +104,7 @@ class CompletionRegistrarTest :
                 Unit
             }
 
-            val registrar = CompletionRegistrar {
-                Ports(query = mockQuery, command = mockCommand) to Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                )
-            }
+            val registrar = CompletionRegistrar { Ports(query = mockQuery, command = mockCommand) to TestFixtures.services(logger) }
 
             registrar.register(server)
 
@@ -154,14 +141,7 @@ class CompletionRegistrarTest :
                 Unit
             }
 
-            val registrar = CompletionRegistrar {
-                Ports(query = mockQuery, command = mockCommand) to Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = logger,
-                )
-            }
+            val registrar = CompletionRegistrar { Ports(query = mockQuery, command = mockCommand) to TestFixtures.services(logger) }
 
             registrar.register(server)
 
@@ -386,14 +366,7 @@ class CompletionRegistrarTest :
                 Unit
             }
 
-            val registrar = CompletionRegistrar {
-                Ports(query = mockQuery, command = mockCommand) to Services(
-                    errors = createErrorMapper(),
-                    idempotency = createIdempotencyService(createArgumentCodec()),
-                    codec = createArgumentCodec(),
-                    logger = mockLogger,
-                )
-            }
+            val registrar = CompletionRegistrar { Ports(query = mockQuery, command = mockCommand) to TestFixtures.services(mockLogger) }
 
             registrar.register(server)
 
