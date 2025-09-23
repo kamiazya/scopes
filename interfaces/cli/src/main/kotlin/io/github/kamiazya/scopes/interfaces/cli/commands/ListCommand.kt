@@ -142,7 +142,11 @@ class ListCommand :
     }
 
     private suspend fun handleChildScopeListing(aspectFilters: Map<String, List<String>>) {
-        scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
+        val parentIdValue = parentId ?: run {
+            echo("Error: Parent ID is required for child scope listing", err = true)
+            return
+        }
+        scopeQueryAdapter.listChildren(parentIdValue, offset, limit).fold(
             { error -> handleContractError(error) },
             { page -> displayPagedScopesFromResult(page, aspectFilters) },
         )

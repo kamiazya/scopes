@@ -77,11 +77,12 @@ class DefineCommand :
                 }
                 "boolean" -> AspectType.BooleanType
                 "ordered" -> {
-                    if (values == null) {
+                    val valuesString = values
+                    if (valuesString == null) {
                         echo("Error: --values is required for ordered type", err = true)
                         return@runBlocking
                     }
-                    val valueList = values!!.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val valueList = valuesString.split(",").map { it.trim() }.filter { it.isNotBlank() }
                     if (valueList.isEmpty()) {
                         echo("Error: --values cannot be empty after trimming", err = true)
                         return@runBlocking

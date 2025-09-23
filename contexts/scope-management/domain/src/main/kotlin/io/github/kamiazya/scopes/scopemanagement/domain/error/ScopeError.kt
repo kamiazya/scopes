@@ -75,4 +75,9 @@ sealed class ScopeError : ScopesError() {
      * Invalid event sequence error - events must be applied in correct order.
      */
     data class InvalidEventSequence(val scopeId: ScopeId, val expectedEventType: String, val actualEventType: String, val reason: String) : ScopeError()
+
+    /**
+     * Invalid state error - aggregate is in an inconsistent state.
+     */
+    data class InvalidState(val reason: String) : ScopeError()
 }

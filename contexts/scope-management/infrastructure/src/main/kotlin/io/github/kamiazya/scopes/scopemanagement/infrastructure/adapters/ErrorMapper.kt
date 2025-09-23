@@ -172,6 +172,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeError.InvalidEventSequence -> ScopeContractError.SystemError.ServiceUnavailable(
             service = "event-sourcing",
         )
+        // Invalid state error
+        is ScopeError.InvalidState -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
+        )
     }
 
     private fun mapUniquenessError(domainError: ScopeUniquenessError): ScopeContractError = when (domainError) {

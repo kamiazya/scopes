@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateResult
 import io.github.kamiazya.scopes.platform.domain.aggregate.AggregateRoot
 import io.github.kamiazya.scopes.platform.domain.event.EventEnvelope
@@ -458,18 +457,14 @@ data class ScopeAggregate(
      * Ensures the scope exists and is not deleted.
      */
     fun updateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
-        ensureNotNull(this@ScopeAggregate.title) {
-            ScopeError.NotFound(scopeId!!)
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+        val currentTitle = this@ScopeAggregate.title ?: raise(ScopeError.InvalidState("Scope title is not initialized"))
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (this@ScopeAggregate.title == newTitle) {
+        if (currentTitle == newTitle) {
             return@either this@ScopeAggregate
         }
 
@@ -478,8 +473,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
-            oldTitle = this@ScopeAggregate.title!!,
+            scopeId = currentScopeId,
+            oldTitle = currentTitle,
             newTitle = newTitle,
         )
 
@@ -491,18 +486,15 @@ data class ScopeAggregate(
      * Returns pending events or empty list if no change needed.
      */
     fun decideUpdateTitle(title: String, now: Instant = Clock.System.now()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
-        ensureNotNull(this@ScopeAggregate.title) {
-            ScopeError.NotFound(scopeId!!)
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+        val currentTitle = this@ScopeAggregate.title ?: raise(ScopeError.InvalidState("Scope title is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
-        if (this@ScopeAggregate.title == newTitle) {
+        if (currentTitle == newTitle) {
             return@either emptyList()
         }
 
@@ -511,8 +503,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = AggregateVersion.initial(), // Dummy version
-            scopeId = scopeId!!,
-            oldTitle = this@ScopeAggregate.title!!,
+            scopeId = currentScopeId,
+            oldTitle = currentTitle,
             newTitle = newTitle,
         )
 
@@ -579,11 +571,10 @@ data class ScopeAggregate(
      */
     fun decideUpdateDescription(description: String?, now: Instant = Clock.System.now()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> =
         either {
-            ensureNotNull(scopeId) {
-                ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-            }
+            val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
             ensure(!isDeleted) {
-                ScopeError.AlreadyDeleted(scopeId!!)
+                ScopeError.AlreadyDeleted(currentScopeId)
             }
 
             val newDescription = ScopeDescription.create(description).bind()
@@ -596,7 +587,7 @@ data class ScopeAggregate(
                 eventId = EventId.generate(),
                 occurredAt = now,
                 aggregateVersion = version.increment(),
-                scopeId = scopeId!!,
+                scopeId = currentScopeId,
                 oldDescription = this@ScopeAggregate.description,
                 newDescription = newDescription,
             )
@@ -608,11 +599,9 @@ data class ScopeAggregate(
      * Updates the scope description after validation.
      */
     fun updateDescription(description: String?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val newDescription = ScopeDescription.create(description).bind()
@@ -625,7 +614,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             oldDescription = this@ScopeAggregate.description,
             newDescription = newDescription,
         )
@@ -638,11 +627,9 @@ data class ScopeAggregate(
      * Validates hierarchy constraints before applying the change.
      */
     fun changeParent(newParentId: ScopeId?, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         if (this@ScopeAggregate.parentId == newParentId) {
@@ -654,7 +641,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             oldParentId = this@ScopeAggregate.parentId,
             newParentId = newParentId,
         )
@@ -667,11 +654,9 @@ data class ScopeAggregate(
      * Soft delete that marks the scope as deleted.
      */
     fun delete(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val event = ScopeDeleted(
@@ -679,7 +664,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
         )
 
         this@ScopeAggregate.raiseEvent(event)
@@ -716,11 +701,10 @@ data class ScopeAggregate(
      * Decides if delete should occur and generates appropriate events.
      */
     fun decideDelete(now: Instant = Clock.System.now()): Either<ScopesError, List<EventEnvelope.Pending<ScopeEvent>>> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val event = ScopeDeleted(
@@ -728,7 +712,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
         )
 
         listOf(EventEnvelope.Pending(event))
@@ -739,14 +723,13 @@ data class ScopeAggregate(
      * Archived scopes are hidden but can be restored.
      */
     fun archive(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
         ensure(!isArchived) {
-            ScopeError.AlreadyArchived(scopeId!!)
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val event = ScopeArchived(
@@ -754,7 +737,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             reason = null,
         )
 
@@ -765,14 +748,13 @@ data class ScopeAggregate(
      * Restores an archived scope.
      */
     fun restore(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
         ensure(isArchived) {
-            ScopeError.NotArchived(scopeId!!)
+            ScopeError.NotArchived(currentScopeId)
         }
 
         val event = ScopeRestored(
@@ -780,7 +762,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
         )
 
         this@ScopeAggregate.raiseEvent(event)
@@ -794,17 +776,15 @@ data class ScopeAggregate(
      */
     fun addAlias(aliasName: AliasName, aliasType: AliasType = AliasType.CUSTOM, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> =
         either {
-            ensureNotNull(scopeId) {
-                ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-            }
+            val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
             ensure(!isDeleted) {
-                ScopeError.AlreadyDeleted(scopeId!!)
+                ScopeError.AlreadyDeleted(currentScopeId)
             }
 
             // Check if alias name already exists
             val existingAlias = aliases.values.find { it.aliasName == aliasName }
             ensure(existingAlias == null) {
-                ScopeError.DuplicateAlias(aliasName.value, scopeId!!)
+                ScopeError.DuplicateAlias(aliasName.value, currentScopeId)
             }
 
             val aliasId = AliasId.generate()
@@ -817,7 +797,7 @@ data class ScopeAggregate(
                 aggregateVersion = version.increment(),
                 aliasId = aliasId,
                 aliasName = aliasName,
-                scopeId = scopeId!!,
+                scopeId = currentScopeId,
                 aliasType = finalAliasType,
             )
 
@@ -829,21 +809,16 @@ data class ScopeAggregate(
      * Canonical aliases cannot be removed, only replaced.
      */
     fun removeAlias(aliasId: AliasId, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
-        val aliasRecord = aliases[aliasId]
-        ensureNotNull(aliasRecord) {
-            ScopeError.AliasNotFound(aliasId.value, scopeId!!)
-        }
+        val aliasRecord = aliases[aliasId] ?: raise(ScopeError.AliasNotFound(aliasId.value, currentScopeId))
 
         // Cannot remove canonical alias
         ensure(aliasRecord.aliasType != AliasType.CANONICAL) {
-            ScopeError.CannotRemoveCanonicalAlias(aliasId.value, scopeId!!)
+            ScopeError.CannotRemoveCanonicalAlias(aliasId.value, currentScopeId)
         }
 
         val event = AliasRemoved(
@@ -853,7 +828,7 @@ data class ScopeAggregate(
             aggregateVersion = version.increment(),
             aliasId = aliasId,
             aliasName = aliasRecord.aliasName,
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             aliasType = aliasRecord.aliasType,
             removedAt = now,
         )
@@ -866,17 +841,14 @@ data class ScopeAggregate(
      * The old canonical alias becomes a custom alias.
      */
     fun replaceCanonicalAlias(newAliasName: AliasName, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
-        ensureNotNull(canonicalAliasId) {
-            ScopeError.NoCanonicalAlias(scopeId!!)
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+        val currentCanonicalAliasId = canonicalAliasId ?: raise(ScopeError.NoCanonicalAlias(currentScopeId))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
-        val currentCanonical = aliases[canonicalAliasId!!]!!
+        val currentCanonical = aliases[currentCanonicalAliasId] ?: raise(ScopeError.InvalidState("Canonical alias not found in aliases map"))
         val newAliasId = AliasId.generate()
 
         val event = CanonicalAliasReplaced(
@@ -884,8 +856,8 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
-            oldAliasId = canonicalAliasId!!,
+            scopeId = currentScopeId,
+            oldAliasId = currentCanonicalAliasId,
             oldAliasName = currentCanonical.aliasName,
             newAliasId = newAliasId,
             newAliasName = newAliasName,
@@ -919,22 +891,18 @@ data class ScopeAggregate(
      * Both canonical and custom aliases can be renamed.
      */
     fun changeAliasName(aliasId: AliasId, newAliasName: AliasName, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
-        val aliasRecord = aliases[aliasId]
-        ensureNotNull(aliasRecord) {
-            ScopeError.AliasNotFound(aliasId.value, scopeId!!)
-        }
+        val aliasRecord = aliases[aliasId] ?: raise(ScopeError.AliasNotFound(aliasId.value, currentScopeId))
 
         // Check if new alias name already exists
         val existingAlias = aliases.values.find { it.aliasName == newAliasName && it.aliasId != aliasId }
         ensure(existingAlias == null) {
-            ScopeError.DuplicateAlias(newAliasName.value, scopeId!!)
+            ScopeError.DuplicateAlias(newAliasName.value, currentScopeId)
         }
 
         val event = AliasNameChanged(
@@ -943,7 +911,7 @@ data class ScopeAggregate(
             occurredAt = now,
             aggregateVersion = version.increment(),
             aliasId = aliasId,
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             oldAliasName = aliasRecord.aliasName,
             newAliasName = newAliasName,
         )
@@ -958,11 +926,10 @@ data class ScopeAggregate(
      */
     fun addAspect(aspectKey: AspectKey, aspectValues: NonEmptyList<AspectValue>, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> =
         either {
-            ensureNotNull(scopeId) {
-                ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-            }
+            val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
             ensure(!isDeleted) {
-                ScopeError.AlreadyDeleted(scopeId!!)
+                ScopeError.AlreadyDeleted(currentScopeId)
             }
 
             val event = ScopeAspectAdded(
@@ -970,7 +937,7 @@ data class ScopeAggregate(
                 eventId = EventId.generate(),
                 occurredAt = now,
                 aggregateVersion = version.increment(),
-                scopeId = scopeId!!,
+                scopeId = currentScopeId,
                 aspectKey = aspectKey,
                 aspectValues = aspectValues,
             )
@@ -982,16 +949,15 @@ data class ScopeAggregate(
      * Removes an aspect from the scope.
      */
     fun removeAspect(aspectKey: AspectKey, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         // Check if aspect exists
         ensure(aspects.contains(aspectKey)) {
-            ScopeError.AspectNotFound(aspectKey.value, scopeId!!)
+            ScopeError.AspectNotFound(aspectKey.value, currentScopeId)
         }
 
         val event = ScopeAspectRemoved(
@@ -999,7 +965,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             aspectKey = aspectKey,
         )
 
@@ -1010,11 +976,10 @@ data class ScopeAggregate(
      * Clears all aspects from the scope.
      */
     fun clearAspects(now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         val event = ScopeAspectsCleared(
@@ -1022,7 +987,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
         )
 
         this@ScopeAggregate.raiseEvent(event)
@@ -1032,11 +997,10 @@ data class ScopeAggregate(
      * Updates multiple aspects at once.
      */
     fun updateAspects(newAspects: Aspects, now: Instant = Clock.System.now()): Either<ScopesError, ScopeAggregate> = either {
-        ensureNotNull(scopeId) {
-            ScopeError.NotFound(ScopeId.create(id.value.substringAfterLast("/")).bind())
-        }
+        val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
+
         ensure(!isDeleted) {
-            ScopeError.AlreadyDeleted(scopeId!!)
+            ScopeError.AlreadyDeleted(currentScopeId)
         }
 
         if (aspects == newAspects) {
@@ -1048,7 +1012,7 @@ data class ScopeAggregate(
             eventId = EventId.generate(),
             occurredAt = now,
             aggregateVersion = version.increment(),
-            scopeId = scopeId!!,
+            scopeId = currentScopeId,
             oldAspects = aspects,
             newAspects = newAspects,
         )
@@ -1138,7 +1102,7 @@ data class ScopeAggregate(
 
         is CanonicalAliasReplaced -> {
             // Add new canonical alias and demote old to custom
-            val oldAliasRecord = aliases[event.oldAliasId]!!.copy(
+            val oldAliasRecord = (aliases[event.oldAliasId] ?: error("Canonical alias not found during event application: ${event.oldAliasId}")).copy(
                 aliasType = AliasType.CUSTOM,
                 updatedAt = event.occurredAt,
             )
@@ -1158,7 +1122,7 @@ data class ScopeAggregate(
         }
 
         is AliasNameChanged -> {
-            val updatedAlias = aliases[event.aliasId]!!.copy(
+            val updatedAlias = (aliases[event.aliasId] ?: error("Alias not found during event application: ${event.aliasId}")).copy(
                 aliasName = event.newAliasName,
                 updatedAt = event.occurredAt,
             )
