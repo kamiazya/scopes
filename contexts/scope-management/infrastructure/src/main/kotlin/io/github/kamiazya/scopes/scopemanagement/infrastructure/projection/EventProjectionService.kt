@@ -37,6 +37,10 @@ class EventProjectionService(
     private val logger: Logger,
 ) : io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher {
 
+    companion object {
+        private const val EVENT_CLASS_NO_NAME_ERROR = "Event class has no name"
+    }
+
     /**
      * Project a single domain event to RDB storage.
      * This method should be called within the same transaction as event storage.
@@ -45,7 +49,7 @@ class EventProjectionService(
         logger.debug(
             "Projecting domain event to RDB",
             mapOf(
-                "eventType" to (event::class.simpleName ?: error("Event class has no name")),
+                "eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR)),
                 "aggregateId" to when (event) {
                     is ScopeCreated -> event.aggregateId.value
                     is ScopeTitleUpdated -> event.aggregateId.value
@@ -72,7 +76,7 @@ class EventProjectionService(
             else -> {
                 logger.warn(
                     "Unknown event type for projection",
-                    mapOf("eventType" to (event::class.simpleName ?: error("Event class has no name"))),
+                    mapOf("eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR))),
                 )
                 // Don't fail for unknown events - allow system to continue
             }
@@ -80,7 +84,7 @@ class EventProjectionService(
 
         logger.debug(
             "Successfully projected event to RDB",
-            mapOf("eventType" to (event::class.simpleName ?: error("Event class has no name"))),
+            mapOf("eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR))),
         )
     }
 

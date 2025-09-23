@@ -23,6 +23,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     companion object {
         // SQLite has a limit of 999 variables in a single query
         private const val SQLITE_VARIABLE_LIMIT = 999
+        private const val UNKNOWN_DATABASE_ERROR = "Unknown database error"
     }
 
     override suspend fun save(alias: ScopeAlias): Either<ScopesError, Unit> = try {
@@ -309,7 +310,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             entityType = "ScopeAlias",
             entityId = aliasId.value,
             failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-            details = mapOf("error" to (e.message ?: "Unknown database error")),
+            details = mapOf("error" to (e.message ?: UNKNOWN_DATABASE_ERROR)),
         ).left()
     }
 
@@ -328,7 +329,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             entityType = "ScopeAlias",
             entityId = aliasId.value,
             failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-            details = mapOf("error" to (e.message ?: "Unknown database error")),
+            details = mapOf("error" to (e.message ?: UNKNOWN_DATABASE_ERROR)),
         ).left()
     }
 
@@ -347,7 +348,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             entityType = "ScopeAlias",
             entityId = aliasId.value,
             failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-            details = mapOf("error" to (e.message ?: "Unknown database error")),
+            details = mapOf("error" to (e.message ?: UNKNOWN_DATABASE_ERROR)),
         ).left()
     }
 
@@ -361,7 +362,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
             entityType = "ScopeAlias",
             entityId = aliasId.value,
             failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
-            details = mapOf("error" to (e.message ?: "Unknown database error")),
+            details = mapOf("error" to (e.message ?: UNKNOWN_DATABASE_ERROR)),
         ).left()
     }
 
