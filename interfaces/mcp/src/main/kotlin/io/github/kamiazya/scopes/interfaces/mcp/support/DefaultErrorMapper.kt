@@ -99,19 +99,18 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
     }
 
     private fun mapContractErrorMessage(error: ScopeContractError): String = when (error) {
+        is ScopeContractError.BusinessError -> mapBusinessErrorMessage(error)
+        is ScopeContractError.InputError -> mapInputErrorMessage(error)
+        is ScopeContractError.SystemError -> mapSystemErrorMessage(error)
+        is ScopeContractError.DataInconsistency -> mapDataInconsistencyErrorMessage(error)
+    }
+
+    private fun mapBusinessErrorMessage(error: ScopeContractError.BusinessError): String = when (error) {
         is ScopeContractError.BusinessError.NotFound -> "Scope not found: ${error.scopeId}"
         is ScopeContractError.BusinessError.AliasNotFound -> "Alias not found: ${error.alias}"
         is ScopeContractError.BusinessError.DuplicateAlias -> "Duplicate alias: ${error.alias}"
         is ScopeContractError.BusinessError.DuplicateTitle -> "Duplicate title"
         is ScopeContractError.BusinessError.AliasOfDifferentScope -> "Alias belongs to different scope: ${error.alias}"
-        is ScopeContractError.InputError.InvalidId -> "Invalid id: ${error.id}"
-        is ScopeContractError.InputError.InvalidAlias -> "Invalid alias: ${error.alias}"
-        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
-        is ScopeContractError.SystemError.Timeout -> "Timeout: ${error.operation}"
-        is ScopeContractError.SystemError.ConcurrentModification -> "Concurrent modification"
-        is ScopeContractError.InputError.InvalidTitle -> "Invalid title"
-        is ScopeContractError.InputError.InvalidDescription -> "Invalid description"
-        is ScopeContractError.InputError.InvalidParentId -> "Invalid parent id"
         is ScopeContractError.BusinessError.HierarchyViolation -> "Hierarchy violation"
         is ScopeContractError.BusinessError.AlreadyDeleted -> "Already deleted"
         is ScopeContractError.BusinessError.ArchivedScope -> "Archived scope"
@@ -122,10 +121,27 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         is ScopeContractError.BusinessError.AliasGenerationValidationFailed -> "Generated alias failed validation: ${error.alias}"
         is ScopeContractError.BusinessError.ContextNotFound -> "Context not found: ${error.contextKey}"
         is ScopeContractError.BusinessError.DuplicateContextKey -> "Duplicate context key: ${error.contextKey}"
+    }
+
+    private fun mapInputErrorMessage(error: ScopeContractError.InputError): String = when (error) {
+        is ScopeContractError.InputError.InvalidId -> "Invalid id: ${error.id}"
+        is ScopeContractError.InputError.InvalidAlias -> "Invalid alias: ${error.alias}"
+        is ScopeContractError.InputError.InvalidTitle -> "Invalid title"
+        is ScopeContractError.InputError.InvalidDescription -> "Invalid description"
+        is ScopeContractError.InputError.InvalidParentId -> "Invalid parent id"
         is ScopeContractError.InputError.InvalidContextKey -> "Invalid context key: ${error.key}"
         is ScopeContractError.InputError.InvalidContextName -> "Invalid context name: ${error.name}"
         is ScopeContractError.InputError.InvalidContextFilter -> "Invalid context filter: ${error.filter}"
         is ScopeContractError.InputError.ValidationFailure -> "Validation failed for ${error.field}: ${error.value}"
+    }
+
+    private fun mapSystemErrorMessage(error: ScopeContractError.SystemError): String = when (error) {
+        is ScopeContractError.SystemError.ServiceUnavailable -> "Service unavailable: ${error.service}"
+        is ScopeContractError.SystemError.Timeout -> "Timeout: ${error.operation}"
+        is ScopeContractError.SystemError.ConcurrentModification -> "Concurrent modification"
+    }
+
+    private fun mapDataInconsistencyErrorMessage(error: ScopeContractError.DataInconsistency): String = when (error) {
         is ScopeContractError.DataInconsistency.MissingCanonicalAlias -> "Data inconsistency: Missing canonical alias for scope ${error.scopeId}"
     }
 

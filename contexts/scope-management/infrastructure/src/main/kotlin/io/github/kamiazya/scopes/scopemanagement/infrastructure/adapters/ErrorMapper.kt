@@ -151,6 +151,10 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             parentId = domainError.parentId?.value,
         )
         is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotArchived(scopeId = domainError.scopeId.value)
+        is ScopeError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
+            scopeId = domainError.scopeId.value,
+            childrenCount = domainError.childCount,
+        )
         is ScopeError.VersionMismatch -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = domainError.scopeId.value,
             expectedVersion = domainError.expectedVersion,

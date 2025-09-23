@@ -38,6 +38,11 @@ sealed class ScopeError : ScopesError() {
     data class NotArchived(val scopeId: ScopeId) : ScopeError()
 
     /**
+     * Cannot delete scope with children error.
+     */
+    data class HasChildren(val scopeId: ScopeId, val childCount: Int) : ScopeError()
+
+    /**
      * Version mismatch error for optimistic concurrency control.
      */
     data class VersionMismatch(val scopeId: ScopeId, val expectedVersion: Long, val actualVersion: Long) : ScopeError()

@@ -14,6 +14,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMapping
 import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Clock
 
@@ -29,6 +31,8 @@ import kotlinx.datetime.Clock
 class DeleteScopeHandler(
     private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
     private val eventProjector: EventPublisher,
+    private val scopeRepository: ScopeRepository,
+    private val scopeHierarchyService: ScopeHierarchyService,
     private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
@@ -77,6 +81,22 @@ class DeleteScopeHandler(
                         ),
                     )
                 }
+
+                // Validate that the scope has no children
+                val childCount = scopeRepository.countChildrenOf(scopeId).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                scopeHierarchyService.validateDeletion(scopeId, childCount).mapLeft { error ->
+                    logger.warn(
+                        "Cannot delete scope with children",
+                        mapOf(
+                            "scopeId" to command.id,
+                            "childCount" to childCount.toString(),
+                        ),
+                    )
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
 
                 // Apply delete through aggregate method
                 val deleteResult = baseAggregate.handleDelete(Clock.System.now()).mapLeft { error ->
