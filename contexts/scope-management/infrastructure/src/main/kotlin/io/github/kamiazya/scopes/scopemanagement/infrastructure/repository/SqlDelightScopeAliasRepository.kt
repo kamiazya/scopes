@@ -250,6 +250,82 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         ).left()
     }
 
+    // Event projection methods
+
+    override suspend fun save(aliasId: AliasId, aliasName: AliasName, scopeId: ScopeId, aliasType: AliasType): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.insertAlias(
+            id = aliasId.value,
+            scope_id = scopeId.value,
+            alias_name = aliasName.value,
+            alias_type = aliasType.name,
+            created_at = now.toEpochMilliseconds(),
+            updated_at = now.toEpochMilliseconds(),
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "Unknown database error")),
+        ).left()
+    }
+
+    override suspend fun updateAliasName(aliasId: AliasId, newAliasName: AliasName): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.updateAliasName(
+            alias_name = newAliasName.value,
+            updated_at = now.toEpochMilliseconds(),
+            id = aliasId.value,
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "Unknown database error")),
+        ).left()
+    }
+
+    override suspend fun updateAliasType(aliasId: AliasId, newAliasType: AliasType): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.updateAliasType(
+            alias_type = newAliasType.name,
+            updated_at = now.toEpochMilliseconds(),
+            id = aliasId.value,
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "Unknown database error")),
+        ).left()
+    }
+
+    override suspend fun deleteById(aliasId: AliasId): Either<ScopesError, Unit> = try {
+        database.scopeAliasQueries.deleteById(aliasId.value)
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "Unknown database error")),
+        ).left()
+    }
+
     private fun rowToScopeAlias(row: Scope_aliases): ScopeAlias = ScopeAlias(
         id = AliasId.create(row.id).fold(
             ifLeft = { error("Invalid alias id in database: $it") },

@@ -156,6 +156,22 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             expectedVersion = domainError.expectedVersion,
             actualVersion = domainError.actualVersion,
         )
+        // Alias-related errors
+        is ScopeError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = domainError.aliasName,
+        )
+        is ScopeError.AliasNotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        is ScopeError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+            scopeId = domainError.scopeId.value,
+            aliasName = domainError.aliasId,
+        )
+        is ScopeError.NoCanonicalAlias -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        // Aspect-related errors
+        is ScopeError.AspectNotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        // Event-related errors
+        is ScopeError.InvalidEventSequence -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "event-sourcing",
+        )
     }
 
     private fun mapUniquenessError(domainError: ScopeUniquenessError): ScopeContractError = when (domainError) {

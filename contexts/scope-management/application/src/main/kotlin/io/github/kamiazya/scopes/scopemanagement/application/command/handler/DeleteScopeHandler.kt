@@ -2,153 +2,135 @@ package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
 import arrow.core.raise.either
-import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.DeleteScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.DeleteScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventProjector
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
+import kotlinx.datetime.Clock
 
 /**
- * Handler for deleting a scope.
+ * Handler for DeleteScope command using Event Sourcing pattern.
  *
- * Note: This handler returns contract errors directly as part of the
- * architecture simplification to eliminate duplicate error definitions.
+ * This handler uses the event-sourced approach where:
+ * - Deletion is handled through ScopeAggregate methods
+ * - All changes go through domain events
+ * - EventSourcingRepository handles persistence
+ * - Soft delete that marks scope as deleted
  */
 class DeleteScopeHandler(
-    private val scopeRepository: ScopeRepository,
+    private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
+    private val eventProjector: EventProjector,
     private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
-) : CommandHandler<DeleteScopeCommand, ScopeContractError, Unit> {
+) : CommandHandler<DeleteScopeCommand, ScopeContractError, DeleteScopeResult> {
 
-    override suspend operator fun invoke(command: DeleteScopeCommand): Either<ScopeContractError, Unit> = either {
+    override suspend operator fun invoke(command: DeleteScopeCommand): Either<ScopeContractError, DeleteScopeResult> = either {
         logger.info(
-            "Deleting scope",
+            "Deleting scope using EventSourcing pattern",
             mapOf(
                 "scopeId" to command.id,
-                "cascade" to command.cascade.toString(),
             ),
         )
 
         transactionManager.inTransaction {
             either {
-                val scopeId = ScopeId.create(command.id).mapLeft { error ->
+                // Parse scope ID
+                val scopeId = ScopeId.create(command.id).mapLeft { idError ->
+                    logger.warn("Invalid scope ID format", mapOf("scopeId" to command.id))
                     applicationErrorMapper.mapDomainError(
-                        error,
+                        idError,
                         ErrorMappingContext(attemptedValue = command.id),
                     )
                 }.bind()
-                validateScopeExists(scopeId).bind()
-                handleChildrenDeletion(scopeId, command.cascade).bind()
-                scopeRepository.deleteById(scopeId).mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(error)
+
+                // Load current aggregate from events
+                val aggregateId = scopeId.toAggregateId().mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
                 }.bind()
-                logger.info("Scope deleted successfully", mapOf("scopeId" to scopeId.value))
+
+                val events = eventSourcingRepository.getEvents(aggregateId).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                // Reconstruct aggregate from events using fromEvents method
+                val scopeEvents = events.filterIsInstance<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>()
+                val baseAggregate = ScopeAggregate.fromEvents(scopeEvents).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                if (baseAggregate == null) {
+                    logger.warn("Scope not found", mapOf("scopeId" to command.id))
+                    raise(
+                        applicationErrorMapper.mapDomainError(
+                            io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.NotFound(scopeId),
+                            ErrorMappingContext(attemptedValue = command.id),
+                        ),
+                    )
+                }
+
+                // Apply delete through aggregate method
+                val deleteResult = baseAggregate.handleDelete(Clock.System.now()).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                // Persist delete events
+                val eventsToSave = deleteResult.events.map { envelope ->
+                    io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending(envelope.event as DomainEvent)
+                }
+
+                eventSourcingRepository.saveEventsWithVersioning(
+                    aggregateId = deleteResult.aggregate.id,
+                    events = eventsToSave,
+                    expectedVersion = baseAggregate.version.value.toInt(),
+                ).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                // Project events to RDB in the same transaction
+                val domainEvents = eventsToSave.map { envelope -> envelope.event }
+                eventProjector.projectEvents(domainEvents).mapLeft { error ->
+                    logger.error(
+                        "Failed to project delete events to RDB",
+                        mapOf(
+                            "error" to error.toString(),
+                            "eventCount" to domainEvents.size.toString(),
+                        ),
+                    )
+                    applicationErrorMapper.mapToContractError(error)
+                }.bind()
+
+                logger.info(
+                    "Scope deleted successfully using EventSourcing",
+                    mapOf(
+                        "scopeId" to command.id,
+                        "eventsCount" to eventsToSave.size.toString(),
+                    ),
+                )
+
+                // Return success result
+                DeleteScopeResult(
+                    id = command.id,
+                    deletedAt = Clock.System.now(),
+                )
             }
         }.bind()
     }.onLeft { error ->
         logger.error(
-            "Failed to delete scope",
+            "Failed to delete scope using EventSourcing",
             mapOf(
                 "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
                 "message" to error.toString(),
             ),
         )
-    }
-
-    private suspend fun validateScopeExists(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
-        val existingScope = scopeRepository.findById(scopeId).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
-        ensure(existingScope != null) {
-            logger.warn("Scope not found for deletion", mapOf("scopeId" to scopeId.value))
-            ScopeContractError.BusinessError.NotFound(scopeId = scopeId.value)
-        }
-    }
-
-    private suspend fun handleChildrenDeletion(scopeId: ScopeId, cascade: Boolean): Either<ScopeContractError, Unit> = either {
-        val allChildren = fetchAllChildren(scopeId).bind()
-
-        if (allChildren.isNotEmpty()) {
-            if (cascade) {
-                logger.debug(
-                    "Cascade deleting children",
-                    mapOf(
-                        "parentId" to scopeId.value,
-                        "childCount" to allChildren.size.toString(),
-                    ),
-                )
-                for (child in allChildren) {
-                    deleteRecursive(child.id).bind()
-                }
-            } else {
-                logger.warn(
-                    "Cannot delete scope with children",
-                    mapOf(
-                        "scopeId" to scopeId.value,
-                        "childCount" to allChildren.size.toString(),
-                    ),
-                )
-                raise(
-                    ScopeContractError.BusinessError.HasChildren(
-                        scopeId = scopeId.value,
-                        childrenCount = allChildren.size,
-                    ),
-                )
-            }
-        }
-    }
-
-    private suspend fun deleteRecursive(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
-        // Find all children of this scope using proper pagination
-        val allChildren = fetchAllChildren(scopeId).bind()
-
-        // Recursively delete all children
-        for (child in allChildren) {
-            deleteRecursive(child.id).bind()
-        }
-
-        // Delete this scope
-        scopeRepository.deleteById(scopeId).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
-        logger.debug("Recursively deleted scope", mapOf("scopeId" to scopeId.value))
-    }
-
-    /**
-     * Fetch all children of a scope using pagination to avoid the limit of 1000.
-     * This ensures complete cascade deletion without leaving orphaned records.
-     */
-    private suspend fun fetchAllChildren(parentId: ScopeId): Either<ScopeContractError, List<Scope>> = either {
-        val allChildren = mutableListOf<Scope>()
-        var offset = 0
-        val batchSize = 1000
-
-        do {
-            val batch = scopeRepository.findByParentId(parentId, offset = offset, limit = batchSize)
-                .mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(error)
-                }.bind()
-
-            allChildren.addAll(batch)
-            offset += batch.size
-
-            logger.debug(
-                "Fetched children batch",
-                mapOf(
-                    "parentId" to parentId.value,
-                    "batchSize" to batch.size.toString(),
-                    "totalSoFar" to allChildren.size.toString(),
-                ),
-            )
-        } while (batch.size == batchSize) // Continue if we got a full batch
-
-        allChildren
     }
 }

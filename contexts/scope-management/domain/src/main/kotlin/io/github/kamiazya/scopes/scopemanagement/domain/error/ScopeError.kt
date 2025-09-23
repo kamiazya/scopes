@@ -70,4 +70,9 @@ sealed class ScopeError : ScopesError() {
      * Aspect not found error - specified aspect does not exist for this scope.
      */
     data class AspectNotFound(val aspectKey: String, val scopeId: ScopeId) : ScopeError()
+
+    /**
+     * Invalid event sequence error - events must be applied in correct order.
+     */
+    data class InvalidEventSequence(val message: String) : ScopeError()
 }

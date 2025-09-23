@@ -43,6 +43,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeH
 import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQueryParser
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.AspectValueValidationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.validation.ContextViewValidationService
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.EventProjector
 import org.koin.dsl.module
 
 /**
@@ -119,15 +120,16 @@ val scopeManagementModule = module {
         )
     }
 
-    // Use Case Handlers
+    // Use Case Handlers - Event Sourcing
     single {
         CreateScopeHandler(
-            scopeFactory = get(),
+            eventSourcingRepository = get(),
             scopeRepository = get(),
-            scopeAliasRepository = get(),
-            aliasGenerationService = get(),
+            hierarchyApplicationService = get(),
+            hierarchyService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
+            eventProjector = get<EventProjector>(),
             applicationErrorMapper = get(),
             logger = get(),
         )
@@ -135,8 +137,8 @@ val scopeManagementModule = module {
 
     single {
         UpdateScopeHandler(
-            scopeRepository = get(),
-            scopeAliasRepository = get(),
+            eventSourcingRepository = get(),
+            eventProjector = get<EventProjector>(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),
@@ -145,7 +147,8 @@ val scopeManagementModule = module {
 
     single {
         DeleteScopeHandler(
-            scopeRepository = get(),
+            eventSourcingRepository = get(),
+            eventProjector = get<EventProjector>(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),

@@ -2,8 +2,9 @@ package io.github.kamiazya.scopes.scopemanagement.domain.event
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId
-import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.event.EventMetadata
+import io.github.kamiazya.scopes.platform.domain.event.MetadataSupport
+import io.github.kamiazya.scopes.platform.domain.event.VersionSupport
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
@@ -19,9 +20,7 @@ import kotlinx.datetime.Instant
  * Events related to alias management within ScopeAggregate.
  * These are now part of ScopeEvent hierarchy since aliases are managed within the ScopeAggregate.
  */
-sealed class AliasEvent : ScopeEvent() {
-    override val metadata: EventMetadata? = null
-}
+sealed class AliasEvent : ScopeEvent()
 
 /**
  * Event fired when an alias is assigned to a scope.
@@ -32,11 +31,17 @@ data class AliasAssigned(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
     val aliasType: AliasType,
-) : AliasEvent() {
+) : AliasEvent(),
+    MetadataSupport<AliasAssigned>,
+    VersionSupport<AliasAssigned> {
+
+    override fun withMetadata(metadata: EventMetadata): AliasAssigned = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): AliasAssigned = copy(aggregateVersion = version)
     companion object {
         fun from(alias: ScopeAlias, eventId: EventId): Either<AggregateIdError, AliasAssigned> = alias.id.toAggregateId().map { aggregateId ->
             AliasAssigned(
@@ -62,12 +67,19 @@ data class AliasRemoved(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val aliasId: AliasId,
     val aliasName: AliasName,
     val scopeId: ScopeId,
     val aliasType: AliasType,
     val removedAt: Instant,
-) : AliasEvent()
+) : AliasEvent(),
+    MetadataSupport<AliasRemoved>,
+    VersionSupport<AliasRemoved> {
+
+    override fun withMetadata(metadata: EventMetadata): AliasRemoved = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): AliasRemoved = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when an alias name is changed.
@@ -79,11 +91,18 @@ data class AliasNameChanged(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val aliasId: AliasId,
     val scopeId: ScopeId,
     val oldAliasName: AliasName,
     val newAliasName: AliasName,
-) : AliasEvent()
+) : AliasEvent(),
+    MetadataSupport<AliasNameChanged>,
+    VersionSupport<AliasNameChanged> {
+
+    override fun withMetadata(metadata: EventMetadata): AliasNameChanged = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): AliasNameChanged = copy(aggregateVersion = version)
+}
 
 /**
  * Event fired when a canonical alias is replaced with a new one.
@@ -95,9 +114,16 @@ data class CanonicalAliasReplaced(
     override val eventId: EventId,
     override val occurredAt: Instant,
     override val aggregateVersion: AggregateVersion,
+    override val metadata: EventMetadata? = null,
     val scopeId: ScopeId,
     val oldAliasId: AliasId,
     val oldAliasName: AliasName,
     val newAliasId: AliasId,
     val newAliasName: AliasName,
-) : AliasEvent()
+) : AliasEvent(),
+    MetadataSupport<CanonicalAliasReplaced>,
+    VersionSupport<CanonicalAliasReplaced> {
+
+    override fun withMetadata(metadata: EventMetadata): CanonicalAliasReplaced = copy(metadata = metadata)
+    override fun withVersion(version: AggregateVersion): CanonicalAliasReplaced = copy(aggregateVersion = version)
+}

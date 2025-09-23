@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.application.error
 
+import io.github.kamiazya.scopes.scopemanagement.application.util.InputSanitizer
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeHierarchyError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -9,7 +10,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeInputErr
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError.PersistenceError as AppPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.PersistenceError as DomainPersistenceError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError as DomainScopeAliasError
-import io.github.kamiazya.scopes.scopemanagement.application.util.InputSanitizer
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError as DomainScopeInputError
 
 // Create singleton presenter instances

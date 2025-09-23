@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.mapper
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasInfoDto
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.CreateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.UpdateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 
@@ -22,6 +23,20 @@ object ScopeMapper {
         parentId = scope.parentId?.toString(),
         createdAt = scope.createdAt,
         canonicalAlias = canonicalAlias,
+        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+    )
+
+    /**
+     * Map Scope entity to UpdateScopeResult DTO.
+     */
+    fun toUpdateScopeResult(scope: Scope, canonicalAlias: String? = null): UpdateScopeResult = UpdateScopeResult(
+        id = scope.id.toString(),
+        title = scope.title.value,
+        description = scope.description?.value,
+        parentId = scope.parentId?.toString(),
+        canonicalAlias = canonicalAlias,
+        createdAt = scope.createdAt,
+        updatedAt = scope.updatedAt,
         aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
     )
 

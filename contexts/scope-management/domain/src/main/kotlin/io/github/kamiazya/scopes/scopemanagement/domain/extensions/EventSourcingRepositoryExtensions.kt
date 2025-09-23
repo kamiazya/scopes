@@ -29,7 +29,7 @@ suspend fun EventSourcingRepository<DomainEvent>.persistScopeAggregate(
     result: AggregateResult<ScopeAggregate, ScopeEvent>,
 ): Either<ScopesError, List<EventEnvelope.Persisted<DomainEvent>>> = saveEventsWithVersioning(
     aggregateId = result.aggregate.id,
-    events = result.events.map { envelope -> 
+    events = result.events.map { envelope ->
         EventEnvelope.Pending(envelope.event as DomainEvent)
     },
     expectedVersion = result.baseVersion.value.toInt(),

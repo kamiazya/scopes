@@ -144,4 +144,43 @@ interface ScopeAliasRepository {
      * @return Either a persistence error or the list of aliases
      */
     suspend fun listAll(offset: Int = 0, limit: Int = 100): Either<ScopesError, List<ScopeAlias>>
+
+    // Event projection methods - these are needed by EventProjector
+
+    /**
+     * Saves an alias with individual parameters (used by event projection).
+     *
+     * @param aliasId The unique ID for the alias
+     * @param aliasName The name of the alias
+     * @param scopeId The ID of the scope this alias points to
+     * @param aliasType The type of the alias (canonical or custom)
+     * @return Either a persistence error or Unit on success
+     */
+    suspend fun save(aliasId: AliasId, aliasName: AliasName, scopeId: ScopeId, aliasType: AliasType): Either<ScopesError, Unit>
+
+    /**
+     * Updates the name of an existing alias (used by event projection).
+     *
+     * @param aliasId The ID of the alias to update
+     * @param newAliasName The new name for the alias
+     * @return Either a persistence error or Unit on success
+     */
+    suspend fun updateAliasName(aliasId: AliasId, newAliasName: AliasName): Either<ScopesError, Unit>
+
+    /**
+     * Updates the type of an existing alias (used by event projection).
+     *
+     * @param aliasId The ID of the alias to update
+     * @param newAliasType The new type for the alias
+     * @return Either a persistence error or Unit on success
+     */
+    suspend fun updateAliasType(aliasId: AliasId, newAliasType: AliasType): Either<ScopesError, Unit>
+
+    /**
+     * Deletes an alias by its ID (used by event projection).
+     *
+     * @param aliasId The ID of the alias to delete
+     * @return Either a persistence error or Unit on success
+     */
+    suspend fun deleteById(aliasId: AliasId): Either<ScopesError, Unit>
 }

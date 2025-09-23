@@ -21,7 +21,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Rem
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.RenameAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.SetCanonicalAliasHandler
 import io.github.kamiazya.scopes.scopemanagement.application.command.handler.UpdateScopeHandler
-import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
@@ -98,28 +97,16 @@ class ScopeManagementCommandPortAdapter(
             title = command.title,
             description = command.description,
         ),
-    ).flatMap { scopeDto: ScopeDto ->
-        // Fail fast at contract boundary for data integrity
-        val canonicalAlias = scopeDto.canonicalAlias
-        if (canonicalAlias == null) {
-            Either.Left(
-                ScopeContractError.DataInconsistency.MissingCanonicalAlias(
-                    scopeId = scopeDto.id,
-                ),
-            )
-        } else {
-            Either.Right(
-                UpdateScopeResult(
-                    id = scopeDto.id,
-                    title = scopeDto.title,
-                    description = scopeDto.description,
-                    parentId = scopeDto.parentId,
-                    canonicalAlias = canonicalAlias,
-                    createdAt = scopeDto.createdAt,
-                    updatedAt = scopeDto.updatedAt,
-                ),
-            )
-        }
+    ).map { result: io.github.kamiazya.scopes.scopemanagement.application.dto.scope.UpdateScopeResult ->
+        UpdateScopeResult(
+            id = result.id,
+            title = result.title,
+            description = result.description,
+            parentId = result.parentId,
+            canonicalAlias = result.canonicalAlias ?: "", // Use actual canonical alias or empty string if none
+            createdAt = result.createdAt,
+            updatedAt = result.updatedAt,
+        )
     }
 
     override suspend fun deleteScope(command: ContractDeleteScopeCommand): Either<ScopeContractError, Unit> = deleteScopeHandler(
@@ -127,7 +114,7 @@ class ScopeManagementCommandPortAdapter(
             id = command.id,
             cascade = command.cascade,
         ),
-    )
+    ).map { _ -> Unit }
 
     override suspend fun addAlias(command: ContractAddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))
