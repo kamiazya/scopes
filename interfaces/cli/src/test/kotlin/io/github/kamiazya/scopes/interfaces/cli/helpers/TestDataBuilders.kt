@@ -16,21 +16,46 @@ import kotlinx.datetime.Instant
 object TestDataBuilders {
 
     /**
-     * Creates a test CreateScopeCommand with sensible defaults
+     * Creates a test CreateScopeCommand.WithAutoAlias with sensible defaults
      */
     fun createScopeCommand(
         title: String = "Test Scope",
         description: String? = "Test Description",
         parentId: String? = null,
-        generateAlias: Boolean = true,
-        customAlias: String? = null,
-    ): CreateScopeCommand = CreateScopeCommand(
+    ): CreateScopeCommand.WithAutoAlias = CreateScopeCommand.WithAutoAlias(
         title = title,
         description = description,
         parentId = parentId,
-        generateAlias = generateAlias,
-        customAlias = customAlias,
     )
+
+    /**
+     * Creates a test CreateScopeCommand.WithCustomAlias
+     */
+    fun createScopeCommandWithCustomAlias(
+        title: String = "Test Scope",
+        description: String? = "Test Description",
+        parentId: String? = null,
+        alias: String,
+    ): CreateScopeCommand.WithCustomAlias = CreateScopeCommand.WithCustomAlias(
+        title = title,
+        description = description,
+        parentId = parentId,
+        alias = alias,
+    )
+
+    /**
+     * Creates a CreateScopeCommand of either variant based on parameters
+     */
+    fun createScopeCommandVariant(
+        title: String = "Test Scope",
+        description: String? = "Test Description",
+        parentId: String? = null,
+        customAlias: String? = null,
+    ): CreateScopeCommand = if (customAlias != null) {
+        createScopeCommandWithCustomAlias(title, description, parentId, customAlias)
+    } else {
+        createScopeCommand(title, description, parentId)
+    }
 
     /**
      * Creates a test UpdateScopeCommand

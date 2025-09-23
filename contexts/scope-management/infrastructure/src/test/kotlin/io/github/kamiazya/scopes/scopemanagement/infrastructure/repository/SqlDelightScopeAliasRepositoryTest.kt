@@ -12,6 +12,8 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 
@@ -607,6 +609,129 @@ class SqlDelightScopeAliasRepositoryTest :
                         error.repositoryName shouldBe "SqlDelightScopeAliasRepository"
                         error.failure shouldNotBe null
                     }
+                }
+            }
+
+            describe("concurrent access and duplicate handling") {
+                it("should handle duplicate alias creation through unique constraint") {
+                    // Given
+                    val scopeId1 = ScopeId.generate()
+                    val scopeId2 = ScopeId.generate()
+                    val aliasName = AliasName.create("duplicate-test").getOrNull()!!
+
+                    val alias1 = ScopeAlias.createCanonical(scopeId1, aliasName, Clock.System.now())
+                    val alias2 = ScopeAlias.createCanonical(scopeId2, aliasName, Clock.System.now())
+
+                    // When - Save first alias successfully
+                    val result1 = runBlocking { repository.save(alias1) }
+
+                    // Then - First save should succeed
+                    result1.isRight() shouldBe true
+
+                    // When - Attempt to save second alias with same name
+                    val result2 = runBlocking { repository.save(alias2) }
+
+                    // Then - Second save should return DuplicateAlias error
+                    result2.isLeft() shouldBe true
+                    val error = result2.leftOrNull()
+                    error.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.DuplicateAlias>()
+                    error.aliasName shouldBe aliasName
+                    error.existingScopeId shouldBe scopeId1
+                    error.attemptedScopeId shouldBe scopeId2
+                }
+
+                it("should handle concurrent saves with proper error mapping") {
+                    // Given
+                    val aliasName = AliasName.create("concurrent-test").getOrNull()!!
+                    val alias1 = ScopeAlias.createCanonical(ScopeId.generate(), aliasName, Clock.System.now())
+                    val alias2 = ScopeAlias.createCanonical(ScopeId.generate(), aliasName, Clock.System.now())
+
+                    // When - Simulate concurrent access by saving first alias
+                    runBlocking { repository.save(alias1) }
+
+                    // Then - Second save should detect the constraint violation and map to business error
+                    val result = runBlocking { repository.save(alias2) }
+                    result.isLeft() shouldBe true
+
+                    val error = result.leftOrNull()
+                    error.shouldBeInstanceOf<io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError.DuplicateAlias>()
+
+                    // Verify the existing scope ID is correctly identified
+                    val existingAlias = runBlocking { repository.findByAliasName(aliasName) }
+                    existingAlias.getOrNull()?.scopeId shouldBe alias1.scopeId
+                }
+
+                it("should preserve database integrity during concurrent operations") {
+                    // Given
+                    val baseAliasName = "concurrent-base"
+                    val aliases = (1..5).map { i ->
+                        ScopeAlias.createCanonical(
+                            ScopeId.generate(),
+                            AliasName.create("$baseAliasName-$i").getOrNull()!!,
+                            Clock.System.now(),
+                        )
+                    }
+
+                    // When - Save all aliases concurrently
+                    val results = runBlocking {
+                        coroutineScope {
+                            aliases.map { alias ->
+                                async {
+                                    repository.save(alias)
+                                }
+                            }.map { it.await() }
+                        }
+                    }
+
+                    // Then - All saves should succeed since names are unique
+                    results.forEach { result ->
+                        result.isRight() shouldBe true
+                    }
+
+                    // Verify all aliases are stored correctly
+                    val storedCount = runBlocking { repository.count() }
+                    storedCount.getOrNull() shouldBe 5L
+                }
+
+                it("should handle mixed success and failure in concurrent duplicate scenarios") {
+                    // Given
+                    val duplicateAliasName = AliasName.create("shared-name").getOrNull()!!
+                    val uniqueAliasName = AliasName.create("unique-name").getOrNull()!!
+
+                    val duplicateAlias1 = ScopeAlias.createCanonical(ScopeId.generate(), duplicateAliasName, Clock.System.now())
+                    val duplicateAlias2 = ScopeAlias.createCanonical(ScopeId.generate(), duplicateAliasName, Clock.System.now())
+                    val uniqueAlias = ScopeAlias.createCanonical(ScopeId.generate(), uniqueAliasName, Clock.System.now())
+
+                    // When - Save first duplicate alias to establish the constraint
+                    val firstResult = runBlocking { repository.save(duplicateAlias1) }
+                    firstResult.isRight() shouldBe true
+
+                    // Concurrent saves: one duplicate (should fail) and one unique (should succeed)
+                    val results = runBlocking {
+                        coroutineScope {
+                            listOf(
+                                async { repository.save(duplicateAlias2) },
+                                async { repository.save(uniqueAlias) },
+                            ).map { it.await() }
+                        }
+                    }
+
+                    // Then - One should fail (duplicate), one should succeed (unique)
+                    val duplicateResult = results[0]
+                    val uniqueResult = results[1]
+
+                    duplicateResult.isLeft() shouldBe true
+                    uniqueResult.isRight() shouldBe true
+
+                    // Verify final database state
+                    val totalCount = runBlocking { repository.count() }
+                    totalCount.getOrNull() shouldBe 2L // Original + unique
+
+                    val existingDuplicate = runBlocking { repository.findByAliasName(duplicateAliasName) }
+                    val existingUnique = runBlocking { repository.findByAliasName(uniqueAliasName) }
+
+                    existingDuplicate.getOrNull()?.scopeId shouldBe duplicateAlias1.scopeId
+                    existingUnique.getOrNull()?.scopeId shouldBe uniqueAlias.scopeId
                 }
             }
 

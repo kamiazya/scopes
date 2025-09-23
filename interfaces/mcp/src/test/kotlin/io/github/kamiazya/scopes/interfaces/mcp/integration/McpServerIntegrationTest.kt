@@ -159,12 +159,10 @@ class McpServerIntegrationTest :
 
             coVerify {
                 mockCommand.createScope(
-                    CreateScopeCommand(
+                    CreateScopeCommand.WithAutoAlias(
                         title = "New Feature",
                         description = "Test description",
                         parentId = null,
-                        generateAlias = true,
-                        customAlias = null,
                     ),
                 )
             }

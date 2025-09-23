@@ -18,17 +18,28 @@ class ContractTypesTest :
     DescribeSpec({
         describe("Contract Types") {
             describe("Commands") {
-                it("CreateScopeCommand should use primitive types") {
-                    val command = CreateScopeCommand(
+                it("CreateScopeCommand.WithAutoAlias should use primitive types") {
+                    val command = CreateScopeCommand.WithAutoAlias(
                         title = "Test Scope",
                         description = "Test Description",
                         parentId = "01HX3BQXYZ123456789ABCDEF",
-                        generateAlias = true,
-                        customAlias = "test-alias",
                     )
 
                     command.title shouldBe "Test Scope"
                     command.parentId shouldBe "01HX3BQXYZ123456789ABCDEF"
+                }
+
+                it("CreateScopeCommand.WithCustomAlias should use primitive types") {
+                    val command = CreateScopeCommand.WithCustomAlias(
+                        title = "Test Scope",
+                        description = "Test Description",
+                        parentId = "01HX3BQXYZ123456789ABCDEF",
+                        alias = "test-alias",
+                    )
+
+                    command.title shouldBe "Test Scope"
+                    command.parentId shouldBe "01HX3BQXYZ123456789ABCDEF"
+                    command.alias shouldBe "test-alias"
                 }
 
                 it("UpdateScopeCommand should use primitive types") {

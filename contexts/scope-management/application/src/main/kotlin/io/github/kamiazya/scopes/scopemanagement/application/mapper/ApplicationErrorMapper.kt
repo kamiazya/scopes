@@ -125,12 +125,12 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
         is AppScopeInputError.ValidationFailed -> {
             // Check if this is specifically an alias validation
-            val isAliasField = error.field == "alias" || 
-                               error.field == "customAlias" || 
-                               error.field == "newAlias" ||
-                               error.field == "canonicalAlias" ||
-                               error.field.endsWith("Alias")
-            
+            val isAliasField = error.field == "alias" ||
+                error.field == "customAlias" ||
+                error.field == "newAlias" ||
+                error.field == "canonicalAlias" ||
+                error.field.endsWith("Alias")
+
             if (isAliasField) {
                 ScopeContractError.InputError.InvalidAlias(
                     alias = error.preview,
@@ -165,7 +165,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun createInvalidTitle(title: String, validationFailure: ScopeContractError.TitleValidationFailure): ScopeContractError.InputError.InvalidTitle =
         ScopeContractError.InputError.InvalidTitle(title = title, validationFailure = validationFailure)
-        
+
     /**
      * Creates an InvalidTitle error with InvalidCharacters validation failure.
      * This is a common pattern for aspect validation errors.
@@ -173,21 +173,17 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     private fun createInvalidTitleWithInvalidCharacters(
         title: String = "",
         prohibitedCharacters: List<Char> = listOf(),
-    ): ScopeContractError.InputError.InvalidTitle =
-        createInvalidTitle(
-            title = title,
-            validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
-                prohibitedCharacters = prohibitedCharacters,
-            ),
-        )
-        
+    ): ScopeContractError.InputError.InvalidTitle = createInvalidTitle(
+        title = title,
+        validationFailure = ScopeContractError.TitleValidationFailure.InvalidCharacters(
+            prohibitedCharacters = prohibitedCharacters,
+        ),
+    )
+
     /**
      * Creates a ValidationFailure error with RequiredField constraint.
      */
-    private fun createRequiredFieldError(
-        field: String,
-        value: String = "",
-    ): ScopeContractError.InputError.ValidationFailure =
+    private fun createRequiredFieldError(field: String, value: String = ""): ScopeContractError.InputError.ValidationFailure =
         ScopeContractError.InputError.ValidationFailure(
             field = field,
             value = value,
@@ -200,19 +196,15 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
      * Creates an InvalidTitle error with Empty validation failure.
      * This is commonly used for empty key/title errors.
      */
-    private fun createEmptyTitleError(): ScopeContractError.InputError.InvalidTitle =
-        ScopeContractError.InputError.InvalidTitle(
-            title = "",
-            validationFailure = ScopeContractError.TitleValidationFailure.Empty,
-        )
+    private fun createEmptyTitleError(): ScopeContractError.InputError.InvalidTitle = ScopeContractError.InputError.InvalidTitle(
+        title = "",
+        validationFailure = ScopeContractError.TitleValidationFailure.Empty,
+    )
 
     /**
      * Creates an InvalidTitle error with TooShort validation failure.
      */
-    private fun createTooShortTitleError(
-        minLength: Int,
-        actualLength: Int,
-    ): ScopeContractError.InputError.InvalidTitle =
+    private fun createTooShortTitleError(minLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle =
         ScopeContractError.InputError.InvalidTitle(
             title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooShort(
@@ -224,10 +216,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     /**
      * Creates an InvalidTitle error with TooLong validation failure.
      */
-    private fun createTooLongTitleError(
-        maxLength: Int,
-        actualLength: Int,
-    ): ScopeContractError.InputError.InvalidTitle =
+    private fun createTooLongTitleError(maxLength: Int, actualLength: Int): ScopeContractError.InputError.InvalidTitle =
         ScopeContractError.InputError.InvalidTitle(
             title = "",
             validationFailure = ScopeContractError.TitleValidationFailure.TooLong(
@@ -239,9 +228,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     /**
      * Creates a ServiceUnavailable error.
      */
-    private fun createServiceUnavailableError(
-        service: String? = null,
-    ): ScopeContractError.SystemError.ServiceUnavailable =
+    private fun createServiceUnavailableError(service: String? = null): ScopeContractError.SystemError.ServiceUnavailable =
         ScopeContractError.SystemError.ServiceUnavailable(
             service = service ?: SERVICE_NAME,
         )
@@ -866,9 +853,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             // Direct mapping to contract error without intermediate app error
             when (domainError) {
                 is DomainScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
-                    alias = InputSanitizer.createPreview(domainError.alias),
-                    existingScopeId = domainError.scopeId.toString(),
-                    attemptedScopeId = null,
+                    alias = domainError.aliasName.value,
+                    existingScopeId = domainError.existingScopeId.value,
+                    attemptedScopeId = domainError.attemptedScopeId.value,
                 )
                 is DomainScopeAliasError.AliasGenerationFailed -> ScopeContractError.BusinessError.AliasGenerationFailed(
                     scopeId = domainError.scopeId.toString(),

@@ -114,15 +114,22 @@ class ScopeCreateToolHandler : ToolHandler {
             null
         }
 
-        val result = ctx.ports.command.createScope(
-            CreateScopeCommand(
+        val command = if (customAlias != null) {
+            CreateScopeCommand.WithCustomAlias(
                 title = title,
                 description = description,
                 parentId = parentId,
-                generateAlias = customAlias == null,
-                customAlias = customAlias,
-            ),
-        )
+                alias = customAlias,
+            )
+        } else {
+            CreateScopeCommand.WithAutoAlias(
+                title = title,
+                description = description,
+                parentId = parentId,
+            )
+        }
+
+        val result = ctx.ports.command.createScope(command)
 
         val toolResult = when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)

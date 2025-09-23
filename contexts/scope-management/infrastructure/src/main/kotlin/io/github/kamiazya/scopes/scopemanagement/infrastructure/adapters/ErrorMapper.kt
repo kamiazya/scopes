@@ -195,7 +195,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
         is ScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = domainError.alias,
+            alias = domainError.aliasName.value,
+            existingScopeId = domainError.existingScopeId.value,
+            attemptedScopeId = domainError.attemptedScopeId.value,
         )
         is ScopeAliasError.AliasNotFoundByName -> ScopeContractError.BusinessError.AliasNotFound(
             alias = domainError.alias,

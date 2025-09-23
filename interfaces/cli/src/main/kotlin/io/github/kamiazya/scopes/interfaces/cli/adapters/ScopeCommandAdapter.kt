@@ -34,17 +34,24 @@ class ScopeCommandAdapter(
         title: String,
         description: String? = null,
         parentId: String? = null,
-        generateAlias: Boolean = true,
         customAlias: String? = null,
     ): Either<ScopeContractError, CreateScopeResult> {
-        // Step 1: Create scope in scope management context
-        val command = CreateScopeCommand(
-            title = title,
-            description = description,
-            parentId = parentId,
-            generateAlias = generateAlias,
-            customAlias = customAlias,
-        )
+        // Step 1: Create scope in scope management context using sealed command variants
+        val command = if (customAlias != null) {
+            CreateScopeCommand.WithCustomAlias(
+                title = title,
+                description = description,
+                parentId = parentId,
+                alias = customAlias,
+            )
+        } else {
+            CreateScopeCommand.WithAutoAlias(
+                title = title,
+                description = description,
+                parentId = parentId,
+            )
+        }
+
         return scopeManagementCommandPort.createScope(command).map { result ->
             // Future: Step 2: Initialize workspace if configured
             // workspaceManagementPort?.initializeWorkspace(result.id)
@@ -87,8 +94,8 @@ class ScopeCommandAdapter(
         description: String? = null,
         // path: String? = null  // Future: workspace path
     ): Either<ScopeContractError, CreateScopeResult> {
-        // Create root scope
-        val command = CreateScopeCommand(
+        // Create root scope with auto-generated alias
+        val command = CreateScopeCommand.WithAutoAlias(
             title = name,
             description = description,
             parentId = null,
