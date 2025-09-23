@@ -180,6 +180,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         is ScopeError.InvalidState -> ScopeContractError.SystemError.ServiceUnavailable(
             service = SCOPE_MANAGEMENT_SERVICE,
         )
+        // Event replay errors
+        is ScopeError.EventApplicationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "event-sourcing",
+        )
+        is ScopeError.AliasRecordNotFound -> ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+            scopeId = domainError.aggregateId,
+        )
     }
 
     private fun mapUniquenessError(domainError: ScopeUniquenessError): ScopeContractError = when (domainError) {

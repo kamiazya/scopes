@@ -207,7 +207,7 @@ class UpdateScopeHandler(
         // Extract canonical alias from aggregate - required by operational policy
         val canonicalAlias = currentAggregate.canonicalAliasId?.let { id ->
             currentAggregate.aliases[id]?.aliasName?.value
-        } ?: throw IllegalStateException("Scope ${currentAggregate.scopeId} missing canonical alias - violates operational policy")
+        } ?: error("Scope ${currentAggregate.scopeId} missing canonical alias - violates operational policy")
 
         val result = ScopeMapper.toUpdateScopeResult(scope, canonicalAlias)
 
