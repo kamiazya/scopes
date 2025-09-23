@@ -19,7 +19,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
     CommandHandler<C, ScopeContractError, R> {
 
     companion object {
-        private const val COMMAND_CLASS_NAME_NULL_ERROR = "Command class name should not be null"
+        private const val COMMAND_NULL_ERROR = "Command must not be null"
     }
 
     /**
@@ -54,7 +54,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Executing command",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
+                "commandType" to (command?.let { it::class.simpleName } ?: error(COMMAND_NULL_ERROR)),
             ),
         )
     }
@@ -68,7 +68,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command executed successfully",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
+                "commandType" to (command?.let { it::class.simpleName } ?: error(COMMAND_NULL_ERROR)),
             ),
         )
     }
@@ -82,7 +82,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
             "Command execution failed",
             mapOf(
                 "command" to getCommandName(command),
-                "commandType" to checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR },
+                "commandType" to (command?.let { it::class.simpleName } ?: error(COMMAND_NULL_ERROR)),
                 "errorCode" to getErrorClassName(error),
                 "errorMessage" to error.toString().take(500),
             ),
@@ -93,7 +93,7 @@ abstract class BaseCommandHandler<C, R>(protected val transactionManager: Transa
      * Get a meaningful command name for logging.
      * Subclasses can override for better naming.
      */
-    protected open fun getCommandName(command: C): String = checkNotNull(command!!::class.simpleName) { COMMAND_CLASS_NAME_NULL_ERROR }
+    protected open fun getCommandName(command: C): String = command?.let { it::class.simpleName } ?: error(COMMAND_NULL_ERROR)
 
     /**
      * Get error class name for consistent error logging.

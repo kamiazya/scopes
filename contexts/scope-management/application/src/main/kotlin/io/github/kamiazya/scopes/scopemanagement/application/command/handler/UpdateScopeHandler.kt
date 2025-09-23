@@ -6,7 +6,6 @@ import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
@@ -34,21 +33,13 @@ import kotlinx.datetime.Clock
 class UpdateScopeHandler(
     private val scopeRepository: ScopeRepository,
     private val scopeAliasRepository: ScopeAliasRepository,
-    private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger,
+    transactionManager: TransactionManager,
+    logger: Logger,
     private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
-) : CommandHandler<UpdateScopeCommand, ScopeContractError, ScopeDto> {
+) : BaseCommandHandler<UpdateScopeCommand, ScopeDto>(transactionManager, logger) {
 
-    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = either {
-        logUpdateStart(command)
-
-        executeUpdate(command).bind()
-    }.onLeft { error ->
-        logUpdateError(error)
-    }
-
-    private fun logUpdateStart(command: UpdateScopeCommand) {
+    override fun logCommandStart(command: UpdateScopeCommand) {
         logger.info(
             "Updating scope",
             mapOf(
@@ -59,59 +50,45 @@ class UpdateScopeHandler(
         )
     }
 
-    private fun logUpdateError(error: ScopeContractError) {
-        logger.error(
-            "Failed to update scope",
-            mapOf(
-                "code" to getErrorClassName(error),
-                "message" to error.toString().take(500),
-            ),
-        )
-    }
+    override suspend fun executeCommand(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = either {
+        // Parse scope ID
+        val scopeId = ScopeId.create(command.id).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(
+                error,
+                ErrorMappingContext(attemptedValue = command.id),
+            )
+        }.bind()
 
-    private fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+        // Find existing scope
+        val existingScope = findExistingScope(scopeId).bind()
 
-    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeContractError, ScopeDto> = transactionManager.inTransaction {
-        either {
-            // Parse scope ID
-            val scopeId = ScopeId.create(command.id).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(
-                    error,
-                    ErrorMappingContext(attemptedValue = command.id),
-                )
-            }.bind()
+        // Apply updates
+        var updatedScope = existingScope
 
-            // Find existing scope
-            val existingScope = findExistingScope(scopeId).bind()
-
-            // Apply updates
-            var updatedScope = existingScope
-
-            if (command.title != null) {
-                updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
-            }
-
-            if (command.description != null) {
-                updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
-            }
-
-            if (command.metadata.isNotEmpty()) {
-                updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
-            }
-
-            // Save the updated scope
-            val savedScope = scopeRepository.save(updatedScope).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
-            logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
-
-            // Fetch aliases to include in the result
-            val aliases = scopeAliasRepository.findByScopeId(savedScope.id).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
-
-            ScopeMapper.toDto(savedScope, aliases)
+        if (command.title != null) {
+            updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
         }
+
+        if (command.description != null) {
+            updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
+        }
+
+        if (command.metadata.isNotEmpty()) {
+            updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
+        }
+
+        // Save the updated scope
+        val savedScope = scopeRepository.save(updatedScope).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
+        }.bind()
+        logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
+
+        // Fetch aliases to include in the result
+        val aliases = scopeAliasRepository.findByScopeId(savedScope.id).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
+        }.bind()
+
+        ScopeMapper.toDto(savedScope, aliases)
     }
 
     private suspend fun findExistingScope(scopeId: ScopeId): Either<ScopeContractError, Scope> = either {
