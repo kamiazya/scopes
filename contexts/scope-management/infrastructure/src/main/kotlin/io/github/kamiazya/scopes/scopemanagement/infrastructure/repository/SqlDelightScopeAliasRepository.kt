@@ -50,8 +50,8 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     } catch (e: Exception) {
         when {
             // SQLite unique constraint violation detection
-            e.message?.contains("UNIQUE constraint failed: scope_aliases.alias_name") == true ||
-                e.message?.contains("SQLITE_CONSTRAINT_UNIQUE") == true -> {
+            // Check for constraint violation using multiple detection methods
+            isSqliteUniqueConstraintViolation(e) -> {
                 // Extract the existing scope ID that owns this alias
                 val existingScopeId = try {
                     database.scopeAliasQueries.findByAliasName(alias.aliasName.value)
@@ -306,4 +306,30 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         createdAt = Instant.fromEpochMilliseconds(row.created_at),
         updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
     )
+
+    /**
+     * Checks if the given exception represents a SQLite unique constraint violation.
+     *
+     * This method uses multiple detection strategies to identify constraint violations:
+     * 1. Checks for specific error messages that SQLite returns
+     * 2. Checks for SQLite error codes if available (e.g., SQLITE_CONSTRAINT = 19)
+     * 3. Handles variations across different SQLite driver versions
+     *
+     * @param e The exception to check
+     * @return true if this is a unique constraint violation, false otherwise
+     */
+    private fun isSqliteUniqueConstraintViolation(e: Exception): Boolean {
+        val message = e.message ?: return false
+
+        // Check for various SQLite unique constraint error patterns
+        return message.contains("UNIQUE constraint failed", ignoreCase = true) ||
+            message.contains("SQLITE_CONSTRAINT_UNIQUE", ignoreCase = true) ||
+            message.contains("constraint failed", ignoreCase = true) &&
+            message.contains("unique", ignoreCase = true) ||
+            // Some drivers may include the error code directly
+            message.contains("error code 19", ignoreCase = true) ||
+            message.contains("SQLITE_CONSTRAINT", ignoreCase = true) ||
+            // Check the cause chain for nested constraint violations
+            (e.cause?.message?.let { isSqliteUniqueConstraintViolation(Exception(it)) } ?: false)
+    }
 }

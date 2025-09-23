@@ -105,52 +105,8 @@ class CreateScopeHandler(
                 }.bind()
                 logger.info("Scope saved successfully", mapOf("scopeId" to savedScope.id.value))
 
-                // Handle alias generation and storage (always generate an alias for consistency with contract)
-                val canonicalAlias = run {
-                    logger.debug(
-                        "Processing alias generation",
-                        mapOf(
-                            "scopeId" to savedScope.id.value,
-                            "aliasStrategy" to aliasStrategy,
-                        ),
-                    )
-
-                    // Determine alias name based on command variant
-                    val aliasName = when (command) {
-                        is CreateScopeCommand.WithCustomAlias -> {
-                            // Custom alias provided - validate format
-                            logger.debug("Validating custom alias", mapOf("customAlias" to command.alias))
-                            AliasName.create(command.alias).mapLeft { aliasError ->
-                                logger.warn("Invalid custom alias format", mapOf("alias" to command.alias, "error" to aliasError.toString()))
-                                applicationErrorMapper.mapDomainError(
-                                    aliasError,
-                                    ErrorMappingContext(attemptedValue = command.alias),
-                                )
-                            }.bind()
-                        }
-                        is CreateScopeCommand.WithAutoAlias -> {
-                            // Generate alias automatically
-                            logger.debug("Generating automatic alias")
-                            aliasGenerationService.generateRandomAlias().mapLeft { aliasError ->
-                                logger.error("Failed to generate alias", mapOf("scopeId" to savedScope.id.value, "error" to aliasError.toString()))
-                                applicationErrorMapper.mapDomainError(
-                                    aliasError,
-                                    ErrorMappingContext(scopeId = savedScope.id.value),
-                                )
-                            }.bind()
-                        }
-                    }
-
-                    // Create and save the canonical alias (Insert-First strategy)
-                    // Let the database unique constraint handle duplicates
-                    val scopeAlias = ScopeAlias.createCanonical(savedScope.id, aliasName, Clock.System.now())
-                    scopeAliasRepository.save(scopeAlias).mapLeft { error ->
-                        applicationErrorMapper.mapDomainError(error)
-                    }.bind()
-
-                    logger.info("Canonical alias created successfully", mapOf("alias" to aliasName.value, "scopeId" to savedScope.id.value))
-                    aliasName.value
-                }
+                // Handle alias generation and storage (extracted for improved readability)
+                val canonicalAlias = generateAndSaveAlias(savedScope, command, aliasStrategy).bind()
 
                 val result = ScopeMapper.toCreateScopeResult(savedScope, canonicalAlias)
 
@@ -175,5 +131,67 @@ class CreateScopeHandler(
                 "message" to error.toString(),
             ),
         )
+    }
+
+    /**
+     * Generates and saves a canonical alias for a newly created scope.
+     *
+     * This method encapsulates the alias creation logic, handling both custom and
+     * auto-generated aliases. It uses an insert-first strategy to prevent TOCOU
+     * race conditions by relying on database unique constraints.
+     *
+     * @param savedScope The scope that was successfully saved
+     * @param command The create command containing alias information
+     * @param aliasStrategy The strategy used for alias generation ("custom" or "auto")
+     * @return Either an error or the canonical alias string value
+     */
+    private suspend fun generateAndSaveAlias(
+        savedScope: io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope,
+        command: CreateScopeCommand,
+        aliasStrategy: String,
+    ): Either<ScopeContractError, String> = either {
+        logger.debug(
+            "Processing alias generation",
+            mapOf(
+                "scopeId" to savedScope.id.value,
+                "aliasStrategy" to aliasStrategy,
+            ),
+        )
+
+        // Determine alias name based on command variant
+        val aliasName = when (command) {
+            is CreateScopeCommand.WithCustomAlias -> {
+                // Custom alias provided - validate format
+                logger.debug("Validating custom alias", mapOf("customAlias" to command.alias))
+                AliasName.create(command.alias).mapLeft { aliasError ->
+                    logger.warn("Invalid custom alias format", mapOf("alias" to command.alias, "error" to aliasError.toString()))
+                    applicationErrorMapper.mapDomainError(
+                        aliasError,
+                        ErrorMappingContext(attemptedValue = command.alias),
+                    )
+                }.bind()
+            }
+            is CreateScopeCommand.WithAutoAlias -> {
+                // Generate alias automatically
+                logger.debug("Generating automatic alias")
+                aliasGenerationService.generateRandomAlias().mapLeft { aliasError ->
+                    logger.error("Failed to generate alias", mapOf("scopeId" to savedScope.id.value, "error" to aliasError.toString()))
+                    applicationErrorMapper.mapDomainError(
+                        aliasError,
+                        ErrorMappingContext(scopeId = savedScope.id.value),
+                    )
+                }.bind()
+            }
+        }
+
+        // Create and save the canonical alias (Insert-First strategy)
+        // Let the database unique constraint handle duplicates
+        val scopeAlias = ScopeAlias.createCanonical(savedScope.id, aliasName, Clock.System.now())
+        scopeAliasRepository.save(scopeAlias).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error)
+        }.bind()
+
+        logger.info("Canonical alias created successfully", mapOf("alias" to aliasName.value, "scopeId" to savedScope.id.value))
+        aliasName.value
     }
 }
