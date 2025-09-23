@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
     alias(libs.plugins.spotless)
-    id("org.cyclonedx.bom") version "2.4.0"
+    id("org.cyclonedx.bom") version "2.4.1"
     id("org.spdx.sbom") version "0.9.0"
 }
 
