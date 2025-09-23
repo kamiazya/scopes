@@ -57,10 +57,10 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
-    private fun createDuplicateContextKeyError(contextKey: String): ScopeContractError.BusinessError.DuplicateContextKey =
+    private fun createDuplicateContextKeyError(contextKey: String, existingContextId: String? = null): ScopeContractError.BusinessError.DuplicateContextKey =
         ScopeContractError.BusinessError.DuplicateContextKey(
             contextKey = contextKey,
-            existingContextId = null,
+            existingContextId = existingContextId,
         )
 
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
@@ -334,7 +334,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ContextError.StateNotFound -> mapNotFoundError(error.contextId)
 
         // Other errors
-        is ContextError.DuplicateContextKey -> createDuplicateContextKeyError(error.key)
+        is ContextError.DuplicateContextKey -> createDuplicateContextKeyError(error.key, error.existingContextId)
         is ContextError.KeyInvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedKey,
             expectedFormat = "Valid context key format",
