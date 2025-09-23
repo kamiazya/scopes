@@ -18,6 +18,25 @@ updates:
       prefix: "deps"
       include: "scope"
 
+  # npm dependencies (pnpm-managed)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "kamiazya"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "changesets"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

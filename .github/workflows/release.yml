@@ -9,6 +9,12 @@ on:
         description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
         required: true
         type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -90,6 +96,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
+            VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
           fi
@@ -138,10 +146,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+            BINARY_NAME="scopes-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
             cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
           else
-            BINARY_NAME="scopes-${{ steps.version.outputs.tag_version }}-${{ matrix.platform }}-${{ matrix.arch }}"
+            BINARY_NAME="scopes-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}"
             cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
           fi
           echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
@@ -425,6 +433,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
+            VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
           fi
@@ -458,7 +468,7 @@ jobs:
 
       - name: Create unified package structure
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-dist"
+          PACKAGE_NAME="scopes-${{ steps.version.outputs.version }}-dist"
           mkdir -p "${PACKAGE_NAME}"
           cd "${PACKAGE_NAME}"
           
@@ -593,7 +603,7 @@ jobs:
 
       - name: Create distribution package archives
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.tag_version }}-dist"
+          PACKAGE_NAME="scopes-${{ steps.version.outputs.version }}-dist"
           
           # Create tar.gz archive
           tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
@@ -639,6 +649,8 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
             VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
@@ -691,7 +703,7 @@ jobs:
           ```
 
           ### Manual Verification
-          For detailed verification instructions, see our [Security Verification Guide](./docs/guides/security-verification.md).
+          For detailed verification instructions, see our [Security Verification Guide](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md).
 
           ## 📦 Artifacts
           - Binary downloads include SHA-256 checksums
@@ -699,9 +711,9 @@ jobs:
           - SBOM files available in CycloneDX format
 
           ## 📚 Documentation
-          - [Installation Guide](./install/README.md)
-          - [Security Verification](./docs/guides/security-verification.md)
-          - [SBOM Verification](./docs/guides/sbom-verification.md)
+          - [Installation Guide](https://github.com/kamiazya/scopes/blob/main/install/README.md)
+          - [Security Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md)
+          - [SBOM Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/sbom-verification.md)
           EOF
 
           # Store the custom content
@@ -723,7 +735,7 @@ jobs:
           # Create or update release without destructive deletion
           if ! gh release view "${{ steps.version.outputs.tag_version }}" > /dev/null 2>&1; then
             gh release create "${{ steps.version.outputs.tag_version }}" \
-              --title "Release ${{ steps.version.outputs.tag_version }}" \
+              --title "Release ${{ steps.version.outputs.version }}" \
               --notes "$NOTES" \
               --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
           else
@@ -771,7 +783,7 @@ jobs:
 
           #### Linux/macOS
           ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install-unified.sh | sh
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
           ```
 
           #### Windows PowerShell
@@ -783,7 +795,7 @@ jobs:
 
           For air-gapped environments or enterprise deployments, download the unified distribution package:
 
-          1. Download `scopes-${{ steps.version.outputs.tag_version }}-dist.tar.gz` or `.zip`
+          1. Download `scopes-${{ steps.version.outputs.version }}-dist.tar.gz` or `.zip`
           2. Extract the package
           3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
 
@@ -816,7 +828,7 @@ jobs:
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
           # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.tag_version }}-linux-x64 \
+          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.version }}-linux-x64 \
             --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```

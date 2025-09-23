@@ -1,0 +1,87 @@
+name: Version and Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  actions: read
+
+jobs:
+  version-and-release:
+    name: Version and Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.semver_tag.outputs.tag }}
+      published: ${{ steps.changesets.outputs.published }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        with:
+          # This expects you to have a script called version-packages that runs some logic and then calls `changeset version`.
+          version: pnpm version-packages
+          # This expects you to have a script called tag that calls `changeset tag`.
+          publish: pnpm tag
+          title: "Release new version"
+          commit: "Release new version"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push SemVer tag (vX.Y.Z)
+        id: semver_tag
+        if: steps.changesets.outputs.published == 'true' || steps.changesets.outputs.hasChangesets == 'true'
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "Preparing to create tag: $TAG"
+          git fetch --tags --quiet
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Skipping creation."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Pushed tag $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  run-release:
+    name: Run Release workflow
+    needs: version-and-release
+    if: needs.version-and-release.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.version-and-release.outputs.tag }}
+    secrets: inherit
