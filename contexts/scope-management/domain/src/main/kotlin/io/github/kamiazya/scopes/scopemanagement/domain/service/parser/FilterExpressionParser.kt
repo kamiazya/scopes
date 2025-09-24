@@ -57,122 +57,131 @@ class FilterExpressionParser {
         var position = 0
 
         while (position < expression.length) {
-            when {
-                expression[position].isWhitespace() -> position++
-
-                expression[position] == '(' -> {
-                    tokens.add(Token.LeftParen(position))
-                    position++
-                }
-
-                expression[position] == ')' -> {
-                    tokens.add(Token.RightParen(position))
-                    position++
-                }
-
-                expression[position] == '\'' || expression[position] == '"' -> {
-                    val quote = expression[position]
-                    val start = position++
-
-                    while (position < expression.length && expression[position] != quote) {
-                        position++
-                    }
-
-                    if (position >= expression.length) {
-                        return ContextError.InvalidFilterSyntax(
-                            expression = expression,
-                            errorType = ContextError.FilterSyntaxErrorType.UnterminatedString(start),
-                        ).left()
-                    }
-
-                    val value = expression.substring(start + 1, position)
-                    tokens.add(Token.StringLiteral(value, start))
-                    position++ // Skip closing quote
-                }
-
-                expression.substring(position).startsWith("==") -> {
-                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
-                    position += 2
-                }
-
-                expression.substring(position).startsWith("!=") -> {
-                    tokens.add(Token.Operator(ComparisonOperator.NOT_EQUALS, position))
-                    position += 2
-                }
-
-                expression.substring(position).startsWith(">=") -> {
-                    tokens.add(Token.Operator(ComparisonOperator.GREATER_THAN_OR_EQUAL, position))
-                    position += 2
-                }
-
-                expression.substring(position).startsWith("<=") -> {
-                    tokens.add(Token.Operator(ComparisonOperator.LESS_THAN_OR_EQUAL, position))
-                    position += 2
-                }
-
-                expression[position] == '>' -> {
-                    tokens.add(Token.Operator(ComparisonOperator.GREATER_THAN, position))
-                    position++
-                }
-
-                expression[position] == '<' -> {
-                    tokens.add(Token.Operator(ComparisonOperator.LESS_THAN, position))
-                    position++
-                }
-
-                // Support documented field:value syntax
-                expression[position] == ':' -> {
-                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
-                    position++
-                }
-
-                // Support single '=' (must check after '==' and '!=' to avoid conflicts)
-                expression[position] == '=' -> {
-                    tokens.add(Token.Operator(ComparisonOperator.EQUALS, position))
-                    position++
-                }
-
-                expression.substring(position).uppercase().startsWith("AND") &&
-                    (position + 3 >= expression.length || !expression[position + 3].isLetterOrDigit()) -> {
-                    tokens.add(Token.And(position))
-                    position += 3
-                }
-
-                expression.substring(position).uppercase().startsWith("OR") &&
-                    (position + 2 >= expression.length || !expression[position + 2].isLetterOrDigit()) -> {
-                    tokens.add(Token.Or(position))
-                    position += 2
-                }
-
-                expression.substring(position).uppercase().startsWith("NOT") &&
-                    (position + 3 >= expression.length || !expression[position + 3].isLetterOrDigit()) -> {
-                    tokens.add(Token.Not(position))
-                    position += 3
-                }
-
-                expression[position].isLetterOrDigit() || expression[position] == '_' -> {
-                    val start = position
-
-                    while (position < expression.length &&
-                        (expression[position].isLetterOrDigit() || expression[position] == '_')
-                    ) {
-                        position++
-                    }
-
-                    val value = expression.substring(start, position)
-                    tokens.add(Token.Identifier(value, start))
-                }
-
-                else -> {
-                    return ContextError.InvalidFilterSyntax(
-                        expression = expression,
-                        errorType = ContextError.FilterSyntaxErrorType.UnexpectedCharacter(expression[position], position),
-                    ).left()
-                }
+            val result = processNextToken(expression, position, tokens)
+            when (result) {
+                is TokenResult.Success -> position = result.newPosition
+                is TokenResult.Error -> return result.error.left()
             }
         }
 
         return tokens.right()
+    }
+
+    private fun processNextToken(expression: String, position: Int, tokens: MutableList<Token>): TokenResult {
+        val char = expression[position]
+
+        return when {
+            char.isWhitespace() -> TokenResult.Success(position + 1)
+            char == '(' -> processParenthesis(position, tokens, Token.LeftParen(position))
+            char == ')' -> processParenthesis(position, tokens, Token.RightParen(position))
+            char == '\'' || char == '"' -> processStringLiteral(expression, position, tokens)
+            else -> processOperatorOrKeyword(expression, position, tokens)
+        }
+    }
+
+    private fun processParenthesis(position: Int, tokens: MutableList<Token>, token: Token): TokenResult {
+        tokens.add(token)
+        return TokenResult.Success(position + 1)
+    }
+
+    private fun processStringLiteral(expression: String, position: Int, tokens: MutableList<Token>): TokenResult {
+        val quote = expression[position]
+        val start = position
+        var currentPos = position + 1
+
+        while (currentPos < expression.length && expression[currentPos] != quote) {
+            currentPos++
+        }
+
+        if (currentPos >= expression.length) {
+            return TokenResult.Error(
+                ContextError.InvalidFilterSyntax(
+                    expression = expression,
+                    errorType = ContextError.FilterSyntaxErrorType.UnterminatedString(start),
+                ),
+            )
+        }
+
+        val value = expression.substring(start + 1, currentPos)
+        tokens.add(Token.StringLiteral(value, start))
+        return TokenResult.Success(currentPos + 1)
+    }
+
+    private fun processOperatorOrKeyword(expression: String, position: Int, tokens: MutableList<Token>): TokenResult {
+        val remaining = expression.substring(position)
+
+        return when {
+            remaining.startsWith("==") -> processDoubleCharOperator(position, tokens, ComparisonOperator.EQUALS)
+            remaining.startsWith("!=") -> processDoubleCharOperator(position, tokens, ComparisonOperator.NOT_EQUALS)
+            remaining.startsWith(">=") -> processDoubleCharOperator(position, tokens, ComparisonOperator.GREATER_THAN_OR_EQUAL)
+            remaining.startsWith("<=") -> processDoubleCharOperator(position, tokens, ComparisonOperator.LESS_THAN_OR_EQUAL)
+            expression[position] == '>' -> processSingleCharOperator(position, tokens, ComparisonOperator.GREATER_THAN)
+            expression[position] == '<' -> processSingleCharOperator(position, tokens, ComparisonOperator.LESS_THAN)
+            expression[position] == ':' -> processSingleCharOperator(position, tokens, ComparisonOperator.EQUALS)
+            expression[position] == '=' -> processSingleCharOperator(position, tokens, ComparisonOperator.EQUALS)
+            else -> processKeywordOrIdentifier(expression, position, tokens)
+        }
+    }
+
+    private fun processDoubleCharOperator(position: Int, tokens: MutableList<Token>, operator: ComparisonOperator): TokenResult {
+        tokens.add(Token.Operator(operator, position))
+        return TokenResult.Success(position + 2)
+    }
+
+    private fun processSingleCharOperator(position: Int, tokens: MutableList<Token>, operator: ComparisonOperator): TokenResult {
+        tokens.add(Token.Operator(operator, position))
+        return TokenResult.Success(position + 1)
+    }
+
+    private fun processKeywordOrIdentifier(expression: String, position: Int, tokens: MutableList<Token>): TokenResult {
+        val remaining = expression.substring(position).uppercase()
+
+        return when {
+            remaining.startsWith("AND") && isWordBoundary(expression, position, 3) -> {
+                tokens.add(Token.And(position))
+                TokenResult.Success(position + 3)
+            }
+            remaining.startsWith("OR") && isWordBoundary(expression, position, 2) -> {
+                tokens.add(Token.Or(position))
+                TokenResult.Success(position + 2)
+            }
+            remaining.startsWith("NOT") && isWordBoundary(expression, position, 3) -> {
+                tokens.add(Token.Not(position))
+                TokenResult.Success(position + 3)
+            }
+            isIdentifierStart(expression[position]) -> processIdentifier(expression, position, tokens)
+            else -> TokenResult.Error(
+                ContextError.InvalidFilterSyntax(
+                    expression = expression,
+                    errorType = ContextError.FilterSyntaxErrorType.UnexpectedCharacter(expression[position], position),
+                ),
+            )
+        }
+    }
+
+    private fun processIdentifier(expression: String, position: Int, tokens: MutableList<Token>): TokenResult {
+        val start = position
+        var currentPos = position
+
+        while (currentPos < expression.length && isIdentifierChar(expression[currentPos])) {
+            currentPos++
+        }
+
+        val value = expression.substring(start, currentPos)
+        tokens.add(Token.Identifier(value, start))
+        return TokenResult.Success(currentPos)
+    }
+
+    private fun isWordBoundary(expression: String, position: Int, length: Int): Boolean =
+        position + length >= expression.length || !expression[position + length].isLetterOrDigit()
+
+    private fun isIdentifierStart(char: Char): Boolean = char.isLetterOrDigit() || char == '_'
+
+    private fun isIdentifierChar(char: Char): Boolean = char.isLetterOrDigit() || char == '_'
+
+    private sealed class TokenResult {
+        data class Success(val newPosition: Int) : TokenResult()
+        data class Error(val error: ContextError) : TokenResult()
     }
 
     private class Parser(private val tokens: List<Token>) {
