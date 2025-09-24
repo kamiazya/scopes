@@ -70,7 +70,7 @@ class ScopeManagementCommandPortAdapter(
             title = result.title,
             description = result.description,
             parentId = result.parentId,
-            canonicalAlias = result.canonicalAlias ?: "", // Use actual canonical alias or empty string if none
+            canonicalAlias = result.canonicalAlias, // Now non-null in DTO
             createdAt = result.createdAt,
             updatedAt = result.updatedAt,
         )

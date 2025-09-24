@@ -19,6 +19,15 @@ import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 object ScopeMapper {
 
     /**
+     * Maps domain Aspects to a simple String map representation.
+     * Converts AspectKey/AspectValue domain types to primitive strings.
+     */
+    private fun mapAspects(aspects: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects): Map<String, List<String>> =
+        aspects.toMap()
+            .mapKeys { it.key.value }
+            .mapValues { it.value.toList().map { v -> v.value } }
+
+    /**
      * Map Scope entity to UpdateScopeResult DTO.
      * Requires canonical alias to be provided as it's now non-null in the DTO.
      */
@@ -30,7 +39,7 @@ object ScopeMapper {
         canonicalAlias = canonicalAlias,
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = mapAspects(scope.aspects),
     )
 
     /**
@@ -43,7 +52,7 @@ object ScopeMapper {
         parentId = scope.parentId?.toString(),
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = mapAspects(scope.aspects),
     )
 
     /**
@@ -58,7 +67,7 @@ object ScopeMapper {
         customAliases = customAliases,
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = mapAspects(scope.aspects),
     )
 
     /**
@@ -89,7 +98,7 @@ object ScopeMapper {
             customAliases = sortedAliases.filterNot { it.isCanonical }.map { it.aliasName },
             createdAt = scope.createdAt,
             updatedAt = scope.updatedAt,
-            aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+            aspects = mapAspects(scope.aspects),
         )
     }
 
@@ -111,7 +120,7 @@ object ScopeMapper {
             createdAt = scope.createdAt,
             updatedAt = scope.updatedAt,
             isArchived = (scope.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
-            aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+            aspects = mapAspects(scope.aspects),
         ).right()
     }
 
@@ -128,7 +137,7 @@ object ScopeMapper {
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
         isArchived = (scope.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
-        aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
+        aspects = mapAspects(scope.aspects),
     )
 
     /**

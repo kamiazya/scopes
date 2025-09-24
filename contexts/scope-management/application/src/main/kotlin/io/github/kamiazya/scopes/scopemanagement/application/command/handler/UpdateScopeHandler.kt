@@ -110,6 +110,15 @@ class UpdateScopeHandler(
         val events: List<PendingEventEnvelope>,
     )
 
+    /**
+     * Converts domain event envelopes to pending event envelopes for persistence.
+     */
+    private fun toPendingEventEnvelopes(
+        events: List<io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>>
+    ): List<PendingEventEnvelope> = events.map { envelope ->
+        PendingEventEnvelope(envelope.event as io.github.kamiazya.scopes.platform.domain.event.DomainEvent)
+    }
+
     private suspend fun applyUpdates(
         initialAggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
         command: UpdateScopeCommand,
@@ -127,11 +136,7 @@ class UpdateScopeHandler(
             }.bind()
 
             currentAggregate = titleUpdateResult.aggregate
-            eventsToSave.addAll(
-                titleUpdateResult.events.map { envelope ->
-                    PendingEventEnvelope(envelope.event as io.github.kamiazya.scopes.platform.domain.event.DomainEvent)
-                },
-            )
+            eventsToSave.addAll(toPendingEventEnvelopes(titleUpdateResult.events))
         }
 
         // Apply description update if provided
@@ -141,11 +146,7 @@ class UpdateScopeHandler(
             }.bind()
 
             currentAggregate = descriptionUpdateResult.aggregate
-            eventsToSave.addAll(
-                descriptionUpdateResult.events.map { envelope ->
-                    PendingEventEnvelope(envelope.event as io.github.kamiazya.scopes.platform.domain.event.DomainEvent)
-                },
-            )
+            eventsToSave.addAll(toPendingEventEnvelopes(descriptionUpdateResult.events))
         }
 
         HandlerResult(currentAggregate, eventsToSave)
