@@ -28,83 +28,91 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
     fun validateValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> {
         // Type-specific validation
         return when (definition.type) {
-            is AspectType.Text -> {
-                // Text type accepts any string value
-                value.right()
-            }
-            is AspectType.Numeric -> {
-                if (!value.isNumeric()) {
-                    ScopesError.ValidationFailed(
-                        field = definition.key.value,
-                        value = value.value,
-                        constraint = ScopesError.ValidationConstraintType.InvalidType(
-                            expectedType = "number",
-                            actualType = "text",
-                        ),
-                        details = mapOf(
-                            "error" to ValidationError.InvalidNumericValue(definition.key, value),
-                        ),
-                    ).left()
-                } else {
-                    value.right()
-                }
-            }
-            is AspectType.BooleanType -> {
-                if (!value.isBoolean()) {
-                    ScopesError.ValidationFailed(
-                        field = definition.key.value,
-                        value = value.value,
-                        constraint = ScopesError.ValidationConstraintType.InvalidType(
-                            expectedType = "boolean",
-                            actualType = "text",
-                        ),
-                        details = mapOf(
-                            "error" to ValidationError.InvalidBooleanValue(definition.key, value),
-                        ),
-                    ).left()
-                } else {
-                    value.right()
-                }
-            }
-            is AspectType.Ordered -> {
-                val orderedType = definition.type
-                if (!orderedType.allowedValues.contains(value)) {
-                    ScopesError.ValidationFailed(
-                        field = definition.key.value,
-                        value = value.value,
-                        constraint = ScopesError.ValidationConstraintType.NotInAllowedValues(
-                            allowedValues = orderedType.allowedValues.map { it.value },
-                        ),
-                        details = mapOf(
-                            "error" to ValidationError.ValueNotInAllowedList(
-                                definition.key,
-                                value,
-                                orderedType.allowedValues,
-                            ),
-                        ),
-                    ).left()
-                } else {
-                    value.right()
-                }
-            }
-            is AspectType.Duration -> {
-                if (!value.isDuration()) {
-                    ScopesError.ValidationFailed(
-                        field = definition.key.value,
-                        value = value.value,
-                        constraint = ScopesError.ValidationConstraintType.InvalidFormat(
-                            expectedFormat = "ISO 8601 duration (e.g., 'P1D', 'PT2H30M')",
-                        ),
-                        details = mapOf(
-                            "error" to ValidationError.InvalidDurationValue(definition.key, value),
-                        ),
-                    ).left()
-                } else {
-                    value.right()
-                }
-            }
+            is AspectType.Text -> validateTextValue(definition, value)
+            is AspectType.Numeric -> validateNumericValue(definition, value)
+            is AspectType.BooleanType -> validateBooleanValue(definition, value)
+            is AspectType.Ordered -> validateOrderedValue(definition, value)
+            is AspectType.Duration -> validateDurationValue(definition, value)
         }
     }
+
+    private fun validateTextValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> {
+        // Text type accepts any string value
+        return value.right()
+    }
+
+    private fun validateNumericValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> = if (!value.isNumeric()) {
+        createValidationError(
+            definition,
+            value,
+            ScopesError.ValidationConstraintType.InvalidType(
+                expectedType = "number",
+                actualType = "text",
+            ),
+            ValidationError.InvalidNumericValue(definition.key, value),
+        ).left()
+    } else {
+        value.right()
+    }
+
+    private fun validateBooleanValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> = if (!value.isBoolean()) {
+        createValidationError(
+            definition,
+            value,
+            ScopesError.ValidationConstraintType.InvalidType(
+                expectedType = "boolean",
+                actualType = "text",
+            ),
+            ValidationError.InvalidBooleanValue(definition.key, value),
+        ).left()
+    } else {
+        value.right()
+    }
+
+    private fun validateOrderedValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> {
+        val orderedType = definition.type as AspectType.Ordered
+        return if (!orderedType.allowedValues.contains(value)) {
+            createValidationError(
+                definition,
+                value,
+                ScopesError.ValidationConstraintType.NotInAllowedValues(
+                    allowedValues = orderedType.allowedValues.map { it.value },
+                ),
+                ValidationError.ValueNotInAllowedList(
+                    definition.key,
+                    value,
+                    orderedType.allowedValues,
+                ),
+            ).left()
+        } else {
+            value.right()
+        }
+    }
+
+    private fun validateDurationValue(definition: AspectDefinition, value: AspectValue): Either<ScopesError, AspectValue> = if (!value.isDuration()) {
+        createValidationError(
+            definition,
+            value,
+            ScopesError.ValidationConstraintType.InvalidFormat(
+                expectedFormat = "ISO 8601 duration (e.g., 'P1D', 'PT2H30M')",
+            ),
+            ValidationError.InvalidDurationValue(definition.key, value),
+        ).left()
+    } else {
+        value.right()
+    }
+
+    private fun createValidationError(
+        definition: AspectDefinition,
+        value: AspectValue,
+        constraint: ScopesError.ValidationConstraintType,
+        error: ValidationError,
+    ): ScopesError.ValidationFailed = ScopesError.ValidationFailed(
+        field = definition.key.value,
+        value = value.value,
+        constraint = constraint,
+        details = mapOf("error" to error),
+    )
 
     /**
      * Validate that multiple values are allowed for an aspect definition.

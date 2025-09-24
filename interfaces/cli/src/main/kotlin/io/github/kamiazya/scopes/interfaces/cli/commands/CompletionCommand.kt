@@ -31,73 +31,102 @@ class CompletionCommand :
 
     override fun run() {
         runBlocking {
-            // Collect unique aspect key:value pairs across all scopes (roots + children)
             val aspectPairs = mutableSetOf<String>()
 
-            // Page through all root scopes to avoid missing candidates
-            val pageLimit = 1000
-            var offset = 0
-            val rootScopes = mutableListOf<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>()
+            // Collect aspects from all scopes (roots + children)
+            val rootScopes = fetchAllRootScopes()
+            collectAspectsFromRootScopes(rootScopes, aspectPairs)
+            collectAspectsFromChildScopes(rootScopes, aspectPairs)
 
-            while (true) {
-                val page = scopeQueryAdapter
-                    .listRootScopes(offset = offset, limit = pageLimit)
-                    .fold({ null }, { it }) ?: break
+            // Output completion candidates
+            outputCompletionCandidates(aspectPairs)
+        }
+    }
 
-                val items = page.scopes
-                if (items.isEmpty()) break
+    private suspend fun fetchAllRootScopes(): List<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult> {
+        val rootScopes = mutableListOf<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>()
+        val pageLimit = 1000
+        var offset = 0
 
-                rootScopes.addAll(items)
-                if (items.size < pageLimit) break
-                offset += pageLimit
-            }
+        while (true) {
+            val page = scopeQueryAdapter
+                .listRootScopes(offset = offset, limit = pageLimit)
+                .fold({ null }, { it }) ?: break
 
-            // Extract aspects from root scopes
-            rootScopes.forEach { scope ->
-                scope.aspects.forEach { (key, values) ->
-                    values.forEach { value ->
-                        aspectPairs.add("$key:$value")
+            val items = page.scopes
+            if (items.isEmpty()) break
+
+            rootScopes.addAll(items)
+            if (items.size < pageLimit) break
+            offset += pageLimit
+        }
+
+        return rootScopes
+    }
+
+    private fun collectAspectsFromRootScopes(
+        rootScopes: List<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>,
+        aspectPairs: MutableSet<String>,
+    ) {
+        rootScopes.forEach { scope ->
+            extractAspectsFromScope(scope, aspectPairs)
+        }
+    }
+
+    private suspend fun collectAspectsFromChildScopes(
+        rootScopes: List<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>,
+        aspectPairs: MutableSet<String>,
+    ) {
+        coroutineScope {
+            val semaphore = Semaphore(8)
+            val jobs = rootScopes.map { rootScope ->
+                async {
+                    semaphore.withPermit {
+                        fetchAspectsFromChildren(rootScope)
                     }
                 }
             }
+            jobs.awaitAll().forEach { localPairs ->
+                aspectPairs.addAll(localPairs)
+            }
+        }
+    }
 
-            // Also extract from children of each root scope with capped concurrency
-            coroutineScope {
-                val semaphore = Semaphore(8)
-                val jobs = rootScopes.map { rootScope ->
-                    async {
-                        semaphore.withPermit {
-                            val localPairs = mutableSetOf<String>()
-                            var childOffset = 0
-                            while (true) {
-                                val childPage = scopeQueryAdapter
-                                    .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
-                                    .fold({ null }, { it }) ?: break
-                                val children = childPage.scopes
-                                if (children.isEmpty()) break
+    private suspend fun fetchAspectsFromChildren(rootScope: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult): Set<String> {
+        val localPairs = mutableSetOf<String>()
+        val pageLimit = 1000
+        var childOffset = 0
 
-                                children.forEach { child ->
-                                    child.aspects.forEach { (key, values) ->
-                                        values.forEach { value ->
-                                            localPairs.add("$key:$value")
-                                        }
-                                    }
-                                }
+        while (true) {
+            val childPage = scopeQueryAdapter
+                .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
+                .fold({ null }, { it }) ?: break
 
-                                if (children.size < pageLimit) break
-                                childOffset += pageLimit
-                            }
-                            localPairs
-                        }
-                    }
-                }
-                jobs.awaitAll().forEach { local -> aspectPairs.addAll(local) }
+            val children = childPage.scopes
+            if (children.isEmpty()) break
+
+            children.forEach { child ->
+                extractAspectsFromScope(child, localPairs)
             }
 
-            // Output each aspect pair on a new line for shell completion
-            aspectPairs.sorted().forEach { pair ->
-                echo(pair)
+            if (children.size < pageLimit) break
+            childOffset += pageLimit
+        }
+
+        return localPairs
+    }
+
+    private fun extractAspectsFromScope(scope: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult, aspectPairs: MutableSet<String>) {
+        scope.aspects.forEach { (key, values) ->
+            values.forEach { value ->
+                aspectPairs.add("$key:$value")
             }
+        }
+    }
+
+    private fun outputCompletionCandidates(aspectPairs: Set<String>) {
+        aspectPairs.sorted().forEach { pair ->
+            echo(pair)
         }
     }
 }
