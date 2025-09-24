@@ -6,38 +6,36 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractE
  * Maps domain and contract errors to user-friendly messages for CLI output.
  */
 object ErrorMessageMapper {
+    private val inputErrorMapper = InputErrorMapper()
+    private val businessErrorMapper = BusinessErrorMapper()
+    private val systemErrorMapper = SystemErrorMapper()
+    private val genericErrorMapper = GenericErrorMapper()
+
     /**
      * Maps any error to a user-friendly message.
      */
     fun toUserMessage(error: Any): String = when (error) {
         is ScopeContractError -> getMessage(error)
-        else -> getGenericErrorMessage(error)
-    }
-
-    private fun getGenericErrorMessage(error: Any): String {
-        val errorString = error.toString()
-        return when {
-            errorString.contains("NotFound") -> "The requested item was not found"
-            errorString.contains("AlreadyExists") -> "The item already exists"
-            errorString.contains("Invalid") -> "Invalid input provided"
-            errorString.contains("Conflict") -> "Operation conflicts with current state"
-            errorString.contains("Unavailable") -> "Service temporarily unavailable"
-            else -> "An error occurred: $error"
-        }
+        else -> genericErrorMapper.mapGenericError(error)
     }
 
     /**
      * Maps contract errors to user-friendly messages.
      */
     fun getMessage(error: ScopeContractError): String = when (error) {
-        is ScopeContractError.InputError -> getInputErrorMessage(error)
-        is ScopeContractError.BusinessError -> getBusinessErrorMessage(error)
+        is ScopeContractError.InputError -> inputErrorMapper.mapInputError(error)
+        is ScopeContractError.BusinessError -> businessErrorMapper.mapBusinessError(error)
         is ScopeContractError.DataInconsistency.MissingCanonicalAlias ->
             "Data inconsistency: Scope ${error.scopeId} is missing its canonical alias. Contact administrator to rebuild aliases."
-        is ScopeContractError.SystemError -> getSystemErrorMessage(error)
+        is ScopeContractError.SystemError -> systemErrorMapper.mapSystemError(error)
     }
+}
 
-    private fun getInputErrorMessage(error: ScopeContractError.InputError): String = when (error) {
+/**
+ * Specialized mapper for input validation errors.
+ */
+internal class InputErrorMapper {
+    fun mapInputError(error: ScopeContractError.InputError): String = when (error) {
         is ScopeContractError.InputError.InvalidId ->
             "Invalid ID format: ${error.id}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
         is ScopeContractError.InputError.InvalidTitle -> formatTitleError(error)
@@ -134,8 +132,13 @@ object ErrorMessageMapper {
         is ScopeContractError.ValidationConstraint.RequiredField ->
             "is required"
     }
+}
 
-    private fun getBusinessErrorMessage(error: ScopeContractError.BusinessError): String = when (error) {
+/**
+ * Specialized mapper for business logic errors.
+ */
+internal class BusinessErrorMapper {
+    fun mapBusinessError(error: ScopeContractError.BusinessError): String = when (error) {
         is ScopeContractError.BusinessError.NotFound -> "Not found: ${error.scopeId}"
         is ScopeContractError.BusinessError.DuplicateTitle ->
             "Duplicate title '${error.title}'${error.parentId?.let { " under parent $it" } ?: " at root level"}"
@@ -171,13 +174,35 @@ object ErrorMessageMapper {
             else -> ValidationMessageFormatter.formatHierarchyViolation(violation)
         }
     }
+}
 
-    private fun getSystemErrorMessage(error: ScopeContractError.SystemError): String = when (error) {
+/**
+ * Specialized mapper for system errors.
+ */
+internal class SystemErrorMapper {
+    fun mapSystemError(error: ScopeContractError.SystemError): String = when (error) {
         is ScopeContractError.SystemError.ServiceUnavailable ->
             "Service unavailable: ${error.service}"
         is ScopeContractError.SystemError.Timeout ->
             "Operation timeout: ${error.operation} (${error.timeout})"
         is ScopeContractError.SystemError.ConcurrentModification ->
             "Concurrent modification detected for ${error.scopeId} (expected: ${error.expectedVersion}, actual: ${error.actualVersion})"
+    }
+}
+
+/**
+ * Specialized mapper for generic errors.
+ */
+internal class GenericErrorMapper {
+    fun mapGenericError(error: Any): String {
+        val errorString = error.toString()
+        return when {
+            errorString.contains("NotFound") -> "The requested item was not found"
+            errorString.contains("AlreadyExists") -> "The item already exists"
+            errorString.contains("Invalid") -> "Invalid input provided"
+            errorString.contains("Conflict") -> "Operation conflicts with current state"
+            errorString.contains("Unavailable") -> "Service temporarily unavailable"
+            else -> "An error occurred: $error"
+        }
     }
 }

@@ -22,36 +22,22 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
     private val errorCodeMapper = ErrorCodeMapper()
     private val errorMessageMapper = ErrorMessageMapper()
     private val errorDataExtractor = ErrorDataExtractor()
+    private val jsonResponseBuilder = JsonResponseBuilder()
 
     override fun mapContractError(error: ScopeContractError): CallToolResult {
         val errorResponse = errorMiddleware.mapScopeError(error)
-        val errorData = buildJsonObject {
-            put("code", errorResponse.code)
-            put("message", errorResponse.message)
-            put("userMessage", errorResponse.userMessage)
-            errorResponse.details?.let { details ->
-                putJsonObject("details") {
-                    details.forEach { (key, value) ->
-                        put(key, value.toString())
-                    }
-                }
-            }
-            // Legacy compatibility
-            put("legacyCode", errorCodeMapper.getErrorCode(error))
-            putJsonObject("data") {
-                put("type", error::class.simpleName)
-                put("message", errorMessageMapper.mapContractErrorMessage(error))
-                errorDataExtractor.extractErrorData(error, this)
-            }
-        }
+        val errorData = jsonResponseBuilder.buildErrorResponse(
+            errorResponse = errorResponse,
+            contractError = error,
+            legacyCode = errorCodeMapper.getErrorCode(error),
+            message = errorMessageMapper.mapContractErrorMessage(error),
+            errorDataExtractor = errorDataExtractor,
+        )
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
 
     override fun errorResult(message: String, code: Int?): CallToolResult {
-        val errorData = buildJsonObject {
-            put("code", code ?: -32000)
-            put("message", message)
-        }
+        val errorData = jsonResponseBuilder.buildSimpleErrorResponse(message, code ?: -32000)
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
 
@@ -154,7 +140,7 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
     /**
      * Error data extraction logic to reduce complexity in main mapping method.
      */
-    private class ErrorDataExtractor {
+    internal class ErrorDataExtractor {
         fun extractErrorData(error: ScopeContractError, builder: kotlinx.serialization.json.JsonObjectBuilder) {
             when (error) {
                 is ScopeContractError.BusinessError.AliasNotFound -> {
@@ -193,5 +179,41 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
             errorType = errorType,
             asJson = true,
         )
+    }
+}
+
+/**
+ * Helper class for building JSON error responses.
+ */
+internal class JsonResponseBuilder {
+    fun buildErrorResponse(
+        errorResponse: ErrorResponse,
+        contractError: ScopeContractError,
+        legacyCode: Int,
+        message: String,
+        errorDataExtractor: DefaultErrorMapper.ErrorDataExtractor,
+    ) = buildJsonObject {
+        put("code", errorResponse.code)
+        put("message", errorResponse.message)
+        put("userMessage", errorResponse.userMessage)
+        errorResponse.details?.let { details ->
+            putJsonObject("details") {
+                details.forEach { (key, value) ->
+                    put(key, value.toString())
+                }
+            }
+        }
+        // Legacy compatibility
+        put("legacyCode", legacyCode)
+        putJsonObject("data") {
+            put("type", contractError::class.simpleName)
+            put("message", message)
+            errorDataExtractor.extractErrorData(contractError, this)
+        }
+    }
+
+    fun buildSimpleErrorResponse(message: String, code: Int) = buildJsonObject {
+        put("code", code)
+        put("message", message)
     }
 }
