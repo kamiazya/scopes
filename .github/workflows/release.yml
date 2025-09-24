@@ -30,8 +30,47 @@ env:
   QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
 
 jobs:
+  validate-tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tag format
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          
+          echo "Validating tag: $TAG"
+          
+          # Ensure tag follows semantic versioning pattern
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Error: Invalid tag format '$TAG'"
+            echo "Tag must follow semantic versioning: v1.0.0 or v1.0.0-alpha"
+            
+            # Check if this might be a branch name
+            if [[ "$TAG" == "main" || "$TAG" == "master" || "$TAG" == "develop" || "$TAG" =~ ^(feature|fix|release|hotfix)/ ]]; then
+              echo ""
+              echo "ERROR: It appears you're trying to create a release with a branch name."
+              echo "Please use a proper semantic version tag like v1.0.0"
+              echo ""
+              echo "If using gh workflow run:"
+              echo "  gh workflow run release.yml --field tag='v1.0.0'"
+              echo ""
+              echo "If using GitHub API:"
+              echo "  Ensure 'tag_name' is a version tag, not a branch name"
+            fi
+            exit 1
+          fi
+          
+          echo "✓ Tag format is valid"
+
   build-release:
     name: Build Release Artifacts
+    needs: validate-tag
     runs-on: ${{ matrix.os }}
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -335,7 +374,7 @@ jobs:
   collect-hashes:
     name: Collect Hashes for SLSA
     runs-on: ubuntu-latest
-    needs: build-release
+    needs: [validate-tag, build-release]
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
@@ -402,7 +441,7 @@ jobs:
 
   provenance:
     name: Generate SLSA Provenance
-    needs: [build-release, collect-hashes]
+    needs: [validate-tag, build-release, collect-hashes]
     permissions:
       actions: read
       id-token: write
@@ -415,7 +454,7 @@ jobs:
   create-unified-package:
     name: Create Unified Distribution Package
     runs-on: ubuntu-latest
-    needs: [build-release, provenance]
+    needs: [validate-tag, build-release, provenance]
     if: always() && needs.build-release.result == 'success'
 
     steps:
@@ -630,7 +669,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-release, provenance, create-unified-package]
+    needs: [validate-tag, build-release, provenance, create-unified-package]
     if: always() && needs.build-release.result == 'success'
 
     steps:

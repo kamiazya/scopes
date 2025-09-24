@@ -58,9 +58,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check if version PR was merged
+        id: check_version_pr
+        run: |
+          # Check if this push is from a merged Version PR
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$COMMIT_MSG" == "Release new version" ]]; then
+            echo "is_version_release=true" >> "$GITHUB_OUTPUT"
+            echo "Detected merged Version PR"
+          else
+            echo "is_version_release=false" >> "$GITHUB_OUTPUT"
+            echo "Not a Version PR merge"
+          fi
+
       - name: Create and push SemVer tag (vX.Y.Z)
         id: semver_tag
-        if: steps.changesets.outputs.published == 'true' || steps.changesets.outputs.hasChangesets == 'true'
+        # Only create tag after Version PR is merged (commit message is "Release new version")
+        if: steps.check_version_pr.outputs.is_version_release == 'true'
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
