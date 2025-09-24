@@ -89,6 +89,18 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
      * Error message mapping logic extracted to reduce complexity.
      */
     private class ErrorMessageMapper {
+        companion object {
+            private const val ALIAS_FIELD = "alias"
+            private const val TITLE_FIELD = "title"
+            private const val CONTEXT_KEY_FIELD = "contextKey"
+            private const val CODE_FIELD = "code"
+            private const val MESSAGE_FIELD = "message"
+            private const val USER_MESSAGE_FIELD = "userMessage"
+            private const val DETAILS_FIELD = "details"
+            private const val LEGACY_CODE_FIELD = "legacyCode"
+            private const val DATA_FIELD = "data"
+            private const val TYPE_FIELD = "type"
+        }
         fun mapContractErrorMessage(error: ScopeContractError): String = when (error) {
             is ScopeContractError.BusinessError -> mapBusinessErrorMessage(error)
             is ScopeContractError.InputError -> mapInputErrorMessage(error)
@@ -144,20 +156,20 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         fun extractErrorData(error: ScopeContractError, builder: kotlinx.serialization.json.JsonObjectBuilder) {
             when (error) {
                 is ScopeContractError.BusinessError.AliasNotFound -> {
-                    builder.put("alias", error.alias)
+                    builder.put(ErrorMessageMapper.ALIAS_FIELD, error.alias)
                 }
                 is ScopeContractError.BusinessError.DuplicateAlias -> {
-                    builder.put("alias", error.alias)
+                    builder.put(ErrorMessageMapper.ALIAS_FIELD, error.alias)
                 }
                 is ScopeContractError.BusinessError.DuplicateTitle -> {
-                    builder.put("title", error.title)
+                    builder.put(ErrorMessageMapper.TITLE_FIELD, error.title)
                     error.existingScopeId?.let { builder.put("existingScopeId", it) }
                 }
                 is ScopeContractError.BusinessError.ContextNotFound -> {
-                    builder.put("contextKey", error.contextKey)
+                    builder.put(ErrorMessageMapper.CONTEXT_KEY_FIELD, error.contextKey)
                 }
                 is ScopeContractError.BusinessError.DuplicateContextKey -> {
-                    builder.put("contextKey", error.contextKey)
+                    builder.put(ErrorMessageMapper.CONTEXT_KEY_FIELD, error.contextKey)
                     error.existingContextId?.let { builder.put("existingContextId", it) }
                 }
                 else -> Unit
@@ -193,27 +205,27 @@ internal class JsonResponseBuilder {
         message: String,
         errorDataExtractor: DefaultErrorMapper.ErrorDataExtractor,
     ) = buildJsonObject {
-        put("code", errorResponse.code)
-        put("message", errorResponse.message)
-        put("userMessage", errorResponse.userMessage)
+        put(ErrorMessageMapper.CODE_FIELD, errorResponse.code)
+        put(ErrorMessageMapper.MESSAGE_FIELD, errorResponse.message)
+        put(ErrorMessageMapper.USER_MESSAGE_FIELD, errorResponse.userMessage)
         errorResponse.details?.let { details ->
-            putJsonObject("details") {
+            putJsonObject(ErrorMessageMapper.DETAILS_FIELD) {
                 details.forEach { (key, value) ->
                     put(key, value.toString())
                 }
             }
         }
         // Legacy compatibility
-        put("legacyCode", legacyCode)
-        putJsonObject("data") {
-            put("type", contractError::class.simpleName)
-            put("message", message)
+        put(ErrorMessageMapper.LEGACY_CODE_FIELD, legacyCode)
+        putJsonObject(ErrorMessageMapper.DATA_FIELD) {
+            put(ErrorMessageMapper.TYPE_FIELD, contractError::class.simpleName)
+            put(ErrorMessageMapper.MESSAGE_FIELD, message)
             errorDataExtractor.extractErrorData(contractError, this)
         }
     }
 
     fun buildSimpleErrorResponse(message: String, code: Int) = buildJsonObject {
-        put("code", code)
-        put("message", message)
+        put(ErrorMessageMapper.CODE_FIELD, code)
+        put(ErrorMessageMapper.MESSAGE_FIELD, message)
     }
 }

@@ -19,6 +19,15 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
  */
 class AspectValueValidationService(private val strictValidation: Boolean = true, private val allowPartialMatches: Boolean = false) {
 
+    companion object {
+        private const val TEXT_TYPE = "text"
+        private const val ERROR_KEY = "error"
+        private const val NUMBER_TYPE = "number"
+        private const val BOOLEAN_TYPE = "boolean"
+        private const val EMPTY_VALUE = "empty"
+        private const val ASPECTS_FIELD = "aspects"
+    }
+
     /**
      * Validate a value against the provided aspect definition.
      * @param definition The aspect definition containing validation rules
@@ -46,8 +55,8 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
             definition,
             value,
             ScopesError.ValidationConstraintType.InvalidType(
-                expectedType = "number",
-                actualType = "text",
+                expectedType = NUMBER_TYPE,
+                actualType = TEXT_TYPE,
             ),
             ValidationError.InvalidNumericValue(definition.key, value),
         ).left()
@@ -60,8 +69,8 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
             definition,
             value,
             ScopesError.ValidationConstraintType.InvalidType(
-                expectedType = "boolean",
-                actualType = "text",
+                expectedType = BOOLEAN_TYPE,
+                actualType = TEXT_TYPE,
             ),
             ValidationError.InvalidBooleanValue(definition.key, value),
         ).left()
@@ -111,7 +120,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
         field = definition.key.value,
         value = value.value,
         constraint = constraint,
-        details = mapOf("error" to error),
+        details = mapOf(ERROR_KEY to error),
     )
 
     /**
@@ -124,11 +133,11 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
         valueCount == 0 -> {
             ScopesError.ValidationFailed(
                 field = definition.key.value,
-                value = "empty",
+                value = EMPTY_VALUE,
                 constraint = ScopesError.ValidationConstraintType.EmptyValues(
                     field = definition.key.value,
                 ),
-                details = mapOf("error" to ValidationError.EmptyValuesList(definition.key)),
+                details = mapOf(ERROR_KEY to ValidationError.EmptyValuesList(definition.key)),
             ).left()
         }
         valueCount > 1 && !definition.allowMultiple -> {
@@ -138,7 +147,7 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
                 constraint = ScopesError.ValidationConstraintType.MultipleValuesNotAllowed(
                     field = definition.key.value,
                 ),
-                details = mapOf("error" to ValidationError.MultipleValuesNotAllowed(definition.key)),
+                details = mapOf(ERROR_KEY to ValidationError.MultipleValuesNotAllowed(definition.key)),
             ).left()
         }
         else -> Unit.right()
@@ -160,12 +169,12 @@ class AspectValueValidationService(private val strictValidation: Boolean = true,
             }.toSet()
 
             ScopesError.ValidationFailed(
-                field = "aspects",
+                field = ASPECTS_FIELD,
                 value = providedKeys.joinToString(", "),
                 constraint = ScopesError.ValidationConstraintType.MissingRequired(
                     requiredFields = missingKeys.toList(),
                 ),
-                details = mapOf("error" to ValidationError.RequiredAspectsMissing(missingAspectKeys)),
+                details = mapOf(ERROR_KEY to ValidationError.RequiredAspectsMissing(missingAspectKeys)),
             ).left()
         } else {
             Unit.right()

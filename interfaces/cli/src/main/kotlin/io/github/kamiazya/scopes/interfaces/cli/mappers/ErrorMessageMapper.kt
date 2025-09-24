@@ -35,6 +35,11 @@ object ErrorMessageMapper {
  * Specialized mapper for input validation errors.
  */
 internal class InputErrorMapper {
+
+    companion object {
+        private const val TOO_SHORT_PATTERN = "%s too short: minimum %d characters"
+        private const val TOO_LONG_PATTERN = "%s too long: maximum %d characters"
+    }
     fun mapInputError(error: ScopeContractError.InputError): String = when (error) {
         is ScopeContractError.InputError.InvalidId ->
             "Invalid ID format: ${error.id}${error.expectedFormat?.let { " (expected: $it)" } ?: ""}"
@@ -53,23 +58,23 @@ internal class InputErrorMapper {
         val failure = error.validationFailure
         return when (failure) {
             is ScopeContractError.TitleValidationFailure.TooShort ->
-                "Title too short: minimum ${failure.minimumLength} characters"
+                TOO_SHORT_PATTERN.format("Title", failure.minimumLength)
             is ScopeContractError.TitleValidationFailure.TooLong ->
-                "Title too long: maximum ${failure.maximumLength} characters"
+                TOO_LONG_PATTERN.format("Title", failure.maximumLength)
             else -> ValidationMessageFormatter.formatTitleValidationFailure(failure)
         }
     }
 
     private fun formatDescriptionError(error: ScopeContractError.InputError.InvalidDescription): String =
-        "Description too long: maximum ${(error.validationFailure as ScopeContractError.DescriptionValidationFailure.TooLong).maximumLength} characters"
+        TOO_LONG_PATTERN.format("Description", (error.validationFailure as ScopeContractError.DescriptionValidationFailure.TooLong).maximumLength)
 
     private fun formatAliasError(error: ScopeContractError.InputError.InvalidAlias): String {
         val failure = error.validationFailure
         return when (failure) {
             is ScopeContractError.AliasValidationFailure.TooShort ->
-                "Alias too short: minimum ${failure.minimumLength} characters"
+                TOO_SHORT_PATTERN.format("Alias", failure.minimumLength)
             is ScopeContractError.AliasValidationFailure.TooLong ->
-                "Alias too long: maximum ${failure.maximumLength} characters"
+                TOO_LONG_PATTERN.format("Alias", failure.maximumLength)
             else -> ValidationMessageFormatter.formatAliasValidationFailure(failure)
         }
     }
@@ -78,9 +83,9 @@ internal class InputErrorMapper {
         val failure = error.validationFailure
         return when (failure) {
             is ScopeContractError.ContextKeyValidationFailure.TooShort ->
-                "Context key too short: minimum ${failure.minimumLength} characters"
+                TOO_SHORT_PATTERN.format("Context key", failure.minimumLength)
             is ScopeContractError.ContextKeyValidationFailure.TooLong ->
-                "Context key too long: maximum ${failure.maximumLength} characters"
+                TOO_LONG_PATTERN.format("Context key", failure.maximumLength)
             is ScopeContractError.ContextKeyValidationFailure.InvalidFormat ->
                 "Invalid context key format: ${failure.invalidType}"
             else -> ValidationMessageFormatter.formatContextKeyValidationFailure(failure)
@@ -90,7 +95,7 @@ internal class InputErrorMapper {
     private fun formatContextNameError(error: ScopeContractError.InputError.InvalidContextName): String {
         val failure = error.validationFailure
         return if (failure is ScopeContractError.ContextNameValidationFailure.TooLong) {
-            "Context name too long: maximum ${failure.maximumLength} characters"
+            TOO_LONG_PATTERN.format("Context name", failure.maximumLength)
         } else {
             ValidationMessageFormatter.formatContextNameValidationFailure(failure)
         }
@@ -100,9 +105,9 @@ internal class InputErrorMapper {
         val failure = error.validationFailure
         return when (failure) {
             is ScopeContractError.ContextFilterValidationFailure.TooShort ->
-                "Context filter too short: minimum ${failure.minimumLength} characters"
+                TOO_SHORT_PATTERN.format("Context filter", failure.minimumLength)
             is ScopeContractError.ContextFilterValidationFailure.TooLong ->
-                "Context filter too long: maximum ${failure.maximumLength} characters"
+                TOO_LONG_PATTERN.format("Context filter", failure.maximumLength)
             else -> ValidationMessageFormatter.formatContextFilterValidationFailure(failure)
         }
     }
