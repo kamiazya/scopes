@@ -60,15 +60,52 @@ jobs:
 
       - name: Check if version PR was merged
         id: check_version_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check if this push is from a merged Version PR
+          # First, check commit message as a quick filter
           COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$COMMIT_MSG" == "Release new version" ]]; then
+          if [[ "$COMMIT_MSG" != "Release new version" ]]; then
+            echo "is_version_release=false" >> "$GITHUB_OUTPUT"
+            echo "Not a Version PR merge (commit message doesn't match)"
+            exit 0
+          fi
+          
+          # Verify this is actually from a merged PR using GitHub API
+          COMMIT_SHA=${{ github.sha }}
+          echo "Checking if commit $COMMIT_SHA is from a merged PR..."
+          
+          # Search for PRs associated with this commit
+          PR_SEARCH=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/commits/$COMMIT_SHA/pulls" \
+            2>/dev/null || echo "[]")
+          
+          # Check if any PR is a Version PR
+          IS_VERSION_PR=false
+          if [[ "$PR_SEARCH" != "[]" ]]; then
+            # Parse JSON to find merged PRs with title "Release new version"
+            while IFS= read -r pr; do
+              PR_TITLE=$(echo "$pr" | jq -r '.title // ""')
+              PR_MERGED=$(echo "$pr" | jq -r '.merged // false')
+              PR_NUMBER=$(echo "$pr" | jq -r '.number // ""')
+              
+              if [[ "$PR_TITLE" == "Release new version" ]] && [[ "$PR_MERGED" == "true" ]]; then
+                echo "Found merged Version PR #$PR_NUMBER"
+                IS_VERSION_PR=true
+                break
+              fi
+            done < <(echo "$PR_SEARCH" | jq -c '.[]')
+          fi
+          
+          if [[ "$IS_VERSION_PR" == "true" ]]; then
             echo "is_version_release=true" >> "$GITHUB_OUTPUT"
-            echo "Detected merged Version PR"
+            echo "✓ Confirmed: This is a merged Version PR"
           else
             echo "is_version_release=false" >> "$GITHUB_OUTPUT"
-            echo "Not a Version PR merge"
+            echo "⚠️ Warning: Commit has version message but no associated Version PR found"
           fi
 
       - name: Create and push SemVer tag (vX.Y.Z)
