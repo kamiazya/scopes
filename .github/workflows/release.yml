@@ -23,9 +23,32 @@ env:
   QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
 
 jobs:
+  resolve-version:
+    name: Resolve Version Information
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_version: ${{ steps.version.outputs.tag_version }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
+          CLEAN_VERSION=${VERSION#v}
+          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+
   validate-tag:
     name: Validate Release Tag
     runs-on: ubuntu-latest
+    needs: resolve-version
     steps:
       - name: Validate tag format
         shell: bash
@@ -33,11 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
-            TAG="${{ github.ref_name }}"
-          fi
+          TAG="${{ needs.resolve-version.outputs.tag_version }}"
           
           echo "Validating tag: $TAG"
           
@@ -115,7 +134,7 @@ jobs:
 
   build-release:
     name: Build Release Artifacts
-    needs: validate-tag
+    needs: [resolve-version, validate-tag]
     runs-on: ${{ matrix.os }}
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -149,25 +168,10 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-          CLEAN_VERSION=${VERSION#v}
-          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
-
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          ref: ${{ steps.version.outputs.tag_version }}
+          ref: ${{ needs.resolve-version.outputs.tag_version }}
 
       - name: Setup QEMU for ARM64 cross-compilation
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
@@ -195,7 +199,7 @@ jobs:
         if: matrix.platform == 'win32'
         run: |
           Set-Location "C:\build-workspace\scopes"
-          $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+          $VERSION_ARG = "-Pversion=${{ needs.resolve-version.outputs.version }}"
 
           # Add architecture-specific flags for ARM64
           $ARCH_FLAGS = ""
@@ -224,16 +228,16 @@ jobs:
           # Disable configuration cache for native build due to GraalVM plugin incompatibility
           # See: https://github.com/kamiazya/scopes/issues/36
           # Run clean build first for reproducible builds
-          ./gradlew --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile -Pversion="${{ steps.version.outputs.version }}" $ARCH_FLAGS
+          ./gradlew --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile -Pversion="${{ needs.resolve-version.outputs.version }}" $ARCH_FLAGS
 
       - name: Prepare binary for upload
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "win32" ]; then
-            BINARY_NAME="scopes-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
+            BINARY_NAME="scopes-${{ needs.resolve-version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
             cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
           else
-            BINARY_NAME="scopes-${{ steps.version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}"
+            BINARY_NAME="scopes-${{ needs.resolve-version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}"
             cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
           fi
           echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
@@ -243,7 +247,7 @@ jobs:
         if: matrix.platform == 'win32'
         run: |
           Set-Location "C:\build-workspace\scopes"
-          $VERSION_ARG = "-Pversion=${{ steps.version.outputs.version }}"
+          $VERSION_ARG = "-Pversion=${{ needs.resolve-version.outputs.version }}"
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
           echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG"
           & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG
@@ -256,7 +260,7 @@ jobs:
         run: |
           # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
           # Pass version property to ensure SBOM metadata matches the binaries
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom -Pversion="${{ steps.version.outputs.version }}"
+          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom -Pversion="${{ needs.resolve-version.outputs.version }}"
 
 
       - name: Generate hash for SLSA provenance
@@ -499,7 +503,7 @@ jobs:
   create-unified-package:
     name: Create Unified Distribution Package
     runs-on: ubuntu-latest
-    needs: [validate-tag, build-release, provenance]
+    needs: [resolve-version, validate-tag, build-release, provenance]
     if: always() && needs.build-release.result == 'success'
 
     steps:
@@ -508,24 +512,10 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-          CLEAN_VERSION=${VERSION#v}
-          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          ref: ${{ steps.version.outputs.tag_version }}
+          ref: ${{ needs.resolve-version.outputs.tag_version }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -552,7 +542,7 @@ jobs:
 
       - name: Create unified package structure
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.version }}-dist"
+          PACKAGE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-dist"
           mkdir -p "${PACKAGE_NAME}"
           cd "${PACKAGE_NAME}"
           
@@ -687,7 +677,7 @@ jobs:
 
       - name: Create distribution package archives
         run: |
-          PACKAGE_NAME="scopes-${{ steps.version.outputs.version }}-dist"
+          PACKAGE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-dist"
           
           # Create tar.gz archive
           tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
@@ -714,7 +704,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [validate-tag, build-release, provenance, create-unified-package]
+    needs: [resolve-version, validate-tag, build-release, provenance, create-unified-package]
     if: always() && needs.build-release.result == 'success'
 
     steps:
@@ -726,21 +716,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
+          ref: ${{ needs.resolve-version.outputs.tag_version }}
           fetch-depth: 0
-
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-          CLEAN_VERSION=${VERSION#v}
-          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -781,7 +758,7 @@ jobs:
           ### Quick Verification
           ```bash
           # Download and verify in one command
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | bash
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.sh | bash
           ```
 
           ### Manual Verification
@@ -811,18 +788,18 @@ jobs:
         run: |
           # Generate release notes using GitHub API
           NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-            -f tag_name='${{ steps.version.outputs.tag_version }}' \
+            -f tag_name='${{ needs.resolve-version.outputs.tag_version }}' \
             --jq .body)
           
           # Create or update release without destructive deletion
-          if ! gh release view "${{ steps.version.outputs.tag_version }}" > /dev/null 2>&1; then
-            gh release create "${{ steps.version.outputs.tag_version }}" \
-              --title "Release ${{ steps.version.outputs.version }}" \
+          if ! gh release view "${{ needs.resolve-version.outputs.tag_version }}" > /dev/null 2>&1; then
+            gh release create "${{ needs.resolve-version.outputs.tag_version }}" \
+              --title "Release ${{ needs.resolve-version.outputs.version }}" \
               --notes "$NOTES" \
               --verify-tag \
-              --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
+              --prerelease=${{ contains(needs.resolve-version.outputs.tag_version, '-') }}
           else
-            gh release edit "${{ steps.version.outputs.tag_version }}" --notes "$NOTES"
+            gh release edit "${{ needs.resolve-version.outputs.tag_version }}" --notes "$NOTES"
           fi
 
       - name: Upload release assets
@@ -830,14 +807,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Upload all binary artifacts
-          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload hash files
-          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SBOM files
-          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload distribution packages
           find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
@@ -866,12 +843,12 @@ jobs:
 
           #### Linux/macOS
           ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.sh | sh
           ```
 
           #### Windows PowerShell
           ```powershell
-          iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 | iex
+          iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.ps1 | iex
           ```
 
           ### 📦 Offline Installation
