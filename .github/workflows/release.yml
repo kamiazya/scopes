@@ -9,16 +9,9 @@ on:
         description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
         required: true
         type: string
-  workflow_call:
-    inputs:
-      tag:
-        description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
-        required: true
-        type: string
-
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  group: release-${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -35,10 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate tag format
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
             TAG="${{ inputs.tag }}"
           else
             TAG="${{ github.ref_name }}"
@@ -100,7 +95,7 @@ jobs:
           
           # For manually triggered runs, ensure the tag exists on the remote
           # This prevents gh release create from accidentally creating a tag
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Checking if tag exists on remote..."
             
             # Use GitHub API to check if tag exists
@@ -159,8 +154,6 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
             VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
@@ -515,16 +508,11 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
       - name: Extract version from tag
         id: version
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
             VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
@@ -533,6 +521,11 @@ jobs:
           CLEAN_VERSION=${VERSION#v}
           echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
           echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ steps.version.outputs.tag_version }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -740,8 +733,6 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
             VERSION="${{ inputs.tag }}"
           else
             VERSION="${{ github.ref_name }}"
