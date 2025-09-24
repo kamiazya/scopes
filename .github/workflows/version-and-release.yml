@@ -66,9 +66,10 @@ jobs:
           # Check if this push is from a merged Version PR
           # First, check commit message as a quick filter
           COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ "$COMMIT_MSG" != "Release new version" ]]; then
+          # GitHub may append PR number, so use pattern match instead of exact match
+          if [[ ! "$COMMIT_MSG" =~ ^Release\ new\ version ]]; then
             echo "is_version_release=false" >> "$GITHUB_OUTPUT"
-            echo "Not a Version PR merge (commit message doesn't match)"
+            echo "Not a Version PR merge (commit message doesn't match pattern)"
             exit 0
           fi
           
