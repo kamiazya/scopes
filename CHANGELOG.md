@@ -1,5 +1,15 @@
 # scopes
 
+## 0.0.2
+
+### Patch Changes
+
+- [#268](https://github.com/kamiazya/scopes/pull/268) [`eca6b0c`](https://github.com/kamiazya/scopes/commit/eca6b0c784bef585ce8c27e77daea4e5993e4bff) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix release workflow to prevent incorrect tag creation
+
+  - Fixed Version and Release workflow to only create tags when Version PR is merged
+  - Added tag format validation to Release workflow to prevent branch names being used as tags
+  - Improved error messages to guide users on correct tag format
+
 ## 0.0.1
 
 ### Patch Changes

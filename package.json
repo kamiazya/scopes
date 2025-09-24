@@ -1,22 +1,22 @@
 {
-  "name" : "scopes",
-  "version" : "0.0.1",
-  "private" : true,
-  "scripts" : {
-    "changeset" : "changeset",
-    "changeset:add" : "changeset add",
-    "changeset:status" : "changeset status",
-    "version-packages" : "changeset version",
-    "tag" : "changeset tag"
+  "name": "scopes",
+  "version": "0.0.2",
+  "private": true,
+  "scripts": {
+    "changeset": "changeset",
+    "changeset:add": "changeset add",
+    "changeset:status": "changeset status",
+    "version-packages": "changeset version",
+    "tag": "changeset tag"
   },
-  "author" : "Yuki Yamazaki <yuki@kamiazya.tech>",
-  "license" : "Apache-2.0",
-  "engines" : {
-    "node" : ">=24"
+  "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
   },
-  "packageManager" : "pnpm@10.6.5",
-  "devDependencies" : {
-    "@changesets/changelog-github" : "^0.5.1",
-    "@changesets/cli" : "^2.29.7"
+  "packageManager": "pnpm@10.6.5",
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7"
   }
 }
