@@ -64,12 +64,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check if this push is from a merged Version PR
-          # First, check commit message as a quick filter
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          # GitHub may append PR number, so use pattern match instead of exact match
-          if [[ ! "$COMMIT_MSG" =~ ^Release\ new\ version ]]; then
+          # Check both subject and body to support different merge strategies
+          COMMIT_SUBJECT=$(git log -1 --pretty=%s)
+          COMMIT_BODY=$(git log -1 --pretty=%b)
+          
+          # Check if either subject starts with "Release new version" or body contains it
+          # This handles both squash merges (subject) and regular merges (body)
+          if [[ "$COMMIT_SUBJECT" =~ ^Release\ new\ version ]] || [[ "$COMMIT_BODY" =~ ^Release\ new\ version ]]; then
+            echo "Found version release commit pattern"
+          else
             echo "is_version_release=false" >> "$GITHUB_OUTPUT"
-            echo "Not a Version PR merge (commit message doesn't match pattern)"
+            echo "Not a Version PR merge (neither subject nor body matches pattern)"
             exit 0
           fi
           
