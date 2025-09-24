@@ -19,7 +19,9 @@ import org.koin.core.component.inject
 class EditContextCommand :
     CliktCommand(
         name = "edit",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Edit an existing context view
 
         Update the properties of a context view. Only specified options will be changed;
@@ -34,9 +36,7 @@ class EditContextCommand :
 
             # Update both name and description
             scopes context edit urgent --name "Critical Items" --description "High priority tasks requiring immediate attention"
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()

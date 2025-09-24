@@ -22,9 +22,9 @@ import org.koin.core.component.inject
 class DefineCommand :
     CliktCommand(
         name = "define",
-        help = "Define a new aspect",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Define a new aspect"
     private val aspectCommandAdapter: AspectCommandAdapter by inject()
 
     private val key by argument(help = "The aspect key (e.g., 'priority', 'status')")

@@ -17,9 +17,9 @@ import org.koin.core.component.inject
 class RmCommand :
     CliktCommand(
         name = "rm",
-        help = "Remove an aspect definition",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Remove an aspect definition"
     private val aspectCommandAdapter: AspectCommandAdapter by inject()
 
     private val key by argument(help = "The aspect key to remove")

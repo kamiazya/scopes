@@ -20,7 +20,9 @@ import org.koin.core.component.inject
 class CreateContextCommand :
     CliktCommand(
         name = "create",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Create a new context view
 
         Context views are named filter configurations that can be reused across sessions.
@@ -35,9 +37,7 @@ class CreateContextCommand :
 
             # Create a context for urgent items
             scopes context create urgent "Urgent Items" --filter "priority=high OR priority=critical" -d "High priority items"
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()

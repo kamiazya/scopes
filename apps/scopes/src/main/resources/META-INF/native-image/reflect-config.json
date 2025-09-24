@@ -122,4 +122,42 @@
 }, {
   "name" : "ch.qos.logback.core.status.NopStatusListener",
   "allDeclaredConstructors" : true
+}, {
+  "name" : "com.github.ajalt.mordant.terminal.terminalinterface.jna.TerminalInterfaceProviderJna",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.github.ajalt.mordant.terminal.terminalinterface.ffm.TerminalInterfaceProviderFfm",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.github.ajalt.mordant.terminal.terminalinterface.graalffi.TerminalInterfaceProviderGraalFFI",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.github.ajalt.mordant.terminal.TerminalInterfaceProvider",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.sun.jna.Native",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.sun.jna.Platform",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "com.sun.jna.Library",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
 } ]

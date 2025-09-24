@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.main
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import kotlinx.coroutines.runBlocking

@@ -23,9 +23,9 @@ import org.koin.core.component.inject
 class SetAspectCommand :
     CliktCommand(
         name = "set",
-        help = "Set aspects on a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Set aspects on a scope"
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 

@@ -22,7 +22,9 @@ import org.koin.core.component.inject
 class CurrentContextCommand :
     CliktCommand(
         name = "current",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Show the currently active context
 
         Displays information about the currently active context view,
@@ -34,9 +36,7 @@ class CurrentContextCommand :
 
             # Clear the current context
             scopes context current --clear
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()

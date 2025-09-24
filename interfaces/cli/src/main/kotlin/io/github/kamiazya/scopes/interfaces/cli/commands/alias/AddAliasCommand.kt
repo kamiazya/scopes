@@ -18,9 +18,9 @@ import org.koin.core.component.inject
 class AddAliasCommand :
     CliktCommand(
         name = "add",
-        help = "Add a new alias to a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Add a new alias to a scope"
     private val aliasCommandAdapter: AliasCommandAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 

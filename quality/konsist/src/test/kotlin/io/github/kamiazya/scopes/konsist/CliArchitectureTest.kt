@@ -91,8 +91,8 @@ class CliArchitectureTest :
                 .filter { it.name.contains("Command") }
                 .filter { it.text.contains("name = \"_") } // Commands starting with underscore
                 .assertTrue { clazz ->
-                    // Should have hidden = true parameter
-                    clazz.text.contains("hidden = true")
+                    // Should have hiddenFromHelp = true property (Clikt 5.x)
+                    clazz.text.contains("hiddenFromHelp = true")
                 }
         }
 

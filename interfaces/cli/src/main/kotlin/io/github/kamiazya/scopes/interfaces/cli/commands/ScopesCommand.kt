@@ -18,8 +18,8 @@ import com.github.ajalt.clikt.parameters.options.option
 class ScopesCommand :
     CliktCommand(
         name = "scopes",
-        help = "Scopes - AI-Native Task Management System",
     ) {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Scopes - AI-Native Task Management System"
 
     private val debug by option("--debug", help = "Enable debug output showing ULIDs alongside aliases").flag()
 

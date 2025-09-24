@@ -20,7 +20,9 @@ import org.koin.core.component.inject
 class ShowContextCommand :
     CliktCommand(
         name = "show",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Show details of a specific context view
 
         Displays the full configuration and metadata of a context view,
@@ -32,9 +34,7 @@ class ShowContextCommand :
 
             # Show details of the current context
             scopes context show current
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()

@@ -19,7 +19,9 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.alias.SetCanonicalAlias
 class AliasCommand :
     CliktCommand(
         name = "alias",
-        help = """
+    ) {
+    override val printHelpOnEmptyArgs = true
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Manage scope aliases
 
         Aliases provide user-friendly names for scopes instead of using ULIDs.
@@ -40,9 +42,8 @@ class AliasCommand :
 
             # Rename an alias
             scopes alias rename "old-name" "new-name"
-        """.trimIndent(),
-        printHelpOnEmptyArgs = true,
-    ) {
+    """.trimIndent()
+
     override fun run() {
         // This is a parent command that does nothing on its own
         // Subcommands handle the actual functionality

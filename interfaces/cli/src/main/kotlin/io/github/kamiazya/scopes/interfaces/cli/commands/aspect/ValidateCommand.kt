@@ -20,9 +20,9 @@ import org.koin.core.component.inject
 class ValidateCommand :
     CliktCommand(
         name = "validate",
-        help = "Validate aspect values against their definitions",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Validate aspect values against their definitions"
     private val aspectQueryAdapter: AspectQueryAdapter by inject()
 
     private val key by argument(help = "The aspect key to validate")

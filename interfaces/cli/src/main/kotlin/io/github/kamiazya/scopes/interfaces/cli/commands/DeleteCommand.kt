@@ -15,11 +15,10 @@ import org.koin.core.component.inject
  * Delete command for removing scopes.
  */
 class DeleteCommand :
-    ScopesCliktCommand(
-        name = "delete",
-        help = "Delete a scope",
-    ),
+    ScopesCliktCommand(name = "delete"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Delete a scope"
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

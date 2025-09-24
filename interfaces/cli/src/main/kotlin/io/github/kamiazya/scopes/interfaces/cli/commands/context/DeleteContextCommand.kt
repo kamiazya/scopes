@@ -20,7 +20,9 @@ import org.koin.core.component.inject
 class DeleteContextCommand :
     CliktCommand(
         name = "delete",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Delete a context view
 
         Removes a context view definition. If the context is currently active,
@@ -32,9 +34,7 @@ class DeleteContextCommand :
 
             # Force delete even if it's the active context
             scopes context delete my-work --force
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()

@@ -15,11 +15,10 @@ import org.koin.core.component.inject
  * Update command for modifying existing scopes.
  */
 class UpdateCommand :
-    ScopesCliktCommand(
-        name = "update",
-        help = "Update an existing scope",
-    ),
+    ScopesCliktCommand(name = "update"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Update an existing scope"
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

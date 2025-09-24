@@ -15,9 +15,9 @@ import org.koin.core.component.inject
 class RenameAliasCommand :
     CliktCommand(
         name = "rename",
-        help = "Rename an alias",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Rename an alias"
     private val aliasCommandAdapter: AliasCommandAdapter by inject()
 
     private val oldAlias by argument("old-alias", help = "The current alias name")

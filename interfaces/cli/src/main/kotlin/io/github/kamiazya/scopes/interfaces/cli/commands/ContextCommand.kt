@@ -21,7 +21,9 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.context.SwitchContextCo
 class ContextCommand :
     CliktCommand(
         name = "context",
-        help = """
+    ) {
+    override val printHelpOnEmptyArgs = true
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Manage context views
 
         Context views provide named, persistent filter configurations for scopes,
@@ -42,9 +44,8 @@ class ContextCommand :
 
             # Delete a context view
             scopes context delete my-work
-        """.trimIndent(),
-        printHelpOnEmptyArgs = true,
-    ) {
+    """.trimIndent()
+
     override fun run() {
         // This is a parent command that does nothing on its own
         // Subcommands handle the actual functionality

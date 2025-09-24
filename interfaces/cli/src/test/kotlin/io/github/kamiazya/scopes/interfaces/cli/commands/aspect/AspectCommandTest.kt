@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
+import com.github.ajalt.clikt.testing.test
 import io.github.kamiazya.scopes.interfaces.cli.commands.AspectCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.configureSubcommands
 import io.kotest.core.spec.style.DescribeSpec
@@ -16,7 +17,8 @@ class AspectCommandTest :
 
             it("should show help text") {
                 val command = AspectCommand()
-                command.commandHelp shouldContain "Manage scope aspects"
+                val result = command.test("--help")
+                result.stdout shouldContain "Manage scope aspects"
             }
 
             it("should have subcommands when configured") {

@@ -18,7 +18,9 @@ import org.koin.core.component.inject
 class SwitchContextCommand :
     CliktCommand(
         name = "switch",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Switch to a different context view
 
         Sets the specified context view as the current active context.
@@ -33,9 +35,7 @@ class SwitchContextCommand :
 
             # Clear the current context (show all scopes)
             scopes context switch --clear
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()
