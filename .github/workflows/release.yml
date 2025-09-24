@@ -61,7 +61,7 @@ jobs:
           SEMVER_PATTERN='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
           
           if ! [[ "$TAG" =~ $SEMVER_PATTERN ]]; then
-            echo "Error: Invalid tag format '$TAG'"
+            echo "::error::Invalid tag format '$TAG'"
             echo ""
             echo "Tag must follow Semantic Versioning 2.0.0 specification:"
             echo "  Basic format:     vMAJOR.MINOR.PATCH"
@@ -86,7 +86,7 @@ jobs:
             # Check if this might be a branch name
             if [[ "$TAG" == "main" || "$TAG" == "master" || "$TAG" == "develop" || "$TAG" =~ ^(feature|fix|release|hotfix)/ ]]; then
               echo ""
-              echo "ERROR: It appears you're trying to create a release with a branch name."
+              echo "::error::It appears you're trying to create a release with a branch name."
               echo "Please use a proper semantic version tag like v1.0.0"
               echo ""
               echo "If using gh workflow run:"
@@ -98,7 +98,25 @@ jobs:
             exit 1
           fi
           
-          echo "✓ Tag format is valid"
+          # For manually triggered runs, ensure the tag exists on the remote
+          # This prevents gh release create from accidentally creating a tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "workflow_call" ]; then
+            echo "Checking if tag exists on remote..."
+            
+            # Use GitHub API to check if tag exists
+            if ! gh api "/repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
+              echo "::error::Tag '$TAG' does not exist on remote. Please create the tag first."
+              echo ""
+              echo "Tags should be created by the Version and Release workflow when merging Version PRs."
+              echo "If you need to manually create a tag:"
+              echo "  git tag -a $TAG -m \"Release $TAG\""
+              echo "  git push origin $TAG"
+              exit 1
+            fi
+            echo "✓ Tag exists on remote"
+          fi
+          
+          echo "✓ Tag format is valid and tag exists"
 
   build-release:
     name: Build Release Artifacts
@@ -810,6 +828,7 @@ jobs:
             gh release create "${{ steps.version.outputs.tag_version }}" \
               --title "Release ${{ steps.version.outputs.version }}" \
               --notes "$NOTES" \
+              --verify-tag \
               --prerelease=${{ contains(steps.version.outputs.tag_version, '-') }}
           else
             gh release edit "${{ steps.version.outputs.tag_version }}" --notes "$NOTES"
