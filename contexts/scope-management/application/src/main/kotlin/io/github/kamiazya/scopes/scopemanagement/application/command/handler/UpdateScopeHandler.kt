@@ -16,7 +16,6 @@ import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 
@@ -34,13 +33,14 @@ private typealias PendingEventEnvelope = io.github.kamiazya.scopes.platform.doma
  * - No separate repositories needed
  */
 class UpdateScopeHandler(
-    private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
+    eventSourcingRepository: EventSourcingRepository<DomainEvent>,
     private val eventPublisher: EventPublisher,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
-    private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger,
-) : CommandHandler<UpdateScopeCommand, ScopeContractError, UpdateScopeResult> {
+    applicationErrorMapper: ApplicationErrorMapper,
+    logger: Logger,
+) : AbstractEventSourcingHandler(eventSourcingRepository, applicationErrorMapper, logger),
+    CommandHandler<UpdateScopeCommand, ScopeContractError, UpdateScopeResult> {
 
     override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult> =
         either<ScopeContractError, UpdateScopeResult> {
@@ -67,44 +67,6 @@ class UpdateScopeHandler(
         )
     }
 
-    private suspend fun loadExistingAggregate(
-        scopeIdString: String,
-    ): Either<ScopeContractError, io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate> = either {
-        // Parse scope ID
-        val scopeId = ScopeId.create(scopeIdString).mapLeft { idError ->
-            logger.warn("Invalid scope ID format", mapOf("scopeId" to scopeIdString))
-            applicationErrorMapper.mapDomainError(
-                idError,
-                ErrorMappingContext(attemptedValue = scopeIdString),
-            )
-        }.bind()
-
-        // Load current aggregate from events
-        val aggregateId = scopeId.toAggregateId().mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-        }.bind()
-
-        val events = eventSourcingRepository.getEvents(aggregateId).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-        }.bind()
-
-        // Reconstruct aggregate from events using fromEvents method
-        val scopeEvents = events.filterIsInstance<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>()
-        val baseAggregate = io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate.fromEvents(scopeEvents).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-        }.bind()
-
-        baseAggregate ?: run {
-            logger.warn("Scope not found", mapOf("scopeId" to scopeIdString))
-            raise(
-                applicationErrorMapper.mapDomainError(
-                    io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.NotFound(scopeId),
-                    ErrorMappingContext(attemptedValue = scopeIdString),
-                ),
-            )
-        }
-    }
-
     private data class HandlerResult(
         val aggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
         val events: List<PendingEventEnvelope>,
@@ -114,7 +76,7 @@ class UpdateScopeHandler(
      * Converts domain event envelopes to pending event envelopes for persistence.
      */
     private fun toPendingEventEnvelopes(
-        events: List<io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>>
+        events: List<io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>>,
     ): List<PendingEventEnvelope> = events.map { envelope ->
         PendingEventEnvelope(envelope.event as io.github.kamiazya.scopes.platform.domain.event.DomainEvent)
     }

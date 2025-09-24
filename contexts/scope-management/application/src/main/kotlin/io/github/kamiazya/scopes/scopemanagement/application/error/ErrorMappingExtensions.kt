@@ -17,12 +17,29 @@ private val contextErrorPresenter = ContextErrorPresenter()
 private val scopeInputErrorPresenter = ScopeInputErrorPresenter()
 
 /**
- * Extension functions for mapping common domain errors to application errors.
- * These provide reusable mappings for errors that don't require special context.
+ * Extension functions for mapping domain layer errors to application layer errors.
+ *
+ * This file provides a centralized location for error translation between layers,
+ * following Clean Architecture principles. Domain errors are transformed into
+ * application-specific error types that contain appropriate context for the
+ * application layer while hiding domain implementation details.
+ *
+ * Key principles:
+ * - Domain errors are mapped to semantically equivalent application errors
+ * - Error context is preserved or enhanced during translation
+ * - Input values are sanitized to prevent sensitive data exposure
+ * - Fail-fast approach for unmapped error types to catch issues early
+ *
+ * Usage:
+ * ```kotlin
+ * domainError.toApplicationError() // For errors with sufficient context
+ * domainError.toApplicationError(attemptedValue) // When additional context is needed
+ * ```
  */
 
 /**
- * Maps PersistenceError to ApplicationError.PersistenceError
+ * Maps domain persistence errors to application persistence errors.
+ * Preserves concurrency conflict details for proper handling at higher layers.
  */
 fun DomainPersistenceError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainPersistenceError.ConcurrencyConflict ->
@@ -35,7 +52,14 @@ fun DomainPersistenceError.toApplicationError(): ScopeManagementApplicationError
 }
 
 /**
- * Maps ContextError to ApplicationError.ContextError
+ * Maps domain context errors to application context errors.
+ *
+ * Context errors relate to context view management (filters, keys, names).
+ * This mapping preserves validation constraints while presenting user-friendly
+ * error messages through the error presenter.
+ *
+ * @receiver The domain context error to map
+ * @return The corresponding application error with appropriate context
  */
 fun ContextError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is ContextError.KeyTooShort ->
@@ -124,8 +148,15 @@ fun ContextError.toApplicationError(): ScopeManagementApplicationError = when (t
 }
 
 /**
- * Maps ScopeInputError to ApplicationError.ScopeInputError
- * Note: This mapping loses the attempted value, which should be provided by the calling code
+ * Maps domain scope input errors to application scope input errors.
+ *
+ * Scope input errors relate to validation of user-provided data (IDs, titles, descriptions, aliases).
+ * The attemptedValue parameter is required because domain errors don't carry the original input
+ * for security reasons - this must be provided by the calling context.
+ *
+ * @receiver The domain scope input error to map
+ * @param attemptedValue The original input value that caused the error (will be sanitized)
+ * @return The corresponding application error with sanitized input preview
  */
 fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManagementApplicationError = when (this) {
     is DomainScopeInputError.IdError.EmptyId ->
@@ -187,7 +218,14 @@ fun DomainScopeInputError.toApplicationError(attemptedValue: String): ScopeManag
 }
 
 /**
- * Maps ScopeAliasError to ApplicationError.ScopeAliasError
+ * Maps domain scope alias errors to application scope alias errors.
+ *
+ * Alias errors relate to scope alias management (duplicates, not found, canonical alias rules).
+ * This mapping preserves important context like scope IDs and alias names while converting
+ * domain value objects to primitive types suitable for the application layer.
+ *
+ * @receiver The domain scope alias error to map
+ * @return The corresponding application error with extracted primitive values
  */
 fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainScopeAliasError.DuplicateAlias ->
@@ -241,8 +279,19 @@ fun DomainScopeAliasError.toApplicationError(): ScopeManagementApplicationError 
 }
 
 /**
- * Generic fallback for any ScopesError that doesn't have a specific mapping.
- * Use this sparingly - prefer context-specific mappings in handlers.
+ * Generic fallback mapper for any domain error that doesn't have a specific mapping.
+ *
+ * This function provides a last-resort mapping for domain errors to application errors.
+ * It should be used sparingly - prefer context-specific mappings in handlers that can
+ * provide better error context and more appropriate error types.
+ *
+ * The mapping strategy:
+ * - Known error types are delegated to their specific mappers
+ * - Common patterns (NotFound, ValidationFailed) are handled generically
+ * - Unknown errors fall back to StorageUnavailable for safety
+ *
+ * @receiver Any domain error that extends ScopesError
+ * @return A generic application error that preserves as much context as possible
  */
 fun ScopesError.toGenericApplicationError(): ScopeManagementApplicationError = when (this) {
     is DomainPersistenceError -> this.toApplicationError()

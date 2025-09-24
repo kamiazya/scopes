@@ -22,10 +22,9 @@ object ScopeMapper {
      * Maps domain Aspects to a simple String map representation.
      * Converts AspectKey/AspectValue domain types to primitive strings.
      */
-    private fun mapAspects(aspects: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects): Map<String, List<String>> =
-        aspects.toMap()
-            .mapKeys { it.key.value }
-            .mapValues { it.value.toList().map { v -> v.value } }
+    private fun mapAspects(aspects: io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects): Map<String, List<String>> = aspects.toMap()
+        .mapKeys { it.key.value }
+        .mapValues { it.value.toList().map { v -> v.value } }
 
     /**
      * Map Scope entity to UpdateScopeResult DTO.

@@ -11,6 +11,19 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
+/**
+ * Builder for formatting ListScopesResponse data into different output formats.
+ *
+ * Transforms lists of scopes into appropriate representations for different interfaces:
+ * - MCP (Model Context Protocol): Structured JSON with metadata
+ * - CLI: Human-readable table format with optional hierarchy visualization
+ *
+ * Special handling includes:
+ * - Root scopes vs child scopes formatting
+ * - Hierarchy tree building with proper indentation
+ * - Pagination metadata in MCP responses
+ * - Conditional field inclusion based on response options
+ */
 class ListScopesResponseBuilder : ResponseBuilder<ListScopesResponse> {
 
     override fun buildMcpResponse(data: ListScopesResponse): Map<String, Any> {
