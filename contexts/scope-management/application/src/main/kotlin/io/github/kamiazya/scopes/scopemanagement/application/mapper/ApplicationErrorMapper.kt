@@ -57,6 +57,20 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapNotFoundError(scopeId: String): ScopeContractError = ScopeContractError.BusinessError.NotFound(scopeId = scopeId)
 
+    private fun mapDuplicateAliasError(alias: String, existingScopeId: String? = null, attemptedScopeId: String? = null): ScopeContractError =
+        ScopeContractError.BusinessError.DuplicateAlias(
+            alias = alias,
+            existingScopeId = existingScopeId,
+            attemptedScopeId = attemptedScopeId,
+        )
+
+    private fun mapDuplicateTitleError(title: String, parentId: String? = null, existingScopeId: String? = null): ScopeContractError =
+        ScopeContractError.BusinessError.DuplicateTitle(
+            title = title,
+            parentId = parentId,
+            existingScopeId = existingScopeId,
+        )
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.preview
@@ -305,9 +319,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is AppScopeInputError.AliasNotFound,
         is AppScopeInputError.InvalidAlias,
         -> mapAliasToNotFound(error)
-        is AppScopeInputError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = error.preview,
-        )
+        is AppScopeInputError.AliasDuplicate -> mapDuplicateAliasError(error.preview)
         is AppScopeInputError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
             scopeId = "", // No scopeId in application error
             aliasName = "", // No aliasName in application error
@@ -363,9 +375,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
 
     private fun mapScopeAliasError(error: AppScopeAliasError): ScopeContractError = when (error) {
         // Business errors
-        is AppScopeAliasError.AliasDuplicate -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = error.aliasName,
-        )
+        is AppScopeAliasError.AliasDuplicate -> mapDuplicateAliasError(error.aliasName)
         is AppScopeAliasError.AliasNotFound -> ScopeContractError.BusinessError.AliasNotFound(
             alias = error.aliasName,
         )
@@ -425,7 +435,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
     }
 
     private fun mapUniquenessError(error: ScopeUniquenessError): ScopeContractError = when (error) {
-        is ScopeUniquenessError.DuplicateTitle -> ScopeContractError.BusinessError.DuplicateTitle(
+        is ScopeUniquenessError.DuplicateTitle -> mapDuplicateTitleError(
             title = error.title,
             parentId = error.parentScopeId,
             existingScopeId = error.existingScopeId,
@@ -582,16 +592,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         )
 
         // Business rule validation errors
-        is DomainContextError.InvalidScope -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.scopeId,
-        )
+        is DomainContextError.InvalidScope -> mapNotFoundError(domainError.scopeId)
         is DomainContextError.InvalidHierarchy -> ScopeContractError.BusinessError.HierarchyViolation(
             violation = ScopeContractError.HierarchyViolationType.ParentNotFound(
                 scopeId = domainError.scopeId,
                 parentId = domainError.parentId,
             ),
         )
-        is DomainContextError.DuplicateScope -> ScopeContractError.BusinessError.DuplicateTitle(
+        is DomainContextError.DuplicateScope -> mapDuplicateTitleError(
             title = InputSanitizer.createPreview(domainError.title),
             parentId = domainError.contextId,
         )
@@ -677,13 +685,9 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is AspectValidationError -> mapDomainError(domainError)
 
         // Common domain errors
-        is ScopesError.NotFound -> ScopeContractError.BusinessError.NotFound(
-            scopeId = domainError.identifier,
-        )
+        is ScopesError.NotFound -> mapNotFoundError(domainError.identifier)
         is ScopesError.InvalidOperation -> createServiceUnavailableError()
-        is ScopesError.AlreadyExists -> ScopeContractError.BusinessError.DuplicateAlias(
-            alias = domainError.identifier,
-        )
+        is ScopesError.AlreadyExists -> mapDuplicateAliasError(domainError.identifier)
         is ScopesError.SystemError -> createServiceUnavailableError(
             service = domainError.service,
         )
@@ -730,7 +734,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             )
         }
         is ScopesError.Conflict -> when (domainError.conflictType) {
-            ScopesError.Conflict.ConflictType.DUPLICATE_KEY -> ScopeContractError.BusinessError.DuplicateTitle(
+            ScopesError.Conflict.ConflictType.DUPLICATE_KEY -> mapDuplicateTitleError(
                 title = InputSanitizer.createPreview(domainError.resourceId),
                 parentId = null,
             )
@@ -752,7 +756,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
             ScopesError.RepositoryError.RepositoryFailure.CORRUPTED_DATA,
             -> createServiceUnavailableError()
-            ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION -> ScopeContractError.BusinessError.DuplicateTitle(
+            ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION -> mapDuplicateTitleError(
                 title = InputSanitizer.createPreview(context?.attemptedValue ?: ""),
                 parentId = context?.parentId,
             )
@@ -840,13 +844,13 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             // Map domain uniqueness errors directly to contract errors
             when (domainError) {
                 is DomainScopeUniquenessError.DuplicateTitleInContext ->
-                    ScopeContractError.BusinessError.DuplicateTitle(
+                    mapDuplicateTitleError(
                         title = InputSanitizer.createPreview(domainError.title),
                         parentId = domainError.parentId?.toString(),
                         existingScopeId = domainError.existingId.toString(),
                     )
                 is DomainScopeUniquenessError.DuplicateIdentifier ->
-                    ScopeContractError.BusinessError.DuplicateAlias(
+                    mapDuplicateAliasError(
                         alias = InputSanitizer.createPreview(domainError.identifier),
                         existingScopeId = null,
                         attemptedScopeId = null,
@@ -856,7 +860,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is DomainScopeAliasError -> {
             // Direct mapping to contract error without intermediate app error
             when (domainError) {
-                is DomainScopeAliasError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
+                is DomainScopeAliasError.DuplicateAlias -> mapDuplicateAliasError(
                     alias = domainError.aliasName.value,
                     existingScopeId = domainError.existingScopeId.value,
                     attemptedScopeId = domainError.attemptedScopeId.value,
@@ -892,7 +896,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             // Map domain ScopeError to contract errors
             when (domainError) {
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.NotFound ->
-                    ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+                    mapNotFoundError(domainError.scopeId.value)
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.HasChildren ->
                     ScopeContractError.BusinessError.HasChildren(
                         scopeId = domainError.scopeId.value,
@@ -901,7 +905,7 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.AlreadyDeleted ->
                     ScopeContractError.BusinessError.AlreadyDeleted(scopeId = domainError.scopeId.value)
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.DuplicateTitle ->
-                    ScopeContractError.BusinessError.DuplicateTitle(
+                    mapDuplicateTitleError(
                         title = domainError.title,
                         parentId = domainError.parentId?.value,
                     )
