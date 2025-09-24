@@ -128,115 +128,137 @@ value class AspectValue private constructor(val value: String) {
      * @return The parsed Duration, or throws an error if invalid
      */
     private fun parseISO8601DurationInternal(iso8601: String, validateOnly: Boolean): Duration {
-        // Basic format validation
+        validateBasicFormat(iso8601)
+
+        val weekDuration = parseWeekFormat(iso8601, validateOnly)
+        if (weekDuration != null) return weekDuration
+
+        validateNonWeekFormat(iso8601)
+
+        val (datePart, timePart) = splitDateAndTimeParts(iso8601)
+        val days = parseDatePart(datePart)
+        val (hours, minutes, seconds) = parseTimePart(timePart)
+
+        validateNonZeroComponents(days, hours, minutes, seconds)
+
+        return if (validateOnly) {
+            Duration.ZERO
+        } else {
+            calculateDuration(days, hours, minutes, seconds)
+        }
+    }
+
+    /**
+     * Validates the basic format requirements for ISO 8601 duration.
+     */
+    private fun validateBasicFormat(iso8601: String) {
         if (!iso8601.startsWith("P")) error("ISO 8601 duration must start with 'P'")
         if (iso8601.length <= 1) error("ISO 8601 duration must contain at least one component")
+        if (iso8601.contains("-")) error("Negative durations are not supported")
+    }
 
-        // Handle week format (PnW must be alone, no other components allowed)
-        val weekMatch = WEEK_PATTERN.matchEntire(iso8601)
-        if (weekMatch != null) {
-            val weeks = weekMatch.groupValues[1].toLong()
-            if (weeks <= 0) error("ISO 8601 duration must specify at least one non-zero component")
-            return if (validateOnly) {
-                Duration.ZERO // Just return a valid duration for validation
-            } else {
-                (weeks * 7 * 24 * 60 * 60).seconds
-            }
+    /**
+     * Attempts to parse week format (PnW). Returns Duration if successful, null otherwise.
+     */
+    private fun parseWeekFormat(iso8601: String, validateOnly: Boolean): Duration? {
+        val weekMatch = WEEK_PATTERN.matchEntire(iso8601) ?: return null
+
+        val weeks = weekMatch.groupValues[1].toLong()
+        if (weeks <= 0) error("ISO 8601 duration must specify at least one non-zero component")
+
+        return if (validateOnly) {
+            Duration.ZERO
+        } else {
+            (weeks * 7 * 24 * 60 * 60).seconds
         }
+    }
 
-        // Check for invalid week combinations
+    /**
+     * Validates that week format is not mixed with other components.
+     */
+    private fun validateNonWeekFormat(iso8601: String) {
         if (iso8601.contains("W")) {
             error("Week durations cannot be combined with other components")
         }
+    }
 
-        // Validate no negative values
-        if (iso8601.contains("-")) {
-            error("Negative durations are not supported")
-        }
-
-        // Split into date and time parts
+    /**
+     * Splits the duration string into date and time parts.
+     */
+    private fun splitDateAndTimeParts(iso8601: String): Pair<String, String> {
         val tIndex = iso8601.indexOf('T')
-        val datePart: String
-        val timePart: String
 
-        if (tIndex != -1) {
-            datePart = iso8601.substring(1, tIndex)
-            timePart = iso8601.substring(tIndex + 1)
+        return if (tIndex != -1) {
+            val datePart = iso8601.substring(1, tIndex)
+            val timePart = iso8601.substring(tIndex + 1)
 
-            // Validate T is not at the end
             if (timePart.isEmpty()) {
                 error("T separator must be followed by time components")
             }
-        } else {
-            datePart = iso8601.substring(1)
-            timePart = ""
 
-            // Check if time components appear in date part (invalid)
+            Pair(datePart, timePart)
+        } else {
+            val datePart = iso8601.substring(1)
+
             if (datePart.contains(Regex("[HMS]"))) {
                 error("Time components (H, M, S) must appear after T separator")
             }
+
+            Pair(datePart, "")
         }
+    }
 
-        var days = 0L
-        var hours = 0.0
-        var minutes = 0.0
-        var seconds = 0.0
+    /**
+     * Parses the date part and returns days value.
+     */
+    private fun parseDatePart(datePart: String): Long {
+        if (datePart.isEmpty()) return 0L
 
-        // Parse date part (before T)
-        if (datePart.isNotEmpty()) {
-            val dateMatch = DATE_PATTERN.matchEntire(datePart)
-            if (dateMatch == null) {
-                error("Invalid date part format: $datePart")
-            }
+        val dateMatch = DATE_PATTERN.matchEntire(datePart)
+            ?: error("Invalid date part format: $datePart")
 
-            val years = dateMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toLong()
-            val months = dateMatch.groupValues[4].takeIf { it.isNotEmpty() }?.toLong()
-            val daysValue = dateMatch.groupValues[6].takeIf { it.isNotEmpty() }?.toLong()
+        val years = dateMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toLong()
+        val months = dateMatch.groupValues[4].takeIf { it.isNotEmpty() }?.toLong()
+        val days = dateMatch.groupValues[6].takeIf { it.isNotEmpty() }?.toLong()
 
-            if (years != null) error("Year durations are not supported")
-            if (months != null) error("Month durations are not supported")
-            if (daysValue != null) {
-                days = daysValue
-            }
-        }
+        if (years != null) error("Year durations are not supported")
+        if (months != null) error("Month durations are not supported")
 
-        // Parse time part (after T)
-        if (timePart.isNotEmpty()) {
-            val timeMatch = TIME_PATTERN.matchEntire(timePart)
-            if (timeMatch == null) {
-                error("Invalid time part format: $timePart")
-            }
+        return days ?: 0L
+    }
 
-            val hoursValue = timeMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toDouble()
-            val minutesValue = timeMatch.groupValues[4].takeIf { it.isNotEmpty() }?.toDouble()
-            val secondsValue = timeMatch.groupValues[6].takeIf { it.isNotEmpty() }?.toDouble()
+    /**
+     * Parses the time part and returns hours, minutes, seconds.
+     */
+    private fun parseTimePart(timePart: String): Triple<Double, Double, Double> {
+        if (timePart.isEmpty()) return Triple(0.0, 0.0, 0.0)
 
-            if (hoursValue != null) hours = hoursValue
-            if (minutesValue != null) minutes = minutesValue
-            if (secondsValue != null) seconds = secondsValue
-        }
+        val timeMatch = TIME_PATTERN.matchEntire(timePart)
+            ?: error("Invalid time part format: $timePart")
 
-        // Check for at least one non-zero component
+        val hours = timeMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toDouble() ?: 0.0
+        val minutes = timeMatch.groupValues[4].takeIf { it.isNotEmpty() }?.toDouble() ?: 0.0
+        val seconds = timeMatch.groupValues[6].takeIf { it.isNotEmpty() }?.toDouble() ?: 0.0
+
+        return Triple(hours, minutes, seconds)
+    }
+
+    /**
+     * Validates that at least one component is non-zero.
+     */
+    private fun validateNonZeroComponents(days: Long, hours: Double, minutes: Double, seconds: Double) {
         if (days <= 0 && hours <= 0 && minutes <= 0 && seconds <= 0) {
             error("ISO 8601 duration must specify at least one non-zero component")
         }
+    }
 
-        // If only validating, return a dummy duration
-        if (validateOnly) {
-            return Duration.ZERO
-        }
-
-        // Calculate total seconds
-        val totalSeconds = days * 24 * 60 * 60 +
-            hours * 60 * 60 +
-            minutes * 60 +
-            seconds
-
-        // Convert to milliseconds to preserve fractional seconds up to millisecond precision
-        // Intentionally truncate sub-millisecond precision for database compatibility
+    /**
+     * Calculates the final duration from parsed components.
+     */
+    private fun calculateDuration(days: Long, hours: Double, minutes: Double, seconds: Double): Duration {
+        val totalSeconds = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
         val milliseconds = (totalSeconds * 1000).toLong()
 
-        // Check if we have a non-zero duration after truncation
         if (milliseconds <= 0) {
             error("ISO 8601 duration must specify at least one non-zero component")
         }
