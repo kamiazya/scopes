@@ -46,10 +46,42 @@ jobs:
           
           echo "Validating tag: $TAG"
           
-          # Ensure tag follows semantic versioning pattern
-          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+          # Ensure tag follows semantic versioning pattern (SemVer 2.0.0 compliant)
+          # Pattern explanation:
+          # ^v                                           - Must start with 'v'
+          # (0|[1-9][0-9]*)                             - Major version (no leading zeros except for 0)
+          # \.(0|[1-9][0-9]*)                           - Minor version (no leading zeros except for 0)
+          # \.(0|[1-9][0-9]*)                           - Patch version (no leading zeros except for 0)
+          # (-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*) - Pre-release version
+          # (\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))? - Additional pre-release identifiers
+          # (\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?     - Build metadata (optional)
+          # $                                           - End of string
+          
+          # Full SemVer 2.0.0 regex pattern
+          SEMVER_PATTERN='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+          
+          if ! [[ "$TAG" =~ $SEMVER_PATTERN ]]; then
             echo "Error: Invalid tag format '$TAG'"
-            echo "Tag must follow semantic versioning: v1.0.0 or v1.0.0-alpha"
+            echo ""
+            echo "Tag must follow Semantic Versioning 2.0.0 specification:"
+            echo "  Basic format:     vMAJOR.MINOR.PATCH"
+            echo "  Pre-release:      vMAJOR.MINOR.PATCH-PRERELEASE"
+            echo "  Build metadata:   vMAJOR.MINOR.PATCH+BUILD"
+            echo "  Full format:      vMAJOR.MINOR.PATCH-PRERELEASE+BUILD"
+            echo ""
+            echo "Examples:"
+            echo "  v1.0.0"
+            echo "  v2.1.3-alpha"
+            echo "  v1.0.0-alpha.1"
+            echo "  v1.0.0-0.3.7"
+            echo "  v1.0.0-x.7.z.92"
+            echo "  v1.0.0+20130313144700"
+            echo "  v1.0.0-beta+exp.sha.5114f85"
+            echo ""
+            echo "Rules:"
+            echo "  - No leading zeros in numeric versions (except for 0 itself)"
+            echo "  - Pre-release identifiers: alphanumeric and hyphens [0-9A-Za-z-]"
+            echo "  - Pre-release versions have lower precedence than normal versions"
             
             # Check if this might be a branch name
             if [[ "$TAG" == "main" || "$TAG" == "master" || "$TAG" == "develop" || "$TAG" =~ ^(feature|fix|release|hotfix)/ ]]; then
