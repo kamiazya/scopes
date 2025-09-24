@@ -35,7 +35,7 @@ private typealias PendingEventEnvelope = io.github.kamiazya.scopes.platform.doma
  */
 class UpdateScopeHandler(
     private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
-    private val eventProjector: EventPublisher,
+    private val eventPublisher: EventPublisher,
     private val scopeRepository: ScopeRepository,
     private val transactionManager: TransactionManager,
     private val applicationErrorMapper: ApplicationErrorMapper,
@@ -121,7 +121,7 @@ class UpdateScopeHandler(
         command.title?.let { title ->
             // First validate title uniqueness before applying the update
             validateTitleUniqueness(currentAggregate, title).bind()
-            
+
             val titleUpdateResult = currentAggregate.handleUpdateTitle(title, Clock.System.now()).mapLeft { error ->
                 applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
             }.bind()
@@ -167,7 +167,7 @@ class UpdateScopeHandler(
 
             // Project events to RDB in the same transaction
             val domainEvents = eventsToSave.map { envelope -> envelope.event }
-            eventProjector.projectEvents(domainEvents).mapLeft { error ->
+            eventPublisher.projectEvents(domainEvents).mapLeft { error ->
                 logger.error(
                     "Failed to project update events to RDB",
                     mapOf(
@@ -207,7 +207,10 @@ class UpdateScopeHandler(
         // Extract canonical alias from aggregate - required by operational policy
         val canonicalAlias = currentAggregate.canonicalAliasId?.let { id ->
             currentAggregate.aliases[id]?.aliasName?.value
-        } ?: error("Scope ${currentAggregate.scopeId} missing canonical alias - violates operational policy")
+        } ?: error(
+            "Missing canonical alias for scope ${currentAggregate.scopeId?.value ?: scopeIdString}. " +
+                "This indicates a data inconsistency between aggregate and projections.",
+        )
 
         val result = ScopeMapper.toUpdateScopeResult(scope, canonicalAlias)
 
@@ -226,7 +229,7 @@ class UpdateScopeHandler(
         logger.error(
             "Failed to update scope using EventSourcing",
             mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: error::class.toString()),
                 "message" to error.toString(),
             ),
         )

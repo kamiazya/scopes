@@ -110,7 +110,7 @@ object ScopeMapper {
             canonicalAlias = canonicalAlias,
             createdAt = scope.createdAt,
             updatedAt = scope.updatedAt,
-            isArchived = false, // Default value, can be updated based on business logic
+            isArchived = (scope.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
             aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
         ).right()
     }
@@ -127,7 +127,7 @@ object ScopeMapper {
         canonicalAlias = canonicalAlias,
         createdAt = scope.createdAt,
         updatedAt = scope.updatedAt,
-        isArchived = false, // Default value, can be updated based on business logic
+        isArchived = (scope.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
         aspects = scope.aspects.toMap().mapKeys { it.key.value }.mapValues { it.value.toList().map { v -> v.value } },
     )
 

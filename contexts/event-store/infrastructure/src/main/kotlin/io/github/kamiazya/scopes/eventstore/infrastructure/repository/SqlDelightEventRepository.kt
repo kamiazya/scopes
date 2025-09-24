@@ -375,13 +375,13 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
     override suspend fun getEventsByAggregateFromVersion(
         aggregateId: AggregateId,
         fromVersion: Long,
-        limit: Int?
+        limit: Int?,
     ): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
         try {
             val events = queries.findEventsByAggregateIdFromVersion(
                 aggregateId.value,
                 fromVersion,
-                (limit ?: Int.MAX_VALUE).toLong()
+                (limit ?: Int.MAX_VALUE).toLong(),
             ).executeAsList()
                 .mapNotNull { row ->
                     when (
@@ -416,14 +416,14 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
         aggregateId: AggregateId,
         fromVersion: Long,
         toVersion: Long,
-        limit: Int?
+        limit: Int?,
     ): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
         try {
             val events = queries.findEventsByAggregateIdVersionRange(
                 aggregateId.value,
                 fromVersion,
                 toVersion,
-                (limit ?: Int.MAX_VALUE).toLong()
+                (limit ?: Int.MAX_VALUE).toLong(),
             ).executeAsList()
                 .mapNotNull { row ->
                     when (
@@ -454,43 +454,41 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
         }
     }
 
-    override suspend fun getLatestEventsByAggregate(
-        aggregateId: AggregateId,
-        limit: Int
-    ): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
-        try {
-            val events = queries.findLatestEventsByAggregateId(
-                aggregateId.value,
-                limit.toLong()
-            ).executeAsList()
-                .mapNotNull { row ->
-                    when (
-                        val result = deserializeEvent(
-                            eventId = row.event_id,
-                            aggregateId = row.aggregate_id,
-                            aggregateVersion = row.aggregate_version,
-                            eventType = row.event_type,
-                            eventData = row.event_data,
-                            occurredAt = row.occurred_at,
-                            storedAt = row.stored_at,
-                            sequenceNumber = row.sequence_number,
-                        )
-                    ) {
-                        is Either.Right -> result.value
-                        is Either.Left -> null // Skip failed deserialization
+    override suspend fun getLatestEventsByAggregate(aggregateId: AggregateId, limit: Int): Either<EventStoreError, List<PersistedEventRecord>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val events = queries.findLatestEventsByAggregateId(
+                    aggregateId.value,
+                    limit.toLong(),
+                ).executeAsList()
+                    .mapNotNull { row ->
+                        when (
+                            val result = deserializeEvent(
+                                eventId = row.event_id,
+                                aggregateId = row.aggregate_id,
+                                aggregateVersion = row.aggregate_version,
+                                eventType = row.event_type,
+                                eventData = row.event_data,
+                                occurredAt = row.occurred_at,
+                                storedAt = row.stored_at,
+                                sequenceNumber = row.sequence_number,
+                            )
+                        ) {
+                            is Either.Right -> result.value
+                            is Either.Left -> null // Skip failed deserialization
+                        }
                     }
-                }
 
-            Either.Right(events)
-        } catch (e: Exception) {
-            Either.Left(
-                EventStoreError.PersistenceError(
-                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
-                    dataType = "LatestAggregateEvents",
-                ),
-            )
+                Either.Right(events)
+            } catch (e: Exception) {
+                Either.Left(
+                    EventStoreError.PersistenceError(
+                        operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                        dataType = "LatestAggregateEvents",
+                    ),
+                )
+            }
         }
-    }
 
     override suspend fun countEventsByAggregate(aggregateId: AggregateId): Either<EventStoreError, Long> = withContext(Dispatchers.IO) {
         try {
@@ -516,8 +514,8 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                     minVersion = stats.MIN,
                     maxVersion = stats.MAX,
                     firstEventTime = stats.MIN_?.let { Instant.fromEpochMilliseconds(it) },
-                    lastEventTime = stats.MAX_?.let { Instant.fromEpochMilliseconds(it) }
-                )
+                    lastEventTime = stats.MAX_?.let { Instant.fromEpochMilliseconds(it) },
+                ),
             )
         } catch (e: Exception) {
             Either.Left(

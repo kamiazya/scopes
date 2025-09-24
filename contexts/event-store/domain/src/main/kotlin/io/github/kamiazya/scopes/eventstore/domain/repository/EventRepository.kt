@@ -120,9 +120,9 @@ interface EventRepository {
      * @return Either an error or a list of stored events
      */
     suspend fun getEventsByAggregateFromVersion(
-        aggregateId: AggregateId, 
-        fromVersion: Long, 
-        limit: Int? = null
+        aggregateId: AggregateId,
+        fromVersion: Long,
+        limit: Int? = null,
     ): Either<EventStoreError, List<PersistedEventRecord>>
 
     /**
@@ -139,7 +139,7 @@ interface EventRepository {
         aggregateId: AggregateId,
         fromVersion: Long,
         toVersion: Long,
-        limit: Int? = null
+        limit: Int? = null,
     ): Either<EventStoreError, List<PersistedEventRecord>>
 
     /**
@@ -150,10 +150,7 @@ interface EventRepository {
      * @param limit The maximum number of recent events to retrieve
      * @return Either an error or a list of stored events (newest first)
      */
-    suspend fun getLatestEventsByAggregate(
-        aggregateId: AggregateId, 
-        limit: Int
-    ): Either<EventStoreError, List<PersistedEventRecord>>
+    suspend fun getLatestEventsByAggregate(aggregateId: AggregateId, limit: Int): Either<EventStoreError, List<PersistedEventRecord>>
 
     /**
      * Counts total events for an aggregate.
@@ -178,10 +175,4 @@ interface EventRepository {
  * Statistical information about an aggregate's events.
  * Used for performance monitoring and snapshot optimization decisions.
  */
-data class AggregateEventStats(
-    val totalEvents: Long,
-    val minVersion: Long?,
-    val maxVersion: Long?,
-    val firstEventTime: Instant?,
-    val lastEventTime: Instant?
-)
+data class AggregateEventStats(val totalEvents: Long, val minVersion: Long?, val maxVersion: Long?, val firstEventTime: Instant?, val lastEventTime: Instant?)

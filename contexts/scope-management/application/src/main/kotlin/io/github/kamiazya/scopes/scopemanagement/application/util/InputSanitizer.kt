@@ -42,8 +42,8 @@ object InputSanitizer {
      * Creates a safe field name representation.
      * Supports Unicode letters and digits for international field names.
      */
-    fun sanitizeFieldName(field: String): String = field.filter { 
-        Character.isLetterOrDigit(it) || it in ".-_" 
+    fun sanitizeFieldName(field: String): String = field.filter {
+        Character.isLetterOrDigit(it) || it in ".-_"
     }
 
     /**
@@ -51,41 +51,39 @@ object InputSanitizer {
      * Includes Unicode letters, digits, and common punctuation/symbols.
      * Excludes control characters and potentially problematic characters.
      */
-    private fun isDisplayableCharacter(char: Char): Boolean {
-        return when {
-            // Allow Unicode letters and digits (supports all languages)
-            Character.isLetterOrDigit(char) -> true
-            
-            // Allow common punctuation and symbols
-            char in " -_.,;:!?@#$%^&*()[]{}/<>='\"\\+" -> true
-            
-            // Allow mathematical symbols (Unicode category Sm)
-            Character.getType(char) == Character.MATH_SYMBOL.toInt() -> true
-            
-            // Allow currency symbols (Unicode category Sc)
-            Character.getType(char) == Character.CURRENCY_SYMBOL.toInt() -> true
-            
-            // Allow other symbols that are commonly used (Unicode category So)
-            Character.getType(char) == Character.OTHER_SYMBOL.toInt() -> true
-            
-            // Allow connector punctuation (underscore variants in other languages)
-            Character.getType(char) == Character.CONNECTOR_PUNCTUATION.toInt() -> true
-            
-            // Allow dash punctuation (various dash types in different languages)
-            Character.getType(char) == Character.DASH_PUNCTUATION.toInt() -> true
-            
-            // Allow start/end punctuation (quotes, brackets in various languages)
-            Character.getType(char) == Character.START_PUNCTUATION.toInt() ||
+    private fun isDisplayableCharacter(char: Char): Boolean = when {
+        // Allow Unicode letters and digits (supports all languages)
+        Character.isLetterOrDigit(char) -> true
+
+        // Allow common punctuation and symbols
+        char in " -_.,;:!?@#$%^&*()[]{}/<>='\"\\+" -> true
+
+        // Allow mathematical symbols (Unicode category Sm)
+        Character.getType(char) == Character.MATH_SYMBOL.toInt() -> true
+
+        // Allow currency symbols (Unicode category Sc)
+        Character.getType(char) == Character.CURRENCY_SYMBOL.toInt() -> true
+
+        // Allow other symbols that are commonly used (Unicode category So)
+        Character.getType(char) == Character.OTHER_SYMBOL.toInt() -> true
+
+        // Allow connector punctuation (underscore variants in other languages)
+        Character.getType(char) == Character.CONNECTOR_PUNCTUATION.toInt() -> true
+
+        // Allow dash punctuation (various dash types in different languages)
+        Character.getType(char) == Character.DASH_PUNCTUATION.toInt() -> true
+
+        // Allow start/end punctuation (quotes, brackets in various languages)
+        Character.getType(char) == Character.START_PUNCTUATION.toInt() ||
             Character.getType(char) == Character.END_PUNCTUATION.toInt() -> true
-            
-            // Allow other punctuation (language-specific punctuation marks)
-            Character.getType(char) == Character.OTHER_PUNCTUATION.toInt() -> true
-            
-            // Exclude control characters and private use areas
-            Character.isISOControl(char) -> false
-            
-            // Default: allow (conservative approach for international support)
-            else -> true
-        }
+
+        // Allow other punctuation (language-specific punctuation marks)
+        Character.getType(char) == Character.OTHER_PUNCTUATION.toInt() -> true
+
+        // Exclude control characters and private use areas
+        Character.isISOControl(char) -> false
+
+        // Default: allow (conservative approach for international support)
+        else -> true
     }
 }

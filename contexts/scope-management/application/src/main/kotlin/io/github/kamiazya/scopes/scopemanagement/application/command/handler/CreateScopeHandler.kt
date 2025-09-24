@@ -322,7 +322,7 @@ class CreateScopeHandler(
         logger.error(
             "Failed to create scope using EventSourcing",
             mapOf(
-                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"),
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: error::class.toString()),
                 "message" to error.toString(),
             ),
         )

@@ -7,6 +7,10 @@ import io.github.kamiazya.scopes.platform.application.port.TransactionManager
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.metrics.DefaultProjectionMetrics
+import io.github.kamiazya.scopes.platform.observability.metrics.InMemoryMetricsRegistry
+import io.github.kamiazya.scopes.platform.observability.metrics.MetricsRegistry
+import io.github.kamiazya.scopes.platform.observability.metrics.ProjectionMetrics
 import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
@@ -109,12 +113,19 @@ val scopeManagementInfrastructureModule = module {
         ErrorMapper(logger = get())
     }
 
+    // Metrics infrastructure
+    single<MetricsRegistry> { InMemoryMetricsRegistry() }
+    single<ProjectionMetrics> {
+        DefaultProjectionMetrics(metricsRegistry = get())
+    }
+
     // Event Projector for RDB projection
     single<EventPublisher> {
         EventProjectionService(
             scopeRepository = get(),
             scopeAliasRepository = get(),
             logger = get(),
+            projectionMetrics = get(),
         )
     }
 

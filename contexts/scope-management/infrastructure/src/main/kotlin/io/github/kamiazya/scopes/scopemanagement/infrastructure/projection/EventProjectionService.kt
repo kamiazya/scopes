@@ -4,21 +4,22 @@ import arrow.core.Either
 import arrow.core.raise.either
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.metrics.ProjectionMetrics
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasAssigned
 import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasNameChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasRemoved
 import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasReplaced
-import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
-import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
-import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeArchived
-import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
-import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectAdded
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectRemoved
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsCleared
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeAspectsUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeCreated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDeleted
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
@@ -42,10 +43,29 @@ class EventProjectionService(
     private val scopeRepository: ScopeRepository,
     private val scopeAliasRepository: ScopeAliasRepository,
     private val logger: Logger,
+    private val projectionMetrics: ProjectionMetrics,
 ) : io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher {
 
     companion object {
         private const val EVENT_CLASS_NO_NAME_ERROR = "Event class has no name"
+    }
+
+    /**
+     * Helper method to create ProjectionFailed error with metrics recording.
+     */
+    private fun createProjectionFailedError(
+        eventType: String,
+        aggregateId: String,
+        reason: String,
+    ): ScopeManagementApplicationError.PersistenceError.ProjectionFailed {
+        // Record failure metric before throwing error
+        projectionMetrics.recordProjectionFailure(eventType, reason)
+
+        return ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+            eventType = eventType,
+            aggregateId = aggregateId,
+            reason = reason,
+        )
     }
 
     /**
@@ -56,7 +76,7 @@ class EventProjectionService(
         logger.debug(
             "Projecting domain event to RDB",
             mapOf(
-                "eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR)),
+                "eventType" to (event::class.simpleName ?: EVENT_CLASS_NO_NAME_ERROR),
                 "aggregateId" to when (event) {
                     is ScopeCreated -> event.aggregateId.value
                     is ScopeTitleUpdated -> event.aggregateId.value
@@ -66,7 +86,18 @@ class EventProjectionService(
                     is AliasNameChanged -> event.aggregateId.value
                     is AliasRemoved -> event.aggregateId.value
                     is CanonicalAliasReplaced -> event.aggregateId.value
-                    else -> error("Unmapped event type for aggregate ID extraction: ${event::class.qualifiedName}")
+                    else -> {
+                        val eventType = event::class.qualifiedName ?: event::class.simpleName ?: event::class.toString()
+                        logger.warn(
+                            "Unmapped event type for aggregate ID extraction",
+                            mapOf("eventType" to eventType),
+                        )
+
+                        // Record metric for unmapped event
+                        projectionMetrics.recordEventUnmapped(eventType)
+
+                        "unmapped-${event::class.simpleName ?: "event"}"
+                    }
                 },
             ),
         )
@@ -88,18 +119,28 @@ class EventProjectionService(
             is AliasRemoved -> projectAliasRemoved(event).bind()
             is CanonicalAliasReplaced -> projectCanonicalAliasReplaced(event).bind()
             else -> {
+                val eventType = event::class.simpleName ?: EVENT_CLASS_NO_NAME_ERROR
                 logger.warn(
                     "Unknown event type for projection",
-                    mapOf("eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR))),
+                    mapOf("eventType" to eventType),
                 )
+
+                // Record metric for skipped unknown event
+                projectionMetrics.recordEventSkipped(eventType)
+
                 // Don't fail for unknown events - allow system to continue
             }
         }
 
+        val eventType = event::class.simpleName ?: EVENT_CLASS_NO_NAME_ERROR
         logger.debug(
             "Successfully projected event to RDB",
-            mapOf("eventType" to (event::class.simpleName ?: error(EVENT_CLASS_NO_NAME_ERROR))),
+            mapOf("eventType" to eventType),
         )
+
+        // Record metric for successful projection
+        // (Note: skipped events are recorded separately above, this covers all successfully handled events)
+        projectionMetrics.recordProjectionSuccess(eventType)
     }
 
     /**
@@ -165,7 +206,7 @@ class EventProjectionService(
             title = event.title,
             description = event.description,
             parentId = event.parentId,
-            status = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Active,
+            status = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.default(),
             aspects = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects.empty(),
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
@@ -180,7 +221,7 @@ class EventProjectionService(
                     "error" to repositoryError.toString(),
                 ),
             )
-            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+            createProjectionFailedError(
                 eventType = "ScopeCreated",
                 aggregateId = event.aggregateId.value,
                 reason = "Repository save failed: $repositoryError",
@@ -204,7 +245,7 @@ class EventProjectionService(
 
         // Load current scope
         val currentScope = scopeRepository.findById(event.scopeId).mapLeft { repositoryError ->
-            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+            createProjectionFailedError(
                 eventType = "ScopeTitleUpdated",
                 aggregateId = event.aggregateId.value,
                 reason = "Failed to load scope for update: $repositoryError",
@@ -213,7 +254,7 @@ class EventProjectionService(
 
         if (currentScope == null) {
             raise(
-                ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
+                createProjectionFailedError(
                     eventType = "ScopeTitleUpdated",
                     aggregateId = event.aggregateId.value,
                     reason = "Scope not found for title update: ${event.scopeId.value}",
@@ -334,13 +375,11 @@ class EventProjectionService(
             )
         }
 
-        val updated = currentScope.archive(event.occurredAt).mapLeft {
-            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
-                eventType = "ScopeArchived",
-                aggregateId = event.aggregateId.value,
-                reason = "Invalid status transition to ARCHIVED",
-            )
-        }.bind()
+        // Use copy to maintain projection consistency without re-executing domain logic
+        val updated = currentScope.copy(
+            status = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived,
+            updatedAt = event.occurredAt,
+        )
 
         scopeRepository.save(updated).mapLeft { repositoryError ->
             ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
@@ -375,13 +414,11 @@ class EventProjectionService(
             )
         }
 
-        val updated = currentScope.reactivate(event.occurredAt).mapLeft {
-            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
-                eventType = "ScopeRestored",
-                aggregateId = event.aggregateId.value,
-                reason = "Invalid status transition to ACTIVE",
-            )
-        }.bind()
+        // Use copy to maintain projection consistency without re-executing domain logic
+        val updated = currentScope.copy(
+            status = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Active,
+            updatedAt = event.occurredAt,
+        )
 
         scopeRepository.save(updated).mapLeft { repositoryError ->
             ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
@@ -419,13 +456,11 @@ class EventProjectionService(
             )
         }
 
-        val updated = currentScope.moveToParent(event.newParentId, event.occurredAt).mapLeft {
-            ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
-                eventType = "ScopeParentChanged",
-                aggregateId = event.aggregateId.value,
-                reason = "Invalid move to parent",
-            )
-        }.bind()
+        // Update the scope with new parent ID using copy to maintain consistency
+        val updated = currentScope.copy(
+            parentId = event.newParentId,
+            updatedAt = event.occurredAt,
+        )
 
         scopeRepository.save(updated).mapLeft { repositoryError ->
             ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
@@ -663,6 +698,7 @@ class EventProjectionService(
                 "scopeId" to event.scopeId.value,
                 "oldAliasId" to event.oldAliasId.value,
                 "newAliasId" to event.newAliasId.value,
+                "newAliasName" to event.newAliasName.value,
             ),
         )
 
@@ -678,21 +714,26 @@ class EventProjectionService(
             )
         }.bind()
 
-        // Update new alias to canonical type
-        scopeAliasRepository.updateAliasType(
+        // Create new canonical alias record
+        scopeAliasRepository.save(
             aliasId = event.newAliasId,
-            newAliasType = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType.CANONICAL,
+            aliasName = event.newAliasName,
+            scopeId = event.scopeId,
+            aliasType = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType.CANONICAL,
         ).mapLeft { repositoryError ->
             ScopeManagementApplicationError.PersistenceError.ProjectionFailed(
                 eventType = "CanonicalAliasReplaced",
                 aggregateId = event.aggregateId.value,
-                reason = "Failed to update new canonical alias: $repositoryError",
+                reason = "Failed to create new canonical alias: $repositoryError",
             )
         }.bind()
 
         logger.debug(
             "Successfully projected CanonicalAliasReplaced to RDB",
-            mapOf("scopeId" to event.scopeId.value),
+            mapOf(
+                "scopeId" to event.scopeId.value,
+                "newCanonicalAlias" to event.newAliasName.value,
+            ),
         )
     }
 }

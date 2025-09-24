@@ -78,7 +78,6 @@ data class ScopeAggregate(
     val canonicalAliasId: AliasId? = null,
     // Aggregate-level state
     val isDeleted: Boolean = false,
-    val isArchived: Boolean = false,
 ) : AggregateRoot<ScopeAggregate, ScopeEvent>() {
 
     companion object {
@@ -130,19 +129,22 @@ data class ScopeAggregate(
                             aliases = emptyMap(),
                             canonicalAliasId = null,
                             isDeleted = false,
-                            isArchived = false,
                         )
                     }
                     else -> {
                         // Apply event to existing aggregate
-                        aggregate?.applyEvent(event) ?: raise(
-                            ScopeError.InvalidEventSequence(
-                                scopeId = extractScopeId(event),
-                                expectedEventType = "ScopeCreated",
-                                actualEventType = event::class.simpleName ?: "UnknownEvent",
-                                reason = "Cannot apply event without ScopeCreated event first",
-                            ),
-                        )
+                        if (aggregate == null) {
+                            raise(
+                                ScopeError.InvalidEventSequence(
+                                    scopeId = extractScopeId(event),
+                                    expectedEventType = "ScopeCreated",
+                                    actualEventType = event::class.simpleName ?: "UnknownEvent",
+                                    reason = "Cannot apply event without ScopeCreated event first",
+                                ),
+                            )
+                        } else {
+                            aggregate.applyEvent(event)
+                        }
                     }
                 }
             }
@@ -192,7 +194,6 @@ data class ScopeAggregate(
                 aliases = emptyMap(),
                 canonicalAliasId = null,
                 isDeleted = false,
-                isArchived = false,
             )
 
             initialAggregate.raiseEvent(event)
@@ -228,7 +229,6 @@ data class ScopeAggregate(
                 aliases = emptyMap(),
                 canonicalAliasId = null,
                 isDeleted = false,
-                isArchived = false,
             )
 
             // Decide phase - create events with dummy version
@@ -289,7 +289,6 @@ data class ScopeAggregate(
                 aliases = emptyMap(),
                 canonicalAliasId = null,
                 isDeleted = false,
-                isArchived = false,
             )
 
             // Create events - first scope creation, then alias assignment
@@ -367,7 +366,6 @@ data class ScopeAggregate(
                 aliases = emptyMap(),
                 canonicalAliasId = null,
                 isDeleted = false,
-                isArchived = false,
             )
 
             // Create events - first scope creation, then alias assignment
@@ -446,7 +444,6 @@ data class ScopeAggregate(
             aliases = emptyMap(),
             canonicalAliasId = null,
             isDeleted = false,
-            isArchived = false,
         )
     }
 
@@ -459,6 +456,9 @@ data class ScopeAggregate(
         val currentTitle = this@ScopeAggregate.title ?: raise(ScopeError.InvalidState("Scope title is not initialized"))
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
@@ -489,6 +489,9 @@ data class ScopeAggregate(
 
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val newTitle = ScopeTitle.create(title).bind()
@@ -574,6 +577,9 @@ data class ScopeAggregate(
             ensure(!isDeleted) {
                 ScopeError.AlreadyDeleted(currentScopeId)
             }
+            ensure(status.canBeEdited()) {
+                ScopeError.AlreadyArchived(currentScopeId)
+            }
 
             val newDescription = ScopeDescription.create(description).bind()
             if (this@ScopeAggregate.description == newDescription) {
@@ -584,7 +590,7 @@ data class ScopeAggregate(
                 aggregateId = id,
                 eventId = EventId.generate(),
                 occurredAt = now,
-                aggregateVersion = version.increment(),
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
                 scopeId = currentScopeId,
                 oldDescription = this@ScopeAggregate.description,
                 newDescription = newDescription,
@@ -600,6 +606,9 @@ data class ScopeAggregate(
         val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val newDescription = ScopeDescription.create(description).bind()
@@ -628,6 +637,9 @@ data class ScopeAggregate(
         val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         if (this@ScopeAggregate.parentId == newParentId) {
@@ -709,7 +721,7 @@ data class ScopeAggregate(
             aggregateId = id,
             eventId = EventId.generate(),
             occurredAt = now,
-            aggregateVersion = version.increment(),
+            aggregateVersion = AggregateVersion.initial(), // Dummy version
             scopeId = currentScopeId,
         )
 
@@ -726,7 +738,7 @@ data class ScopeAggregate(
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
         }
-        ensure(!isArchived) {
+        ensure(status.canBeEdited()) {
             ScopeError.AlreadyArchived(currentScopeId)
         }
 
@@ -751,7 +763,7 @@ data class ScopeAggregate(
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
         }
-        ensure(isArchived) {
+        ensure(status is ScopeStatus.Archived) {
             ScopeError.NotArchived(currentScopeId)
         }
 
@@ -778,6 +790,9 @@ data class ScopeAggregate(
             ensure(!isDeleted) {
                 ScopeError.AlreadyDeleted(currentScopeId)
             }
+            ensure(status.canBeEdited()) {
+                ScopeError.AlreadyArchived(currentScopeId)
+            }
 
             // Check if alias name already exists
             val existingAlias = aliases.values.find { it.aliasName == aliasName }
@@ -792,7 +807,7 @@ data class ScopeAggregate(
                 aggregateId = id,
                 eventId = EventId.generate(),
                 occurredAt = now,
-                aggregateVersion = version.increment(),
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
                 aliasId = aliasId,
                 aliasName = aliasName,
                 scopeId = currentScopeId,
@@ -810,6 +825,9 @@ data class ScopeAggregate(
         val currentScopeId = scopeId ?: raise(ScopeError.InvalidState("Scope ID is not initialized"))
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val aliasRecord = aliases[aliasId] ?: raise(ScopeError.AliasNotFound(aliasId.value, currentScopeId))
@@ -844,6 +862,9 @@ data class ScopeAggregate(
 
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         val currentCanonical = aliases[currentCanonicalAliasId] ?: raise(ScopeError.InvalidState("Canonical alias not found in aliases map"))
@@ -894,6 +915,9 @@ data class ScopeAggregate(
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
         }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
+        }
 
         val aliasRecord = aliases[aliasId] ?: raise(ScopeError.AliasNotFound(aliasId.value, currentScopeId))
 
@@ -929,12 +953,15 @@ data class ScopeAggregate(
             ensure(!isDeleted) {
                 ScopeError.AlreadyDeleted(currentScopeId)
             }
+            ensure(status.canBeEdited()) {
+                ScopeError.AlreadyArchived(currentScopeId)
+            }
 
             val event = ScopeAspectAdded(
                 aggregateId = id,
                 eventId = EventId.generate(),
                 occurredAt = now,
-                aggregateVersion = version.increment(),
+                aggregateVersion = AggregateVersion.initial(), // Dummy version
                 scopeId = currentScopeId,
                 aspectKey = aspectKey,
                 aspectValues = aspectValues,
@@ -951,6 +978,9 @@ data class ScopeAggregate(
 
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         // Check if aspect exists
@@ -979,6 +1009,9 @@ data class ScopeAggregate(
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
         }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
+        }
 
         val event = ScopeAspectsCleared(
             aggregateId = id,
@@ -999,6 +1032,9 @@ data class ScopeAggregate(
 
         ensure(!isDeleted) {
             ScopeError.AlreadyDeleted(currentScopeId)
+        }
+        ensure(status.canBeEdited()) {
+            ScopeError.AlreadyArchived(currentScopeId)
         }
 
         if (aspects == newAspects) {
@@ -1066,13 +1102,13 @@ data class ScopeAggregate(
         is ScopeArchived -> copy(
             version = version.increment(),
             updatedAt = event.occurredAt,
-            isArchived = true,
+            status = ScopeStatus.Archived,
         )
 
         is ScopeRestored -> copy(
             version = version.increment(),
             updatedAt = event.occurredAt,
-            isArchived = false,
+            status = ScopeStatus.Active,
         )
 
         // Alias Events

@@ -30,7 +30,7 @@ import kotlinx.datetime.Clock
  */
 class DeleteScopeHandler(
     private val eventSourcingRepository: EventSourcingRepository<DomainEvent>,
-    private val eventProjector: EventPublisher,
+    private val eventPublisher: EventPublisher,
     private val scopeRepository: ScopeRepository,
     private val scopeHierarchyService: ScopeHierarchyService,
     private val transactionManager: TransactionManager,
@@ -82,21 +82,28 @@ class DeleteScopeHandler(
                     )
                 }
 
-                // Validate that the scope has no children
-                val childCount = scopeRepository.countChildrenOf(scopeId).mapLeft { error ->
-                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                }.bind()
+                // Handle cascade deletion if requested
+                if (command.cascade) {
+                    // If cascade is true, we need to delete all children recursively
+                    deleteChildrenRecursively(scopeId).bind()
+                } else {
+                    // If cascade is false, validate that the scope has no children
+                    val childCount = scopeRepository.countChildrenOf(scopeId).mapLeft { error ->
+                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                    }.bind()
 
-                scopeHierarchyService.validateDeletion(scopeId, childCount).mapLeft { error ->
-                    logger.warn(
-                        "Cannot delete scope with children",
-                        mapOf(
-                            "scopeId" to command.id,
-                            "childCount" to childCount.toString(),
-                        ),
-                    )
-                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
-                }.bind()
+                    scopeHierarchyService.validateDeletion(scopeId, childCount).mapLeft { error ->
+                        logger.warn(
+                            "Cannot delete scope with children",
+                            mapOf(
+                                "scopeId" to command.id,
+                                "childCount" to childCount.toString(),
+                                "cascade" to command.cascade.toString(),
+                            ),
+                        )
+                        applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                    }.bind()
+                }
 
                 // Apply delete through aggregate method
                 val deleteResult = baseAggregate.handleDelete(Clock.System.now()).mapLeft { error ->
@@ -118,7 +125,7 @@ class DeleteScopeHandler(
 
                 // Project events to RDB in the same transaction
                 val domainEvents = eventsToSave.map { envelope -> envelope.event }
-                eventProjector.projectEvents(domainEvents).mapLeft { error ->
+                eventPublisher.projectEvents(domainEvents).mapLeft { error ->
                     logger.error(
                         "Failed to project delete events to RDB",
                         mapOf(
@@ -152,5 +159,71 @@ class DeleteScopeHandler(
                 "message" to error.toString(),
             ),
         )
+    }
+
+    /**
+     * Recursively delete all children of a scope.
+     * This is called when cascade=true to delete the entire hierarchy.
+     */
+    private suspend fun deleteChildrenRecursively(scopeId: ScopeId): Either<ScopeContractError, Unit> = either {
+        // Get all direct children
+        val children = scopeRepository.findByParentId(scopeId, offset = 0, limit = 1000).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+        }.bind()
+
+        // Delete each child recursively
+        children.forEach { childScope ->
+            // First delete the child's children
+            deleteChildrenRecursively(childScope.id).bind()
+
+            // Then delete the child itself
+            val childAggregateId = childScope.id.toAggregateId().mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            // Load child aggregate from events
+            val childEvents = eventSourcingRepository.getEvents(childAggregateId).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            val childScopeEvents = childEvents.filterIsInstance<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>()
+            val childAggregate = ScopeAggregate.fromEvents(childScopeEvents).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            if (childAggregate != null) {
+                // Apply delete to child aggregate
+                val deleteResult = childAggregate.handleDelete(Clock.System.now()).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                // Persist delete events for child
+                val eventsToSave = deleteResult.events.map { envelope ->
+                    io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending(envelope.event as DomainEvent)
+                }
+
+                eventSourcingRepository.saveEventsWithVersioning(
+                    aggregateId = deleteResult.aggregate.id,
+                    events = eventsToSave,
+                    expectedVersion = childAggregate.version.value.toInt(),
+                ).mapLeft { error ->
+                    applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+                }.bind()
+
+                // Project events to RDB
+                val domainEvents = eventsToSave.map { envelope -> envelope.event }
+                eventPublisher.projectEvents(domainEvents).mapLeft { error ->
+                    applicationErrorMapper.mapToContractError(error)
+                }.bind()
+
+                logger.debug(
+                    "Deleted child scope in cascade",
+                    mapOf(
+                        "childScopeId" to childScope.id.value,
+                        "parentScopeId" to scopeId.value,
+                    ),
+                )
+            }
+        }
     }
 }

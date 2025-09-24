@@ -425,7 +425,7 @@ class ScopeAggregateTest :
                     aggregate.status shouldBe ScopeStatus.default()
                     aggregate.aspects shouldBe Aspects.empty()
                     aggregate.isDeleted shouldBe false
-                    aggregate.isArchived shouldBe false
+                    aggregate.status shouldNotBe ScopeStatus.Archived
                 }
             }
 
@@ -494,7 +494,6 @@ private fun createTestAggregate(): ScopeAggregate {
         aliases = emptyMap(),
         canonicalAliasId = null,
         isDeleted = false,
-        isArchived = false,
     )
 }
 

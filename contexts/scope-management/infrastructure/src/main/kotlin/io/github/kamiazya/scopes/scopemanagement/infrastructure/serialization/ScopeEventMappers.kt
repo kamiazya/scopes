@@ -22,7 +22,7 @@ object ScopeEventMappers {
 
     fun mapMetadataFromSurrogate(surrogate: SerializableEventMetadata): EventMetadata = EventMetadata(
         correlationId = surrogate.correlationId,
-        causationId = surrogate.causationId?.let { EventId.from(it).fold({ error("Invalid EventId: $it") }, { it }) },
+        causationId = surrogate.causationId?.let { EventId.from(it).fold({ _ -> error("Invalid EventId: $it") }, { it }) },
         userId = surrogate.userId,
         custom = surrogate.additionalData,
     )

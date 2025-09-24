@@ -69,24 +69,29 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         private fun getBusinessErrorCode(error: ScopeContractError.BusinessError): Int = when (error) {
             is ScopeContractError.BusinessError.NotFound,
             is ScopeContractError.BusinessError.AliasNotFound,
-            is ScopeContractError.BusinessError.ContextNotFound -> -32011 // Not found
-            
+            is ScopeContractError.BusinessError.ContextNotFound,
+            -> -32011 // Not found
+
             is ScopeContractError.BusinessError.DuplicateAlias,
             is ScopeContractError.BusinessError.DuplicateTitle,
-            is ScopeContractError.BusinessError.DuplicateContextKey -> -32012 // Duplicate
-            
+            is ScopeContractError.BusinessError.DuplicateContextKey,
+            -> -32012 // Duplicate
+
             is ScopeContractError.BusinessError.HierarchyViolation,
             is ScopeContractError.BusinessError.CannotRemoveCanonicalAlias,
-            is ScopeContractError.BusinessError.AliasOfDifferentScope -> -32013 // Hierarchy violation
-            
+            is ScopeContractError.BusinessError.AliasOfDifferentScope,
+            -> -32013 // Hierarchy violation
+
             is ScopeContractError.BusinessError.AlreadyDeleted,
             is ScopeContractError.BusinessError.ArchivedScope,
-            is ScopeContractError.BusinessError.NotArchived -> -32014 // State conflict
-            
+            is ScopeContractError.BusinessError.NotArchived,
+            -> -32014 // State conflict
+
             is ScopeContractError.BusinessError.HasChildren -> -32010 // Business constraint violation
-            
+
             is ScopeContractError.BusinessError.AliasGenerationFailed,
-            is ScopeContractError.BusinessError.AliasGenerationValidationFailed -> -32015 // Alias generation error
+            is ScopeContractError.BusinessError.AliasGenerationValidationFailed,
+            -> -32015 // Alias generation error
         }
 
         private fun getDataInconsistencyErrorCode(error: ScopeContractError.DataInconsistency): Int = when (error) {

@@ -891,14 +891,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError -> {
             // Map domain ScopeError to contract errors
             when (domainError) {
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.NotFound -> 
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.NotFound ->
                     ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.HasChildren -> 
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.HasChildren ->
                     ScopeContractError.BusinessError.HasChildren(
                         scopeId = domainError.scopeId.value,
                         childrenCount = domainError.childCount,
                     )
-                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.AlreadyDeleted -> 
+                is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.AlreadyDeleted ->
                     ScopeContractError.BusinessError.AlreadyDeleted(scopeId = domainError.scopeId.value)
                 is io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.DuplicateTitle ->
                     ScopeContractError.BusinessError.DuplicateTitle(

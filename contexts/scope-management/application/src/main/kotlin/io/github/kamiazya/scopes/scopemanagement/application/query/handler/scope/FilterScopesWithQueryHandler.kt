@@ -151,7 +151,7 @@ class FilterScopesWithQueryHandler(
                         canonicalAlias = canonicalAlias.aliasName.value,
                         createdAt = scope.createdAt,
                         updatedAt = scope.updatedAt,
-                        isArchived = false,
+                        isArchived = (scope.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
                         aspects = scope.aspects.toMap().mapKeys { (key, _) ->
                             key.value
                         }.mapValues { (_, values) ->

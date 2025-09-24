@@ -138,7 +138,7 @@ val scopeManagementModule = module {
     single {
         UpdateScopeHandler(
             eventSourcingRepository = get(),
-            eventProjector = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             scopeRepository = get(),
             transactionManager = get(),
             applicationErrorMapper = get(),
@@ -149,7 +149,7 @@ val scopeManagementModule = module {
     single {
         DeleteScopeHandler(
             eventSourcingRepository = get(),
-            eventProjector = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             scopeRepository = get(),
             scopeHierarchyService = get(),
             transactionManager = get(),
