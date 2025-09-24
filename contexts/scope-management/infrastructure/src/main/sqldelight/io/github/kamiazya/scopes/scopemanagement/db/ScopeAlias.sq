@@ -25,6 +25,18 @@ UPDATE scope_aliases
 SET scope_id = ?, alias_name = ?, alias_type = ?, updated_at = ?
 WHERE id = ?;
 
+-- Update alias name only (for event projection)
+updateAliasName:
+UPDATE scope_aliases
+SET alias_name = ?, updated_at = ?
+WHERE id = ?;
+
+-- Update alias type only (for event projection)
+updateAliasType:
+UPDATE scope_aliases
+SET alias_type = ?, updated_at = ?
+WHERE id = ?;
+
 -- Find by alias name
 findByAliasName:
 SELECT *

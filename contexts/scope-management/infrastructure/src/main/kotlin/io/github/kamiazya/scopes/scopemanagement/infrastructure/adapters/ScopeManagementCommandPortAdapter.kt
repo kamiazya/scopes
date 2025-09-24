@@ -64,15 +64,15 @@ class ScopeManagementCommandPortAdapter(
             title = command.title,
             description = command.description,
         ),
-    ).map { scopeResult ->
+    ).map { result: io.github.kamiazya.scopes.scopemanagement.application.dto.scope.UpdateScopeResult ->
         UpdateScopeResult(
-            id = scopeResult.id,
-            title = scopeResult.title,
-            description = scopeResult.description,
-            parentId = scopeResult.parentId,
-            canonicalAlias = scopeResult.canonicalAlias,
-            createdAt = scopeResult.createdAt,
-            updatedAt = scopeResult.updatedAt,
+            id = result.id,
+            title = result.title,
+            description = result.description,
+            parentId = result.parentId,
+            canonicalAlias = result.canonicalAlias, // Now non-null in DTO
+            createdAt = result.createdAt,
+            updatedAt = result.updatedAt,
         )
     }
 
@@ -81,7 +81,7 @@ class ScopeManagementCommandPortAdapter(
             id = command.id,
             cascade = command.cascade,
         ),
-    )
+    ).map { _ -> Unit }
 
     override suspend fun addAlias(command: ContractAddAliasCommand): Either<ScopeContractError, Unit> = transactionManager.inTransaction {
         val scopeResult = getScopeByIdHandler(GetScopeById(command.scopeId))

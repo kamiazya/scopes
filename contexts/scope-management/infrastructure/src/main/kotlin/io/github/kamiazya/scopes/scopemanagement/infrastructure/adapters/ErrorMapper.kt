@@ -158,10 +158,41 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             parentId = domainError.parentId?.value,
         )
         is ScopeError.NotArchived -> ScopeContractError.BusinessError.NotArchived(scopeId = domainError.scopeId.value)
+        is ScopeError.HasChildren -> ScopeContractError.BusinessError.HasChildren(
+            scopeId = domainError.scopeId.value,
+            childrenCount = domainError.childCount,
+        )
         is ScopeError.VersionMismatch -> ScopeContractError.SystemError.ConcurrentModification(
             scopeId = domainError.scopeId.value,
             expectedVersion = domainError.expectedVersion,
             actualVersion = domainError.actualVersion,
+        )
+        // Alias-related errors
+        is ScopeError.DuplicateAlias -> ScopeContractError.BusinessError.DuplicateAlias(
+            alias = domainError.aliasName,
+        )
+        is ScopeError.AliasNotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        is ScopeError.CannotRemoveCanonicalAlias -> ScopeContractError.BusinessError.CannotRemoveCanonicalAlias(
+            scopeId = domainError.scopeId.value,
+            aliasName = domainError.aliasId,
+        )
+        is ScopeError.NoCanonicalAlias -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        // Aspect-related errors
+        is ScopeError.AspectNotFound -> ScopeContractError.BusinessError.NotFound(scopeId = domainError.scopeId.value)
+        // Event-related errors
+        is ScopeError.InvalidEventSequence -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "event-sourcing",
+        )
+        // Invalid state error
+        is ScopeError.InvalidState -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = SCOPE_MANAGEMENT_SERVICE,
+        )
+        // Event replay errors
+        is ScopeError.EventApplicationFailed -> ScopeContractError.SystemError.ServiceUnavailable(
+            service = "event-sourcing",
+        )
+        is ScopeError.AliasRecordNotFound -> ScopeContractError.DataInconsistency.MissingCanonicalAlias(
+            scopeId = domainError.aggregateId,
         )
     }
 

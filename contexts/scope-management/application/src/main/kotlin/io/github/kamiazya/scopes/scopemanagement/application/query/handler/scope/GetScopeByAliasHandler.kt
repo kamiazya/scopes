@@ -101,7 +101,7 @@ class GetScopeByAliasHandler(
                         canonicalAlias = canonicalAlias,
                         createdAt = s.createdAt,
                         updatedAt = s.updatedAt,
-                        isArchived = false,
+                        isArchived = (s.status is io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus.Archived),
                         aspects = s.aspects.toMap().mapKeys { (key, _) ->
                             key.value
                         }.mapValues { (_, values) ->

@@ -1,7 +1,17 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort
+import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
+import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.metrics.DefaultProjectionMetrics
+import io.github.kamiazya.scopes.platform.observability.metrics.InMemoryMetricsRegistry
+import io.github.kamiazya.scopes.platform.observability.metrics.MetricsRegistry
+import io.github.kamiazya.scopes.platform.observability.metrics.ProjectionMetrics
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository
@@ -17,6 +27,10 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMa
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.ActiveContextBootstrap
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.factory.EventSourcingRepositoryFactory
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.EventProjectionService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
@@ -24,6 +38,7 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDe
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.service.AspectQueryFilterValidator
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
+import kotlinx.serialization.modules.SerializersModule
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -98,16 +113,34 @@ val scopeManagementInfrastructureModule = module {
         ErrorMapper(logger = get())
     }
 
-    // Event Sourcing Repository using contracts
-    single<EventSourcingRepository<io.github.kamiazya.scopes.platform.domain.event.DomainEvent>> {
-        val eventStoreCommandPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort = get()
-        val eventStoreQueryPort: io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort = get()
-        val logger: io.github.kamiazya.scopes.platform.observability.logging.Logger = get()
+    // Metrics infrastructure
+    single<MetricsRegistry> { InMemoryMetricsRegistry() }
+    single<ProjectionMetrics> {
+        DefaultProjectionMetrics(metricsRegistry = get())
+    }
 
-        io.github.kamiazya.scopes.scopemanagement.infrastructure.factory.EventSourcingRepositoryFactory.createContractBased(
+    // Event Projector for RDB projection
+    single<EventPublisher> {
+        EventProjectionService(
+            scopeRepository = get(),
+            scopeAliasRepository = get(),
+            logger = get(),
+            projectionMetrics = get(),
+        )
+    }
+
+    // Event Sourcing Repository using contracts
+    single<EventSourcingRepository<DomainEvent>> {
+        val eventStoreCommandPort: EventStoreCommandPort = get()
+        val eventStoreQueryPort: EventStoreQueryPort = get()
+        val logger: Logger = get()
+        val serializersModule: SerializersModule? = getOrNull()
+
+        EventSourcingRepositoryFactory.createContractBased(
             eventStoreCommandPort = eventStoreCommandPort,
             eventStoreQueryPort = eventStoreQueryPort,
             logger = logger,
+            serializersModule = serializersModule,
         )
     }
 
@@ -115,15 +148,15 @@ val scopeManagementInfrastructureModule = module {
     // UserPreferencesService is provided by UserPreferencesModule
 
     // Bootstrap services - registered as ApplicationBootstrapper for lifecycle management
-    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("AspectPresetBootstrap")) {
-        io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.AspectPresetBootstrap(
+    single<ApplicationBootstrapper>(qualifier = named("AspectPresetBootstrap")) {
+        AspectPresetBootstrap(
             aspectDefinitionRepository = get(),
             logger = get(),
         )
     }
 
-    single<io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationBootstrapper>(qualifier = named("ActiveContextBootstrap")) {
-        io.github.kamiazya.scopes.scopemanagement.infrastructure.bootstrap.ActiveContextBootstrap(
+    single<ApplicationBootstrapper>(qualifier = named("ActiveContextBootstrap")) {
+        ActiveContextBootstrap(
             activeContextRepository = get(),
             logger = get(),
         )

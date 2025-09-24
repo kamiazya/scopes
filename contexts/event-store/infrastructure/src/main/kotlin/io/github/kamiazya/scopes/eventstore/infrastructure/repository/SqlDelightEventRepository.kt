@@ -5,6 +5,7 @@ import io.github.kamiazya.scopes.eventstore.application.port.EventSerializer
 import io.github.kamiazya.scopes.eventstore.db.EventQueries
 import io.github.kamiazya.scopes.eventstore.domain.entity.PersistedEventRecord
 import io.github.kamiazya.scopes.eventstore.domain.error.EventStoreError
+import io.github.kamiazya.scopes.eventstore.domain.repository.AggregateEventStats
 import io.github.kamiazya.scopes.eventstore.domain.repository.EventRepository
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventMetadata
 import io.github.kamiazya.scopes.eventstore.domain.valueobject.EventType
@@ -352,6 +353,177 @@ class SqlDelightEventRepository(private val queries: EventQueries, private val e
                 }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    // ===== OPTIMIZATION METHODS FOR LONG-LIVED AGGREGATES =====
+
+    override suspend fun getLatestAggregateVersion(aggregateId: AggregateId): Either<EventStoreError, Long?> = withContext(Dispatchers.IO) {
+        try {
+            val result = queries.getLatestAggregateVersion(aggregateId.value).executeAsOneOrNull()
+            Either.Right(result?.MAX)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "AggregateLatestVersion",
+                ),
+            )
+        }
+    }
+
+    override suspend fun getEventsByAggregateFromVersion(
+        aggregateId: AggregateId,
+        fromVersion: Long,
+        limit: Int?,
+    ): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val events = queries.findEventsByAggregateIdFromVersion(
+                aggregateId.value,
+                fromVersion,
+                (limit ?: Int.MAX_VALUE).toLong(),
+            ).executeAsList()
+                .mapNotNull { row ->
+                    when (
+                        val result = deserializeEvent(
+                            eventId = row.event_id,
+                            aggregateId = row.aggregate_id,
+                            aggregateVersion = row.aggregate_version,
+                            eventType = row.event_type,
+                            eventData = row.event_data,
+                            occurredAt = row.occurred_at,
+                            storedAt = row.stored_at,
+                            sequenceNumber = row.sequence_number,
+                        )
+                    ) {
+                        is Either.Right -> result.value
+                        is Either.Left -> null // Skip failed deserialization
+                    }
+                }
+
+            Either.Right(events)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "AggregateEventsFromVersion",
+                ),
+            )
+        }
+    }
+
+    override suspend fun getEventsByAggregateVersionRange(
+        aggregateId: AggregateId,
+        fromVersion: Long,
+        toVersion: Long,
+        limit: Int?,
+    ): Either<EventStoreError, List<PersistedEventRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val events = queries.findEventsByAggregateIdVersionRange(
+                aggregateId.value,
+                fromVersion,
+                toVersion,
+                (limit ?: Int.MAX_VALUE).toLong(),
+            ).executeAsList()
+                .mapNotNull { row ->
+                    when (
+                        val result = deserializeEvent(
+                            eventId = row.event_id,
+                            aggregateId = row.aggregate_id,
+                            aggregateVersion = row.aggregate_version,
+                            eventType = row.event_type,
+                            eventData = row.event_data,
+                            occurredAt = row.occurred_at,
+                            storedAt = row.stored_at,
+                            sequenceNumber = row.sequence_number,
+                        )
+                    ) {
+                        is Either.Right -> result.value
+                        is Either.Left -> null // Skip failed deserialization
+                    }
+                }
+
+            Either.Right(events)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "AggregateEventsVersionRange",
+                ),
+            )
+        }
+    }
+
+    override suspend fun getLatestEventsByAggregate(aggregateId: AggregateId, limit: Int): Either<EventStoreError, List<PersistedEventRecord>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val events = queries.findLatestEventsByAggregateId(
+                    aggregateId.value,
+                    limit.toLong(),
+                ).executeAsList()
+                    .mapNotNull { row ->
+                        when (
+                            val result = deserializeEvent(
+                                eventId = row.event_id,
+                                aggregateId = row.aggregate_id,
+                                aggregateVersion = row.aggregate_version,
+                                eventType = row.event_type,
+                                eventData = row.event_data,
+                                occurredAt = row.occurred_at,
+                                storedAt = row.stored_at,
+                                sequenceNumber = row.sequence_number,
+                            )
+                        ) {
+                            is Either.Right -> result.value
+                            is Either.Left -> null // Skip failed deserialization
+                        }
+                    }
+
+                Either.Right(events)
+            } catch (e: Exception) {
+                Either.Left(
+                    EventStoreError.PersistenceError(
+                        operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                        dataType = "LatestAggregateEvents",
+                    ),
+                )
+            }
+        }
+
+    override suspend fun countEventsByAggregate(aggregateId: AggregateId): Either<EventStoreError, Long> = withContext(Dispatchers.IO) {
+        try {
+            val count = queries.countEventsByAggregateId(aggregateId.value).executeAsOne()
+            Either.Right(count)
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "AggregateEventCount",
+                ),
+            )
+        }
+    }
+
+    override suspend fun getAggregateEventStats(aggregateId: AggregateId): Either<EventStoreError, AggregateEventStats> = withContext(Dispatchers.IO) {
+        try {
+            val stats = queries.getAggregateEventStats(aggregateId.value).executeAsOne()
+            // SQLDelight generates property names based on column position and function names
+            Either.Right(
+                AggregateEventStats(
+                    totalEvents = stats.COUNT,
+                    minVersion = stats.MIN,
+                    maxVersion = stats.MAX,
+                    firstEventTime = stats.MIN_?.let { Instant.fromEpochMilliseconds(it) },
+                    lastEventTime = stats.MAX_?.let { Instant.fromEpochMilliseconds(it) },
+                ),
+            )
+        } catch (e: Exception) {
+            Either.Left(
+                EventStoreError.PersistenceError(
+                    operation = EventStoreError.PersistenceOperation.READ_FROM_DISK,
+                    dataType = "AggregateEventStats",
+                ),
+            )
         }
     }
 

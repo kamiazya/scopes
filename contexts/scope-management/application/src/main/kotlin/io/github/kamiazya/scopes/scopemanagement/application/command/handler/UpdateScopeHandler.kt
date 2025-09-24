@@ -1,56 +1,64 @@
 package io.github.kamiazya.scopes.scopemanagement.application.command.handler
 
 import arrow.core.Either
-import arrow.core.NonEmptyList
-import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
-import arrow.core.raise.ensureNotNull
+import arrow.core.raise.ensure
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
-import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.platform.application.handler.CommandHandler
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.UpdateScopeCommand
+import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.UpdateScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ScopeMapper
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
+import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
-import io.github.kamiazya.scopes.scopemanagement.domain.specification.ScopeTitleUniquenessSpecification
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 
+private typealias PendingEventEnvelope = io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending<
+    io.github.kamiazya.scopes.platform.domain.event.DomainEvent,
+    >
+
 /**
- * Handler for updating an existing scope.
+ * Handler for UpdateScope command using Event Sourcing pattern.
  *
- * Note: This handler returns contract errors directly as part of the
- * architecture simplification to eliminate duplicate error definitions.
+ * This handler uses the event-sourced approach where:
+ * - Updates are handled through ScopeAggregate methods
+ * - All changes go through domain events
+ * - EventSourcingRepository handles persistence
+ * - No separate repositories needed
  */
 class UpdateScopeHandler(
+    eventSourcingRepository: EventSourcingRepository<DomainEvent>,
+    private val eventPublisher: EventPublisher,
     private val scopeRepository: ScopeRepository,
-    private val scopeAliasRepository: ScopeAliasRepository,
     private val transactionManager: TransactionManager,
-    private val applicationErrorMapper: ApplicationErrorMapper,
-    private val logger: Logger,
-    private val titleUniquenessSpec: ScopeTitleUniquenessSpecification = ScopeTitleUniquenessSpecification(),
-) : CommandHandler<UpdateScopeCommand, ScopeContractError, ScopeResult> {
+    applicationErrorMapper: ApplicationErrorMapper,
+    logger: Logger,
+) : AbstractEventSourcingHandler(eventSourcingRepository, applicationErrorMapper, logger),
+    CommandHandler<UpdateScopeCommand, ScopeContractError, UpdateScopeResult> {
 
-    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, ScopeResult> = either {
-        logUpdateStart(command)
+    override suspend operator fun invoke(command: UpdateScopeCommand): Either<ScopeContractError, UpdateScopeResult> =
+        either<ScopeContractError, UpdateScopeResult> {
+            logCommandStart(command)
 
-        executeUpdate(command).bind()
-    }.onLeft { error ->
-        logUpdateError(error)
-    }
+            transactionManager.inTransaction<ScopeContractError, UpdateScopeResult> {
+                either<ScopeContractError, UpdateScopeResult> {
+                    val baseAggregate = loadExistingAggregate(command.id).bind()
+                    val updateResult = applyUpdates(baseAggregate, command).bind()
+                    persistChangesIfNeeded(updateResult.aggregate, updateResult.events, baseAggregate).bind()
+                    buildResult(updateResult.aggregate, command.id)
+                }
+            }.bind()
+        }.onLeft { error -> logCommandFailure(error) }
 
-    private fun logUpdateStart(command: UpdateScopeCommand) {
+    private fun logCommandStart(command: UpdateScopeCommand) {
         logger.info(
-            "Updating scope",
+            "Updating scope using EventSourcing pattern",
             mapOf(
                 "scopeId" to command.id,
                 "hasTitle" to (command.title != null).toString(),
@@ -59,150 +67,172 @@ class UpdateScopeHandler(
         )
     }
 
-    private fun logUpdateError(error: ScopeContractError) {
-        logger.error(
-            "Failed to update scope",
-            mapOf(
-                "code" to getErrorClassName(error),
-                "message" to error.toString().take(500),
-            ),
-        )
+    private data class HandlerResult(
+        val aggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+        val events: List<PendingEventEnvelope>,
+    )
+
+    /**
+     * Converts domain event envelopes to pending event envelopes for persistence.
+     */
+    private fun toPendingEventEnvelopes(
+        events: List<io.github.kamiazya.scopes.platform.domain.event.EventEnvelope.Pending<io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent>>,
+    ): List<PendingEventEnvelope> = events.map { envelope ->
+        PendingEventEnvelope(envelope.event as io.github.kamiazya.scopes.platform.domain.event.DomainEvent)
     }
 
-    private fun getErrorClassName(error: ScopeContractError): String = error::class.qualifiedName ?: error::class.simpleName ?: "UnknownError"
+    private suspend fun applyUpdates(
+        initialAggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+        command: UpdateScopeCommand,
+    ): Either<ScopeContractError, HandlerResult> = either {
+        var currentAggregate = initialAggregate
+        val eventsToSave = mutableListOf<PendingEventEnvelope>()
 
-    private suspend fun executeUpdate(command: UpdateScopeCommand): Either<ScopeContractError, ScopeResult> = transactionManager.inTransaction {
-        either {
-            // Parse scope ID
-            val scopeId = ScopeId.create(command.id).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(
-                    error,
-                    ErrorMappingContext(attemptedValue = command.id),
+        // Apply title update if provided
+        command.title?.let { title ->
+            // First validate title uniqueness before applying the update
+            validateTitleUniqueness(currentAggregate, title).bind()
+
+            val titleUpdateResult = currentAggregate.handleUpdateTitle(title, Clock.System.now()).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            currentAggregate = titleUpdateResult.aggregate
+            eventsToSave.addAll(toPendingEventEnvelopes(titleUpdateResult.events))
+        }
+
+        // Apply description update if provided
+        command.description?.let { description ->
+            val descriptionUpdateResult = currentAggregate.handleUpdateDescription(description, Clock.System.now()).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            currentAggregate = descriptionUpdateResult.aggregate
+            eventsToSave.addAll(toPendingEventEnvelopes(descriptionUpdateResult.events))
+        }
+
+        HandlerResult(currentAggregate, eventsToSave)
+    }
+
+    private suspend fun persistChangesIfNeeded(
+        currentAggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+        eventsToSave: List<PendingEventEnvelope>,
+        baseAggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+    ): Either<ScopeContractError, Unit> = either {
+        if (eventsToSave.isNotEmpty()) {
+            eventSourcingRepository.saveEventsWithVersioning(
+                aggregateId = currentAggregate.id,
+                events = eventsToSave,
+                expectedVersion = baseAggregate.version.value.toInt(),
+            ).mapLeft { error ->
+                applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+            }.bind()
+
+            // Project events to RDB in the same transaction
+            val domainEvents = eventsToSave.map { envelope -> envelope.event }
+            eventPublisher.projectEvents(domainEvents).mapLeft { error ->
+                logger.error(
+                    "Failed to project update events to RDB",
+                    mapOf(
+                        "error" to error.toString(),
+                        "eventCount" to domainEvents.size.toString(),
+                    ),
                 )
+                applicationErrorMapper.mapToContractError(error)
             }.bind()
 
-            // Find existing scope
-            val existingScope = findExistingScope(scopeId).bind()
-
-            // Apply updates
-            var updatedScope = existingScope
-
-            if (command.title != null) {
-                updatedScope = updateTitle(updatedScope, command.title, scopeId).bind()
-            }
-
-            if (command.description != null) {
-                updatedScope = updateDescription(updatedScope, command.description, scopeId).bind()
-            }
-
-            if (command.metadata.isNotEmpty()) {
-                updatedScope = updateAspects(updatedScope, command.metadata, scopeId).bind()
-            }
-
-            // Save the updated scope
-            val savedScope = scopeRepository.save(updatedScope).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
-            logger.info("Scope updated successfully", mapOf("scopeId" to savedScope.id.value))
-
-            // Fetch aliases to include in the result
-            val aliases = scopeAliasRepository.findByScopeId(savedScope.id).mapLeft { error ->
-                applicationErrorMapper.mapDomainError(error)
-            }.bind()
-
-            ScopeMapper.toScopeResult(savedScope, aliases).bind()
-        }
-    }
-
-    private suspend fun findExistingScope(scopeId: ScopeId): Either<ScopeContractError, Scope> = either {
-        val scope = scopeRepository.findById(scopeId).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
-        ensureNotNull(scope) {
-            logger.warn("Scope not found for update", mapOf("scopeId" to scopeId.value))
-            ScopeContractError.BusinessError.NotFound(scopeId = scopeId.value)
-        }
-    }
-
-    private suspend fun updateTitle(scope: Scope, newTitle: String, scopeId: ScopeId): Either<ScopeContractError, Scope> = either {
-        val title = ScopeTitle.create(newTitle).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(
-                error,
-                ErrorMappingContext(attemptedValue = newTitle),
+            logger.info(
+                "Scope updated successfully using EventSourcing",
+                mapOf(
+                    "hasChanges" to "true",
+                    "eventsCount" to eventsToSave.size.toString(),
+                ),
             )
-        }.bind()
+        }
+    }
 
-        // Use specification to validate title uniqueness
-        titleUniquenessSpec.isSatisfiedByForUpdate(
-            newTitle = title,
-            currentTitle = scope.title,
-            parentId = scope.parentId,
-            scopeId = scopeId,
-            titleExistsChecker = { checkTitle, parentId ->
-                scopeRepository.findIdByParentIdAndTitle(parentId, checkTitle.value).getOrNull()
-            },
-        ).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
+    private fun buildResult(
+        currentAggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+        scopeIdString: String,
+    ): UpdateScopeResult {
+        // Extract scope data from aggregate for result mapping
+        val scope = io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope(
+            id = currentAggregate.scopeId!!,
+            title = currentAggregate.title!!,
+            description = currentAggregate.description,
+            parentId = currentAggregate.parentId,
+            status = currentAggregate.status,
+            aspects = currentAggregate.aspects,
+            createdAt = currentAggregate.createdAt,
+            updatedAt = currentAggregate.updatedAt,
+        )
 
-        val updated = scope.updateTitle(newTitle, Clock.System.now()).mapLeft { error ->
-            applicationErrorMapper.mapDomainError(error)
-        }.bind()
+        // Extract canonical alias from aggregate - required by operational policy
+        val canonicalAlias = currentAggregate.canonicalAliasId?.let { id ->
+            currentAggregate.aliases[id]?.aliasName?.value
+        } ?: error(
+            "Missing canonical alias for scope ${currentAggregate.scopeId?.value ?: scopeIdString}. " +
+                "This indicates a data inconsistency between aggregate and projections.",
+        )
 
-        logger.debug(
-            "Title updated",
+        val result = ScopeMapper.toUpdateScopeResult(scope, canonicalAlias)
+
+        logger.info(
+            "Scope update workflow completed",
             mapOf(
-                "scopeId" to scopeId.value,
-                "newTitle" to newTitle,
+                "scopeId" to scope.id.value,
+                "title" to scope.title.value,
             ),
         )
 
-        updated
+        return result
     }
 
-    private fun updateDescription(scope: Scope, newDescription: String, scopeId: ScopeId): Either<ScopeContractError, Scope> = either {
-        val updated = scope.updateDescription(newDescription, Clock.System.now())
-            .mapLeft { error ->
+    private fun logCommandFailure(error: ScopeContractError) {
+        logger.error(
+            "Failed to update scope using EventSourcing",
+            mapOf(
+                "error" to (error::class.qualifiedName ?: error::class.simpleName ?: error::class.toString()),
+                "message" to error.toString(),
+            ),
+        )
+    }
+
+    private suspend fun validateTitleUniqueness(
+        aggregate: io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate,
+        newTitle: String,
+    ): Either<ScopeContractError, Unit> = either {
+        // Don't check if the title hasn't changed
+        if (aggregate.title?.value == newTitle) {
+            return@either
+        }
+
+        // Parse and validate the new title
+        val validatedTitle = ScopeTitle.create(newTitle)
+            .mapLeft { titleError ->
                 applicationErrorMapper.mapDomainError(
-                    error,
-                    ErrorMappingContext(attemptedValue = newDescription),
+                    titleError,
+                    ErrorMappingContext(attemptedValue = newTitle),
                 )
             }.bind()
 
-        logger.debug(
-            "Description updated",
-            mapOf(
-                "scopeId" to scopeId.value,
-                "hasDescription" to newDescription.isNotEmpty().toString(),
-            ),
-        )
+        // Check if another scope with the same title exists in the same parent context
+        val existingScopeId = scopeRepository.findIdByParentIdAndTitle(
+            aggregate.parentId,
+            validatedTitle.value,
+        ).mapLeft { error ->
+            applicationErrorMapper.mapDomainError(error, ErrorMappingContext())
+        }.bind()
 
-        updated
-    }
-
-    private fun updateAspects(scope: Scope, metadata: Map<String, String>, scopeId: ScopeId): Either<ScopeContractError, Scope> = either {
-        val aspects = buildAspects(metadata)
-        val updated = scope.updateAspects(Aspects.from(aspects), Clock.System.now())
-
-        logger.debug(
-            "Aspects updated",
-            mapOf(
-                "scopeId" to scopeId.value,
-                "aspectCount" to aspects.size.toString(),
-            ),
-        )
-
-        updated
-    }
-
-    private fun buildAspects(metadata: Map<String, String>): Map<AspectKey, NonEmptyList<AspectValue>> = metadata.mapNotNull { (key, value) ->
-        val aspectKey = AspectKey.create(key).getOrNull()
-        val aspectValue = AspectValue.create(value).getOrNull()
-        if (aspectKey != null && aspectValue != null) {
-            aspectKey to nonEmptyListOf(aspectValue)
-        } else {
-            logger.debug("Skipping invalid aspect", mapOf("key" to key, "value" to value))
-            null
+        // Ensure no other scope has this title (or it's our own scope)
+        ensure(existingScopeId == null || existingScopeId == aggregate.scopeId) {
+            applicationErrorMapper.mapToContractError(
+                io.github.kamiazya.scopes.scopemanagement.application.error.ScopeUniquenessError.DuplicateTitle(
+                    title = validatedTitle.value,
+                    parentScopeId = aggregate.parentId?.value,
+                    existingScopeId = existingScopeId!!.value,
+                ),
+            )
         }
-    }.toMap()
+    }
 }

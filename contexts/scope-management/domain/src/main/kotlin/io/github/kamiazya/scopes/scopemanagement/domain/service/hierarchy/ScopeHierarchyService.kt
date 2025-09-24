@@ -121,4 +121,21 @@ class ScopeHierarchyService(private val maxDepthLimit: Int? = null, private val 
             }
         }
     }
+
+    /**
+     * Validates that a scope can be deleted.
+     * A scope cannot be deleted if it has children.
+     *
+     * @param scopeId The ID of the scope to delete
+     * @param childCount The number of children this scope has
+     * @return Either an error or Unit if valid
+     */
+    fun validateDeletion(scopeId: ScopeId, childCount: Int): Either<io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError, Unit> = either {
+        ensure(childCount == 0) {
+            io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError.HasChildren(
+                scopeId = scopeId,
+                childCount = childCount,
+            )
+        }
+    }
 }

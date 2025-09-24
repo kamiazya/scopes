@@ -9,6 +9,19 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
+/**
+ * Builder for formatting GetScopeResponse data into different output formats.
+ *
+ * Transforms the structured GetScopeResponse into appropriate representations
+ * for different interfaces:
+ * - MCP (Model Context Protocol): Structured JSON format
+ * - CLI: Human-readable text format
+ *
+ * This builder handles conditional formatting based on response options such as:
+ * - includeDebug: Shows internal IDs and detailed information
+ * - includeTemporalFields: Shows created/updated timestamps
+ * - aliases: When present, displays all aliases with their types
+ */
 class GetScopeResponseBuilder : ResponseBuilder<GetScopeResponse> {
 
     override fun buildMcpResponse(data: GetScopeResponse): Map<String, Any> {

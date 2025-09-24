@@ -22,5 +22,7 @@ sealed class ScopeManagementApplicationError : ApplicationError {
             PersistenceError()
 
         data class NotFound(val entityType: String, val entityId: String?) : PersistenceError()
+
+        data class ProjectionFailed(val eventType: String, val aggregateId: String, val reason: String) : PersistenceError()
     }
 }

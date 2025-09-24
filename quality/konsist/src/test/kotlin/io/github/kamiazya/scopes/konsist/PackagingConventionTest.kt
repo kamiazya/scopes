@@ -98,6 +98,7 @@ class PackagingConventionTest :
                         it.name.endsWith("Input")
                 }
                 .filter { !it.name.endsWith("Test") }
+                .filter { it.isTopLevel } // Exclude nested classes (internal helper classes)
                 .assertTrue { dto ->
                     dto.packagee?.name == "dto" ||
                         dto.resideInPackage("..dto..")

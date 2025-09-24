@@ -232,6 +232,8 @@ class DomainRichnessTest :
                     .filter { it.resideInPackage("..aggregate..") }
                     .filter { !it.name.endsWith("Test") }
                     .filter { !it.hasAbstractModifier } // Skip abstract base classes
+                    .filter { !it.hasDataModifier } // Skip data classes like AliasRecord
+                    .filter { it.name.endsWith("Aggregate") } // Only include actual aggregates
 
                 // Only run test if there are aggregates
                 if (aggregates.isNotEmpty()) {

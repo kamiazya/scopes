@@ -105,3 +105,55 @@ AND occurred_at < ?
 ORDER BY sequence_number ASC
 LIMIT ?
 OFFSET ?;
+
+-- ===== OPTIMIZATION QUERIES FOR LONG-LIVED AGGREGATES =====
+
+-- Get latest version for an aggregate (optimized for long-lived aggregates)
+getLatestAggregateVersion:
+SELECT MAX(aggregate_version)
+FROM events
+WHERE aggregate_id = ?;
+
+-- Get events from specific version onwards (for incremental loading)
+findEventsByAggregateIdFromVersion:
+SELECT *
+FROM events
+WHERE aggregate_id = ?
+AND aggregate_version >= ?
+ORDER BY aggregate_version ASC
+LIMIT ?;
+
+-- Get events in version range (for partial replay)
+findEventsByAggregateIdVersionRange:
+SELECT *
+FROM events
+WHERE aggregate_id = ?
+AND aggregate_version >= ?
+AND aggregate_version <= ?
+ORDER BY aggregate_version ASC
+LIMIT ?;
+
+-- Get latest N events for an aggregate (for recent activity)
+findLatestEventsByAggregateId:
+SELECT *
+FROM events
+WHERE aggregate_id = ?
+ORDER BY aggregate_version DESC
+LIMIT ?;
+
+-- Count total events for an aggregate (for performance monitoring)
+countEventsByAggregateId:
+SELECT COUNT(*)
+FROM events
+WHERE aggregate_id = ?;
+
+-- Get aggregate event statistics (for snapshot decision making)
+getAggregateEventStats:
+SELECT 
+    COUNT(*),
+    MIN(aggregate_version),
+    MAX(aggregate_version),
+    MIN(occurred_at),
+    MAX(occurred_at)
+FROM events
+WHERE aggregate_id = ?;

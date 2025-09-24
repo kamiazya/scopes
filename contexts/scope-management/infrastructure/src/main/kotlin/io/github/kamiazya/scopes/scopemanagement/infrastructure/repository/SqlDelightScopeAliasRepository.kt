@@ -23,6 +23,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     companion object {
         // SQLite has a limit of 999 variables in a single query
         private const val SQLITE_VARIABLE_LIMIT = 999
+        private const val DATABASE_ERROR_PREFIX = "Database error: "
     }
 
     override suspend fun save(alias: ScopeAlias): Either<ScopesError, Unit> = try {
@@ -289,23 +290,155 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
         ).left()
     }
 
-    private fun rowToScopeAlias(row: Scope_aliases): ScopeAlias = ScopeAlias(
-        id = AliasId.create(row.id).fold(
-            ifLeft = { error("Invalid alias id in database: $it") },
+    // Event projection methods
+
+    override suspend fun save(aliasId: AliasId, aliasName: AliasName, scopeId: ScopeId, aliasType: AliasType): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.insertAlias(
+            id = aliasId.value,
+            scope_id = scopeId.value,
+            alias_name = aliasName.value,
+            alias_type = aliasType.name,
+            created_at = now.toEpochMilliseconds(),
+            updated_at = now.toEpochMilliseconds(),
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        when {
+            // SQLite unique constraint violation detection
+            // Check for constraint violation using multiple detection methods
+            isSqliteUniqueConstraintViolation(e) -> {
+                // Extract the existing scope ID that owns this alias
+                val existingScopeId = try {
+                    database.scopeAliasQueries.findByAliasName(aliasName.value)
+                        .executeAsOneOrNull()?.scope_id?.let { ScopeId.create(it) }
+                        ?.fold(
+                            ifLeft = { null },
+                            ifRight = { it },
+                        )
+                } catch (_: Exception) {
+                    null
+                }
+
+                if (existingScopeId != null) {
+                    // Return business-specific duplicate alias error
+                    ScopeAliasError.DuplicateAlias(
+                        aliasName = aliasName,
+                        existingScopeId = existingScopeId,
+                        attemptedScopeId = scopeId,
+                    ).left()
+                } else {
+                    // Fallback to repository error if we can't determine the existing scope
+                    ScopesError.RepositoryError(
+                        repositoryName = "ScopeAliasRepository",
+                        operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                        entityType = "ScopeAlias",
+                        entityId = aliasId.value,
+                        failure = ScopesError.RepositoryError.RepositoryFailure.CONSTRAINT_VIOLATION,
+                        details = mapOf("error" to (e.message ?: "${DATABASE_ERROR_PREFIX}${e::class.simpleName}")),
+                    ).left()
+                }
+            }
+            else -> {
+                // All other database errors
+                ScopesError.RepositoryError(
+                    repositoryName = "ScopeAliasRepository",
+                    operation = ScopesError.RepositoryError.RepositoryOperation.SAVE,
+                    entityType = "ScopeAlias",
+                    entityId = aliasId.value,
+                    failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+                    details = mapOf("error" to (e.message ?: "${DATABASE_ERROR_PREFIX}${e::class.simpleName}")),
+                ).left()
+            }
+        }
+    }
+
+    override suspend fun updateAliasName(aliasId: AliasId, newAliasName: AliasName): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.updateAliasName(
+            alias_name = newAliasName.value,
+            updated_at = now.toEpochMilliseconds(),
+            id = aliasId.value,
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "${DATABASE_ERROR_PREFIX}${e::class.simpleName}")),
+        ).left()
+    }
+
+    override suspend fun updateAliasType(aliasId: AliasId, newAliasType: AliasType): Either<ScopesError, Unit> = try {
+        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
+        database.scopeAliasQueries.updateAliasType(
+            alias_type = newAliasType.name,
+            updated_at = now.toEpochMilliseconds(),
+            id = aliasId.value,
+        )
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.UPDATE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "${DATABASE_ERROR_PREFIX}${e::class.simpleName}")),
+        ).left()
+    }
+
+    override suspend fun deleteById(aliasId: AliasId): Either<ScopesError, Unit> = try {
+        database.scopeAliasQueries.deleteById(aliasId.value)
+        Unit.right()
+    } catch (e: Exception) {
+        ScopesError.RepositoryError(
+            repositoryName = "ScopeAliasRepository",
+            operation = ScopesError.RepositoryError.RepositoryOperation.DELETE,
+            entityType = "ScopeAlias",
+            entityId = aliasId.value,
+            failure = ScopesError.RepositoryError.RepositoryFailure.OPERATION_FAILED,
+            details = mapOf("error" to (e.message ?: "${DATABASE_ERROR_PREFIX}${e::class.simpleName}")),
+        ).left()
+    }
+
+    private fun rowToScopeAlias(row: Scope_aliases): ScopeAlias {
+        // Value objects should be valid if they exist in database
+        // Log error and throw exception if data integrity is violated
+        val id = AliasId.create(row.id).fold(
+            ifLeft = {
+                val errorMsg = "Invalid alias id in database: ${row.id} - $it"
+                error(errorMsg)
+            },
             ifRight = { it },
-        ),
-        scopeId = ScopeId.create(row.scope_id).fold(
-            ifLeft = { error("Invalid scope id in database: $it") },
+        )
+        val scopeId = ScopeId.create(row.scope_id).fold(
+            ifLeft = {
+                val errorMsg = "Invalid scope id in database: ${row.scope_id} - $it"
+                error(errorMsg)
+            },
             ifRight = { it },
-        ),
-        aliasName = AliasName.create(row.alias_name).fold(
-            ifLeft = { error("Invalid alias name in database: $it") },
+        )
+        val aliasName = AliasName.create(row.alias_name).fold(
+            ifLeft = {
+                val errorMsg = "Invalid alias name in database: ${row.alias_name} - $it"
+                error(errorMsg)
+            },
             ifRight = { it },
-        ),
-        aliasType = AliasType.valueOf(row.alias_type),
-        createdAt = Instant.fromEpochMilliseconds(row.created_at),
-        updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
-    )
+        )
+
+        return ScopeAlias(
+            id = id,
+            scopeId = scopeId,
+            aliasName = aliasName,
+            aliasType = AliasType.valueOf(row.alias_type),
+            createdAt = Instant.fromEpochMilliseconds(row.created_at),
+            updatedAt = Instant.fromEpochMilliseconds(row.updated_at),
+        )
+    }
 
     /**
      * Checks if the given exception represents a SQLite unique constraint violation.

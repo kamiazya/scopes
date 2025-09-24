@@ -17,6 +17,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.con
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.DomainEventPublisher
+import io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.GetAspectDefinitionHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.aspect.ListAspectDefinitionsHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.context.GetContextViewHandler
@@ -119,15 +120,16 @@ val scopeManagementModule = module {
         )
     }
 
-    // Use Case Handlers
+    // Use Case Handlers - Event Sourcing
     single {
         CreateScopeHandler(
-            scopeFactory = get(),
+            eventSourcingRepository = get(),
             scopeRepository = get(),
-            scopeAliasRepository = get(),
-            aliasGenerationService = get(),
+            hierarchyApplicationService = get(),
+            hierarchyService = get(),
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             applicationErrorMapper = get(),
             logger = get(),
         )
@@ -135,8 +137,9 @@ val scopeManagementModule = module {
 
     single {
         UpdateScopeHandler(
+            eventSourcingRepository = get(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             scopeRepository = get(),
-            scopeAliasRepository = get(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),
@@ -145,7 +148,10 @@ val scopeManagementModule = module {
 
     single {
         DeleteScopeHandler(
+            eventSourcingRepository = get(),
+            eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
             scopeRepository = get(),
+            scopeHierarchyService = get(),
             transactionManager = get(),
             applicationErrorMapper = get(),
             logger = get(),
