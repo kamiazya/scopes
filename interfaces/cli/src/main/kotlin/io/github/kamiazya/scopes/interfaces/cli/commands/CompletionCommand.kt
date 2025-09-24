@@ -29,6 +29,12 @@ class CompletionCommand :
 
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
 
+    companion object {
+        private const val PAGE_LIMIT = 1000
+        private const val INITIAL_OFFSET = 0
+        private const val CONCURRENCY_LIMIT = 8
+    }
+
     override fun run() {
         runBlocking {
             val aspectPairs = mutableSetOf<String>()
@@ -45,20 +51,19 @@ class CompletionCommand :
 
     private suspend fun fetchAllRootScopes(): List<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult> {
         val rootScopes = mutableListOf<io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult>()
-        val pageLimit = 1000
-        var offset = 0
+        var offset = INITIAL_OFFSET
 
         while (true) {
             val page = scopeQueryAdapter
-                .listRootScopes(offset = offset, limit = pageLimit)
+                .listRootScopes(offset = offset, limit = PAGE_LIMIT)
                 .fold({ null }, { it }) ?: break
 
             val items = page.scopes
             if (items.isEmpty()) break
 
             rootScopes.addAll(items)
-            if (items.size < pageLimit) break
-            offset += pageLimit
+            if (items.size < PAGE_LIMIT) break
+            offset += PAGE_LIMIT
         }
 
         return rootScopes
@@ -78,7 +83,7 @@ class CompletionCommand :
         aspectPairs: MutableSet<String>,
     ) {
         coroutineScope {
-            val semaphore = Semaphore(8)
+            val semaphore = Semaphore(CONCURRENCY_LIMIT)
             val jobs = rootScopes.map { rootScope ->
                 async {
                     semaphore.withPermit {
@@ -94,12 +99,11 @@ class CompletionCommand :
 
     private suspend fun fetchAspectsFromChildren(rootScope: io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult): Set<String> {
         val localPairs = mutableSetOf<String>()
-        val pageLimit = 1000
-        var childOffset = 0
+        var childOffset = INITIAL_OFFSET
 
         while (true) {
             val childPage = scopeQueryAdapter
-                .listChildren(rootScope.id, offset = childOffset, limit = pageLimit)
+                .listChildren(rootScope.id, offset = childOffset, limit = PAGE_LIMIT)
                 .fold({ null }, { it }) ?: break
 
             val children = childPage.scopes
@@ -109,8 +113,8 @@ class CompletionCommand :
                 extractAspectsFromScope(child, localPairs)
             }
 
-            if (children.size < pageLimit) break
-            childOffset += pageLimit
+            if (children.size < PAGE_LIMIT) break
+            childOffset += PAGE_LIMIT
         }
 
         return localPairs
