@@ -56,7 +56,13 @@ After merging a PR with changesets:
    - Generated `CHANGELOG.md` entries
    - Consumed changeset files are removed
 3. **Version PR Merge**: When this PR is merged, CI creates and pushes a SemVer tag `vX.Y.Z`
-4. **Release Pipeline**: The `Release` workflow triggers on the tag push and builds binaries, SBOM, SLSA, and publishes a GitHub Release
+   - The workflow now uses GitHub API to verify the commit is from a merged Version PR
+   - Supports both squash merge and regular merge strategies
+4. **Release Pipeline**: The `Release` workflow triggers on the tag push and:
+   - Validates the tag exists before proceeding (prevents accidental releases)
+   - Checks out the exact tagged commit for building
+   - Uses `--verify-tag` flag to ensure release integrity
+   - Builds binaries, SBOM, SLSA, and publishes a GitHub Release
 
 ## Available Scripts
 
@@ -120,6 +126,8 @@ Ensure the [Changeset Bot](https://github.com/apps/changeset-bot) is installed o
 - **Trigger**: Push to main branch
 - **Purpose**: Create version PRs; after merge, create and push `vX.Y.Z` tags
 - **Actions**: Uses `changesets/action@v1`
+- **Tag Creation**: Only creates tags after verifying the commit is from a merged Version PR using GitHub API
+- **Safety**: No longer includes direct release job to prevent double execution
 
 ### Release (`.github/workflows/release.yml`)
 - **Trigger**: Tag push (`v*.*.*` and `v*.*.*-*`), or manual `workflow_dispatch`

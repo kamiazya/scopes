@@ -20,7 +20,11 @@ The release workflow builds native binaries for multiple platforms and architect
 # Generate test version with timestamp
 TEST_VERSION="v0.0.0-test$(date +%Y%m%d%H%M%S)"
 
-# Trigger workflow
+# Create the test tag first (required since workflow now validates tag existence)
+git tag "$TEST_VERSION"
+git push origin "$TEST_VERSION"
+
+# Or trigger workflow manually (if tag already exists)
 gh workflow run release.yml --field tag="$TEST_VERSION"
 
 # Monitor execution
@@ -31,15 +35,17 @@ gh run list --workflow=release.yml --limit=1
 
 ### 1. Manual Workflow Dispatch
 
-Trigger the workflow without creating permanent tags:
+Trigger the workflow for existing tags:
 
 ```bash
-# Basic test run
+# Basic test run (tag must already exist)
 gh workflow run release.yml --field tag=v0.0.0-test[TIMESTAMP]
 
-# Specific branch testing
+# Specific branch testing (ensure tag exists on that branch)
 gh workflow run release.yml --ref [BRANCH_NAME] --field tag=v0.0.0-test[TIMESTAMP]
 ```
+
+Note: As of the latest workflow updates, the release workflow validates that tags exist before proceeding. This prevents accidental release creation with incorrect tags.
 
 ### 2. Monitoring Execution
 
@@ -235,12 +241,23 @@ gh run view [RUN_ID] --log | grep -A5 "Collecting hashes"
 
 **Diagnosis**:
 ```bash
+# Check if tag exists (required as of latest updates)
+git ls-remote --tags origin | grep [TAG_NAME]
+
 # Check for existing releases
 gh release list --limit=10
 
 # Verify permissions
 gh api user -q .permissions
+
+# Check release creation logs for --verify-tag errors
+gh run view [RUN_ID] --log | grep "verify-tag"
 ```
+
+**Common causes since workflow updates**:
+- Tag doesn't exist on remote (workflow now validates this)
+- Tag exists but points to different commit than expected
+- Release already exists for the tag
 
 ## Performance Monitoring
 

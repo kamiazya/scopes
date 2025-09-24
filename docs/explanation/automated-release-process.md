@@ -13,7 +13,7 @@ Scopes uses GitHub's native release notes generation combined with custom verifi
 ```mermaid
 graph LR
     %% Triggers
-    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch]) 
+    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch<br/>with --verify-tag]) 
     
     %% Main workflow stages
     Start --> Build[🏗️ Build<br/>Multi-Platform<br/>Artifacts]
@@ -233,6 +233,21 @@ The final release notes follow this structure:
 [Detailed SLSA and SBOM verification examples]
 ```
 
+## Workflow Safety Features
+
+### Tag Validation
+The release workflow includes several safety checks:
+- **Tag Existence**: Validates that the tag exists on the remote repository before proceeding
+- **SemVer Compliance**: Enforces strict SemVer 2.0.0 format (e.g., v1.2.3, v1.2.3-rc.1)
+- **Checkout Verification**: Ensures the workflow builds from the exact tagged commit
+- **Release Verification**: Uses `--verify-tag` flag when creating GitHub releases
+
+### Version PR Detection
+The version-and-release workflow:
+- Uses GitHub API to verify commits are from merged Version PRs
+- Supports both squash merge and regular merge strategies
+- Only creates tags after successful Version PR verification
+
 ## For Maintainers
 
 ### Labeling Pull Requests
@@ -248,17 +263,30 @@ gh pr create --label "docs" --title "Update installation guide"
 
 ### Triggering Releases
 
-Releases are triggered by pushing version tags:
+Releases are now automatically triggered through the Changesets workflow:
 
-```bash
-# Create and push a release tag
-git tag v1.0.0
-git push origin v1.0.0
+1. **Automatic Process** (Recommended):
+   - Create changesets with your PRs
+   - Merge the auto-generated "Release new version" PR
+   - CI automatically creates and pushes the version tag
+   - Release workflow triggers on the new tag
 
-# Or for pre-releases
-git tag v1.0.0-beta.1
-git push origin v1.0.0-beta.1
-```
+2. **Manual Process** (If needed):
+   ```bash
+   # Create and push a release tag manually
+   git tag v1.0.0
+   git push origin v1.0.0
+   
+   # Or for pre-releases
+   git tag v1.0.0-beta.1
+   git push origin v1.0.0-beta.1
+   ```
+
+3. **Manual Workflow Dispatch**:
+   ```bash
+   # Trigger release for existing tag
+   gh workflow run release.yml --field tag=v1.0.0
+   ```
 
 ### Excluding Content
 
