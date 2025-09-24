@@ -91,12 +91,3 @@ jobs:
           git push origin "$TAG"
           echo "Pushed tag $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-  run-release:
-    name: Run Release workflow
-    needs: version-and-release
-    if: needs.version-and-release.outputs.tag != ''
-    uses: ./.github/workflows/release.yml
-    with:
-      tag: ${{ needs.version-and-release.outputs.tag }}
-    secrets: inherit

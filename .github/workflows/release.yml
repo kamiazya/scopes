@@ -104,8 +104,27 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
+          CLEAN_VERSION=${VERSION#v}
+          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
+
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ steps.version.outputs.tag_version }}
 
       - name: Setup QEMU for ARM64 cross-compilation
         if: matrix.platform == 'linux' && matrix.arch == 'arm64'
@@ -128,23 +147,6 @@ jobs:
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
         with:
           validate-wrappers: true
-
-      - name: Extract version from tag
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "workflow_call" ]; then
-            VERSION="${{ inputs.tag }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
-          CLEAN_VERSION=${VERSION#v}
-          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-          echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $CLEAN_VERSION (from tag: $VERSION)"
 
       - name: Build native binary (Windows)
         if: matrix.platform == 'win32'
