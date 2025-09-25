@@ -48,6 +48,8 @@ include(
     ":interfaces-mcp",
     // Quality
     ":quality-konsist",
+    // Coverage aggregation
+    ":coverage-report",
 )
 
 // Configure Gradle Build Scan

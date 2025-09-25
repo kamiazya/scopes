@@ -1,3 +1,7 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -8,6 +12,8 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.cyclonedx.bom)
     alias(libs.plugins.spdx.sbom)
+    alias(libs.plugins.sonarqube)
+    jacoco
 }
 
 group = "io.github.kamiazya"
@@ -40,9 +46,42 @@ subprojects {
 
     // Configure Kotlin compilation when plugin is applied
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        // Apply JaCoCo to all modules with Kotlin code
+        apply(plugin = "jacoco")
+
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            }
+        }
+
+        // Configure JaCoCo
+        tasks.withType<JacocoReport> {
+            dependsOn(tasks.named("test"))
+            reports {
+                xml.required.set(true)
+                html.required.set(true)
+                csv.required.set(false)
+            }
+        }
+
+        // Configure test task to generate JaCoCo data
+        tasks.withType<Test> {
+            finalizedBy(tasks.withType<JacocoReport>())
+            useJUnitPlatform()
+            testLogging {
+                events("passed", "skipped", "failed")
+            }
+        }
+
+        // JaCoCo coverage verification
+        tasks.withType<JacocoCoverageVerification> {
+            violationRules {
+                rule {
+                    limit {
+                        minimum = "0.60".toBigDecimal()
+                    }
+                }
             }
         }
     }
@@ -147,6 +186,39 @@ tasks.register("konsistTest") {
     dependsOn(":quality-konsist:test")
 }
 
+// Task to run all tests with coverage
+tasks.register("testWithCoverage") {
+    description = "Run all tests and generate coverage reports"
+    group = "verification"
+
+    // Run all tests
+    subprojects.forEach { subproject ->
+        subproject.tasks.findByName("test")?.let {
+            dependsOn(it)
+        }
+    }
+
+    // Generate individual coverage reports
+    subprojects.forEach { subproject ->
+        subproject.tasks.findByName("jacocoTestReport")?.let {
+            dependsOn(it)
+        }
+    }
+
+    // Generate aggregated coverage report
+    finalizedBy(":coverage-report:testCodeCoverageReport")
+}
+
+// Task to run SonarQube analysis with all reports
+tasks.register("sonarqubeWithCoverage") {
+    description = "Run SonarQube analysis with coverage and quality reports"
+    group = "verification"
+
+    dependsOn("testWithCoverage")
+    dependsOn("detekt")
+    finalizedBy("sonarqube")
+}
+
 // Spotless configuration
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
@@ -203,5 +275,20 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         targetExclude("**/build/**/*.sh")
         trimTrailingWhitespace()
         endWithNewline()
+    }
+}
+
+// SonarQube configuration
+sonarqube {
+    properties {
+        property("sonar.projectKey", "kamiazya_scopes")
+        property("sonar.organization", "kamiazya")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.language", "kotlin")
+        property("sonar.sources", "src/main")
+        property("sonar.tests", "src/test")
+        property("sonar.sourceEncoding", "UTF-8")
+        property("sonar.kotlin.detekt.reportPaths", "build/reports/detekt/detekt.xml")
+        property("sonar.coverage.jacoco.xmlReportPaths", "${project.layout.buildDirectory.get()}/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
     }
 }
