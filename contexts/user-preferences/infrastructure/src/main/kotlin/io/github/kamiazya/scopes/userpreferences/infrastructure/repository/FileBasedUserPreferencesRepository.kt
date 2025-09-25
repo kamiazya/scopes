@@ -34,11 +34,11 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
     }
 
     override suspend fun save(aggregate: UserPreferencesAggregate): Either<UserPreferencesError, Unit> = either {
+        val preferences = aggregate.preferences
+            ?: raise(UserPreferencesError.PreferencesNotInitialized)
+
         withContext(Dispatchers.IO) {
             try {
-                val preferences = aggregate.preferences
-                    ?: raise(UserPreferencesError.PreferencesNotInitialized)
-
                 val config = UserPreferencesConfig(
                     version = UserPreferencesConfig.CURRENT_VERSION,
                     hierarchyPreferences = HierarchyPreferencesConfig(

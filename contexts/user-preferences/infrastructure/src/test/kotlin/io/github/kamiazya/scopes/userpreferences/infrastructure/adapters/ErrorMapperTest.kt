@@ -4,6 +4,7 @@ import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreference
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.userpreferences.domain.error.UserPreferencesError
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.annotation.Ignored
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.mockk
