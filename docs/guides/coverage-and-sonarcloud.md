@@ -74,14 +74,14 @@ The project includes a dedicated SonarCloud workflow (`.github/workflows/sonarcl
 
 Configure these in GitHub repository settings:
 - `SONAR_TOKEN`: Your SonarCloud authentication token
-  - Get from: https://sonarcloud.io/account/security
+  - Get from: [SonarCloud Security Settings](https://sonarcloud.io/account/security)
   - Add in: Settings → Secrets → Actions
 
 ## SonarCloud Configuration
 
 ### Project Setup
 
-1. Go to https://sonarcloud.io
+1. Go to [SonarCloud](https://sonarcloud.io)
 2. Import your GitHub repository
 3. Configure analysis method as "GitHub Actions"
 4. Note your project key and organization
@@ -98,7 +98,7 @@ SonarCloud enforces quality gates for:
 ### Viewing Results
 
 Access your project dashboard at:
-```
+```text
 https://sonarcloud.io/project/overview?id=kamiazya_scopes
 ```
 

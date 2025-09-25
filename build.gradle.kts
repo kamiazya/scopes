@@ -1,6 +1,6 @@
 import org.gradle.api.tasks.testing.Test
-import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
@@ -289,6 +289,9 @@ sonarqube {
         property("sonar.tests", "src/test")
         property("sonar.sourceEncoding", "UTF-8")
         property("sonar.kotlin.detekt.reportPaths", "build/reports/detekt/detekt.xml")
-        property("sonar.coverage.jacoco.xmlReportPaths", "${project.layout.buildDirectory.get()}/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "${project.layout.buildDirectory.get()}/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+        )
     }
 }
