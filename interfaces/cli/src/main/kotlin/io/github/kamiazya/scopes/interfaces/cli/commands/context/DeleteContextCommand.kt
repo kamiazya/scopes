@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -20,7 +21,9 @@ import org.koin.core.component.inject
 class DeleteContextCommand :
     CliktCommand(
         name = "delete",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Delete a context view
 
         Removes a context view definition. If the context is currently active,
@@ -32,9 +35,7 @@ class DeleteContextCommand :
 
             # Force delete even if it's the active context
             scopes context delete my-work --force
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()
@@ -55,9 +56,7 @@ class DeleteContextCommand :
             // Check if this is the current context
             val currentContext = contextQueryAdapter.getCurrentContext().getOrNull()
             if (currentContext?.key == key && !force) {
-                echo("Error: Cannot delete the currently active context '$key'.", err = true)
-                echo("Use --force to delete it anyway, or switch to a different context first.", err = true)
-                return@runBlocking
+                throw CliktError("Cannot delete the currently active context '$key'. Use --force to delete it anyway, or switch to a different context first.")
             }
 
             // If forcing deletion of current context, clear it first
@@ -68,7 +67,7 @@ class DeleteContextCommand :
             val result = contextCommandAdapter.deleteContext(DeleteContextViewCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 {
                     echo("Context view '$key' deleted successfully")

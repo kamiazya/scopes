@@ -20,9 +20,9 @@ import org.koin.core.component.inject
 class ListAliasesCommand :
     CliktCommand(
         name = "list",
-        help = "List all aliases for a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "List all aliases for a scope"
     private val aliasQueryAdapter: AliasQueryAdapter by inject()
     private val aliasOutputFormatter: AliasOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

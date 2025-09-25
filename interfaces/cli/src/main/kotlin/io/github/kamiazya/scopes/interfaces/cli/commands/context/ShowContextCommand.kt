@@ -20,7 +20,9 @@ import org.koin.core.component.inject
 class ShowContextCommand :
     CliktCommand(
         name = "show",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Show details of a specific context view
 
         Displays the full configuration and metadata of a context view,
@@ -32,9 +34,7 @@ class ShowContextCommand :
 
             # Show details of the current context
             scopes context show current
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
@@ -50,13 +50,11 @@ class ShowContextCommand :
                 // Get the current context key
                 contextQueryAdapter.getCurrentContext().fold(
                     { error ->
-                        echo("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}", err = true)
-                        return@runBlocking
+                        throw CliktError("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}")
                     },
                     { activeContext ->
                         if (activeContext == null) {
-                            echo("No context is currently active.", err = true)
-                            return@runBlocking
+                            throw CliktError("No context is currently active.")
                         }
                         activeContext.key
                     },
@@ -71,7 +69,7 @@ class ShowContextCommand :
                 },
                 { contextView ->
                     if (contextView == null) {
-                        echo("Context view '$contextKey' not found.", err = true)
+                        throw CliktError("Context view '$contextKey' not found.")
                     } else {
                         echo(contextOutputFormatter.formatContextViewDetailed(contextView, debugContext.debug))
                     }

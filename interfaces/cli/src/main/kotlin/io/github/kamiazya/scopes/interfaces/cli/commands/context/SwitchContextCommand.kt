@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
@@ -18,7 +19,9 @@ import org.koin.core.component.inject
 class SwitchContextCommand :
     CliktCommand(
         name = "switch",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Switch to a different context view
 
         Sets the specified context view as the current active context.
@@ -33,9 +36,7 @@ class SwitchContextCommand :
 
             # Clear the current context (show all scopes)
             scopes context switch --clear
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val debugContext by requireObject<DebugContext>()
@@ -50,7 +51,7 @@ class SwitchContextCommand :
             val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 {
                     echo("Switched to context '$key'")

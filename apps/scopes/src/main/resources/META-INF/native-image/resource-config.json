@@ -18,6 +18,8 @@
       "pattern" : "logback-native\\.xml$"
     }, {
       "pattern" : "logback-.*\\.xml$"
+    }, {
+      "pattern" : "META-INF/services/.*"
     } ]
   },
   "bundles" : [ ]

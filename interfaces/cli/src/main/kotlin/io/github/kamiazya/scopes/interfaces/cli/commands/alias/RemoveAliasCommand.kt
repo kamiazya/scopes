@@ -18,9 +18,9 @@ import org.koin.core.component.inject
 class RemoveAliasCommand :
     CliktCommand(
         name = "rm",
-        help = "Remove an alias from a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Remove an alias from a scope"
     private val aliasCommandAdapter: AliasCommandAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 

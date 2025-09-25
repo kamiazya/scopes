@@ -24,9 +24,9 @@ import org.koin.core.component.inject
 class RemoveAspectCommand :
     CliktCommand(
         name = "remove",
-        help = "Remove aspects from a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Remove aspects from a scope"
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

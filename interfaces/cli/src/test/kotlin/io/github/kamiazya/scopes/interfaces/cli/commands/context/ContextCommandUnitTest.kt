@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
+import com.github.ajalt.clikt.testing.test
 import io.github.kamiazya.scopes.interfaces.cli.commands.ContextCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.configureSubcommands
 import io.kotest.core.spec.style.DescribeSpec
@@ -16,7 +17,8 @@ class ContextCommandUnitTest :
 
             it("should show help text") {
                 val command = ContextCommand()
-                command.commandHelp shouldContain "Manage context views"
+                val result = command.test("--help")
+                result.stdout shouldContain "Manage context views"
             }
 
             it("should have subcommands when configured") {

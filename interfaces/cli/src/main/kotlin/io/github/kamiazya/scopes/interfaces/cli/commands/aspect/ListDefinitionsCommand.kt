@@ -17,9 +17,9 @@ import org.koin.core.component.inject
 class ListDefinitionsCommand :
     CliktCommand(
         name = "definitions",
-        help = "List all aspect definitions",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "List all aspect definitions"
     private val aspectQueryAdapter: AspectQueryAdapter by inject()
 
     override fun run() {

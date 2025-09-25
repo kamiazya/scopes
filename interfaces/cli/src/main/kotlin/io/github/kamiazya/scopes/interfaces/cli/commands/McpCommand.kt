@@ -9,8 +9,10 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class McpCommand :
-    ScopesCliktCommand(name = "mcp", help = "Run MCP server (stdio)"),
+    ScopesCliktCommand(name = "mcp"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Run MCP server (stdio)"
     private val mcpServer: McpServer by inject()
 
     override fun run() {

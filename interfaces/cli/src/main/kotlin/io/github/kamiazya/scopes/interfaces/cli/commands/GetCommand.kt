@@ -15,11 +15,10 @@ import org.koin.core.component.inject
  * Get command for retrieving scopes.
  */
 class GetCommand :
-    ScopesCliktCommand(
-        name = "get",
-        help = "Get a scope by ID or alias",
-    ),
+    ScopesCliktCommand(name = "get"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Get a scope by ID or alias"
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

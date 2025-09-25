@@ -18,9 +18,9 @@ import org.koin.core.component.inject
 class ShowCommand :
     CliktCommand(
         name = "show",
-        help = "Show aspect definition details",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Show aspect definition details"
     private val aspectQueryAdapter: AspectQueryAdapter by inject()
 
     private val key by argument(help = "The aspect key to show")
@@ -33,7 +33,7 @@ class ShowCommand :
                 },
                 ifRight = { definition ->
                     if (definition == null) {
-                        echo("Aspect '$key' not found", err = true)
+                        throw CliktError("Aspect '$key' not found")
                     } else {
                         echo("Aspect: ${definition.key}")
                         echo("Description: ${definition.description}")

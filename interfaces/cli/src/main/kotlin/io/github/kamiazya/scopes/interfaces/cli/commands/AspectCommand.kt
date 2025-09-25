@@ -23,7 +23,9 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.aspect.ValidateCommand
 class AspectCommand :
     CliktCommand(
         name = "aspect",
-        help = """
+    ) {
+    override val printHelpOnEmptyArgs = true
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Manage scope aspects
 
         Aspects provide key-value metadata for scopes, enabling flexible
@@ -41,9 +43,8 @@ class AspectCommand :
 
             # Remove an aspect from a scope
             scopes aspect remove quiet-river-a4f7 priority
-        """.trimIndent(),
-        printHelpOnEmptyArgs = true,
-    ) {
+    """.trimIndent()
+
     override fun run() {
         // This is a parent command that does nothing on its own
         // Subcommands handle the actual functionality

@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli
 
 import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.main
 import io.github.kamiazya.scopes.interfaces.cli.commands.ScopesCommand
 import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import kotlinx.coroutines.runBlocking
@@ -26,13 +27,13 @@ fun main(args: Array<String>) {
     }
 
     try {
-        ScopesCliApplication().use {
+        ScopesCliApplication().use { app ->
             // Initialize application lifecycle before running commands
-            runBlocking { it.initialize() }
-            it.container.get<ScopesCommand>().main(args)
+            runBlocking { app.initialize() }
+
+            // Execute the CLI command using the extension function
+            app.container.get<ScopesCommand>().main(args)
         }
-        // Successful execution
-        exitProcess(ExitCode.SUCCESS.code)
     } catch (e: CliktError) {
         // Check if a specific exit code was set
         val exitCode = System.getProperty("scopes.cli.exit.code")?.toIntOrNull() ?: ExitCode.GENERAL_ERROR.code

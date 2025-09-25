@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
@@ -17,9 +18,9 @@ import org.koin.core.component.inject
 class EditCommand :
     CliktCommand(
         name = "edit",
-        help = "Edit an existing aspect definition",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Edit an existing aspect definition"
     private val aspectCommandAdapter: AspectCommandAdapter by inject()
 
     private val key by argument(help = "The aspect key to edit")
@@ -28,8 +29,7 @@ class EditCommand :
     override fun run() {
         runBlocking {
             if (description == null) {
-                echo("Error: No changes specified. Use --description to update the description.", err = true)
-                return@runBlocking
+                throw CliktError("No changes specified. Use --description to update the description.")
             }
 
             val result = aspectCommandAdapter.updateAspectDefinition(
@@ -39,7 +39,7 @@ class EditCommand :
 
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to update aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to update aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 ifRight = {
                     echo("Aspect '$key' updated successfully")

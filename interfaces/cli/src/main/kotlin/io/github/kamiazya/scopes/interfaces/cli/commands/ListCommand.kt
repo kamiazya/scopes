@@ -26,11 +26,10 @@ import org.koin.core.component.inject
  * List command for retrieving multiple scopes.
  */
 class ListCommand :
-    ScopesCliktCommand(
-        name = "list",
-        help = "List scopes",
-    ),
+    ScopesCliktCommand(name = "list"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "List scopes"
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()

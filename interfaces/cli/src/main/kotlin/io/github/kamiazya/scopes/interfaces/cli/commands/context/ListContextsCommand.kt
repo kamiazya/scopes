@@ -19,7 +19,9 @@ import org.koin.core.component.inject
 class ListContextsCommand :
     CliktCommand(
         name = "list",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         List all context views
 
         Displays all defined context views with their names, keys, and descriptions.
@@ -28,9 +30,7 @@ class ListContextsCommand :
         Examples:
             # List all context views
             scopes context list
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()

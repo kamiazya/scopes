@@ -16,11 +16,10 @@ import kotlin.system.measureTimeMillis
  * Create command for creating new scopes.
  */
 class CreateCommand :
-    ScopesCliktCommand(
-        name = "create",
-        help = "Create a new scope",
-    ),
+    ScopesCliktCommand(name = "create"),
     KoinComponent {
+
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Create a new scope"
     private val scopeCommandAdapter: ScopeCommandAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()

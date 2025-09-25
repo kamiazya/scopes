@@ -22,9 +22,9 @@ import org.koin.core.component.inject
 class ListAspectsCommand :
     CliktCommand(
         name = "list",
-        help = "List all aspects for a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "List all aspects for a scope"
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 

@@ -18,9 +18,9 @@ import org.koin.core.component.inject
 class SetCanonicalAliasCommand :
     CliktCommand(
         name = "set-canonical",
-        help = "Set the canonical alias for a scope",
     ),
     KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Set the canonical alias for a scope"
     private val aliasCommandAdapter: AliasCommandAdapter by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 

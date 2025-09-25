@@ -14,27 +14,7 @@ import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapp
  * - Automatic mapping of contract errors to user-friendly messages
  * - Standard error formatting
  */
-abstract class ScopesCliktCommand(
-    help: String = "",
-    epilog: String = "",
-    name: String? = null,
-    invokeWithoutSubcommand: Boolean = false,
-    printHelpOnEmptyArgs: Boolean = false,
-    helpTags: Map<String, String> = emptyMap(),
-    autoCompleteEnvvar: String? = "",
-    allowMultipleSubcommands: Boolean = false,
-    treatUnknownOptionsAsArgs: Boolean = false,
-) : CliktCommand(
-    help = help,
-    epilog = epilog,
-    name = name,
-    invokeWithoutSubcommand = invokeWithoutSubcommand,
-    printHelpOnEmptyArgs = printHelpOnEmptyArgs,
-    helpTags = helpTags,
-    autoCompleteEnvvar = autoCompleteEnvvar,
-    allowMultipleSubcommands = allowMultipleSubcommands,
-    treatUnknownOptionsAsArgs = treatUnknownOptionsAsArgs,
-) {
+abstract class ScopesCliktCommand(name: String? = null) : CliktCommand(name = name) {
     /**
      * Throws a CliktError with the appropriate exit code and user-friendly message.
      *

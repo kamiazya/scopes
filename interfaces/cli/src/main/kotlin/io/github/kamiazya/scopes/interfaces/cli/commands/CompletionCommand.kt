@@ -22,10 +22,10 @@ import org.koin.core.component.inject
 class CompletionCommand :
     CliktCommand(
         name = "_complete-aspects",
-        help = "Internal command for shell completion (hidden)",
-        hidden = true,
     ),
     KoinComponent {
+    override val hiddenFromHelp = true
+    override fun help(context: com.github.ajalt.clikt.core.Context) = "Internal command for shell completion (hidden)"
 
     private val scopeQueryAdapter: ScopeQueryAdapter by inject()
 

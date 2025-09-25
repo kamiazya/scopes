@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
@@ -19,7 +20,9 @@ import org.koin.core.component.inject
 class EditContextCommand :
     CliktCommand(
         name = "edit",
-        help = """
+    ),
+    KoinComponent {
+    override fun help(context: com.github.ajalt.clikt.core.Context) = """
         Edit an existing context view
 
         Update the properties of a context view. Only specified options will be changed;
@@ -34,9 +37,7 @@ class EditContextCommand :
 
             # Update both name and description
             scopes context edit urgent --name "Critical Items" --description "High priority tasks requiring immediate attention"
-        """.trimIndent(),
-    ),
-    KoinComponent {
+    """.trimIndent()
     private val contextCommandAdapter: ContextCommandAdapter by inject()
     private val contextOutputFormatter: ContextOutputFormatter by inject()
     private val debugContext by requireObject<DebugContext>()
@@ -68,8 +69,7 @@ class EditContextCommand :
         runBlocking {
             // Check if at least one field to update is provided
             if (name == null && filter == null && description == null) {
-                echo("Error: At least one field to update must be specified (--name, --filter, or --description)", err = true)
-                return@runBlocking
+                throw CliktError("At least one field to update must be specified (--name, --filter, or --description)")
             }
 
             val request = UpdateContextViewCommand(
@@ -82,7 +82,7 @@ class EditContextCommand :
             val result = contextCommandAdapter.updateContext(request)
             result.fold(
                 { error ->
-                    echo("Error: Failed to update context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to update context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 {
                     echo("Context view '$key' updated successfully")
