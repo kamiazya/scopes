@@ -21,14 +21,53 @@ import io.mockk.mockk
 import kotlinx.datetime.Clock
 
 /**
- * Test to verify the refactored createDefaultPreferences method properly handles
- * suspend functions within the either { } context.
+ * Test to verify the GetCurrentUserPreferencesHandler properly behaves as a query handler
+ * that only reads data and does not modify state.
  */
 class GetCurrentUserPreferencesHandlerSuspendFixTest :
     DescribeSpec({
         describe("GetCurrentUserPreferencesHandler") {
-            describe("createDefaultPreferences") {
-                it("should handle PreferencesAlreadyInitialized error and reload from repository") {
+            describe("query handler behavior") {
+                it("should return PreferencesNotInitialized when no aggregate exists") {
+                    // Given
+                    val repository = mockk<UserPreferencesRepository>()
+                    val handler = GetCurrentUserPreferencesHandler(repository)
+
+                    coEvery { repository.findForCurrentUser() } returns null.right()
+
+                    // When
+                    val result = handler(GetCurrentUserPreferences)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull() shouldBe UserPreferencesError.PreferencesNotInitialized
+
+                    // Query handlers should not modify state
+                    coVerify(exactly = 1) { repository.findForCurrentUser() }
+                    coVerify(exactly = 0) { repository.save(any()) }
+                }
+
+                it("should propagate repository read errors") {
+                    // Given
+                    val repository = mockk<UserPreferencesRepository>()
+                    val handler = GetCurrentUserPreferencesHandler(repository)
+
+                    val customError = UserPreferencesError.InvalidPreferenceValue("test", "value", UserPreferencesError.ValidationError.INVALID_FORMAT)
+
+                    coEvery { repository.findForCurrentUser() } returns customError.left()
+
+                    // When
+                    val result = handler(GetCurrentUserPreferences)
+
+                    // Then
+                    result.shouldBeLeft()
+                    result.leftOrNull() shouldBe customError
+
+                    coVerify(exactly = 1) { repository.findForCurrentUser() }
+                    coVerify(exactly = 0) { repository.save(any()) } // Query handler should not save
+                }
+
+                it("should successfully return existing preferences") {
                     // Given
                     val repository = mockk<UserPreferencesRepository>()
                     val handler = GetCurrentUserPreferencesHandler(repository)
@@ -46,54 +85,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                         updatedAt = now,
                     )
 
-                    // First call returns null (no preferences exist)
-                    coEvery { repository.findForCurrentUser() } returnsMany listOf(
-                        null.right(),
-                        existingAggregate.right(), // Second call returns existing aggregate
-                    )
-
-                    // save() returns PreferencesAlreadyInitialized error (race condition)
-                    coEvery { repository.save(any()) } returns UserPreferencesError.PreferencesAlreadyInitialized.left()
-
-                    // When
-                    val result = handler(GetCurrentUserPreferences)
-
-                    // Then
-                    result.shouldBeRight()
-
-                    // Verify the sequence of calls
-                    coVerify(exactly = 2) { repository.findForCurrentUser() }
-                    coVerify(exactly = 1) { repository.save(any()) }
-                }
-
-                it("should propagate other errors from repository.save") {
-                    // Given
-                    val repository = mockk<UserPreferencesRepository>()
-                    val handler = GetCurrentUserPreferencesHandler(repository)
-
-                    val customError = UserPreferencesError.InvalidPreferenceValue("test", "value", UserPreferencesError.ValidationError.INVALID_FORMAT)
-
-                    coEvery { repository.findForCurrentUser() } returns null.right()
-                    coEvery { repository.save(any()) } returns customError.left()
-
-                    // When
-                    val result = handler(GetCurrentUserPreferences)
-
-                    // Then
-                    result.shouldBeLeft()
-                    result.leftOrNull() shouldBe customError
-
-                    coVerify(exactly = 1) { repository.findForCurrentUser() }
-                    coVerify(exactly = 1) { repository.save(any()) }
-                }
-
-                it("should successfully create and save default preferences") {
-                    // Given
-                    val repository = mockk<UserPreferencesRepository>()
-                    val handler = GetCurrentUserPreferencesHandler(repository)
-
-                    coEvery { repository.findForCurrentUser() } returns null.right()
-                    coEvery { repository.save(any()) } returns Unit.right()
+                    coEvery { repository.findForCurrentUser() } returns existingAggregate.right()
 
                     // When
                     val result = handler(GetCurrentUserPreferences)
@@ -102,7 +94,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
                     result.shouldBeRight()
 
                     coVerify(exactly = 1) { repository.findForCurrentUser() }
-                    coVerify(exactly = 1) { repository.save(any()) }
+                    coVerify(exactly = 0) { repository.save(any()) } // Query handler should not save
                 }
             }
         }
