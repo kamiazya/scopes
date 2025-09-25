@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -42,7 +43,7 @@ class RmCommand :
 
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to delete aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to delete aspect '$key': ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 ifRight = {
                     echo("Aspect '$key' removed successfully")

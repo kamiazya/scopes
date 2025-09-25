@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.aspect
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
@@ -50,13 +51,11 @@ class DefineCommand :
             val trimmedDescription = description.trim()
 
             if (trimmedKey.isBlank()) {
-                echo("Error: Aspect key cannot be empty or blank", err = true)
-                return@runBlocking
+                throw CliktError("Aspect key cannot be empty or blank")
             }
 
             if (trimmedDescription.isBlank()) {
-                echo("Error: Description cannot be empty or blank", err = true)
-                return@runBlocking
+                throw CliktError("Description cannot be empty or blank")
             }
 
             // Parse aspect type based on the type parameter and options
@@ -78,19 +77,16 @@ class DefineCommand :
                 "boolean" -> AspectType.BooleanType
                 "ordered" -> {
                     if (values == null) {
-                        echo("Error: --values is required for ordered type", err = true)
-                        return@runBlocking
+                        throw CliktError("--values is required for ordered type")
                     }
                     val valueList = values!!.split(",").map { it.trim() }.filter { it.isNotBlank() }
                     if (valueList.isEmpty()) {
-                        echo("Error: --values cannot be empty after trimming", err = true)
-                        return@runBlocking
+                        throw CliktError("--values cannot be empty after trimming")
                     }
                     val aspectValues = valueList.map { value ->
                         AspectValue.create(value).fold(
                             { error ->
-                                echo("Error: Invalid value '$value': $error", err = true)
-                                return@runBlocking
+                                throw CliktError("Invalid value '$value': $error")
                             },
                             { it },
                         )
@@ -99,8 +95,7 @@ class DefineCommand :
                 }
                 "duration" -> AspectType.Duration
                 else -> {
-                    echo("Error: Invalid type '$type'", err = true)
-                    return@runBlocking
+                    throw CliktError("Invalid type '$type'")
                 }
             }
 
@@ -113,7 +108,7 @@ class DefineCommand :
 
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to define aspect '$trimmedKey': ${ContractErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to define aspect '$trimmedKey': ${ContractErrorMessageMapper.getMessage(error)}")
                 },
                 ifRight = {
                     echo("Aspect '$trimmedKey' defined successfully")

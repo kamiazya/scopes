@@ -50,13 +50,11 @@ class ShowContextCommand :
                 // Get the current context key
                 contextQueryAdapter.getCurrentContext().fold(
                     { error ->
-                        echo("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}", err = true)
-                        return@runBlocking
+                        throw CliktError("Failed to get current context: ${ErrorMessageMapper.getMessage(error)}")
                     },
                     { activeContext ->
                         if (activeContext == null) {
-                            echo("No context is currently active.", err = true)
-                            return@runBlocking
+                            throw CliktError("No context is currently active.")
                         }
                         activeContext.key
                     },
@@ -71,7 +69,7 @@ class ShowContextCommand :
                 },
                 { contextView ->
                     if (contextView == null) {
-                        echo("Context view '$contextKey' not found.", err = true)
+                        throw CliktError("Context view '$contextKey' not found.")
                     } else {
                         echo(contextOutputFormatter.formatContextViewDetailed(contextView, debugContext.debug))
                     }

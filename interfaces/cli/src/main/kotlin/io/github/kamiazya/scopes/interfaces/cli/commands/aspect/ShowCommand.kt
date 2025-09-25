@@ -33,7 +33,7 @@ class ShowCommand :
                 },
                 ifRight = { definition ->
                     if (definition == null) {
-                        echo("Aspect '$key' not found", err = true)
+                        throw CliktError("Aspect '$key' not found")
                     } else {
                         echo("Aspect: ${definition.key}")
                         echo("Description: ${definition.description}")

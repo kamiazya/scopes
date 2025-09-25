@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
@@ -55,9 +56,7 @@ class DeleteContextCommand :
             // Check if this is the current context
             val currentContext = contextQueryAdapter.getCurrentContext().getOrNull()
             if (currentContext?.key == key && !force) {
-                echo("Error: Cannot delete the currently active context '$key'.", err = true)
-                echo("Use --force to delete it anyway, or switch to a different context first.", err = true)
-                return@runBlocking
+                throw CliktError("Cannot delete the currently active context '$key'. Use --force to delete it anyway, or switch to a different context first.")
             }
 
             // If forcing deletion of current context, clear it first
@@ -68,7 +67,7 @@ class DeleteContextCommand :
             val result = contextCommandAdapter.deleteContext(DeleteContextViewCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to delete context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 {
                     echo("Context view '$key' deleted successfully")

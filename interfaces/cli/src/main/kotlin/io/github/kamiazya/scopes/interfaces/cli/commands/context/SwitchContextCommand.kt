@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.SetActiveContextCommand
@@ -50,7 +51,7 @@ class SwitchContextCommand :
             val result = contextCommandAdapter.setCurrentContext(SetActiveContextCommand(key))
             result.fold(
                 { error ->
-                    echo("Error: Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to switch to context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 {
                     echo("Switched to context '$key'")

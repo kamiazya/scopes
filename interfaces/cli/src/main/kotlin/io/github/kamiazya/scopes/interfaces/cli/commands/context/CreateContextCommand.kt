@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.interfaces.cli.commands.context
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
@@ -76,7 +77,7 @@ class CreateContextCommand :
             val result = contextCommandAdapter.createContext(request)
             result.fold(
                 ifLeft = { error ->
-                    echo("Error: Failed to create context '$key': ${ErrorMessageMapper.getMessage(error)}", err = true)
+                    throw CliktError("Failed to create context '$key': ${ErrorMessageMapper.getMessage(error)}")
                 },
                 ifRight = {
                     echo("Context view '$key' created successfully")
