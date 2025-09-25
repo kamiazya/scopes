@@ -47,17 +47,17 @@ jobs:
       run: ./gradlew --no-daemon testWithCoverage detekt
 
     - name: SonarCloud Scan
-      if: ${{ secrets.SONAR_TOKEN != '' }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: ./gradlew --no-daemon sonarqube --info
-
-    - name: Note about SonarCloud
-      if: ${{ secrets.SONAR_TOKEN == '' }}
       run: |
-        echo "::notice::SonarCloud analysis skipped. To enable it, set the SONAR_TOKEN secret in repository settings."
-        echo "Get your token from: https://sonarcloud.io/account/security"
+        if [ -n "$SONAR_TOKEN" ]; then
+          echo "Running SonarCloud analysis..."
+          ./gradlew --no-daemon sonarqube --info
+        else
+          echo "::notice::SonarCloud analysis skipped. To enable it, set the SONAR_TOKEN secret in repository settings."
+          echo "Get your token from: https://sonarcloud.io/account/security"
+        fi
 
     - name: Upload coverage reports
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
