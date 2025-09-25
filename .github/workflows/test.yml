@@ -53,6 +53,7 @@ jobs:
       run: ./gradlew --no-daemon detekt
 
     - name: SonarCloud Scan
+      continue-on-error: true  # Don't fail the workflow if SonarCloud has issues
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
