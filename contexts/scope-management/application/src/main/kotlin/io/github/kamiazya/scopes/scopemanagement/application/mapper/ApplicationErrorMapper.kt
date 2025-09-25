@@ -71,6 +71,12 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
             existingScopeId = existingScopeId,
         )
 
+    private fun createDuplicateContextKeyError(contextKey: String, existingContextId: String? = null): ScopeContractError.BusinessError.DuplicateContextKey =
+        ScopeContractError.BusinessError.DuplicateContextKey(
+            contextKey = contextKey,
+            existingContextId = existingContextId,
+        )
+
     private fun mapAliasToNotFound(error: AppScopeInputError): ScopeContractError {
         val alias = when (error) {
             is AppScopeInputError.AliasNotFound -> error.preview
@@ -340,20 +346,14 @@ class ApplicationErrorMapper(logger: Logger) : BaseErrorMapper<ScopeManagementAp
         is ContextError.StateNotFound -> mapNotFoundError(error.contextId)
 
         // Other errors
-        is ContextError.DuplicateContextKey -> ScopeContractError.BusinessError.DuplicateContextKey(
-            contextKey = error.key,
-            existingContextId = null,
-        )
+        is ContextError.DuplicateContextKey -> createDuplicateContextKeyError(error.key, error.existingContextId)
         is ContextError.KeyInvalidFormat -> ScopeContractError.InputError.InvalidId(
             id = error.attemptedKey,
             expectedFormat = "Valid context key format",
         )
 
         // Context in use - map to business error for better user experience
-        is ContextError.ContextInUse -> ScopeContractError.BusinessError.DuplicateContextKey(
-            contextKey = error.key,
-            existingContextId = null, // Context is in use but we don't have the specific context ID
-        )
+        is ContextError.ContextInUse -> createDuplicateContextKeyError(error.key)
 
         // Context update conflict - map to concurrency error with context key as identifier
         is ContextError.ContextUpdateConflict -> ScopeContractError.SystemError.ConcurrentModification(

@@ -2,14 +2,24 @@ package io.github.kamiazya.scopes.interfaces.mcp.tools.handlers
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetChildrenQuery
-import io.github.kamiazya.scopes.contracts.scopemanagement.queries.GetScopeByAliasQuery
+import io.github.kamiazya.scopes.interfaces.mcp.support.Annotations
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolInput
+import io.github.kamiazya.scopes.interfaces.mcp.support.SchemaDsl.toolOutput
+import io.github.kamiazya.scopes.interfaces.mcp.support.aliasProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.arrayProperty
+import io.github.kamiazya.scopes.interfaces.mcp.support.getScopeByAliasOrFail
+import io.github.kamiazya.scopes.interfaces.mcp.support.itemsObject
+import io.github.kamiazya.scopes.interfaces.mcp.support.stringProperty
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolContext
 import io.github.kamiazya.scopes.interfaces.mcp.tools.ToolHandler
 import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.ToolAnnotations
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 /**
  * Tool handler for getting child scopes.
@@ -22,59 +32,22 @@ class ScopeChildrenToolHandler(private val responseFormatter: ResponseFormatterS
 
     override val description: String = "Get child scopes of a parent scope"
 
-    override val annotations: ToolAnnotations? = ToolAnnotations(
-        title = null,
-        readOnlyHint = true,
-        destructiveHint = false,
-        idempotentHint = true,
-    )
+    override val annotations: ToolAnnotations? = Annotations.readOnlyIdempotent()
 
-    override val input: Tool.Input = Tool.Input(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonArray("required") {
-                add("parentAlias")
-            }
-            putJsonObject("properties") {
-                putJsonObject("parentAlias") {
-                    put("type", "string")
-                    put("minLength", 1)
-                    put("description", "Parent scope alias")
-                }
-            }
-        },
-    )
+    override val input: Tool.Input = toolInput(required = listOf("parentAlias")) {
+        aliasProperty(name = "parentAlias", description = "Parent scope alias")
+    }
 
-    override val output: Tool.Output = Tool.Output(
-        properties = buildJsonObject {
-            put("type", "object")
-            put("additionalProperties", false)
-            putJsonObject("properties") {
-                putJsonObject("parentAlias") { put("type", "string") }
-                putJsonObject("children") {
-                    put("type", "array")
-                    putJsonObject("items") {
-                        put("type", "object")
-                        put("additionalProperties", false)
-                        putJsonObject("properties") {
-                            putJsonObject("canonicalAlias") { put("type", "string") }
-                            putJsonObject("title") { put("type", "string") }
-                            putJsonObject("description") { put("type", "string") }
-                        }
-                        putJsonArray("required") {
-                            add("canonicalAlias")
-                            add("title")
-                        }
-                    }
-                }
+    override val output: Tool.Output = toolOutput(required = listOf("parentAlias", "children")) {
+        stringProperty("parentAlias")
+        arrayProperty("children") {
+            itemsObject(required = listOf("canonicalAlias", "title")) {
+                stringProperty("canonicalAlias")
+                stringProperty("title")
+                stringProperty("description")
             }
-            putJsonArray("required") {
-                add("parentAlias")
-                add("children")
-            }
-        },
-    )
+        }
+    }
 
     override suspend fun handle(ctx: ToolContext): CallToolResult {
         val parentAlias = ctx.services.codec.getString(ctx.args, "parentAlias", required = true)
@@ -82,15 +55,13 @@ class ScopeChildrenToolHandler(private val responseFormatter: ResponseFormatterS
 
         ctx.services.logger.debug("Getting children of scope: $parentAlias")
 
-        // First get the parent scope to get its ID
-        val parentResult = ctx.ports.query.getScopeByAlias(GetScopeByAliasQuery(parentAlias))
-        val parentId = when (parentResult) {
-            is Either.Left -> return ctx.services.errors.mapContractError(parentResult.value)
-            is Either.Right -> parentResult.value.id
+        val parent = when (val parentResult = ctx.getScopeByAliasOrFail(parentAlias)) {
+            is Either.Left -> return parentResult.value
+            is Either.Right -> parentResult.value
         }
 
         // Get the children
-        val result = ctx.ports.query.getChildren(GetChildrenQuery(parentId = parentId))
+        val result = ctx.ports.query.getChildren(GetChildrenQuery(parentId = parent.id))
 
         return when (result) {
             is Either.Left -> ctx.services.errors.mapContractError(result.value)

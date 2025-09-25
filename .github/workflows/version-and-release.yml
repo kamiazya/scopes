@@ -1,0 +1,136 @@
+name: Version and Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  actions: read
+  attestations: write
+
+jobs:
+  version-and-release:
+    name: Version and Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.semver_tag.outputs.tag }}
+      published: ${{ steps.changesets.outputs.published }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba # v1.5.3
+        with:
+          # This expects you to have a script called version-packages that runs some logic and then calls `changeset version`.
+          version: pnpm version-packages
+          # This expects you to have a script called tag that calls `changeset tag`.
+          publish: pnpm tag
+          title: "Release new version"
+          commit: "Release new version"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if version PR was merged
+        id: check_version_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if this push is from a merged Version PR
+          # Check both subject and body to support different merge strategies
+          COMMIT_SUBJECT=$(git log -1 --pretty=%s)
+          COMMIT_BODY=$(git log -1 --pretty=%b)
+          
+          # Check if either subject starts with "Release new version" or body contains it
+          # This handles both squash merges (subject) and regular merges (body)
+          if [[ "$COMMIT_SUBJECT" =~ ^Release\ new\ version ]] || [[ "$COMMIT_BODY" =~ ^Release\ new\ version ]]; then
+            echo "Found version release commit pattern"
+          else
+            echo "is_version_release=false" >> "$GITHUB_OUTPUT"
+            echo "Not a Version PR merge (neither subject nor body matches pattern)"
+            exit 0
+          fi
+          
+          # Verify this is actually from a merged PR using GitHub API
+          COMMIT_SHA=${{ github.sha }}
+          echo "Checking if commit $COMMIT_SHA is from a merged PR..."
+          
+          # Search for PRs associated with this commit
+          PR_SEARCH=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/commits/$COMMIT_SHA/pulls" \
+            2>/dev/null || echo "[]")
+          
+          # Check if any PR is a Version PR
+          IS_VERSION_PR=false
+          if [[ "$PR_SEARCH" != "[]" ]]; then
+            # Parse JSON to find merged PRs with title "Release new version"
+            while IFS= read -r pr; do
+              PR_TITLE=$(echo "$pr" | jq -r '.title // ""')
+              PR_MERGED=$(echo "$pr" | jq -r '.merged // false')
+              PR_NUMBER=$(echo "$pr" | jq -r '.number // ""')
+              
+              if [[ "$PR_TITLE" == "Release new version" ]] && [[ "$PR_MERGED" == "true" ]]; then
+                echo "Found merged Version PR #$PR_NUMBER"
+                IS_VERSION_PR=true
+                break
+              fi
+            done < <(echo "$PR_SEARCH" | jq -c '.[]')
+          fi
+          
+          if [[ "$IS_VERSION_PR" == "true" ]]; then
+            echo "is_version_release=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Confirmed: This is a merged Version PR"
+          else
+            echo "is_version_release=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Warning: Commit has version message but no associated Version PR found"
+          fi
+
+      - name: Create and push SemVer tag (vX.Y.Z)
+        id: semver_tag
+        # Only create tag after Version PR is merged (commit message is "Release new version")
+        if: steps.check_version_pr.outputs.is_version_release == 'true'
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          echo "Preparing to create tag: $TAG"
+          git fetch --tags --quiet
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists. Skipping creation."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Pushed tag $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"

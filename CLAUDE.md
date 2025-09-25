@@ -118,6 +118,7 @@ See @docs/explanation/adr/ for all Architecture Decision Records:
   - @docs/guides/development/error-handling.md - Error handling patterns
   - @docs/guides/development/testing.md - Testing strategies
   - @docs/guides/development/dto-guidelines.md - DTO conventions
+  - @docs/guides/development/changeset-workflow.md - Changeset version management
 - @docs/guides/use-case-style-guide.md - UseCase pattern implementation
 - @docs/guides/using-aliases.md - Alias system best practices
 - @docs/guides/observability-guide.md - Logging and monitoring

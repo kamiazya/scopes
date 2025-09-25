@@ -32,6 +32,13 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
     override fun createServiceUnavailableError(serviceName: String): ScopeContractError =
         ScopeContractError.SystemError.ServiceUnavailable(service = serviceName)
 
+    /**
+     * Creates a service unavailable error for the scope management service.
+     * This helper method reduces code duplication in error mapping.
+     */
+    private fun createServiceUnavailableError(): ScopeContractError.SystemError.ServiceUnavailable =
+        ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+
     override fun mapToContractError(domainError: ScopesError): ScopeContractError = when (domainError) {
         // Input validation errors
         is ScopeInputError.IdError -> mapIdError(domainError)
@@ -57,12 +64,12 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
             expectedVersion = domainError.expectedVersion?.toLong() ?: -1L,
             actualVersion = domainError.actualVersion?.toLong() ?: -1L,
         )
-        is ScopesError.RepositoryError -> mapSystemError()
+        is ScopesError.RepositoryError -> createServiceUnavailableError()
 
         // Default fallback for unmapped errors
         else -> handleUnmappedError(
             domainError,
-            mapSystemError(),
+            createServiceUnavailableError(),
         )
     }
 
@@ -221,7 +228,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 maximumChildren = domainError.maxChildren,
             ),
         )
-        is ScopeHierarchyError.HierarchyUnavailable -> mapSystemError()
+        is ScopeHierarchyError.HierarchyUnavailable -> createServiceUnavailableError()
     }
 
     private fun mapAliasErrorDomain(domainError: ScopeAliasError): ScopeContractError = when (domainError) {
@@ -253,9 +260,7 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
         // Handle generic DataInconsistencyError and AliasGenerationFailed together
         is ScopeAliasError.AliasGenerationFailed,
         is ScopeAliasError.DataInconsistencyError,
-        -> ScopeContractError.SystemError.ServiceUnavailable(
-            service = SCOPE_MANAGEMENT_SERVICE,
-        )
+        -> createServiceUnavailableError()
     }
 
     private fun mapNotFoundError(domainError: ScopesError.NotFound): ScopeContractError = when (domainError.identifierType) {
@@ -303,9 +308,9 @@ class ErrorMapper(logger: Logger) : BaseErrorMapper<ScopesError, ScopeContractEr
                 scopeId = domainError.entityId ?: "",
                 aliasName = "",
             )
-            else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+            else -> createServiceUnavailableError()
         }
-        else -> ScopeContractError.SystemError.ServiceUnavailable(service = SCOPE_MANAGEMENT_SERVICE)
+        else -> createServiceUnavailableError()
     }
 
     private fun mapConflictError(domainError: ScopesError.Conflict): ScopeContractError = when (domainError.conflictType) {

@@ -27,6 +27,10 @@ class CreateContextViewHandler(
     private val applicationErrorMapper: ApplicationErrorMapper,
 ) : CommandHandler<CreateContextViewCommand, ScopeContractError, ContextViewDto> {
 
+    companion object {
+        private const val CONTEXT_VIEW_REPOSITORY_SERVICE = "context-view-repository"
+    }
+
     override suspend operator fun invoke(command: CreateContextViewCommand): Either<ScopeContractError, ContextViewDto> = transactionManager.inTransaction {
         either {
             // Validate and create value objects
@@ -42,10 +46,10 @@ class CreateContextViewHandler(
 
             // Check if a context with the same key already exists
             contextViewRepository.findByKey(key).fold(
-                { error ->
+                { _ ->
                     raise(
                         ScopeContractError.SystemError.ServiceUnavailable(
-                            service = "context-view-repository",
+                            service = CONTEXT_VIEW_REPOSITORY_SERVICE,
                         ),
                     )
                 },
@@ -83,9 +87,9 @@ class CreateContextViewHandler(
                                     ),
                                 )
                             else ->
-                                raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                                raise(ScopeContractError.SystemError.ServiceUnavailable(service = CONTEXT_VIEW_REPOSITORY_SERVICE))
                         }
-                        else -> raise(ScopeContractError.SystemError.ServiceUnavailable(service = "context-view-repository"))
+                        else -> raise(ScopeContractError.SystemError.ServiceUnavailable(service = CONTEXT_VIEW_REPOSITORY_SERVICE))
                     }
                 },
                 { it },

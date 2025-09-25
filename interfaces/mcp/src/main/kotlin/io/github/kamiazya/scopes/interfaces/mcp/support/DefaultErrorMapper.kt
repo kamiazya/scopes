@@ -6,6 +6,8 @@ import io.github.kamiazya.scopes.platform.observability.logging.Slf4jLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.TextContent
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
@@ -26,18 +28,52 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
 
     override fun mapContractError(error: ScopeContractError): CallToolResult {
         val errorResponse = errorMiddleware.mapScopeError(error)
-        val errorData = jsonResponseBuilder.buildErrorResponse(
-            errorResponse = errorResponse,
-            contractError = error,
-            legacyCode = errorCodeMapper.getErrorCode(error),
-            message = errorMessageMapper.mapContractErrorMessage(error),
-            errorDataExtractor = errorDataExtractor,
-        )
+        val errorData = buildJsonObject {
+            put(CODE_FIELD, errorResponse.code)
+            put(MESSAGE_FIELD, errorResponse.message)
+            put(USER_MESSAGE_FIELD, errorResponse.userMessage)
+            errorResponse.details?.let { details ->
+                putJsonObject(DETAILS_FIELD) {
+                    details.forEach { (key, value) ->
+                        put(key, value.toJsonElementSafe())
+                    }
+                }
+            }
+            // Legacy compatibility
+            put(LEGACY_CODE_FIELD, errorCodeMapper.getErrorCode(error))
+            putJsonObject(DATA_FIELD) {
+                put(TYPE_FIELD, error::class.simpleName)
+                put(MESSAGE_FIELD, errorMessageMapper.mapContractErrorMessage(error))
+                when (error) {
+                    is ScopeContractError.BusinessError.AliasNotFound -> {
+                        put(ALIAS_FIELD, error.alias)
+                    }
+                    is ScopeContractError.BusinessError.DuplicateAlias -> {
+                        put(ALIAS_FIELD, error.alias)
+                    }
+                    is ScopeContractError.BusinessError.DuplicateTitle -> {
+                        put(TITLE_FIELD, error.title)
+                        error.existingScopeId?.let { put("existingScopeId", it) }
+                    }
+                    is ScopeContractError.BusinessError.ContextNotFound -> {
+                        put(CONTEXT_KEY_FIELD, error.contextKey)
+                    }
+                    is ScopeContractError.BusinessError.DuplicateContextKey -> {
+                        put(CONTEXT_KEY_FIELD, error.contextKey)
+                        error.existingContextId?.let { put("existingContextId", it) }
+                    }
+                    else -> Unit
+                }
+            }
+        }
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
 
     override fun errorResult(message: String, code: Int?): CallToolResult {
-        val errorData = jsonResponseBuilder.buildSimpleErrorResponse(message, code ?: -32000)
+        val errorData = buildJsonObject {
+            put(CODE_FIELD, code ?: -32000)
+            put(MESSAGE_FIELD, message)
+        }
         return CallToolResult(content = listOf(TextContent(errorData.toString())), isError = true)
     }
 
@@ -89,18 +125,6 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
      * Error message mapping logic extracted to reduce complexity.
      */
     private class ErrorMessageMapper {
-        companion object {
-            private const val ALIAS_FIELD = "alias"
-            private const val TITLE_FIELD = "title"
-            private const val CONTEXT_KEY_FIELD = "contextKey"
-            private const val CODE_FIELD = "code"
-            private const val MESSAGE_FIELD = "message"
-            private const val USER_MESSAGE_FIELD = "userMessage"
-            private const val DETAILS_FIELD = "details"
-            private const val LEGACY_CODE_FIELD = "legacyCode"
-            private const val DATA_FIELD = "data"
-            private const val TYPE_FIELD = "type"
-        }
         fun mapContractErrorMessage(error: ScopeContractError): String = when (error) {
             is ScopeContractError.BusinessError -> mapBusinessErrorMessage(error)
             is ScopeContractError.InputError -> mapInputErrorMessage(error)
@@ -156,20 +180,20 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
         fun extractErrorData(error: ScopeContractError, builder: kotlinx.serialization.json.JsonObjectBuilder) {
             when (error) {
                 is ScopeContractError.BusinessError.AliasNotFound -> {
-                    builder.put(ErrorMessageMapper.ALIAS_FIELD, error.alias)
+                    builder.put(ALIAS_FIELD, error.alias)
                 }
                 is ScopeContractError.BusinessError.DuplicateAlias -> {
-                    builder.put(ErrorMessageMapper.ALIAS_FIELD, error.alias)
+                    builder.put(ALIAS_FIELD, error.alias)
                 }
                 is ScopeContractError.BusinessError.DuplicateTitle -> {
-                    builder.put(ErrorMessageMapper.TITLE_FIELD, error.title)
+                    builder.put(TITLE_FIELD, error.title)
                     error.existingScopeId?.let { builder.put("existingScopeId", it) }
                 }
                 is ScopeContractError.BusinessError.ContextNotFound -> {
-                    builder.put(ErrorMessageMapper.CONTEXT_KEY_FIELD, error.contextKey)
+                    builder.put(CONTEXT_KEY_FIELD, error.contextKey)
                 }
                 is ScopeContractError.BusinessError.DuplicateContextKey -> {
-                    builder.put(ErrorMessageMapper.CONTEXT_KEY_FIELD, error.contextKey)
+                    builder.put(CONTEXT_KEY_FIELD, error.contextKey)
                     error.existingContextId?.let { builder.put("existingContextId", it) }
                 }
                 else -> Unit
@@ -194,38 +218,46 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
     }
 }
 
-/**
- * Helper class for building JSON error responses.
- */
-internal class JsonResponseBuilder {
-    fun buildErrorResponse(
-        errorResponse: ErrorResponse,
-        contractError: ScopeContractError,
-        legacyCode: Int,
-        message: String,
-        errorDataExtractor: DefaultErrorMapper.ErrorDataExtractor,
-    ) = buildJsonObject {
-        put(ErrorMessageMapper.CODE_FIELD, errorResponse.code)
-        put(ErrorMessageMapper.MESSAGE_FIELD, errorResponse.message)
-        put(ErrorMessageMapper.USER_MESSAGE_FIELD, errorResponse.userMessage)
-        errorResponse.details?.let { details ->
-            putJsonObject(ErrorMessageMapper.DETAILS_FIELD) {
-                details.forEach { (key, value) ->
-                    put(key, value.toString())
-                }
-            }
-        }
-        // Legacy compatibility
-        put(ErrorMessageMapper.LEGACY_CODE_FIELD, legacyCode)
-        putJsonObject(ErrorMessageMapper.DATA_FIELD) {
-            put(ErrorMessageMapper.TYPE_FIELD, contractError::class.simpleName)
-            put(ErrorMessageMapper.MESSAGE_FIELD, message)
-            errorDataExtractor.extractErrorData(contractError, this)
-        }
+    companion object {
+        private const val CODE_FIELD = "code"
+        private const val MESSAGE_FIELD = "message"
+        private const val USER_MESSAGE_FIELD = "userMessage"
+        private const val DETAILS_FIELD = "details"
+        private const val LEGACY_CODE_FIELD = "legacyCode"
+        private const val DATA_FIELD = "data"
+        private const val TYPE_FIELD = "type"
+        private const val ALIAS_FIELD = "alias"
+        private const val TITLE_FIELD = "title"
+        private const val CONTEXT_KEY_FIELD = "contextKey"
     }
+}
 
-    fun buildSimpleErrorResponse(message: String, code: Int) = buildJsonObject {
-        put(ErrorMessageMapper.CODE_FIELD, code)
-        put(ErrorMessageMapper.MESSAGE_FIELD, message)
+private fun Any?.toJsonElementSafe(): kotlinx.serialization.json.JsonElement = when (this) {
+    null -> kotlinx.serialization.json.JsonNull
+    is kotlinx.serialization.json.JsonElement -> this
+    is Number -> kotlinx.serialization.json.JsonPrimitive(this)
+    is Boolean -> kotlinx.serialization.json.JsonPrimitive(this)
+    is String -> kotlinx.serialization.json.JsonPrimitive(this)
+    is Enum<*> -> kotlinx.serialization.json.JsonPrimitive(this.name)
+    is Map<*, *> -> buildJsonObject {
+        this@toJsonElementSafe.forEach { (k, v) ->
+            val key = when (k) {
+                null -> return@forEach // skip null keys
+                is String -> k
+                else -> k.toString()
+            }
+            put(key, v.toJsonElementSafe())
+        }
     }
+    is Iterable<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    is Array<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    is IntArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is LongArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is ShortArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is FloatArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is DoubleArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is BooleanArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
+    is CharArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e.toString())) }
+    is Sequence<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
+    else -> kotlinx.serialization.json.JsonPrimitive(this.toString())
 }
