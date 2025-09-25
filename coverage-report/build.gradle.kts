@@ -1,5 +1,9 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     base
+    jacoco
     alias(libs.plugins.jacoco.report.aggregation)
 }
 
@@ -52,19 +56,46 @@ dependencies {
     jacocoAggregation(project(":quality-konsist"))
 }
 
-reporting {
+// Create the aggregated report task directly
+tasks.register<JacocoReport>("testCodeCoverageReport") {
+    description = "Generate aggregated code coverage report for all modules"
+    group = "verification"
+
+    // Depend on test tasks from all subprojects
+    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+
+    // Collect execution data from all subprojects
+    executionData(
+        fileTree(project.rootDir) {
+            include("**/build/jacoco/*.exec")
+        },
+    )
+
+    // Collect source directories from all subprojects
+    sourceDirectories.setFrom(
+        files(
+            subprojects.flatMap { subproject ->
+                listOf("${subproject.projectDir}/src/main/kotlin")
+            },
+        ),
+    )
+
+    // Collect class directories from all subprojects
+    classDirectories.setFrom(
+        files(
+            subprojects.map { subproject ->
+                fileTree("${subproject.buildDir}/classes/kotlin/main") {
+                    exclude("**/*Test.class", "**/*Spec.class")
+                }
+            },
+        ),
+    )
+
+    // Configure report outputs
     reports {
-        val testCodeCoverageReport by creating(JacocoCoverageReport::class) {
-            reportTask.configure {
-                classDirectories.setFrom(
-                    files(
-                        subprojects.map { project ->
-                            project.fileTree("build/classes/kotlin/main")
-                        },
-                    ),
-                )
-            }
-        }
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
     }
 }
 
