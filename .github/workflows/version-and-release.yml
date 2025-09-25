@@ -95,7 +95,7 @@ jobs:
             # Parse JSON to find merged PRs with title "Release new version"
             while IFS= read -r pr; do
               PR_TITLE=$(echo "$pr" | jq -r '.title // ""')
-              PR_MERGED=$(echo "$pr" | jq -r '.merged // false')
+              PR_MERGED=$(echo "$pr" | jq -r 'if .merged_at != null then "true" else "false" end')
               PR_NUMBER=$(echo "$pr" | jq -r '.number // ""')
               
               if [[ "$PR_TITLE" == "Release new version" ]] && [[ "$PR_MERGED" == "true" ]]; then
