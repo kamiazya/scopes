@@ -91,7 +91,10 @@ subprojects {
         sonarqube {
             properties {
                 property("sonar.sources", "src/main/kotlin")
-                property("sonar.tests", "src/test/kotlin")
+                // Only set test sources if the directory exists
+                if (file("src/test/kotlin").exists()) {
+                    property("sonar.tests", "src/test/kotlin")
+                }
                 property("sonar.java.binaries", "build/classes/kotlin/main")
                 // Each module should report its own JaCoCo XML report path
                 property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
