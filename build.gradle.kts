@@ -86,7 +86,7 @@ subprojects {
                 }
             }
         }
-        
+
         // Configure SonarQube for each module
         sonarqube {
             properties {
@@ -297,8 +297,11 @@ sonarqube {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.projectName", "Scopes")
         property("sonar.projectVersion", version)
-        
+
         // Coverage configuration - point to the aggregated report
-        property("sonar.coverage.jacoco.xmlReportPaths", "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+        )
     }
 }
