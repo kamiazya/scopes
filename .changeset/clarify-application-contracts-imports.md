@@ -8,4 +8,3 @@ Clarify application-to-contracts import policy and add enforcement
 - Add Konsist test to automatically enforce import rules
 - Update architecture diagrams to reflect allowed dependencies
 - Maintain domain purity while avoiding duplicate DTOs at boundaries
-EOF < /dev/null
