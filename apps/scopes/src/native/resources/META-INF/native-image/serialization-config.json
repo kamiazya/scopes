@@ -1,0 +1,64 @@
+[ {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeCreated",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeDeleted",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeArchived",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeRestored",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeTitleUpdated",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeDescriptionUpdated",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeParentChanged",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeAspectAdded",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeAspectRemoved",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeAspectsCleared",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableScopeAspectsUpdated",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableAliasAssigned",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableAliasRemoved",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableAliasNameChanged",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableCanonicalAliasReplaced",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.SerializableEventMetadata",
+  "serialization" : true
+}, {
+  "name" : "kotlinx.datetime.Instant",
+  "serialization" : true
+}, {
+  "name" : "kotlinx.datetime.Instant$Companion",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult",
+  "serialization" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult",
+  "serialization" : true
+} ]

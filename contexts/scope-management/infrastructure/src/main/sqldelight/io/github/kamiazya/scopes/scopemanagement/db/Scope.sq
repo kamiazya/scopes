@@ -19,6 +19,17 @@ CREATE INDEX IF NOT EXISTS idx_scopes_parent_created ON scopes(parent_id, create
 -- Optional but helpful for root scans (partial index)
 CREATE INDEX IF NOT EXISTS idx_scopes_root_created ON scopes(created_at, id) WHERE parent_id IS NULL;
 
+-- Uniqueness constraints to prevent duplicate titles
+-- Root level: title must be unique when parent_id IS NULL
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_scopes_root_title
+ON scopes(title)
+WHERE parent_id IS NULL;
+
+-- Children: (title, parent_id) must be unique when parent_id IS NOT NULL
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_scopes_child_title_parent
+ON scopes(title, parent_id)
+WHERE parent_id IS NOT NULL;
+
 -- Insert scope
 insertScope:
 INSERT INTO scopes (id, title, description, parent_id, created_at, updated_at)

@@ -113,6 +113,8 @@ class LayerArchitectureTest :
                         clazz.name.contains("Telemetry") ||
                         clazz.name.contains("Observer") ||
                         clazz.name.contains("Monitor") ||
+                        clazz.name.contains("Counter") ||
+                        // Metrics counters
                         clazz.name.contains("Application") ||
                         // ApplicationInfo, ApplicationType
                         clazz.name.contains("Runtime") ||

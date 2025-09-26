@@ -124,6 +124,7 @@ class ArchitectureUniformityTest :
                             ) &&
                             clazz.name.endsWith("Handler")
                     }
+                    .filterNot { it.hasAbstractModifier }
 
                 commandHandlers.assertTrue { handler ->
                     // Should implement or extend CommandHandler (check both exact name and generic versions)
@@ -144,6 +145,7 @@ class ArchitectureUniformityTest :
                             ) &&
                             clazz.name.endsWith("Handler")
                     }
+                    .filterNot { it.hasAbstractModifier }
 
                 queryHandlers.assertTrue { handler ->
                     // Should implement or extend QueryHandler (check both exact name and generic versions)

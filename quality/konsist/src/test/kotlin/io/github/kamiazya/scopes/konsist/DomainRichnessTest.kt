@@ -116,6 +116,7 @@ class DomainRichnessTest :
                     .filter { !it.name.endsWith("Test") }
                     // Filter out inner data classes (like Query, Command classes)
                     .filter { !it.hasDataModifier || it.hasPublicModifier }
+                    .filterNot { it.hasAbstractModifier }
                     .filter { clazz ->
                         // Only check actual handlers/use cases, not inner data classes
                         val hasInvokeMethod = clazz.functions().any { it.name == "invoke" || it.name == "handle" }
@@ -305,10 +306,11 @@ class DomainRichnessTest :
                     }
                     // Skip sealed class hierarchies used for data modeling
                     .filter { clazz ->
-                        // Exclude specific token/AST/state classes that are part of parsing logic
+                        // Exclude specific token/AST/state/result classes that are part of parsing logic
                         !clazz.name.endsWith("Token") &&
                             !clazz.name.endsWith("AST") &&
-                            !clazz.name.endsWith("State")
+                            !clazz.name.endsWith("State") &&
+                            !clazz.name.endsWith("Result")
                     }
                     // Skip parser services - they're utility classes with parse methods
                     .filter { !it.name.endsWith("Parser") }

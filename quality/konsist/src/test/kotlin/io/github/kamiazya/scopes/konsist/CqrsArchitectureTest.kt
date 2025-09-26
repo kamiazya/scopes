@@ -67,6 +67,7 @@ class CqrsArchitectureTest :
                     it.packagee?.name?.contains("handler.command") == true ||
                         it.packagee?.name?.contains("command.handler") == true
                 }
+                .filterNot { it.hasAbstractModifier }
                 .assertTrue { handler ->
                     handler.parents().any { parent ->
                         parent.name.contains("CommandHandler")

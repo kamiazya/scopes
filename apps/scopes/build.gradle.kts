@@ -79,8 +79,25 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
+// Add a dedicated sourceSet for Native Image (separated from JVM main)
+sourceSets {
+    create("native") {
+        java.srcDir("src/native/kotlin")
+        resources.srcDir("src/native/resources")
+    }
+}
+
+// Inherit dependencies from main for the native sourceSet
+configurations.named("nativeImplementation").configure {
+    extendsFrom(configurations.getByName("implementation"))
+}
+configurations.named("nativeRuntimeOnly").configure {
+    extendsFrom(configurations.getByName("runtimeOnly"))
+}
+
+// Use the standard entrypoint for JVM runs
 application {
-    mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
+    mainClass.set("io.github.kamiazya.scopes.apps.cli.Main")
 }
 
 tasks.test {
@@ -90,9 +107,10 @@ tasks.test {
 graalvmNative {
     binaries {
         named("main") {
+            classpath.from(sourceSets.getByName("native").runtimeClasspath)
             imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
-            useFatJar.set(true)
+            mainClass.set("io.github.kamiazya.scopes.apps.cli.nativeimage.NativeImageMain")
+            useFatJar.set(false)
 
             buildArgs.addAll(
                 listOf(
@@ -111,9 +129,10 @@ graalvmNative {
                     "--exclude-config",
                     ".*sqlite-jdbc.*\\.jar",
                     ".*native-image.*",
-                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
-                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
-                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",
+                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/native/META-INF/native-image/resource-config.json",
+                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/native/META-INF/native-image/reflect-config.json",
+                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/native/META-INF/native-image/jni-config.json",
+                    "-H:SerializationConfigurationFiles=${layout.buildDirectory.get()}/resources/native/META-INF/native-image/serialization-config.json",
                 ),
             )
         }
@@ -215,3 +234,9 @@ tasks.register("nativeE2eTest") {
 // tasks.named("check") {
 //     dependsOn("nativeSmokeTest")
 // }
+
+
+// Avoid duplicate META-INF/native-image entries in native resources
+tasks.named<org.gradle.language.jvm.tasks.ProcessResources>("processNativeResources") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

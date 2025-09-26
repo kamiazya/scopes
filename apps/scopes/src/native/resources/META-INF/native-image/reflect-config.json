@@ -1,0 +1,1045 @@
+[ {
+  "name" : "org.sqlite.JDBC",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.core.DB",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.core.NativeDB",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteConfig",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteJDBCLoader",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.util.OSInfo",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteConnection",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.SQLiteDataSource",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Function",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.Function$Aggregate",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Function$Window",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.ProgressHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.BusyHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Collation",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.LoggerContext",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "ch.qos.logback.core.rolling.RollingFileAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.rolling.TimeBasedRollingPolicy",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.ConsoleAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.AsyncAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.status.NopStatusListener",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "org.koin.core.module.Module",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.Koin",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.KoinApplication",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.scope.Scope",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.instance.InstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.instance.SingleInstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.instance.FactoryInstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.definition.BeanDefinition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.registry.InstanceRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.registry.ScopeRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.ScopesCliApplication",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementCommandPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ScopeManagementQueryPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectCommandPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.AspectQueryPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewCommandPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ContextViewQueryPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.infrastructure.adapters.UserPreferencesQueryPortAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.UserPreferencesToHierarchyPolicyAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.infrastructure.lifecycle.DefaultApplicationLifecycleManager",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.persistence.InMemoryScopeRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.persistence.InMemoryContextViewRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.persistence.InMemoryAspectDefinitionRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.CreateScopeHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.UpdateScopeHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.DeleteScopeHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.AddAliasHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.RemoveAliasHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.SetCanonicalAliasHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.command.handler.RenameAliasHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByAliasHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetChildrenHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.ListAliasesHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.FilterScopesWithQueryHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.persistence.InMemoryEventSourcingRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.persistence.InMemoryActiveContextRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.DefaultAliasGenerationService",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.HaikunatorGeneratorStrategy",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.DefaultWordProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.infrastructure.transaction.NoopTransactionManager",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.CliAppModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.scopemanagement.ScopeManagementModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.scopemanagement.ScopeManagementInfrastructureModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.ContractsModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.ObservabilityModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.McpModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.platform.DatabaseModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.platform.PlatformModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.eventstore.EventStoreInfrastructureModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.userpreferences.UserPreferencesModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.devicesync.DeviceSyncInfrastructureModuleKt",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.ConsoleLogger",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.formatter.JsonLogFormatter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.formatter.PlainTextLogFormatter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.apps.cli.di.scopemanagement.ScopeManagementModuleKt$scopeManagementModule$1$6",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementCommandPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.ScopeManagementQueryPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.AspectCommandPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.AspectQueryPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewCommandPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.scopemanagement.ContextViewQueryPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.contracts.userpreferences.UserPreferencesQueryPort",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.ContextViewRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.AspectDefinitionRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.service.alias.GeneratorStrategy",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.domain.service.alias.WordProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.port.TransactionManager",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.Logger",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.LogAppender",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.observability.LogFormatter",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.domain.repository.PreferencesRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.infrastructure.persistence.InMemoryPreferencesRepository",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.application.query.handler.GetCurrentUserPreferencesHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.application.query.handler.GetPreferenceByKeyHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.userpreferences.application.mapper.UserPreferencesErrorMapper",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.infrastructure.lifecycle.ApplicationLifecycleManager",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.commons.time.TimeProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.github.kamiazya.scopes.platform.commons.time.SystemTimeProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.jvm.functions.Function0",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.jvm.functions.Function1",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.jvm.functions.Function2",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.Function0",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.Function1",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.Function2",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.definition.Definition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.qualifier.StringQualifier",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.qualifier.TypeQualifier",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.parameter.ParametersHolder",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.qualifier.Qualifier",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.koin.core.registry.ScopeRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.registry.BeanRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.registry.PropertyRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.definition.BeanDefinition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.definition.Callbacks",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.definition.Definition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.definition.KoinDefinition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.instance.SingleInstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.instance.FactoryInstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.instance.ScopeInstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.instance.InstanceFactory",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.parameter.ParametersDefinition",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.parameter.ParametersHolder",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.dsl.ScopeDSL",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.dsl.ModuleDSL",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.registry.InstanceRegistry",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.module.Module",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.module.KoinModule",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.module.ModuleContext",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.registry.InstanceRegistry$get$1",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.error.KoinAppAlreadyStartedException",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.error.NoBeanDefFoundException",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.error.NoDefinitionFoundException",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.logger.Logger",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.logger.PrintLogger",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.koin.core.logger.EmptyLogger",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "kotlin.reflect.KClass",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "kotlin.reflect.KType",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "kotlin.reflect.jvm.internal.KClassImpl",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "kotlin.reflect.jvm.internal.KTypeImpl",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+} ]

@@ -10,12 +10,18 @@ import io.kotest.matchers.shouldNotBe
 
 class CreateScopeHandlerTest :
     DescribeSpec({
-        describe("ScopeAggregate alias generation integration") {
-            it("should create aggregate with handleCreateWithAutoAlias") {
-                // Test verifies that AliasGenerationService integration works correctly
-                val result = ScopeAggregate.handleCreateWithAutoAlias(
+        describe("ScopeAggregate explicit alias creation") {
+            it("should create aggregate with handleCreateWithAlias") {
+                val aliasName = io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
+                    .create("test-alias").fold(
+                        { e -> throw AssertionError("alias creation failed: $e") },
+                        { it },
+                    )
+
+                val result = ScopeAggregate.handleCreateWithAlias(
                     title = "Test Scope",
                     description = "Test Description",
+                    aliasName = aliasName,
                 )
 
                 result.shouldBeRight()
@@ -24,11 +30,6 @@ class CreateScopeHandlerTest :
                         throw AssertionError("Expected success but got error: $error")
                     },
                     ifRight = { aggregateResult: AggregateResult<ScopeAggregate, ScopeEvent> ->
-                        println("✅ AliasGenerationService integration test successful!")
-                        println("Created aggregate: ${aggregateResult.aggregate}")
-                        println("Generated events: ${aggregateResult.events.size}")
-
-                        // Verify the aggregate was created correctly
                         aggregateResult.aggregate shouldNotBe null
                         aggregateResult.events.size shouldBe 2 // ScopeCreated + AliasAssigned
 
@@ -37,8 +38,6 @@ class CreateScopeHandlerTest :
                         aggregate.title shouldNotBe null
                         aggregate.canonicalAliasId shouldNotBe null
                         aggregate.aliases.size shouldBe 1
-
-                        println("✅ All assertions passed! AliasGenerationService successfully integrated into ScopeAggregate")
                     },
                 )
             }

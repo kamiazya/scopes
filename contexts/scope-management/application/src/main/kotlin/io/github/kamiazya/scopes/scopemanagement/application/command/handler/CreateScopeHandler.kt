@@ -22,6 +22,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeEvent
 import io.github.kamiazya.scopes.scopemanagement.domain.extensions.persistScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.EventSourcingRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
+import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.hierarchy.ScopeHierarchyService
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.HierarchyPolicy
@@ -48,6 +49,7 @@ class CreateScopeHandler(
     private val transactionManager: TransactionManager,
     private val hierarchyPolicyProvider: HierarchyPolicyProvider,
     private val eventPublisher: EventPublisher,
+    private val aliasGenerationService: AliasGenerationService,
     private val applicationErrorMapper: ApplicationErrorMapper,
     private val logger: Logger,
 ) : CommandHandler<CreateScopeCommand, ScopeContractError, CreateScopeResult> {
@@ -232,10 +234,17 @@ class CreateScopeHandler(
                 }.bind()
             }
             is CreateScopeCommand.WithAutoAlias -> {
-                ScopeAggregate.handleCreateWithAutoAlias(
+                val aliasName = aliasGenerationService.generateRandomAlias()
+                    .mapLeft { aliasError ->
+                        logger.warn("Alias generation failed", mapOf("error" to aliasError.toString()))
+                        applicationErrorMapper.mapDomainError(aliasError, ErrorMappingContext())
+                    }.bind()
+
+                ScopeAggregate.handleCreateWithAlias(
                     title = command.title,
                     description = command.description,
                     parentId = validationResult.parentId,
+                    aliasName = aliasName,
                     scopeId = validationResult.newScopeId,
                     now = Clock.System.now(),
                 ).mapLeft { error ->
@@ -287,7 +296,8 @@ class CreateScopeHandler(
         }
 
         ensure(resolvedAlias != null) {
-            // Create の仕様上必ず Canonical Alias が存在するはず。存在しないのは投影/適用不整合。
+            // By design, a newly created scope must have a canonical alias.
+            // If it is missing, it indicates a projection/application inconsistency.
             ScopeContractError.DataInconsistency.MissingCanonicalAlias(
                 scopeId = aggregate.scopeId?.value ?: "",
             )

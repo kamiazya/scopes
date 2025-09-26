@@ -1,30 +1,38 @@
 package io.github.kamiazya.scopes.platform.observability.metrics
 
-import java.util.concurrent.atomic.AtomicLong
-
 /**
  * Thread-safe in-memory implementation of Counter.
- * Uses AtomicLong for thread-safe operations.
+ * Uses synchronized blocks for thread-safe operations.
  */
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 class InMemoryCounter(private val name: String, private val description: String? = null, private val tags: Map<String, String> = emptyMap()) : Counter {
 
-    private val atomicCount = AtomicLong(0)
+    private var count: Long = 0
+    private val lock = Object()
 
     override fun increment() {
-        atomicCount.incrementAndGet()
+        synchronized(lock) {
+            count += 1
+        }
     }
 
     override fun increment(amount: Double) {
         require(amount >= 0) { "Counter increment amount must be non-negative, got $amount" }
         // Convert double to long for atomic operations
         val longAmount = amount.toLong()
-        atomicCount.addAndGet(longAmount)
+        synchronized(lock) {
+            count += longAmount
+        }
     }
 
-    override fun count(): Double = atomicCount.get().toDouble()
+    override fun count(): Double = synchronized(lock) {
+        count.toDouble()
+    }
 
     override fun reset() {
-        atomicCount.set(0)
+        synchronized(lock) {
+            count = 0
+        }
     }
 
     override fun toString(): String {

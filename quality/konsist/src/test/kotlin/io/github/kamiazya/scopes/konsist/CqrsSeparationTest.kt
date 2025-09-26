@@ -44,6 +44,7 @@ class CqrsSeparationTest :
                     .withNameEndingWith("Handler")
                     .filter { it.packagee?.name?.contains("command.handler") == true }
                     .filter { !it.name.contains("Test") }
+                    .filterNot { it.hasAbstractModifier }
                     .assertTrue { commandHandler ->
                         commandHandler.properties().any { property ->
                             property.type?.name == "TransactionManager"

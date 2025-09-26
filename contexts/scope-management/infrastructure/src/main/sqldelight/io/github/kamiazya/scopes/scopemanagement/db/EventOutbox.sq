@@ -1,0 +1,45 @@
+-- Outbox table for projecting domain events to RDB
+CREATE TABLE IF NOT EXISTS event_outbox (
+    id TEXT PRIMARY KEY NOT NULL,
+    event_id TEXT NOT NULL,
+    aggregate_id TEXT NOT NULL,
+    aggregate_version INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    occurred_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    processed_at INTEGER,
+    status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING | PROCESSED | FAILED
+    retries INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_outbox_status_created ON event_outbox(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_event_outbox_event_id ON event_outbox(event_id);
+
+-- Enqueue a new outbox record
+enqueueOutbox:
+INSERT INTO event_outbox (
+    id, event_id, aggregate_id, aggregate_version, event_type, payload, occurred_at, created_at, status
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING');
+
+-- Fetch pending records in FIFO order
+fetchPending:
+SELECT *
+FROM event_outbox
+WHERE status = 'PENDING'
+ORDER BY created_at ASC
+LIMIT ?;
+
+-- Mark a record as processed
+markProcessed:
+UPDATE event_outbox
+SET status = 'PROCESSED', processed_at = ?
+WHERE id = ?;
+
+-- Mark a record as failed and increment retry count
+markFailed:
+UPDATE event_outbox
+SET status = 'FAILED', retries = retries + 1
+WHERE id = ?;
+

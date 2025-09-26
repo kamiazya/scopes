@@ -11,7 +11,7 @@ import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
  *
  * @param T The concrete event type that implements this interface
  */
-interface VersionSupport<T : DomainEvent> {
+interface VersionSupport<out T : DomainEvent> {
     /**
      * Creates a copy of this event with the specified version.
      *

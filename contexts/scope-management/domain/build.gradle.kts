@@ -8,8 +8,7 @@ dependencies {
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-domain-commons"))
 
-    // Event store (for EventTypeId annotation)
-    implementation(project(":event-store-domain"))
+    // Removed cross-context dependency on event-store domain (@EventTypeId moved to platform)
 
     // Core libraries
     implementation(libs.kotlin.stdlib)

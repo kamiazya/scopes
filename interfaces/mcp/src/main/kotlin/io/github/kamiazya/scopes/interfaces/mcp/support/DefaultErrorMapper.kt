@@ -24,7 +24,6 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
     private val errorCodeMapper = ErrorCodeMapper()
     private val errorMessageMapper = ErrorMessageMapper()
     private val errorDataExtractor = ErrorDataExtractor()
-    private val jsonResponseBuilder = JsonResponseBuilder()
 
     override fun mapContractError(error: ScopeContractError): CallToolResult {
         val errorResponse = errorMiddleware.mapScopeError(error)
@@ -216,7 +215,6 @@ internal class DefaultErrorMapper(private val logger: Logger = Slf4jLogger("Defa
             asJson = true,
         )
     }
-}
 
     companion object {
         private const val CODE_FIELD = "code"

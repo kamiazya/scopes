@@ -34,10 +34,12 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.Event
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightEventOutboxRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.service.AspectQueryFilterValidator
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -119,13 +121,45 @@ val scopeManagementInfrastructureModule = module {
         DefaultProjectionMetrics(metricsRegistry = get())
     }
 
-    // Event Projector for RDB projection
-    single<EventPublisher> {
+    // Serializers for domain events (Scope context)
+    single<SerializersModule> { io.github.kamiazya.scopes.scopemanagement.infrastructure.serialization.ScopeEventSerializersModule.create() }
+    single<Json>(named("scopeEventJson")) {
+        val module: SerializersModule = get()
+        Json {
+            serializersModule = module
+            ignoreUnknownKeys = true
+            isLenient = true
+            classDiscriminator = "type"
+        }
+    }
+
+    // Event projector for RDB projection
+    single {
         EventProjectionService(
             scopeRepository = get(),
             scopeAliasRepository = get(),
             logger = get(),
             projectionMetrics = get(),
+        )
+    }
+
+    // Outbox repository + projector + publisher (processImmediately to preserve current behavior)
+    single<SqlDelightEventOutboxRepository> { SqlDelightEventOutboxRepository(get(named("scopeManagement"))) }
+    single {
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.OutboxProjectionService(
+            outboxRepository = get(),
+            projectionService = get(),
+            json = get(named("scopeEventJson")),
+            logger = get(),
+        )
+    }
+    single<EventPublisher> {
+        io.github.kamiazya.scopes.scopemanagement.infrastructure.projection.OutboxEventProjectionService(
+            outboxRepository = get(),
+            projector = get(),
+            json = get(named("scopeEventJson")),
+            logger = get(),
+            processImmediately = true,
         )
     }
 

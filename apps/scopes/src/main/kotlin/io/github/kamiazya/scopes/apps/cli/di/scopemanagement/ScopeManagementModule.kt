@@ -130,6 +130,7 @@ val scopeManagementModule = module {
             transactionManager = get(),
             hierarchyPolicyProvider = get(),
             eventPublisher = get<io.github.kamiazya.scopes.scopemanagement.application.port.EventPublisher>(),
+            aliasGenerationService = get(),
             applicationErrorMapper = get(),
             logger = get(),
         )

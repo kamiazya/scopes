@@ -5,7 +5,9 @@ import arrow.core.raise.either
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreCommandPort
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.contracts.eventstore.commands.StoreEventCommand
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateFromVersionQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateQuery
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateVersionRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTimeRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.results.EventResult
@@ -147,19 +149,30 @@ internal class ContractBasedScopeEventSourcingRepository(
             .map { results -> results.mapNotNull { deserializeEvent(it) } }
     }
 
-    override suspend fun getEventsFromVersion(aggregateId: AggregateId, fromVersion: Int): Either<ScopesError, List<DomainEvent>> =
-        getEvents(aggregateId).map { events ->
-            events.filter { event ->
-                event.aggregateVersion.value >= fromVersion
-            }
-        }
+    override suspend fun getEventsFromVersion(aggregateId: AggregateId, fromVersion: Int): Either<ScopesError, List<DomainEvent>> {
+        val query = GetEventsByAggregateFromVersionQuery(
+            aggregateId = aggregateId.value,
+            fromVersion = fromVersion,
+            limit = null,
+        )
 
-    override suspend fun getEventsBetweenVersions(aggregateId: AggregateId, fromVersion: Int, toVersion: Int): Either<ScopesError, List<DomainEvent>> =
-        getEvents(aggregateId).map { events ->
-            events.filter { event ->
-                event.aggregateVersion.value in fromVersion..toVersion
-            }
-        }
+        return eventStoreQueryPort.getEventsByAggregateFromVersion(query)
+            .mapLeft { eventStoreContractErrorMapper.mapCrossContext(it) }
+            .map { results -> results.mapNotNull { deserializeEvent(it) } }
+    }
+
+    override suspend fun getEventsBetweenVersions(aggregateId: AggregateId, fromVersion: Int, toVersion: Int): Either<ScopesError, List<DomainEvent>> {
+        val query = GetEventsByAggregateVersionRangeQuery(
+            aggregateId = aggregateId.value,
+            fromVersion = fromVersion,
+            toVersion = toVersion,
+            limit = null,
+        )
+
+        return eventStoreQueryPort.getEventsByAggregateVersionRange(query)
+            .mapLeft { eventStoreContractErrorMapper.mapCrossContext(it) }
+            .map { results -> results.mapNotNull { deserializeEvent(it) } }
+    }
 
     override suspend fun getCurrentVersion(aggregateId: AggregateId): Either<ScopesError, Int> = getEvents(aggregateId).map { events ->
         events.maxOfOrNull { it.aggregateVersion.value.toInt() } ?: 0
@@ -218,33 +231,12 @@ internal class ContractBasedScopeEventSourcingRepository(
     }
 
     private fun eventTypeId(event: DomainEvent): String {
-        val fqcn = "io.github.kamiazya.scopes.eventstore.domain.valueobject.EventTypeId"
-        val annClass = try {
-            @Suppress("UNCHECKED_CAST")
-            Class.forName(fqcn) as Class<out Annotation>
-        } catch (_: ClassNotFoundException) {
-            null
+        // Prefer platform-level @EventTypeId; fallback to class name
+        val ann = event::class.annotations.firstOrNull { it is io.github.kamiazya.scopes.platform.domain.event.EventTypeId }
+        if (ann is io.github.kamiazya.scopes.platform.domain.event.EventTypeId) {
+            return ann.value
         }
-
-        if (annClass != null) {
-            val ann = event::class.java.getAnnotation(annClass)
-            if (ann != null) {
-                return try {
-                    val m = annClass.getMethod("value")
-                    m.invoke(ann) as? String
-                } catch (_: Exception) {
-                    null
-                } ?: (
-                    event::class.qualifiedName ?: (
-                        event::class.simpleName
-                            ?: error("Event class must have a name")
-                        )
-                    )
-            }
-        }
-        return event::class.qualifiedName ?: (
-            event::class.simpleName
-                ?: error("Event class must have a name")
-            )
+        return event::class.qualifiedName
+            ?: (event::class.simpleName ?: error("Event class must have a name"))
     }
 }

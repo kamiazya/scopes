@@ -17,6 +17,10 @@ import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeDescriptionUp
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeParentChanged
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeRestored
 import io.github.kamiazya.scopes.scopemanagement.domain.event.ScopeTitleUpdated
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasAssigned
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasRemoved
+import io.github.kamiazya.scopes.scopemanagement.domain.event.AliasNameChanged
+import io.github.kamiazya.scopes.scopemanagement.domain.event.CanonicalAliasReplaced
 
 /**
  * Bootstrapper responsible for registering all domain event types.
@@ -56,6 +60,7 @@ class EventTypeRegistrar(private val eventTypeMapping: EventTypeMapping, private
 
     private fun registerScopeManagementEvents() {
         val events = listOf(
+            // Scope events
             ScopeCreated::class,
             ScopeDeleted::class,
             ScopeArchived::class,
@@ -67,6 +72,11 @@ class EventTypeRegistrar(private val eventTypeMapping: EventTypeMapping, private
             ScopeAspectRemoved::class,
             ScopeAspectsCleared::class,
             ScopeAspectsUpdated::class,
+            // Alias events
+            AliasAssigned::class,
+            AliasRemoved::class,
+            AliasNameChanged::class,
+            CanonicalAliasReplaced::class,
         )
 
         events.forEach { eventClass ->
@@ -81,6 +91,7 @@ class EventTypeRegistrar(private val eventTypeMapping: EventTypeMapping, private
         // This allows reading events that were persisted before stable IDs were introduced
         if (eventTypeMapping is DefaultEventTypeMapping) {
             val legacyEvents = listOf(
+                // Scope events
                 ScopeCreated::class,
                 ScopeDeleted::class,
                 ScopeArchived::class,
@@ -92,6 +103,11 @@ class EventTypeRegistrar(private val eventTypeMapping: EventTypeMapping, private
                 ScopeAspectRemoved::class,
                 ScopeAspectsCleared::class,
                 ScopeAspectsUpdated::class,
+                // Alias events
+                AliasAssigned::class,
+                AliasRemoved::class,
+                AliasNameChanged::class,
+                CanonicalAliasReplaced::class,
             )
 
             legacyEvents.forEach { eventClass ->

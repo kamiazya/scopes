@@ -4,7 +4,9 @@ import arrow.core.Either
 import arrow.core.flatMap
 import io.github.kamiazya.scopes.contracts.eventstore.EventStoreQueryPort
 import io.github.kamiazya.scopes.contracts.eventstore.errors.EventStoreContractError
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateFromVersionQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateQuery
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateVersionRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTimeRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
@@ -160,6 +162,83 @@ class EventStoreQueryPortAdapter(
             )
         }
     }
+
+    override suspend fun getEventsByAggregateFromVersion(query: GetEventsByAggregateFromVersionQuery): Either<EventStoreContractError, List<EventResult>> =
+        AggregateId.from(query.aggregateId)
+            .mapLeft { error ->
+                EventStoreContractError.InvalidQueryError(
+                    parameterName = "aggregateId",
+                    providedValue = query.aggregateId,
+                    constraint = EventStoreContractError.QueryConstraint.INVALID_FORMAT,
+                )
+            }
+            .flatMap { aggregateId ->
+                // Use domain repository optimized method
+                eventRepository.getEventsByAggregateFromVersion(aggregateId, query.fromVersion.toLong(), query.limit)
+                    .mapLeft { _ ->
+                        EventStoreContractError.EventRetrievalError(
+                            aggregateId = query.aggregateId,
+                            retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
+                            cause = null,
+                        )
+                    }
+                    .flatMap { storedEvents ->
+                        val results = storedEvents.mapNotNull { storedEvent ->
+                            when (val serialized = eventSerializer.serialize(storedEvent.event)) {
+                                is Either.Right -> EventResult(
+                                    eventId = storedEvent.metadata.eventId.value,
+                                    aggregateId = storedEvent.metadata.aggregateId.value,
+                                    aggregateVersion = storedEvent.metadata.aggregateVersion.value,
+                                    eventType = storedEvent.metadata.eventType.value,
+                                    eventData = serialized.value,
+                                    occurredAt = storedEvent.metadata.occurredAt,
+                                    storedAt = storedEvent.metadata.storedAt,
+                                    sequenceNumber = storedEvent.metadata.sequenceNumber,
+                                )
+                                is Either.Left -> null
+                            }
+                        }
+                        Either.Right(results)
+                    }
+            }
+
+    override suspend fun getEventsByAggregateVersionRange(query: GetEventsByAggregateVersionRangeQuery): Either<EventStoreContractError, List<EventResult>> =
+        AggregateId.from(query.aggregateId)
+            .mapLeft { error ->
+                EventStoreContractError.InvalidQueryError(
+                    parameterName = "aggregateId",
+                    providedValue = query.aggregateId,
+                    constraint = EventStoreContractError.QueryConstraint.INVALID_FORMAT,
+                )
+            }
+            .flatMap { aggregateId ->
+                eventRepository.getEventsByAggregateVersionRange(aggregateId, query.fromVersion.toLong(), query.toVersion.toLong(), query.limit)
+                    .mapLeft { _ ->
+                        EventStoreContractError.EventRetrievalError(
+                            aggregateId = query.aggregateId,
+                            retrievalReason = EventStoreContractError.RetrievalFailureReason.TIMEOUT,
+                            cause = null,
+                        )
+                    }
+                    .flatMap { storedEvents ->
+                        val results = storedEvents.mapNotNull { storedEvent ->
+                            when (val serialized = eventSerializer.serialize(storedEvent.event)) {
+                                is Either.Right -> EventResult(
+                                    eventId = storedEvent.metadata.eventId.value,
+                                    aggregateId = storedEvent.metadata.aggregateId.value,
+                                    aggregateVersion = storedEvent.metadata.aggregateVersion.value,
+                                    eventType = storedEvent.metadata.eventType.value,
+                                    eventData = serialized.value,
+                                    occurredAt = storedEvent.metadata.occurredAt,
+                                    storedAt = storedEvent.metadata.storedAt,
+                                    sequenceNumber = storedEvent.metadata.sequenceNumber,
+                                )
+                                is Either.Left -> null
+                            }
+                        }
+                        Either.Right(results)
+                    }
+            }
 
     override suspend fun getEventsByTimeRange(query: GetEventsByTimeRangeQuery): Either<EventStoreContractError, List<EventResult>> {
         // Use the event repository to query by time range

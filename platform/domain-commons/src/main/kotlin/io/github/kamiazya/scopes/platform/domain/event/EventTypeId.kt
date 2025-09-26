@@ -1,4 +1,4 @@
-package io.github.kamiazya.scopes.eventstore.domain.valueobject
+package io.github.kamiazya.scopes.platform.domain.event
 
 /**
  * Annotation to declare a stable type identifier for a domain event.
@@ -7,10 +7,7 @@ package io.github.kamiazya.scopes.eventstore.domain.valueobject
  * Use semantic versioning in the identifier to support schema evolution.
  *
  * Example:
- * ```kotlin
  * @EventTypeId("scope-management.scope.created.v1")
- * data class ScopeCreatedEvent(...) : DomainEvent
- * ```
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

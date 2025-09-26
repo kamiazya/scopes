@@ -2,7 +2,9 @@ package io.github.kamiazya.scopes.contracts.eventstore
 
 import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.eventstore.errors.EventStoreContractError
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateFromVersionQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateQuery
+import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByAggregateVersionRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTimeRangeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsByTypeQuery
 import io.github.kamiazya.scopes.contracts.eventstore.queries.GetEventsSinceQuery
@@ -20,6 +22,16 @@ public interface EventStoreQueryPort {
      * @return Either an error or list of events for the aggregate
      */
     public suspend fun getEventsByAggregate(query: GetEventsByAggregateQuery): Either<EventStoreContractError, List<EventResult>>
+
+    /**
+     * Retrieves events for an aggregate from a specific version (inclusive).
+     */
+    public suspend fun getEventsByAggregateFromVersion(query: GetEventsByAggregateFromVersionQuery): Either<EventStoreContractError, List<EventResult>>
+
+    /**
+     * Retrieves events for an aggregate within a version range (inclusive).
+     */
+    public suspend fun getEventsByAggregateVersionRange(query: GetEventsByAggregateVersionRangeQuery): Either<EventStoreContractError, List<EventResult>>
 
     /**
      * Retrieves events since a specific timestamp.

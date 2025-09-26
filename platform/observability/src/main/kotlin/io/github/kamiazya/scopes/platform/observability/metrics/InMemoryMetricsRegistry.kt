@@ -1,25 +1,27 @@
 package io.github.kamiazya.scopes.platform.observability.metrics
 
-import java.util.concurrent.ConcurrentHashMap
-
 /**
  * Thread-safe in-memory implementation of MetricsRegistry.
- * Uses ConcurrentHashMap for thread-safe operations across multiple counters.
+ * Uses Kotlin's mutable map with synchronized blocks for thread-safe operations across multiple counters.
  */
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 class InMemoryMetricsRegistry : MetricsRegistry {
 
-    private val counters = ConcurrentHashMap<String, InMemoryCounter>()
+    private val counters = mutableMapOf<String, InMemoryCounter>()
+    private val lock = Object()
 
-    override fun counter(name: String, description: String?, tags: Map<String, String>): Counter {
+    override fun counter(name: String, description: String?, tags: Map<String, String>): Counter = synchronized(lock) {
         // Create unique key by combining name and tags
         val key = buildCounterKey(name, tags)
 
-        return counters.computeIfAbsent(key) {
+        counters.getOrPut(key) {
             InMemoryCounter(name, description, tags)
         }
     }
 
-    override fun getAllCounters(): Map<String, Counter> = counters.toMap()
+    override fun getAllCounters(): Map<String, Counter> = synchronized(lock) {
+        counters.toMap()
+    }
 
     override fun exportMetrics(): String {
         if (counters.isEmpty()) {
