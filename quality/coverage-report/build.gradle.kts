@@ -1,5 +1,7 @@
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.language.jvm.tasks.ProcessResources
 
 plugins {
     base
@@ -64,15 +66,18 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
 
     // Depend on all necessary tasks from all subprojects to fix Gradle dependency ordering issues
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
+    dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
     
-    // Add safe dependencies on tasks that may exist
-    subprojects.forEach { subproject ->
-        subproject.tasks.findByName("processResources")?.let { dependsOn(it) }
-        subproject.tasks.findByName("compileKotlin")?.let { dependsOn(it) }
-        subproject.tasks.findByName("compileJava")?.let { dependsOn(it) }
-        subproject.tasks.findByName("compileTestKotlin")?.let { dependsOn(it) }
-        subproject.tasks.findByName("processTestResources")?.let { dependsOn(it) }
-    }
+    // Explicitly depend on all task types that might be required by JaCoCo
+    dependsOn(subprojects.flatMap { subproject ->
+        subproject.tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>()
+    })
+    dependsOn(subprojects.flatMap { subproject ->
+        subproject.tasks.withType<JavaCompile>()
+    })
+    dependsOn(subprojects.flatMap { subproject ->
+        subproject.tasks.withType<ProcessResources>()
+    })
 
     // Collect execution data from all subprojects
     executionData(
