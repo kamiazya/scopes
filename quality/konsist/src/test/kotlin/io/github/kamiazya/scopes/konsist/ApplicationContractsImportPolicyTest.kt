@@ -16,19 +16,20 @@ class ApplicationContractsImportPolicyTest :
 
         fun String.normalizePath() = replace('\\', '/')
 
+        val allowedFolders = listOf(
+            "/application/command/handler/",
+            "/application/query/handler/",
+            "/application/mapper/",
+            "/application/error/",
+            "/application/adapter/",
+            "/application/query/response/",
+        )
+        val allowedSpecificFiles = listOf(
+            "/application/services/ResponseFormatterService.kt",
+        )
+
         fun isAllowedApplicationBoundaryPath(path: String): Boolean {
             val p = path.normalizePath()
-            val allowedFolders = listOf(
-                "/application/command/handler/",
-                "/application/query/handler/",
-                "/application/mapper/",
-                "/application/error/",
-                "/application/adapter/",
-                "/application/query/response/",
-            )
-            val allowedSpecificFiles = listOf(
-                "/application/services/ResponseFormatterService.kt",
-            )
             return allowedFolders.any { allowed -> p.contains(allowed) } ||
                 allowedSpecificFiles.any { allowed -> p.endsWith(allowed) }
         }

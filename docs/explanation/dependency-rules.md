@@ -108,7 +108,9 @@ graph TD
   - `application/mapper/`
   - `application/error/`
   - `application/adapter/` (for context-local adapters that bridge to contracts)
+  - `application/query/response/` (for query response DTOs)
 - ❌ Do NOT import contracts from core coordination areas: `application/service/`, `application/services/`, `application/factory/`, `application/port/`, `application/util/`
+  - **Exception**: `application/services/ResponseFormatterService.kt` is allowed to import contract types for response formatting
 
 These rules are automatically verified by Konsist tests in `quality/konsist`.
 
