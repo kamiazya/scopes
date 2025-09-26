@@ -1,6 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.di.scopemanagement
 
 import io.github.kamiazya.scopes.platform.application.port.TransactionManager
+import io.github.kamiazya.scopes.platform.infrastructure.database.migration.MigrationAwareDatabaseProvider
+import io.github.kamiazya.scopes.platform.infrastructure.database.migration.MigrationConfig
 import io.github.kamiazya.scopes.platform.infrastructure.transaction.SqlDelightTransactionManager
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
@@ -17,13 +19,13 @@ import io.github.kamiazya.scopes.scopemanagement.infrastructure.adapters.ErrorMa
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.DefaultAliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.providers.DefaultWordProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.alias.generation.strategies.HaikunatorStrategy
+import io.github.kamiazya.scopes.scopemanagement.infrastructure.migration.ScopeManagementMigrationProvider
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightActiveContextRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightContextViewRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.SqlDelightScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.service.AspectQueryFilterValidator
-import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -38,15 +40,59 @@ import org.koin.dsl.module
  * - Default services following Zero-Configuration principle
  */
 val scopeManagementInfrastructureModule = module {
-    // SQLDelight Database
+    // Migration configuration
+    single<MigrationConfig>(named("scopeManagementMigrationConfig")) {
+        MigrationConfig(
+            maxRetries = 3,
+        )
+    }
+
+    // Migration provider
+    single(named("scopeManagementMigrationProvider")) {
+        { ScopeManagementMigrationProvider(logger = get()).getMigrations() }
+    }
+
+    // Migration-aware database provider
+    single<MigrationAwareDatabaseProvider<ScopeManagementDatabase>>(named("scopeManagementDatabaseProvider")) {
+        val migrationProvider: () -> List<io.github.kamiazya.scopes.platform.infrastructure.database.migration.Migration> =
+            get(named("scopeManagementMigrationProvider"))
+        val config: MigrationConfig = get(named("scopeManagementMigrationConfig"))
+        val logger: io.github.kamiazya.scopes.platform.observability.logging.Logger = get()
+
+        MigrationAwareDatabaseProvider(
+            migrationProvider = migrationProvider,
+            config = config,
+            logger = logger,
+            databaseFactory = { driver ->
+                // Schema is created by migrations; avoid double-creation here
+                ScopeManagementDatabase(driver)
+            },
+        )
+    }
+
+    // SQLDelight Database using the migration-aware provider
     single<ScopeManagementDatabase>(named("scopeManagement")) {
         val databasePath: String = get<String>(named("databasePath"))
+        val provider: MigrationAwareDatabaseProvider<ScopeManagementDatabase> = get(named("scopeManagementDatabaseProvider"))
+
         val dbPath = if (databasePath == ":memory:") {
             ":memory:"
         } else {
             "$databasePath/scope-management.db"
         }
-        SqlDelightDatabaseProvider.createDatabase(dbPath)
+
+        // Create database with migrations applied
+        kotlinx.coroutines.runBlocking {
+            provider.createDatabase(dbPath).fold(
+                ifLeft = { err ->
+                    // Fail-fast using Kotlin's error() function
+                    error("Failed to create database: ${err.message}")
+                },
+                ifRight = { database ->
+                    database
+                },
+            )
+        }
     }
 
     // Repository implementations - mix of SQLDelight and legacy SQLite
@@ -128,4 +174,10 @@ val scopeManagementInfrastructureModule = module {
             logger = get(),
         )
     }
+
+    // Note: Schema version repository and migration executor are no longer needed here
+    // They are handled internally by MigrationAwareDatabaseProvider
+
+    // Note: Migrations are now automatically run when creating the ManagedSqlDriver
+    // No need for separate MigrationManager or DatabaseMigrationBootstrapper
 }

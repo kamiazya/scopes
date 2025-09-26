@@ -20,6 +20,10 @@
       "pattern" : "logback-.*\\.xml$"
     }, {
       "pattern" : "META-INF/services/.*"
+    }, {
+      "pattern" : "migrations/.*\\.sql$"
+    }, {
+      "pattern" : "migrations/.*/.*\\.sql$"
     } ]
   },
   "bundles" : [ ]
