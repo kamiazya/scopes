@@ -48,6 +48,8 @@ subprojects {
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
         // Apply JaCoCo to all modules with Kotlin code
         apply(plugin = "jacoco")
+        // Apply SonarQube plugin to all Kotlin modules
+        apply(plugin = "org.sonarqube")
 
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             compilerOptions {
@@ -82,6 +84,15 @@ subprojects {
                         minimum = "0.60".toBigDecimal()
                     }
                 }
+            }
+        }
+        
+        // Configure SonarQube for each module
+        sonarqube {
+            properties {
+                property("sonar.sources", "src/main/kotlin")
+                property("sonar.tests", "src/test/kotlin")
+                property("sonar.java.binaries", "build/classes/kotlin/main")
             }
         }
     }
@@ -284,14 +295,10 @@ sonarqube {
         property("sonar.projectKey", "kamiazya_scopes")
         property("sonar.organization", "kamiazya")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.language", "kotlin")
-        property("sonar.sources", "src/main")
-        property("sonar.tests", "src/test")
-        property("sonar.sourceEncoding", "UTF-8")
-        property("sonar.kotlin.detekt.reportPaths", "build/reports/detekt/detekt.xml")
-        property(
-            "sonar.coverage.jacoco.xmlReportPaths",
-            "${project.layout.buildDirectory.get()}/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
-        )
+        property("sonar.projectName", "Scopes")
+        property("sonar.projectVersion", version)
+        
+        // Coverage configuration - point to the aggregated report
+        property("sonar.coverage.jacoco.xmlReportPaths", "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
     }
 }

@@ -5,6 +5,7 @@ plugins {
     base
     jacoco
     alias(libs.plugins.jacoco.report.aggregation)
+    alias(libs.plugins.sonarqube)
 }
 
 repositories {

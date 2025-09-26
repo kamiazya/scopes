@@ -47,7 +47,19 @@ jobs:
       run: ./gradlew --no-daemon --scan test jacocoTestReport
 
     - name: Generate aggregated coverage report
-      run: ./gradlew --no-daemon :coverage-report:testCodeCoverageReport
+      run: ./gradlew --no-daemon :quality-coverage-report:testCodeCoverageReport
+
+    - name: Verify coverage report exists
+      run: |
+        if [ -f "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml" ]; then
+          echo "✅ Coverage report found"
+          echo "File size: $(ls -lh quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml | awk '{print $5}')"
+        else
+          echo "❌ Coverage report not found!"
+          echo "Listing available reports:"
+          find . -name "*.xml" -path "*/jacoco/*" -type f
+          exit 1
+        fi
 
     - name: Run Detekt static analysis
       run: ./gradlew --no-daemon detekt
@@ -73,7 +85,7 @@ jobs:
         name: coverage-reports
         path: |
           **/build/reports/jacoco/
-          coverage-report/build/reports/jacoco/
+          quality/coverage-report/build/reports/jacoco/
         if-no-files-found: warn
 
     - name: Upload test results
