@@ -222,20 +222,7 @@ tasks.register("testWithCoverage") {
     finalizedBy(":quality-coverage-report:testCodeCoverageReport")
 }
 
-// Task to run SonarQube analysis with all reports
-tasks.register("sonarqubeWithCoverage") {
-    description = "Run SonarQube analysis with coverage and quality reports"
-    group = "verification"
 
-    dependsOn("testWithCoverage")
-    dependsOn("detekt")
-    finalizedBy("sonarqube")
-}
-
-// Ensure SonarQube task runs after coverage report generation
-tasks.named("sonarqube") {
-    dependsOn(":quality-coverage-report:testCodeCoverageReport")
-}
 
 // Spotless configuration
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {

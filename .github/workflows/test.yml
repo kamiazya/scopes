@@ -52,20 +52,15 @@ jobs:
     - name: Generate aggregated coverage report
       run: ./gradlew --no-daemon :quality-coverage-report:testCodeCoverageReport
 
+    - name: List coverage reports
+      run: |
+        echo "=== Aggregated coverage report ==="
+        ls -la quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/ || true
+        echo "=== Individual module reports ==="
+        find . -name "jacocoTestReport.xml" -path "*/build/reports/jacoco/*" -type f | head -20
+
     - name: Run Detekt static analysis
       run: ./gradlew --no-daemon detekt
-
-    - name: SonarCloud Scan
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: |
-        if [ -n "$SONAR_TOKEN" ]; then
-          echo "Running SonarCloud analysis..."
-          ./gradlew --no-daemon sonarqube --info
-        else
-          echo "::warning::SonarCloud analysis skipped. To enable it, set the SONAR_TOKEN secret in repository settings."
-        fi
 
     - name: Upload coverage reports
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
