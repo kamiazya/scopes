@@ -1,35 +1,50 @@
 package io.github.kamiazya.scopes.devicesync.infrastructure.sqldelight
 
-import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.github.kamiazya.scopes.devicesync.db.DeviceSyncDatabase
+import io.github.kamiazya.scopes.devicesync.infrastructure.migration.DeviceSyncMigrationProvider
+import io.github.kamiazya.scopes.platform.infrastructure.database.ManagedSqlDriver
+import io.github.kamiazya.scopes.platform.infrastructure.database.migration.applyMigrations
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
+import kotlinx.coroutines.runBlocking
 
 /**
- * Provides SQLDelight database instances for Device Synchronization.
+ * Provides SQLDelight database instances for Device Synchronization with automatic migrations.
  */
 object SqlDelightDatabaseProvider {
 
-    /**
-     * Creates a new DeviceSyncDatabase instance.
-     */
-    fun createDatabase(databasePath: String): DeviceSyncDatabase {
-        val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:$databasePath")
-
-        // Create the database schema
-        DeviceSyncDatabase.Schema.create(driver)
-
-        // Enable foreign keys
-        driver.execute(null, "PRAGMA foreign_keys=ON", 0)
-
-        return DeviceSyncDatabase(driver)
+    class ManagedDatabase(private val database: DeviceSyncDatabase, private val managedDriver: AutoCloseable) :
+        DeviceSyncDatabase by database,
+        AutoCloseable {
+        override fun close() = managedDriver.close()
     }
 
-    /**
-     * Creates an in-memory database for testing.
-     */
+    fun createDatabase(databasePath: String): DeviceSyncDatabase {
+        val managedDriver = ManagedSqlDriver.createWithDefaults(databasePath)
+        val driver = managedDriver.driver
+
+        val logger = ConsoleLogger("DeviceSyncDB")
+        val migrations = DeviceSyncMigrationProvider(logger).getMigrations()
+        runBlocking {
+            driver.applyMigrations(migrations, logger).fold(
+                ifLeft = { err -> error("Migration failed: ${err.message}") },
+                ifRight = { },
+            )
+        }
+        return ManagedDatabase(DeviceSyncDatabase(driver), managedDriver)
+    }
+
     fun createInMemoryDatabase(): DeviceSyncDatabase {
-        val driver: SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        DeviceSyncDatabase.Schema.create(driver)
-        return DeviceSyncDatabase(driver)
+        val managedDriver = ManagedSqlDriver(":memory:")
+        val driver = managedDriver.driver
+
+        val logger = ConsoleLogger("DeviceSyncDB-InMemory")
+        val migrations = DeviceSyncMigrationProvider(logger).getMigrations()
+        runBlocking {
+            driver.applyMigrations(migrations, logger).fold(
+                ifLeft = { err -> error("Migration failed: ${err.message}") },
+                ifRight = { },
+            )
+        }
+        return ManagedDatabase(DeviceSyncDatabase(driver), managedDriver)
     }
 }

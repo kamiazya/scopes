@@ -1,0 +1,71 @@
+-- Schema Versions table for tracking applied database migrations
+CREATE TABLE IF NOT EXISTS schema_versions (
+    version INTEGER PRIMARY KEY NOT NULL,
+    description TEXT NOT NULL,
+    applied_at INTEGER NOT NULL,
+    execution_time_ms INTEGER NOT NULL
+);
+
+-- Index for efficient version ordering queries
+CREATE INDEX IF NOT EXISTS idx_schema_versions_applied_at ON schema_versions(applied_at);
+
+-- Insert a new applied migration record
+insertMigration:
+INSERT INTO schema_versions (version, description, applied_at, execution_time_ms)
+VALUES (?, ?, ?, ?);
+
+-- Find migration by version
+findByVersion:
+SELECT *
+FROM schema_versions
+WHERE version = ?;
+
+-- Get all applied migrations ordered by version
+getAllApplied:
+SELECT *
+FROM schema_versions
+ORDER BY version ASC;
+
+-- Get all applied migrations ordered by version with limit
+getAllAppliedPaged:
+SELECT *
+FROM schema_versions
+ORDER BY version ASC
+LIMIT ? OFFSET :value_;
+
+-- Get the current (highest) migration version
+getCurrentVersion:
+SELECT COALESCE(MAX(version), 0) AS version
+FROM schema_versions;
+
+
+-- Check if a specific migration version exists
+existsByVersion:
+SELECT COUNT(*) > 0 AS result
+FROM schema_versions
+WHERE version = ?;
+
+
+-- Count total applied migrations
+countApplied:
+SELECT COUNT(*)
+FROM schema_versions;
+
+-- Get migration statistics
+getMigrationStats:
+SELECT 
+    COUNT(*) AS count,
+    MIN(version) AS min_version,
+    MAX(version) AS max_version,
+    MIN(applied_at) AS min_applied_at,
+    MAX(applied_at) AS max_applied_at,
+    SUM(execution_time_ms) AS total_execution_time
+FROM schema_versions;
+
+-- Validate migration integrity by checking for gaps
+validateMigrationSequence:
+SELECT 
+    version,
+    version - LAG(version, 1, 0) OVER (ORDER BY version) AS gap
+FROM schema_versions
+ORDER BY version;

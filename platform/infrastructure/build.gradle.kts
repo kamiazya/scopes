@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    alias(libs.plugins.sqldelight)
 }
 
 dependencies {
@@ -24,8 +25,18 @@ dependencies {
     // Testing
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+sqldelight {
+    databases {
+        create("PlatformDatabase") {
+            packageName.set("io.github.kamiazya.scopes.platform.db")
+            dialect(libs.sqldelight.dialect.sqlite)
+        }
+    }
 }
