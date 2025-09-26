@@ -222,8 +222,6 @@ tasks.register("testWithCoverage") {
     finalizedBy(":quality-coverage-report:testCodeCoverageReport")
 }
 
-
-
 // Spotless configuration
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
@@ -306,7 +304,7 @@ sonarqube {
         // Coverage configuration - use the aggregated report
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml"
+            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
         )
 
         // Encoding
