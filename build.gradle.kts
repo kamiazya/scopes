@@ -93,6 +93,8 @@ subprojects {
                 property("sonar.sources", "src/main/kotlin")
                 property("sonar.tests", "src/test/kotlin")
                 property("sonar.java.binaries", "build/classes/kotlin/main")
+                // Each module should report its own JaCoCo XML report path
+                property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
             }
         }
     }
@@ -298,10 +300,27 @@ sonarqube {
         property("sonar.projectName", "Scopes")
         property("sonar.projectVersion", version)
 
-        // Coverage configuration - point to the aggregated report
+        // Source and test configuration
+        property("sonar.sources", ".")
+        property("sonar.inclusions", "**/*.kt,**/*.kts")
+        property("sonar.exclusions", "**/build/**,**/test/**,**/*Test.kt,**/*Spec.kt,**/generated/**,**/node_modules/**")
+        property("sonar.tests", ".")
+        property("sonar.test.inclusions", "**/*Test.kt,**/*Spec.kt,**/test/**/*.kt")
+
+        // Language settings
+        property("sonar.language", "kotlin")
+        property("sonar.kotlin.detekt.reportPaths", "**/build/reports/detekt/detekt.xml")
+
+        // Coverage configuration - absolute path from project root
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+            "${projectDir}/quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
         )
+
+        // Encoding
+        property("sonar.sourceEncoding", "UTF-8")
+
+        // Duplication detection
+        property("sonar.cpd.exclusions", "**/*Test.kt,**/*Spec.kt")
     }
 }
