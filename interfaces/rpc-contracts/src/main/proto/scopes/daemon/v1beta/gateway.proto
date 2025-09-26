@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package scopes.daemon.v1beta;
+
+option java_multiple_files = true;
+option java_package = "io.github.kamiazya.scopes.rpc.v1beta";
+option java_outer_classname = "GatewayProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// TaskGatewayService provides a generic gateway for command and query execution
+service TaskGatewayService {
+  // ExecuteCommand executes a command and returns the result
+  rpc ExecuteCommand(Envelope) returns (Envelope);
+
+  // Query executes a query and returns the result
+  rpc Query(Envelope) returns (Envelope);
+
+  // StreamEvents opens a bidirectional stream for real-time events (future)
+  rpc StreamEvents(stream Envelope) returns (stream Envelope);
+}
+
+// Envelope is a generic container for all requests and responses
+message Envelope {
+  // Unique identifier for this message
+  string id = 1;
+
+  // The type/kind of payload (e.g., "scopes.commands.CreateScope")
+  string kind = 2;
+
+  // Version of the payload schema (e.g., "v1", "v2")
+  string version = 3;
+
+  // Idempotency key for deduplication
+  string idempotency_key = 4;
+
+  // Generic headers for metadata
+  map<string, string> headers = 5;
+
+  // The actual payload (JSON/protobuf/CBOR bytes)
+  bytes payload = 6;
+
+  // Timestamp when this envelope was created
+  google.protobuf.Timestamp timestamp = 7;
+
+  // Correlation ID for tracing requests across services
+  string correlation_id = 8;
+
+  // Optional error information if this is an error response
+  ErrorInfo error = 9;
+}
+
+// ErrorInfo contains error details
+message ErrorInfo {
+  // Error code following gRPC status codes
+  int32 code = 1;
+
+  // Human-readable error message
+  string message = 2;
+
+  // Error details (can be structured data)
+  google.protobuf.Any details = 3;
+
+  // Stack trace (only in debug mode)
+  repeated string stack_trace = 4;
+
+  // Error source (which service/component)
+  string source = 5;
+}
+
+// Common request/response types that might be useful
+
+// HealthCheck for service health monitoring
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  ServingStatus status = 1;
+  map<string, string> metadata = 2;
+}
+
+// Progress reporting for long-running operations
+message ProgressUpdate {
+  // Operation ID this progress relates to
+  string operation_id = 1;
+
+  // Progress percentage (0-100)
+  int32 percentage = 2;
+
+  // Current status message
+  string message = 3;
+
+  // Estimated time remaining in seconds
+  int32 estimated_seconds_remaining = 4;
+
+  // Additional metadata
+  map<string, string> metadata = 5;
+}
+
+// BatchRequest for executing multiple operations
+message BatchRequest {
+  // List of envelopes to process
+  repeated Envelope requests = 1;
+
+  // Whether to stop on first error
+  bool stop_on_error = 2;
+
+  // Whether to process in parallel
+  bool parallel = 3;
+}
+
+message BatchResponse {
+  // Results in the same order as requests
+  repeated Envelope responses = 1;
+
+  // Summary statistics
+  int32 total = 2;
+  int32 succeeded = 3;
+  int32 failed = 4;
+}

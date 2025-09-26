@@ -20,6 +20,9 @@ include(
     ":platform-infrastructure",
     // Interface layer
     ":interfaces-cli",
+    ":interfaces-rpc-contracts",
+    ":interfaces-daemon-grpc",
+    ":interfaces-cli-grpc",
     // Contracts layer
     ":contracts-scope-management",
     ":contracts-user-preferences",
@@ -105,6 +108,9 @@ project(":platform-infrastructure").projectDir = file("platform/infrastructure")
 // Interface layer
 project(":interfaces-cli").projectDir = file("interfaces/cli")
 project(":interfaces-mcp").projectDir = file("interfaces/mcp")
+project(":interfaces-rpc-contracts").projectDir = file("interfaces/rpc-contracts")
+project(":interfaces-daemon-grpc").projectDir = file("interfaces/daemon-grpc")
+project(":interfaces-cli-grpc").projectDir = file("interfaces/cli-grpc")
 
 // Contracts layer
 project(":contracts-scope-management").projectDir = file("contracts/scope-management")

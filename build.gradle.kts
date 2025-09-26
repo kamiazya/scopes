@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.cyclonedx.bom)
     alias(libs.plugins.spdx.sbom)
+    alias(libs.plugins.protobuf) apply false
 }
 
 group = "io.github.kamiazya"

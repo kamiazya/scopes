@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package scopes.daemon.v1beta;
+
+option java_multiple_files = true;
+option java_package = "io.github.kamiazya.scopes.rpc.v1beta";
+option java_outer_classname = "ControlProto";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// ControlService provides basic daemon control operations
+service ControlService {
+  // Ping checks if the daemon is alive and responding
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  // GetVersion returns version information about the daemon
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+
+  // Shutdown gracefully stops the daemon
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+// PingRequest is empty - just checks if daemon is alive
+message PingRequest {}
+
+// PingResponse contains daemon status information
+message PingResponse {
+  // Server timestamp when ping was received
+  google.protobuf.Timestamp server_time = 1;
+  
+  // Process ID of the daemon
+  int64 pid = 2;
+  
+  // Uptime in seconds since daemon started
+  int64 uptime_seconds = 3;
+}
+
+// GetVersionRequest is empty
+message GetVersionRequest {}
+
+// GetVersionResponse contains version information
+message GetVersionResponse {
+  // Application version (e.g., "0.1.0")
+  string app_version = 1;
+  
+  // API version (e.g., "v1beta")
+  string api_version = 2;
+  
+  // Git commit hash (optional)
+  string git_revision = 3;
+  
+  // Build timestamp
+  google.protobuf.Timestamp build_time = 4;
+  
+  // Build platform (e.g., "linux/amd64")
+  string build_platform = 5;
+}
+
+// ShutdownRequest contains optional shutdown parameters
+message ShutdownRequest {
+  // Reason for shutdown (for logging)
+  string reason = 1;
+  
+  // Grace period in seconds before forcing shutdown
+  int32 grace_period_seconds = 2;
+  
+  // Whether to save state before shutdown
+  bool save_state = 3;
+}
+
+// ShutdownResponse confirms shutdown initiation
+message ShutdownResponse {
+  // Whether shutdown was accepted
+  bool accepted = 1;
+  
+  // Message if shutdown was rejected
+  string message = 2;
+  
+  // Estimated time until shutdown completes
+  int32 estimated_seconds = 3;
+}
