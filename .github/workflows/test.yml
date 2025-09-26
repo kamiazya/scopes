@@ -43,24 +43,24 @@ jobs:
         validate-wrappers: true
         cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-    - name: Run tests with coverage
-      run: ./gradlew --no-daemon --scan test
-
-    - name: Generate JaCoCo reports
-      run: ./gradlew --no-daemon jacocoTestReport
-
-    - name: Generate aggregated coverage report
-      run: ./gradlew --no-daemon :quality-coverage-report:testCodeCoverageReport
-
-    - name: List coverage reports
-      run: |
-        echo "=== Aggregated coverage report ==="
-        ls -la quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/ || true
-        echo "=== Individual module reports ==="
-        find . -name "jacocoTestReport.xml" -path "*/build/reports/jacoco/*" -type f | head -20
+    - name: Run tests and generate coverage reports
+      run: ./gradlew --no-daemon test jacocoTestReport :quality-coverage-report:testCodeCoverageReport
 
     - name: Run Detekt static analysis
       run: ./gradlew --no-daemon detekt
+
+    - name: SonarCloud Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        if [ -n "$SONAR_TOKEN" ]; then
+          echo "Running SonarCloud analysis with coverage..."
+          ./gradlew --no-daemon sonarqube \
+            -Dsonar.coverage.jacoco.xmlReportPaths=quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml
+        else
+          echo "::warning::SONAR_TOKEN is not set. Skipping SonarCloud analysis."
+        fi
 
     - name: Upload coverage reports
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

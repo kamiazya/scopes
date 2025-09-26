@@ -303,13 +303,10 @@ sonarqube {
         property("sonar.language", "kotlin")
         property("sonar.kotlin.detekt.reportPaths", "**/build/reports/detekt/detekt.xml")
 
-        // Coverage configuration - include both individual and aggregated reports
+        // Coverage configuration - use the aggregated report
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            listOf(
-                "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
-                "**/build/reports/jacoco/test/jacocoTestReport.xml"
-            ).joinToString(",")
+            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml"
         )
 
         // Encoding
