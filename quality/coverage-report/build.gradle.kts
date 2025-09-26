@@ -65,18 +65,17 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
     group = "verification"
 
     // Depend on all necessary tasks to fix Gradle dependency ordering issues
-    dependsOn(subprojects.map { it.tasks.withType<Test>() })
-    dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
-    dependsOn(subprojects.map { it.tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>() })
-    dependsOn(subprojects.map { it.tasks.withType<JavaCompile>() })
-    dependsOn(subprojects.map { it.tasks.withType<ProcessResources>() })
-    
-    // Explicitly depend on the problematic tasks mentioned in CI errors
-    dependsOn(":apps-scopes:compileJava")
-    dependsOn(":apps-scopes:compileKotlin")
-    dependsOn(":apps-scopes:compileTestKotlin")
-    dependsOn(":apps-scopes:test")
-    dependsOn(":apps-scopes:jacocoTestReport")
+    // First ensure all subprojects have completed their compilation and testing
+    rootProject.allprojects.forEach { project ->
+        project.tasks.findByName("compileJava")?.let { dependsOn(it) }
+        project.tasks.findByName("compileKotlin")?.let { dependsOn(it) }
+        project.tasks.findByName("compileTestJava")?.let { dependsOn(it) }
+        project.tasks.findByName("compileTestKotlin")?.let { dependsOn(it) }
+        project.tasks.findByName("processResources")?.let { dependsOn(it) }
+        project.tasks.findByName("processTestResources")?.let { dependsOn(it) }
+        project.tasks.findByName("test")?.let { dependsOn(it) }
+        project.tasks.findByName("jacocoTestReport")?.let { dependsOn(it) }
+    }
 
     // Collect execution data from all subprojects
     executionData(
