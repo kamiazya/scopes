@@ -66,7 +66,10 @@ graph TB
     ADAPTERS --> SMP
     ADAPTERS --> UPP
     ADAPTERS --> UC
-    
+
+    %% Application boundary may use Contracts
+    CMD --> CONTRACTS
+
     UC --> CMD
     CMD --> AGG
     CMD --> REPO
@@ -117,6 +120,9 @@ Provides stable interfaces between bounded contexts:
 - **Dependencies**: None (pure interfaces)
 - **Testing**: Contract compliance tests
 
+Note on application-to-contracts imports:
+- The Application layer is allowed to reference contract types at the boundary (e.g., handlers, mappers, error mapping). This reduces duplicated error/DTO definitions while keeping the Domain pure. See Dependency Rules for the exact constraints.
+
 #### User Preferences Port (`contracts/user-preferences/`)
 - **Location**: `contracts/user-preferences/`
 - **Contents**:
@@ -157,6 +163,9 @@ The core bounded context handling all scope-related operations.
   - **Port Interfaces**: `TransactionManager`
 - **Dependencies**: Domain layer and platform application commons
 - **Testing**: Integration tests for workflows
+
+Additional note:
+- Boundary components in Application (command/query handlers, mappers, error mappers, and context-specific adapters) may reference contract types (commands/queries/results/errors) to avoid duplicate models. Core application services and ports should remain contract-agnostic.
 
 ##### Infrastructure Layer (Technical Implementations)
 - **Location**: `contexts/scope-management/infrastructure/`
