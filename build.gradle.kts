@@ -219,7 +219,7 @@ tasks.register("testWithCoverage") {
     }
 
     // Generate aggregated coverage report
-    finalizedBy(":coverage-report:testCodeCoverageReport")
+    finalizedBy(":quality-coverage-report:testCodeCoverageReport")
 }
 
 // Task to run SonarQube analysis with all reports
@@ -230,6 +230,11 @@ tasks.register("sonarqubeWithCoverage") {
     dependsOn("testWithCoverage")
     dependsOn("detekt")
     finalizedBy("sonarqube")
+}
+
+// Ensure SonarQube task runs after coverage report generation
+tasks.named("sonarqube") {
+    dependsOn(":quality-coverage-report:testCodeCoverageReport")
 }
 
 // Spotless configuration
@@ -311,10 +316,13 @@ sonarqube {
         property("sonar.language", "kotlin")
         property("sonar.kotlin.detekt.reportPaths", "**/build/reports/detekt/detekt.xml")
 
-        // Coverage configuration - absolute path from project root
+        // Coverage configuration - include both individual and aggregated reports
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "$projectDir/quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+            listOf(
+                "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+                "**/build/reports/jacoco/test/jacocoTestReport.xml"
+            ).joinToString(",")
         )
 
         // Encoding
