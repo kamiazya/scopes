@@ -64,8 +64,10 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
 
     // Depend on test tasks from all subprojects
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
-    // Also depend on processResources tasks to fix Gradle dependency ordering issue
+    // Also depend on compilation and resource processing tasks to fix Gradle dependency ordering issues
     dependsOn(subprojects.map { it.tasks.named("processResources") })
+    dependsOn(subprojects.map { it.tasks.named("compileKotlin") })
+    dependsOn(subprojects.map { it.tasks.named("compileJava") })
 
     // Collect execution data from all subprojects
     executionData(
