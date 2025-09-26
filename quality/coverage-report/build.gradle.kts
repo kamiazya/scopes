@@ -62,12 +62,17 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
     description = "Generate aggregated code coverage report for all modules"
     group = "verification"
 
-    // Depend on test tasks from all subprojects
+    // Depend on all necessary tasks from all subprojects to fix Gradle dependency ordering issues
     dependsOn(subprojects.map { it.tasks.withType<Test>() })
-    // Also depend on compilation and resource processing tasks to fix Gradle dependency ordering issues
-    dependsOn(subprojects.map { it.tasks.named("processResources") })
-    dependsOn(subprojects.map { it.tasks.named("compileKotlin") })
-    dependsOn(subprojects.map { it.tasks.named("compileJava") })
+    
+    // Add safe dependencies on tasks that may exist
+    subprojects.forEach { subproject ->
+        subproject.tasks.findByName("processResources")?.let { dependsOn(it) }
+        subproject.tasks.findByName("compileKotlin")?.let { dependsOn(it) }
+        subproject.tasks.findByName("compileJava")?.let { dependsOn(it) }
+        subproject.tasks.findByName("compileTestKotlin")?.let { dependsOn(it) }
+        subproject.tasks.findByName("processTestResources")?.let { dependsOn(it) }
+    }
 
     // Collect execution data from all subprojects
     executionData(
