@@ -100,7 +100,7 @@ Each context follows DDD with three layers:
 - **infrastructure**: Repositories, external service adapters
 
 #### Cross-Cutting Concerns
-- **contracts-***: Inter-context communication interfaces
+- **contracts-***: Inter-context communication interfaces (aka Application Contracts / Primary Ports)
 - **interfaces-***: User-facing adapters (CLI, API)
 
 For detailed dependency rules, see [Dependency Rules](docs/explanation/dependency-rules.md).

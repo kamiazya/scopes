@@ -77,6 +77,7 @@ graph TD
 ### 1. Layer Dependencies
 - **Interfaces Layer** → Can depend on: Contracts, Application layer
 - **Application Layer** → Can depend on: Domain layer, Platform Application Commons
+  - Application boundary components MAY depend on Contracts (ports, DTOs, errors). See “Allowed Application → Contracts imports”.
 - **Domain Layer** → Can depend on: Platform Domain Commons
 - **Infrastructure Layer** → Can depend on: Domain layer, Application ports/DTOs (DIP), Platform Infrastructure, Platform Commons
 - **Platform Modules** → Self-contained, minimal cross-dependencies
@@ -100,6 +101,19 @@ graph TD
 - ❌ Direct context-to-context dependencies (must use contracts, except event-store value objects)
 - ❌ `interfaces` → `domain` or `infrastructure` layers
 
+#### Allowed Application → Contracts imports
+- ✅ Within `contexts/*/application/` only the following directories may import `io.github.kamiazya.scopes.contracts.*`:
+  - `application/command/handler/`
+  - `application/query/handler/`
+  - `application/mapper/`
+  - `application/error/`
+  - `application/adapter/` (for context-local adapters that bridge to contracts)
+  - `application/query/response/` (for query response DTOs)
+- ❌ Do NOT import contracts from core coordination areas: `application/service/`, `application/services/`, `application/factory/`, `application/port/`, `application/util/`
+  - **Exception**: `application/services/ResponseFormatterService.kt` is allowed to import contract types for response formatting
+
+These rules are automatically verified by Konsist tests in `quality/konsist`.
+
 ### 5. Architectural Patterns Exceptions
 
 #### CQRS Pattern
@@ -109,6 +123,9 @@ In this CQRS implementation, infrastructure adapters inject and wrap application
 - ✅ Infrastructure can import Application **command/query DTOs**
 - The adapters act as thin wrappers implementing the contract interfaces
 - Infrastructure must only import from its own context's application layer
+
+#### Rationale
+- To avoid duplicated error and result types at the boundary, Application handlers and mappers may directly use contract types, while core application services stay contract-agnostic. This retains a clean domain core and pragmatic integration surface.
 
 #### Dependency Inversion Principle (DIP)
 Infrastructure implements ports defined in the Application layer:
