@@ -41,7 +41,7 @@ netty-codec-http2 = "4.2.6.Final"
 
 # Testing and coverage
 jacoco = "0.8.12"
-sonarqube = "6.0.1.5171"
+sonarqube = "6.3.1.5724"
 
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
