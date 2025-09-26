@@ -41,14 +41,6 @@ class MigrationAwareDatabaseProvider<T>(
         val managedDriver = ManagedSqlDriver.createWithDefaults(databasePath)
         val driver = managedDriver.driver
 
-        // Explicitly apply PRAGMA settings to ensure they are set
-        // This is redundant with connection properties but ensures settings are applied
-        driver.execute(null, "PRAGMA foreign_keys = ON", 0)
-        driver.execute(null, "PRAGMA journal_mode = WAL", 0)
-        driver.execute(null, "PRAGMA synchronous = NORMAL", 0)
-        driver.execute(null, "PRAGMA cache_size = -64000", 0)
-        driver.execute(null, "PRAGMA temp_store = MEMORY", 0)
-
         // Initialize migration components
         val platformDatabase = io.github.kamiazya.scopes.platform.db.PlatformDatabase(driver)
         val executor = SqlDelightMigrationExecutor(driver)
@@ -98,11 +90,6 @@ class MigrationAwareDatabaseProvider<T>(
 
         val managedDriver = ManagedSqlDriver(":memory:")
         val driver = managedDriver.driver
-
-        // Apply PRAGMA settings for in-memory database
-        driver.execute(null, "PRAGMA foreign_keys = ON", 0)
-        driver.execute(null, "PRAGMA synchronous = OFF", 0) // OFF is safe for in-memory
-        driver.execute(null, "PRAGMA temp_store = MEMORY", 0)
 
         // Initialize migration components
         val platformDatabase = io.github.kamiazya.scopes.platform.db.PlatformDatabase(driver)

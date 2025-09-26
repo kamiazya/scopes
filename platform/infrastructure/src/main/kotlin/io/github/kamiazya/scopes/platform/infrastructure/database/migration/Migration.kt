@@ -1,8 +1,8 @@
 package io.github.kamiazya.scopes.platform.infrastructure.database.migration
 
 import arrow.core.Either
-import io.github.kamiazya.scopes.platform.commons.time.Instant
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 

@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS scope_aliases (
 
 -- Scope aliases indexes
 CREATE INDEX IF NOT EXISTS idx_scope_aliases_scope_id ON scope_aliases(scope_id);
-CREATE INDEX IF NOT EXISTS idx_scope_aliases_alias_name ON scope_aliases(alias_name);
+-- idx_scope_aliases_alias_name is redundant - alias_name already has UNIQUE constraint
 CREATE INDEX IF NOT EXISTS idx_scope_aliases_alias_type ON scope_aliases(alias_type);
 
 -- Scope aspects table (align with SQLDelight schema)
 CREATE TABLE IF NOT EXISTS scope_aspects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     scope_id TEXT NOT NULL,
     aspect_key TEXT NOT NULL,
     aspect_value TEXT NOT NULL,
@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS context_views (
 );
 
 -- Context views indexes
-CREATE INDEX IF NOT EXISTS idx_context_views_key ON context_views(key);
-CREATE INDEX IF NOT EXISTS idx_context_views_name ON context_views(name);
+-- idx_context_views_key is redundant - key already has UNIQUE constraint
+-- idx_context_views_name is redundant - name already has UNIQUE constraint
 CREATE INDEX IF NOT EXISTS idx_context_views_created_at ON context_views(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_context_views_updated_at ON context_views(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_context_views_key_filter ON context_views(key, filter) WHERE filter IS NOT NULL;
