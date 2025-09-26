@@ -1,5 +1,32 @@
 # scopes
 
+## 0.0.3
+
+### Patch Changes
+
+- [#273](https://github.com/kamiazya/scopes/pull/273) [`59d2a68`](https://github.com/kamiazya/scopes/commit/59d2a68fee47af32df2780afe64e8978f96b7fc5) Thanks [@kamiazya](https://github.com/kamiazya)! - Clarify application-to-contracts import policy and add enforcement
+
+  - Document that Application boundary components (handlers, mappers, error mappers) may import contract types
+  - Add Konsist test to automatically enforce import rules
+  - Update architecture diagrams to reflect allowed dependencies
+  - Maintain domain purity while avoiding duplicate DTOs at boundaries
+
+- [#267](https://github.com/kamiazya/scopes/pull/267) [`d0c82e9`](https://github.com/kamiazya/scopes/commit/d0c82e9bc389c12032ed276790ddc14ae97639fc) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: Upgrade to Clikt 5.0.3 and migrate deprecated APIs
+
+  - Update Clikt version from 4.4.0 to 5.0.3 for improved CLI functionality
+  - Migrate all CLI commands to property-based configuration (Clikt 5.x requirement)
+  - Fix deprecated echo(err=true) usage across multiple command files
+  - Update Native Image configuration for Mordant terminal interface compatibility
+  - Improve exit handling by using parse() instead of main() for proper error handling
+
+- [#272](https://github.com/kamiazya/scopes/pull/272) [`042f732`](https://github.com/kamiazya/scopes/commit/042f73206699a7b52ca8a758930e1d512e8a459e) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix version-and-release workflow to handle GitHub API changes
+
+  The workflow was checking for a 'merged' field that no longer exists in the GitHub API response.
+  Updated to check 'merged_at' field instead to properly detect merged Version PRs.
+
+  This fixes the issue where release tags were not being created automatically after merging Version PRs.
+  EOF < /dev/null
+
 ## 0.0.2
 
 ### Patch Changes
