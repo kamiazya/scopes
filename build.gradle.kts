@@ -314,7 +314,7 @@ sonarqube {
         // Coverage configuration - absolute path from project root
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "${projectDir}/quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+            "$projectDir/quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
         )
 
         // Encoding
