@@ -38,8 +38,8 @@ Perfect for most users - contains everything needed for your specific platform:
 | Linux | ARM64 | `scopes-vX.X.X-linux-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
 | macOS | x64 (Intel) | `scopes-vX.X.X-darwin-x64-bundle.tar.gz` | Binary + installer + SBOM + verification |
 | macOS | ARM64 (Apple Silicon) | `scopes-vX.X.X-darwin-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
-| Windows | x64 | `scopes-vX.X.X-win32-x64-bundle.tar.gz` | Binary + installer + SBOM + verification |
-| Windows | ARM64 | `scopes-vX.X.X-win32-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| Windows | x64 | `scopes-vX.X.X-win32-x64-bundle.zip` | Binary + installer + SBOM + verification |
+| Windows | ARM64 | `scopes-vX.X.X-win32-arm64-bundle.zip` | Binary + installer + SBOM + verification |
 
 ### 🏢 Enterprise: Unified Distribution Package (~260MB)
 For multi-platform deployments or offline enterprise installations:
@@ -51,17 +51,11 @@ All releases include cryptographic supply chain verification:
 
 ## 🚀 Quick Start
 
-### Linux/macOS (One-liner)
-```bash
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
-```
+### Recommended Installation
 
-### Windows PowerShell (One-liner)
-```powershell
-iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 | iex
-```
+Download the platform-specific bundle package for your system from GitHub Releases and follow the included installation instructions.
 
-### Offline Installation
+### Installation Options
 
 #### Option 1: Platform-Specific Bundle (Recommended)
 Download the appropriate bundle for your platform from GitHub Releases:
@@ -90,20 +84,18 @@ All installation methods provide **integrated cryptographic verification**:
 - ✅ **Automatic Verification** - No manual steps required
 - ✅ **Unified Package Integrity** - Single package checksum for simplified verification
 
-## 📋 Available Scripts
+## 📋 Available Files
 
-### Primary Installation Scripts
-- **`install.sh`** - Main installer that uses unified distribution package (recommended)
-- **`install-unified.sh`** - Explicit unified package installer
-- **`install.ps1`** - PowerShell installation for Windows
+### PowerShell Installation Script
+- **`install.ps1`** - PowerShell installation for Windows (manual installation guide)
 
 ### Distribution Package Contents
 - **`offline/install.sh`** - Installer included in distribution package
 - **`offline/README.md`** - Distribution package documentation
 
-### Verification Scripts  
-- **`verify-release.sh`** - Standalone verification for downloaded releases (Unix)
-- **`Verify-Release.ps1`** - Standalone verification for PowerShell
+### Documentation
+- **`README.md`** - Installation guide and package overview
+- **`verify-README.md`** - Verification procedures documentation
 
 ## ⚙️ Environment Variables
 
@@ -133,53 +125,50 @@ export SCOPES_SKIP_VERIFICATION=false     # Skip SLSA verification
 
 ### Basic Installation
 ```bash
-# Download and install latest version
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+# Download platform-specific bundle from GitHub Releases
+# Example for Linux x64
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
+./install.sh
 ```
 
-### Custom Version
+### Custom Installation Directory
 ```bash
-# Install specific version
-export SCOPES_VERSION=v1.0.0
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
-```
-
-### Custom Directory (No sudo required)
-```bash
-# Install to user directory
+# Install to user directory (no sudo required)
 export SCOPES_INSTALL_DIR=$HOME/.local/bin
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+./install.sh
 ```
 
 ### Enterprise/CI Installation
 ```bash
 # Automated installation for CI/CD
-export SCOPES_VERSION=v1.0.0
 export SCOPES_FORCE_INSTALL=true
 export SCOPES_INSTALL_DIR=/usr/local/bin
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
+./install.sh
 ```
 
-### Fork/Custom Repository
+### Multi-Platform Enterprise Installation
 ```bash
-# Install from forked repository
-export SCOPES_GITHUB_REPO=myorg/scopes-fork
-export SCOPES_VERSION=v1.0.0-custom
-curl -sSL https://raw.githubusercontent.com/myorg/scopes-fork/main/install/install.sh | sh
+# Download unified package for enterprise environments
+tar -xzf scopes-v1.0.0-dist.tar.gz
+cd scopes-v1.0.0-dist
+./install.sh
 ```
 
 ## 🛠️ Advanced Usage
 
-### Download and Inspect Before Running
+### Bundle Inspection Before Installation
 ```bash
-# Download script for inspection
-curl -sSL -o install.sh https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh
+# Download and extract platform bundle for inspection
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-linux-x64-bundle.tar.gz
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
 
-# Review the script
+# Review the installation script and documentation
 less install.sh
+less README.md
 
 # Run after inspection
-chmod +x install.sh
 ./install.sh
 ```
 
@@ -195,8 +184,13 @@ wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/multiple.intoto
 tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
 cd scopes-v1.0.0-linux-x64-bundle
 
-# Use included verification tools
-./verify-release.sh --binary scopes-v1.0.0-linux-x64 --hash-file binary-hash-linux-x64.txt --provenance ../multiple.intoto.jsonl
+# Verify using included hash file and SLSA provenance
+sha256sum -c verification/binary-hash-linux-x64.txt
+
+# Optional: Verify SLSA provenance (requires slsa-verifier)
+slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
+  --provenance-path verification/multiple.intoto.jsonl \
+  --source-uri github.com/kamiazya/scopes
 
 # For other platforms, replace with appropriate bundle:
 # macOS Intel: scopes-v1.0.0-darwin-x64-bundle.tar.gz
@@ -210,23 +204,32 @@ cd scopes-v1.0.0-linux-x64-bundle
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-dist.tar.gz
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/multiple.intoto.jsonl
 
-# Extract and verify all platforms
+# Extract and verify unified package
 tar -xzf scopes-v1.0.0-dist.tar.gz
 cd scopes-v1.0.0-dist
-./verify-all-platforms.sh --provenance ../multiple.intoto.jsonl
+
+# The installation script handles verification automatically
+./install.sh
+
+# Manual verification of specific binaries
+sha256sum -c verification/binary-hash-*.txt
 ```
 
 ### Windows PowerShell Advanced
 ```powershell
-# Download and inspect
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1" -OutFile "install.ps1"
-Get-Content install.ps1 | Select-Object -First 50  # Review first 50 lines
+# Download and extract Windows bundle
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-win32-x64-bundle.zip" -OutFile "scopes-bundle.zip"
+Expand-Archive scopes-bundle.zip -DestinationPath .
+cd scopes-*-bundle
 
-# Run with parameters
-.\install.ps1 -Version v1.0.0 -InstallDir "C:\Tools\Scopes" -Verbose
+# Review bundle contents and documentation
+Get-Content README.md | Select-Object -First 50
+Get-Content install.ps1 | Select-Object -First 50
+
+# Run with custom parameters
+.\install.ps1 -InstallDir "C:\Tools\Scopes" -Verbose
 
 # Or with environment variables
-$env:SCOPES_VERSION='v1.0.0'
 $env:SCOPES_INSTALL_DIR='C:\Tools\Scopes'
 .\install.ps1
 ```
@@ -234,9 +237,10 @@ $env:SCOPES_INSTALL_DIR='C:\Tools\Scopes'
 ## 🔧 Prerequisites
 
 ### Linux/macOS
-- `curl` or `wget` (for downloads)
+- `wget` or browser (for downloading bundle packages)
+- `tar` and `gzip` (for extracting bundle packages)
 - `sha256sum` or `shasum` (for hash verification)
-- `go` (optional, for SLSA verification - will be auto-installed if available)
+- `go` (optional, for SLSA verification)
 
 ### Windows
 - **PowerShell**: PowerShell 5.1+ or PowerShell Core

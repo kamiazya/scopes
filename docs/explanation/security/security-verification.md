@@ -26,8 +26,8 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
      - Linux ARM64: `scopes-v1.0.0-linux-arm64-bundle.tar.gz`
      - macOS x64: `scopes-v1.0.0-darwin-x64-bundle.tar.gz`
      - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64-bundle.tar.gz`
-     - Windows x64: `scopes-v1.0.0-win32-x64-bundle.tar.gz`
-     - Windows ARM64: `scopes-v1.0.0-win32-arm64-bundle.tar.gz`
+     - Windows x64: `scopes-v1.0.0-win32-x64-bundle.zip`
+     - Windows ARM64: `scopes-v1.0.0-win32-arm64-bundle.zip`
    - Or download the unified package: `scopes-v1.0.0-dist.tar.gz`
    - Download the provenance file (`multiple.intoto.jsonl`)
 
@@ -59,67 +59,82 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    PASSED: Verified SLSA provenance
    ```
 
-### One-Liner Installation (Recommended)
+### Platform Bundle Installation (Recommended)
 
-The easiest and most secure way to install Scopes is using our one-liner installation scripts that include automatic verification:
+The most secure and efficient way to install Scopes is using platform-specific bundle packages that include automatic verification:
 
-#### Linux/macOS/WSL (Bash)
+#### Linux/macOS/WSL
 ```bash
-# One-liner installation with automatic verification
-curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.sh | sh
-```
+# Download platform-specific bundle (example for Linux x64)
+wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-v1.0.0-linux-x64-bundle.tar.gz
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
 
-#### Windows PowerShell
-```powershell
-# One-liner installation with automatic verification
-iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 | iex
+# Run installation with automatic verification
+./install.sh
 ```
 
 #### Windows
-For Windows users, please use PowerShell (available on Windows 10/11 by default) with the one-liner installation shown above.
+```powershell
+# Download Windows bundle
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/latest/download/scopes-v1.0.0-win32-x64-bundle.zip" -OutFile "scopes-bundle.zip"
+Expand-Archive scopes-bundle.zip -DestinationPath .
+cd scopes-v1.0.0-win32-x64-bundle
 
-### Standalone Verification Scripts
+# Run installation with automatic verification
+.\install.ps1
+```
 
-For manual verification of already downloaded files, we provide standalone verification scripts:
+#### Available Platform Bundles
+- Linux x64: `scopes-vX.X.X-linux-x64-bundle.tar.gz`
+- Linux ARM64: `scopes-vX.X.X-linux-arm64-bundle.tar.gz`
+- macOS x64: `scopes-vX.X.X-darwin-x64-bundle.tar.gz`
+- macOS ARM64: `scopes-vX.X.X-darwin-arm64-bundle.tar.gz`
+- Windows x64: `scopes-vX.X.X-win32-x64-bundle.zip`
+- Windows ARM64: `scopes-vX.X.X-win32-arm64-bundle.zip`
+
+### Manual Bundle Verification
+
+For manual verification of downloaded bundle packages:
 
 #### Linux/macOS/WSL (Bash)
 ```bash
-# Method 1: Using environment variables (recommended)
-export SCOPES_VERSION=v1.0.0
-export SCOPES_AUTO_DOWNLOAD=true
-curl -L -o verify-release.sh https://raw.githubusercontent.com/kamiazya/scopes/main/install/verify-release.sh
-chmod +x verify-release.sh
-./verify-release.sh  # No parameters needed!
-
-# Method 2: Command line parameters
-./verify-release.sh --download --version v1.0.0
-
-# Verify bundle contents (auto-detects architecture from bundle)
+# Extract and verify platform bundle
 tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
 cd scopes-v1.0.0-linux-x64-bundle
-./verify-release.sh --binary scopes-v1.0.0-linux-x64 --provenance ../multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
+
+# Verify binary hash using included verification files
+sha256sum -c verification/binary-hash-linux-x64.txt
+
+# Verify SLSA provenance (requires slsa-verifier)
+slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
+  --provenance-path verification/multiple.intoto.jsonl \
+  --source-uri github.com/kamiazya/scopes
 
 # For ARM64 systems (e.g., Apple Silicon Mac)
 tar -xzf scopes-v1.0.0-darwin-arm64-bundle.tar.gz
 cd scopes-v1.0.0-darwin-arm64-bundle
-./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --provenance ../multiple.intoto.jsonl --hash-file binary-hash-darwin-arm64.txt
+sha256sum -c verification/binary-hash-darwin-arm64.txt
+slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
+  --provenance-path verification/multiple.intoto.jsonl \
+  --source-uri github.com/kamiazya/scopes
 ```
 
 #### Windows (PowerShell)
 ```powershell
-# Method 1: Using environment variables (recommended)
-$env:SCOPES_VERSION='v1.0.0'
-$env:SCOPES_AUTO_DOWNLOAD='true'
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/install/Verify-Release.ps1" -OutFile "Verify-Release.ps1"
-.\Verify-Release.ps1  # No parameters needed!
-
-# Method 2: Command line parameters
-.\Verify-Release.ps1 -AutoDownload -Version v1.0.0
-
-# Verify bundle contents
-tar -xzf scopes-v1.0.0-win32-x64-bundle.tar.gz  # Use tar command or 7-zip
+# Extract and verify Windows bundle
+Expand-Archive scopes-v1.0.0-win32-x64-bundle.zip -DestinationPath .
 cd scopes-v1.0.0-win32-x64-bundle
-.\Verify-Release.ps1 -BinaryPath scopes-v1.0.0-win32-x64.exe -HashFile binary-hash-win32-x64.txt -ProvenancePath ..\multiple.intoto.jsonl
+
+# Verify binary hash using included verification files
+certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
+Get-Content verification\binary-hash-win32-x64.txt
+
+# Verify SLSA provenance (requires slsa-verifier)
+# Install slsa-verifier first if not available
+slsa-verifier verify-artifact scopes-v1.0.0-win32-x64.exe `
+  --provenance-path verification\multiple.intoto.jsonl `
+  --source-uri github.com/kamiazya/scopes
 ```
 
 

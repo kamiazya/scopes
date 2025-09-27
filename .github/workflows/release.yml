@@ -277,8 +277,8 @@ jobs:
           echo "Hash: $HASH"
           echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
 
-          # Create individual hash file with proper format
-          echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          # Create individual hash file with sha256sum-compatible format
+          echo "$HASH  ${{ steps.binary.outputs.binary_name }}" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
           # Verify the hash file was created correctly
           echo "Generated hash file content:"
@@ -1037,11 +1037,8 @@ EOF
           ## 🔐 Verification Instructions
           > **Security Notice**: This release is signed and includes SLSA provenance for supply chain security.
 
-          ### Quick Verification
-          ```bash
-          # Download and verify in one command
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.sh | bash
-          ```
+          ### Quick Installation
+          Download the platform-specific bundle for your system and follow the included installation instructions.
 
           ### Manual Verification
           For detailed verification instructions, see our [Security Verification Guide](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md).
@@ -1121,15 +1118,7 @@ EOF
 
           ### 🚀 Quick Install (Recommended)
 
-          #### Linux/macOS
-          ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.sh | sh
-          ```
-
-          #### Windows PowerShell
-          ```powershell
-          iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.ps1 | iex
-          ```
+          Download the platform-specific bundle package for your system and run the included installation script.
 
           ### 📦 Platform-Specific Bundles (Recommended)
 

@@ -39,9 +39,13 @@ chmod +x install.sh
 ./install.sh
 ```
 
-For convenience (if you trust the source), you can use the one-liner:
+For the recommended installation method, use the platform-specific bundle:
 ```bash
-curl -fsSL https://github.com/kamiazya/scopes/releases/latest/download/install.sh | bash
+# Download platform-specific bundle (example for Linux x64)
+wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64-bundle.tar.gz
+tar -xzf scopes-linux-x64-bundle.tar.gz
+cd scopes-*-bundle
+./install.sh
 ```
 
 ### Manual Installation
