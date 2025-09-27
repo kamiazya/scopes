@@ -156,7 +156,7 @@ jobs:
       
       - name: Trigger Release Workflow
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Triggering release workflow for tag: ${{ needs.version-and-release.outputs.tag }}"
           gh workflow run release.yml \
