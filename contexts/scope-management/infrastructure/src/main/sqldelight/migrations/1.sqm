@@ -1,0 +1,25 @@
+-- Migration from version 1 to version 2
+-- This is an example migration file that will be used when upgrading from schema version 1 to 2
+--
+-- Example migrations (uncomment and modify as needed for actual schema changes):
+--
+-- Add a new column to the scopes table
+-- ALTER TABLE scopes ADD COLUMN status TEXT DEFAULT 'active';
+--
+-- Create a new index
+-- CREATE INDEX IF NOT EXISTS idx_scopes_status ON scopes(status);
+--
+-- Add a new table
+-- CREATE TABLE IF NOT EXISTS scope_tags (
+--     scope_id TEXT NOT NULL,
+--     tag TEXT NOT NULL,
+--     created_at INTEGER NOT NULL,
+--     PRIMARY KEY (scope_id, tag),
+--     FOREIGN KEY (scope_id) REFERENCES scopes(id) ON DELETE CASCADE
+-- );
+--
+-- Note: This file is currently a placeholder.
+-- When you need to make schema changes in the future:
+-- 1. Uncomment and modify the SQL statements above
+-- 2. Update ApplicationVersion.SchemaVersions.SCOPE_MANAGEMENT to 2
+-- 3. Add a new VersionMapping in ApplicationVersion.versionHistory
