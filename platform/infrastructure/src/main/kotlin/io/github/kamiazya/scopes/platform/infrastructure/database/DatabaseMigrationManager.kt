@@ -36,6 +36,31 @@ class DatabaseMigrationManager(
         targetVersion: Long,
         callbacks: Map<Long, MigrationCallback> = emptyMap()
     ) {
+        // Use database-level locking to prevent concurrent migrations across processes
+        driver.execute(null, "BEGIN IMMEDIATE", 0)
+        try {
+            performMigrationInternal(driver, schema, targetVersion, callbacks)
+            driver.execute(null, "COMMIT", 0)
+        } catch (e: Exception) {
+            try {
+                driver.execute(null, "ROLLBACK", 0)
+            } catch (rollbackException: Exception) {
+                // Log rollback failure but preserve original exception
+                logger.error("Failed to rollback migration transaction", throwable = rollbackException)
+            }
+            throw if (e is DatabaseMigrationException) e else DatabaseMigrationException("Migration failed", e)
+        }
+    }
+
+    /**
+     * Internal migration logic, called within database transaction lock.
+     */
+    private fun performMigrationInternal(
+        driver: SqlDriver,
+        schema: SqlSchema<*>,
+        targetVersion: Long,
+        callbacks: Map<Long, MigrationCallback>
+    ) {
         val currentVersion = getCurrentVersion(driver)
 
         when {
@@ -44,26 +69,22 @@ class DatabaseMigrationManager(
                 logger.warn("Database exists without version. Setting version to 1 and attempting migration.")
                 setVersion(driver, 1L)
                 if (targetVersion > 1L) {
-                    performMigration(driver, schema, 1L, targetVersion, callbacks)
+                    executeSchemaUpdate(driver, schema, 1L, targetVersion, callbacks)
                 }
             }
             currentVersion == 0L -> {
                 // Fresh database
                 logger.info("Creating new database schema (version $targetVersion)")
-                // Use raw SQL transactions
-                driver.execute(null, "BEGIN TRANSACTION", 0)
                 try {
                     schema.create(driver)
                     setVersion(driver, targetVersion)
-                    driver.execute(null, "COMMIT", 0)
                 } catch (e: Exception) {
-                    driver.execute(null, "ROLLBACK", 0)
                     throw DatabaseMigrationException("Failed to create database schema", e)
                 }
             }
             currentVersion < targetVersion -> {
                 logger.info("Migrating database from version $currentVersion to $targetVersion")
-                performMigration(driver, schema, currentVersion, targetVersion, callbacks)
+                executeSchemaUpdate(driver, schema, currentVersion, targetVersion, callbacks)
             }
             currentVersion > targetVersion -> {
                 // Fail fast when database is newer than application
@@ -86,11 +107,13 @@ class DatabaseMigrationManager(
             identifier = null,
             sql = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
             mapper = { cursor ->
-                if (cursor.next()) {
-                    cursor.getLong(0) == 0L
-                } else {
-                    true
-                }
+                QueryResult.Value(
+                    if (cursor.next().value) {
+                        cursor.getLong(0) == 0L
+                    } else {
+                        true
+                    }
+                )
             },
             parameters = 0
         ).value
@@ -105,11 +128,13 @@ class DatabaseMigrationManager(
             identifier = null,
             sql = "PRAGMA user_version",
             mapper = { cursor ->
-                if (cursor.next()) {
-                    cursor.getLong(0) ?: 0L
-                } else {
-                    0L
-                }
+                QueryResult.Value(
+                    if (cursor.next().value) {
+                        cursor.getLong(0) ?: 0L
+                    } else {
+                        0L
+                    }
+                )
             },
             parameters = 0
         ).value
@@ -127,17 +152,15 @@ class DatabaseMigrationManager(
     }
 
     /**
-     * Performs the actual migration from one version to another.
+     * Performs the actual schema update from one version to another.
      */
-    private fun performMigration(
+    private fun executeSchemaUpdate(
         driver: SqlDriver,
         schema: SqlSchema<*>,
         currentVersion: Long,
         targetVersion: Long,
         callbacks: Map<Long, MigrationCallback>
     ) {
-        // Use raw SQL transactions
-        driver.execute(null, "BEGIN TRANSACTION", 0)
         try {
             // Execute SQLDelight migrations
             schema.migrate(driver, currentVersion, targetVersion)
@@ -154,11 +177,9 @@ class DatabaseMigrationManager(
             // Update version
             setVersion(driver, targetVersion)
 
-            driver.execute(null, "COMMIT", 0)
             logger.info("Migration completed successfully")
         } catch (e: Exception) {
             logger.error("Migration failed", throwable = e)
-            driver.execute(null, "ROLLBACK", 0)
             throw DatabaseMigrationException("Failed to migrate database from $currentVersion to $targetVersion", e)
         }
     }
