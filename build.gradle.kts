@@ -1,3 +1,7 @@
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -8,6 +12,8 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.cyclonedx.bom)
     alias(libs.plugins.spdx.sbom)
+    alias(libs.plugins.sonarqube)
+    jacoco
 }
 
 group = "io.github.kamiazya"
@@ -40,9 +46,61 @@ subprojects {
 
     // Configure Kotlin compilation when plugin is applied
     pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+        // Apply JaCoCo to all modules with Kotlin code
+        apply(plugin = "jacoco")
+        // Apply SonarQube plugin to all Kotlin modules
+        apply(plugin = "org.sonarqube")
+
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            }
+        }
+
+        // Configure JaCoCo
+        tasks.withType<JacocoReport> {
+            dependsOn(tasks.named("test"))
+            reports {
+                xml.required.set(true)
+                html.required.set(true)
+                csv.required.set(false)
+            }
+        }
+
+        // Configure test task to generate JaCoCo data
+        tasks.withType<Test> {
+            finalizedBy(tasks.withType<JacocoReport>())
+            useJUnitPlatform()
+            testLogging {
+                events("passed", "skipped", "failed")
+            }
+        }
+
+        // JaCoCo coverage verification
+        tasks.withType<JacocoCoverageVerification> {
+            violationRules {
+                rule {
+                    limit {
+                        minimum = "0.60".toBigDecimal()
+                    }
+                }
+            }
+        }
+
+        // Configure SonarQube for each module
+        sonarqube {
+            properties {
+                // Only set sources if the directory exists
+                if (file("src/main/kotlin").exists()) {
+                    property("sonar.sources", "src/main/kotlin")
+                    property("sonar.java.binaries", "build/classes/kotlin/main")
+                }
+                // Only set test sources if the directory exists
+                if (file("src/test/kotlin").exists()) {
+                    property("sonar.tests", "src/test/kotlin")
+                }
+                // Each module should report its own JaCoCo XML report path
+                property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
             }
         }
     }
@@ -81,6 +139,8 @@ subprojects {
 
 // Custom task to check if GraalVM is available
 tasks.register("checkGraalVM") {
+    description = "Check if GraalVM native-image is available in the current environment"
+    group = "verification"
     doLast {
         try {
             val isWindows = System.getProperty("os.name").lowercase().contains("windows")
@@ -147,6 +207,29 @@ tasks.register("konsistTest") {
     dependsOn(":quality-konsist:test")
 }
 
+// Task to run all tests with coverage
+tasks.register("testWithCoverage") {
+    description = "Run all tests and generate coverage reports"
+    group = "verification"
+
+    // Run all tests
+    subprojects.forEach { subproject ->
+        subproject.tasks.findByName("test")?.let {
+            dependsOn(it)
+        }
+    }
+
+    // Generate individual coverage reports
+    subprojects.forEach { subproject ->
+        subproject.tasks.findByName("jacocoTestReport")?.let {
+            dependsOn(it)
+        }
+    }
+
+    // Generate aggregated coverage report
+    finalizedBy(":quality-coverage-report:testCodeCoverageReport")
+}
+
 // Spotless configuration
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
@@ -203,5 +286,32 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         targetExclude("**/build/**/*.sh")
         trimTrailingWhitespace()
         endWithNewline()
+    }
+}
+
+// SonarQube configuration
+sonarqube {
+    properties {
+        property("sonar.projectKey", "kamiazya_scopes")
+        property("sonar.organization", "kamiazya")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.projectName", "Scopes")
+        property("sonar.projectVersion", version)
+
+        // Language settings
+        property("sonar.language", "kotlin")
+        property("sonar.kotlin.detekt.reportPaths", "**/build/reports/detekt/detekt.xml")
+
+        // Coverage configuration - use the aggregated report
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml",
+        )
+
+        // Encoding
+        property("sonar.sourceEncoding", "UTF-8")
+
+        // Duplication detection
+        property("sonar.cpd.exclusions", "**/*Test.kt,**/*Spec.kt")
     }
 }

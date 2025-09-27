@@ -48,6 +48,7 @@ include(
     ":interfaces-mcp",
     // Quality
     ":quality-konsist",
+    ":quality-coverage-report",
 )
 
 // Configure Gradle Build Scan
@@ -138,3 +139,4 @@ project(":apps-scopesd").projectDir = file("apps/scopesd")
 
 // Quality
 project(":quality-konsist").projectDir = file("quality/konsist")
+project(":quality-coverage-report").projectDir = file("quality/coverage-report")

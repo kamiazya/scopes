@@ -39,6 +39,10 @@ ktlint-tool = "1.5.0"
 # Security patches
 netty-codec-http2 = "4.2.6.Final"
 
+# Testing and coverage
+jacoco = "0.8.12"
+sonarqube = "6.3.1.5724"
+
 [libraries]
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
@@ -92,6 +96,8 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
 spdx-sbom = { id = "org.spdx.sbom", version.ref = "spdx-sbom" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+jacoco-report-aggregation = { id = "jacoco-report-aggregation" }
 
 [bundles]
 kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-assertions-arrow", "kotest-property"]
