@@ -1,24 +1,53 @@
 # Scopes Installation Scripts
 
-This directory contains secure, modern installation scripts for Scopes with a unified distribution approach that simplifies deployment across all platforms.
+This directory contains secure, modern installation scripts for Scopes with a streamlined bundle-based distribution approach that eliminates download confusion.
 
-## 🎯 Unified Distribution Architecture
+## 🎯 Bundle Distribution Architecture
 
-Scopes uses a **unified distribution package** as the single source of truth for all installations:
+Scopes uses **optimized bundle packages** to provide clear, efficient installation options:
 
 ```mermaid
 graph TB
-    Package[📦 Unified Distribution Package<br/>scopes-vX.X.X-dist.tar.gz<br/><br/>• All platform binaries<br/>• Verification tools<br/>• Documentation<br/>• SBOM files]
-    
-    Online[🌐 Online Installer<br/>install.sh → install-unified.sh]
-    Offline[💾 Offline Installer<br/>Direct extraction + install.sh]
-    
-    Package --> Online
-    Package --> Offline
-    
+    Bundles[📦 Platform-Specific Bundles<br/>scopes-vX.X.X-{platform}-{arch}-bundle.tar.gz<br/><br/>• Platform binary<br/>• Installation script<br/>• SBOM & verification<br/>• ~20MB each]
+
+    Unified[📦 Unified Distribution Package<br/>scopes-vX.X.X-dist.tar.gz<br/><br/>• All platform binaries<br/>• Verification tools<br/>• Documentation<br/>• SBOM files<br/>• ~260MB]
+
+    Online[🌐 Online Installer<br/>install.sh → Downloads appropriate bundle]
+    PlatformOffline[💾 Platform Bundle<br/>Direct extraction + install.sh]
+    UnifiedOffline[💾 Unified Package<br/>Multi-platform + install.sh]
+
+    Bundles --> Online
+    Bundles --> PlatformOffline
+    Unified --> UnifiedOffline
+
     Online --> Result[✅ Scopes Installed]
-    Offline --> Result
+    PlatformOffline --> Result
+    UnifiedOffline --> Result
 ```
+
+## 📋 Download Options
+
+Choose the best installation approach for your needs:
+
+### 🎯 Recommended: Platform-Specific Bundles (~20MB each)
+Perfect for most users - contains everything needed for your specific platform:
+
+| Platform | Architecture | Bundle Name | Contents |
+|----------|-------------|-------------|----------|
+| Linux | x64 | `scopes-vX.X.X-linux-x64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| Linux | ARM64 | `scopes-vX.X.X-linux-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| macOS | x64 (Intel) | `scopes-vX.X.X-darwin-x64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| macOS | ARM64 (Apple Silicon) | `scopes-vX.X.X-darwin-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| Windows | x64 | `scopes-vX.X.X-win32-x64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+| Windows | ARM64 | `scopes-vX.X.X-win32-arm64-bundle.tar.gz` | Binary + installer + SBOM + verification |
+
+### 🏢 Enterprise: Unified Distribution Package (~260MB)
+For multi-platform deployments or offline enterprise installations:
+- **`scopes-vX.X.X-dist.tar.gz`** - All platforms, architectures, and tools in one package
+
+### 🔒 Security: SLSA Provenance
+All releases include cryptographic supply chain verification:
+- **`multiple.intoto.jsonl`** - SLSA Level 3 provenance for all artifacts
 
 ## 🚀 Quick Start
 
@@ -33,7 +62,18 @@ iwr https://raw.githubusercontent.com/kamiazya/scopes/main/install/install.ps1 |
 ```
 
 ### Offline Installation
-Download the distribution package from GitHub Releases and run the included installer:
+
+#### Option 1: Platform-Specific Bundle (Recommended)
+Download the appropriate bundle for your platform from GitHub Releases:
+```bash
+# Example for Linux x64
+tar -xzf scopes-vX.X.X-linux-x64-bundle.tar.gz
+cd scopes-vX.X.X-linux-x64-bundle
+./install.sh
+```
+
+#### Option 2: Unified Distribution Package
+For multi-platform or enterprise deployments:
 ```bash
 tar -xzf scopes-vX.X.X-dist.tar.gz
 cd scopes-vX.X.X-dist
@@ -144,19 +184,36 @@ chmod +x install.sh
 ```
 
 ### Standalone Verification
+
+#### Bundle Verification (Recommended)
 ```bash
-# Download release files manually (example for Linux x64)
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-linux-x64
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-linux-x64.txt
+# Download platform bundle and provenance (example for Linux x64)
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-linux-x64-bundle.tar.gz
 wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/multiple.intoto.jsonl
 
-# Verify with standalone script
-./verify-release.sh --binary scopes-v1.0.0-linux-x64 --hash-file binary-hash-linux-x64.txt --provenance multiple.intoto.jsonl
+# Extract bundle and verify
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
 
-# For ARM64 systems (e.g., Apple Silicon Mac)
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-darwin-arm64
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-darwin-arm64.txt
-./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --hash-file binary-hash-darwin-arm64.txt --provenance multiple.intoto.jsonl
+# Use included verification tools
+./verify-release.sh --binary scopes-v1.0.0-linux-x64 --hash-file binary-hash-linux-x64.txt --provenance ../multiple.intoto.jsonl
+
+# For other platforms, replace with appropriate bundle:
+# macOS Intel: scopes-v1.0.0-darwin-x64-bundle.tar.gz
+# macOS Apple Silicon: scopes-v1.0.0-darwin-arm64-bundle.tar.gz
+# Windows x64: scopes-v1.0.0-win32-x64-bundle.tar.gz
+```
+
+#### Unified Package Verification
+```bash
+# For enterprise/multi-platform verification
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-dist.tar.gz
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/multiple.intoto.jsonl
+
+# Extract and verify all platforms
+tar -xzf scopes-v1.0.0-dist.tar.gz
+cd scopes-v1.0.0-dist
+./verify-all-platforms.sh --provenance ../multiple.intoto.jsonl
 ```
 
 ### Windows PowerShell Advanced
@@ -251,12 +308,14 @@ curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/main/install/install
 
 ## 🏢 Enterprise Deployment
 
-### Benefits of Unified Distribution
+### Benefits of Bundle Distribution
 
-1. **Single Source of Truth**: One package contains all platforms and architectures
-2. **Reduced Complexity**: Same verification process for online and offline
-3. **Bandwidth Optimization**: Download once, deploy anywhere
-4. **Compliance Ready**: SBOM and verification tools included
+1. **Optimized Downloads**: 92% size reduction - download only what you need (~20MB vs ~260MB)
+2. **Clear User Experience**: No confusion about which files to download
+3. **Platform-Specific**: Each bundle contains everything needed for your platform
+4. **Enterprise Ready**: Unified package available for multi-platform deployments
+5. **Consistent Verification**: Same security verification process for all packages
+6. **Future-Proof**: Ready for daemon binary distribution in upcoming releases
 
 ### CI/CD Integration
 

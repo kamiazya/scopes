@@ -20,26 +20,33 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
    ```
 
-2. **Download the binary and provenance:**
-   - Download your platform's binary:
-     - Linux x64: `scopes-v1.0.0-linux-x64`
-     - Linux ARM64: `scopes-v1.0.0-linux-arm64`
-     - macOS x64: `scopes-v1.0.0-darwin-x64`
-     - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64`
-     - Windows x64: `scopes-v1.0.0-win32-x64.exe`
-     - Windows ARM64: `scopes-v1.0.0-win32-arm64.exe`
+2. **Download the bundle and provenance:**
+   - Download your platform's bundle package:
+     - Linux x64: `scopes-v1.0.0-linux-x64-bundle.tar.gz`
+     - Linux ARM64: `scopes-v1.0.0-linux-arm64-bundle.tar.gz`
+     - macOS x64: `scopes-v1.0.0-darwin-x64-bundle.tar.gz`
+     - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64-bundle.tar.gz`
+     - Windows x64: `scopes-v1.0.0-win32-x64-bundle.tar.gz`
+     - Windows ARM64: `scopes-v1.0.0-win32-arm64-bundle.tar.gz`
+   - Or download the unified package: `scopes-v1.0.0-dist.tar.gz`
    - Download the provenance file (`multiple.intoto.jsonl`)
 
-3. **Verify the binary:**
+3. **Extract and verify the binary:**
    ```bash
-   # For Linux x64
+   # Extract the bundle (example for Linux x64)
+   tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+   cd scopes-v1.0.0-linux-x64-bundle
+
+   # Verify the binary using SLSA verifier
    slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
-     --provenance-path multiple.intoto.jsonl \
+     --provenance-path ../multiple.intoto.jsonl \
      --source-uri github.com/kamiazya/scopes
-   
+
    # For macOS ARM64 (Apple Silicon)
+   tar -xzf scopes-v1.0.0-darwin-arm64-bundle.tar.gz
+   cd scopes-v1.0.0-darwin-arm64-bundle
    slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
-     --provenance-path multiple.intoto.jsonl \
+     --provenance-path ../multiple.intoto.jsonl \
      --source-uri github.com/kamiazya/scopes
    ```
 
@@ -87,11 +94,15 @@ chmod +x verify-release.sh
 # Method 2: Command line parameters
 ./verify-release.sh --download --version v1.0.0
 
-# Verify local files (auto-detects architecture)
-./verify-release.sh --binary scopes-v1.0.0-linux-x64 --provenance multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
+# Verify bundle contents (auto-detects architecture from bundle)
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
+./verify-release.sh --binary scopes-v1.0.0-linux-x64 --provenance ../multiple.intoto.jsonl --hash-file binary-hash-linux-x64.txt
 
 # For ARM64 systems (e.g., Apple Silicon Mac)
-./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --provenance multiple.intoto.jsonl --hash-file binary-hash-darwin-arm64.txt
+tar -xzf scopes-v1.0.0-darwin-arm64-bundle.tar.gz
+cd scopes-v1.0.0-darwin-arm64-bundle
+./verify-release.sh --binary scopes-v1.0.0-darwin-arm64 --provenance ../multiple.intoto.jsonl --hash-file binary-hash-darwin-arm64.txt
 ```
 
 #### Windows (PowerShell)
@@ -105,8 +116,10 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/i
 # Method 2: Command line parameters
 .\Verify-Release.ps1 -AutoDownload -Version v1.0.0
 
-# Verify local files
-.\Verify-Release.ps1 -BinaryPath scopes-v1.0.0-win32-x64.exe -HashFile binary-hash-win32-x64.txt -ProvenancePath multiple.intoto.jsonl
+# Verify bundle contents
+tar -xzf scopes-v1.0.0-win32-x64-bundle.tar.gz  # Use tar command or 7-zip
+cd scopes-v1.0.0-win32-x64-bundle
+.\Verify-Release.ps1 -BinaryPath scopes-v1.0.0-win32-x64.exe -HashFile binary-hash-win32-x64.txt -ProvenancePath ..\multiple.intoto.jsonl
 ```
 
 
@@ -114,28 +127,32 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/i
 
 If you prefer manual verification:
 
-1. **Download the checksums file** (`binary-hash-<platform>-<arch>.txt`) from the release
-2. **Calculate the hash** of your downloaded binary:
+1. **Extract the bundle** and find the checksums file (`binary-hash-<platform>-<arch>.txt`) inside
+2. **Calculate the hash** of the binary from the bundle:
    ```bash
+   # Extract bundle first (example for Linux x64)
+   tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+   cd scopes-v1.0.0-linux-x64-bundle
+
    # Linux x64
    sha256sum scopes-v1.0.0-linux-x64
-   
+
    # Linux ARM64
    sha256sum scopes-v1.0.0-linux-arm64
-   
+
    # macOS x64
    shasum -a 256 scopes-v1.0.0-darwin-x64
-   
+
    # macOS ARM64 (Apple Silicon)
    shasum -a 256 scopes-v1.0.0-darwin-arm64
-   
+
    # Windows x64
    certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
-   
+
    # Windows ARM64
    certutil -hashfile scopes-v1.0.0-win32-arm64.exe SHA256
    ```
-3. **Compare** the calculated hash with the value in the checksum file
+3. **Compare** the calculated hash with the value in the included checksum file
 
 ## What SLSA Verification Confirms
 
@@ -222,11 +239,16 @@ This release includes comprehensive SBOM files for complete dependency transpare
 
 ### SBOM Files
 - **CycloneDX Format**: `sbom-{platform}-{arch}.json` and `sbom-{platform}-{arch}.xml`
+- **Location**: Included in each platform-specific bundle and unified distribution package
 - **Purpose**: Complete inventory of all dependencies with vulnerability tracking
 - **Integration**: Compatible with OWASP Dependency-Track, Grype, and other security tools
 
 ### SBOM Verification
 ```bash
+# Extract bundle and verify SBOM integrity
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
+
 # Verify SBOM integrity
 sha256sum sbom-linux-x64.json
 grep "sbom-linux-x64.json" binary-hash-linux-x64.txt
