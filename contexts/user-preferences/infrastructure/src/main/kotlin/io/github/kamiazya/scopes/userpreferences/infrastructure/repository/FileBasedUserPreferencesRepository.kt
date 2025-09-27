@@ -23,11 +23,8 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class FileBasedUserPreferencesRepository(
-    configPathStr: String,
-    private val logger: Logger,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
-) : UserPreferencesRepository {
+class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger, private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) :
+    UserPreferencesRepository {
 
     private val configPath = Path(configPathStr)
     private val configFile = Path(configPathStr, UserPreferencesConfig.CONFIG_FILE_NAME)
