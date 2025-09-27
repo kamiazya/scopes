@@ -11,7 +11,7 @@ permissions:
   contents: write
   pull-requests: write
   id-token: write
-  actions: read
+  actions: write  # Changed from 'read' to 'write' to allow workflow dispatch
   attestations: write
 
 jobs:
