@@ -2,6 +2,11 @@
 "scopes": minor
 ---
 
-feat: add platform-specific bundle packages for easier downloads
+feat: replace individual assets with bundled packages for easier downloads
 
-Add platform-specific bundle packages containing SBOM, binaries, installation scripts, and comparison hashes as compressed archives. This reduces download confusion for users by providing clear, environment-specific packages (~20MB each) instead of requiring users to navigate 28 individual assets. Includes proper Windows PowerShell installer integration and maintains all existing security features (SLSA Level 3, SHA256 verification).
+Replace the previous 28 individual release assets with organized bundle packages to eliminate download confusion. Users now choose from:
+- 6 platform-specific bundles (~20MB each) containing binary, installer, SBOM, and verification files
+- 1 unified offline package (~260MB) for enterprise/multi-platform deployments
+- SLSA provenance for supply chain security
+
+This provides 92% reduction in download size for most users while maintaining all existing security features (SLSA Level 3, SHA256 verification) and preparing for future daemon binary distribution.

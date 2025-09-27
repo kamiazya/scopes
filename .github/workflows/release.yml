@@ -1088,22 +1088,15 @@ EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Upload all binary artifacts
-          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          # Note: Individual files (28 total) have been eliminated for better user experience
+          # Users can now choose from clear, bundled options instead of navigating many files
 
-          # Upload hash files
-          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-
-          # Upload SBOM files
-          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-
-          # Upload distribution packages
+          # Upload unified distribution package (all platforms, ~260MB)
           find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
-          # Upload platform-specific bundle packages
+          # Upload platform-specific bundle packages (~20MB each)
           find distribution-packages -name "scopes-*-bundle.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           find distribution-packages -name "scopes-*-bundle.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           find distribution-packages -name "scopes-*-bundle.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
@@ -1138,32 +1131,47 @@ EOF
           iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.ps1 | iex
           ```
 
-          ### 📦 Offline Installation
+          ### 📦 Platform-Specific Bundles (Recommended)
 
-          For air-gapped environments or enterprise deployments, download the unified distribution package:
+          For most users, download the platform-specific bundle for your system:
 
-          1. Download `scopes-${{ steps.version.outputs.version }}-dist.tar.gz` or `.zip`
+          - **Linux x64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz` (~20MB)
+          - **Linux ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-arm64-bundle.tar.gz` (~20MB)
+          - **macOS x64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-x64-bundle.tar.gz` (~20MB)
+          - **macOS ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-arm64-bundle.tar.gz` (~20MB)
+          - **Windows x64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-x64-bundle.zip` (~20MB)
+          - **Windows ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-arm64-bundle.zip` (~20MB)
+
+          Each bundle includes:
+          - Platform-specific binary
+          - Installation script
+          - SHA256 hash verification
+          - SLSA provenance
+          - SBOM files
+          - Documentation
+
+          #### Install from Bundle
+          ```bash
+          # Linux/macOS
+          tar -xzf scopes-*-bundle.tar.gz
+          cd scopes-*-bundle
+          ./install.sh
+
+          # Windows PowerShell
+          Expand-Archive scopes-*-bundle.zip
+          cd scopes-*-bundle
+          .\install.ps1
+          ```
+
+          ### 🏢 Enterprise/Offline Installation
+
+          For air-gapped environments or enterprise deployments with multiple platforms:
+
+          1. Download `scopes-${{ needs.resolve-version.outputs.version }}-dist.tar.gz` or `.zip` (~260MB)
           2. Extract the package
           3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
 
-          The offline package includes:
-          - All platform binaries (Linux, macOS, Windows - x64 & ARM64)
-          - Security verification (SHA256 hashes + SLSA provenance)
-          - Complete documentation
-          - SBOM files for compliance
-
-          ### Manual Binary Installation
-
-          Individual binaries are also available for direct download below.
-
-          #### Linux/macOS
-          ```bash
-          chmod +x scopes-*
-          sudo mv scopes-* /usr/local/bin/scopes
-          ```
-
-          #### Windows
-          Extract `scopes-*.exe` to a directory in your PATH.
+          The unified package includes all platforms and complete documentation.
 
           ## Security & Verification
 
@@ -1174,32 +1182,39 @@ EOF
           # Install slsa-verifier
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
-          # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.version }}-linux-x64 \
-            --provenance-path multiple.intoto.jsonl \
+          # Extract and verify from platform bundle
+          tar -xzf scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz
+          cd scopes-*-bundle
+
+          slsa-verifier verify-artifact scopes-${{ needs.resolve-version.outputs.version }}-linux-x64 \
+            --provenance-path verification/multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
 
           ### SBOM (Software Bill of Materials)
 
-          Each platform includes SBOM files in both industry-standard formats:
-          - **CycloneDX** (JSON/XML): Security-focused with vulnerability tracking capabilities
-          - Download: `sbom-{platform}-{arch}.json` or `sbom-{platform}-{arch}.xml`
+          Each platform bundle includes SBOM files in CycloneDX format for compliance and security scanning:
+          - **Location**: `sbom/` directory in each bundle
+          - **Formats**: JSON and XML formats included
 
           #### SBOM Usage Examples
           ```bash
+          # Extract platform bundle
+          tar -xzf scopes-*-linux-x64-bundle.tar.gz
+          cd scopes-*-bundle
+
           # Analyze dependencies with CycloneDX tools
-          cyclonedx-cli analyze sbom-linux-x64.json
+          cyclonedx-cli analyze sbom/sbom-linux-x64.json
 
           # Import into OWASP Dependency-Track
           curl -X POST "http://dtrack-server/api/v1/bom" \
             -H "X-API-Key: your-api-key" \
             -H "Content-Type: application/json" \
-            -d @sbom-linux-x64.json
+            -d @sbom/sbom-linux-x64.json
           ```
 
           ### Manual Verification
-          See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
+          SHA256 hashes are included in each platform bundle at `verification/binary-hash-{platform}-{arch}.txt`.
           EOF
 
           # Add the auto-generated notes after our custom content
