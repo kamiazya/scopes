@@ -1,8 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags: ['v*.*.*', 'v*.*.*-*']
   workflow_dispatch:
     inputs:
       tag:
@@ -10,7 +8,7 @@ on:
         required: true
         type: string
 concurrency:
-  group: release-${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: true
 
 permissions:
@@ -35,11 +33,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.tag }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
+          VERSION="${{ inputs.tag }}"
           # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
           CLEAN_VERSION=${VERSION#v}
           echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
@@ -114,21 +108,19 @@ jobs:
           
           # For manually triggered runs, ensure the tag exists on the remote
           # This prevents gh release create from accidentally creating a tag
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Checking if tag exists on remote..."
-            
-            # Use GitHub API to check if tag exists
-            if ! gh api "/repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
-              echo "::error::Tag '$TAG' does not exist on remote. Please create the tag first."
-              echo ""
-              echo "Tags should be created by the Version and Release workflow when merging Version PRs."
-              echo "If you need to manually create a tag:"
-              echo "  git tag -a $TAG -m \"Release $TAG\""
-              echo "  git push origin $TAG"
-              exit 1
-            fi
-            echo "✓ Tag exists on remote"
+          echo "Checking if tag exists on remote..."
+          
+          # Use GitHub API to check if tag exists
+          if ! gh api "/repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag '$TAG' does not exist on remote. Please create the tag first."
+            echo ""
+            echo "Tags should be created by the Version and Release workflow when merging Version PRs."
+            echo "If you need to manually create a tag:"
+            echo "  git tag -a $TAG -m \"Release $TAG\""
+            echo "  git push origin $TAG"
+            exit 1
           fi
+          echo "✓ Tag exists on remote"
           
           echo "✓ Tag format is valid and tag exists"
 

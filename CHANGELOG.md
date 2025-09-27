@@ -25,7 +25,6 @@
   Updated to check 'merged_at' field instead to properly detect merged Version PRs.
 
   This fixes the issue where release tags were not being created automatically after merging Version PRs.
-  EOF < /dev/null
 
 ## 0.0.2
 
