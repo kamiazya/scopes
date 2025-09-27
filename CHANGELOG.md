@@ -1,5 +1,26 @@
 # scopes
 
+## 0.0.4
+
+### Patch Changes
+
+- [#275](https://github.com/kamiazya/scopes/pull/275) [`be39193`](https://github.com/kamiazya/scopes/commit/be39193b8a5b463fc1d1a3dcce1c0dae322070d6) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix automatic release workflow triggering after Version PR merges
+
+  - Integrated release triggering into version-and-release.yml to work around GitHub Actions limitations
+  - GitHub Actions security prevents workflows from triggering other workflows when using GITHUB_TOKEN
+  - Modified release.yml to only support manual workflow_dispatch
+  - Updated permissions to `actions: write` to allow workflow dispatch via gh CLI
+  - Fixed gh CLI authentication by using GH_TOKEN environment variable instead of GITHUB_TOKEN
+  - Automatic releases now work correctly after Version PR merges without requiring Personal Access Tokens
+
+- [#278](https://github.com/kamiazya/scopes/pull/278) [`146ed17`](https://github.com/kamiazya/scopes/commit/146ed175df36f28c8362df86b3d9d46fcb39b669) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix medium and low severity security vulnerabilities in dependencies
+
+  - Update Apache Commons Lang3 to 3.18.0 to fix an uncontrolled recursion vulnerability
+  - Verify Logback 1.5.18 includes fixes for CVE-2024-12801 (SSRF) and CVE-2024-12798 (Expression Language injection)
+  - Add explicit commons-lang3 dependency to ensure secure version is used across all modules
+
+  This patch resolves all 3 open Dependabot security alerts (2 medium severity, 1 low severity) without breaking changes to the public API.
+
 ## 0.0.3
 
 ### Patch Changes
