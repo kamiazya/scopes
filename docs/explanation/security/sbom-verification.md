@@ -57,12 +57,13 @@ Get-ChildItem sbom-win32-x64.json, sbom-win32-x64.xml
 ### 2. Manual Download and Verify Checksums
 
 ```bash
-# Download SBOM files and checksums
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/sbom-linux-x64.json
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/binary-hash-linux-x64.txt
+# Download and extract the platform bundle
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-linux-x64-bundle.tar.gz
+tar -xzf scopes-linux-x64-bundle.tar.gz
+cd scopes-*-bundle
 
-# Verify SBOM integrity (SBOM hashes are included in binary hash files)
-sha256sum sbom-linux-x64.json
+# Verify SBOM integrity using the included verification files
+sha256sum -c verification/sbom-linux-x64.json.sha256
 ```
 
 ### 2. Validate SBOM Format
@@ -71,8 +72,8 @@ sha256sum sbom-linux-x64.json
 # Install CycloneDX CLI tools
 npm install -g @cyclonedx/cli
 
-# Validate SBOM format compliance
-cyclonedx validate sbom-linux-x64.json
+# Validate SBOM format compliance (from within the extracted bundle)
+cyclonedx validate verification/sbom-linux-x64.json
 ```
 
 ### 3. SLSA Provenance Integration

@@ -195,7 +195,7 @@ slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
 # For other platforms, replace with appropriate bundle:
 # macOS Intel: scopes-v1.0.0-darwin-x64-bundle.tar.gz
 # macOS Apple Silicon: scopes-v1.0.0-darwin-arm64-bundle.tar.gz
-# Windows x64: scopes-v1.0.0-win32-x64-bundle.tar.gz
+# Windows x64: scopes-v1.0.0-win32-x64-bundle.zip
 ```
 
 #### Unified Package Verification

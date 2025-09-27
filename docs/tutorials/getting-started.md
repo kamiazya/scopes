@@ -21,45 +21,36 @@ This tutorial will guide you through your first steps with Scopes, from installa
 
 ### Quick Install (Recommended)
 
-For security, we recommend downloading and verifying the installation script before executing:
-
+Download the platform-specific bundle, verify it with the included manifest, and then run the installer:
 ```bash
-# 1. Download the installation script and checksum
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh.sha256
-
-# 2. Verify the checksum
-sha256sum -c install.sh.sha256
-
-# 3. Review the script (optional but recommended)
-less install.sh
-
-# 4. Make executable and run
-chmod +x install.sh
-./install.sh
-```
-
-For the recommended installation method, use the platform-specific bundle:
-```bash
-# Download platform-specific bundle (example for Linux x64)
+# Example for Linux x64
 wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64-bundle.tar.gz
 tar -xzf scopes-linux-x64-bundle.tar.gz
 cd scopes-*-bundle
+sha256sum -c verification/binary-hash-linux-x64.txt
+less install.sh  # optional review
 ./install.sh
 ```
+
+Replace `linux-x64` with the identifier for your platform bundle.
 
 ### Manual Installation
 
 If you prefer manual installation:
 
-1. Download the latest release:
+1. Download and extract the platform bundle:
 ```bash
-wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64.tar.gz
+# Example for Linux x64
+wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64-bundle.tar.gz
+tar -xzf scopes-linux-x64-bundle.tar.gz
 ```
 
-2. Extract to your preferred location:
+2. Copy the binary to your preferred location:
 ```bash
-tar -xzf scopes-linux-x64.tar.gz -C ~/.local/bin/
+cd scopes-*-bundle
+cp scopes ~/.local/bin/
+# Or use the install script with custom path
+./install.sh --install-dir ~/.local/bin
 ```
 
 3. Add to your PATH if needed:
