@@ -708,17 +708,42 @@ jobs:
               archive_ext="tar.gz"
             fi
 
-            # Find and copy the specific binary
-            find ../artifacts -name "$binary_pattern" -type f -exec cp {} . \;
-            if [ ! -f "$binary_pattern" ]; then
+            # Find and copy the specific binary safely
+            binary_found=false
+            while IFS= read -r -d '' file; do
+              if cp "$file" .; then
+                binary_found=true
+                echo "Copied binary: $file"
+                break
+              else
+                echo "Warning: Failed to copy binary: $file"
+              fi
+            done < <(find ../artifacts -name "$binary_pattern" -type f -print0)
+
+            if [ "$binary_found" = false ] || [ ! -f "$binary_pattern" ]; then
               echo "Warning: Binary not found for $platform-$arch"
               cd ..
-              rm -rf "$BUNDLE_NAME"
+              if ! rm -rf "$BUNDLE_NAME" 2>/dev/null; then
+                echo "Warning: Failed to clean up $BUNDLE_NAME"
+              fi
               continue
             fi
 
-            # Copy platform-specific hash file
-            find ../artifacts -name "binary-hash-$platform-$arch.txt" -type f -exec cp {} verification/ \;
+            # Copy platform-specific hash file safely
+            hash_copied=false
+            while IFS= read -r -d '' file; do
+              if cp "$file" verification/; then
+                hash_copied=true
+                echo "Copied hash file: $file"
+                break
+              else
+                echo "Warning: Failed to copy hash file: $file"
+              fi
+            done < <(find ../artifacts -name "binary-hash-$platform-$arch.txt" -type f -print0)
+
+            if [ "$hash_copied" = false ]; then
+              echo "Warning: Hash file not found for $platform-$arch"
+            fi
 
             # Copy SLSA provenance if available (shared across all platforms)
             if [ -d "../provenance" ]; then
@@ -811,11 +836,37 @@ jobs:
           **Quick Start**: `scopes --help` after installation
           EOF
 
-            # Copy installation script
+            # Copy installation script with existence check
             if [ "$platform" = "win32" ]; then
-              cp ../install/offline/install.ps1 .
+              if [ -f "../install/offline/install.ps1" ]; then
+                cp ../install/offline/install.ps1 .
+                echo "Copied PowerShell installer script"
+              else
+                echo "Warning: install.ps1 not found, creating placeholder"
+                cat > install.ps1 << 'EOF'
+# Scopes Installation Script for Windows (Placeholder)
+# This feature will be implemented in a future release
+param([string]$InstallDir = "$env:ProgramFiles\Scopes\bin")
+Write-Host "PowerShell installer will be available in future release" -ForegroundColor Yellow
+Write-Host "For now, please extract the .exe file to your desired location and add to PATH" -ForegroundColor Yellow
+EOF
+              fi
             else
-              cp ../install/offline/install.sh .
+              if [ -f "../install/offline/install.sh" ]; then
+                cp ../install/offline/install.sh .
+                echo "Copied Unix installer script"
+              else
+                echo "Warning: install.sh not found, creating placeholder"
+                cat > install.sh << 'EOF'
+#!/bin/bash
+# Scopes Installation Script for Unix (Placeholder)
+echo "Unix installer will be available in future release"
+echo "For now, please:"
+echo "  chmod +x scopes-*"
+echo "  sudo mv scopes-* /usr/local/bin/scopes"
+EOF
+                chmod +x install.sh
+              fi
             fi
 
             # Create shared documentation
