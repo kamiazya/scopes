@@ -1,9 +1,10 @@
 package io.github.kamiazya.scopes.platform.infrastructure.database
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import io.github.kamiazya.scopes.platform.observability.logger.Logger
-import io.github.kamiazya.scopes.platform.observability.logger.ConsoleLogger
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
+import io.github.kamiazya.scopes.platform.observability.logging.ConsoleLogger
 
 /**
  * Manages database migrations for SQLDelight databases.
@@ -49,15 +50,15 @@ class DatabaseMigrationManager(
             currentVersion == 0L -> {
                 // Fresh database
                 logger.info("Creating new database schema (version $targetVersion)")
-                driver.newTransaction().use { transaction ->
-                    try {
-                        schema.create(driver)
-                        setVersion(driver, targetVersion)
-                        transaction.endTransaction(successful = true)
-                    } catch (e: Exception) {
-                        transaction.endTransaction(successful = false)
-                        throw DatabaseMigrationException("Failed to create database schema", e)
-                    }
+                // Use raw SQL transactions
+                driver.execute(null, "BEGIN TRANSACTION", 0)
+                try {
+                    schema.create(driver)
+                    setVersion(driver, targetVersion)
+                    driver.execute(null, "COMMIT", 0)
+                } catch (e: Exception) {
+                    driver.execute(null, "ROLLBACK", 0)
+                    throw DatabaseMigrationException("Failed to create database schema", e)
                 }
             }
             currentVersion < targetVersion -> {
@@ -68,7 +69,7 @@ class DatabaseMigrationManager(
                 // Fail fast when database is newer than application
                 val message = "Database version ($currentVersion) is newer than application version ($targetVersion). " +
                         "Please update the application to a newer version."
-                logger.error(message)
+                logger.error(message, throwable = DatabaseMigrationException(message))
                 throw DatabaseMigrationException(message)
             }
             else -> {
@@ -92,7 +93,7 @@ class DatabaseMigrationManager(
                 }
             },
             parameters = 0
-        )
+        ).value
     }
 
     /**
@@ -111,7 +112,7 @@ class DatabaseMigrationManager(
                 }
             },
             parameters = 0
-        )
+        ).value
     }
 
     /**
@@ -135,27 +136,30 @@ class DatabaseMigrationManager(
         targetVersion: Long,
         callbacks: Map<Long, MigrationCallback>
     ) {
-        driver.newTransaction().use { transaction ->
-            try {
-                // Execute SQLDelight migrations
-                schema.migrate(driver, oldVersion = currentVersion, newVersion = targetVersion) { afterVersion ->
-                    // Execute custom callbacks after specific versions
-                    callbacks[afterVersion]?.let { callback ->
-                        logger.debug("Executing custom migration callback for version $afterVersion")
-                        callback.execute(driver)
-                    }
+        // Use raw SQL transactions
+        driver.execute(null, "BEGIN TRANSACTION", 0)
+        try {
+            // Execute SQLDelight migrations
+            schema.migrate(driver, currentVersion, targetVersion)
+
+            // Note: The callbacks parameter with afterVersion lambda is not part of the standard migrate API
+            // If custom callbacks are needed at specific versions, they should be handled separately
+            for (version in (currentVersion + 1)..targetVersion) {
+                callbacks[version]?.let { callback ->
+                    logger.debug("Executing custom migration callback for version $version")
+                    callback.execute(driver)
                 }
-
-                // Update version
-                setVersion(driver, targetVersion)
-
-                transaction.endTransaction(successful = true)
-                logger.info("Migration completed successfully")
-            } catch (e: Exception) {
-                logger.error("Migration failed", error = e)
-                transaction.endTransaction(successful = false)
-                throw DatabaseMigrationException("Failed to migrate database from $currentVersion to $targetVersion", e)
             }
+
+            // Update version
+            setVersion(driver, targetVersion)
+
+            driver.execute(null, "COMMIT", 0)
+            logger.info("Migration completed successfully")
+        } catch (e: Exception) {
+            logger.error("Migration failed", throwable = e)
+            driver.execute(null, "ROLLBACK", 0)
+            throw DatabaseMigrationException("Failed to migrate database from $currentVersion to $targetVersion", e)
         }
     }
 
