@@ -139,6 +139,8 @@ subprojects {
 
 // Custom task to check if GraalVM is available
 tasks.register("checkGraalVM") {
+    description = "Check if GraalVM native-image is available in the current environment"
+    group = "verification"
     doLast {
         try {
             val isWindows = System.getProperty("os.name").lowercase().contains("windows")

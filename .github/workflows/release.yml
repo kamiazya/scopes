@@ -817,13 +817,13 @@ jobs:
           find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload distribution packages
-          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SLSA provenance if available
           if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
-            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           fi
 
       - name: Enhance release notes with custom content
@@ -831,7 +831,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the auto-generated release notes
-          AUTO_NOTES=$(gh release view "${{ steps.version.outputs.tag_version }}" --json body --jq '.body')
+          AUTO_NOTES=$(gh release view "${{ needs.resolve-version.outputs.tag_version }}" --json body --jq '.body')
 
           # Create the combined release notes
           cat > combined_notes.md << 'EOF'
@@ -843,19 +843,19 @@ jobs:
 
           #### Linux/macOS
           ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.sh | sh
+          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.sh | sh
           ```
 
           #### Windows PowerShell
           ```powershell
-          iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.ps1 | iex
+          iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.ps1 | iex
           ```
 
           ### 📦 Offline Installation
 
           For air-gapped environments or enterprise deployments, download the unified distribution package:
 
-          1. Download `scopes-${{ steps.version.outputs.version }}-dist.tar.gz` or `.zip`
+          1. Download `scopes-${{ needs.resolve-version.outputs.version }}-dist.tar.gz` or `.zip`
           2. Extract the package
           3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
 
@@ -888,7 +888,7 @@ jobs:
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
           # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.version }}-linux-x64 \
+          slsa-verifier verify-artifact scopes-${{ needs.resolve-version.outputs.version }}-linux-x64 \
             --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
@@ -920,4 +920,4 @@ jobs:
           echo "$AUTO_NOTES" >> combined_notes.md
 
           # Update the release with combined content
-          gh release edit "${{ steps.version.outputs.tag_version }}" --notes-file combined_notes.md
+          gh release edit "${{ needs.resolve-version.outputs.tag_version }}" --notes-file combined_notes.md

@@ -13,6 +13,7 @@ import io.github.kamiazya.scopes.userpreferences.domain.repository.UserPreferenc
 import io.github.kamiazya.scopes.userpreferences.domain.value.HierarchyPreferences
 import io.github.kamiazya.scopes.userpreferences.infrastructure.config.HierarchyPreferencesConfig
 import io.github.kamiazya.scopes.userpreferences.infrastructure.config.UserPreferencesConfig
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -22,7 +23,11 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-class FileBasedUserPreferencesRepository(configPathStr: String, private val logger: Logger) : UserPreferencesRepository {
+class FileBasedUserPreferencesRepository(
+    configPathStr: String,
+    private val logger: Logger,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) : UserPreferencesRepository {
 
     private val configPath = Path(configPathStr)
     private val configFile = Path(configPathStr, UserPreferencesConfig.CONFIG_FILE_NAME)
@@ -37,7 +42,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
         val preferences = aggregate.preferences
             ?: raise(UserPreferencesError.PreferencesNotInitialized)
 
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try {
                 val config = UserPreferencesConfig(
                     version = UserPreferencesConfig.CURRENT_VERSION,
@@ -78,7 +83,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
     override suspend fun findForCurrentUser(): Either<UserPreferencesError, UserPreferencesAggregate?> = either {
         cachedAggregate?.let { return@either it }
 
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             if (!configFile.exists()) {
                 logger.debug("No preferences file found at $configFile")
                 return@withContext null
