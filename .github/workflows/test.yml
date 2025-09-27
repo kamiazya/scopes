@@ -65,7 +65,7 @@ jobs:
       run: |
         if [ -n "$SONAR_TOKEN" ]; then
           echo "Running SonarCloud analysis with coverage..."
-          ./gradlew --no-daemon sonarqube \
+          ./gradlew --no-daemon sonar \
             -Dsonar.coverage.jacoco.xmlReportPaths=quality/coverage-report/build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml
         else
           echo "::warning::SONAR_TOKEN is not set. Skipping SonarCloud analysis."

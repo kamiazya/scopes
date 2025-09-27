@@ -296,13 +296,6 @@ sonarqube {
         property("sonar.projectName", "Scopes")
         property("sonar.projectVersion", version)
 
-        // Source and test configuration
-        property("sonar.sources", ".")
-        property("sonar.inclusions", "**/*.kt,**/*.kts")
-        property("sonar.exclusions", "**/build/**,**/test/**,**/*Test.kt,**/*Spec.kt,**/generated/**,**/node_modules/**")
-        property("sonar.tests", ".")
-        property("sonar.test.inclusions", "**/*Test.kt,**/*Spec.kt,**/test/**/*.kt")
-
         // Language settings
         property("sonar.language", "kotlin")
         property("sonar.kotlin.detekt.reportPaths", "**/build/reports/detekt/detekt.xml")
