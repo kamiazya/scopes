@@ -1,5 +1,3 @@
-import org.gradle.testing.jacoco.tasks.JacocoReport
-
 plugins {
     base
     jacoco
@@ -56,54 +54,12 @@ dependencies {
     jacocoAggregation(project(":quality-konsist"))
 }
 
-// Create the aggregated report task directly
-tasks.register<JacocoReport>("testCodeCoverageReport") {
-    description = "Generate aggregated code coverage report for all modules"
-    group = "verification"
-
-    // Depend on test tasks from all subprojects with tests
-    // Only depend on actual test and jacoco tasks to avoid spurious dependencies
-    rootProject.subprojects.forEach { subproject ->
-        subproject.tasks.findByName("test")?.let { dependsOn(it) }
-        subproject.tasks.findByName("jacocoTestReport")?.let { dependsOn(it) }
-    }
-
-    // Collect execution data from all subprojects
-    executionData.from(
-        rootProject.subprojects
-            .map { subproject ->
-                "${subproject.layout.buildDirectory.get().asFile}/jacoco/test.exec"
-            }.filter { file(it).exists() },
-    )
-
-    // Collect source directories from all subprojects
-    sourceDirectories.setFrom(
-        files(
-            rootProject.subprojects.flatMap { subproject ->
-                listOf("${subproject.projectDir}/src/main/kotlin")
-            },
-        ),
-    )
-
-    // Collect class directories from all subprojects
-    classDirectories.setFrom(
-        files(
-            rootProject.subprojects.map { subproject ->
-                fileTree("${subproject.layout.buildDirectory.get().asFile}/classes/kotlin/main") {
-                    exclude("**/*Test.class", "**/*Spec.class")
-                }
-            },
-        ),
-    )
-
-    // Configure report outputs
+// Configure reports using the jacoco-report-aggregation plugin syntax
+reporting {
     reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
+        val testCodeCoverageReport by creating(JacocoCoverageReport::class) {
+            // This task will aggregate coverage from all projects specified in jacocoAggregation dependencies
+            testSuiteName.set("test")
+        }
     }
-}
-
-tasks.check {
-    dependsOn(tasks.named("testCodeCoverageReport"))
 }
