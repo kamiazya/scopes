@@ -2,7 +2,7 @@
 "scopes": patch
 ---
 
-Fix critical security vulnerabilities in dependencies
+Fix medium and low severity security vulnerabilities in dependencies
 
 - Update Apache Commons Lang3 to 3.18.0 to fix CVE-2025-48924 (uncontrolled recursion vulnerability)
 - Verify Logback 1.5.18 includes fixes for CVE-2024-12801 (SSRF) and CVE-2024-12798 (Expression Language injection)
