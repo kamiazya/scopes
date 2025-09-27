@@ -841,6 +841,9 @@ jobs:
               if [ -f "../install/offline/install.ps1" ]; then
                 cp ../install/offline/install.ps1 .
                 echo "Copied PowerShell installer script"
+              elif [ -f "../install/install.ps1" ]; then
+                cp ../install/install.ps1 .
+                echo "Copied PowerShell installer script"
               else
                 echo "Warning: install.ps1 not found, creating placeholder"
                 cat > install.ps1 << 'EOF'
