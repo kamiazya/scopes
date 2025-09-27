@@ -155,8 +155,18 @@ private fun Any?.toJsonElementSafe(): kotlinx.serialization.json.JsonElement = w
     is Boolean -> kotlinx.serialization.json.JsonPrimitive(this)
     is String -> kotlinx.serialization.json.JsonPrimitive(this)
     is Enum<*> -> kotlinx.serialization.json.JsonPrimitive(this.name)
-    is Map<*, *> -> buildJsonObject {
-        this@toJsonElementSafe.forEach { (k, v) ->
+    is Map<*, *> -> mapToJsonObject(this)
+    is Iterable<*> -> iterableToJsonArray(this)
+    is Array<*> -> arrayToJsonArray(this)
+    is IntArray, is LongArray, is ShortArray, is FloatArray, is DoubleArray, 
+    is BooleanArray, is CharArray -> primitiveArrayToJsonArray(this)
+    is Sequence<*> -> sequenceToJsonArray(this)
+    else -> kotlinx.serialization.json.JsonPrimitive(this.toString())
+}
+
+private fun mapToJsonObject(map: Map<*, *>): kotlinx.serialization.json.JsonObject =
+    buildJsonObject {
+        map.forEach { (k, v) ->
             val key = when (k) {
                 null -> return@forEach // skip null keys
                 is String -> k
@@ -165,15 +175,25 @@ private fun Any?.toJsonElementSafe(): kotlinx.serialization.json.JsonElement = w
             put(key, v.toJsonElementSafe())
         }
     }
-    is Iterable<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
-    is Array<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
-    is IntArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is LongArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is ShortArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is FloatArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is DoubleArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is BooleanArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e)) }
-    is CharArray -> buildJsonArray { for (e in this@toJsonElementSafe) add(kotlinx.serialization.json.JsonPrimitive(e.toString())) }
-    is Sequence<*> -> buildJsonArray { this@toJsonElementSafe.forEach { add(it.toJsonElementSafe()) } }
-    else -> kotlinx.serialization.json.JsonPrimitive(this.toString())
-}
+
+private fun iterableToJsonArray(iterable: Iterable<*>): kotlinx.serialization.json.JsonArray =
+    buildJsonArray { iterable.forEach { add(it.toJsonElementSafe()) } }
+
+private fun arrayToJsonArray(array: Array<*>): kotlinx.serialization.json.JsonArray =
+    buildJsonArray { array.forEach { add(it.toJsonElementSafe()) } }
+
+private fun primitiveArrayToJsonArray(array: Any): kotlinx.serialization.json.JsonArray =
+    buildJsonArray {
+        when (array) {
+            is IntArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is LongArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is ShortArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is FloatArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is DoubleArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is BooleanArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e))
+            is CharArray -> for (e in array) add(kotlinx.serialization.json.JsonPrimitive(e.toString()))
+        }
+    }
+
+private fun sequenceToJsonArray(sequence: Sequence<*>): kotlinx.serialization.json.JsonArray =
+    buildJsonArray { sequence.forEach { add(it.toJsonElementSafe()) } }
