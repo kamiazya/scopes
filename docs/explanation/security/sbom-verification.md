@@ -28,31 +28,30 @@ Scopes releases include comprehensive SBOM files that provide:
 
 ### 1. Automated Verification (Recommended)
 
-Use our cross-platform verification scripts that include SBOM validation:
+Use the platform-specific bundle packages that include SBOM validation:
 
 ```bash
-# Linux/macOS - Using environment variables (recommended)
-export SCOPES_VERSION=v1.0.0
-export SCOPES_AUTO_DOWNLOAD=true
-export SCOPES_VERIFY_SBOM=true
-curl -L -o verify-release.sh https://raw.githubusercontent.com/kamiazya/scopes/main/install/verify-release.sh
-chmod +x verify-release.sh
-./verify-release.sh  # SBOM verification enabled via environment
+# Linux/macOS - Extract platform bundle
+tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
+cd scopes-v1.0.0-linux-x64-bundle
 
-# Linux/macOS - Command line parameters
-./verify-release.sh --download --version v1.0.0 --verify-sbom
+# SBOM files are included in the bundle
+ls sbom-linux-x64.json sbom-linux-x64.xml
+
+# Run installation with automatic verification
+./install.sh  # Includes SBOM verification
 ```
 
 ```powershell
-# Windows PowerShell - Using environment variables (recommended)
-$env:SCOPES_VERSION='v1.0.0'
-$env:SCOPES_AUTO_DOWNLOAD='true'
-$env:SCOPES_VERIFY_SBOM='true'
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kamiazya/scopes/main/install/Verify-Release.ps1" -OutFile "Verify-Release.ps1"
-.\Verify-Release.ps1  # SBOM verification enabled via environment
+# Windows PowerShell - Extract platform bundle
+Expand-Archive scopes-v1.0.0-win32-x64-bundle.zip -DestinationPath .
+cd scopes-v1.0.0-win32-x64-bundle
 
-# Windows PowerShell - Command line parameters
-.\Verify-Release.ps1 -AutoDownload -Version v1.0.0 -VerifySBOM
+# SBOM files are included in the bundle
+Get-ChildItem sbom-win32-x64.json, sbom-win32-x64.xml
+
+# Run installation with automatic verification
+.\install.ps1  # Includes SBOM verification
 ```
 
 ### 2. Manual Download and Verify Checksums

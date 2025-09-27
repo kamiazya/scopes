@@ -1,8 +1,10 @@
-# Scopes Distribution Package
+# Scopes Unified Distribution Package
 
 ## 📦 Package Contents
 
-This distribution package contains everything needed to install Scopes, suitable for both online and offline environments.
+This unified distribution package contains everything needed to install Scopes for all platforms, suitable for enterprise and multi-platform deployments.
+
+> **💡 Recommended**: For most users, use the platform-specific bundle packages (~20MB each) instead of this unified package (~260MB). Platform bundles provide the same security and features with 92% smaller downloads.
 
 ### Package Structure
 
