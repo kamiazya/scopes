@@ -30,6 +30,11 @@ replay_pid*
 .gradle/
 build/
 
+# Gradle dependency verification temporary files
+gradle/verification-keyring.gpg
+gradle/verification-metadata.xml.backup
+settings-gradle.lockfile
+
 tmp/
 .claude/settings.local.json
 

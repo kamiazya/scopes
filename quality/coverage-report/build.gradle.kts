@@ -61,30 +61,25 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
     description = "Generate aggregated code coverage report for all modules"
     group = "verification"
 
-    // Depend on all necessary tasks to fix Gradle dependency ordering issues
-    // First ensure all subprojects have completed their compilation and testing
-    rootProject.allprojects.forEach { project ->
-        project.tasks.findByName("compileJava")?.let { dependsOn(it) }
-        project.tasks.findByName("compileKotlin")?.let { dependsOn(it) }
-        project.tasks.findByName("compileTestJava")?.let { dependsOn(it) }
-        project.tasks.findByName("compileTestKotlin")?.let { dependsOn(it) }
-        project.tasks.findByName("processResources")?.let { dependsOn(it) }
-        project.tasks.findByName("processTestResources")?.let { dependsOn(it) }
-        project.tasks.findByName("test")?.let { dependsOn(it) }
-        project.tasks.findByName("jacocoTestReport")?.let { dependsOn(it) }
+    // Depend on test tasks from all subprojects with tests
+    // Only depend on actual test and jacoco tasks to avoid spurious dependencies
+    rootProject.subprojects.forEach { subproject ->
+        subproject.tasks.findByName("test")?.let { dependsOn(it) }
+        subproject.tasks.findByName("jacocoTestReport")?.let { dependsOn(it) }
     }
 
     // Collect execution data from all subprojects
-    executionData(
-        fileTree(project.rootDir) {
-            include("**/build/jacoco/*.exec")
-        },
+    executionData.from(
+        rootProject.subprojects
+            .map { subproject ->
+                "${subproject.layout.buildDirectory.get().asFile}/jacoco/test.exec"
+            }.filter { file(it).exists() },
     )
 
     // Collect source directories from all subprojects
     sourceDirectories.setFrom(
         files(
-            subprojects.flatMap { subproject ->
+            rootProject.subprojects.flatMap { subproject ->
                 listOf("${subproject.projectDir}/src/main/kotlin")
             },
         ),
@@ -93,8 +88,8 @@ tasks.register<JacocoReport>("testCodeCoverageReport") {
     // Collect class directories from all subprojects
     classDirectories.setFrom(
         files(
-            subprojects.map { subproject ->
-                fileTree("${subproject.buildDir}/classes/kotlin/main") {
+            rootProject.subprojects.map { subproject ->
+                fileTree("${subproject.layout.buildDirectory.get().asFile}/classes/kotlin/main") {
                     exclude("**/*Test.class", "**/*Spec.class")
                 }
             },
