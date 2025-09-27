@@ -17,6 +17,9 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
 
+    // Security patches
+    api(libs.commons.lang3)
+
     // Dependency injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
