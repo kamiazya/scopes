@@ -1,5 +1,5 @@
 ---
-"scopes": minor
+"scopes": patch
 ---
 
 feat: replace individual assets with bundled packages for easier downloads
