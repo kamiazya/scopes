@@ -164,13 +164,13 @@ class MigrationTest : DescribeSpec({
                 null,
                 "PRAGMA table_info(scopes)",
                 mapper = { cursor ->
-                    var found = false
-                    while (cursor.next().value) {
-                        if (cursor.getString(1) == "status") {
-                            found = true
-                        }
-                    }
-                    found
+                    QueryResult.Value(
+                        buildList {
+                            while (cursor.next().value) {
+                                add(cursor.getString(1) ?: "")
+                            }
+                        }.contains("status")
+                    )
                 },
                 0
             ).value

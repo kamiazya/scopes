@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.platform.infrastructure.database
 
+import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
@@ -8,9 +9,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 
 class DatabaseMigrationManagerTest : DescribeSpec({
     describe("DatabaseMigrationManager") {
@@ -30,14 +28,32 @@ class DatabaseMigrationManagerTest : DescribeSpec({
         describe("migrate") {
             it("should create new schema when database is fresh") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val targetVersion = 1L
+                val createCalled = mutableListOf<SqlDriver>()
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        createCalled.add(driver)
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        return QueryResult.Value(Unit)
+                    }
+                }
 
                 // When
                 migrationManager.migrate(driver, schema, targetVersion)
 
                 // Then
-                verify(exactly = 1) { schema.create(driver) }
+                createCalled.size shouldBe 1
+                createCalled.first() shouldBe driver
 
                 // Check version was set
                 val version = driver.executeQuery<Long>(
@@ -53,9 +69,27 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should migrate schema when current version is lower") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 3L
+                val migrateCalled = mutableListOf<Triple<SqlDriver, Long, Long>>()
+                
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        migrateCalled.add(Triple(driver, oldVersion, newVersion))
+                        return QueryResult.Value(Unit)
+                    }
+                }
 
                 // Set initial version
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
@@ -64,9 +98,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 migrationManager.migrate(driver, schema, targetVersion)
 
                 // Then
-                verify(exactly = 1) {
-                    schema.migrate(driver, currentVersion, targetVersion, any())
-                }
+                migrateCalled.size shouldBe 1
+                val (migrateDriver, oldVer, newVer) = migrateCalled.first()
+                migrateDriver shouldBe driver
+                oldVer shouldBe currentVersion
+                newVer shouldBe targetVersion
 
                 // Check version was updated
                 val version = driver.executeQuery<Long>(
@@ -82,8 +118,28 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should not migrate when database is up to date") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val targetVersion = 2L
+                var createCalled = false
+                var migrateCalled = false
+                
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        createCalled = true
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        migrateCalled = true
+                        return QueryResult.Value(Unit)
+                    }
+                }
 
                 // Set current version to target
                 driver.execute(null, "PRAGMA user_version = $targetVersion", 0)
@@ -92,13 +148,12 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 migrationManager.migrate(driver, schema, targetVersion)
 
                 // Then
-                verify(exactly = 0) { schema.create(driver) }
-                verify(exactly = 0) { schema.migrate(any(), any(), any(), any()) }
+                createCalled shouldBe false
+                migrateCalled shouldBe false
             }
 
             it("should execute custom callbacks during migration") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 3L
                 var callbackExecuted = false
@@ -109,16 +164,25 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     }
                 )
 
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        return QueryResult.Value(Unit)
+                    }
+                }
+
                 // Set initial version
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
-
-                // Configure schema.migrate to call the after callback
-                every {
-                    schema.migrate(driver, currentVersion, targetVersion, any())
-                } answers {
-                    val afterCallback = arg<(Long) -> Unit>(3)
-                    afterCallback(2L) // Simulate migration to version 2
-                }
 
                 // When
                 migrationManager.migrate(driver, schema, targetVersion, callbacks)
@@ -129,17 +193,28 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should rollback on migration failure") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 2L
+                
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        throw RuntimeException("Migration failed")
+                    }
+                }
 
                 // Set initial version
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
-
-                // Configure schema to throw exception
-                every {
-                    schema.migrate(driver, currentVersion, targetVersion, any())
-                } throws RuntimeException("Migration failed")
 
                 // When
                 try {
@@ -163,9 +238,29 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should fail fast when database version is newer than target version") {
                 // Given
-                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 5L
                 val targetVersion = 3L
+                var createCalled = false
+                var migrateCalled = false
+                
+                val schema = object : SqlSchema<QueryResult<Unit>> {
+                    override val version = targetVersion
+                    
+                    override fun create(driver: SqlDriver): QueryResult<Unit> {
+                        createCalled = true
+                        return QueryResult.Value(Unit)
+                    }
+                    
+                    override fun migrate(
+                        driver: SqlDriver,
+                        oldVersion: Long,
+                        newVersion: Long,
+                        vararg callbacks: AfterVersion
+                    ): QueryResult<Unit> {
+                        migrateCalled = true
+                        return QueryResult.Value(Unit)
+                    }
+                }
 
                 // Set database version higher than target
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
@@ -175,11 +270,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     migrationManager.migrate(driver, schema, targetVersion)
                 }
 
-                exception.message shouldBe "Database version ($currentVersion) is newer than application version ($targetVersion). Please update the application."
+                exception.message shouldBe "Database version ($currentVersion) is newer than application version ($targetVersion). Please update the application to a newer version."
 
                 // Verify no schema operations were attempted
-                verify(exactly = 0) { schema.create(driver) }
-                verify(exactly = 0) { schema.migrate(any(), any(), any(), any()) }
+                createCalled shouldBe false
+                migrateCalled shouldBe false
 
                 // Version should remain unchanged
                 val version = driver.executeQuery<Long>(
