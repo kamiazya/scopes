@@ -7,8 +7,12 @@ on:
         description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
         required: true
         type: string
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
 concurrency:
-  group: release-${{ inputs.tag }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -33,11 +37,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ inputs.tag }}"
+          # Handle both workflow_dispatch (inputs.tag) and push (github.ref_name) triggers
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
           # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
           CLEAN_VERSION=${VERSION#v}
           echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
           echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using tag: $VERSION (from ${{ github.event_name }})"
 
   validate-tag:
     name: Validate Release Tag
