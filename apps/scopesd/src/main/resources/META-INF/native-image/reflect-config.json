@@ -1,0 +1,268 @@
+[ {
+  "name" : "org.sqlite.JDBC",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.core.DB",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.core.NativeDB",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteConfig",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteJDBCLoader",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.util.OSInfo",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.SQLiteConnection",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.SQLiteDataSource",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Function",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "org.sqlite.Function$Aggregate",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Function$Window",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.ProgressHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.BusyHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "org.sqlite.Collation",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.LoggerContext",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "ch.qos.logback.core.rolling.RollingFileAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.rolling.TimeBasedRollingPolicy",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.ConsoleAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.classic.AsyncAppender",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "ch.qos.logback.core.status.NopStatusListener",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.internal.DnsNameResolverProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.internal.PickFirstLoadBalancerProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.NettyChannelProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.NettyServerProvider",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.protobuf.services.HealthServiceImpl",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.protobuf.services.ProtoReflectionService",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueuePad2",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueuePad3",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscChunkedArrayQueuePad1",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscChunkedArrayQueuePad2",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.shaded.org.jctools.queues.MpscChunkedArrayQueuePad3",
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.ByteBufAllocator",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.ResourceLeakDetector",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.PooledByteBufAllocator",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.UnpooledByteBufAllocator",
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.ReferenceCountUtil",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.DefaultChannelPipeline",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.Unpooled",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2ConnectionHandler",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "allDeclaredFields" : true,
+  "allPublicFields" : true
+} ]

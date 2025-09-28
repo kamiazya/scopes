@@ -188,3 +188,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Wrapper configuration and output files
+.scopes/wrapper.properties
+*.jfr

@@ -36,6 +36,7 @@ class ScopesCommand :
             AliasCommand().configureSubcommands(),
             AspectCommand().configureSubcommands(),
             ContextCommand().configureSubcommands(),
+            InfoCommand(),
             McpCommand(),
             CompletionCommand(), // Hidden command for shell completion
         )

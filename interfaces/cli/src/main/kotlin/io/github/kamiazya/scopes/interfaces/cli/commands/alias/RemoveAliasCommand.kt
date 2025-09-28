@@ -5,9 +5,9 @@ import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
 import io.github.kamiazya.scopes.interfaces.cli.mappers.ContractErrorMessageMapper
 import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
+import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 import kotlinx.coroutines.runBlocking
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -21,7 +21,7 @@ class RemoveAliasCommand :
     ),
     KoinComponent {
     override fun help(context: com.github.ajalt.clikt.core.Context) = "Remove an alias from a scope"
-    private val aliasCommandAdapter: AliasCommandAdapter by inject()
+    private val transport: Transport by inject()
     private val parameterResolver: ScopeParameterResolver by inject()
 
     private val aliasName by argument("alias", help = "The alias name to remove")
@@ -38,11 +38,11 @@ class RemoveAliasCommand :
             )
 
             // Remove alias
-            aliasCommandAdapter.removeAlias(scopeId, aliasName).fold(
+            transport.removeAlias(scopeId, aliasName).fold(
                 { error ->
                     throw CliktError("Error removing alias: ${ContractErrorMessageMapper.getMessage(error)}")
                 },
-                {
+                { result ->
                     echo("Alias '$aliasName' removed successfully from scope '$scope'")
                 },
             )

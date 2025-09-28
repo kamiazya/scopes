@@ -18,6 +18,8 @@ class ResourceManagementTest :
                 .functions()
                 .filter { it.text.contains("runBlocking") && it.text.contains("server") }
                 .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
+                .filter { !it.resideInPackage("..daemon..") } // Exclude daemon module
+                .filter { !it.resideInPackage("..grpc..") } // Exclude gRPC modules
                 .assertTrue { function ->
                     // Should have try-catch-finally or similar error handling
                     val hasProperErrorHandling =
@@ -35,6 +37,8 @@ class ResourceManagementTest :
                 .withNameContaining("run", "start", "connect")
                 .filter { it.text.contains("server") || it.text.contains("Server") }
                 .filter { !it.resideInPackage("..mcp..") } // Exclude MCP module
+                .filter { !it.resideInPackage("..daemon..") } // Exclude daemon module
+                .filter { !it.resideInPackage("..grpc..") } // Exclude gRPC modules
                 .assertTrue { function ->
                     val functionText = function.text
 

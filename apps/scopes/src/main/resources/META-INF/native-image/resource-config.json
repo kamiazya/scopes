@@ -20,7 +20,45 @@
       "pattern" : "logback-.*\\.xml$"
     }, {
       "pattern" : "META-INF/services/.*"
+    }, {
+      "pattern" : "META-INF/native-image/.*"
+    }, {
+      "pattern" : "version.txt"
+    }, {
+      "pattern" : "io/grpc/.*\\.proto$"
+    }, {
+      "pattern" : "google/.*\\.proto$"
+    }, {
+      "pattern" : "com/google/protobuf/.*\\.proto$"
+    }, {
+      "pattern" : "io/grpc/netty/shaded/io/netty/.*\\.properties$"
+    }, {
+      "pattern" : "io/grpc/internal/.*\\.properties$"
+    }, {
+      "pattern" : "kotlin/.*\\.kotlin_builtins$"
+    }, {
+      "pattern" : "kotlin/.*\\.kotlin_metadata$"
+    }, {
+      "pattern" : "ch/qos/logback/classic/.*"
+    }, {
+      "pattern" : "ch/qos/logback/core/.*"
+    }, {
+      "pattern" : "\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
+    }, {
+      "pattern" : "\\Qcom/sun/jna/darwin-aarch64/libjnidispatch.jnilib\\E"
+    }, {
+      "pattern" : "\\Qorg/sqlite/native/Mac/aarch64/libsqlitejdbc.dylib\\E"
+    }, {
+      "pattern" : "\\Qlogback.scmo\\E"
+    }, {
+      "pattern" : "\\Qlogback-test.scmo\\E"
+    }, {
+      "pattern" : "\\Qlogback-test.xml\\E"
     } ]
   },
-  "bundles" : [ ]
+  "bundles" : [ {
+    "name" : "com.sun.jna.CoreFoundationUtil"
+  }, {
+    "name" : "com.sun.jna.DarwinFileUtils"
+  } ]
 }

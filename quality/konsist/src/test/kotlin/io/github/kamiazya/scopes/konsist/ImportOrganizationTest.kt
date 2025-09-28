@@ -130,7 +130,12 @@ class ImportOrganizationTest :
                 .files
                 .filter { file ->
                     // Exclude platform-infrastructure module which is JVM-specific
-                    !file.path.contains("platform/infrastructure")
+                    !file.path.contains("platform/infrastructure") &&
+                        // Exclude daemon and gRPC modules which are JVM-specific
+                        !file.path.contains("apps/scopesd") &&
+                        !file.path.contains("interfaces/daemon-grpc") &&
+                        !file.path.contains("interfaces/cli-grpc") &&
+                        !file.path.contains("interfaces/rpc-contracts")
                 }
                 .assertFalse { file ->
                     file.imports.any { import ->

@@ -1,0 +1,62 @@
+{
+  "resources" : {
+    "includes" : [ {
+      "pattern" : "org/sqlite/.*\\.dll$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.so$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.dylib$"
+    }, {
+      "pattern" : "org/sqlite/.*\\.jnilib$"
+    }, {
+      "pattern" : "org/sqlite/native/.*"
+    }, {
+      "pattern" : ".*\\.properties$"
+    }, {
+      "pattern" : "logback\\.xml$"
+    }, {
+      "pattern" : "logback-native\\.xml$"
+    }, {
+      "pattern" : "logback-.*\\.xml$"
+    }, {
+      "pattern" : "META-INF/services/.*"
+    }, {
+      "pattern" : "META-INF/native-image/.*"
+    }, {
+      "pattern" : "version.txt"
+    }, {
+      "pattern" : "build-info.properties"
+    }, {
+      "pattern" : "io/grpc/.*\\.proto$"
+    }, {
+      "pattern" : "google/.*\\.proto$"
+    }, {
+      "pattern" : "com/google/protobuf/.*\\.proto$"
+    }, {
+      "pattern" : "kotlin/.*\\.kotlin_builtins$"
+    }, {
+      "pattern" : "kotlin/.*\\.kotlin_metadata$"
+    }, {
+      "pattern" : "ch/qos/logback/classic/.*"
+    }, {
+      "pattern" : "ch/qos/logback/core/.*"
+    }, {
+      "pattern" : "\\QMETA-INF/maven/org.xerial/sqlite-jdbc/pom.properties\\E"
+    }, {
+      "pattern" : "\\Qorg/sqlite/native/Mac/aarch64/libsqlitejdbc.dylib\\E"
+    }, {
+      "pattern" : "\\Qlogback.scmo\\E"
+    }, {
+      "pattern" : "\\Qlogback-test.scmo\\E"
+    }, {
+      "pattern" : "\\Qlogback-test.xml\\E"
+    }, {
+      "pattern" : "\\QMETA-INF/io.netty.versions.properties\\E"
+    }, {
+      "pattern" : "\\Qio/grpc/netty/shaded/io/netty/nativeimage/features\\E"
+    }, {
+      "pattern" : "\\Qio/grpc/netty/shaded/io/netty/channel/socket/nio/NioChannelOption\\E"
+    } ]
+  },
+  "bundles" : [ ]
+}

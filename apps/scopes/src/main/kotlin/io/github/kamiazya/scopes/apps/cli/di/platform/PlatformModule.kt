@@ -23,11 +23,9 @@ val platformModule = module {
 
     // Collect all ApplicationBootstrapper instances for lifecycle management
     single<List<ApplicationBootstrapper>> {
-        listOf(
-            get<ApplicationBootstrapper>(named("EventTypeRegistrar")),
-            get<ApplicationBootstrapper>(named("AspectPresetBootstrap")),
-            get<ApplicationBootstrapper>(named("ActiveContextBootstrap")),
-        )
+        // gRPC-only CLI doesn't need any bootstrappers (they depend on SQLite infrastructure)
+        // All bootstrappers were removed when converting to gRPC-only client
+        emptyList()
     }
 
     // Application lifecycle management

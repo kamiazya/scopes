@@ -21,8 +21,8 @@ include(
     // Interface layer
     ":interfaces-cli",
     ":interfaces-rpc-contracts",
-    ":interfaces-daemon-grpc",
-    ":interfaces-cli-grpc",
+    ":interfaces-grpc-server-daemon",
+    ":interfaces-grpc-client-daemon",
     // Contracts layer
     ":contracts-scope-management",
     ":contracts-user-preferences",
@@ -51,6 +51,7 @@ include(
     ":interfaces-mcp",
     // Quality
     ":quality-konsist",
+    ":quality-e2e-tests",
 )
 
 // Configure Gradle Build Scan
@@ -109,8 +110,8 @@ project(":platform-infrastructure").projectDir = file("platform/infrastructure")
 project(":interfaces-cli").projectDir = file("interfaces/cli")
 project(":interfaces-mcp").projectDir = file("interfaces/mcp")
 project(":interfaces-rpc-contracts").projectDir = file("interfaces/rpc-contracts")
-project(":interfaces-daemon-grpc").projectDir = file("interfaces/daemon-grpc")
-project(":interfaces-cli-grpc").projectDir = file("interfaces/cli-grpc")
+project(":interfaces-grpc-server-daemon").projectDir = file("interfaces/grpc-server-daemon")
+project(":interfaces-grpc-client-daemon").projectDir = file("interfaces/grpc-client-daemon")
 
 // Contracts layer
 project(":contracts-scope-management").projectDir = file("contracts/scope-management")
@@ -144,3 +145,4 @@ project(":apps-scopesd").projectDir = file("apps/scopesd")
 
 // Quality
 project(":quality-konsist").projectDir = file("quality/konsist")
+project(":quality-e2e-tests").projectDir = file("quality/e2e-tests")

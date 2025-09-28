@@ -602,3 +602,34 @@ project/.scopes/     # Workspace configuration
 - [User Stories](../explanation/user-stories/) - Detailed usage scenarios
 - [Domain Overview](../explanation/domain-overview.md) - Core concepts
 - [Architecture Decisions](../explanation/adr/) - Design rationale
+## System Information
+
+### Show client and daemon information
+```bash
+$ scopes info
+Client:
+ Version:     0.1.0
+ Config Dir:  /Users/alice/.scopes
+ Platform:    macos/arm64
+
+Server:
+ Status:      Running
+ Version:     0.1.0
+ API Version: v1beta
+ PID:         12345
+ Address:     127.0.0.1:52345
+ Uptime:      1h 03m 12s
+ Started:     2025-09-26T13:45:35Z
+```
+
+Notes:
+- If the daemon is not running, `Server: Status: Not running` is shown.
+- The CLI resolves the daemon endpoint using `SCOPESD_ENDPOINT` first, then the platform endpoint file.
+
+### Run create via gRPC gateway (experimental)
+```bash
+$ SCOPES_TRANSPORT=grpc scopes create "My Task" -d "Try gateway"
+```
+Notes:
+- When `SCOPES_TRANSPORT=grpc` is set, eligible commands (e.g., `create`) call the daemon via gRPC TaskGatewayService.
+- Unset the variable to use the local (in-process) path as before.

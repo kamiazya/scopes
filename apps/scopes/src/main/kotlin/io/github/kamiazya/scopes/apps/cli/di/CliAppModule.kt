@@ -1,19 +1,8 @@
 package io.github.kamiazya.scopes.apps.cli.di
 
-import io.github.kamiazya.scopes.apps.cli.di.devicesync.deviceSyncInfrastructureModule
-import io.github.kamiazya.scopes.apps.cli.di.eventstore.eventStoreInfrastructureModule
-import io.github.kamiazya.scopes.apps.cli.di.platform.databaseModule
+import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
-import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementInfrastructureModule
-import io.github.kamiazya.scopes.apps.cli.di.scopemanagement.scopeManagementModule
-import io.github.kamiazya.scopes.apps.cli.di.userpreferences.userPreferencesModule
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasCommandAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AliasQueryAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectCommandAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.AspectQueryAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextCommandAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeCommandAdapter
+import io.github.kamiazya.scopes.interfaces.grpc.client.daemon.di.grpcClientModule
 import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
@@ -25,49 +14,25 @@ import io.github.kamiazya.scopes.interfaces.cli.commands.configureSubcommands
 import io.github.kamiazya.scopes.interfaces.cli.formatters.AliasOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
-import io.github.kamiazya.scopes.interfaces.cli.resolvers.ScopeParameterResolver
-import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
-import io.github.kamiazya.scopes.scopemanagement.domain.service.ValidationService
+import io.github.kamiazya.scopes.interfaces.cli.transport.GrpcTransport
+import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 import org.koin.dsl.module
 
 /**
- * Root module for CLI application
+ * Root module for CLI application (gRPC client only)
  *
- * This module aggregates all necessary modules for the CLI application:
- * - Platform modules
- * - Bounded context modules
- * - Interface modules
- * - Application-specific components
+ * This module includes only what's needed for a gRPC client:
+ * - Platform modules (observability, lifecycle)
+ * - gRPC client module
+ * - CLI interface components
  */
 val cliAppModule = module {
-    // Include all required modules
+    // Core platform modules
     includes(
-        // Platform
         observabilityModule,
-        databaseModule,
         platformModule, // Lifecycle management
-
-        // Bounded Contexts
-        scopeManagementModule,
-        scopeManagementInfrastructureModule,
-        eventStoreInfrastructureModule,
-        deviceSyncInfrastructureModule,
-        userPreferencesModule,
-
-        // Contracts layer
-        contractsModule,
-
-        // MCP components
-        mcpModule,
+        grpcClientModule, // gRPC client for daemon communication
     )
-
-    // Domain Services
-    single { AspectManagementService() }
-    single { ValidationService() }
-
-    // Application Services (reuse from MCP module if available)
-    single { ResponseFormatterService() }
 
     // CLI Commands
     factory { ScopesCommand() }
@@ -78,60 +43,16 @@ val cliAppModule = module {
     factory { ListCommand() }
     factory { AliasCommand().configureSubcommands() }
 
-    // CLI Adapters
-    single {
-        ScopeCommandAdapter(
-            scopeManagementCommandPort = get(),
-            // Future: Add other context ports here
-        )
-    }
-    single {
-        AliasCommandAdapter(
-            scopeManagementCommandPort = get(),
-        )
-    }
-    single {
-        AliasQueryAdapter(
-            scopeManagementQueryPort = get(),
-        )
-    }
-    single {
-        io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter(
-            scopeManagementQueryPort = get(),
-        )
-    }
-    single {
-        AspectCommandAdapter(
-            aspectCommandPort = get(),
-        )
-    }
-    single {
-        ContextCommandAdapter(
-            contextViewCommandPort = get(),
-        )
-    }
-    single {
-        ContextQueryAdapter(
-            contextViewQueryPort = get(),
-        )
-    }
-    single {
-        AspectQueryAdapter(
-            aspectQueryPort = get(),
-        )
-    }
-
     // CLI Formatters
     single { ScopeOutputFormatter() }
     single { AliasOutputFormatter() }
     single { ContextOutputFormatter() }
 
-    // CLI Utilities
-    single {
-        ScopeParameterResolver(
-            scopeManagementPort = get(),
+    // Always use gRPC transport (direct injection)
+    single<Transport> {
+        GrpcTransport(
+            gatewayClient = get(), // From grpcClientModule
+            logger = get(),
         )
     }
-
-    // MCP server provided by mcpModule
 }

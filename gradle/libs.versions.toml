@@ -28,6 +28,8 @@ gradle-develocity = "4.2"
 spotless = "7.2.1"
 mcp-kotlin-sdk = "0.7.2"
 ktor = "2.3.12"
+zt-process-executor = "1.12"
+os-maven-plugin = "1.7.1"
 okio = "3.16.0"
 kotlinx-io = "0.8.0"
 
@@ -80,6 +82,14 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 mcp-kotlin-sdk = { module = "io.modelcontextprotocol:kotlin-sdk", version.ref = "mcp-kotlin-sdk" }
 # Ktor (server engine used only if needed by sdk)
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# Process management
+zt-process-executor = { module = "org.zeroturnaround:zt-exec", version.ref = "zt-process-executor" }
+os-maven-plugin = { module = "com.google.gradle:osdetector-gradle-plugin", version.ref = "os-maven-plugin" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 kotlinx-io-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-io-core-jvm", version.ref = "kotlinx-io" }
@@ -91,7 +101,10 @@ netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "nett
 grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
 grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-services = { module = "io.grpc:grpc-services", version.ref = "grpc" }
 grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpc-kotlin" }
+grpc-testing = { module = "io.grpc:grpc-testing", version.ref = "grpc" }
+grpc-inprocess = { module = "io.grpc:grpc-inprocess", version.ref = "grpc" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
 

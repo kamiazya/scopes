@@ -102,7 +102,7 @@ class DefaultApplicationLifecycleManager(private val logger: Logger) :
     override suspend fun shutdown() {
         mutex.withLock {
             logger.info("Application shutdown initiated")
-            // Future: Add shutdown logic for bootstrappers that need cleanup
+            // Future: Add shutdown logic for components that need cleanup
             initialized = false
             errors.clear()
         }

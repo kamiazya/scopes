@@ -125,8 +125,8 @@ jobs:
           $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
         }
 
-        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
-        & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
+        echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile :apps-scopesd:nativeCompile $VERSION_ARG $ARCH_FLAGS"
+        & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile :apps-scopesd:nativeCompile $VERSION_ARG $ARCH_FLAGS
       shell: powershell
       env:
         GRADLE_USER_HOME: C:\gradle-cache
@@ -139,7 +139,13 @@ jobs:
 
         # Run full E2E test suite only on primary Windows build
         if ("${{ matrix.arch }}" -eq "x64") {
-          & .\gradlew.bat --no-daemon --no-configuration-cache :apps-scopes:nativeE2eTest
+          $cliBinary = "C:\build-workspace\scopes\apps\scopes\build\native\nativeCompile\scopes.exe"
+          $daemonBinary = "C:\build-workspace\scopes\apps\scopesd\build\native\nativeCompile\scopesd.exe"
+          & .\gradlew.bat --no-daemon --no-configuration-cache :quality:e2e-tests:e2eTest `
+            "-Pe2e.cli.binary=$cliBinary" `
+            "-Pe2e.daemon.binary=$daemonBinary" `
+            "-Pe2e.test.platform=win32" `
+            "-Pe2e.test.arch=${{ matrix.arch }}"
         }
       shell: powershell
       continue-on-error: ${{ matrix.experimental == true }}
@@ -170,8 +176,8 @@ jobs:
           echo "Building for Linux ARM64 - using QEMU emulation"
         fi
 
-        # Build the CLI application with native compilation
-        ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
+        # Build the CLI and daemon applications with native compilation
+        ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:nativeCompile :apps-scopesd:nativeCompile $VERSION_ARG $ARCH_FLAGS
 
     - name: Run E2E tests on native binary
       if: matrix.platform != 'win32'  # Unix/Linux/macOS
@@ -179,13 +185,21 @@ jobs:
         echo "Running E2E tests on native binary..."
 
         # Run full E2E test suite only on main platform builds
-        if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ]; then
-          ./gradlew --no-daemon --no-configuration-cache :apps-scopes:nativeE2eTest
+        if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "x64" ] || \
+           [ "${{ matrix.platform }}" = "darwin" ]; then
+          CLI_BINARY="apps/scopes/build/native/nativeCompile/scopes"
+          DAEMON_BINARY="apps/scopesd/build/native/nativeCompile/scopesd"
+          
+          ./gradlew --no-daemon --no-configuration-cache :quality:e2e-tests:e2eTest \
+            -Pe2e.cli.binary="$CLI_BINARY" \
+            -Pe2e.daemon.binary="$DAEMON_BINARY" \
+            -Pe2e.test.platform="${{ matrix.platform }}" \
+            -Pe2e.test.arch="${{ matrix.arch }}"
         fi
       shell: bash
       continue-on-error: ${{ matrix.experimental == true }}
 
-    - name: Prepare binary for security check
+    - name: Prepare binaries for security check
       shell: bash
       run: |
         # Use a default prefix if none is provided
@@ -194,81 +208,119 @@ jobs:
           PREFIX="scopes-build"
         fi
 
-        BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
+        # Prepare CLI binary
+        CLI_BINARY_NAME="${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
+        DAEMON_BINARY_NAME="scopesd-${PREFIX}-${{ matrix.platform }}-${{ matrix.arch }}"
+        
         if [ "${{ matrix.platform }}" = "win32" ]; then
-          BINARY_NAME="${BINARY_NAME}.exe"
-          cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
+          CLI_BINARY_NAME="${CLI_BINARY_NAME}.exe"
+          DAEMON_BINARY_NAME="${DAEMON_BINARY_NAME}.exe"
+          cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$CLI_BINARY_NAME"
+          cp /c/build-workspace/scopes/apps/scopesd/build/native/nativeCompile/scopesd.exe "$DAEMON_BINARY_NAME"
         else
-          cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
+          cp apps/scopes/build/native/nativeCompile/scopes "$CLI_BINARY_NAME"
+          cp apps/scopesd/build/native/nativeCompile/scopesd "$DAEMON_BINARY_NAME"
         fi
-        echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
+        
+        echo "cli_binary_name=$CLI_BINARY_NAME" >> $GITHUB_OUTPUT
+        echo "daemon_binary_name=$DAEMON_BINARY_NAME" >> $GITHUB_OUTPUT
+        # Keep backward compatibility
+        echo "binary_name=$CLI_BINARY_NAME" >> $GITHUB_OUTPUT
       id: binary
 
-    - name: Generate binary hash
+    - name: Generate binary hashes
       shell: bash
       run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          # On Windows, certutil outputs in a specific format, we need to extract just the hash
-          HASH_OUTPUT=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256)
-          # Extract the second line which contains the hash
-          HASH=$(echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-        elif [[ "${{ runner.os }}" == "macOS" ]]; then
-          HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
-        else
-          HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
-        fi
+        # Function to calculate hash based on OS
+        calculate_hash() {
+          local file=$1
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # On Windows, certutil outputs in a specific format, we need to extract just the hash
+            HASH_OUTPUT=$(certutil -hashfile "$file" SHA256)
+            # Extract the second line which contains the hash
+            echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]'
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            shasum -a 256 "$file" | awk '{print $1}'
+          else
+            sha256sum "$file" | awk '{print $1}'
+          fi
+        }
 
-        echo "Hash: $HASH"
-        echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+        # Generate hashes for both binaries
+        CLI_HASH=$(calculate_hash "${{ steps.binary.outputs.cli_binary_name }}")
+        DAEMON_HASH=$(calculate_hash "${{ steps.binary.outputs.daemon_binary_name }}")
 
-        # Set hash output for release workflow compatibility
-        echo "hash=$HASH" >> $GITHUB_OUTPUT
+        echo "CLI Hash: $CLI_HASH"
+        echo "Daemon Hash: $DAEMON_HASH"
+        
+        # Save hashes to file
+        echo "${{ steps.binary.outputs.cli_binary_name }}:$CLI_HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+        echo "${{ steps.binary.outputs.daemon_binary_name }}:$DAEMON_HASH" >> binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+
+        # Set hash outputs for release workflow compatibility
+        echo "cli_hash=$CLI_HASH" >> $GITHUB_OUTPUT
+        echo "daemon_hash=$DAEMON_HASH" >> $GITHUB_OUTPUT
+        echo "hash=$CLI_HASH" >> $GITHUB_OUTPUT  # Backward compatibility
       id: hash
 
     - name: Basic security checks
       shell: bash
       run: |
         echo "=== Binary Security Analysis ==="
-        echo "File: ${{ steps.binary.outputs.binary_name }}"
+        
+        # Function to check a binary
+        check_binary() {
+          local binary=$1
+          local name=$2
+          
+          echo ""
+          echo "Checking $name: $binary"
+          echo "---"
+          
+          # File size check (reasonable size limits)
+          SIZE=$(ls -la "$binary" | awk '{print $5}')
+          echo "Size: $SIZE bytes"
 
-        # File size check (reasonable size limits)
-        SIZE=$(ls -la "${{ steps.binary.outputs.binary_name }}" | awk '{print $5}')
-        echo "Size: $SIZE bytes"
-
-        # Basic file type verification
-        if command -v file >/dev/null 2>&1; then
-          echo "File type:"
-          file "${{ steps.binary.outputs.binary_name }}"
-        fi
-
-        # Check if binary is executable
-        if [ "${{ matrix.platform }}" != "win32" ]; then
-          if [ -x "${{ steps.binary.outputs.binary_name }}" ]; then
-            echo "✅ Binary is executable"
-          else
-            echo "❌ Binary is not executable"
-            exit 1
+          # Basic file type verification
+          if command -v file >/dev/null 2>&1; then
+            echo "File type:"
+            file "$binary"
           fi
-        fi
 
-        # Check for suspicious strings (basic malware detection)
-        if command -v strings >/dev/null 2>&1; then
-          echo "Checking for suspicious strings..."
-          SUSPICIOUS=$(strings "${{ steps.binary.outputs.binary_name }}" | grep -i -E "(eval|exec|system|shell|cmd|powershell|wget|curl)" | head -5 || true)
-          if [ -n "$SUSPICIOUS" ]; then
-            echo "⚠️ Found potentially suspicious strings (may be normal for CLI tools):"
-            echo "$SUSPICIOUS"
-          else
-            echo "✅ No obviously suspicious strings found"
+          # Check if binary is executable
+          if [ "${{ matrix.platform }}" != "win32" ]; then
+            if [ -x "$binary" ]; then
+              echo "✅ Binary is executable"
+            else
+              echo "❌ Binary is not executable"
+              exit 1
+            fi
           fi
-        fi
+
+          # Check for suspicious strings (basic malware detection)
+          if command -v strings >/dev/null 2>&1; then
+            echo "Checking for suspicious strings..."
+            SUSPICIOUS=$(strings "$binary" | grep -i -E "(eval|exec|system|shell|cmd|powershell|wget|curl)" | head -5 || true)
+            if [ -n "$SUSPICIOUS" ]; then
+              echo "⚠️ Found potentially suspicious strings (may be normal for CLI tools):"
+              echo "$SUSPICIOUS"
+            else
+              echo "✅ No obviously suspicious strings found"
+            fi
+          fi
+        }
+        
+        # Check both binaries
+        check_binary "${{ steps.binary.outputs.cli_binary_name }}" "CLI"
+        check_binary "${{ steps.binary.outputs.daemon_binary_name }}" "Daemon"
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: build-binary-${{ matrix.platform }}-${{ matrix.arch }}
         path: |
-          ${{ steps.binary.outputs.binary_name }}
+          ${{ steps.binary.outputs.cli_binary_name }}
+          ${{ steps.binary.outputs.daemon_binary_name }}
           binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
     - name: Rename source-level SBOM (Windows)
@@ -363,14 +415,17 @@ jobs:
           PREFIX="scopes-build"
         fi
 
-        for binary in binaries/"${PREFIX}"-*; do
-          if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
-            echo "Scanning: $binary"
-            "${{ steps.grype.outputs.cmd }}" "$binary" --output json --file "${binary}-grype-report.json" || true
-            "${{ steps.grype.outputs.cmd }}" "$binary" --output sarif --file "${binary}-grype-report.sarif" || true
-            "${{ steps.grype.outputs.cmd }}" "$binary" --output table || true
-            echo "---"
-          fi
+        # Scan both CLI and daemon binaries
+        for pattern in "${PREFIX}-*" "scopesd-${PREFIX}-*"; do
+          for binary in binaries/$pattern; do
+            if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
+              echo "Scanning: $binary"
+              "${{ steps.grype.outputs.cmd }}" "$binary" --output json --file "${binary}-grype-report.json" || true
+              "${{ steps.grype.outputs.cmd }}" "$binary" --output sarif --file "${binary}-grype-report.sarif" || true
+              "${{ steps.grype.outputs.cmd }}" "$binary" --output table || true
+              echo "---"
+            fi
+          done
         done
 
     - name: Generate SBOMs for binaries
@@ -382,13 +437,16 @@ jobs:
           PREFIX="scopes-build"
         fi
 
-        for binary in binaries/"${PREFIX}"-*; do
-          if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
-            echo "Generating SBOM for: $binary"
-            "${{ steps.syft.outputs.cmd }}" "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
-            "${{ steps.syft.outputs.cmd }}" "$binary" --output table || true
-            echo "---"
-          fi
+        # Generate SBOMs for both CLI and daemon binaries
+        for pattern in "${PREFIX}-*" "scopesd-${PREFIX}-*"; do
+          for binary in binaries/$pattern; do
+            if [ -f "$binary" ] && [[ ! "$binary" == *.txt ]]; then
+              echo "Generating SBOM for: $binary"
+              "${{ steps.syft.outputs.cmd }}" "$binary" --output cyclonedx-json --file "${binary}-sbom.json" || true
+              "${{ steps.syft.outputs.cmd }}" "$binary" --output table || true
+              echo "---"
+            fi
+          done
         done
 
     - name: Verify binary integrity

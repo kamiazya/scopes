@@ -1,252 +1,161 @@
 [ {
-  "name" : "[Z"
-}, {
-  "name" : "java.lang.Throwable",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
   "name" : "java.lang.Boolean",
   "methods" : [ {
     "name" : "getBoolean",
     "parameterTypes" : [ "java.lang.String" ]
   } ]
 }, {
-  "name" : "java.lang.Object",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true
-}, {
-  "name" : "java.lang.String",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true
-}, {
   "name" : "java.lang.System",
   "methods" : [ {
-    "name" : "getProperty",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "getProperty",
-    "parameterTypes" : [ "java.lang.String", "java.lang.String" ]
-  }, {
-    "name" : "getenv",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
     "name" : "load",
     "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "loadLibrary",
-    "parameterTypes" : [ "java.lang.String" ]
   } ]
-}, {
-  "name" : "java.io.File",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "methods" : [ {
-    "name" : "getPath",
-    "parameterTypes" : [ ]
-  }, {
-    "name" : "exists",
-    "parameterTypes" : [ ]
-  }, {
-    "name" : "isDirectory",
-    "parameterTypes" : [ ]
-  }, {
-    "name" : "listFiles",
-    "parameterTypes" : [ ]
-  } ]
-}, {
-  "name" : "java.util.Properties",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "methods" : [ {
-    "name" : "getProperty",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "getProperty",
-    "parameterTypes" : [ "java.lang.String", "java.lang.String" ]
-  } ]
-}, {
-  "name" : "org.sqlite.Function",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true
-}, {
-  "name" : "org.sqlite.Function$Aggregate",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
-  "name" : "org.sqlite.Function$Window",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
-  "name" : "org.sqlite.ProgressHandler",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
-  "name" : "org.sqlite.BusyHandler",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
-  "name" : "org.sqlite.Collation",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
-}, {
-  "name" : "org.sqlite.SQLiteConfig",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true
-}, {
-  "name" : "org.sqlite.core.DB",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true,
-  "allDeclaredClasses" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true
-}, {
-  "name" : "org.sqlite.core.DB$ProgressObserver",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
 }, {
   "name" : "org.sqlite.core.NativeDB",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true,
   "methods" : [ {
-    "name" : "_open_utf8",
-    "parameterTypes" : [ "byte[]", "int" ]
+    "name" : "<init>",
+    "parameterTypes" : [ ]
   }, {
-    "name" : "_close",
-    "parameterTypes" : [ "long" ]
+    "name" : "_busy_handler",
+    "parameterTypes" : [ "long", "org.sqlite.BusyHandler" ]
   }, {
-    "name" : "enable_load_extension",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "_exec_utf8",
-    "parameterTypes" : [ "long", "byte[]" ]
-  }, {
-    "name" : "_prepare_utf8",
-    "parameterTypes" : [ "long", "byte[]" ]
-  }, {
-    "name" : "_finalize",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "_step",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "_reset",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "_bind_null",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "_bind_int",
-    "parameterTypes" : [ "long", "int", "int" ]
-  }, {
-    "name" : "_bind_long",
-    "parameterTypes" : [ "long", "int", "long" ]
-  }, {
-    "name" : "_bind_double",
-    "parameterTypes" : [ "long", "int", "double" ]
-  }, {
-    "name" : "_bind_text_utf8",
-    "parameterTypes" : [ "long", "int", "byte[]" ]
-  }, {
-    "name" : "_bind_blob",
-    "parameterTypes" : [ "long", "int", "byte[]" ]
-  }, {
-    "name" : "column_count",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "column_type",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_name_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_text_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_blob",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_double",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_long",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_int",
+    "name" : "_busy_timeout",
     "parameterTypes" : [ "long", "int" ]
   }, {
     "name" : "_changes",
     "parameterTypes" : [ "long" ]
   }, {
+    "name" : "_close",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "_exec",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "_exec_utf8",
+    "parameterTypes" : [ "long", "byte[]" ]
+  }, {
+    "name" : "_finalize",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "_open_utf8",
+    "parameterTypes" : [ "byte[]", "int" ]
+  }, {
+    "name" : "_prepare_utf8",
+    "parameterTypes" : [ "long", "byte[]" ]
+  }, {
+    "name" : "_progress_handler",
+    "parameterTypes" : [ "long", "int", "org.sqlite.ProgressHandler" ]
+  }, {
+    "name" : "_restore",
+    "parameterTypes" : [ "long", "java.lang.String", "java.lang.String", "org.sqlite.core.DB$ProgressObserver" ]
+  }, {
     "name" : "_total_changes",
     "parameterTypes" : [ "long" ]
   }, {
-    "name" : "_last_insert_rowid",
-    "parameterTypes" : [ "long" ]
+    "name" : "bind_blob",
+    "parameterTypes" : [ "long", "int", "byte[]" ]
   }, {
-    "name" : "_busy_timeout",
-    "parameterTypes" : [ "long", "int" ]
+    "name" : "bind_double",
+    "parameterTypes" : [ "long", "int", "double" ]
   }, {
-    "name" : "_busy_handler",
-    "parameterTypes" : [ "long", "org.sqlite.BusyHandler" ]
-  }, {
-    "name" : "backup",
-    "parameterTypes" : [ "long", "java.lang.String", "long", "java.lang.String", "org.sqlite.core.DB$ProgressObserver", "int", "int", "int" ]
-  }, {
-    "name" : "restore",
-    "parameterTypes" : [ "long", "java.lang.String", "long", "java.lang.String", "org.sqlite.core.DB$ProgressObserver", "int", "int", "int" ]
-  }, {
-    "name" : "_trace",
+    "name" : "bind_int",
     "parameterTypes" : [ "long", "int", "int" ]
   }, {
-    "name" : "_profile",
-    "parameterTypes" : [ "long", "org.sqlite.ProgressHandler", "int" ]
+    "name" : "bind_long",
+    "parameterTypes" : [ "long", "int", "long" ]
   }, {
-    "name" : "_update_hook",
-    "parameterTypes" : [ "long", "boolean" ]
-  }, {
-    "name" : "_commit_hook",
-    "parameterTypes" : [ "long", "boolean" ]
-  }, {
-    "name" : "_rollback_hook",
-    "parameterTypes" : [ "long", "boolean" ]
-  }, {
-    "name" : "_enable_load_extension",
+    "name" : "bind_null",
     "parameterTypes" : [ "long", "int" ]
   }, {
-    "name" : "_interrupt",
+    "name" : "bind_parameter_count",
     "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "bind_parameter_index",
+    "parameterTypes" : [ "long", "java.lang.String" ]
+  }, {
+    "name" : "bind_parameter_name",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "bind_text",
+    "parameterTypes" : [ "long", "int", "java.lang.String" ]
+  }, {
+    "name" : "clear_bindings",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "column_blob",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_count",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "column_decltype",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_double",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_int",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_long",
+    "parameterTypes" : [ "long", "int" ]
   }, {
     "name" : "column_metadata",
-    "parameterTypes" : [ "long", "byte[]", "byte[]", "byte[]" ]
+    "parameterTypes" : [ "long" ]
   }, {
-    "name" : "_limit",
-    "parameterTypes" : [ "long", "int", "int" ]
+    "name" : "column_name",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_table_name",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_text",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "column_type",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "enable_load_extension",
+    "parameterTypes" : [ "long", "boolean" ]
+  }, {
+    "name" : "errcode",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "errmsg",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "finalize",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "prepare",
+    "parameterTypes" : [ "long", "java.lang.String" ]
+  }, {
+    "name" : "register_progress_handler",
+    "parameterTypes" : [ "long", "int", "org.sqlite.ProgressHandler" ]
+  }, {
+    "name" : "reset",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "result_blob",
+    "parameterTypes" : [ "long", "byte[]" ]
+  }, {
+    "name" : "result_double",
+    "parameterTypes" : [ "long", "double" ]
+  }, {
+    "name" : "result_error",
+    "parameterTypes" : [ "long", "java.lang.String" ]
+  }, {
+    "name" : "result_int",
+    "parameterTypes" : [ "long", "int" ]
+  }, {
+    "name" : "result_long",
+    "parameterTypes" : [ "long", "long" ]
+  }, {
+    "name" : "result_null",
+    "parameterTypes" : [ "long" ]
+  }, {
+    "name" : "result_text",
+    "parameterTypes" : [ "long", "java.lang.String" ]
   }, {
     "name" : "set_commit_listener",
     "parameterTypes" : [ "boolean" ]
@@ -254,140 +163,99 @@
     "name" : "set_update_listener",
     "parameterTypes" : [ "boolean" ]
   }, {
-    "name" : "_exec",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "shared_cache",
-    "parameterTypes" : [ "boolean" ]
-  }, {
-    "name" : "enable_load_extension",
-    "parameterTypes" : [ "boolean" ]
-  }, {
-    "name" : "_db_config",
-    "parameterTypes" : [ "long", "int", "int" ]
-  }, {
-    "name" : "load",
+    "name" : "sqlite3_libversion",
     "parameterTypes" : [ ]
   }, {
-    "name" : "create_function_utf8",
-    "parameterTypes" : [ "long", "byte[]", "org.sqlite.Function", "int", "int" ]
+    "name" : "sqlite3_status",
+    "parameterTypes" : [ "int", "int[]", "int[]", "boolean" ]
   }, {
-    "name" : "destroy_function_utf8",
-    "parameterTypes" : [ "long", "byte[]", "int" ]
-  }, {
-    "name" : "create_collation_utf8",
-    "parameterTypes" : [ "long", "byte[]", "org.sqlite.Collation" ]
-  }, {
-    "name" : "destroy_collation_utf8",
-    "parameterTypes" : [ "long", "byte[]" ]
-  }, {
-    "name" : "_get_autocommit",
+    "name" : "step",
     "parameterTypes" : [ "long" ]
   }, {
     "name" : "throwex",
     "parameterTypes" : [ "java.lang.String" ]
   }, {
-    "name" : "throwex",
-    "parameterTypes" : [ ]
+    "name" : "value_blob",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   }, {
-    "name" : "_errmsg_utf8",
-    "parameterTypes" : [ "long" ]
+    "name" : "value_double",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   }, {
-    "name" : "_libversion_utf8",
-    "parameterTypes" : [ ]
+    "name" : "value_int",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   }, {
-    "name" : "_status",
-    "parameterTypes" : [ "int", "int[]", "boolean" ]
+    "name" : "value_long",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   }, {
-    "name" : "register_progress_handler",
-    "parameterTypes" : [ "long", "int", "org.sqlite.ProgressHandler" ]
+    "name" : "value_text",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   }, {
-    "name" : "clear_progress_handler",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "_sql_utf8",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "bind_parameter_count",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "bind_parameter_name_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "bind_parameter_index_utf8",
-    "parameterTypes" : [ "long", "byte[]" ]
-  }, {
-    "name" : "column_database_name_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_table_name_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "column_origin_name_utf8",
-    "parameterTypes" : [ "long", "int" ]
-  }, {
-    "name" : "_db_status",
-    "parameterTypes" : [ "long", "int", "int[]", "boolean" ]
-  }, {
-    "name" : "_stmt_status",
-    "parameterTypes" : [ "long", "int", "boolean" ]
-  }, {
-    "name" : "_stmt_readonly",
-    "parameterTypes" : [ "long" ]
-  }, {
-    "name" : "serialize",
-    "parameterTypes" : [ "long", "java.lang.String", "long" ]
-  }, {
-    "name" : "deserialize",
-    "parameterTypes" : [ "long", "java.lang.String", "byte[]" ]
-  }, {
-    "name" : "_keyword_count",
-    "parameterTypes" : [ ]
-  }, {
-    "name" : "_keyword_name",
-    "parameterTypes" : [ "int" ]
-  }, {
-    "name" : "_keyword_check",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "stringToUtf8ByteArray",
-    "parameterTypes" : [ "java.lang.String" ]
-  }, {
-    "name" : "utf8ByteArrayToString",
-    "parameterTypes" : [ "byte[]" ]
+    "name" : "value_type",
+    "parameterTypes" : [ "org.sqlite.Function", "int" ]
   } ]
 }, {
-  "name" : "org.sqlite.SQLiteJDBCLoader",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true
+  "name" : "org.sqlite.Function",
+  "methods" : [ ]
 }, {
-  "name" : "org.sqlite.util.OSInfo",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true,
-  "allDeclaredFields" : true,
-  "allPublicFields" : true
+  "name" : "org.sqlite.Function$Aggregate",
+  "methods" : [ ]
 }, {
-  "name" : "org.sqlite.JDBC",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
+  "name" : "org.sqlite.Function$Window",
+  "methods" : [ ]
 }, {
-  "name" : "org.sqlite.SQLiteConnection",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
+  "name" : "org.sqlite.BusyHandler",
+  "methods" : [ ]
 }, {
-  "name" : "org.sqlite.SQLiteDataSource",
-  "allDeclaredConstructors" : true,
-  "allPublicConstructors" : true,
-  "allDeclaredMethods" : true,
-  "allPublicMethods" : true
+  "name" : "org.sqlite.ProgressHandler",
+  "methods" : [ ]
+}, {
+  "name" : "org.sqlite.core.DB$ProgressObserver",
+  "methods" : [ ]
+}, {
+  "name" : "org.sqlite.Collation",
+  "methods" : [ ]
+}, {
+  "name" : "java.lang.Throwable",
+  "methods" : [ ]
+}, {
+  "name" : "[Z"
+}, {
+  "name" : "[I"
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.epoll.Native",
+  "fields" : [ {
+    "name" : "EPOLLIN"
+  }, {
+    "name" : "EPOLLOUT"
+  }, {
+    "name" : "EPOLLRDHUP"
+  }, {
+    "name" : "EPOLLET"
+  }, {
+    "name" : "EPOLLERR"
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.unix.Errors",
+  "fields" : [ {
+    "name" : "ERRNO_ECONNREFUSED_NEGATIVE"
+  }, {
+    "name" : "ERRNO_EBADF_NEGATIVE"
+  }, {
+    "name" : "ERRNO_EPIPE_NEGATIVE"
+  }, {
+    "name" : "ERRNO_EAGAIN_NEGATIVE"
+  }, {
+    "name" : "ERRNO_EWOULDBLOCK_NEGATIVE"
+  }, {
+    "name" : "ERRNO_EINPROGRESS_NEGATIVE"
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.unix.Limits",
+  "fields" : [ {
+    "name" : "UIO_MAX_IOV"
+  }, {
+    "name" : "SSIZE_MAX"
+  }, {
+    "name" : "IOV_MAX"
+  } ]
 } ]

@@ -1,3 +1,5 @@
+import java.time.Instant
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.detekt)
@@ -23,29 +25,9 @@ dependencies {
     implementation(project(":interfaces-cli"))
     implementation(project(":interfaces-mcp"))
 
-    // Bounded Contexts - scope-management
-    // Infrastructure dependencies are required here for the Composition Root pattern.
-    // See docs/architecture/dependency-injection.md for details.
-    implementation(project(":scope-management-domain"))
-    implementation(project(":scope-management-application"))
-    implementation(project(":scope-management-infrastructure"))
-
-    // Bounded Contexts - user-preferences
-    implementation(project(":user-preferences-domain"))
-    implementation(project(":user-preferences-application"))
-    implementation(project(":user-preferences-infrastructure"))
-
-    // Bounded Contexts - event-store
-    implementation(project(":event-store-domain"))
-    implementation(project(":event-store-application"))
-    implementation(project(":event-store-infrastructure"))
-
-    // Bounded Contexts - device-synchronization
-    implementation(project(":device-synchronization-domain"))
-    implementation(project(":device-synchronization-application"))
-    implementation(project(":device-synchronization-infrastructure"))
-    implementation(project(":contracts-event-store"))
-    implementation(project(":contracts-device-synchronization"))
+    // gRPC Client for daemon communication
+    implementation(project(":interfaces-grpc-client-daemon"))
+    implementation(project(":interfaces-rpc-contracts"))
 
     // TODO: Enable when implemented
     // implementation(project(":contexts:aspect-management:application"))
@@ -87,6 +69,68 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Generate version.txt from project version
+tasks.processResources {
+    inputs.property("version", project.version)
+
+    filesMatching("version.txt") {
+        expand("version" to project.version)
+    }
+
+    // Also generate build-info.properties for more detailed information
+    doLast {
+        val buildInfoFile = file("$destinationDir/build-info.properties")
+        buildInfoFile.parentFile.mkdirs()
+
+        // Get git revision if available
+        val gitRevision =
+            try {
+                val process =
+                    ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+                        .directory(project.rootDir)
+                        .start()
+                process.inputStream.bufferedReader().use { it.readText().trim() }
+            } catch (e: Exception) {
+                logger.warn("Failed to get git revision: ${e.message}")
+                "unknown"
+            }
+
+        // Check if working directory is dirty
+        val isDirty =
+            try {
+                val process =
+                    ProcessBuilder("git", "status", "--porcelain")
+                        .directory(project.rootDir)
+                        .start()
+                val output = process.inputStream.bufferedReader().use { it.readText().trim() }
+                output.isNotEmpty()
+            } catch (e: Exception) {
+                logger.warn("Failed to check git status: ${e.message}")
+                false
+            }
+
+        val gitRevisionWithStatus =
+            if (isDirty && gitRevision != "unknown") {
+                "$gitRevision-dirty"
+            } else {
+                gitRevision
+            }
+
+        buildInfoFile.writeText(
+            """
+            version=${project.version}
+            build.time=${Instant.now()}
+            git.revision=$gitRevisionWithStatus
+            gradle.version=${gradle.gradleVersion}
+            java.version=${System.getProperty("java.version")}
+            java.vendor=${System.getProperty("java.vendor")}
+            os.name=${System.getProperty("os.name")}
+            os.arch=${System.getProperty("os.arch")}
+            """.trimIndent(),
+        )
+    }
+}
+
 graalvmNative {
     binaries {
         named("main") {
@@ -106,11 +150,8 @@ graalvmNative {
                     "--initialize-at-build-time=kotlin",
                     "--initialize-at-build-time=kotlinx.coroutines",
                     "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-                    "--initialize-at-run-time=org.sqlite",
-                    "-Dorg.sqlite.lib.exportPath=${layout.buildDirectory.get()}/native/nativeCompile",
-                    "--exclude-config",
-                    ".*sqlite-jdbc.*\\.jar",
-                    ".*native-image.*",
+                    "-Dio.netty.leakDetection.level=disabled",
+                    "-Dio.netty.noResourceLeakDetection=true",
                     "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
                     "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
                     "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",

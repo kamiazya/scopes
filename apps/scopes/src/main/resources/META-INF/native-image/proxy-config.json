@@ -1,0 +1,27 @@
+[ {
+  "interfaces" : [ "io.grpc.Channel" ]
+}, {
+  "interfaces" : [ "io.grpc.ClientInterceptor" ]
+}, {
+  "interfaces" : [ "io.grpc.ServerInterceptor" ]
+}, {
+  "interfaces" : [ "io.grpc.ClientCall" ]
+}, {
+  "interfaces" : [ "io.grpc.ClientCall$Listener" ]
+}, {
+  "interfaces" : [ "io.grpc.internal.ClientStream" ]
+}, {
+  "interfaces" : [ "io.grpc.internal.ClientStreamListener" ]
+}, {
+  "interfaces" : [ "io.grpc.netty.shaded.io.netty.channel.ChannelHandler" ]
+}, {
+  "interfaces" : [ "io.grpc.netty.shaded.io.netty.channel.ChannelInboundHandler" ]
+}, {
+  "interfaces" : [ "io.grpc.netty.shaded.io.netty.channel.ChannelOutboundHandler" ]
+}, {
+  "interfaces" : [ "io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2FrameListener" ]
+}, {
+  "interfaces" : [ "io.github.kamiazya.scopes.rpc.daemon.v1beta.TaskGatewayServiceGrpc$AsyncService" ]
+}, {
+  "interfaces" : [ "io.grpc.stub.AbstractStub" ]
+} ]

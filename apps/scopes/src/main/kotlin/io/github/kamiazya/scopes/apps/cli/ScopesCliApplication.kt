@@ -43,10 +43,31 @@ class ScopesCliApplication : AutoCloseable {
     }
 
     /**
-     * Clean up Koin resources
+     * Clean up application resources including transport connections
      */
     override fun close() {
-        stopKoin()
+        try {
+            // Disconnect transport to properly close gRPC connections
+            kotlinx.coroutines.runBlocking {
+                try {
+                    val transport = koinApp.koin.getOrNull<io.github.kamiazya.scopes.interfaces.cli.transport.Transport>()
+                    transport?.disconnect()
+                } catch (e: Exception) {
+                    // Log but don't fail - we're shutting down anyway
+                    System.err.println("Warning: Error disconnecting transport: ${e.message}")
+                }
+                
+                // Shutdown application lifecycle
+                val lifecycleManager = koinApp.koin.get<ApplicationLifecycleManager>()
+                lifecycleManager.shutdown()
+            }
+        } catch (e: Exception) {
+            // Log but don't fail - we're shutting down anyway
+            System.err.println("Warning: Error during application shutdown: ${e.message}")
+        } finally {
+            // Always stop Koin DI container
+            stopKoin()
+        }
     }
 
     // Direct access to Koin instance

@@ -1,0 +1,46 @@
+[Unit]
+Description=Scopes Daemon - AI-Native Task Management Background Service
+Documentation=https://github.com/kamiazya/scopes
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/scopesd
+ExecStop=/usr/local/bin/scopes daemon shutdown --grace-period=10
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.scopes %t/scopes
+
+# Resource limits
+LimitNOFILE=4096
+MemoryLimit=512M
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
+# Environment
+Environment="SCOPES_LOG_LEVEL=info"
+Environment="SCOPESD_BIND_ADDRESS=127.0.0.1:0"
+
+# User and group
+# Run as the user who installed it
+User=%i
+Group=%i
+
+# Runtime directory
+RuntimeDirectory=scopes
+RuntimeDirectoryMode=0700
+
+# State directory
+StateDirectory=scopes
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=default.target

@@ -39,21 +39,24 @@ class UserPreferencesToHierarchyPolicyAdapter(private val userPreferencesPort: U
                 HierarchyPolicy.default()
             },
             // On success, translate to domain model
-            ifRight = { hierarchyPreferences ->
+            ifRight = { preferenceResult ->
                 // Use user preferences if set, otherwise use system defaults
-                HierarchyPolicy.create(
-                    maxDepth = hierarchyPreferences.maxDepth,
-                    maxChildrenPerScope = hierarchyPreferences.maxChildrenPerScope,
-                ).getOrElse { error ->
-                    logger.error(
-                        "Invalid hierarchy preferences from user preferences, using defaults",
-                        mapOf(
-                            "maxDepth" to (hierarchyPreferences.maxDepth?.toString() ?: "not set"),
-                            "maxChildrenPerScope" to (hierarchyPreferences.maxChildrenPerScope?.toString() ?: "not set"),
-                            "error" to error.toString(),
-                        ),
-                    )
-                    HierarchyPolicy.default()
+                when (preferenceResult) {
+                    is io.github.kamiazya.scopes.contracts.userpreferences.results.PreferenceResult.HierarchyPreferences ->
+                        HierarchyPolicy.create(
+                            maxDepth = preferenceResult.maxDepth,
+                            maxChildrenPerScope = preferenceResult.maxChildrenPerScope,
+                        ).getOrElse { error ->
+                            logger.error(
+                                "Invalid hierarchy preferences from user preferences, using defaults",
+                                mapOf(
+                                    "maxDepth" to (preferenceResult.maxDepth?.toString() ?: "not set"),
+                                    "maxChildrenPerScope" to (preferenceResult.maxChildrenPerScope?.toString() ?: "not set"),
+                                    "error" to error.toString(),
+                                ),
+                            )
+                            HierarchyPolicy.default()
+                        }
                 }
             },
         )

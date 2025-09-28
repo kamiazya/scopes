@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    id("com.google.protobuf") version "0.9.4"
+    alias(libs.plugins.protobuf)
 }
 
 repositories {
@@ -60,4 +60,9 @@ sourceSets {
             srcDir("src/main/proto")
         }
     }
+}
+
+// Handle duplicate resources
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

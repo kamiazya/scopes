@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.github.kamiazya.scopesd</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/scopesd</string>
+    </array>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>SCOPES_LOG_LEVEL</key>
+        <string>info</string>
+        <key>SCOPESD_BIND_ADDRESS</key>
+        <string>127.0.0.1:0</string>
+    </dict>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/USER/Library/Application Support/scopes</string>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/USER/Library/Logs/scopes/scopesd.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/USER/Library/Logs/scopes/scopesd.error.log</string>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>Crashed</key>
+        <true/>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>Nice</key>
+    <integer>10</integer>
+    
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>4096</integer>
+    </dict>
+    
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>8192</integer>
+    </dict>
+</dict>
+</plist>

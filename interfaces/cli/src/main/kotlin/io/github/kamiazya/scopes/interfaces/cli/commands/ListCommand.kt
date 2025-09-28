@@ -9,10 +9,10 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.interfaces.cli.adapters.ContextQueryAdapter
-import io.github.kamiazya.scopes.interfaces.cli.adapters.ScopeQueryAdapter
 import io.github.kamiazya.scopes.interfaces.cli.core.ScopesCliktCommand
 import io.github.kamiazya.scopes.interfaces.cli.exitcode.ExitCode
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
+import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 import io.github.kamiazya.scopes.scopemanagement.application.services.ResponseFormatterService
 import io.github.kamiazya.scopes.scopemanagement.domain.error.DomainValidationError
 import io.github.kamiazya.scopes.scopemanagement.domain.service.AspectManagementService
@@ -30,7 +30,7 @@ class ListCommand :
     KoinComponent {
 
     override fun help(context: com.github.ajalt.clikt.core.Context) = "List scopes"
-    private val scopeQueryAdapter: ScopeQueryAdapter by inject()
+    private val transport: Transport by inject()
     private val contextQueryAdapter: ContextQueryAdapter by inject()
     private val scopeOutputFormatter: ScopeOutputFormatter by inject()
     private val responseFormatter: ResponseFormatterService = ResponseFormatterService()
@@ -122,33 +122,30 @@ class ListCommand :
     }
 
     private suspend fun handleQueryBasedListing(aspectFilters: Map<String, List<String>>, effectiveQuery: String) {
-        scopeQueryAdapter.listScopesWithQuery(
-            aspectQuery = effectiveQuery,
-            parentId = parentId,
-            offset = offset,
-            limit = limit,
-        ).fold(
+        // Note: Advanced query functionality is not yet supported by Transport abstraction
+        // Fall back to basic listing for now
+        transport.listScopes().fold(
             { error -> handleContractError(error) },
-            { scopes -> displayFilteredScopes(scopes, aspectFilters) },
+            { result -> displayFilteredScopes(result.scopes, aspectFilters) },
         )
     }
 
     private suspend fun handleRootScopeListing(aspectFilters: Map<String, List<String>>) {
-        scopeQueryAdapter.listRootScopes(offset, limit).fold(
+        transport.getRootScopes().fold(
             { error -> handleContractError(error) },
             { page -> displayPagedScopes(page.scopes, aspectFilters, true) },
         )
     }
 
     private suspend fun handleChildScopeListing(aspectFilters: Map<String, List<String>>) {
-        scopeQueryAdapter.listChildren(parentId!!, offset, limit).fold(
+        transport.getChildren(parentId!!, includeDescendants = false).fold(
             { error -> handleContractError(error) },
             { page -> displayPagedScopesFromResult(page, aspectFilters) },
         )
     }
 
     private suspend fun handleDefaultListing(aspectFilters: Map<String, List<String>>) {
-        scopeQueryAdapter.listRootScopes(offset, limit).fold(
+        transport.getRootScopes().fold(
             { error -> handleContractError(error) },
             { page -> displayPagedScopes(page.scopes, aspectFilters, true) },
         )
@@ -259,7 +256,7 @@ class ListCommand :
     }
 
     private suspend fun StringBuilder.appendScopeAliases(scope: ScopeResult) {
-        scopeQueryAdapter.listAliases(scope.id).fold(
+        transport.listAliases(scope.id).fold(
             { error ->
                 appendFallbackAliasInfo(scope)
             },

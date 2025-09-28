@@ -300,6 +300,8 @@ class PackagingConventionTest :
                         "exitcode", "cli", "interfaces", "extensions",
                         // Subcommand packages
                         "alias", "context", "aspect", "scope", "query",
+                        // gRPC infrastructure packages
+                        "daemon", "grpc",
                     )
 
                     // Extract the last part of the package name

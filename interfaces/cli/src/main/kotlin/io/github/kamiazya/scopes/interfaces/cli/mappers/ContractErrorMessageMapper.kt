@@ -77,7 +77,15 @@ object ContractErrorMessageMapper {
                 "A scope with title '${error.title}' already exists $location"
             }
         }
-        is ScopeContractError.BusinessError.HierarchyViolation -> ValidationMessageFormatter.formatHierarchyViolation(error.violation)
+        is ScopeContractError.BusinessError.HierarchyViolation -> {
+            if (debug) {
+                val base = ValidationMessageFormatter.formatHierarchyViolation(error.violation)
+                val violationType = error.violation::class.simpleName
+                "$base [violation type: $violationType]"
+            } else {
+                ValidationMessageFormatter.formatHierarchyViolation(error.violation)
+            }
+        }
         is ScopeContractError.BusinessError.AlreadyDeleted -> "Scope is already deleted: ${error.scopeId}"
         is ScopeContractError.BusinessError.ArchivedScope -> "Cannot modify archived scope: ${error.scopeId}"
         is ScopeContractError.BusinessError.NotArchived -> "Scope is not archived: ${error.scopeId}"

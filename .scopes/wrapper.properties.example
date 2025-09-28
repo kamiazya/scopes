@@ -1,0 +1,17 @@
+# Scopes Wrapper Configuration
+# Copy this file to wrapper.properties and customize as needed
+
+# CLI Configuration
+scopes.log.level=INFO
+scopes.transport=local
+scopes.jvm.opts=-Xmx1g
+
+# Daemon Configuration
+scopesd.log.level=INFO
+scopesd.host=127.0.0.1
+scopesd.port=0
+scopesd.jvm.opts=-Xmx2g
+
+# Common Debug Settings (uncomment to enable)
+# scopes.jvm.opts=-Xmx1g -XX:+UseG1GC -XX:+PrintGCDetails
+# scopesd.jvm.opts=-Xmx2g -XX:+UseG1GC -XX:+PrintGCDetails

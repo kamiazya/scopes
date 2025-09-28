@@ -17,6 +17,10 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
 
+    // gRPC dependencies (for endpoint resolution and channel building)
+    implementation(libs.grpc.netty.shaded)
+    implementation(libs.grpc.stub)
+
     // Dependency injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)

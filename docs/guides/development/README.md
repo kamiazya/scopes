@@ -9,9 +9,10 @@ This directory contains modular development guidelines for the Scopes project. E
 - [Arrow Style Guide](./arrow-style-guide.md) - Functional programming patterns with Arrow
 
 ### Implementation Guidelines
+- [DTO Guidelines](./dto-guidelines.md) - Data Transfer Object naming and placement
+- [Testing Patterns](./testing.md) - Testing strategies and patterns
+- [Changeset Workflow](./changeset-workflow.md) - Version management and automated releases
 <!-- Coming soon: Additional implementation guides -->
-<!-- - [DTO Guidelines](./dto-guidelines.md) - Data Transfer Object naming and placement -->
-<!-- - [Testing Patterns](./testing.md) - Testing strategies and patterns -->
 <!-- - [Validation Patterns](./validation-patterns.md) - Validation service architecture -->
 
 ### Advanced Topics
@@ -78,6 +79,35 @@ flowchart TD
 
 ## Development Workflow
 
+### Using Wrapper Scripts (Recommended)
+
+For daily development, use the wrapper scripts for enhanced debugging:
+
+```bash
+# 1. Start daemon in debug mode
+./scopesd --debug --log-level DEBUG
+
+# 2. Run CLI with debug support
+./scopes --debug --transport grpc create "Development Task"
+
+# 3. Architecture validation (enforced by Konsist)
+./scopes --gradle-task konsistTest
+
+# 4. Comprehensive test suite
+./scopes --gradle-task test
+
+# 5. Code formatting and style
+./scopes --gradle-task ktlintFormat
+./scopes --gradle-task detekt
+
+# 6. Full build verification  
+./scopes --gradle-task build
+```
+
+### Traditional Gradle Commands
+
+For CI/CD and advanced scenarios:
+
 ```bash
 # 1. Architecture validation (enforced by Konsist)
 ./gradlew konsistTest
@@ -95,6 +125,7 @@ flowchart TD
 
 ## Related Documentation
 
+- [Development Wrapper Scripts](../development-wrapper-scripts.md) - Enhanced development experience
 - [Clean Architecture](../../explanation/clean-architecture.md) - Architecture principles
 - [Domain-Driven Design](../../explanation/domain-driven-design.md) - DDD patterns
 - [Architecture Testing Guide](../architecture-testing-guide.md) - Konsist usage

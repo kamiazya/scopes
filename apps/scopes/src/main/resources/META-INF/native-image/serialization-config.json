@@ -1,0 +1,41 @@
+[ {
+  "name" : "io.grpc.Status",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.StatusRuntimeException",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.Metadata",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.ChannelLogger$ChannelLogLevel",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.internal.ChannelLoggerImpl",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2Headers",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2Settings",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2Settings",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.GrpcHttp2HeadersUtils$GrpcHttp2InboundHeaders",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.GrpcHttp2HeadersUtils$GrpcHttp2OutboundHeaders",
+  "allDeclaredFields" : true,
+  "allDeclaredConstructors" : true
+} ]

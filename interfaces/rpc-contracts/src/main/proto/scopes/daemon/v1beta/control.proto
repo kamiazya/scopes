@@ -6,7 +6,6 @@ option java_multiple_files = true;
 option java_package = "io.github.kamiazya.scopes.rpc.v1beta";
 option java_outer_classname = "ControlProto";
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // ControlService provides basic daemon control operations

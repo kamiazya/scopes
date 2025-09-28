@@ -12,6 +12,7 @@ data class ApplicationInfo(
     val name: String,
     val version: String,
     val type: ApplicationType,
+    val gitRevision: String? = null,
     val startTime: Instant = Clock.System.now(),
     val instanceId: String = generateInstanceId(),
     val customMetadata: Map<String, Any> = emptyMap(),
@@ -23,6 +24,7 @@ data class ApplicationInfo(
         put("app.name", name)
         put("app.version", version)
         put("app.type", type.name)
+        gitRevision?.let { put("app.git_revision", it) }
         put("app.start_time", startTime.toString())
         put("app.instance_id", instanceId)
 

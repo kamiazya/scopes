@@ -65,6 +65,7 @@ In-depth explanations of concepts, architecture decisions, and design rationale.
 - [Domain-Driven Design](./explanation/domain-driven-design.md) - DDD implementation with functional programming
 - [Event Sourcing Architecture](./explanation/event-sourcing-architecture.md) - Event-driven foundation (infrastructure only)
 - [Device Synchronization](./explanation/device-synchronization.md) - Multi-device sync architecture (planned)
+- [CLI↔Daemon gRPC Architecture (v1beta)](./explanation/cli-daemon-grpc.md) - Local IPC over gRPC, schema and plan
 - [Architecture Decision Records](./explanation/adr/) - Documented architectural decisions
 - [Automated Release Process](./explanation/automated-release-process.md) - CI/CD and release automation
 
