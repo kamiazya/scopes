@@ -7,8 +7,12 @@ on:
         description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
         required: true
         type: string
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
 concurrency:
-  group: release-${{ inputs.tag }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -33,11 +37,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ inputs.tag }}"
+          # Handle both workflow_dispatch (inputs.tag) and push (github.ref_name) triggers
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
           # Remove 'v' prefix for SemVer compatibility (v1.0.0 -> 1.0.0)
           CLEAN_VERSION=${VERSION#v}
           echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
           echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using tag: $VERSION (from ${{ github.event_name }})"
 
   validate-tag:
     name: Validate Release Tag
@@ -755,21 +765,21 @@ jobs:
             find ../sbom-artifacts -name "sbom-$platform-$arch.xml" -type f -exec cp {} sbom/ \;
 
             # Create platform-specific README
-            cat > README.md <<'EOF'
-          # Scopes ${{ needs.resolve-version.outputs.version }} - $platform-$arch Bundle
+            cat > README.md <<EOF
+          # Scopes ${{ needs.resolve-version.outputs.version }} - ${platform}-${arch} Bundle
 
-          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **$platform-$arch**.
+          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **${platform}-${arch}**.
 
           ## 📦 Package Contents
 
-          - \`$binary_pattern\` - Scopes binary for $platform-$arch
+          - \`${binary_pattern}\` - Scopes binary for ${platform}-${arch}
           - \`verification/\` - Security verification files (SHA256 hash + SLSA provenance)
           - \`sbom/\` - Software Bill of Materials (CycloneDX format)
           - \`docs/\` - Installation and security documentation
 
           ## 🚀 Quick Installation
 
-          ### For $platform
+          ### For ${platform}
 EOF
 
             # Add platform-specific installation instructions
