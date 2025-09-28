@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.ChannelBuilder
+import io.github.kamiazya.scopes.platform.infrastructure.grpc.ChannelWithEventLoop
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.EndpointResolver
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.rpc.v1beta.ControlServiceGrpcKt
@@ -26,7 +27,7 @@ import kotlin.time.Duration.Companion.seconds
  * gRPC client for communicating with the Scopes daemon.
  */
 class GrpcClient(private val endpointResolver: EndpointResolver, private val logger: Logger) {
-    private var channel: ManagedChannel? = null
+    private var channelWithEventLoop: ChannelWithEventLoop? = null
     private var controlService: ControlServiceGrpcKt.ControlServiceCoroutineStub? = null
 
     /**
@@ -65,16 +66,16 @@ class GrpcClient(private val endpointResolver: EndpointResolver, private val log
                 ),
             )
 
-            // Create channel using common builder
-            val newChannel = ChannelBuilder.createChannel(
+            // Create channel with EventLoopGroup using common builder
+            val channelWithEventLoop = ChannelBuilder.createChannelWithEventLoop(
                 host = endpointInfo.host,
                 port = endpointInfo.port,
                 logger = logger,
                 // Use default timeout from environment or 30 seconds
             )
 
-            channel = newChannel
-            controlService = ControlServiceGrpcKt.ControlServiceCoroutineStub(newChannel)
+            this.channelWithEventLoop = channelWithEventLoop
+            controlService = ControlServiceGrpcKt.ControlServiceCoroutineStub(channelWithEventLoop.channel)
 
             logger.info("Connected to daemon", mapOf("address" to endpointInfo.address))
             Unit.right()
@@ -89,29 +90,12 @@ class GrpcClient(private val endpointResolver: EndpointResolver, private val log
      */
     suspend fun disconnect(): Either<ClientError, Unit> = withContext(Dispatchers.IO) {
         try {
-            val currentChannel = channel
-            if (currentChannel != null) {
-                currentChannel.shutdown()
+            // Properly shutdown both channel and EventLoopGroup
+            channelWithEventLoop?.shutdown()
+            channelWithEventLoop = null
+            controlService = null
 
-                // Use Kotlin coroutine-based timeout instead of TimeUnit
-                val terminated = withTimeoutOrNull(5.seconds) {
-                    // Poll channel termination status
-                    while (!currentChannel.isTerminated) {
-                        delay(100) // Check every 100ms
-                    }
-                    true
-                } ?: false
-
-                if (!terminated) {
-                    logger.warn("Channel did not terminate gracefully, forcing shutdown")
-                    currentChannel.shutdownNow()
-                }
-
-                channel = null
-                controlService = null
-
-                logger.debug("Disconnected from daemon")
-            }
+            logger.debug("Disconnected from daemon")
 
             Unit.right()
         } catch (e: Exception) {
@@ -193,12 +177,12 @@ class GrpcClient(private val endpointResolver: EndpointResolver, private val log
      * Checks if the client is currently connected.
      */
     fun isConnected(): Boolean {
-        val currentChannel = channel
+        val currentChannel = channelWithEventLoop?.channel
         return currentChannel != null && !currentChannel.isShutdown
     }
 
     /**
      * Gets the current connection state for debugging.
      */
-    fun getConnectionState(): String? = channel?.getState(false)?.toString()
+    fun getConnectionState(): String? = channelWithEventLoop?.channel?.getState(false)?.toString()
 }

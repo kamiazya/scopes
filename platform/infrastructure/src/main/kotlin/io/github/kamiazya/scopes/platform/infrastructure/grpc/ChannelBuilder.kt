@@ -68,6 +68,10 @@ object ChannelBuilder {
                 "port" to port.toString(),
                 "timeout" to effectiveTimeout.inWholeMilliseconds.toString(),
                 "maxMessageSizeMB" to maxMessageSizeMB.toString(),
+                "keepAliveTime" to "120s",
+                "keepAliveTimeout" to "20s",
+                "connectTimeout" to "30s",
+                "flowControlWindow" to "1MB",
             ),
         )
 
@@ -78,13 +82,15 @@ object ChannelBuilder {
             .usePlaintext() // TODO: Add TLS support in future iterations
             .channelType(io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel::class.java) // Force NIO transport for native image compatibility
             .eventLoopGroup(eventLoopGroup)
-            // More conservative settings for native image compatibility
-            .keepAliveTime(60, TimeUnit.SECONDS) // Increased from 30s
-            .keepAliveTimeout(10, TimeUnit.SECONDS) // Increased from 5s
+            // More conservative settings for native-to-native compatibility
+            .keepAliveTime(120, TimeUnit.SECONDS) // Increased from 60s for native stability
+            .keepAliveTimeout(20, TimeUnit.SECONDS) // Increased from 10s for native stability
             .keepAliveWithoutCalls(false) // Disabled for stability
             .maxInboundMessageSize(getMaxMessageSize()) // Configure max message size
-            // Add connection timeout settings
-            .withOption(io.grpc.netty.shaded.io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+            // HTTP/2 flow control settings for better native compatibility
+            .flowControlWindow(1048576) // 1MB initial window size (helps with native buffering)
+            // Connection timeout settings - increased for native-to-native
+            .withOption(io.grpc.netty.shaded.io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // Increased from 10s to 30s
             .withOption(io.grpc.netty.shaded.io.netty.channel.ChannelOption.SO_KEEPALIVE, true)
             .intercept(
                 DeadlineClientInterceptor(effectiveTimeout),
