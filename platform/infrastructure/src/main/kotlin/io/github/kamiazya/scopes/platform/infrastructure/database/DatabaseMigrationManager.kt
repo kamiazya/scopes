@@ -27,7 +27,7 @@ class DatabaseMigrationManager(
      * @param schema The SQLDelight schema containing migration logic
      * @param targetVersion The target schema version to migrate to
      * @param callbacks Optional callbacks for custom migration logic at specific versions
-     * @throws DatabaseMigrationException if migration fails or database is newer than application
+     * @throws IllegalStateException if migration fails or database is newer than application
      */
     @Synchronized
     fun migrate(
@@ -48,7 +48,7 @@ class DatabaseMigrationManager(
                 // Log rollback failure but preserve original exception
                 logger.error("Failed to rollback migration transaction", throwable = rollbackException)
             }
-            throw if (e is DatabaseMigrationException) e else DatabaseMigrationException("Migration failed", e)
+            error("Migration failed: ${e.message}")
         }
     }
 
@@ -79,7 +79,7 @@ class DatabaseMigrationManager(
                     schema.create(driver)
                     setVersion(driver, targetVersion)
                 } catch (e: Exception) {
-                    throw DatabaseMigrationException("Failed to create database schema", e)
+                    error("Failed to create database schema: ${e.message}")
                 }
             }
             currentVersion < targetVersion -> {
@@ -90,8 +90,8 @@ class DatabaseMigrationManager(
                 // Fail fast when database is newer than application
                 val message = "Database version ($currentVersion) is newer than application version ($targetVersion). " +
                         "Please update the application to a newer version."
-                logger.error(message, throwable = DatabaseMigrationException(message))
-                throw DatabaseMigrationException(message)
+                logger.error(message)
+                error(message)
             }
             else -> {
                 logger.debug("Database is up to date (version $currentVersion)")
@@ -180,7 +180,7 @@ class DatabaseMigrationManager(
             logger.info("Migration completed successfully")
         } catch (e: Exception) {
             logger.error("Migration failed", throwable = e)
-            throw DatabaseMigrationException("Failed to migrate database from $currentVersion to $targetVersion", e)
+            error("Failed to migrate database from $currentVersion to $targetVersion: ${e.message}")
         }
     }
 

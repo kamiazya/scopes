@@ -219,7 +219,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 // When
                 try {
                     migrationManager.migrate(driver, schema, targetVersion)
-                } catch (e: DatabaseMigrationException) {
+                } catch (e: IllegalStateException) {
                     // Expected
                     e.message shouldNotBe null
                 }
@@ -266,11 +266,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
 
                 // When & Then
-                val exception = shouldThrow<DatabaseMigrationException> {
+                val exception = shouldThrow<IllegalStateException> {
                     migrationManager.migrate(driver, schema, targetVersion)
                 }
 
-                exception.message shouldBe "Database version ($currentVersion) is newer than application version ($targetVersion). Please update the application to a newer version."
+                exception.message shouldBe "Migration failed: Database version ($currentVersion) is newer than application version ($targetVersion). Please update the application to a newer version."
 
                 // Verify no schema operations were attempted
                 createCalled shouldBe false
