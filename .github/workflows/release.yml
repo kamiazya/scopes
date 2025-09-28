@@ -765,7 +765,7 @@ jobs:
             find ../sbom-artifacts -name "sbom-$platform-$arch.xml" -type f -exec cp {} sbom/ \;
 
             # Create platform-specific README
-            cat > README.md <<EOF
+            cat > README.md <<'EOF'
           # Scopes ${{ needs.resolve-version.outputs.version }} - ${platform}-${arch} Bundle
 
           This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **${platform}-${arch}**.
