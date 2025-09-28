@@ -43,10 +43,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
                 version shouldBe targetVersion
             }
 
@@ -72,10 +72,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
                 version shouldBe targetVersion
             }
 
@@ -153,10 +153,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
                 version shouldBe currentVersion
             }
 
@@ -185,10 +185,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
                 version shouldBe currentVersion
             }
         }
@@ -200,10 +200,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
 
                 // Then
                 version shouldBe 0L
@@ -219,10 +219,10 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
                     },
                     0
-                )
+                ).value
 
                 // Then
                 version shouldBe expectedVersion
