@@ -12,7 +12,7 @@ on:
       - 'v*.*.*'
       - 'v*.*.*-*'
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -765,21 +765,21 @@ jobs:
             find ../sbom-artifacts -name "sbom-$platform-$arch.xml" -type f -exec cp {} sbom/ \;
 
             # Create platform-specific README
-            cat > README.md <<'EOF'
-          # Scopes ${{ needs.resolve-version.outputs.version }} - $platform-$arch Bundle
+            cat > README.md <<EOF
+          # Scopes ${{ needs.resolve-version.outputs.version }} - ${platform}-${arch} Bundle
 
-          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **$platform-$arch**.
+          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **${platform}-${arch}**.
 
           ## 📦 Package Contents
 
-          - \`$binary_pattern\` - Scopes binary for $platform-$arch
+          - \`${binary_pattern}\` - Scopes binary for ${platform}-${arch}
           - \`verification/\` - Security verification files (SHA256 hash + SLSA provenance)
           - \`sbom/\` - Software Bill of Materials (CycloneDX format)
           - \`docs/\` - Installation and security documentation
 
           ## 🚀 Quick Installation
 
-          ### For $platform
+          ### For ${platform}
 EOF
 
             # Add platform-specific installation instructions
