@@ -21,46 +21,68 @@ This tutorial will guide you through your first steps with Scopes, from installa
 
 ### Quick Install (Recommended)
 
-For security, we recommend downloading and verifying the installation script before executing:
+Download the platform-specific bundle, verify it with the included manifest, and then run the installer:
 
 ```bash
-# 1. Download the installation script and checksum
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh.sha256
+# Set version and platform (replace with actual values)
+VERSION="v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
+PLATFORM="linux-x64"  # Options: linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64, win32-arm64
 
-# 2. Verify the checksum
-sha256sum -c install.sh.sha256
-
-# 3. Review the script (optional but recommended)
-less install.sh
-
-# 4. Make executable and run
-chmod +x install.sh
+# Download and verify bundle
+wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
+tar -xzf scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
+cd scopes-${VERSION}-${PLATFORM}-bundle
+sha256sum -c verification/binary-hash-${PLATFORM}.txt
+less install.sh  # optional review
 ./install.sh
 ```
 
-For convenience (if you trust the source), you can use the one-liner:
-```bash
-curl -fsSL https://github.com/kamiazya/scopes/releases/latest/download/install.sh | bash
-```
+For Windows platforms, use `.zip` instead of `.tar.gz` and `Expand-Archive` instead of `tar`.
 
 ### Manual Installation
 
 If you prefer manual installation:
 
-1. Download the latest release:
+1. Download and extract the platform bundle:
 ```bash
-wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64.tar.gz
+# Set version and platform variables
+VERSION="v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
+PLATFORM="linux-x64"  # Choose your platform identifier
+
+# Download bundle
+wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
+tar -xzf scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
 ```
 
-2. Extract to your preferred location:
+2. Copy the binary to your preferred location:
 ```bash
-tar -xzf scopes-linux-x64.tar.gz -C ~/.local/bin/
+cd scopes-${VERSION}-${PLATFORM}-bundle
+cp scopes* ~/.local/bin/
+# Or use the install script with custom path
+./install.sh --install-dir ~/.local/bin
 ```
 
 3. Add to your PATH if needed:
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
+```
+
+#### Windows Example
+
+For Windows users:
+```powershell
+# Set version and platform variables
+$VERSION = "v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
+$PLATFORM = "win32-x64"  # or win32-arm64
+
+# Download and extract bundle
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/$VERSION/scopes-$VERSION-$PLATFORM-bundle.zip" -OutFile "scopes-bundle.zip"
+Expand-Archive scopes-bundle.zip -DestinationPath .
+cd "scopes-$VERSION-$PLATFORM-bundle"
+
+# Run installer or copy manually
+.\install.ps1
+# Or copy scopes.exe to a directory in your PATH
 ```
 
 ### Verify Installation
