@@ -37,16 +37,21 @@ class DatabaseMigrationManager(
         callbacks: Map<Long, MigrationCallback> = emptyMap()
     ) {
         // Use database-level locking to prevent concurrent migrations across processes
-        driver.execute(null, "BEGIN IMMEDIATE", 0)
+        var transactionActive = false
         try {
+            driver.execute(null, "BEGIN IMMEDIATE", 0)
+            transactionActive = true
             performMigrationInternal(driver, schema, targetVersion, callbacks)
             driver.execute(null, "COMMIT", 0)
+            transactionActive = false
         } catch (e: Exception) {
-            try {
-                driver.execute(null, "ROLLBACK", 0)
-            } catch (rollbackException: Exception) {
-                // Log rollback failure but preserve original exception
-                logger.error("Failed to rollback migration transaction", throwable = rollbackException)
+            if (transactionActive) {
+                try {
+                    driver.execute(null, "ROLLBACK", 0)
+                } catch (rollbackException: Exception) {
+                    // Log rollback failure but preserve original exception
+                    logger.error("Failed to rollback migration transaction", throwable = rollbackException)
+                }
             }
             error("Migration failed: ${e.message}")
         }

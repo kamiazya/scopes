@@ -216,13 +216,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 // Set initial version
                 driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
 
-                // When
-                try {
+                // When & Then
+                val exception = shouldThrow<IllegalStateException> {
                     migrationManager.migrate(driver, schema, targetVersion)
-                } catch (e: IllegalStateException) {
-                    // Expected
-                    e.message shouldNotBe null
                 }
+                exception.message shouldBe "Migration failed: Failed to migrate database from 1 to 2: Migration failed"
 
                 // Then - version should remain unchanged
                 val version = driver.executeQuery<Long>(
