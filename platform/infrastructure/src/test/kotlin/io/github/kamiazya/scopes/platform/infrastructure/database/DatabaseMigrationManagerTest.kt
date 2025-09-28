@@ -1,5 +1,6 @@
 package io.github.kamiazya.scopes.platform.infrastructure.database
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
@@ -29,7 +30,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
         describe("migrate") {
             it("should create new schema when database is fresh") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val targetVersion = 1L
 
                 // When
@@ -39,11 +40,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 verify(exactly = 1) { schema.create(driver) }
 
                 // Check version was set
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
@@ -52,7 +53,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should migrate schema when current version is lower") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 3L
 
@@ -68,11 +69,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 }
 
                 // Check version was updated
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
@@ -81,7 +82,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should not migrate when database is up to date") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val targetVersion = 2L
 
                 // Set current version to target
@@ -97,7 +98,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should execute custom callbacks during migration") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 3L
                 var callbackExecuted = false
@@ -128,7 +129,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should rollback on migration failure") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 1L
                 val targetVersion = 2L
 
@@ -149,11 +150,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 }
 
                 // Then - version should remain unchanged
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
@@ -162,7 +163,7 @@ class DatabaseMigrationManagerTest : DescribeSpec({
 
             it("should fail fast when database version is newer than target version") {
                 // Given
-                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val schema = mockk<SqlSchema<*>>(relaxed = true)
                 val currentVersion = 5L
                 val targetVersion = 3L
 
@@ -181,11 +182,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 verify(exactly = 0) { schema.migrate(any(), any(), any(), any()) }
 
                 // Version should remain unchanged
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
@@ -196,11 +197,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
         describe("getCurrentVersion") {
             it("should return 0 for new database") {
                 // When
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
@@ -215,11 +216,11 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 driver.execute(null, "PRAGMA user_version = $expectedVersion", 0)
 
                 // When
-                val version = driver.executeQuery(
+                val version = driver.executeQuery<Long>(
                     null,
                     "PRAGMA user_version",
                     mapper = { cursor ->
-                        if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L
+                        QueryResult.Value(if (cursor.next().value) cursor.getLong(0) ?: 0L else 0L)
                     },
                     0
                 ).value
