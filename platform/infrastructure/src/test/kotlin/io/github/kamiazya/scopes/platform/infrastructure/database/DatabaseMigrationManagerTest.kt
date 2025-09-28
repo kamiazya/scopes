@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.platform.infrastructure.database
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -148,6 +149,38 @@ class DatabaseMigrationManagerTest : DescribeSpec({
                 }
 
                 // Then - version should remain unchanged
+                val version = driver.executeQuery(
+                    null,
+                    "PRAGMA user_version",
+                    mapper = { cursor ->
+                        if (cursor.next()) cursor.getLong(0) ?: 0L else 0L
+                    },
+                    0
+                )
+                version shouldBe currentVersion
+            }
+
+            it("should fail fast when database version is newer than target version") {
+                // Given
+                val schema = mockk<SqlSchema<Any>>(relaxed = true)
+                val currentVersion = 5L
+                val targetVersion = 3L
+
+                // Set database version higher than target
+                driver.execute(null, "PRAGMA user_version = $currentVersion", 0)
+
+                // When & Then
+                val exception = shouldThrow<DatabaseMigrationException> {
+                    migrationManager.migrate(driver, schema, targetVersion)
+                }
+
+                exception.message shouldBe "Database version ($currentVersion) is newer than application version ($targetVersion). Please update the application."
+
+                // Verify no schema operations were attempted
+                verify(exactly = 0) { schema.create(driver) }
+                verify(exactly = 0) { schema.migrate(any(), any(), any(), any()) }
+
+                // Version should remain unchanged
                 val version = driver.executeQuery(
                     null,
                     "PRAGMA user_version",

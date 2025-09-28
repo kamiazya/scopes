@@ -13,6 +13,8 @@ import io.github.kamiazya.scopes.platform.infrastructure.version.ApplicationVers
  */
 object SqlDelightDatabaseProvider {
 
+    private val migrationManager = DatabaseMigrationManager.createDefault()
+
     /**
      * Creates a new EventStoreDatabase instance.
      * Automatically handles schema creation and migration based on version differences.
@@ -21,7 +23,6 @@ object SqlDelightDatabaseProvider {
         val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:$databasePath")
 
         // Perform migration if needed
-        val migrationManager = DatabaseMigrationManager.createDefault()
         migrationManager.migrate(
             driver = driver,
             schema = EventStoreDatabase.Schema,

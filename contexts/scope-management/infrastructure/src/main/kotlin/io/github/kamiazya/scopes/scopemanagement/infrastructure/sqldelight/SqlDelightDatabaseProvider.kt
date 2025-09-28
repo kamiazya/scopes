@@ -13,6 +13,8 @@ import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
  */
 object SqlDelightDatabaseProvider {
 
+    private val migrationManager = DatabaseMigrationManager.createDefault()
+
     /**
      * Wrapper that combines database and its managed driver for proper cleanup.
      * Implements AutoCloseable to ensure resources are properly released.
@@ -38,7 +40,6 @@ object SqlDelightDatabaseProvider {
         val driver = managedDriver.driver
 
         // Perform migration if needed
-        val migrationManager = DatabaseMigrationManager.createDefault()
         migrationManager.migrate(
             driver = driver,
             schema = ScopeManagementDatabase.Schema,
