@@ -184,7 +184,7 @@ needs_sudo() {
 validate_package() {
     print_status "Validating offline package structure..."
 
-    local required_dirs=("binaries" "verification" "sbom" "docs" "tools")
+    local required_dirs=("binaries" "verification" "sbom" "docs")
     for dir in "${required_dirs[@]}"; do
         if [[ ! -d "$PACKAGE_ROOT/$dir" ]]; then
             print_error "Missing required directory: $dir"
@@ -193,6 +193,13 @@ validate_package() {
         fi
         print_verbose "Found directory: $dir"
     done
+
+    # Optional tools directory (slsa-verifier may not always be included)
+    if [[ -d "$PACKAGE_ROOT/tools" ]]; then
+        print_verbose "Found optional tools directory"
+    else
+        print_verbose "Tools directory not found (SLSA verification may be limited)"
+    fi
 
     # Check for README
     if [[ ! -f "$PACKAGE_ROOT/README.md" ]]; then

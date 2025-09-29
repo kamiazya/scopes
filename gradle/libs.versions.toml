@@ -19,8 +19,9 @@ sqldelight = "2.1.0"
 # Logging
 slf4j = "2.0.17"
 logback = "1.5.18"
+commons-lang3 = "3.18.0"
 
-graalvm-buildtools = "0.11.0"
+graalvm-buildtools = "0.11.1"
 graalvm-sdk = "25.0.0"
 ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
@@ -95,6 +96,7 @@ kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.re
 kotlinx-io-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-io-core-jvm", version.ref = "kotlinx-io" }
 
 # Security patches
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "netty-codec-http2" }
 
 # gRPC and Protocol Buffers

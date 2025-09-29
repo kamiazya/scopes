@@ -1,16 +1,18 @@
 name: Release
 
 on:
-  push:
-    tags: ['v*.*.*', 'v*.*.*-*']
   workflow_dispatch:
     inputs:
       tag:
         description: 'Release tag (e.g., v1.0.0, v2.0.0-alpha)'
         required: true
         type: string
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
 concurrency:
-  group: release-${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -35,6 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Handle both workflow_dispatch (inputs.tag) and push (github.ref_name) triggers
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.tag }}"
           else
@@ -44,6 +47,7 @@ jobs:
           CLEAN_VERSION=${VERSION#v}
           echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
           echo "tag_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using tag: $VERSION (from ${{ github.event_name }})"
 
   validate-tag:
     name: Validate Release Tag
@@ -114,21 +118,19 @@ jobs:
           
           # For manually triggered runs, ensure the tag exists on the remote
           # This prevents gh release create from accidentally creating a tag
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Checking if tag exists on remote..."
-            
-            # Use GitHub API to check if tag exists
-            if ! gh api "/repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
-              echo "::error::Tag '$TAG' does not exist on remote. Please create the tag first."
-              echo ""
-              echo "Tags should be created by the Version and Release workflow when merging Version PRs."
-              echo "If you need to manually create a tag:"
-              echo "  git tag -a $TAG -m \"Release $TAG\""
-              echo "  git push origin $TAG"
-              exit 1
-            fi
-            echo "✓ Tag exists on remote"
+          echo "Checking if tag exists on remote..."
+          
+          # Use GitHub API to check if tag exists
+          if ! gh api "/repos/${{ github.repository }}/git/refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag '$TAG' does not exist on remote. Please create the tag first."
+            echo ""
+            echo "Tags should be created by the Version and Release workflow when merging Version PRs."
+            echo "If you need to manually create a tag:"
+            echo "  git tag -a $TAG -m \"Release $TAG\""
+            echo "  git push origin $TAG"
+            exit 1
           fi
+          echo "✓ Tag exists on remote"
           
           echo "✓ Tag format is valid and tag exists"
 
@@ -285,8 +287,8 @@ jobs:
           echo "Hash: $HASH"
           echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
 
-          # Create individual hash file with proper format
-          echo "${{ steps.binary.outputs.binary_name }}:$HASH" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
+          # Create individual hash file with sha256sum-compatible format
+          echo "$HASH  ${{ steps.binary.outputs.binary_name }}" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
           # Verify the hash file was created correctly
           echo "Generated hash file content:"
@@ -692,6 +694,296 @@ jobs:
           echo "Created offline packages:"
           ls -la *.tar.gz *.zip *.sha256
 
+      - name: Create platform-specific bundle packages
+        run: |
+          PLATFORMS=("linux-x64" "linux-arm64" "darwin-x64" "darwin-arm64" "win32-x64" "win32-arm64")
+
+          for platform_arch in "${PLATFORMS[@]}"; do
+            IFS='-' read -r platform arch <<< "$platform_arch"
+
+            echo "Creating bundle package for $platform-$arch..."
+            BUNDLE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-$platform-$arch-bundle"
+            mkdir -p "$BUNDLE_NAME"
+            cd "$BUNDLE_NAME"
+
+            # Create directory structure
+            mkdir -p verification sbom docs
+
+            # Copy platform-specific binary
+            binary_pattern="scopes-${{ needs.resolve-version.outputs.version }}-$platform-$arch"
+            if [ "$platform" = "win32" ]; then
+              binary_pattern="$binary_pattern.exe"
+              archive_ext="zip"
+            else
+              archive_ext="tar.gz"
+            fi
+
+            # Find and copy the specific binary safely
+            binary_found=false
+            while IFS= read -r -d '' file; do
+              if cp "$file" .; then
+                binary_found=true
+                echo "Copied binary: $file"
+                break
+              else
+                echo "Warning: Failed to copy binary: $file"
+              fi
+            done < <(find ../artifacts -name "$binary_pattern" -type f -print0)
+
+            if [ "$binary_found" = false ] || [ ! -f "$binary_pattern" ]; then
+              echo "Warning: Binary not found for $platform-$arch"
+              cd ..
+              if ! rm -rf "$BUNDLE_NAME" 2>/dev/null; then
+                echo "Warning: Failed to clean up $BUNDLE_NAME"
+              fi
+              continue
+            fi
+
+            # Copy platform-specific hash file safely
+            hash_copied=false
+            while IFS= read -r -d '' file; do
+              if cp "$file" verification/; then
+                hash_copied=true
+                echo "Copied hash file: $file"
+                break
+              else
+                echo "Warning: Failed to copy hash file: $file"
+              fi
+            done < <(find ../artifacts -name "binary-hash-$platform-$arch.txt" -type f -print0)
+
+            if [ "$hash_copied" = false ]; then
+              echo "Warning: Hash file not found for $platform-$arch"
+            fi
+
+            # Copy SLSA provenance if available (shared across all platforms)
+            if [ -d "../provenance" ]; then
+              find ../provenance -name "*.intoto.jsonl" -type f -exec cp {} verification/multiple.intoto.jsonl \;
+            fi
+
+            # Copy platform-specific SBOM files
+            find ../sbom-artifacts -name "sbom-$platform-$arch.json" -type f -exec cp {} sbom/ \;
+            find ../sbom-artifacts -name "sbom-$platform-$arch.xml" -type f -exec cp {} sbom/ \;
+
+            # Create platform-specific README
+            cat > README.md <<'EOF'
+          # Scopes ${{ needs.resolve-version.outputs.version }} - ${platform}-${arch} Bundle
+
+          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **${platform}-${arch}**.
+
+          ## 📦 Package Contents
+
+          - \`${binary_pattern}\` - Scopes binary for ${platform}-${arch}
+          - \`verification/\` - Security verification files (SHA256 hash + SLSA provenance)
+          - \`sbom/\` - Software Bill of Materials (CycloneDX format)
+          - \`docs/\` - Installation and security documentation
+
+          ## 🚀 Quick Installation
+
+          ### For ${platform}
+EOF
+
+            # Add platform-specific installation instructions
+            if [ "$platform" = "linux" ] || [ "$platform" = "darwin" ]; then
+              cat >> README.md <<'EOF'
+          ```bash
+          # Extract the bundle
+          tar -xzf scopes-*-bundle.tar.gz
+          cd scopes-*-bundle
+
+          # Run installation script
+          ./install.sh
+
+          # Or manual installation:
+          chmod +x scopes-*
+          sudo mv scopes-* /usr/local/bin/scopes
+          ```
+EOF
+            else
+              cat >> README.md <<'EOF'
+          ```powershell
+          # Extract the bundle
+          Expand-Archive scopes-*-bundle.zip -DestinationPath .
+          cd scopes-*-bundle
+
+          # Run installation script
+          .\install.ps1
+
+          # Or manual installation:
+          # Move scopes-*.exe to a directory in your PATH
+          ```
+EOF
+            fi
+
+            cat >> README.md <<'EOF'
+
+          ## 🔒 Security Verification
+
+          This bundle includes cryptographic verification:
+          - **SHA256 Hash**: Automatically verified during installation
+          - **SLSA Level 3 Provenance**: Supply chain security verification
+          - **SBOM**: Complete dependency information for compliance
+
+          ## 📚 Documentation
+
+          - `docs/INSTALL.md` - Detailed installation guide
+          - `docs/SECURITY.md` - Security verification procedures
+          - `docs/ENTERPRISE.md` - Enterprise deployment guide
+
+          ## 🌍 Other Platforms
+
+          Need a different platform? Download the appropriate bundle:
+          - Linux x64: `scopes-*-linux-x64-bundle.tar.gz`
+          - Linux ARM64: `scopes-*-linux-arm64-bundle.tar.gz`
+          - macOS x64: `scopes-*-darwin-x64-bundle.tar.gz`
+          - macOS ARM64: `scopes-*-darwin-arm64-bundle.tar.gz`
+          - Windows x64: `scopes-*-win32-x64-bundle.zip`
+          - Windows ARM64: `scopes-*-win32-arm64-bundle.zip`
+
+          Or use the unified package: `scopes-*-dist.tar.gz` (all platforms, ~260MB)
+
+          ---
+
+          **Quick Start**: `scopes --help` after installation
+EOF
+
+            # Copy installation script with existence check
+            if [ "$platform" = "win32" ]; then
+              if [ -f "../install/offline/install.ps1" ]; then
+                cp ../install/offline/install.ps1 .
+                echo "Copied PowerShell installer script"
+              elif [ -f "../install/install.ps1" ]; then
+                cp ../install/install.ps1 .
+                echo "Copied PowerShell installer script"
+              else
+                echo "Warning: install.ps1 not found, creating placeholder"
+                cat > install.ps1 <<'EOF'
+# Scopes Installation Script for Windows (Placeholder)
+# This feature will be implemented in a future release
+param([string]$InstallDir = "$env:ProgramFiles\Scopes\bin")
+Write-Host "PowerShell installer will be available in future release" -ForegroundColor Yellow
+Write-Host "For now, please extract the .exe file to your desired location and add to PATH" -ForegroundColor Yellow
+EOF
+              fi
+            else
+              if [ -f "../install/offline/install.sh" ]; then
+                cp ../install/offline/install.sh .
+                echo "Copied Unix installer script"
+              else
+                echo "Warning: install.sh not found, creating placeholder"
+                cat > install.sh <<'EOF'
+#!/bin/bash
+# Scopes Installation Script for Unix (Placeholder)
+echo "Unix installer will be available in future release"
+echo "For now, please:"
+echo "  chmod +x scopes-*"
+echo "  sudo mv scopes-* /usr/local/bin/scopes"
+EOF
+                chmod +x install.sh
+              fi
+            fi
+
+            # Create shared documentation
+            cat > docs/INSTALL.md << 'EOF'
+          # Scopes Installation Guide
+
+          ## Prerequisites
+
+          ### Linux/macOS
+          - `bash` shell
+          - `sha256sum` or `shasum` (for hash verification)
+
+          ### Windows
+          - PowerShell 5.1 or later
+          - `certutil` (built into Windows)
+
+          ## Installation
+
+          Run the included installation script which will:
+          1. Verify the binary cryptographically (SHA256 + SLSA)
+          2. Install to an appropriate system location
+          3. Verify the installation works
+
+          For detailed installation options, run the script with `--help`.
+          EOF
+
+            cat > docs/SECURITY.md << 'EOF'
+          # Security Verification
+
+          This package includes multiple security layers:
+
+          ## Automatic Verification (Recommended)
+
+          The installation script automatically verifies:
+          - SHA256 hash matches the expected value
+          - SLSA Level 3 provenance (if slsa-verifier is available)
+
+          ## Manual Verification
+
+          ```bash
+          # Verify SHA256 hash
+          sha256sum -c verification/binary-hash-*.txt
+
+          # Verify SLSA provenance (requires slsa-verifier)
+          slsa-verifier verify-artifact scopes-* \
+            --provenance-path verification/multiple.intoto.jsonl \
+            --source-uri github.com/kamiazya/scopes
+          ```
+
+          ## SBOM Analysis
+
+          Software Bill of Materials files are provided in industry-standard formats:
+          - `sbom/*.json` - CycloneDX JSON format
+          - `sbom/*.xml` - CycloneDX XML format
+
+          Use these for security scanning and compliance reporting.
+          EOF
+
+            cat > docs/ENTERPRISE.md << 'EOF'
+          # Enterprise Deployment
+
+          ## Air-Gapped Installation
+
+          This bundle is designed for offline/air-gapped environments:
+          - No network access required after download
+          - All verification can be performed offline
+          - SBOM included for compliance scanning
+
+          ## CI/CD Integration
+
+          ```yaml
+          # Example GitHub Actions usage
+          - name: Install Scopes
+            run: |
+              wget https://github.com/kamiazya/scopes/releases/download/v${{ needs.resolve-version.outputs.version }}/scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz
+              tar -xzf scopes-*-bundle.tar.gz
+              cd scopes-*-bundle
+              SCOPES_FORCE_INSTALL=true ./install.sh
+          ```
+
+          ## Compliance
+
+          - SBOM files provided in CycloneDX format
+          - SLSA Level 3 provenance for supply chain verification
+          - SHA256 hashes for integrity verification
+          EOF
+
+            cd ..
+
+            # Create archive
+            if [ "$platform" = "win32" ]; then
+              zip -r "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}"
+              sha256sum "${BUNDLE_NAME}.zip" > "${BUNDLE_NAME}.zip.sha256"
+            else
+              tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+              sha256sum "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
+            fi
+
+            echo "Created bundle: ${BUNDLE_NAME}.${archive_ext}"
+          done
+
+          echo "All platform-specific bundles created:"
+          ls -la scopes-*-bundle.*
+
       - name: Upload distribution package artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -755,11 +1047,8 @@ jobs:
           ## 🔐 Verification Instructions
           > **Security Notice**: This release is signed and includes SLSA provenance for supply chain security.
 
-          ### Quick Verification
-          ```bash
-          # Download and verify in one command
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ needs.resolve-version.outputs.tag_version }}/install/install.sh | bash
-          ```
+          ### Quick Installation
+          Download the platform-specific bundle for your system and follow the included installation instructions.
 
           ### Manual Verification
           For detailed verification instructions, see our [Security Verification Guide](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md).
@@ -806,24 +1095,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Upload all binary artifacts
-          find artifacts -name "scopes-*" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          # Note: Individual files (28 total) have been eliminated for better user experience
+          # Users can now choose from clear, bundled options instead of navigating many files
 
-          # Upload hash files
-          find artifacts -name "binary-hash-*.txt" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          # Upload unified distribution package (all platforms, ~260MB)
+          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
-          # Upload SBOM files
-          find sbom-artifacts -name "sbom-*.json" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find sbom-artifacts -name "sbom-*.xml" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-
-          # Upload distribution packages
-          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+          # Upload platform-specific bundle packages (~20MB each)
+          find distribution-packages -name "scopes-*-bundle.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-bundle.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find distribution-packages -name "scopes-*-bundle.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SLSA provenance if available
           if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
-            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ steps.version.outputs.tag_version }}" --clobber {} \;
+            find provenance -name "*.intoto.jsonl" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
           fi
 
       - name: Enhance release notes with custom content
@@ -831,7 +1118,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the auto-generated release notes
-          AUTO_NOTES=$(gh release view "${{ steps.version.outputs.tag_version }}" --json body --jq '.body')
+          AUTO_NOTES=$(gh release view "${{ needs.resolve-version.outputs.tag_version }}" --json body --jq '.body')
 
           # Create the combined release notes
           cat > combined_notes.md << 'EOF'
@@ -841,42 +1128,49 @@ jobs:
 
           ### 🚀 Quick Install (Recommended)
 
-          #### Linux/macOS
+          Download the platform-specific bundle package for your system and run the included installation script.
+
+          ### 📦 Platform-Specific Bundles (Recommended)
+
+          For most users, download the platform-specific bundle for your system:
+
+          - **Linux x64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz` (~20MB)
+          - **Linux ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-arm64-bundle.tar.gz` (~20MB)
+          - **macOS x64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-x64-bundle.tar.gz` (~20MB)
+          - **macOS ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-arm64-bundle.tar.gz` (~20MB)
+          - **Windows x64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-x64-bundle.zip` (~20MB)
+          - **Windows ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-arm64-bundle.zip` (~20MB)
+
+          Each bundle includes:
+          - Platform-specific binary
+          - Installation script
+          - SHA256 hash verification
+          - SLSA provenance
+          - SBOM files
+          - Documentation
+
+          #### Install from Bundle
           ```bash
-          curl -sSL https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.sh | sh
+          # Linux/macOS
+          tar -xzf scopes-*-bundle.tar.gz
+          cd scopes-*-bundle
+          ./install.sh
+
+          # Windows PowerShell
+          Expand-Archive scopes-*-bundle.zip
+          cd scopes-*-bundle
+          .\install.ps1
           ```
 
-          #### Windows PowerShell
-          ```powershell
-          iwr https://raw.githubusercontent.com/kamiazya/scopes/${{ steps.version.outputs.tag_version }}/install/install.ps1 | iex
-          ```
+          ### 🏢 Enterprise/Offline Installation
 
-          ### 📦 Offline Installation
+          For air-gapped environments or enterprise deployments with multiple platforms:
 
-          For air-gapped environments or enterprise deployments, download the unified distribution package:
-
-          1. Download `scopes-${{ steps.version.outputs.version }}-dist.tar.gz` or `.zip`
+          1. Download `scopes-${{ needs.resolve-version.outputs.version }}-dist.tar.gz` or `.zip` (~260MB)
           2. Extract the package
           3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
 
-          The offline package includes:
-          - All platform binaries (Linux, macOS, Windows - x64 & ARM64)
-          - Security verification (SHA256 hashes + SLSA provenance)
-          - Complete documentation
-          - SBOM files for compliance
-
-          ### Manual Binary Installation
-
-          Individual binaries are also available for direct download below.
-
-          #### Linux/macOS
-          ```bash
-          chmod +x scopes-*
-          sudo mv scopes-* /usr/local/bin/scopes
-          ```
-
-          #### Windows
-          Extract `scopes-*.exe` to a directory in your PATH.
+          The unified package includes all platforms and complete documentation.
 
           ## Security & Verification
 
@@ -887,32 +1181,39 @@ jobs:
           # Install slsa-verifier
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
-          # Verify the binary (example for Linux)
-          slsa-verifier verify-artifact scopes-${{ steps.version.outputs.version }}-linux-x64 \
-            --provenance-path multiple.intoto.jsonl \
+          # Extract and verify from platform bundle
+          tar -xzf scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz
+          cd scopes-*-bundle
+
+          slsa-verifier verify-artifact scopes-${{ needs.resolve-version.outputs.version }}-linux-x64 \
+            --provenance-path verification/multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
 
           ### SBOM (Software Bill of Materials)
 
-          Each platform includes SBOM files in both industry-standard formats:
-          - **CycloneDX** (JSON/XML): Security-focused with vulnerability tracking capabilities
-          - Download: `sbom-{platform}-{arch}.json` or `sbom-{platform}-{arch}.xml`
+          Each platform bundle includes SBOM files in CycloneDX format for compliance and security scanning:
+          - **Location**: `sbom/` directory in each bundle
+          - **Formats**: JSON and XML formats included
 
           #### SBOM Usage Examples
           ```bash
+          # Extract platform bundle
+          tar -xzf scopes-*-linux-x64-bundle.tar.gz
+          cd scopes-*-bundle
+
           # Analyze dependencies with CycloneDX tools
-          cyclonedx-cli analyze sbom-linux-x64.json
+          cyclonedx-cli analyze sbom/sbom-linux-x64.json
 
           # Import into OWASP Dependency-Track
           curl -X POST "http://dtrack-server/api/v1/bom" \
             -H "X-API-Key: your-api-key" \
             -H "Content-Type: application/json" \
-            -d @sbom-linux-x64.json
+            -d @sbom/sbom-linux-x64.json
           ```
 
           ### Manual Verification
-          See the checksums in `binary-hash-*.txt` files for manual verification of binaries.
+          SHA256 hashes are included in each platform bundle at `verification/binary-hash-{platform}-{arch}.txt`.
           EOF
 
           # Add the auto-generated notes after our custom content
@@ -920,4 +1221,4 @@ jobs:
           echo "$AUTO_NOTES" >> combined_notes.md
 
           # Update the release with combined content
-          gh release edit "${{ steps.version.outputs.tag_version }}" --notes-file combined_notes.md
+          gh release edit "${{ needs.resolve-version.outputs.tag_version }}" --notes-file combined_notes.md

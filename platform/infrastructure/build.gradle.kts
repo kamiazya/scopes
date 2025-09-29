@@ -21,6 +21,9 @@ dependencies {
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.stub)
 
+    // Security patches
+    api(libs.commons.lang3)
+
     // Dependency injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)

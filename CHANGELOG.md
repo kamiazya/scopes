@@ -1,5 +1,52 @@
 # scopes
 
+## 0.0.4
+
+### Patch Changes
+
+- [#275](https://github.com/kamiazya/scopes/pull/275) [`be39193`](https://github.com/kamiazya/scopes/commit/be39193b8a5b463fc1d1a3dcce1c0dae322070d6) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix automatic release workflow triggering after Version PR merges
+
+  - Integrated release triggering into version-and-release.yml to work around GitHub Actions limitations
+  - GitHub Actions security prevents workflows from triggering other workflows when using GITHUB_TOKEN
+  - Modified release.yml to only support manual workflow_dispatch
+  - Updated permissions to `actions: write` to allow workflow dispatch via gh CLI
+  - Fixed gh CLI authentication by using GH_TOKEN environment variable instead of GITHUB_TOKEN
+  - Automatic releases now work correctly after Version PR merges without requiring Personal Access Tokens
+
+- [#278](https://github.com/kamiazya/scopes/pull/278) [`146ed17`](https://github.com/kamiazya/scopes/commit/146ed175df36f28c8362df86b3d9d46fcb39b669) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix medium and low severity security vulnerabilities in dependencies
+
+  - Update Apache Commons Lang3 to 3.18.0 to fix an uncontrolled recursion vulnerability
+  - Verify Logback 1.5.18 includes fixes for CVE-2024-12801 (SSRF) and CVE-2024-12798 (Expression Language injection)
+  - Add explicit commons-lang3 dependency to ensure secure version is used across all modules
+
+  This patch resolves all 3 open Dependabot security alerts (2 medium severity, 1 low severity) without breaking changes to the public API.
+
+## 0.0.3
+
+### Patch Changes
+
+- [#273](https://github.com/kamiazya/scopes/pull/273) [`59d2a68`](https://github.com/kamiazya/scopes/commit/59d2a68fee47af32df2780afe64e8978f96b7fc5) Thanks [@kamiazya](https://github.com/kamiazya)! - Clarify application-to-contracts import policy and add enforcement
+
+  - Document that Application boundary components (handlers, mappers, error mappers) may import contract types
+  - Add Konsist test to automatically enforce import rules
+  - Update architecture diagrams to reflect allowed dependencies
+  - Maintain domain purity while avoiding duplicate DTOs at boundaries
+
+- [#267](https://github.com/kamiazya/scopes/pull/267) [`d0c82e9`](https://github.com/kamiazya/scopes/commit/d0c82e9bc389c12032ed276790ddc14ae97639fc) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: Upgrade to Clikt 5.0.3 and migrate deprecated APIs
+
+  - Update Clikt version from 4.4.0 to 5.0.3 for improved CLI functionality
+  - Migrate all CLI commands to property-based configuration (Clikt 5.x requirement)
+  - Fix deprecated echo(err=true) usage across multiple command files
+  - Update Native Image configuration for Mordant terminal interface compatibility
+  - Improve exit handling by using parse() instead of main() for proper error handling
+
+- [#272](https://github.com/kamiazya/scopes/pull/272) [`042f732`](https://github.com/kamiazya/scopes/commit/042f73206699a7b52ca8a758930e1d512e8a459e) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix version-and-release workflow to handle GitHub API changes
+
+  The workflow was checking for a 'merged' field that no longer exists in the GitHub API response.
+  Updated to check 'merged_at' field instead to properly detect merged Version PRs.
+
+  This fixes the issue where release tags were not being created automatically after merging Version PRs.
+
 ## 0.0.2
 
 ### Patch Changes
