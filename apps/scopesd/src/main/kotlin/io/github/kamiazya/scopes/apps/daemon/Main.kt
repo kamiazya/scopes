@@ -47,10 +47,15 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
 
-    // Parse command line arguments
-    var host = "127.0.0.1"
-    var port = 0 // Ephemeral port by default
-    var allowExternalBind = false
+    // Parse command line arguments with environment variable fallbacks
+    var host = System.getenv("SCOPESD_HOST") ?: "127.0.0.1"
+    var port = System.getenv("SCOPESD_PORT")?.toIntOrNull() ?: 0 // Ephemeral port by default
+    var allowExternalBind = System.getenv("SCOPESD_ALLOW_EXTERNAL_BIND")?.toBoolean() == true
+    var useUnixSocket = false
+    var socketPath: String? = System.getenv("SCOPESD_UNIX_SOCKET")
+    if (!socketPath.isNullOrBlank()) {
+        useUnixSocket = true
+    }
     var showHelp = false
 
     var i = 0
@@ -72,6 +77,15 @@ fun main(args: Array<String>) {
                     }
                 } else {
                     System.err.println("--port requires a value")
+                    exitProcess(1)
+                }
+            }
+            "--unix-socket", "--uds" -> {
+                if (i + 1 < args.size) {
+                    useUnixSocket = true
+                    socketPath = args[++i]
+                } else {
+                    System.err.println("--unix-socket requires a path")
                     exitProcess(1)
                 }
             }
@@ -100,15 +114,29 @@ fun main(args: Array<String>) {
             OPTIONS:
                 --host <HOST>             Host to bind the gRPC server to (default: 127.0.0.1)
                 --port <PORT>             Port to bind the gRPC server to (default: 0 for ephemeral)
+                --unix-socket <PATH>      Use Unix Domain Socket at specified path (alias: --uds)
                 --allow-external-bind     Allow binding to external addresses (required for non-localhost)
                 -h, --help                Show this help message
+
+            ENVIRONMENT VARIABLES:
+                SCOPESD_HOST              Host to bind to (overridden by --host)
+                SCOPESD_PORT              Port to bind to (overridden by --port)
+                SCOPESD_UNIX_SOCKET       Unix socket path (overridden by --unix-socket)
+                SCOPESD_ALLOW_EXTERNAL_BIND  Allow external binding (overridden by --allow-external-bind)
+
+            EXAMPLES:
+                scopesd                                      # Start with TCP on localhost:random-port
+                scopesd --port 50051                         # Start with TCP on localhost:50051
+                scopesd --unix-socket /tmp/scopes.sock       # Start with Unix Domain Socket
+                scopesd --uds ~/.scopes/daemon.sock          # Start with Unix Domain Socket (short form)
+                SCOPESD_UNIX_SOCKET=/tmp/scopes.sock scopesd # Start with UDS using environment variable
             """.trimIndent(),
         )
         exitProcess(if (args.any { it.startsWith("--help") || it == "-h" }) 0 else 1)
     }
 
-    // Security check: Prevent external binding without explicit permission
-    if (!allowExternalBind && !isLocalhost(host)) {
+    // Security check: Prevent external binding without explicit permission (TCP only)
+    if (!useUnixSocket && !allowExternalBind && !isLocalhost(host)) {
         System.err.println("[ERROR] Binding to external address '$host' is not allowed by default")
         System.err.println("[ERROR] For security reasons, only localhost addresses are permitted")
         System.err.println("[ERROR] To bind to external addresses, use --allow-external-bind flag")
@@ -143,7 +171,12 @@ fun main(args: Array<String>) {
     runBlocking {
         println("[INFO] Starting Scopes daemon v${applicationInfo.version}")
 
-        daemon.start(host = host, port = port).fold(
+        daemon.start(
+            host = host,
+            port = port,
+            useUnixSocket = useUnixSocket,
+            socketPath = socketPath
+        ).fold(
             { error ->
                 System.err.println("[ERROR] Failed to start daemon: ${error.message}")
                 exitProcess(1)

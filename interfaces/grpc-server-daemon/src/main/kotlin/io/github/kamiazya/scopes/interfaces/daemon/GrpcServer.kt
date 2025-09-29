@@ -11,6 +11,11 @@ import io.grpc.BindableService
 import io.grpc.Server
 import io.grpc.ServerInterceptors
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollServerDomainSocketChannel
+import io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueEventLoopGroup
+import io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueServerDomainSocketChannel
+import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -27,9 +32,12 @@ class GrpcServer(
     private val logger: Logger,
     private val host: String = "127.0.0.1",
     private val port: Int = 0, // 0 means ephemeral port
+    private val useUnixSocket: Boolean = false,
+    private val socketPath: String? = null,
 ) {
     private var server: Server? = null
     private var actualPort: Int = -1
+    private var actualSocketPath: String? = null
 
     /**
      * Error types for server operations.
@@ -43,7 +51,13 @@ class GrpcServer(
     /**
      * Server information after successful startup.
      */
-    data class ServerInfo(val host: String, val port: Int, val address: String)
+    data class ServerInfo(
+        val host: String,
+        val port: Int,
+        val address: String,
+        val transport: String = "tcp",
+        val socketPath: String? = null
+    )
 
     /**
      * Starts the gRPC server on the specified host and port.
@@ -55,20 +69,64 @@ class GrpcServer(
             val maxMessageSizeMB = getMaxMessageSize() / (1024 * 1024)
             val maxConcurrentCalls = getMaxConcurrentCalls()
 
-            logger.info(
-                "Starting gRPC server",
-                mapOf(
-                    "host" to host,
-                    "port" to port.toString(),
-                    "maxMessageSizeMB" to maxMessageSizeMB.toString(),
-                    "maxConcurrentCalls" to maxConcurrentCalls.toString(),
-                ),
-            )
+            val serverBuilder = if (useUnixSocket && socketPath != null) {
+                logger.info(
+                    "Starting gRPC server on Unix Domain Socket",
+                    mapOf(
+                        "socketPath" to socketPath,
+                        "maxMessageSizeMB" to maxMessageSizeMB.toString(),
+                        "maxConcurrentCalls" to maxConcurrentCalls.toString(),
+                    ),
+                )
 
-            val serverBuilder = NettyServerBuilder.forAddress(InetSocketAddress(host, port))
-                .executor(null) // Use default executor
-                .maxInboundMessageSize(getMaxMessageSize()) // Configure max message size
-                .maxConcurrentCallsPerConnection(getMaxConcurrentCalls()) // Limit concurrent calls per connection
+                actualSocketPath = socketPath
+
+                // Delete existing socket file if it exists
+                val socketFile = File(socketPath)
+                if (socketFile.exists()) {
+                    socketFile.delete()
+                }
+
+                // Ensure parent directory exists
+                socketFile.parentFile?.mkdirs()
+
+                // Create UDS server builder
+                val osName = System.getProperty("os.name")?.lowercase() ?: ""
+                val (eventLoopGroup, channelType) = when {
+                    osName.contains("linux") -> {
+                        EpollEventLoopGroup() to EpollServerDomainSocketChannel::class.java
+                    }
+                    osName.contains("mac") || osName.contains("darwin") -> {
+                        KQueueEventLoopGroup() to KQueueServerDomainSocketChannel::class.java
+                    }
+                    else -> {
+                        throw UnsupportedOperationException("Unix Domain Sockets are not supported on $osName")
+                    }
+                }
+
+                NettyServerBuilder.forAddress(DomainSocketAddress(socketPath))
+                    .channelType(channelType)
+                    .bossEventLoopGroup(eventLoopGroup)
+                    .workerEventLoopGroup(eventLoopGroup)
+                    .executor(null) // Use default executor
+                    .maxInboundMessageSize(getMaxMessageSize())
+                    .maxConcurrentCallsPerConnection(getMaxConcurrentCalls())
+            } else {
+                logger.info(
+                    "Starting gRPC server on TCP",
+                    mapOf(
+                        "host" to host,
+                        "port" to port.toString(),
+                        "maxMessageSizeMB" to maxMessageSizeMB.toString(),
+                        "maxConcurrentCalls" to maxConcurrentCalls.toString(),
+                    ),
+                )
+
+                NettyServerBuilder.forAddress(InetSocketAddress(host, port))
+                    .executor(null) // Use default executor
+                    .maxInboundMessageSize(getMaxMessageSize()) // Configure max message size
+                    .maxConcurrentCallsPerConnection(getMaxConcurrentCalls()) // Limit concurrent calls per connection
+            }
 
             // Interceptors (correlation + basic request logging)
             val interceptors = listOf(
@@ -87,19 +145,29 @@ class GrpcServer(
             builtServer.start()
 
             server = builtServer
-            actualPort = builtServer.port
 
-            val serverInfo = ServerInfo(
-                host = host,
-                port = actualPort,
-                address = "$host:$actualPort",
-            )
+            val serverInfo = if (useUnixSocket && actualSocketPath != null) {
+                ServerInfo(
+                    host = "localhost",
+                    port = 0,
+                    address = "unix://$actualSocketPath",
+                    transport = "uds",
+                    socketPath = actualSocketPath,
+                )
+            } else {
+                actualPort = builtServer.port
+                ServerInfo(
+                    host = host,
+                    port = actualPort,
+                    address = "$host:$actualPort",
+                    transport = "tcp",
+                )
+            }
 
             logger.info(
                 "gRPC server started successfully",
                 mapOf(
-                    "host" to host,
-                    "port" to actualPort.toString(),
+                    "transport" to serverInfo.transport,
                     "address" to serverInfo.address,
                 ),
             )
@@ -154,8 +222,22 @@ class GrpcServer(
                 }
             }
 
+            // Clean up Unix socket file if using UDS
+            if (actualSocketPath != null) {
+                try {
+                    val socketFile = File(actualSocketPath)
+                    if (socketFile.exists()) {
+                        socketFile.delete()
+                        logger.debug("Removed Unix socket file", mapOf("socketPath" to actualSocketPath))
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Failed to remove Unix socket file", mapOf("socketPath" to actualSocketPath, "error" to e.message))
+                }
+            }
+
             server = null
             actualPort = -1
+            actualSocketPath = null
 
             logger.info("gRPC server stopped successfully")
             Unit.right()
@@ -173,7 +255,7 @@ class GrpcServer(
      */
     suspend fun writeEndpointFile(endpointFile: File): Either<ServerError, Unit> = withContext(Dispatchers.IO) {
         try {
-            if (actualPort == -1) {
+            if (actualPort == -1 && actualSocketPath == null) {
                 return@withContext ServerError.EndpointError("Server not started").left()
             }
 
@@ -184,8 +266,15 @@ class GrpcServer(
 
             val endpointContent = buildString {
                 appendLine("version=1")
-                appendLine("addr=$host:$actualPort")
-                appendLine("transport=tcp")
+                if (actualSocketPath != null) {
+                    // Unix Domain Socket endpoint
+                    appendLine("addr=unix://$actualSocketPath")
+                    appendLine("transport=uds")
+                } else {
+                    // TCP endpoint
+                    appendLine("addr=$host:$actualPort")
+                    appendLine("transport=tcp")
+                }
                 appendLine("pid=${ProcessHandle.current().pid()}")
                 appendLine("started=${System.currentTimeMillis()}")
             }
@@ -213,7 +302,11 @@ class GrpcServer(
     /**
      * Gets the current server address if running.
      */
-    fun getAddress(): String? = if (actualPort != -1) "$host:$actualPort" else null
+    fun getAddress(): String? = when {
+        actualSocketPath != null -> "unix://$actualSocketPath"
+        actualPort != -1 -> "$host:$actualPort"
+        else -> null
+    }
 
     companion object {
         // Default configuration values

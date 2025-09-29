@@ -73,17 +73,19 @@ object ChannelBuilder {
 
         // Determine the appropriate event loop group and channel type based on the OS
         val osName = System.getProperty("os.name")?.lowercase() ?: ""
-        val (eventLoopGroup, channelType) = when {
+        val eventLoopGroupAndChannelType: Pair<EventLoopGroup, Class<out io.grpc.netty.shaded.io.netty.channel.Channel>> = when {
             osName.contains("linux") -> {
-                EpollEventLoopGroup(1) to EpollDomainSocketChannel::class.java
+                Pair(EpollEventLoopGroup(1), EpollDomainSocketChannel::class.java)
             }
             osName.contains("mac") || osName.contains("darwin") -> {
-                KQueueEventLoopGroup(1) to KQueueDomainSocketChannel::class.java
+                Pair(KQueueEventLoopGroup(1), KQueueDomainSocketChannel::class.java)
             }
             else -> {
                 throw UnsupportedOperationException("Unix Domain Sockets are not supported on $osName")
             }
         }
+        val eventLoopGroup = eventLoopGroupAndChannelType.first
+        val channelType = eventLoopGroupAndChannelType.second
 
         val channel = NettyChannelBuilder.forAddress(DomainSocketAddress(socketPath))
             .usePlaintext() // Local IPC doesn't need TLS
