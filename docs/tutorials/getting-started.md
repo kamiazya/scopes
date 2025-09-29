@@ -13,54 +13,44 @@ This tutorial will guide you through your first steps with Scopes, from installa
 
 ## Prerequisites
 
+- Java 21 or higher (required)
+  - Check version: `java -version`
+  - Install via [SDKMAN](https://sdkman.io/): `sdk install java 21-tem`
+  - Or download from [Adoptium](https://adoptium.net/)
 - A Unix-like operating system (Linux, macOS, or WSL on Windows)
 - Basic command-line familiarity
 - (Optional) An AI assistant that supports MCP for enhanced features
 
 ## Step 1: Installation
 
-### Quick Install (Recommended)
+### From Source (Currently Required)
 
-For security, we recommend downloading and verifying the installation script before executing:
+> **Note**: Binary releases are not yet available. You'll need to build from source.
 
 ```bash
-# 1. Download the installation script and checksum
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh
-wget https://github.com/kamiazya/scopes/releases/latest/download/install.sh.sha256
+# Clone the repository
+git clone https://github.com/kamiazya/scopes.git
+cd scopes
 
-# 2. Verify the checksum
-sha256sum -c install.sh.sha256
+# Option A: Build JAR files for faster execution
+./gradlew :apps-scopes:fatJar :apps-scopesd:fatJar
 
-# 3. Review the script (optional but recommended)
-less install.sh
-
-# 4. Make executable and run
-chmod +x install.sh
-./install.sh
+# Option B: Just use the wrapper scripts (builds automatically)
+# The scripts will use JAR files if available, or Gradle if not
+./scopes --help
 ```
 
-For convenience (if you trust the source), you can use the one-liner:
+### Add to PATH (Optional)
+
+To use `scopes` from anywhere:
+
 ```bash
-curl -fsSL https://github.com/kamiazya/scopes/releases/latest/download/install.sh | bash
-```
+# Add the repository directory to your PATH
+export PATH="$PATH:$(pwd)"
 
-### Manual Installation
-
-If you prefer manual installation:
-
-1. Download the latest release:
-```bash
-wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-linux-x64.tar.gz
-```
-
-2. Extract to your preferred location:
-```bash
-tar -xzf scopes-linux-x64.tar.gz -C ~/.local/bin/
-```
-
-3. Add to your PATH if needed:
-```bash
-export PATH="$HOME/.local/bin:$PATH"
+# Or create a symlink
+sudo ln -s $(pwd)/scopes /usr/local/bin/scopes
+sudo ln -s $(pwd)/scopesd /usr/local/bin/scopesd
 ```
 
 ### Verify Installation

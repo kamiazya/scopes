@@ -64,6 +64,39 @@ users          User management
 └── profile    User profile
 ```
 
+## 📋 Prerequisites
+
+- **Java 21 or higher**: Scopes requires Java 21+ to run
+  - Check your version: `java -version`
+  - Install via [SDKMAN](https://sdkman.io/): `sdk install java 21-tem`
+  - Or download from [Adoptium](https://adoptium.net/)
+- **Operating System**: Linux, macOS, or Windows (with WSL recommended)
+
+## 🛠️ Installation
+
+### Option 1: Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/kamiazya/scopes.git
+cd scopes
+
+# Build the JAR files
+./gradlew :apps-scopes:fatJar :apps-scopesd:fatJar
+
+# The wrapper scripts will automatically use the JAR files
+./scopes --help
+```
+
+### Option 2: Use Development Mode
+
+```bash
+# Clone and run directly with Gradle (slower but always up-to-date)
+git clone https://github.com/kamiazya/scopes.git
+cd scopes
+./scopes --help  # Automatically builds and runs
+```
+
 ## 📚 Documentation
 
 ### Getting Started
