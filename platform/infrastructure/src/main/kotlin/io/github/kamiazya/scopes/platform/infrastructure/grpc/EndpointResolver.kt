@@ -32,15 +32,9 @@ class EndpointResolver(private val logger: Logger) {
         val host: String,
         val port: Int,
         val transport: String = "tcp",
-        val socketPath: String? = null, // For UDS transport
         val pid: Long? = null,
         val started: Instant? = null,
-    ) {
-        /**
-         * Returns true if this endpoint uses Unix Domain Socket transport.
-         */
-        fun isUnixSocket(): Boolean = transport == "uds" || address.startsWith("unix://")
-    }
+    )
 
     /**
      * Resolves the daemon endpoint using environment variables and/or endpoint files.
@@ -56,13 +50,12 @@ class EndpointResolver(private val logger: Logger) {
         val envEndpoint = System.getenv("SCOPESD_ENDPOINT")
         if (!envEndpoint.isNullOrBlank()) {
             logger.debug("Using daemon endpoint from environment variable", mapOf("endpoint" to envEndpoint))
-            return parseAddress(envEndpoint).map { (host, port, socketPath) ->
+            return parseAddress(envEndpoint).map { (host, port) ->
                 EndpointInfo(
                     address = envEndpoint,
                     host = host,
                     port = port,
-                    transport = if (socketPath != null) "uds" else "tcp",
-                    socketPath = socketPath,
+                    transport = "tcp",
                 )
             }
         }
@@ -102,7 +95,7 @@ class EndpointResolver(private val logger: Logger) {
                 ?: return@withContext EndpointError.InvalidFormat("Missing 'addr' in endpoint file").left()
 
             val addressResult = parseAddress(address)
-            val (host, port, socketPath) = when (addressResult) {
+            val (host, port) = when (addressResult) {
                 is Either.Left -> return@withContext addressResult.value.left()
                 is Either.Right -> addressResult.value
             }
@@ -126,8 +119,7 @@ class EndpointResolver(private val logger: Logger) {
                 address = address,
                 host = host,
                 port = port,
-                transport = properties["transport"] ?: (if (socketPath != null) "uds" else "tcp"),
-                socketPath = socketPath,
+                transport = properties["transport"] ?: "tcp",
                 pid = pid,
                 started = properties["started"]?.toLongOrNull()?.let { Instant.fromEpochMilliseconds(it) },
             ).right()
@@ -139,29 +131,16 @@ class EndpointResolver(private val logger: Logger) {
     }
 
     /**
-     * Parses an address string in the format "host:port", "[ipv6]:port", or "unix:///path/to/socket".
+     * Parses an address string in the format "host:port" or "[ipv6]:port".
      *
      * Supports:
      * - IPv4 addresses: "127.0.0.1:8080"
      * - IPv6 addresses: "[::1]:8080" or "[2001:db8::1]:8080"
      * - Hostnames: "localhost:8080" or "example.com:8080"
-     * - Unix Domain Sockets: "unix:///path/to/socket" or "unix://socket.sock"
      * - Spaces around addresses: " [::1] : 8080 " or " localhost : 8080 "
-     *
-     * Future: Can be extended to support Windows Named Pipes (npipe:////./pipe/name)
      */
-    private fun parseAddress(address: String): Either<EndpointError, Triple<String, Int, String?>> {
+    private fun parseAddress(address: String): Either<EndpointError, Pair<String, Int>> {
         val trimmedAddress = address.trim()
-
-        // Check for Unix Domain Socket format
-        if (trimmedAddress.startsWith("unix://")) {
-            val socketPath = trimmedAddress.substring("unix://".length)
-            if (socketPath.isEmpty()) {
-                return EndpointError.InvalidFormat("Empty socket path in address: '$address'").left()
-            }
-            // For UDS, use dummy host and port values
-            return Triple("localhost", 0, socketPath).right()
-        }
 
         // Try to match IPv6 format with brackets: [host]:port (with optional spaces)
         val ipv6Pattern = Regex("""^\s*\[(.+)]\s*:\s*(\d+)\s*$""")
@@ -177,14 +156,14 @@ class EndpointResolver(private val logger: Logger) {
                 return EndpointError.InvalidFormat("Invalid port in address: '$address'. Port must be between 1 and 65535").left()
             }
 
-            return Triple(host, port, null).right()
+            return Pair(host, port).right()
         }
 
         // Try to match standard format: host:port
         // Find the last colon to split host and port
         val lastColonIndex = trimmedAddress.lastIndexOf(':')
         if (lastColonIndex == -1) {
-            return EndpointError.InvalidFormat("Invalid address format: '$address'. Expected 'host:port', '[ipv6]:port', or 'unix:///path'").left()
+            return EndpointError.InvalidFormat("Invalid address format: '$address'. Expected 'host:port' or '[ipv6]:port'").left()
         }
 
         val host = trimmedAddress.substring(0, lastColonIndex).trim()
@@ -206,7 +185,7 @@ class EndpointResolver(private val logger: Logger) {
             return EndpointError.InvalidFormat("Invalid port in address: '$address'. Port must be between 1 and 65535").left()
         }
 
-        return Triple(host, port, null).right()
+        return Pair(host, port).right()
     }
 
     /**

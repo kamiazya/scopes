@@ -20,17 +20,13 @@ class GrpcServerFactory(private val taskGatewayService: TaskGatewayServiceImpl? 
      * @param logger Logger instance
      * @param host Host to bind to
      * @param port Port to bind to
-     * @param useUnixSocket Whether to use Unix Domain Socket instead of TCP
-     * @param socketPath Path for the Unix socket file (required if useUnixSocket is true)
      * @return GrpcServerWrapper containing the server and shutdown monitor
      */
     fun createServer(
         applicationInfo: ApplicationInfo,
         logger: Logger,
         host: String = "127.0.0.1",
-        port: Int = 0,
-        useUnixSocket: Boolean = false,
-        socketPath: String? = null
+        port: Int = 0
     ): GrpcServerWrapper {
         val controlService = ControlServiceImpl(
             applicationInfo = applicationInfo,
@@ -54,9 +50,7 @@ class GrpcServerFactory(private val taskGatewayService: TaskGatewayServiceImpl? 
             services = services,
             logger = logger,
             host = host,
-            port = port,
-            useUnixSocket = useUnixSocket,
-            socketPath = socketPath,
+            port = port
         )
 
         return GrpcServerWrapper(

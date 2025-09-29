@@ -25,6 +25,7 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.types.AspectDefinitio
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.ChannelBuilder
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.ChannelWithEventLoop
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.EndpointResolver
+import io.github.kamiazya.scopes.platform.infrastructure.grpc.RetryPolicy
 import io.github.kamiazya.scopes.platform.infrastructure.grpc.interceptors.RetryUtils
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.rpc.v1beta.Envelope
@@ -41,14 +42,39 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
-class GatewayClient(private val endpointResolver: EndpointResolver, private val logger: Logger, private val json: Json = Json) {
+class GatewayClient(
+    private val endpointResolver: EndpointResolver,
+    private val logger: Logger,
+    private val json: Json = Json,
+    private val retryPolicy: RetryPolicy = RetryPolicy.fromEnvironment(logger),
+) {
     private var channelWithEventLoop: ChannelWithEventLoop? = null
     private var stub: TaskGatewayServiceGrpcKt.TaskGatewayServiceCoroutineStub? = null
 
     private fun generateId(): String = Random.nextLong().toString(16)
 
-    suspend fun connect(): Either<ClientError, Unit> = try {
-        val endpoint = endpointResolver.resolve().getOrElse { return ClientError.ConnectionError(it.message ?: "endpoint error").left() }
+    suspend fun connect(useRetry: Boolean = true): Either<ClientError, Unit> =
+        if (useRetry) {
+            retryPolicy.execute<ClientError, Unit>("gateway-connection") { attemptNumber ->
+                performConnect(attemptNumber)
+            }
+        } else {
+            performConnect(1)
+        }
+
+    private suspend fun performConnect(attemptNumber: Int): Either<ClientError, Unit> = try {
+        val endpoint = endpointResolver.resolve().getOrElse {
+            return ClientError.ConnectionError(it.message ?: "endpoint error").left()
+        }
+
+        logger.debug(
+            "Connecting to gateway",
+            mapOf(
+                "host" to endpoint.host,
+                "port" to endpoint.port.toString(),
+                "attempt" to attemptNumber,
+            ),
+        )
 
         // Create channel with EventLoopGroup using common builder
         val channelWithEventLoop = ChannelBuilder.createChannelWithEventLoop(
@@ -60,10 +86,11 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
 
         this.channelWithEventLoop = channelWithEventLoop
         stub = TaskGatewayServiceGrpcKt.TaskGatewayServiceCoroutineStub(channelWithEventLoop.channel)
+        logger.info("Connected to gateway", mapOf("address" to "${endpoint.host}:${endpoint.port}"))
         Unit.right()
     } catch (e: Exception) {
-        logger.error("Gateway connect failed", mapOf("error" to e.javaClass.simpleName), e)
-        ClientError.ConnectionError(e.message ?: "connect failed").left()
+        logger.error("Gateway connect failed", mapOf("error" to e.javaClass.simpleName, "attempt" to attemptNumber), e)
+        ClientError.ConnectionError(e.message ?: "connect failed", e).left()
     }
 
     suspend fun disconnect() {
@@ -105,7 +132,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -149,7 +176,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
                 ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
             }
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -194,7 +221,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -240,7 +267,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
             } catch (e: StatusException) {
                 ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
             } catch (e: Exception) {
-                ClientError.Unexpected(e.message ?: "unexpected").left()
+                ClientError.Unexpected(e.message ?: "unexpected", e).left()
             }
         }
 
@@ -285,7 +312,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -321,7 +348,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
             } catch (e: StatusException) {
                 ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
             } catch (e: Exception) {
-                ClientError.Unexpected(e.message ?: "unexpected").left()
+                ClientError.Unexpected(e.message ?: "unexpected", e).left()
             }
         }
 
@@ -349,7 +376,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -377,7 +404,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -405,7 +432,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -434,7 +461,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -470,7 +497,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -516,7 +543,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
                 ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
             }
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -548,7 +575,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -584,7 +611,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -614,7 +641,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -641,7 +668,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -678,7 +705,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -713,7 +740,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -741,7 +768,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -764,7 +791,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -788,7 +815,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -822,7 +849,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -844,7 +871,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -866,7 +893,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -897,7 +924,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -921,7 +948,7 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
         } catch (e: StatusException) {
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
-            ClientError.Unexpected(e.message ?: "unexpected").left()
+            ClientError.Unexpected(e.message ?: "unexpected", e).left()
         }
     }
 
@@ -1014,15 +1041,15 @@ class GatewayClient(private val endpointResolver: EndpointResolver, private val 
             ClientError.ServiceError(e.status.code, e.status.description ?: "", e).left()
         } catch (e: Exception) {
             logger.error("Error subscribing to events", emptyMap(), e)
-            ClientError.Unexpected(e.message ?: "streaming error").left()
+            ClientError.Unexpected(e.message ?: "streaming error", e).left()
         }
     }
 
-    sealed class ClientError(open val message: String) {
-        data class ConnectionError(override val message: String) : ClientError(message)
-        data class ServiceError(val code: io.grpc.Status.Code, override val message: String, val statusException: StatusException? = null) :
-            ClientError(message)
-        data class Unexpected(override val message: String) : ClientError(message)
+    sealed class ClientError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+        class ConnectionError(message: String, cause: Throwable? = null) : ClientError(message, cause)
+        class ServiceError(val code: io.grpc.Status.Code, message: String, val statusException: StatusException? = null) :
+            ClientError(message, statusException)
+        class Unexpected(message: String, cause: Throwable? = null) : ClientError(message, cause)
     }
 
     @Serializable

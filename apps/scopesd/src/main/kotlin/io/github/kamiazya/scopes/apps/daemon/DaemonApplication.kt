@@ -43,27 +43,17 @@ class DaemonApplication(private val logger: Logger, private val serverFactory: G
      *
      * @param host The host to bind the gRPC server to (default: 127.0.0.1)
      * @param port The port to bind the gRPC server to (default: 0 for ephemeral)
-     * @param useUnixSocket Whether to use Unix Domain Socket instead of TCP
-     * @param socketPath Path for the Unix socket file (required if useUnixSocket is true)
      * @return Either a DaemonError or Unit on success
      */
     suspend fun start(
         host: String = "127.0.0.1",
-        port: Int = 0,
-        useUnixSocket: Boolean = false,
-        socketPath: String? = null
+        port: Int = 0
     ): Either<DaemonError, Unit> {
         if (isRunning.compareAndSet(false, true)) {
             try {
-                // Validate UDS parameters
-                if (useUnixSocket && socketPath == null) {
-                    isRunning.set(false)
-                    return Either.Left(DaemonError.StartupError("Socket path required when using Unix Domain Socket"))
-                }
-
                 logger.info("Starting Scopes daemon", mapOf(
                     "version" to applicationInfo.version,
-                    "transport" to if (useUnixSocket) "uds" else "tcp"
+                    "transport" to "tcp"
                 ))
 
                 // Create gRPC server wrapper using factory
@@ -71,9 +61,7 @@ class DaemonApplication(private val logger: Logger, private val serverFactory: G
                     applicationInfo = applicationInfo,
                     logger = logger,
                     host = host,
-                    port = port,
-                    useUnixSocket = useUnixSocket,
-                    socketPath = socketPath,
+                    port = port
                 )
 
                 val serverInfo = serverWrapper.server.start().fold(

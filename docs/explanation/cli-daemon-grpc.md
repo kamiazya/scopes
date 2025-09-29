@@ -65,6 +65,7 @@ Dependency direction (enforced by tests/guidelines):
     started=1732590635123
     ```
 - Planned transports: Unix Domain Socket (Linux/macOS), Named Pipe (Windows).
+  - **UDS Implementation Status**: Infrastructure code implemented but not functional due to grpc-netty-shaded limitations (see unix-domain-socket-limitations.md).
 
 ## Control Semantics
 - Ping: health check and uptime information (`pid`, `uptime_seconds`, `server_time`).
@@ -77,6 +78,17 @@ Dependency direction (enforced by tests/guidelines):
 - Netty is shaded (`grpc-netty-shaded`) to avoid dependency conflicts; root build pins `netty-codec-http2`.
 - Interceptors for correlation IDs and request summaries are implemented on the server. Each RPC logs method, status, latency, and correlation ID.
 
+## Retry Policy
+- **Exponential Backoff**: Connection and operation retries use exponential backoff with configurable parameters
+- **Default Configuration**: 3 attempts, 1s initial delay, 2x backoff multiplier, 15s max delay
+- **Retryable Errors**: UNAVAILABLE, DEADLINE_EXCEEDED, ABORTED, INTERNAL, UNKNOWN, and network errors
+- **Environment Variables**:
+  - `SCOPES_GRPC_RETRY_MAX_ATTEMPTS`: Maximum retry attempts (default: 3)
+  - `SCOPES_GRPC_RETRY_INITIAL_DELAY_MS`: Initial retry delay in milliseconds (default: 1000)
+  - `SCOPES_GRPC_RETRY_MAX_DELAY_MS`: Maximum retry delay in milliseconds (default: 15000)
+  - `SCOPES_GRPC_RETRY_BACKOFF_MULTIPLIER`: Backoff multiplier (default: 2.0)
+- **Per-Operation Control**: Retry can be disabled for specific operations (e.g., shutdown requests)
+
 ## CLI Integration
 - The CLI provides `scopes info` (docker-like) to display both client-side and daemon-side information.
 - Resolution order when connecting to the daemon:
@@ -84,6 +96,10 @@ Dependency direction (enforced by tests/guidelines):
   2. Platform endpoint file (see above)
 - Typical output includes server status (Running/Not running), address, pid, uptime, API version, and platform.
 - For early Gateway trials, setting `SCOPES_TRANSPORT=grpc` will route certain commands (e.g., `scopes create`) through the TaskGatewayService over gRPC. Without this flag, commands run locally as before.
+- **UDS Configuration (Non-functional)**: The following options exist in the code but do not work due to grpc-netty-shaded limitations:
+  - Server: `--unix-socket` or `--uds` flag, `SCOPESD_UNIX_SOCKET` environment variable
+  - Client: Automatically detects `unix://` addresses in endpoint resolution
+  - See unix-domain-socket-limitations.md for details
 
 ## Change Management and Compatibility
 - Schema version: `v1beta` within proto package; breaking changes may occur during 0.x.
@@ -99,32 +115,38 @@ Dependency direction (enforced by tests/guidelines):
 
 ### ✅ Working Configurations
 1. **JVM CLI ↔ Native Daemon** (Production Ready)
-   - Fully functional and reliable
-   - Performance: ~0.3-0.5s command execution
-   - Recommended for development and production use
+  - Fully functional and reliable
+  - Performance: ~0.3-0.5s command execution
+  - Recommended for development and production use
 
 2. **Native CLI Basic Operations** (Limited)
-   - Help and simple commands work
-   - Builds without SQLite segmentation faults
-   - Native CLI is now a pure gRPC client (no local database)
+  - Help and simple commands work
+  - Builds without SQLite segmentation faults
+  - Native CLI is now a pure gRPC client (no local database)
 
 ### ⚠️ Known Limitations
 1. **Native CLI ↔ Native Daemon** (Protocol Issues)
-   - Intermittent connection failures due to Netty native transport incompatibility
-   - Error: `UNAVAILABLE: io exception` during protocol negotiation
-   - Root cause: GraalVM native compilation affects gRPC/Netty behavior
+  - Intermittent connection failures due to Netty native transport incompatibility
+  - Error: `UNAVAILABLE: io exception` during protocol negotiation
+  - Root cause: GraalVM native compilation affects gRPC/Netty behavior
+
+2. **Unix Domain Socket (UDS) Support** (Non-functional)
+  - Implementation code exists but doesn't work with grpc-netty-shaded
+  - grpc-netty-shaded only includes standard NIO transport, not platform-specific transports
+  - Platform-specific transports (epoll/kqueue) required for UDS are not in shaded JAR
+  - See unix-domain-socket-limitations.md for technical details
 
 ### 🏗️ Architecture Changes Made
 1. **CLI Converted to gRPC-Only Client**
-   - Eliminated all SQLite dependencies from CLI build
-   - Removed SQLite JNI segmentation faults completely
-   - CLI now communicates exclusively via gRPC TaskGatewayService
-   - Simplified native-image configuration (no SQLite reflection needed)
+  - Eliminated all SQLite dependencies from CLI build
+  - Removed SQLite JNI segmentation faults completely
+  - CLI now communicates exclusively via gRPC TaskGatewayService
+  - Simplified native-image configuration (no SQLite reflection needed)
 
 2. **Dependency Injection Streamlined**
-   - Removed conditional transport logic from CLI
-   - Direct injection of GrpcTransport in CliAppModule
-   - No fallback to local adapters (daemon required)
+  - Removed conditional transport logic from CLI
+  - Direct injection of GrpcTransport in CliAppModule
+  - No fallback to local adapters (daemon required)
 
 ### 📁 Key Files Modified
 - `apps/scopes/build.gradle.kts`: Removed SQLite dependencies
@@ -141,3 +163,10 @@ Dependency direction (enforced by tests/guidelines):
   - SQLite JNI caused persistent segmentation faults in native CLI builds. Converting to gRPC-only eliminated these issues while providing a cleaner architecture.
 - What's the recommended production setup?
   - Use JVM CLI with native daemon for maximum reliability and performance.
+- Why doesn't UDS work?
+  - grpc-netty-shaded doesn't include platform-specific Netty transports (epoll/kqueue) required for Unix domain sockets.
+- What are the options to fix native-to-native and UDS issues?
+  - Switch from grpc-netty-shaded to non-shaded dependencies (complexity tradeoff)
+  - Wait for Java 16+ UDS support and updated Netty/gRPC versions
+  - Use alternative IPC mechanisms (REST API, message queues)
+  - Keep current setup (JVM CLI + Native daemon works well)

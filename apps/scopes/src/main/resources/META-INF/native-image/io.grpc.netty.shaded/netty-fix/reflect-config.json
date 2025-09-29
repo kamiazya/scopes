@@ -1,0 +1,82 @@
+[ {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.socket.nio.NioSocketChannel",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.socket.nio.NioServerSocketChannel",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.DefaultHttp2Connection",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "boolean" ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2Exception",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http2.Http2Error",
+  "allDeclaredFields" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http.HttpObjectAggregator",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http.HttpServerCodec",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.handler.codec.http.HttpServerUpgradeHandler",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "io.grpc.netty.shaded.io.netty.handler.codec.http.HttpServerCodec", "io.grpc.netty.shaded.io.netty.handler.codec.http.HttpServerUpgradeHandler$UpgradeCodecFactory" ]
+  } ]
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.channel.DefaultChannelId",
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.buffer.AbstractByteBufAllocator",
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.NativeLibraryLoader",
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent0",
+  "allDeclaredFields" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.netty.util.internal.PlatformDependent",
+  "allDeclaredFields" : true,
+  "allDeclaredMethods" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators",
+  "allDeclaredMethods" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$ClientTlsHandler",
+  "allDeclaredMethods" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiators$WaitUntilActiveHandler",
+  "allDeclaredMethods" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.GrpcHttp2ConnectionHandler",
+  "allDeclaredMethods" : true,
+  "allDeclaredConstructors" : true
+}, {
+  "name" : "io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler",
+  "allDeclaredMethods" : true,
+  "allDeclaredConstructors" : true
+} ]

@@ -162,34 +162,47 @@ Details: Channel state IDLE, transport negotiation failed
 
 **Workarounds**:
 1. **Use JVM CLI with Native Daemon** (Recommended)
-   ```bash
-   ./scopesd &  # Native daemon
-   ./gradlew :apps-scopes:run --args="create 'Task'"  # JVM CLI
-   ```
+  ```bash
+  ./scopesd &  # Native daemon
+  ./gradlew :apps-scopes:run --args="create 'Task'"  # JVM CLI
+  ```
 
 2. **Force NIO Transport** (Experimental)
-   ```kotlin
-   NettyChannelBuilder.forAddress(host, port)
-       .channelType(NioSocketChannel::class.java)
-       .eventLoopGroup(NioEventLoopGroup())
-   ```
+  ```kotlin
+  NettyChannelBuilder.forAddress(host, port)
+      .channelType(NioSocketChannel::class.java)
+      .eventLoopGroup(NioEventLoopGroup())
+  ```
 
-3. **Retry Logic** (Partial mitigation)
-   ```kotlin
-   suspend fun withRetry(maxAttempts: Int = 3, operation: suspend () -> T): T {
-       repeat(maxAttempts - 1) { attempt ->
-           try { return operation() }
-           catch (e: StatusException) {
-               if (e.status.code == Status.Code.UNAVAILABLE) {
-                   delay(100 * (attempt + 1))
-                   continue
-               }
-               throw e
-           }
-       }
-       return operation()
-   }
-   ```
+3. **Retry Logic** (Implemented)
+  
+  The system now includes a comprehensive retry mechanism with exponential backoff:
+  
+  ```kotlin
+  // RetryPolicy provides automatic retry for transient errors
+  val retryPolicy = RetryPolicy.fromEnvironment(logger)
+  
+  // Connection with retry
+  client.connect(useRetry = true)  // Default: enabled
+  
+  // Operation with retry
+  client.ping(useRetry = true)     // Default: enabled
+  
+  // Disable retry for specific operations
+  client.shutdown(useRetry = false)  // Shutdown doesn't retry by default
+      repeat(maxAttempts - 1) { attempt ->
+          try { return operation() }
+          catch (e: StatusException) {
+              if (e.status.code == Status.Code.UNAVAILABLE) {
+                  delay(100 * (attempt + 1))
+                  continue
+              }
+              throw e
+          }
+      }
+      return operation()
+  }
+  ```
 
 ### gRPC-Only CLI Architecture
 
