@@ -1,28 +1,5 @@
 # scopes
 
-## 0.0.5
-
-### Patch Changes
-
-- [#286](https://github.com/kamiazya/scopes/pull/286) [`2cef2d0`](https://github.com/kamiazya/scopes/commit/2cef2d0701c24e41c65c34b38d4bcc103ec82991) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: resolve GitHub Actions release failure by adding redundant trigger mechanisms
-
-  - Add push trigger to release.yml for automatic releases on tag push
-  - Update tag resolution logic to handle both workflow_dispatch and push triggers
-  - Remove failing manual release trigger job that was causing HTTP 422 errors
-  - Ensures reliable releases by providing multiple trigger mechanisms
-
-- [#285](https://github.com/kamiazya/scopes/pull/285) [`82825a3`](https://github.com/kamiazya/scopes/commit/82825a3d5d306bb9450845f100616f6dc707677a) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: Resolved a release workflow failure by correcting heredoc syntax in `release.yml` to prevent improper variable expansion.
-
-- [#286](https://github.com/kamiazya/scopes/pull/286) [`2cef2d0`](https://github.com/kamiazya/scopes/commit/2cef2d0701c24e41c65c34b38d4bcc103ec82991) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: replace individual assets with bundled packages for easier downloads
-
-  Replace the previous 28 individual release assets with organized bundle packages to eliminate download confusion. Users now choose from:
-
-  - 6 platform-specific bundles (~20MB each) containing binary, installer, SBOM, and verification files
-  - 1 unified offline package (~260MB) for enterprise/multi-platform deployments
-  - SLSA provenance for supply chain security
-
-  This provides 92% reduction in download size for most users while maintaining all existing security features (SLSA Level 3, SHA256 verification) and preparing for future daemon binary distribution.
-
 ## 0.0.4
 
 ### Patch Changes
