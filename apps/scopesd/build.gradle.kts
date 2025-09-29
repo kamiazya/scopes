@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.graalvm.native)
     application
 }
 
@@ -35,9 +34,6 @@ dependencies {
 
     // DI
     implementation(libs.koin.core)
-
-    // GraalVM native image
-    compileOnly(libs.graalvm.sdk)
 
     // Logging
     runtimeOnly(libs.logback.classic)
@@ -118,56 +114,42 @@ tasks.processResources {
     }
 }
 
-graalvmNative {
-    binaries {
-        named("main") {
-            imageName.set("scopesd")
-            mainClass.set("io.github.kamiazya.scopes.apps.daemon.MainKt")
-            useFatJar.set(true)
-
-            buildArgs.addAll(
-                listOf(
-                    "-O2",
-                    "--no-fallback",
-                    "--gc=serial",
-                    "--report-unsupported-elements-at-runtime",
-                    "-H:+UnlockExperimentalVMOptions",
-                    "-H:+ReportExceptionStackTraces",
-                    "-H:+InstallExitHandlers",
-                    "-Djdk.util.jar.enableMultiRelease=force",
-                    "--initialize-at-build-time=kotlin",
-                    "--initialize-at-build-time=kotlinx.coroutines",
-                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-                    "--initialize-at-run-time=org.sqlite",
-                    "-Dorg.sqlite.lib.exportPath=${layout.buildDirectory.get()}/native/nativeCompile",
-                    "--exclude-config",
-                    ".*sqlite-jdbc.*\\.jar",
-                    ".*native-image.*",
-                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
-                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
-                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",
-                    // Additional settings for gRPC
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.epoll.Epoll",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.epoll.Native",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoop",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.DefaultFileRegion",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueEventArray",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueEventLoop",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.kqueue.Native",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.unix.Errors",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.unix.IovArray",
-                    "--initialize-at-run-time=io.grpc.netty.shaded.io.netty.channel.unix.Limits",
-                    "--enable-url-protocols=http,https"
-                ),
-            )
-        }
+// Configure JAR task to create an executable JAR with dependencies
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "io.github.kamiazya.scopes.apps.daemon.MainKt",
+            "Implementation-Version" to project.version,
+            "Implementation-Title" to "Scopes Daemon"
+        )
     }
-
-    toolchainDetection.set(false)
 }
 
-// Make nativeCompile depend on checkGraalVM
-tasks.named("nativeCompile") {
-    dependsOn(":checkGraalVM")
+// Create a fat JAR with all dependencies
+tasks.register<Jar>("fatJar") {
+    dependsOn(tasks.classes)
+
+    archiveBaseName.set("scopesd")
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            "Main-Class" to "io.github.kamiazya.scopes.apps.daemon.MainKt",
+            "Implementation-Version" to project.version,
+            "Implementation-Title" to "Scopes Daemon"
+        )
+    }
+
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    }) {
+        exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+        exclude("META-INF/MANIFEST.MF")
+        exclude("META-INF/versions/**")
+        exclude("module-info.class")
+    }
 }

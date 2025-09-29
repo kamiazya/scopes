@@ -3,7 +3,6 @@ import java.time.Instant
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.detekt)
-    alias(libs.plugins.graalvm.native)
     alias(libs.plugins.cyclonedx.bom)
     alias(libs.plugins.spdx.sbom)
     application
@@ -49,9 +48,6 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
 
-    // GraalVM native image
-    compileOnly(libs.graalvm.sdk)
-
     // Logging
     runtimeOnly(libs.logback.classic)
 
@@ -67,6 +63,46 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Configure JAR task to create an executable JAR with dependencies
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "io.github.kamiazya.scopes.apps.cli.MainKt",
+            "Implementation-Version" to project.version,
+            "Implementation-Title" to "Scopes CLI"
+        )
+    }
+}
+
+// Create a fat JAR with all dependencies
+tasks.register<Jar>("fatJar") {
+    dependsOn(tasks.classes)
+
+    archiveBaseName.set("scopes")
+    archiveClassifier.set("all")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            "Main-Class" to "io.github.kamiazya.scopes.apps.cli.MainKt",
+            "Implementation-Version" to project.version,
+            "Implementation-Title" to "Scopes CLI"
+        )
+    }
+
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    }) {
+        exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+        exclude("META-INF/MANIFEST.MF")
+        exclude("META-INF/versions/**")
+        exclude("module-info.class")
+    }
 }
 
 // Generate version.txt from project version
@@ -131,128 +167,3 @@ tasks.processResources {
     }
 }
 
-graalvmNative {
-    binaries {
-        named("main") {
-            imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
-            useFatJar.set(true)
-
-            buildArgs.addAll(
-                listOf(
-                    "-O2",
-                    "--no-fallback",
-                    "--gc=serial",
-                    "--report-unsupported-elements-at-runtime",
-                    "-H:+UnlockExperimentalVMOptions",
-                    "-H:+ReportExceptionStackTraces",
-                    "-H:+InstallExitHandlers",
-                    "--initialize-at-build-time=kotlin",
-                    "--initialize-at-build-time=kotlinx.coroutines",
-                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-                    "-Dio.netty.leakDetection.level=disabled",
-                    "-Dio.netty.noResourceLeakDetection=true",
-                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
-                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
-                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",
-                ),
-            )
-        }
-    }
-
-    toolchainDetection.set(false)
-}
-
-// Make nativeCompile depend on checkGraalVM
-tasks.named("nativeCompile") {
-    dependsOn(":checkGraalVM")
-}
-
-// E2E Test Tasks for Native Binary
-
-// Common function to get native binary path
-fun getNativeBinaryPath(): File {
-    val os =
-        org.gradle.internal.os.OperatingSystem
-            .current()
-    val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
-    return layout.buildDirectory
-        .file("native/nativeCompile/$binaryName")
-        .get()
-        .asFile
-}
-
-// Smoke test - quick verification that binary can run
-// NOTE: Does not depend on nativeCompile to avoid rebuilding with different flags
-// tasks.register<Exec>("nativeSmokeTest") {
-//     group = "verification"
-//     description = "Run basic smoke test on native binary"
-
-//     val binaryPath = getNativeBinaryPath()
-
-//     doFirst {
-//         if (!binaryPath.exists()) {
-//             throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
-//         }
-//         val os =
-//             org.gradle.internal.os.OperatingSystem
-//                 .current()
-//         if (!os.isWindows && !binaryPath.canExecute()) {
-//             binaryPath.setExecutable(true)
-//         }
-//         logger.lifecycle("Running smoke test on: ${binaryPath.absolutePath}")
-//     }
-
-//     // Test --help flag
-//     commandLine(binaryPath.absolutePath, "--help")
-
-//     doLast {
-//         logger.lifecycle("✅ Smoke test passed: binary is executable")
-//     }
-// }
-
-// Full E2E test suite
-tasks.register("nativeE2eTest") {
-    group = "verification"
-    description = "Run full E2E test suite on native binary"
-    // dependsOn("nativeSmokeTest")
-
-    doLast {
-        val binaryPath = getNativeBinaryPath()
-
-        if (!binaryPath.exists()) {
-            throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
-        }
-
-        logger.lifecycle("Running E2E tests on native binary...")
-
-        // Test basic commands
-        val testCases =
-            listOf(
-                listOf("--help"),
-                listOf("scope", "--help"),
-                listOf("context", "--help"),
-                listOf("workspace", "--help"),
-            )
-
-        testCases.forEach { args ->
-            try {
-                project.exec {
-                    commandLine(listOf(binaryPath.absolutePath) + args)
-                    standardOutput = System.out
-                    errorOutput = System.err
-                }
-                logger.lifecycle("✅ Test passed: ${args.joinToString(" ")}")
-            } catch (e: Exception) {
-                throw GradleException("❌ Test failed for: ${args.joinToString(" ")}\n${e.message}")
-            }
-        }
-
-        logger.lifecycle("✅ All E2E tests passed successfully")
-    }
-}
-
-// Add smoke test to check task
-// tasks.named("check") {
-//     dependsOn("nativeSmokeTest")
-// }

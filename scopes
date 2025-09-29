@@ -20,8 +20,8 @@ do
     ls=$( ls -ld "$app_path" )
     link=${ls#*' -> '}
     case $link in             #(
-      /*)   app_path=$link ;; #(
-      *)    app_path=$APP_HOME$link ;;
+        /*)   app_path=$link ;; #(
+        *)    app_path=$APP_HOME$link ;;
     esac
 done
 
@@ -32,6 +32,10 @@ APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exi
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_TRANSPORT="local"
 DEFAULT_JVM_OPTS=""
+
+# JAR configuration
+JAR_NAME="scopes-all.jar"
+JAR_PATH="$APP_HOME/apps/scopes/build/libs/$JAR_NAME"
 
 # Load wrapper configuration if it exists
 WRAPPER_CONFIG="$APP_HOME/.scopes/wrapper.properties"
@@ -54,6 +58,7 @@ JVM_OPTS="$DEFAULT_JVM_OPTS"
 LOG_LEVEL="$DEFAULT_LOG_LEVEL"
 TRANSPORT="$DEFAULT_TRANSPORT"
 GRADLE_TASK="run"
+USE_JAR=false
 REMAINING_ARGS=()
 
 warn () {
@@ -80,7 +85,8 @@ WRAPPER OPTIONS:
     --profile               Enable JVM profiling
     --log-level LEVEL       Set log level (TRACE|DEBUG|INFO|WARN|ERROR)
     --transport TYPE        Set transport (local|grpc)
-    --gradle-task TASK      Set Gradle task (default: run)
+    --gradle-task TASK      Force Gradle mode with specific task
+    --build-jar             Build the JAR file and exit
     --jvm-opts OPTS         Additional JVM options
     --help-wrapper          Show this wrapper help
 
@@ -126,8 +132,15 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --gradle-task)
+            USE_JAR=false  # Force Gradle mode
             GRADLE_TASK="$2"
             shift 2
+            ;;
+        --build-jar)
+            echo "🔨 Building JAR file..."
+            "$APP_HOME/gradlew" :apps-scopes:fatJar || die "Failed to build JAR"
+            echo "✅ JAR built successfully"
+            exit 0
             ;;
         --jvm-opts)
             JVM_OPTS="$JVM_OPTS $2"
@@ -143,6 +156,16 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Check if JAR exists and set mode
+if [ -f "$JAR_PATH" ]; then
+    USE_JAR=true
+    echo "📦 Using compiled JAR: $JAR_PATH"
+else
+    echo "🔧 Using Gradle for development mode"
+    echo "   (JAR not found at $JAR_PATH)"
+    echo "   Run './gradlew :apps-scopes:fatJar' to build the JAR"
+fi
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
@@ -169,6 +192,19 @@ location of your Java installation."
     fi
 fi
 
+# Check Java version (require Java 21+)
+JAVA_VERSION=$($JAVACMD -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
+if [ -z "$JAVA_VERSION" ]; then
+    # Try alternative parsing for different Java version formats
+    JAVA_VERSION=$($JAVACMD -version 2>&1 | grep -oE 'version "[0-9]+' | grep -oE '[0-9]+$')
+fi
+
+if [ -n "$JAVA_VERSION" ] && [ "$JAVA_VERSION" -lt 21 ]; then
+    die "ERROR: Java 21 or higher is required. Current version: $JAVA_VERSION
+
+Please install Java 21 or higher and update your JAVA_HOME."
+fi
+
 # Build JVM arguments
 if [ "$DEBUG_MODE" = true ]; then
     JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:$JVM_DEBUG_PORT"
@@ -184,31 +220,6 @@ fi
 export SCOPES_LOG_LEVEL="$LOG_LEVEL"
 export SCOPES_TRANSPORT="$TRANSPORT"
 
-# Build Gradle arguments
-GRADLE_ARGS=()
-GRADLE_ARGS+=("$GRADLE_TASK")
-
-if [ "$GRADLE_TASK" = "run" ]; then
-    GRADLE_ARGS+=(":apps-scopes:run")
-    if [ ${#REMAINING_ARGS[@]} -gt 0 ]; then
-        # Join arguments with proper quoting for Gradle
-        CLI_ARGS=""
-        for arg in "${REMAINING_ARGS[@]}"; do
-            if [[ "$arg" == *" "* ]]; then
-                CLI_ARGS="$CLI_ARGS \"$arg\""
-            else
-                CLI_ARGS="$CLI_ARGS $arg"
-            fi
-        done
-        GRADLE_ARGS+=("--args=$CLI_ARGS")
-    fi
-else
-    GRADLE_ARGS+=("${REMAINING_ARGS[@]}")
-fi
-
-# Set GRADLE_OPTS for JVM options
-export GRADLE_OPTS="$JVM_OPTS"
-
 echo "🚀 Starting Scopes CLI..."
 echo "   Log Level: $LOG_LEVEL"
 echo "   Transport: $TRANSPORT"
@@ -220,5 +231,36 @@ if [ ${#REMAINING_ARGS[@]} -gt 0 ]; then
 fi
 echo
 
-# Execute Gradle with the CLI
-exec "$APP_HOME/gradlew" "${GRADLE_ARGS[@]}"
+if [ "$USE_JAR" = true ]; then
+    # Execute JAR directly
+    exec "$JAVACMD" $JVM_OPTS -jar "$JAR_PATH" "${REMAINING_ARGS[@]}"
+else
+    # Use Gradle for development
+    GRADLE_ARGS=()
+    GRADLE_ARGS+=("$GRADLE_TASK")
+
+    if [ "$GRADLE_TASK" = "run" ]; then
+        GRADLE_ARGS+=(":apps-scopes:run")
+        if [ ${#REMAINING_ARGS[@]} -gt 0 ]; then
+            # Join arguments with proper quoting for Gradle
+            CLI_ARGS=""
+            for arg in "${REMAINING_ARGS[@]}"; do
+                if [[ "$arg" == *" "* ]]; then
+                    CLI_ARGS="$CLI_ARGS \"$arg\""
+                else
+                    CLI_ARGS="$CLI_ARGS $arg"
+                fi
+            done
+            GRADLE_ARGS+=("--args=$CLI_ARGS")
+        fi
+    else
+        GRADLE_ARGS+=("${REMAINING_ARGS[@]}")
+    fi
+
+    # Set GRADLE_OPTS for JVM options
+    export GRADLE_OPTS="$JVM_OPTS"
+
+    # Execute Gradle with the CLI
+    exec "$APP_HOME/gradlew" "${GRADLE_ARGS[@]}"
+fi
+
