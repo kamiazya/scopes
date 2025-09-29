@@ -1,5 +1,30 @@
 # scopes
 
+## 0.0.5
+
+### Patch Changes
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: resolve GitHub Actions release failure by adding redundant trigger mechanisms
+
+  - Add push trigger to release.yml for automatic releases on tag push
+  - Update tag resolution logic to handle both workflow_dispatch and push triggers
+  - Remove failing manual release trigger job that was causing HTTP 422 errors
+  - Ensures reliable releases by providing multiple trigger mechanisms
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: Resolved a release workflow failure by correcting heredoc syntax in `release.yml` to prevent improper variable expansion.
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: replace individual assets with bundled packages for easier downloads
+
+  Replace the previous 28 individual release assets with organized bundle packages to eliminate download confusion. Users now choose from:
+
+  - 6 platform-specific bundles (~20MB each) containing binary, installer, SBOM, and verification files
+  - 1 unified offline package (~260MB) for enterprise/multi-platform deployments
+  - SLSA provenance for supply chain security
+
+  This provides 92% reduction in download size for most users while maintaining all existing security features (SLSA Level 3, SHA256 verification) and preparing for future daemon binary distribution.
+
+- [#289](https://github.com/kamiazya/scopes/pull/289) [`33f06cf`](https://github.com/kamiazya/scopes/commit/33f06cf9c54b934046435e24fc62715d83678709) Thanks [@dependabot](https://github.com/apps/dependabot)! - deps(deps): bump org.graalvm.buildtools.native from 0.11.0 to 0.11.1
+
 ## 0.0.4
 
 ### Patch Changes
