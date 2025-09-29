@@ -8,25 +8,23 @@ import java.nio.file.Paths
  * Platform-specific utilities for E2E testing.
  */
 object PlatformUtils {
-    
-    data class Platform(
-        val os: OS,
-        val arch: Architecture,
-    ) {
+
+    data class Platform(val os: OS, val arch: Architecture) {
         fun toBinaryIdentifier(): String = "${os.identifier}-${arch.identifier}"
-        
+
         fun isWindows(): Boolean = os == OS.WINDOWS
         fun isMacOS(): Boolean = os == OS.MACOS
         fun isLinux(): Boolean = os == OS.LINUX
         fun isUnix(): Boolean = isMacOS() || isLinux()
     }
-    
+
     enum class OS(val identifier: String) {
         WINDOWS("win32"),
         MACOS("darwin"),
         LINUX("linux"),
-        UNKNOWN("unknown");
-        
+        UNKNOWN("unknown"),
+        ;
+
         companion object {
             fun detect(): OS {
                 val osName = System.getProperty("os.name").lowercase()
@@ -39,12 +37,13 @@ object PlatformUtils {
             }
         }
     }
-    
+
     enum class Architecture(val identifier: String) {
         X64("x64"),
         ARM64("arm64"),
-        UNKNOWN("unknown");
-        
+        UNKNOWN("unknown"),
+        ;
+
         companion object {
             fun detect(): Architecture {
                 val osArch = System.getProperty("os.arch").lowercase()
@@ -56,72 +55,72 @@ object PlatformUtils {
             }
         }
     }
-    
+
     val currentPlatform: Platform by lazy {
         Platform(OS.detect(), Architecture.detect())
     }
-    
-    fun getExecutableName(baseName: String): String {
-        return if (currentPlatform.isWindows()) "$baseName.exe" else baseName
-    }
-    
+
+    fun getExecutableName(baseName: String): String = if (currentPlatform.isWindows()) "$baseName.exe" else baseName
+
     fun makeExecutable(file: File) {
         if (currentPlatform.isUnix()) {
             file.setExecutable(true)
         }
     }
-    
-    fun getEndpointFilePath(): Path {
-        return when (currentPlatform.os) {
-            OS.LINUX -> {
-                val runtimeDir = System.getenv("XDG_RUNTIME_DIR")
-                if (runtimeDir != null) {
-                    Paths.get(runtimeDir, "scopes", "scopesd.endpoint")
-                } else {
-                    Paths.get(System.getProperty("user.home"), ".scopes", "run", "scopesd.endpoint")
-                }
+
+    fun getEndpointFilePath(): Path = when (currentPlatform.os) {
+        OS.LINUX -> {
+            val runtimeDir = System.getenv("XDG_RUNTIME_DIR")
+            if (runtimeDir != null) {
+                Paths.get(runtimeDir, "scopes", "scopesd.endpoint")
+            } else {
+                Paths.get(System.getProperty("user.home"), ".scopes", "run", "scopesd.endpoint")
             }
-            OS.MACOS -> {
-                Paths.get(
-                    System.getProperty("user.home"),
-                    "Library", "Application Support", "scopes", "run", "scopesd.endpoint"
-                )
-            }
-            OS.WINDOWS -> {
-                val localAppData = System.getenv("LOCALAPPDATA")
-                    ?: System.getenv("APPDATA")
-                    ?: Paths.get(System.getProperty("user.home"), "AppData", "Local").toString()
-                Paths.get(localAppData, "scopes", "run", "scopesd.endpoint")
-            }
-            else -> throw UnsupportedOperationException("Unsupported platform: ${currentPlatform.os}")
         }
-    }
-    
-    fun getConfigDir(): Path {
-        return when (currentPlatform.os) {
-            OS.LINUX -> {
-                val configHome = System.getenv("XDG_CONFIG_HOME")
-                if (configHome != null) {
-                    Paths.get(configHome, "scopes")
-                } else {
-                    Paths.get(System.getProperty("user.home"), ".config", "scopes")
-                }
-            }
-            OS.MACOS -> {
-                Paths.get(
-                    System.getProperty("user.home"),
-                    "Library", "Application Support", "scopes"
-                )
-            }
-            OS.WINDOWS -> {
-                val appData = System.getenv("APPDATA")
-                    ?: Paths.get(System.getProperty("user.home"), "AppData", "Roaming").toString()
-                Paths.get(appData, "scopes")
-            }
-            else -> throw UnsupportedOperationException("Unsupported platform: ${currentPlatform.os}")
+        OS.MACOS -> {
+            Paths.get(
+                System.getProperty("user.home"),
+                "Library",
+                "Application Support",
+                "scopes",
+                "run",
+                "scopesd.endpoint",
+            )
         }
+        OS.WINDOWS -> {
+            val localAppData = System.getenv("LOCALAPPDATA")
+                ?: System.getenv("APPDATA")
+                ?: Paths.get(System.getProperty("user.home"), "AppData", "Local").toString()
+            Paths.get(localAppData, "scopes", "run", "scopesd.endpoint")
+        }
+        else -> throw UnsupportedOperationException("Unsupported platform: ${currentPlatform.os}")
     }
-    
+
+    fun getConfigDir(): Path = when (currentPlatform.os) {
+        OS.LINUX -> {
+            val configHome = System.getenv("XDG_CONFIG_HOME")
+            if (configHome != null) {
+                Paths.get(configHome, "scopes")
+            } else {
+                Paths.get(System.getProperty("user.home"), ".config", "scopes")
+            }
+        }
+        OS.MACOS -> {
+            Paths.get(
+                System.getProperty("user.home"),
+                "Library",
+                "Application Support",
+                "scopes",
+            )
+        }
+        OS.WINDOWS -> {
+            val appData = System.getenv("APPDATA")
+                ?: Paths.get(System.getProperty("user.home"), "AppData", "Roaming").toString()
+            Paths.get(appData, "scopes")
+        }
+        else -> throw UnsupportedOperationException("Unsupported platform: ${currentPlatform.os}")
+    }
+
     fun killProcess(pid: Long) {
         if (currentPlatform.isWindows()) {
             ProcessBuilder("taskkill", "/F", "/PID", pid.toString())
@@ -133,15 +132,13 @@ object PlatformUtils {
                 .waitFor()
         }
     }
-    
-    fun checkPortAvailable(port: Int): Boolean {
-        return try {
-            java.net.ServerSocket(port).use { true }
-        } catch (e: Exception) {
-            false
-        }
+
+    fun checkPortAvailable(port: Int): Boolean = try {
+        java.net.ServerSocket(port).use { true }
+    } catch (e: Exception) {
+        false
     }
-    
+
     fun findAvailablePort(startPort: Int = 50000, endPort: Int = 60000): Int {
         for (port in startPort..endPort) {
             if (checkPortAvailable(port)) {

@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.apps.cli.di
 
 import io.github.kamiazya.scopes.apps.cli.di.observabilityModule
 import io.github.kamiazya.scopes.apps.cli.di.platform.platformModule
-import io.github.kamiazya.scopes.interfaces.grpc.client.daemon.di.grpcClientModule
 import io.github.kamiazya.scopes.interfaces.cli.commands.AliasCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.CreateCommand
 import io.github.kamiazya.scopes.interfaces.cli.commands.DeleteCommand
@@ -16,6 +15,7 @@ import io.github.kamiazya.scopes.interfaces.cli.formatters.ContextOutputFormatte
 import io.github.kamiazya.scopes.interfaces.cli.formatters.ScopeOutputFormatter
 import io.github.kamiazya.scopes.interfaces.cli.transport.GrpcTransport
 import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
+import io.github.kamiazya.scopes.interfaces.grpc.client.daemon.di.grpcClientModule
 import org.koin.dsl.module
 
 /**

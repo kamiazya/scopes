@@ -43,12 +43,7 @@ class GrpcServer(
     /**
      * Server information after successful startup.
      */
-    data class ServerInfo(
-        val host: String,
-        val port: Int,
-        val address: String,
-        val transport: String = "tcp"
-    )
+    data class ServerInfo(val host: String, val port: Int, val address: String, val transport: String = "tcp")
 
     /**
      * Starts the gRPC server on the specified host and port.

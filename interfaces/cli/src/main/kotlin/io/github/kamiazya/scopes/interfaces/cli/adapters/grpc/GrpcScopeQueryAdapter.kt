@@ -1,7 +1,6 @@
 package io.github.kamiazya.scopes.interfaces.cli.adapters.grpc
 
 import arrow.core.Either
-import arrow.core.flatMap
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeListResult
@@ -10,23 +9,19 @@ import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 
 /**
  * gRPC-specific implementation of ScopeQueryAdapter.
- * 
+ *
  * This adapter delegates scope queries to the Transport layer
  * when using gRPC transport.
  */
-class GrpcScopeQueryAdapter(
-    private val transport: Transport
-) {
-    
+class GrpcScopeQueryAdapter(private val transport: Transport) {
+
     /**
      * Retrieves a scope by ID
      */
-    suspend fun getScopeById(id: String): Either<ScopeContractError, ScopeResult> {
-        return transport.getScope(id).fold(
-            { error -> Either.Left(error) },
-            { result -> result?.let { Either.Right(it) } ?: Either.Left(ScopeContractError.BusinessError.NotFound(id)) }
-        )
-    }
+    suspend fun getScopeById(id: String): Either<ScopeContractError, ScopeResult> = transport.getScope(id).fold(
+        { error -> Either.Left(error) },
+        { result -> result?.let { Either.Right(it) } ?: Either.Left(ScopeContractError.BusinessError.NotFound(id)) },
+    )
 
     /**
      * Retrieves a scope by alias name
@@ -42,23 +37,18 @@ class GrpcScopeQueryAdapter(
     /**
      * Lists child scopes with pagination support
      */
-    suspend fun listChildren(parentId: String, offset: Int = 0, limit: Int = 20): Either<ScopeContractError, ScopeListResult> {
-        return transport.getChildren(parentId, false)
-    }
+    suspend fun listChildren(parentId: String, offset: Int = 0, limit: Int = 20): Either<ScopeContractError, ScopeListResult> =
+        transport.getChildren(parentId, false)
 
     /**
      * Lists root scopes (scopes without parent) with pagination support
      */
-    suspend fun listRootScopes(offset: Int = 0, limit: Int = 20): Either<ScopeContractError, ScopeListResult> {
-        return transport.getRootScopes()
-    }
+    suspend fun listRootScopes(offset: Int = 0, limit: Int = 20): Either<ScopeContractError, ScopeListResult> = transport.getRootScopes()
 
     /**
      * Lists all aliases for a specific scope
      */
-    suspend fun listAliases(scopeId: String): Either<ScopeContractError, AliasListResult> {
-        return transport.listAliases(scopeId)
-    }
+    suspend fun listAliases(scopeId: String): Either<ScopeContractError, AliasListResult> = transport.listAliases(scopeId)
 
     /**
      * Lists scopes filtered by a specific aspect key-value pair
@@ -94,14 +84,13 @@ class GrpcScopeQueryAdapter(
     /**
      * Searches scopes by title or description (convenience method)
      */
-    suspend fun searchScopes(searchTerm: String, parentId: String? = null, offset: Int = 0, limit: Int = 20): Either<ScopeContractError, List<ScopeResult>> {
-        return transport.listScopes().map { result ->
+    suspend fun searchScopes(searchTerm: String, parentId: String? = null, offset: Int = 0, limit: Int = 20): Either<ScopeContractError, List<ScopeResult>> =
+        transport.listScopes().map { result ->
             result.scopes.filter { scope ->
                 scope.title.contains(searchTerm, ignoreCase = true) ||
-                scope.description?.contains(searchTerm, ignoreCase = true) == true
+                    scope.description?.contains(searchTerm, ignoreCase = true) == true
             }
         }
-    }
 
     /**
      * Gets scope hierarchy path from root to the specified scope

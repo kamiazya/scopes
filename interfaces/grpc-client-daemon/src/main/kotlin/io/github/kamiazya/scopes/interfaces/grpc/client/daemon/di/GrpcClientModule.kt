@@ -12,10 +12,10 @@ import org.koin.dsl.module
 val grpcClientModule = module {
     // Endpoint resolver for daemon communication
     single<EndpointResolver> { EndpointResolver(logger = get()) }
-    
+
     // JSON serializer for protocol communication
     single<Json> { Json { ignoreUnknownKeys = true } }
-    
+
     // gRPC Client implementations
     single { GrpcClient(endpointResolver = get(), logger = get()) }
     single { GatewayClient(endpointResolver = get(), logger = get(), json = get()) }

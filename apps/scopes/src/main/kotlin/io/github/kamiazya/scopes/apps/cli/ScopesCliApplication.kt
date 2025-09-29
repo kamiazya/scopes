@@ -56,7 +56,7 @@ class ScopesCliApplication : AutoCloseable {
                     // Log but don't fail - we're shutting down anyway
                     System.err.println("Warning: Error disconnecting transport: ${e.message}")
                 }
-                
+
                 // Shutdown application lifecycle
                 val lifecycleManager = koinApp.koin.get<ApplicationLifecycleManager>()
                 lifecycleManager.shutdown()

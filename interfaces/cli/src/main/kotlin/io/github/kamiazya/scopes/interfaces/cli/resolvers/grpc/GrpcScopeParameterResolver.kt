@@ -7,17 +7,15 @@ import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 
 /**
  * gRPC-specific implementation of ScopeParameterResolver.
- * 
+ *
  * This resolver uses the Transport layer to resolve scope aliases
  * to scope IDs when using gRPC transport.
  */
-class GrpcScopeParameterResolver(
-    private val transport: Transport
-) {
-    
+class GrpcScopeParameterResolver(private val transport: Transport) {
+
     /**
      * Resolves a parameter to a scope ID.
-     * 
+     *
      * @param parameter The parameter to resolve (ULID or alias)
      * @return Either an error or the resolved scope ID
      */
@@ -36,7 +34,7 @@ class GrpcScopeParameterResolver(
             }
         }
     }
-    
+
     /**
      * Checks if a string is a valid ULID format.
      * ULIDs are 26 characters long and contain only valid ULID characters.

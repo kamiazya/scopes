@@ -5,7 +5,6 @@ import io.github.kamiazya.scopes.platform.application.lifecycle.ApplicationLifec
 import io.github.kamiazya.scopes.platform.commons.time.TimeProvider
 import io.github.kamiazya.scopes.platform.infrastructure.lifecycle.DefaultApplicationLifecycleManager
 import io.github.kamiazya.scopes.platform.infrastructure.time.SystemTimeProvider
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**

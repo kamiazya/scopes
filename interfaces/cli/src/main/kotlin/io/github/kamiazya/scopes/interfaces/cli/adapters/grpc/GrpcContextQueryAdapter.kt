@@ -7,12 +7,12 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.types.ContextView
 
 /**
  * gRPC-specific implementation of ContextQueryAdapter.
- * 
+ *
  * This provides the same interface as ContextQueryAdapter but delegates
  * to stub implementations since context management is not yet supported in gRPC transport.
  */
 class GrpcContextQueryAdapter {
-    
+
     /**
      * List all context views.
      */
@@ -20,7 +20,7 @@ class GrpcContextQueryAdapter {
         // For gRPC transport, context management is not supported yet
         return emptyList<ContextView>().right()
     }
-    
+
     /**
      * Get a specific context view by key.
      */
@@ -28,7 +28,7 @@ class GrpcContextQueryAdapter {
         // For gRPC transport, context management is not supported yet
         return null.right()
     }
-    
+
     /**
      * Get the currently active context.
      */

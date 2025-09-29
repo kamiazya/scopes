@@ -35,10 +35,7 @@ data class RetryConfig(
 /**
  * Retry policy implementation with exponential backoff.
  */
-class RetryPolicy(
-    private val config: RetryConfig,
-    private val logger: Logger,
-) {
+class RetryPolicy(private val config: RetryConfig, private val logger: Logger) {
     /**
      * Executes an operation with retry logic.
      *
@@ -46,10 +43,7 @@ class RetryPolicy(
      * @param operation The operation to execute
      * @return Either the last error or the successful result
      */
-    suspend fun <E : Throwable, T> execute(
-        operationName: String,
-        operation: suspend (attemptNumber: Int) -> Either<E, T>,
-    ): Either<E, T> {
+    suspend fun <E : Throwable, T> execute(operationName: String, operation: suspend (attemptNumber: Int) -> Either<E, T>): Either<E, T> {
         var lastError: E? = null
         var delay = config.initialDelay
 
@@ -120,38 +114,38 @@ class RetryPolicy(
         /**
          * Creates a default retry policy for gRPC operations.
          */
-        fun forGrpc(logger: Logger): RetryPolicy {
-            return RetryPolicy(
-                config = RetryConfig(
-                    maxAttempts = 3,
-                    initialDelay = 1.seconds,
-                    maxDelay = 15.seconds,
-                    backoffMultiplier = 2.0,
-                    retryableCondition = { error ->
-                        when (error) {
-                            is io.grpc.StatusException -> {
-                                // Retry on transient errors
-                                when (error.status.code) {
-                                    io.grpc.Status.Code.UNAVAILABLE,
-                                    io.grpc.Status.Code.DEADLINE_EXCEEDED,
-                                    io.grpc.Status.Code.ABORTED,
-                                    io.grpc.Status.Code.INTERNAL,
-                                    io.grpc.Status.Code.UNKNOWN -> true
-                                    else -> false
-                                }
+        fun forGrpc(logger: Logger): RetryPolicy = RetryPolicy(
+            config = RetryConfig(
+                maxAttempts = 3,
+                initialDelay = 1.seconds,
+                maxDelay = 15.seconds,
+                backoffMultiplier = 2.0,
+                retryableCondition = { error ->
+                    when (error) {
+                        is io.grpc.StatusException -> {
+                            // Retry on transient errors
+                            when (error.status.code) {
+                                io.grpc.Status.Code.UNAVAILABLE,
+                                io.grpc.Status.Code.DEADLINE_EXCEEDED,
+                                io.grpc.Status.Code.ABORTED,
+                                io.grpc.Status.Code.INTERNAL,
+                                io.grpc.Status.Code.UNKNOWN,
+                                -> true
+                                else -> false
                             }
-                            // Connection errors are retryable
-                            is java.net.ConnectException,
-                            is java.net.SocketException,
-                            is java.net.SocketTimeoutException,
-                            is java.io.IOException -> true
-                            else -> false
                         }
-                    },
-                ),
-                logger = logger,
-            )
-        }
+                        // Connection errors are retryable
+                        is java.net.ConnectException,
+                        is java.net.SocketException,
+                        is java.net.SocketTimeoutException,
+                        is java.io.IOException,
+                        -> true
+                        else -> false
+                    }
+                },
+            ),
+            logger = logger,
+        )
 
         /**
          * Creates a retry policy from environment configuration.

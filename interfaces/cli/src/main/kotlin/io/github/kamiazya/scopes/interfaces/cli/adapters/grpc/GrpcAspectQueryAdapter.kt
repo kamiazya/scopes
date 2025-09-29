@@ -8,28 +8,20 @@ import io.github.kamiazya.scopes.interfaces.cli.transport.Transport
 /**
  * gRPC-specific implementation of AspectQueryAdapter.
  */
-class GrpcAspectQueryAdapter(
-    private val transport: Transport
-) {
-    
+class GrpcAspectQueryAdapter(private val transport: Transport) {
+
     /**
      * Get an aspect definition by key.
      */
-    suspend fun getAspectDefinition(key: String): Either<ScopeContractError, AspectDefinition?> {
-        return transport.getAspectDefinition(key)
-    }
-    
+    suspend fun getAspectDefinition(key: String): Either<ScopeContractError, AspectDefinition?> = transport.getAspectDefinition(key)
+
     /**
      * List all aspect definitions.
      */
-    suspend fun listAspectDefinitions(): Either<ScopeContractError, List<AspectDefinition>> {
-        return transport.listAspectDefinitions()
-    }
-    
+    suspend fun listAspectDefinitions(): Either<ScopeContractError, List<AspectDefinition>> = transport.listAspectDefinitions()
+
     /**
      * Validate aspect values against their definitions.
      */
-    suspend fun validateAspectValue(key: String, values: List<String>): Either<ScopeContractError, List<String>> {
-        return transport.validateAspectValue(key, values)
-    }
+    suspend fun validateAspectValue(key: String, values: List<String>): Either<ScopeContractError, List<String>> = transport.validateAspectValue(key, values)
 }

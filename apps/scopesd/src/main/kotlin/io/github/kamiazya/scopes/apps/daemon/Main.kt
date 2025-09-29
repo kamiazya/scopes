@@ -2,7 +2,6 @@ package io.github.kamiazya.scopes.apps.daemon
 
 import io.github.kamiazya.scopes.apps.daemon.di.daemonModule
 import io.github.kamiazya.scopes.interfaces.daemon.grpc.daemonGrpcModule
-import io.github.kamiazya.scopes.apps.daemon.di.daemonModule
 import io.github.kamiazya.scopes.platform.observability.logging.ApplicationInfo
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.startKoin
@@ -155,7 +154,7 @@ fun main(args: Array<String>) {
 
         daemon.start(
             host = host,
-            port = port
+            port = port,
         ).fold(
             { error ->
                 System.err.println("[ERROR] Failed to start daemon: ${error.message}")

@@ -30,7 +30,6 @@ import io.github.kamiazya.scopes.platform.infrastructure.grpc.interceptors.Retry
 import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.rpc.v1beta.Envelope
 import io.github.kamiazya.scopes.rpc.v1beta.TaskGatewayServiceGrpcKt
-import io.grpc.ManagedChannel
 import io.grpc.StatusException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -53,14 +52,13 @@ class GatewayClient(
 
     private fun generateId(): String = Random.nextLong().toString(16)
 
-    suspend fun connect(useRetry: Boolean = true): Either<ClientError, Unit> =
-        if (useRetry) {
-            retryPolicy.execute<ClientError, Unit>("gateway-connection") { attemptNumber ->
-                performConnect(attemptNumber)
-            }
-        } else {
-            performConnect(1)
+    suspend fun connect(useRetry: Boolean = true): Either<ClientError, Unit> = if (useRetry) {
+        retryPolicy.execute<ClientError, Unit>("gateway-connection") { attemptNumber ->
+            performConnect(attemptNumber)
         }
+    } else {
+        performConnect(1)
+    }
 
     private suspend fun performConnect(attemptNumber: Int): Either<ClientError, Unit> = try {
         val endpoint = endpointResolver.resolve().getOrElse {

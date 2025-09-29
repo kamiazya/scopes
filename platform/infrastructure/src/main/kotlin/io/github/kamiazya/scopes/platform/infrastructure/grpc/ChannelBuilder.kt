@@ -15,10 +15,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Data class to hold a managed channel and its associated EventLoopGroup for proper lifecycle management.
  */
-data class ChannelWithEventLoop(
-    val channel: ManagedChannel,
-    val eventLoopGroup: EventLoopGroup
-) {
+data class ChannelWithEventLoop(val channel: ManagedChannel, val eventLoopGroup: EventLoopGroup) {
     /**
      * Properly shutdown both the channel and EventLoopGroup.
      * This ensures the process can exit cleanly.
@@ -112,10 +109,12 @@ object ChannelBuilder {
      * @param timeout Optional custom timeout (defaults to environment variable or 30 seconds)
      * @return Configured ManagedChannel
      */
-    @Deprecated("Use createChannelWithEventLoop() for proper resource management", ReplaceWith("createChannelWithEventLoop(host, port, logger, timeout).channel"))
-    fun createChannel(host: String, port: Int, logger: Logger, timeout: Duration? = null): ManagedChannel {
-        return createChannelWithEventLoop(host, port, logger, timeout).channel
-    }
+    @Deprecated(
+        "Use createChannelWithEventLoop() for proper resource management",
+        ReplaceWith("createChannelWithEventLoop(host, port, logger, timeout).channel"),
+    )
+    fun createChannel(host: String, port: Int, logger: Logger, timeout: Duration? = null): ManagedChannel =
+        createChannelWithEventLoop(host, port, logger, timeout).channel
 
     /**
      * Creates a channel from an address string (host:port format).
@@ -149,7 +148,10 @@ object ChannelBuilder {
      * @param timeout Optional custom timeout
      * @return Result containing either the channel or an error
      */
-    @Deprecated("Use createChannelWithEventLoopFromAddress() for proper resource management", ReplaceWith("createChannelWithEventLoopFromAddress(address, logger, timeout).map { it.channel }"))
+    @Deprecated(
+        "Use createChannelWithEventLoopFromAddress() for proper resource management",
+        ReplaceWith("createChannelWithEventLoopFromAddress(address, logger, timeout).map { it.channel }"),
+    )
     fun createChannelFromAddress(address: String, logger: Logger, timeout: Duration? = null): Result<ManagedChannel> = runCatching {
         val parts = address.split(":")
         require(parts.size == 2) { "Invalid address format: expected 'host:port', got '$address'" }

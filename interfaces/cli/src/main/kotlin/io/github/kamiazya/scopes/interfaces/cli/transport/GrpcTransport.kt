@@ -265,7 +265,7 @@ class GrpcTransport(private val gatewayClient: GatewayClient, private val logger
                             scopeId = scope.id,
                             matchedAlias = scope.canonicalAlias,
                             wasPrefixMatch = false,
-                            otherMatches = emptyList()
+                            otherMatches = emptyList(),
                         )
                     } ?: throw IllegalStateException("Alias '$aliasOrPrefix' not found")
                 }
@@ -561,7 +561,7 @@ class GrpcTransport(private val gatewayClient: GatewayClient, private val logger
                 // Try to resolve as alias via gRPC
                 gatewayClient.getScopeByAlias(parameter)
                     .mapLeft { clientError -> mapClientErrorToContractError(clientError) }
-                    .map { scopeResult -> 
+                    .map { scopeResult ->
                         scopeResult?.id ?: throw IllegalStateException("Alias '$parameter' resolved to null scope")
                     }
             }

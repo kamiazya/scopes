@@ -22,12 +22,7 @@ class GrpcServerFactory(private val taskGatewayService: TaskGatewayServiceImpl? 
      * @param port Port to bind to
      * @return GrpcServerWrapper containing the server and shutdown monitor
      */
-    fun createServer(
-        applicationInfo: ApplicationInfo,
-        logger: Logger,
-        host: String = "127.0.0.1",
-        port: Int = 0
-    ): GrpcServerWrapper {
+    fun createServer(applicationInfo: ApplicationInfo, logger: Logger, host: String = "127.0.0.1", port: Int = 0): GrpcServerWrapper {
         val controlService = ControlServiceImpl(
             applicationInfo = applicationInfo,
             logger = logger,
@@ -50,7 +45,7 @@ class GrpcServerFactory(private val taskGatewayService: TaskGatewayServiceImpl? 
             services = services,
             logger = logger,
             host = host,
-            port = port
+            port = port,
         )
 
         return GrpcServerWrapper(

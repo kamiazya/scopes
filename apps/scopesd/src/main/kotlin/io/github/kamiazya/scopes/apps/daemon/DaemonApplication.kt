@@ -45,23 +45,23 @@ class DaemonApplication(private val logger: Logger, private val serverFactory: G
      * @param port The port to bind the gRPC server to (default: 0 for ephemeral)
      * @return Either a DaemonError or Unit on success
      */
-    suspend fun start(
-        host: String = "127.0.0.1",
-        port: Int = 0
-    ): Either<DaemonError, Unit> {
+    suspend fun start(host: String = "127.0.0.1", port: Int = 0): Either<DaemonError, Unit> {
         if (isRunning.compareAndSet(false, true)) {
             try {
-                logger.info("Starting Scopes daemon", mapOf(
-                    "version" to applicationInfo.version,
-                    "transport" to "tcp"
-                ))
+                logger.info(
+                    "Starting Scopes daemon",
+                    mapOf(
+                        "version" to applicationInfo.version,
+                        "transport" to "tcp",
+                    ),
+                )
 
                 // Create gRPC server wrapper using factory
                 val serverWrapper = serverFactory.createServer(
                     applicationInfo = applicationInfo,
                     logger = logger,
                     host = host,
-                    port = port
+                    port = port,
                 )
 
                 val serverInfo = serverWrapper.server.start().fold(

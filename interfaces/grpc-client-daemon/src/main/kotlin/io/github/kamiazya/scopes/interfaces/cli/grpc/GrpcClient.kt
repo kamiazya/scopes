@@ -15,14 +15,10 @@ import io.github.kamiazya.scopes.rpc.v1beta.PingRequest
 import io.github.kamiazya.scopes.rpc.v1beta.PingResponse
 import io.github.kamiazya.scopes.rpc.v1beta.ShutdownRequest
 import io.github.kamiazya.scopes.rpc.v1beta.ShutdownResponse
-import io.grpc.ManagedChannel
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * gRPC client for communicating with the Scopes daemon.

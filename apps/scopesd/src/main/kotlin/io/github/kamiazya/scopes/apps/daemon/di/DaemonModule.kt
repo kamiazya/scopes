@@ -36,8 +36,8 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Cre
 import io.github.kamiazya.scopes.scopemanagement.application.factory.ScopeFactory
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.port.HierarchyPolicyProvider
-import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetChildrenHandler
+import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetRootScopesHandler
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeHierarchyApplicationService
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
