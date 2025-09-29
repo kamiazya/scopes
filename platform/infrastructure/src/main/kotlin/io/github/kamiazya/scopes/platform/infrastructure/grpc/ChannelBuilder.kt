@@ -7,6 +7,11 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.grpc.ManagedChannel
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
 import io.grpc.netty.shaded.io.netty.channel.EventLoopGroup
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollDomainSocketChannel
+import io.grpc.netty.shaded.io.netty.channel.epoll.EpollEventLoopGroup
+import io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueDomainSocketChannel
+import io.grpc.netty.shaded.io.netty.channel.kqueue.KQueueEventLoopGroup
+import io.grpc.netty.shaded.io.netty.channel.unix.DomainSocketAddress
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -38,6 +43,68 @@ data class ChannelWithEventLoop(
  * Common channel builder utilities for creating gRPC channels with consistent configuration.
  */
 object ChannelBuilder {
+
+    /**
+     * Creates a Unix Domain Socket channel with EventLoopGroup for proper lifecycle management.
+     *
+     * @param socketPath The Unix socket file path
+     * @param logger Logger instance for request logging
+     * @param timeout Optional custom timeout (defaults to environment variable or 30 seconds)
+     * @return ChannelWithEventLoop containing both channel and EventLoopGroup
+     */
+    fun createUnixSocketChannel(socketPath: String, logger: Logger, timeout: Duration? = null): ChannelWithEventLoop {
+        // Determine timeout: provided value > environment variable > default
+        val effectiveTimeout = timeout ?: run {
+            val envTimeoutMs = System.getenv("SCOPES_GRPC_TIMEOUT_MS")?.toLongOrNull()
+            if (envTimeoutMs != null) {
+                envTimeoutMs.milliseconds
+            } else {
+                30.seconds
+            }
+        }
+
+        logger.debug(
+            "Creating gRPC Unix Domain Socket channel",
+            mapOf(
+                "socketPath" to socketPath,
+                "timeout" to effectiveTimeout.inWholeMilliseconds.toString(),
+            ),
+        )
+
+        // Determine the appropriate event loop group and channel type based on the OS
+        val osName = System.getProperty("os.name")?.lowercase() ?: ""
+        val (eventLoopGroup, channelType) = when {
+            osName.contains("linux") -> {
+                EpollEventLoopGroup(1) to EpollDomainSocketChannel::class.java
+            }
+            osName.contains("mac") || osName.contains("darwin") -> {
+                KQueueEventLoopGroup(1) to KQueueDomainSocketChannel::class.java
+            }
+            else -> {
+                throw UnsupportedOperationException("Unix Domain Sockets are not supported on $osName")
+            }
+        }
+
+        val channel = NettyChannelBuilder.forAddress(DomainSocketAddress(socketPath))
+            .usePlaintext() // Local IPC doesn't need TLS
+            .channelType(channelType)
+            .eventLoopGroup(eventLoopGroup)
+            // More conservative settings for native compatibility
+            .keepAliveTime(120, TimeUnit.SECONDS)
+            .keepAliveTimeout(20, TimeUnit.SECONDS)
+            .keepAliveWithoutCalls(false)
+            .maxInboundMessageSize(getMaxMessageSize())
+            // HTTP/2 flow control settings
+            .flowControlWindow(1048576) // 1MB initial window size
+            .intercept(
+                DeadlineClientInterceptor(effectiveTimeout),
+                CorrelationIdClientInterceptor(),
+                RequestLoggingClientInterceptor(logger),
+            )
+            .build()
+
+        return ChannelWithEventLoop(channel, eventLoopGroup)
+    }
 
     /**
      * Creates a managed channel with EventLoopGroup for proper lifecycle management.

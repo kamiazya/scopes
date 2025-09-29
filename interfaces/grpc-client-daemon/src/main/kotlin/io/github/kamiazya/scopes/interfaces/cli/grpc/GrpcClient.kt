@@ -67,12 +67,24 @@ class GrpcClient(private val endpointResolver: EndpointResolver, private val log
             )
 
             // Create channel with EventLoopGroup using common builder
-            val channelWithEventLoop = ChannelBuilder.createChannelWithEventLoop(
-                host = endpointInfo.host,
-                port = endpointInfo.port,
-                logger = logger,
-                // Use default timeout from environment or 30 seconds
-            )
+            val channelWithEventLoop = if (endpointInfo.isUnixSocket() && endpointInfo.socketPath != null) {
+                logger.debug(
+                    "Using Unix Domain Socket connection",
+                    mapOf("socketPath" to endpointInfo.socketPath),
+                )
+                ChannelBuilder.createUnixSocketChannel(
+                    socketPath = endpointInfo.socketPath,
+                    logger = logger,
+                    // Use default timeout from environment or 30 seconds
+                )
+            } else {
+                ChannelBuilder.createChannelWithEventLoop(
+                    host = endpointInfo.host,
+                    port = endpointInfo.port,
+                    logger = logger,
+                    // Use default timeout from environment or 30 seconds
+                )
+            }
 
             this.channelWithEventLoop = channelWithEventLoop
             controlService = ControlServiceGrpcKt.ControlServiceCoroutineStub(channelWithEventLoop.channel)
