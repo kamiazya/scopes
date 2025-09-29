@@ -160,6 +160,7 @@ graph TD
   ADR_0014[ADR-0014: Pluggable AI Strategy Pattern<br/>🧩 AI Integration Strategy]
   ADR_0015[ADR-0015: Unified Event Sourcing Approach<br/>📜 Event-Driven Architecture]
   ADR_0016[ADR-0016: A2A Collaboration Architecture<br/>🤝 AI-to-AI Collaboration]
+  ADR_0017[ADR-0017: Java Runtime Distribution<br/>🏗️ Infrastructure]
 
   %% Dependencies
   ADR_003 --> ADR_004
@@ -201,6 +202,7 @@ graph TD
   ADR_0010 -.-> ADR_0012
   ADR_001 -.-> ADR_0013
   ADR_0011 -.-> ADR_0014
+  ADR_001 -.-> ADR_0017
 
   %% Styling
   classDef foundation fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
@@ -212,6 +214,7 @@ graph TD
   classDef distributed fill:#ffecb3,stroke:#f57f17,stroke-width:2px
   classDef structural fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
   classDef functional fill:#f1f8e9,stroke:#689f38,stroke-width:2px
+  classDef infrastructure fill:#e0f2f1,stroke:#00897b,stroke-width:2px
 
 
   class ADR_001,ADR_002 foundation
@@ -227,6 +230,8 @@ graph TD
   class ADR_0013 architecture
   class ADR_0014 implementation
   class ADR_0015 structural
+  class ADR_0016 implementation
+  class ADR_0017 infrastructure
 ```
 
 ### ADR Index
@@ -249,6 +254,7 @@ graph TD
 | [0014](./0014-pluggable-ai-strategy-pattern.md) | Accepted | Pluggable AI Strategy Pattern | Entity-agnostic AI integration with type-specific strategies |
 | [0015](./0015-unified-event-sourcing-approach.md) | Accepted | Unified Event Sourcing Approach | Complete audit trail and event-driven architecture for all changes |
 | [0016](./0016-a2a-collaboration-architecture.md) | Accepted | A2A Collaboration Architecture | AI-to-AI collaboration with conversation branching and conflict resolution |
+| [0017](./0017-java-runtime-distribution.md) | Accepted | Java Runtime Distribution | Adopt JAR distribution over native compilation for compatibility |
 
 #### Legend
 
