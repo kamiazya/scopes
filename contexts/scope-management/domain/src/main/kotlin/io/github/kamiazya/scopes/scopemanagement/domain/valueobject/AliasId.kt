@@ -7,15 +7,17 @@ import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Value object representing a unique identifier for scope aliases.
  * Uses ULID (Universally Unique Lexicographically Sortable Identifier) format.
  *
  * This ID is immutable and allows tracking aliases even when their names change.
+ *
  */
 @JvmInline
-value class AliasId private constructor(val value: String) {
+value class AliasId private constructor(val value: String) : Identifier {
 
     companion object {
         /**

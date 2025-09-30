@@ -12,27 +12,36 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewI
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ContextViewName
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.AggregateRoot
 
 /**
- * Entity representing a named context view for filtering scopes.
+ * Aggregate root representing a named context view for filtering scopes.
  * Context views provide persistent, named filter definitions that can be applied
  * to scope lists to show only relevant scopes for different work contexts.
+ *
+ * ContextView is an aggregate root because:
+ * - It has independent lifecycle and is not part of another aggregate
+ * - It maintains its own consistency boundary
+ * - It is the root of its own consistency boundary
  *
  * Business rules:
  * - Context key must be unique (used for programmatic access)
  * - Context name is for display purposes and can contain spaces
  * - Filter must be valid and evaluable
  * - Description is optional but recommended for clarity
+ *
  */
 data class ContextView(
-    val id: ContextViewId,
+    private val _id: ContextViewId,
     val key: ContextViewKey,
     val name: ContextViewName,
     val filter: ContextViewFilter,
     val description: ContextViewDescription? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
-) {
+) : AggregateRoot<ContextView, ContextViewId> {
+
+    override fun getId(): ContextViewId = _id
 
     companion object {
         /**
@@ -55,7 +64,7 @@ data class ContextView(
                 }
             }
             return ContextView(
-                id = ContextViewId.generate(),
+                _id = ContextViewId.generate(),
                 key = key,
                 name = name,
                 filter = filter,

@@ -12,9 +12,13 @@ import kotlinx.datetime.Instant
  * They are immutable and should contain all information necessary
  * to understand what happened.
  *
+ * This interface provides
+ * semantic DDD marking while adding event sourcing requirements (versioning,
+ * metadata) specific to this platform's needs.
+ *
  * Events should be named in past tense (e.g., OrderPlaced, PaymentReceived).
  */
-interface DomainEvent {
+interface DomainEvent : org.jmolecules.event.types.DomainEvent {
     /**
      * Unique identifier for this event instance.
      */

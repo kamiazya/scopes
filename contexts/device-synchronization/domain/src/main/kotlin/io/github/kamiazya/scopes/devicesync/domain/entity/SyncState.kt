@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.devicesync.domain.entity
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.DeviceId
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.AggregateRoot
 import kotlin.time.Duration
 
 /**
@@ -10,16 +11,28 @@ import kotlin.time.Duration
  *
  * This entity encapsulates the business logic for managing synchronization state,
  * including state transitions, sync readiness checks, and error handling.
+ *
+ * Each SyncState is uniquely identified by the remote DeviceId it syncs with.
  */
 data class SyncState(
-    val deviceId: DeviceId,
+    private val _deviceId: DeviceId,
     val lastSyncAt: Instant?,
     val remoteVectorClock: VectorClock,
     val lastSuccessfulPush: Instant?,
     val lastSuccessfulPull: Instant?,
     val syncStatus: SyncStatus,
     val pendingChanges: Int = 0,
-) {
+) : AggregateRoot<SyncState, DeviceId> {
+
+    /**
+     */
+    override fun getId(): DeviceId = _deviceId
+
+    /**
+     * Public accessor for deviceId.
+     */
+    val deviceId: DeviceId
+        get() = _deviceId
     init {
         require(pendingChanges >= 0) { "Pending changes cannot be negative" }
         lastSuccessfulPush?.let { push ->

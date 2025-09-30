@@ -20,9 +20,24 @@ import org.jmolecules.ddd.types.Entity
  * Core domain entity representing a unified "Scope" that can be a project, epic, or task.
  * This implements the recursive structure where all entities share the same operations.
  * Follows functional DDD principles with immutability and pure functions.
- * Implements jMolecules Entity to explicitly express DDD building blocks.
  *
  * Note: Aspects are temporarily included here but should be managed in aspect-management context.
+ *
+ * ## Why parentId uses ScopeId? instead of Association<ScopeAggregate, ScopeId>?
+ *
+ * The `Association<T, ID>` pattern is designed for **cross-aggregate references** where T must be
+ * an AggregateRoot. However, Scope entities have **within-aggregate references** (parent-child
+ * relationships within the same ScopeAggregate boundary).
+ *
+ * Key architectural reasons:
+ * 1. **Aggregate Boundary**: Parent and child Scopes belong to the same aggregate (ScopeAggregate)
+ * 2. **Type Constraint**: Association requires T extends AggregateRoot, but Scope is an Entity
+ * 3. **Consistency**: Within-aggregate references should use direct IDs for simplicity
+ * 4. **DDD Pattern**: Associations are for references that cross aggregate boundaries, not internal structure
+ *
+ * If Scopes were separate aggregates (which would violate the hierarchy invariants we need to maintain),
+ * then Association would be appropriate. The current design correctly uses direct ID references for
+ * entities within the same aggregate boundary.
  */
 data class Scope(
     private val _id: ScopeId,
@@ -36,7 +51,6 @@ data class Scope(
 ) : Entity<ScopeAggregate, ScopeId> {
 
     /**
-     * jMolecules Entity identifier accessor.
      */
     override fun getId(): ScopeId = _id
 
@@ -94,6 +108,29 @@ data class Scope(
             createdAt = now,
             status = ScopeStatus.default(),
             updatedAt = now,
+            aspects = aspects,
+        )
+
+        /**
+         * Create a scope for testing with validated value objects.
+         * Generates a new ID automatically.
+         * This method is designed for test code where you already have validated value objects.
+         */
+        fun createForTest(
+            title: ScopeTitle,
+            description: ScopeDescription? = null,
+            parentId: ScopeId? = null,
+            aspects: Aspects = Aspects.empty(),
+            createdAt: Instant,
+            updatedAt: Instant,
+        ): Scope = Scope(
+            _id = ScopeId.generate(),
+            title = title,
+            description = description,
+            parentId = parentId,
+            createdAt = createdAt,
+            status = ScopeStatus.default(),
+            updatedAt = updatedAt,
             aspects = aspects,
         )
     }
