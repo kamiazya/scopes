@@ -22,6 +22,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.handler.Upd
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.query.dto.GetScopeById
 import io.github.kamiazya.scopes.scopemanagement.application.query.handler.scope.GetScopeByIdHandler
+import org.jmolecules.architecture.hexagonal.SecondaryAdapter
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.AddAliasCommand as ContractAddAliasCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.CreateScopeCommand as ContractCreateScopeCommand
 import io.github.kamiazya.scopes.contracts.scopemanagement.commands.DeleteScopeCommand as ContractDeleteScopeCommand
@@ -42,7 +43,11 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeC
  * - Delegate to application command handlers for business logic
  * - Use TransactionManager for command operations to ensure atomicity
  * - Map domain errors to contract errors for external consumers
+ *
+ * Marked with @SecondaryAdapter to indicate this is an implementation of a driving port
+ * in hexagonal architecture, adapting between external contracts and internal application logic.
  */
+@SecondaryAdapter
 class ScopeManagementCommandPortAdapter(
     private val createScopeHandler: CreateScopeHandler,
     private val updateScopeHandler: UpdateScopeHandler,

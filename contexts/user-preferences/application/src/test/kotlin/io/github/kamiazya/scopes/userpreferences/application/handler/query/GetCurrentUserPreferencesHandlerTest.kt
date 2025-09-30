@@ -43,7 +43,7 @@ class GetCurrentUserPreferencesHandlerTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -75,7 +75,7 @@ class GetCurrentUserPreferencesHandlerTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -100,7 +100,7 @@ class GetCurrentUserPreferencesHandlerTest :
                     coEvery { mockRepository.findForCurrentUser() } returns null.right()
 
                     val newAggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = UserPreferences(
                             hierarchyPreferences = HierarchyPreferences.DEFAULT,
@@ -164,7 +164,7 @@ class GetCurrentUserPreferencesHandlerTest :
                 it("should return PreferencesNotInitialized error") {
                     // Given
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = null, // Preferences not initialized
                         createdAt = fixedInstant,
@@ -192,7 +192,7 @@ class GetCurrentUserPreferencesHandlerTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -223,7 +223,7 @@ class GetCurrentUserPreferencesHandlerTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,

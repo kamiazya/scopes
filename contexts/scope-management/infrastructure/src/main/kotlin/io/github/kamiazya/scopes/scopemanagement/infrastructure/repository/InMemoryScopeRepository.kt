@@ -10,13 +10,18 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.jmolecules.architecture.hexagonal.SecondaryAdapter
 
 /**
  * In-memory implementation of ScopeRepository for initial development and testing.
  * Thread-safe implementation using mutex for concurrent access.
  * Follows functional DDD principles with Result types for explicit error handling.
  * This will be replaced with persistent storage implementation.
+ *
+ * Marked with @SecondaryAdapter to indicate this is an implementation of a driven port
+ * in hexagonal architecture, providing persistence infrastructure.
  */
+@SecondaryAdapter
 open class InMemoryScopeRepository : ScopeRepository {
 
     protected val scopes = mutableMapOf<ScopeId, Scope>()

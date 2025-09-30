@@ -1,7 +1,7 @@
 package io.github.kamiazya.scopes.apps.cli.test
 
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName

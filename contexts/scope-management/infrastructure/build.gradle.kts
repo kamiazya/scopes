@@ -20,6 +20,9 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kulid)
 
+    // jMolecules - DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     // Database
     implementation(libs.sqlite.jdbc)
 

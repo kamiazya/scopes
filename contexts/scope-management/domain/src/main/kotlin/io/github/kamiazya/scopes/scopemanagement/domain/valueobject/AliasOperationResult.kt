@@ -1,6 +1,6 @@
 package io.github.kamiazya.scopes.scopemanagement.domain.valueobject
 
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 
 /**

@@ -9,6 +9,7 @@ import kotlinx.datetime.Instant
 
 sealed interface UserPreferencesDomainEvent : DomainEvent
 
+@org.jmolecules.event.annotation.DomainEvent
 data class UserPreferencesCreated(
     override val eventId: EventId,
     override val aggregateId: AggregateId,
@@ -17,6 +18,7 @@ data class UserPreferencesCreated(
     val preferences: UserPreferences,
 ) : UserPreferencesDomainEvent
 
+@org.jmolecules.event.annotation.DomainEvent
 data class PreferencesReset(
     override val eventId: EventId,
     override val aggregateId: AggregateId,

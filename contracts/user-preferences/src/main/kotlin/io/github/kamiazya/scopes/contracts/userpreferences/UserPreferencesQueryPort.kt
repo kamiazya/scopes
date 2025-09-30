@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.github.kamiazya.scopes.contracts.userpreferences.errors.UserPreferencesContractError
 import io.github.kamiazya.scopes.contracts.userpreferences.queries.GetPreferenceQuery
 import io.github.kamiazya.scopes.contracts.userpreferences.results.HierarchyPreferencesResult
+import org.jmolecules.architecture.hexagonal.PrimaryPort
 
 /**
  * Public contract for user preferences read operations (Queries).
@@ -17,7 +18,11 @@ import io.github.kamiazya.scopes.contracts.userpreferences.results.HierarchyPref
  *
  * NULL SEMANTICS: In preference values, null means "unlimited" or "no limit".
  * For example, maxDepth = null means unlimited depth is allowed.
+ *
+ * Marked with @PrimaryPort to indicate this is a driving port in hexagonal architecture,
+ * representing the application's preferences query API.
  */
+@PrimaryPort
 public interface UserPreferencesQueryPort {
     /**
      * Retrieves user preferences.

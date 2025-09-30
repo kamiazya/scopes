@@ -93,7 +93,7 @@ class FileBasedUserPreferencesRepositoryTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -129,7 +129,7 @@ class FileBasedUserPreferencesRepositoryTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -159,7 +159,7 @@ class FileBasedUserPreferencesRepositoryTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -183,7 +183,7 @@ class FileBasedUserPreferencesRepositoryTest :
                     val repository = FileBasedUserPreferencesRepository(testConfigPath, mockLogger)
 
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = null, // No preferences
                         createdAt = fixedInstant,
@@ -209,7 +209,7 @@ class FileBasedUserPreferencesRepositoryTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -453,7 +453,7 @@ class FileBasedUserPreferencesRepositoryTest :
                         updatedAt = fixedInstant,
                     )
                     val aggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences,
                         createdAt = fixedInstant,
@@ -526,14 +526,14 @@ class FileBasedUserPreferencesRepositoryTest :
                     val userPreferences2 = UserPreferences(hierarchyPreferences2, fixedInstant, fixedInstant)
 
                     val aggregate1 = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences1,
                         createdAt = fixedInstant,
                         updatedAt = fixedInstant,
                     )
                     val aggregate2 = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         version = AggregateVersion.initial(),
                         preferences = userPreferences2,
                         createdAt = fixedInstant,

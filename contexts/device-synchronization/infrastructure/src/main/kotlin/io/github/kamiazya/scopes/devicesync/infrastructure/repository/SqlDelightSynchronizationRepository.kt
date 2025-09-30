@@ -37,7 +37,7 @@ class SqlDelightSynchronizationRepository(
 
             Either.Right(
                 SyncState(
-                    deviceId = deviceId,
+                    _deviceId = deviceId,
                     lastSyncAt = device.last_sync_at?.let { Instant.fromEpochMilliseconds(it) },
                     remoteVectorClock = vectorClock,
                     lastSuccessfulPush = device.last_successful_push?.let { Instant.fromEpochMilliseconds(it) },

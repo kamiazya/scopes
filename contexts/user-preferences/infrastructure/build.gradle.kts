@@ -11,6 +11,10 @@ dependencies {
     implementation(project(":platform-domain-commons"))
     implementation(project(":platform-application-commons"))
     implementation(project(":platform-observability"))
+
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)

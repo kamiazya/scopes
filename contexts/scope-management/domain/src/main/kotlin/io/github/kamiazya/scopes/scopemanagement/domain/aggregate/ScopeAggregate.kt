@@ -43,7 +43,7 @@ import kotlinx.datetime.Instant
  * - The aggregate can be reconstructed from its event history
  * - Commands return new instances (immutability)
  * - Extends platform AggregateRoot for proper event tracking and propagation
- 
+
  */
 class ScopeAggregate(
     private val _id: ScopeId,

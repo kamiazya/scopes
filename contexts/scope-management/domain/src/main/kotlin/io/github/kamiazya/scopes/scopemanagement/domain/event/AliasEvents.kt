@@ -6,7 +6,7 @@ import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
@@ -23,6 +23,7 @@ sealed class AliasEvent : DomainEvent
  * Event fired when an alias is assigned to a scope.
  */
 @EventTypeId("scope-management.alias.assigned.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class AliasAssigned(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -53,6 +54,7 @@ data class AliasAssigned(
  * Event fired when an alias is removed from a scope.
  */
 @EventTypeId("scope-management.alias.removed.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class AliasRemoved(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -70,6 +72,7 @@ data class AliasRemoved(
  * This is typically used when updating custom aliases.
  */
 @EventTypeId("scope-management.alias.name-changed.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class AliasNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -86,6 +89,7 @@ data class AliasNameChanged(
  * This happens when regenerating the canonical alias for a scope.
  */
 @EventTypeId("scope-management.alias.canonical-replaced.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class CanonicalAliasReplaced(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
