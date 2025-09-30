@@ -7,7 +7,6 @@ import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
 import io.github.kamiazya.scopes.platform.domain.value.EventId
-import org.jmolecules.ddd.types.AggregateRoot
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
@@ -28,6 +27,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.AggregateRoot
 
 /**
  * Scope aggregate root implementing event sourcing pattern with jMolecules DDD types.
@@ -145,7 +145,6 @@ data class ScopeAggregate(
             initialAggregate.raiseEvent(event)
         }
 
-
         /**
          * Creates an empty aggregate for event replay.
          * Used when loading an aggregate from the event store.
@@ -193,7 +192,6 @@ data class ScopeAggregate(
 
         this@ScopeAggregate.raiseEvent(event)
     }
-
 
     /**
      * Updates the scope description after validation.
@@ -352,7 +350,7 @@ data class ScopeAggregate(
             createdAt = event.occurredAt,
             updatedAt = event.occurredAt,
             scope = Scope(
-                id = event.scopeId,
+                _id = event.scopeId,
                 title = event.title,
                 description = event.description,
                 parentId = event.parentId,

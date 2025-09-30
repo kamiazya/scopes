@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -13,16 +14,18 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.Entity
 
 /**
  * Core domain entity representing a unified "Scope" that can be a project, epic, or task.
  * This implements the recursive structure where all entities share the same operations.
  * Follows functional DDD principles with immutability and pure functions.
+ * Implements jMolecules Entity to explicitly express DDD building blocks.
  *
  * Note: Aspects are temporarily included here but should be managed in aspect-management context.
  */
 data class Scope(
-    val id: ScopeId,
+    private val _id: ScopeId,
     val title: ScopeTitle,
     val description: ScopeDescription? = null,
     val parentId: ScopeId? = null,
@@ -30,7 +33,21 @@ data class Scope(
     val createdAt: Instant,
     val updatedAt: Instant,
     val aspects: Aspects = Aspects.empty(),
-) {
+) : Entity<ScopeAggregate, ScopeId> {
+
+    /**
+     * jMolecules Entity identifier accessor.
+     */
+    override fun getId(): ScopeId = _id
+
+    /**
+     * Convenience property to access id directly.
+     * Note: Uses @JvmName to avoid platform declaration clash with getId()
+     * since ScopeId is an inline value class.
+     */
+    @get:JvmName("id")
+    val id: ScopeId get() = getId()
+
     companion object {
         /**
          * Create a new scope with generated timestamps.
@@ -46,7 +63,7 @@ data class Scope(
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
             Scope(
-                id = ScopeId.generate(),
+                _id = ScopeId.generate(),
                 title = validatedTitle,
                 description = validatedDescription,
                 parentId = parentId,
@@ -70,7 +87,7 @@ data class Scope(
             aspects: Aspects = Aspects.empty(),
             now: Instant,
         ): Scope = Scope(
-            id = id,
+            _id = id,
             title = title,
             description = description,
             parentId = parentId,
