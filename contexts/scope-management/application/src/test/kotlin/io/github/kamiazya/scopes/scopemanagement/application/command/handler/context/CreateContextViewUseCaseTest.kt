@@ -65,7 +65,7 @@ class CreateContextViewUseCaseTest :
 
                     val now = Clock.System.now()
                     val contextView = ContextView(
-                        id = ContextViewId.generate(),
+                        _id = ContextViewId.generate(),
                         key = ContextViewKey.create("client-work").getOrNull()!!,
                         name = ContextViewName.create("Client Work").getOrNull()!!,
                         filter = ContextViewFilter.create("project=acme AND priority=high").getOrNull()!!,
@@ -103,7 +103,7 @@ class CreateContextViewUseCaseTest :
 
                     val now = Clock.System.now()
                     val contextView = ContextView(
-                        id = ContextViewId.generate(),
+                        _id = ContextViewId.generate(),
                         key = ContextViewKey.create("personal").getOrNull()!!,
                         name = ContextViewName.create("Personal Projects").getOrNull()!!,
                         filter = ContextViewFilter.create("type=personal").getOrNull()!!,

@@ -22,6 +22,15 @@ dependencies {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // ArchUnit and jMolecules integration
+    testImplementation(libs.archunit.junit5)
+    testImplementation(libs.jmolecules.archunit)
+    testImplementation(libs.jmolecules.ddd)
+    testImplementation(libs.jmolecules.events)
+
+    // JUnit Jupiter Engine for running JUnit5 tests (ArchUnit uses JUnit5)
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
 tasks.test {

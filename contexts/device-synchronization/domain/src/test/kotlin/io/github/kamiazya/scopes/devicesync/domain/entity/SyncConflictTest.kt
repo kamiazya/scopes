@@ -23,7 +23,7 @@ class SyncConflictTest :
 
             describe("isResolved and isPending") {
                 it("should be pending when not resolved") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -40,7 +40,7 @@ class SyncConflictTest :
                 }
 
                 it("should be resolved when resolution is set") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -64,7 +64,7 @@ class SyncConflictTest :
                     val concurrentLocal = VectorClock(mapOf("device-a" to 5L, "device-b" to 2L))
                     val concurrentRemote = VectorClock(mapOf("device-a" to 3L, "device-b" to 4L))
 
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -80,7 +80,7 @@ class SyncConflictTest :
                 }
 
                 it("should always be true for version mismatch") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -96,7 +96,7 @@ class SyncConflictTest :
                 }
 
                 it("should always be true for missing dependency") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -114,7 +114,7 @@ class SyncConflictTest :
 
             describe("severity") {
                 it("should be CRITICAL for missing dependencies") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -130,7 +130,7 @@ class SyncConflictTest :
                 }
 
                 it("should be HIGH for large version mismatches") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -146,7 +146,7 @@ class SyncConflictTest :
                 }
 
                 it("should be MEDIUM for concurrent modifications") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -162,7 +162,7 @@ class SyncConflictTest :
                 }
 
                 it("should be LOW for minor version mismatches") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -183,7 +183,7 @@ class SyncConflictTest :
                     val localBefore = VectorClock.single(deviceA, 3)
                     val remoteAfter = VectorClock(mapOf("device-a" to 5L, "device-b" to 2L))
 
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -202,7 +202,7 @@ class SyncConflictTest :
                     val localAfter = VectorClock(mapOf("device-a" to 5L, "device-b" to 4L))
                     val remoteBefore = VectorClock.single(deviceB, 3)
 
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -221,7 +221,7 @@ class SyncConflictTest :
                     val concurrentLocal = VectorClock(mapOf("device-a" to 5L, "device-b" to 2L))
                     val concurrentRemote = VectorClock(mapOf("device-a" to 3L, "device-b" to 4L))
 
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -237,7 +237,7 @@ class SyncConflictTest :
                 }
 
                 it("should suggest DEFERRED for missing dependencies") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -255,7 +255,7 @@ class SyncConflictTest :
 
             describe("resolve") {
                 it("should mark conflict as resolved") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -274,7 +274,7 @@ class SyncConflictTest :
                 }
 
                 it("should throw exception when already resolved") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -296,7 +296,7 @@ class SyncConflictTest :
 
             describe("defer") {
                 it("should resolve as deferred") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",
@@ -316,7 +316,7 @@ class SyncConflictTest :
 
             describe("merge") {
                 it("should resolve as merged") {
-                    val conflict = SyncConflict(
+                    val conflict = SyncConflict.create(
                         localEventId = "event-1",
                         remoteEventId = "event-2",
                         aggregateId = "aggregate-1",

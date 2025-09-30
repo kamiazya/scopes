@@ -7,15 +7,17 @@ import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ContextError
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Value object representing a unique identifier for a context view.
  * Uses ULID for lexicographically sortable distributed system compatibility.
  *
  * Follows functional error handling pattern with Either instead of exceptions.
+ *
  */
 @JvmInline
-value class ContextViewId private constructor(val value: String) {
+value class ContextViewId private constructor(val value: String) : Identifier {
     companion object {
         /**
          * Generate a new unique ContextViewId with ULID format.

@@ -11,6 +11,9 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
  * Follows Clean Architecture principles with basic CRUD operations.
  * Complex business logic is handled by domain services.
  *
+ * Note: This repository handles Scope entities which are part of the ScopeAggregate.
+ * We work with Entity (Scope) for convenience in query operations.
+ *
  * Note: Aspect-based queries are handled by the aspect-management context.
  */
 interface ScopeRepository {

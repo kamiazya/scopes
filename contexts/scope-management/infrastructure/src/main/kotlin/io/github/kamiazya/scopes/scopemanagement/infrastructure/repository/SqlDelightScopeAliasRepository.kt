@@ -5,7 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.db.ScopeManagementDatabase
 import io.github.kamiazya.scopes.scopemanagement.db.Scope_aliases
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
@@ -290,7 +290,7 @@ class SqlDelightScopeAliasRepository(private val database: ScopeManagementDataba
     }
 
     private fun rowToScopeAlias(row: Scope_aliases): ScopeAlias = ScopeAlias(
-        id = AliasId.create(row.id).fold(
+        _id = AliasId.create(row.id).fold(
             ifLeft = { error("Invalid alias id in database: $it") },
             ifRight = { it },
         ),

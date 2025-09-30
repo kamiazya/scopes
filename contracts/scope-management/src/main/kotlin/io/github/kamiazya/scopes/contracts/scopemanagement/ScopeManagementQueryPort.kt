@@ -11,12 +11,17 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWit
 import io.github.kamiazya.scopes.contracts.scopemanagement.queries.ListScopesWithQueryQuery
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.AliasListResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
+import org.jmolecules.architecture.hexagonal.PrimaryPort
 
 /**
  * Public contract for scope management read operations (Queries).
  * Following CQRS principles, this port handles only operations that read data without side effects.
  * All operations return Either for explicit error handling.
+ *
+ * Marked with @PrimaryPort to indicate this is a driving port in hexagonal architecture,
+ * representing the application's query API exposed to external adapters (CLI, API, MCP).
  */
+@PrimaryPort
 public interface ScopeManagementQueryPort {
     /**
      * Retrieves a single scope by its ID.

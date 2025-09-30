@@ -4,13 +4,15 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectKeyError
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Value object representing an aspect key.
  * Aspects are key-value pairs that provide metadata about a scope.
+ *
  */
 @JvmInline
-value class AspectKey private constructor(val value: String) {
+value class AspectKey private constructor(val value: String) : Identifier {
     companion object {
         private const val MIN_LENGTH = 1
         private const val MAX_LENGTH = 50

@@ -11,6 +11,9 @@ dependencies {
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)
 
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
 }

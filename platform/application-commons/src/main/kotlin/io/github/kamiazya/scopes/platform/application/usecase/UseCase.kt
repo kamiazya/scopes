@@ -1,6 +1,7 @@
 package io.github.kamiazya.scopes.platform.application.usecase
 
 import arrow.core.Either
+import org.jmolecules.architecture.hexagonal.PrimaryPort
 
 /**
  * Base interface for all use cases following functional programming principles.
@@ -10,10 +11,14 @@ import arrow.core.Either
  * its specific error type. This enables compile-time verification of which
  * errors can be returned by each UseCase implementation.
  *
+ * Marked with @PrimaryPort to indicate this is a driving port in hexagonal architecture,
+ * representing the application's public API for use case execution.
+ *
  * @param I Input type (Command or Query)
  * @param E Error type (UseCase-specific error sealed class)
  * @param T Success result type (typically a Result DTO)
  */
+@PrimaryPort
 fun interface UseCase<I, E, T> {
     /**
      * Execute the use case with the given input.

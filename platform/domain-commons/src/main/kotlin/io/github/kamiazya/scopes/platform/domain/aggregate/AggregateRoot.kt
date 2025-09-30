@@ -1,27 +1,32 @@
 package io.github.kamiazya.scopes.platform.domain.aggregate
 
 import io.github.kamiazya.scopes.platform.domain.event.DomainEvent
-import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.platform.domain.value.AggregateVersion
+import org.jmolecules.ddd.types.Identifier
+import org.jmolecules.ddd.types.AggregateRoot as JMoleculesAggregateRoot
 
 /**
  * Base class for aggregate roots in Domain-Driven Design.
  *
  * Aggregate roots are the main entry points to aggregates and maintain:
- * - Identity (through AggregateId)
+ * - Identity (through any Identifier implementation)
  * - Version (for optimistic concurrency control)
  * - Uncommitted events (for event sourcing)
  *
  * This class supports both event-sourced and state-based aggregates.
  *
+ * event sourcing capabilities through the abstract class.
+ *
  * @param T The concrete aggregate type (for fluent API)
+ * @param ID The identifier type (must implement Identifier)
  * @param E The domain event type this aggregate produces
  */
-abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
+abstract class AggregateRoot<T : AggregateRoot<T, ID, E>, ID : Identifier, E : DomainEvent> : JMoleculesAggregateRoot<T, ID> {
     /**
      * Unique identifier for this aggregate instance.
+     * Subclasses must provide this through getId() method implementation.
      */
-    abstract val id: AggregateId
+    abstract override fun getId(): ID
 
     /**
      * Current version for optimistic concurrency control.
@@ -60,7 +65,7 @@ abstract class AggregateRoot<T : AggregateRoot<T, E>, E : DomainEvent> {
         @Suppress("UNCHECKED_CAST")
         val updated = applyEvent(event) as T
         if (updated !== this) {
-            val updatedRoot = updated as AggregateRoot<T, E>
+            val updatedRoot = updated as AggregateRoot<T, ID, E>
             updatedRoot.uncommittedEventsList.addAll(this.uncommittedEventsList)
         }
         return updated

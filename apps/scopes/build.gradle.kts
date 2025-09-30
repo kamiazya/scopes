@@ -77,6 +77,9 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // jMolecules - DDD building blocks (needed for test compilation as tests use domain entities)
+    testImplementation(libs.jmolecules.ddd)
 }
 
 application {

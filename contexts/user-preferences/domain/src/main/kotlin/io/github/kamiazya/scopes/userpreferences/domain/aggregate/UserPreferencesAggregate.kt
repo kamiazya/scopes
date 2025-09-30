@@ -16,12 +16,14 @@ import io.github.kamiazya.scopes.userpreferences.domain.event.UserPreferencesDom
 import kotlinx.datetime.Instant
 
 data class UserPreferencesAggregate(
-    override val id: AggregateId,
+    private val _id: AggregateId,
     override val version: AggregateVersion,
     val preferences: UserPreferences?,
     val createdAt: Instant,
     val updatedAt: Instant,
-) : AggregateRoot<UserPreferencesAggregate, UserPreferencesDomainEvent>() {
+) : AggregateRoot<UserPreferencesAggregate, AggregateId, UserPreferencesDomainEvent>() {
+
+    override fun getId(): AggregateId = _id
 
     companion object {
         fun create(
@@ -40,7 +42,7 @@ data class UserPreferencesAggregate(
             )
 
             val aggregate = UserPreferencesAggregate(
-                id = aggregateId,
+                _id = aggregateId,
                 version = AggregateVersion.initial(),
                 preferences = preferences,
                 createdAt = now,
@@ -57,7 +59,7 @@ data class UserPreferencesAggregate(
 
         val event = PreferencesReset(
             eventId = EventId.generate(),
-            aggregateId = id,
+            aggregateId = getId(),
             aggregateVersion = version.increment(),
             occurredAt = now,
             oldPreferences = currentPreferences,

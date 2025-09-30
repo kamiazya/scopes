@@ -313,7 +313,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
 
         return Scope(
-            id = scopeId,
+            _id = scopeId,
             title = ScopeTitle.create(row.title).fold(
                 ifLeft = { error("Invalid title in database: $it") },
                 ifRight = { it },
@@ -381,7 +381,7 @@ class SqlDelightScopeRepository(private val database: ScopeManagementDatabase) :
             }
 
         return Scope(
-            id = scopeId,
+            _id = scopeId,
             title = ScopeTitle.create(row.title).fold(
                 ifLeft = { error("Invalid title in database: $it") },
                 ifRight = { it },

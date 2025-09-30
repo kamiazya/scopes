@@ -9,7 +9,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeDescription
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.sqldelight.SqlDelightDatabaseProvider
 import io.kotest.core.spec.style.DescribeSpec
@@ -39,8 +38,7 @@ class SqlDelightScopeRepositoryTest :
             describe("save") {
                 it("should save a new scope") {
                     // Given
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Test Scope").getOrNull()!!,
                         description = ScopeDescription.create("Test Description").getOrNull(),
                         parentId = null,
@@ -62,8 +60,7 @@ class SqlDelightScopeRepositoryTest :
                     val aspectValue = AspectValue.create("high").getOrNull()!!
                     val aspects = Aspects.from(mapOf(aspectKey to nonEmptyListOf(aspectValue)))
 
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Scope with Aspects").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -86,8 +83,7 @@ class SqlDelightScopeRepositoryTest :
 
                 it("should update an existing scope") {
                     // Given
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Initial Title").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -118,8 +114,7 @@ class SqlDelightScopeRepositoryTest :
 
                 it("should handle save errors gracefully") {
                     // Given
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Test").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -145,8 +140,7 @@ class SqlDelightScopeRepositoryTest :
             describe("findById") {
                 it("should find an existing scope by ID") {
                     // Given
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Find Me").getOrNull()!!,
                         description = ScopeDescription.create("Test Description").getOrNull(),
                         parentId = null,
@@ -199,8 +193,7 @@ class SqlDelightScopeRepositoryTest :
                 it("should return all scopes") {
                     // Given
                     val scopes = listOf(
-                        Scope(
-                            id = ScopeId.generate(),
+                        Scope.createForTest(
                             title = ScopeTitle.create("Scope 1").getOrNull()!!,
                             description = null,
                             parentId = null,
@@ -208,8 +201,7 @@ class SqlDelightScopeRepositoryTest :
                             createdAt = Clock.System.now(),
                             updatedAt = Clock.System.now(),
                         ),
-                        Scope(
-                            id = ScopeId.generate(),
+                        Scope.createForTest(
                             title = ScopeTitle.create("Scope 2").getOrNull()!!,
                             description = null,
                             parentId = null,
@@ -245,8 +237,7 @@ class SqlDelightScopeRepositoryTest :
             describe("findByParentId") {
                 it("should find root scopes when parentId is null") {
                     // Given
-                    val rootScope = Scope(
-                        id = ScopeId.generate(),
+                    val rootScope = Scope.createForTest(
                         title = ScopeTitle.create("Root Scope").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -255,8 +246,7 @@ class SqlDelightScopeRepositoryTest :
                         updatedAt = Clock.System.now(),
                     )
 
-                    val childScope = Scope(
-                        id = ScopeId.generate(),
+                    val childScope = Scope.createForTest(
                         title = ScopeTitle.create("Child Scope").getOrNull()!!,
                         description = null,
                         parentId = ScopeId.generate(),
@@ -284,7 +274,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val parentId = ScopeId.generate()
                     val parentScope = Scope(
-                        id = parentId,
+                        _id = parentId,
                         title = ScopeTitle.create("Parent").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -294,8 +284,7 @@ class SqlDelightScopeRepositoryTest :
                     )
 
                     val childScopes = listOf(
-                        Scope(
-                            id = ScopeId.generate(),
+                        Scope.createForTest(
                             title = ScopeTitle.create("Child 1").getOrNull()!!,
                             description = null,
                             parentId = parentId,
@@ -303,8 +292,7 @@ class SqlDelightScopeRepositoryTest :
                             createdAt = Clock.System.now(),
                             updatedAt = Clock.System.now(),
                         ),
-                        Scope(
-                            id = ScopeId.generate(),
+                        Scope.createForTest(
                             title = ScopeTitle.create("Child 2").getOrNull()!!,
                             description = null,
                             parentId = parentId,
@@ -333,8 +321,7 @@ class SqlDelightScopeRepositoryTest :
             describe("existsById") {
                 it("should return true for existing scope") {
                     // Given
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("Exists").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -368,8 +355,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val parentId = ScopeId.generate()
                     val title = "Unique Title"
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = parentId,
@@ -397,8 +383,7 @@ class SqlDelightScopeRepositoryTest :
                 it("should check root scopes when parentId is null") {
                     // Given
                     val title = "Root Title"
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -423,8 +408,7 @@ class SqlDelightScopeRepositoryTest :
                     val aspectValue = AspectValue.create("active").getOrNull()!!
                     val aspects = Aspects.from(mapOf(aspectKey to nonEmptyListOf(aspectValue)))
 
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create("To Delete").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -460,7 +444,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val parentId = ScopeId.generate()
                     val parentScope = Scope(
-                        id = parentId,
+                        _id = parentId,
                         title = ScopeTitle.create("Parent").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -473,8 +457,7 @@ class SqlDelightScopeRepositoryTest :
 
                     // Create 3 direct children
                     repeat(3) { i ->
-                        val child = Scope(
-                            id = ScopeId.generate(),
+                        val child = Scope.createForTest(
                             title = ScopeTitle.create("Child $i").getOrNull()!!,
                             description = null,
                             parentId = parentId,
@@ -509,8 +492,7 @@ class SqlDelightScopeRepositoryTest :
                     // Given
                     val parentId = ScopeId.generate()
                     val title = "Specific Title"
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = parentId,
@@ -538,8 +520,7 @@ class SqlDelightScopeRepositoryTest :
                 it("should find root scope ID when parentId is null") {
                     // Given
                     val title = "Root Scope Title"
-                    val scope = Scope(
-                        id = ScopeId.generate(),
+                    val scope = Scope.createForTest(
                         title = ScopeTitle.create(title).getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -566,12 +547,10 @@ class SqlDelightScopeRepositoryTest :
                     val operations = listOf(
                         runBlocking {
                             repository.save(
-                                Scope(
-                                    id = ScopeId.generate(),
+                                Scope.createForTest(
                                     title = ScopeTitle.create("Test").getOrNull()!!,
                                     description = null,
                                     parentId = null,
-                                    status = ScopeStatus.default(),
                                     createdAt = Clock.System.now(),
                                     updatedAt = Clock.System.now(),
                                     aspects = Aspects.empty(),

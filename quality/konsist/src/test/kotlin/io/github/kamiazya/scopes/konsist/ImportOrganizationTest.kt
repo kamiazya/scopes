@@ -31,6 +31,11 @@ class ImportOrganizationTest :
             Konsist
                 .scopeFromProduction()
                 .files
+                .filter { file ->
+                    // Exclude Gradle-generated files
+                    !file.path.contains(".gradle-local/") &&
+                        !file.path.contains("build/generated/")
+                }
                 .assertTrue { file ->
                     val wildcardImports = file.imports.filter { it.isWildcard }
 

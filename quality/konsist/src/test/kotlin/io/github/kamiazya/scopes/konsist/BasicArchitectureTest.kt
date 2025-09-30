@@ -71,13 +71,13 @@ class BasicArchitectureTest :
                 .flatMap { it.classes() }
                 .filter {
                     it.name == "Scope" ||
-                        it.name == "ScopeAlias" ||
                         it.name == "AspectDefinition" ||
                         it.name == "ContextView" ||
                         it.name.endsWith("Entity")
                 }
                 .filter { !it.name.endsWith("Test") }
                 // Exclude DTOs in contracts layer - they are not domain entities
+                // Exclude ScopeAlias - it's an aggregate root, not an entity
                 .filterNot { it.packagee?.name?.contains("contracts") == true }
                 .assertTrue { entity ->
                     val packageName = entity.packagee?.name ?: ""

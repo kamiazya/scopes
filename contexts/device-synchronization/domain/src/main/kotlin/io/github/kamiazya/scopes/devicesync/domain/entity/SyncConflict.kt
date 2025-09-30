@@ -1,17 +1,21 @@
 package io.github.kamiazya.scopes.devicesync.domain.entity
 
+import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictId
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ConflictType
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.ResolutionAction
 import io.github.kamiazya.scopes.devicesync.domain.valueobject.VectorClock
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.Entity
 
 /**
  * Represents a synchronization conflict with rich domain logic for resolution.
  *
  * This entity encapsulates the business rules for conflict detection, analysis,
  * and resolution strategies.
+ *
  */
 data class SyncConflict(
+    private val _id: ConflictId,
     val localEventId: String,
     val remoteEventId: String,
     val aggregateId: String,
@@ -23,7 +27,13 @@ data class SyncConflict(
     val detectedAt: Instant,
     val resolvedAt: Instant? = null,
     val resolution: ResolutionAction? = null,
-) {
+) : Entity<SyncState, ConflictId> {
+
+    /**
+     * Use getId() to access the conflict ID.
+     */
+    override fun getId(): ConflictId = _id
+
     init {
         require(localEventId.isNotBlank()) { "Local event ID cannot be blank" }
         require(remoteEventId.isNotBlank()) { "Remote event ID cannot be blank" }
@@ -180,6 +190,7 @@ data class SyncConflict(
             require(remoteVersion >= 0) { "Remote version must be non-negative" }
 
             return SyncConflict(
+                _id = ConflictId.generate(),
                 localEventId = localEventId,
                 remoteEventId = remoteEventId,
                 aggregateId = aggregateId,
@@ -191,6 +202,37 @@ data class SyncConflict(
                 detectedAt = detectedAt,
             )
         }
+
+        /**
+         * Create a new SyncConflict for testing purposes.
+         * Auto-generates an ID.
+         */
+        fun create(
+            localEventId: String,
+            remoteEventId: String,
+            aggregateId: String,
+            localVersion: Long,
+            remoteVersion: Long,
+            localVectorClock: VectorClock,
+            remoteVectorClock: VectorClock,
+            conflictType: ConflictType,
+            detectedAt: Instant,
+            resolvedAt: Instant? = null,
+            resolution: ResolutionAction? = null,
+        ): SyncConflict = SyncConflict(
+            _id = ConflictId.generate(),
+            localEventId = localEventId,
+            remoteEventId = remoteEventId,
+            aggregateId = aggregateId,
+            localVersion = localVersion,
+            remoteVersion = remoteVersion,
+            localVectorClock = localVectorClock,
+            remoteVectorClock = remoteVectorClock,
+            conflictType = conflictType,
+            detectedAt = detectedAt,
+            resolvedAt = resolvedAt,
+            resolution = resolution,
+        )
     }
 }
 

@@ -7,6 +7,9 @@ arrow = "2.1.2"
 clikt = "5.0.3"
 kulid = "2.0.0.0"
 koin-bom = "4.1.1"
+jmolecules = "1.10.0"
+jmolecules-archunit = "1.0.0"
+archunit = "1.4.0"
 
 kotest = "6.0.3"
 mockk = "1.14.5"
@@ -52,6 +55,16 @@ koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-test = { module = "io.insert-koin:koin-test" }
 graalvm-sdk = { module = "org.graalvm.sdk:graal-sdk", version.ref = "graalvm-sdk" }
+
+# jMolecules - DDD building blocks
+jmolecules-ddd = { module = "org.jmolecules:jmolecules-ddd", version.ref = "jmolecules" }
+jmolecules-events = { module = "org.jmolecules:jmolecules-events", version.ref = "jmolecules" }
+jmolecules-hexagonal-architecture = { module = "org.jmolecules:jmolecules-hexagonal-architecture", version.ref = "jmolecules" }
+jmolecules-layered-architecture = { module = "org.jmolecules:jmolecules-layered-architecture", version.ref = "jmolecules" }
+jmolecules-archunit = { module = "org.jmolecules:jmolecules-archunit", version.ref = "jmolecules-archunit" }
+
+# ArchUnit - Architecture testing
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }

@@ -118,7 +118,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     runBlocking {
                         repository.registerDevice(deviceId)
                         val syncState = SyncState(
-                            deviceId = deviceId,
+                            _deviceId = deviceId,
                             lastSyncAt = Clock.System.now(),
                             remoteVectorClock = vectorClock,
                             lastSuccessfulPush = null,
@@ -148,7 +148,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     runBlocking {
                         repository.registerDevice(deviceId)
                         val syncState = SyncState(
-                            deviceId = deviceId,
+                            _deviceId = deviceId,
                             lastSyncAt = now,
                             remoteVectorClock = VectorClock(mapOf("device1" to 100L)),
                             lastSuccessfulPush = now,
@@ -200,7 +200,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     runBlocking { repository.registerDevice(deviceId) }
 
                     val updatedState = SyncState(
-                        deviceId = deviceId,
+                        _deviceId = deviceId,
                         lastSyncAt = updatedTime,
                         remoteVectorClock = VectorClock(mapOf("device1" to 50L, "device2" to 75L)),
                         lastSuccessfulPush = updatedTime,
@@ -232,7 +232,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     runBlocking { repository.registerDevice(deviceId) }
 
                     val partialState = SyncState(
-                        deviceId = deviceId,
+                        _deviceId = deviceId,
                         lastSyncAt = null,
                         remoteVectorClock = VectorClock(emptyMap()),
                         lastSuccessfulPush = null,
@@ -353,7 +353,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     // When
                     runBlocking {
                         val state1 = SyncState(
-                            deviceId = deviceId,
+                            _deviceId = deviceId,
                             lastSyncAt = Clock.System.now(),
                             remoteVectorClock = clock1,
                             lastSuccessfulPush = null,
@@ -395,7 +395,7 @@ class SqlDelightSynchronizationRepositoryTest :
                         runBlocking {
                             repository.updateSyncState(
                                 SyncState(
-                                    deviceId = deviceId,
+                                    _deviceId = deviceId,
                                     lastSyncAt = Clock.System.now(),
                                     remoteVectorClock = VectorClock(emptyMap()),
                                     lastSuccessfulPush = null,
@@ -438,7 +438,7 @@ class SqlDelightSynchronizationRepositoryTest :
                     // When/Then
                     statuses.forEach { status ->
                         val syncState = SyncState(
-                            deviceId = deviceId,
+                            _deviceId = deviceId,
                             lastSyncAt = Clock.System.now(),
                             remoteVectorClock = VectorClock(emptyMap()),
                             lastSuccessfulPush = null,

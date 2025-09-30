@@ -7,24 +7,37 @@ import io.github.kamiazya.scopes.scopemanagement.domain.error.AspectValidationEr
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
+import org.jmolecules.ddd.types.AggregateRoot
 
 /**
- * Entity representing an aspect definition with type and constraints.
+ * Aggregate root representing an aspect definition with type and constraints.
  * Defines the metadata about an aspect including its type and allowed values.
- * AspectDefinition is an entity because it has identity (AspectKey) and lifecycle.
+ *
+ * AspectDefinition is an aggregate root because:
+ * - It has independent lifecycle and is not part of another aggregate
+ * - It maintains its own consistency boundary for aspect metadata
+ * - It is the root of its own consistency boundary
+ * - Aspect definitions are managed independently through their own repository
+ *
  */
+@ConsistentCopyVisibility
 data class AspectDefinition private constructor(
-    val key: AspectKey,
+    private val _key: AspectKey,
     val type: AspectType,
     val description: String? = null,
     val allowMultiple: Boolean = false,
-) {
+) : AggregateRoot<AspectDefinition, AspectKey> {
+
+    override fun getId(): AspectKey = _key
+
+    val key: AspectKey get() = _key
+
     companion object {
         /**
          * Create a text-based aspect definition.
          */
         fun createText(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
-            key = key,
+            _key = key,
             type = AspectType.Text,
             description = description,
             allowMultiple = allowMultiple,
@@ -34,7 +47,7 @@ data class AspectDefinition private constructor(
          * Create a numeric aspect definition.
          */
         fun createNumeric(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
-            key = key,
+            _key = key,
             type = AspectType.Numeric,
             description = description,
             allowMultiple = allowMultiple,
@@ -44,7 +57,7 @@ data class AspectDefinition private constructor(
          * Create a boolean aspect definition.
          */
         fun createBoolean(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
-            key = key,
+            _key = key,
             type = AspectType.BooleanType,
             description = description,
             allowMultiple = allowMultiple,
@@ -65,7 +78,7 @@ data class AspectDefinition private constructor(
             }
 
             AspectDefinition(
-                key = key,
+                _key = key,
                 type = AspectType.Ordered(allowedValues),
                 description = description,
                 allowMultiple = allowMultiple,
@@ -77,12 +90,18 @@ data class AspectDefinition private constructor(
          * Values must be in ISO 8601 duration format (e.g., "P1D", "PT2H30M").
          */
         fun createDuration(key: AspectKey, description: String? = null, allowMultiple: Boolean = false): AspectDefinition = AspectDefinition(
-            key = key,
+            _key = key,
             type = AspectType.Duration,
             description = description,
             allowMultiple = allowMultiple,
         )
     }
+
+    /**
+     * Update the description of this aspect definition.
+     * Returns a new instance with updated description.
+     */
+    fun updateDescription(newDescription: String?): AspectDefinition = copy(description = newDescription)
 
     /**
      * Validate if a value is compatible with this aspect definition.

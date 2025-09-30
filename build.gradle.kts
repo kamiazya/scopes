@@ -151,7 +151,7 @@ tasks.register("konsistTest") {
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
         target("**/*.kt")
-        targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt")
+        targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt", "**/.gradle-local/**/*.kt")
         ktlint(
             libs.versions.ktlint.tool
                 .get(),
@@ -194,7 +194,7 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     }
     format("markdown") {
         target("**/*.md")
-        targetExclude("**/build/**/*.md")
+        targetExclude("**/build/**/*.md", "**/tmp/**/*.md")
         endWithNewline()
         // Trailing whitespace has semantic meaning in Markdown, so follow .editorconfig
     }

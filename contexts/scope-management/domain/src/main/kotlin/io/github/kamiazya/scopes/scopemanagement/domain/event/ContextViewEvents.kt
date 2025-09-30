@@ -24,6 +24,7 @@ sealed class ContextViewEvent : DomainEvent
  * Event fired when a new ContextView is created.
  */
 @EventTypeId("scope-management.context-view.created.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewCreated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -56,6 +57,7 @@ data class ContextViewCreated(
  * Event fired when a ContextView is updated.
  */
 @EventTypeId("scope-management.context-view.updated.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -69,6 +71,7 @@ data class ContextViewUpdated(
  * Event fired when a ContextView's name is changed.
  */
 @EventTypeId("scope-management.context-view.name-changed.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewNameChanged(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -83,6 +86,7 @@ data class ContextViewNameChanged(
  * Event fired when a ContextView's filter is updated.
  */
 @EventTypeId("scope-management.context-view.filter-updated.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewFilterUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -97,6 +101,7 @@ data class ContextViewFilterUpdated(
  * Event fired when a ContextView's description is updated.
  */
 @EventTypeId("scope-management.context-view.description-updated.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewDescriptionUpdated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -111,6 +116,7 @@ data class ContextViewDescriptionUpdated(
  * Event fired when a ContextView is deleted.
  */
 @EventTypeId("scope-management.context-view.deleted.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewDeleted(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -140,6 +146,7 @@ data class ContextViewChanges(
  * This event is critical for audit logging of context switches.
  */
 @EventTypeId("scope-management.context-view.activated.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewActivated(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -157,6 +164,7 @@ data class ContextViewActivated(
  * This event is important for tracking when users work without an active filter.
  */
 @EventTypeId("scope-management.active-context.cleared.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ActiveContextCleared(
     override val aggregateId: AggregateId,
     override val eventId: EventId,
@@ -172,6 +180,7 @@ data class ActiveContextCleared(
  * This provides audit trail for context usage without switching active context.
  */
 @EventTypeId("scope-management.context-view.applied.v1")
+@org.jmolecules.event.annotation.DomainEvent
 data class ContextViewApplied(
     override val aggregateId: AggregateId,
     override val eventId: EventId,

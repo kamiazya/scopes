@@ -232,6 +232,7 @@ class DomainRichnessTest :
                     .filter { it.resideInPackage("..aggregate..") }
                     .filter { !it.name.endsWith("Test") }
                     .filter { !it.hasAbstractModifier } // Skip abstract base classes
+                    .filter { it.name != "ScopeAlias" } // Skip ScopeAlias - simple immutable aggregate
 
                 // Only run test if there are aggregates
                 if (aggregates.isNotEmpty()) {

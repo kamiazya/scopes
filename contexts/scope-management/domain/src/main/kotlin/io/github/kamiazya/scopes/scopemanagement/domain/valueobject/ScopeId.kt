@@ -7,12 +7,13 @@ import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.value.AggregateId
 import io.github.kamiazya.scopes.scopemanagement.domain.error.AggregateIdError
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopeInputError
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Type-safe identifier for Scope entities using ULID for lexicographically sortable distributed system compatibility.
  */
 @JvmInline
-value class ScopeId private constructor(val value: String) {
+value class ScopeId private constructor(val value: String) : Identifier {
     companion object {
         /**
          * Generate a new random ScopeId with ULID format.

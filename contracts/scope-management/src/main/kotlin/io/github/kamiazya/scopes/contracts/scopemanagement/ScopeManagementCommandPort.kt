@@ -11,12 +11,17 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.commands.UpdateScopeC
 import io.github.kamiazya.scopes.contracts.scopemanagement.errors.ScopeContractError
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeResult
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.UpdateScopeResult
+import org.jmolecules.architecture.hexagonal.PrimaryPort
 
 /**
  * Public contract for scope management write operations (Commands).
  * Following CQRS principles, this port handles only operations that modify state.
  * All operations return Either for explicit error handling.
+ *
+ * Marked with @PrimaryPort to indicate this is a driving port in hexagonal architecture,
+ * representing the application's command API exposed to external adapters (CLI, API, MCP).
  */
+@PrimaryPort
 public interface ScopeManagementCommandPort {
     /**
      * Creates a new scope with the specified attributes.

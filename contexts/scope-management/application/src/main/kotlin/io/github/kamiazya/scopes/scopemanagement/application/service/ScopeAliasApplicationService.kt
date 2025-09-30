@@ -7,7 +7,7 @@ import arrow.core.raise.ensureNotNull
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeAliasError
 import io.github.kamiazya.scopes.scopemanagement.application.error.ScopeManagementApplicationError
 import io.github.kamiazya.scopes.scopemanagement.application.error.toGenericApplicationError
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ScopeAliasRepository
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.AliasGenerationService
 import io.github.kamiazya.scopes.scopemanagement.domain.service.alias.ScopeAliasPolicy

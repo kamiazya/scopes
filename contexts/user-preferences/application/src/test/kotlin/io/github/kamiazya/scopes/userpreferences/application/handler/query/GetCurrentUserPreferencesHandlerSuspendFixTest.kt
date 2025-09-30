@@ -35,7 +35,7 @@ class GetCurrentUserPreferencesHandlerSuspendFixTest :
 
                     val now = Clock.System.now()
                     val existingAggregate = UserPreferencesAggregate(
-                        id = AggregateId.Simple.generate(),
+                        _id = AggregateId.Simple.generate(),
                         preferences = UserPreferences(
                             hierarchyPreferences = HierarchyPreferences.DEFAULT,
                             createdAt = now,

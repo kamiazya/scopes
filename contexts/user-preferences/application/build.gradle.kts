@@ -8,6 +8,9 @@ dependencies {
     implementation(project(":platform-commons"))
     implementation(project(":platform-domain-commons"))
 
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
     implementation(libs.kotlinx.datetime)

@@ -15,6 +15,9 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
 
+    // jMolecules - DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     // DI
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)

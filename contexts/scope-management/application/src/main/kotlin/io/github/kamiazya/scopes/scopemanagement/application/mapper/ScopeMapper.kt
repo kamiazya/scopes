@@ -8,8 +8,8 @@ import io.github.kamiazya.scopes.contracts.scopemanagement.results.CreateScopeRe
 import io.github.kamiazya.scopes.contracts.scopemanagement.results.ScopeResult
 import io.github.kamiazya.scopes.scopemanagement.application.dto.alias.AliasInfoDto
 import io.github.kamiazya.scopes.scopemanagement.application.dto.scope.ScopeDto
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.Scope
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
 
 /**
  * Mapper between domain entities and application DTOs.

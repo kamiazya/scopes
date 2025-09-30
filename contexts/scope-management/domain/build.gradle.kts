@@ -17,6 +17,11 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kulid)
 
+    // jMolecules - DDD building blocks
+    implementation(libs.jmolecules.ddd)
+    implementation(libs.jmolecules.events)
+    implementation(libs.jmolecules.layered.architecture)
+
     // Test dependencies
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)

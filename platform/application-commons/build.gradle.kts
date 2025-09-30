@@ -10,6 +10,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
 
+    // jMolecules hexagonal architecture annotations
+    api(libs.jmolecules.hexagonal.architecture)
+
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.mockk)

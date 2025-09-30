@@ -17,7 +17,6 @@ import io.github.kamiazya.scopes.scopemanagement.domain.service.query.AspectQuer
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.Aspects
-import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryAspectDefinitionRepository
 import io.github.kamiazya.scopes.scopemanagement.infrastructure.repository.InMemoryScopeAliasRepository
@@ -113,8 +112,7 @@ class AspectQueryIntegrationTest :
                     aspectDefinitionRepository.save(timeDef)
 
                     // Create test scopes with aspects
-                    scope1 = Scope(
-                        id = ScopeId.generate(),
+                    scope1 = Scope.createForTest(
                         title = ScopeTitle.create("Task 1").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -137,8 +135,7 @@ class AspectQueryIntegrationTest :
                         aliasRepository = aliasRepository,
                     )
 
-                    scope2 = Scope(
-                        id = ScopeId.generate(),
+                    scope2 = Scope.createForTest(
                         title = ScopeTitle.create("Task 2").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -161,8 +158,7 @@ class AspectQueryIntegrationTest :
                         aliasRepository = aliasRepository,
                     )
 
-                    scope3 = Scope(
-                        id = ScopeId.generate(),
+                    scope3 = Scope.createForTest(
                         title = ScopeTitle.create("Task 3").getOrNull()!!,
                         description = null,
                         parentId = null,
@@ -185,8 +181,7 @@ class AspectQueryIntegrationTest :
                         aliasRepository = aliasRepository,
                     )
 
-                    scope4 = Scope(
-                        id = ScopeId.generate(),
+                    scope4 = Scope.createForTest(
                         title = ScopeTitle.create("Task 4").getOrNull()!!,
                         description = null,
                         parentId = null,

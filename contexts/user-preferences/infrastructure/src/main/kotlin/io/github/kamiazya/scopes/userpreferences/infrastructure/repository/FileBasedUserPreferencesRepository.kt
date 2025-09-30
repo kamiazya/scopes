@@ -61,7 +61,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                 raise(
                     UserPreferencesError.InvalidPreferenceValue(
                         key = "save",
-                        value = aggregate.id.value,
+                        value = aggregate.getId().value,
                         validationError = UserPreferencesError.ValidationError.INVALID_FORMAT,
                     ),
                 )
@@ -104,7 +104,7 @@ class FileBasedUserPreferencesRepository(configPathStr: String, private val logg
                 )
 
                 val aggregate = UserPreferencesAggregate(
-                    id = currentUserAggregateId,
+                    _id = currentUserAggregateId,
                     version = AggregateVersion.initial(),
                     preferences = preferences,
                     createdAt = now,
