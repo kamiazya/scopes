@@ -9,7 +9,7 @@ kulid = "2.0.0.0"
 koin-bom = "4.1.1"
 
 kotest = "6.0.3"
-mockk = "1.14.5"
+mockk = "1.14.6"
 konsist = "0.17.3"
 
 # Database and persistence
