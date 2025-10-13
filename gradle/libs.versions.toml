@@ -28,7 +28,7 @@ detekt = "1.23.8"
 gradle-develocity = "4.2"
 spotless = "7.2.1"
 mcp-kotlin-sdk = "0.7.2"
-ktor = "2.3.12"
+ktor = "3.3.1"
 okio = "3.16.0"
 kotlinx-io = "0.8.0"
 
