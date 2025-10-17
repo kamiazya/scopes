@@ -6,7 +6,7 @@ pre-commit:
   commands:
     editorconfig:
       glob: "*"
-      exclude: '.claude/.*|tmp/.*|LICENSE|gradle/verification-metadata.xml'
+      exclude: ".claude/.*|tmp/.*|LICENSE|gradle/verification-metadata.xml"
       run: |
         docker run --rm -v "$(pwd):/workspace" \
           -w /workspace \
@@ -35,6 +35,74 @@ pre-commit:
     kotlin-test:
       glob: "**/*.kt"
       run: ./gradlew test --daemon
+      skip:
+        - merge
+        - rebase
+
+    shellcheck:
+      glob: "**/*.sh"
+      run: |
+        if command -v shellcheck &> /dev/null; then
+          echo "🔍 Running shellcheck on shell scripts..."
+          shellcheck {staged_files}
+        else
+          echo "❌ shellcheck not found!"
+          echo "   Please install shellcheck to validate shell scripts:"
+          echo "   • macOS: brew install shellcheck"
+          echo "   • Ubuntu/Debian: sudo apt install shellcheck"
+          echo "   • CentOS/RHEL: sudo yum install shellcheck"
+          echo "   • Or download from: https://github.com/koalaman/shellcheck"
+          echo ""
+          echo "   Skipping shell script validation for now..."
+          exit 1
+        fi
+      skip:
+        - merge
+        - rebase
+
+    yamllint:
+      glob: "**/*.{yml,yaml}"
+      run: |
+        if command -v yamllint &> /dev/null; then
+          echo "🔍 Running yamllint on YAML files..."
+          yamllint {staged_files}
+        else
+          echo "❌ yamllint not found!"
+          echo "   Please install yamllint to validate YAML files:"
+          echo "   • macOS: brew install yamllint"
+          echo "   • Ubuntu/Debian: sudo apt install yamllint"
+          echo "   • CentOS/RHEL: sudo yum install yamllint"
+          echo "   • Or install with pip: pip install yamllint"
+          echo ""
+          echo "   Skipping YAML validation for now..."
+          exit 1
+        fi
+      skip:
+        - merge
+        - rebase
+
+    shfmt:
+      glob: "**/*.sh"
+      run: |
+        if command -v shfmt &> /dev/null; then
+          echo "🔍 Checking shell script formatting with shfmt..."
+          # Check if files need formatting
+          if ! shfmt -d -i 2 -ci {staged_files}; then
+            echo "❌ Shell scripts need formatting!"
+            echo "   Run: shfmt -w -i 2 -ci {staged_files}"
+            exit 1
+          fi
+          echo "✅ Shell scripts are properly formatted"
+        else
+          echo "❌ shfmt not found!"
+          echo "   Please install shfmt to format shell scripts:"
+          echo "   • macOS: brew install shfmt"
+          echo "   • Ubuntu/Debian: sudo apt install shfmt"
+          echo "   • Or download from: https://github.com/mvdan/sh"
+          echo ""
+          echo "   Skipping shell script formatting check for now..."
+          exit 1
+        fi
       skip:
         - merge
         - rebase
