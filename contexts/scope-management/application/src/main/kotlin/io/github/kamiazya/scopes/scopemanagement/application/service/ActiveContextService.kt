@@ -3,6 +3,7 @@ package io.github.kamiazya.scopes.scopemanagement.application.service
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.error.*
 import io.github.kamiazya.scopes.scopemanagement.domain.entity.ContextView
 import io.github.kamiazya.scopes.scopemanagement.domain.repository.ActiveContextRepository
@@ -25,6 +26,7 @@ class ActiveContextService(
     private val contextViewRepository: ContextViewRepository,
     private val activeContextRepository: ActiveContextRepository,
     private val contextAuditService: ContextAuditService,
+    private val logger: Logger,
 ) {
 
     /**
@@ -63,9 +65,14 @@ class ActiveContextService(
             previousContextId = previousContext?.id?.value,
             activatedBy = activatedBy,
         ).fold(
-            { _ ->
-                // TODO: Add proper logging - for now, silently continue
-                // logger.warn("Failed to publish context activated event: $error")
+            { error ->
+                logger.warn(
+                    "Failed to publish context activated event",
+                    mapOf(
+                        "contextKey" to context.key.value,
+                        "error" to error.toString()
+                    )
+                )
             },
             { },
         )
@@ -97,9 +104,14 @@ class ActiveContextService(
                 previousContext = previous,
                 clearedBy = clearedBy,
             ).fold(
-                { _ ->
-                    // TODO: Add proper logging - for now, silently continue
-                    // logger.warn("Failed to publish active context cleared event: $error")
+                { error ->
+                    logger.warn(
+                        "Failed to publish active context cleared event",
+                        mapOf(
+                            "previousContextKey" to previous.key.value,
+                            "error" to error.toString()
+                        )
+                    )
                 },
                 { },
             )
