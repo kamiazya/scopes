@@ -29,7 +29,7 @@ gradle-develocity = "4.2"
 spotless = "7.2.1"
 mcp-kotlin-sdk = "0.7.2"
 ktor = "2.3.12"
-okio = "3.16.0"
+okio = "3.16.2"
 kotlinx-io = "0.8.0"
 
 # Build plugins
