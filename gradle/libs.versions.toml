@@ -31,7 +31,7 @@ okio = "3.16.0"
 kotlinx-io = "0.8.0"
 
 # Build plugins
-cyclonedx-bom = "2.4.0"
+cyclonedx-bom = "3.0.1"
 spdx-sbom = "0.9.0"
 ktlint-tool = "1.5.0"
 shadow = "8.3.6"
