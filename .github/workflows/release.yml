@@ -21,9 +21,6 @@ permissions:
   id-token: write
   attestations: write
 
-env:
-  QUARKUS_BUILDER_IMAGE_LINUX_ARM64: "ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477"
-
 jobs:
   resolve-version:
     name: Resolve Version Information
@@ -134,38 +131,15 @@ jobs:
           
           echo "✓ Tag format is valid and tag exists"
 
-  build-release:
-    name: Build Release Artifacts
+  build-jar:
+    name: Build JAR Distribution
     needs: [resolve-version, validate-tag]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
-
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-          - os: ubuntu-latest
-            platform: linux
-            arch: arm64
-          - os: macos-13
-            platform: darwin
-            arch: x64
-          - os: macos-14
-            platform: darwin
-            arch: arm64
-          - os: windows-latest
-            platform: win32
-            arch: x64
-          - os: windows-latest
-            platform: win32
-            arch: arm64
-            experimental: true
+      jar_hash: ${{ steps.hash.outputs.jar_hash }}
 
     steps:
-      - name: Harden the runner (Audit all outbound calls)
+      - name: Harden the runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
@@ -175,257 +149,55 @@ jobs:
         with:
           ref: ${{ needs.resolve-version.outputs.tag_version }}
 
-      - name: Setup QEMU for ARM64 cross-compilation
-        if: matrix.platform == 'linux' && matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - name: Set up JDK 21
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b # v4.6.0
         with:
-          platforms: linux/arm64
-
-      - name: Setup Windows Build Environment
-        if: matrix.platform == 'win32'
-        uses: ./.github/actions/setup-windows-build
-
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@e140024fdc2d95d3c7e10a636887a91090d29990 # v1.4.0
-        with:
+          distribution: 'temurin'
           java-version: '21'
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
         with:
           validate-wrappers: true
 
-      - name: Build native binary (Windows)
-        if: matrix.platform == 'win32'
+      - name: Build Shadow JAR
         run: |
-          Set-Location "C:\build-workspace\scopes"
-          $VERSION_ARG = "-Pversion=${{ needs.resolve-version.outputs.version }}"
+          ./gradlew --no-daemon --scan clean :apps-scopes:shadowJar -Pversion="${{ needs.resolve-version.outputs.version }}"
 
-          # Add architecture-specific flags for ARM64
-          $ARCH_FLAGS = ""
-          if ("${{ matrix.arch }}" -eq "arm64") {
-            $ARCH_FLAGS = "-Dquarkus.native.additional-build-args=--target=aarch64-pc-windows"
-          }
-
-          # Disable configuration cache for native build due to GraalVM plugin incompatibility
-          # See: https://github.com/kamiazya/scopes/issues/36
-          # Run clean build first for reproducible builds
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile $VERSION_ARG $ARCH_FLAGS
-        shell: powershell
-        env:
-          GRADLE_USER_HOME: C:\gradle-cache
-
-      - name: Build native binary (Unix)
-        if: matrix.platform != 'win32'
-        run: |
-          # Add architecture-specific flags for cross-compilation
-          ARCH_FLAGS=""
-          if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" = "arm64" ]; then
-            ARCH_FLAGS="-Dquarkus.native.container-build=true -Dquarkus.native.builder-image=${QUARKUS_BUILDER_IMAGE_LINUX_ARM64:-ghcr.io/graalvm/graalvm-ce:ol8-java11-22.3.3@sha256:1622fe4beeb753c07e9196d9ab68755f42d661872a1e9b548b549d6e60194477}"
-          fi
-
-          # Disable configuration cache for native build due to GraalVM plugin incompatibility
-          # See: https://github.com/kamiazya/scopes/issues/36
-          # Run clean build first for reproducible builds
-          ./gradlew --no-daemon --no-configuration-cache --scan clean :apps-scopes:nativeCompile -Pversion="${{ needs.resolve-version.outputs.version }}" $ARCH_FLAGS
-
-      - name: Prepare binary for upload
+      - name: Prepare JAR for upload
         shell: bash
         run: |
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            BINARY_NAME="scopes-${{ needs.resolve-version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}.exe"
-            cp /c/build-workspace/scopes/apps/scopes/build/native/nativeCompile/scopes.exe "$BINARY_NAME"
-          else
-            BINARY_NAME="scopes-${{ needs.resolve-version.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}"
-            cp apps/scopes/build/native/nativeCompile/scopes "$BINARY_NAME"
-          fi
-          echo "binary_name=$BINARY_NAME" >> $GITHUB_OUTPUT
-        id: binary
+          # Copy JAR to root with version number
+          cp apps/scopes/build/libs/scopes-${{ needs.resolve-version.outputs.version }}.jar scopes.jar
 
-      - name: Generate SBOM (CycloneDX) (Windows)
-        if: matrix.platform == 'win32'
-        run: |
-          Set-Location "C:\build-workspace\scopes"
-          $VERSION_ARG = "-Pversion=${{ needs.resolve-version.outputs.version }}"
-          # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          echo "Executing: .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG"
-          & .\gradlew.bat --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom $VERSION_ARG
-        shell: powershell
-        env:
-          GRADLE_USER_HOME: C:\gradle-cache
+          # Generate SHA256 hash
+          sha256sum scopes.jar > scopes.jar.sha256
 
-      - name: Generate SBOM (CycloneDx) (Unix)
-        if: matrix.platform != 'win32'
-        run: |
-          # Disable configuration cache for SBOM generation due to GraalVM plugin incompatibility
-          # Pass version property to ensure SBOM metadata matches the binaries
-          ./gradlew --no-daemon --no-configuration-cache --scan :apps-scopes:cycloneDxBom -Pversion="${{ needs.resolve-version.outputs.version }}"
-
+          echo "JAR prepared: scopes.jar"
+          ls -lh scopes.jar
 
       - name: Generate hash for SLSA provenance
-        shell: bash
         id: hash
         run: |
-          set -euo pipefail
-          echo "Generating hash for: ${{ steps.binary.outputs.binary_name }}"
+          JAR_HASH=$(sha256sum scopes.jar | awk '{print $1}')
+          echo "jar_hash=scopes.jar:$JAR_HASH" >> $GITHUB_OUTPUT
+          echo "Generated hash: $JAR_HASH"
 
-          # Generate SHA256 hash for binary
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # On Windows, certutil outputs in a specific format, we need to extract just the hash
-            HASH_OUTPUT=$(certutil -hashfile "${{ steps.binary.outputs.binary_name }}" SHA256)
-            # Extract the second line which contains the hash
-            HASH=$(echo "$HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            HASH=$(shasum -a 256 "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
-          else
-            HASH=$(sha256sum "${{ steps.binary.outputs.binary_name }}" | awk '{print $1}')
-          fi
-
-          echo "Hash: $HASH"
-          echo "${{ steps.binary.outputs.binary_name }}:$HASH" >> hashes.txt
-
-          # Create individual hash file with sha256sum-compatible format
-          echo "$HASH  ${{ steps.binary.outputs.binary_name }}" > binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
-
-          # Verify the hash file was created correctly
-          echo "Generated hash file content:"
-          cat binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
-
-          # Generate hashes for SBOM files with fallback detection
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            # Check for SBOM files in the default location first
-            if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
-            # Fall back to cyclonedx subdirectory if not found
-            elif [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json" ]; then
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
-            else
-              echo "Warning: SBOM files not found in expected locations"
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
-            fi
-          else
-            # Check for SBOM files in the default location first
-            if [ -f "apps/scopes/build/reports/bom.json" ]; then
-              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
-            # Fall back to cyclonedx subdirectory if not found
-            elif [ -f "apps/scopes/build/reports/cyclonedx/bom.json" ]; then
-              SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
-            else
-              echo "Warning: SBOM files not found in expected locations"
-              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
-            fi
-          fi
-
-          if [ -f "$SBOM_JSON_PATH" ]; then
-            if [[ "${{ runner.os }}" == "Windows" ]]; then
-              SBOM_JSON_HASH_OUTPUT=$(certutil -hashfile "$SBOM_JSON_PATH" SHA256)
-              SBOM_JSON_HASH=$(echo "$SBOM_JSON_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-            elif [[ "${{ runner.os }}" == "macOS" ]]; then
-              SBOM_JSON_HASH=$(shasum -a 256 "$SBOM_JSON_PATH" | awk '{print $1}')
-            else
-              SBOM_JSON_HASH=$(sha256sum "$SBOM_JSON_PATH" | awk '{print $1}')
-            fi
-            echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json:$SBOM_JSON_HASH" >> hashes.txt
-          fi
-
-          if [ -f "$SBOM_XML_PATH" ]; then
-            if [[ "${{ runner.os }}" == "Windows" ]]; then
-              SBOM_XML_HASH_OUTPUT=$(certutil -hashfile "$SBOM_XML_PATH" SHA256)
-              SBOM_XML_HASH=$(echo "$SBOM_XML_HASH_OUTPUT" | sed -n '2p' | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-            elif [[ "${{ runner.os }}" == "macOS" ]]; then
-              SBOM_XML_HASH=$(shasum -a 256 "$SBOM_XML_PATH" | awk '{print $1}')
-            else
-              SBOM_XML_HASH=$(sha256sum "$SBOM_XML_PATH" | awk '{print $1}')
-            fi
-            echo "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml:$SBOM_XML_HASH" >> hashes.txt
-          fi
-
-          # Create base64 encoded hash for SLSA (encoded_hash artifact_name format)
-          printf "%s %s\n" "$(echo -n "$HASH" | base64)" "${{ steps.binary.outputs.binary_name }}" > hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
-
-          # Set output variable for downstream steps
-          ALL_HASHES=$(cat hashes.txt | tr '\n' ' ' | sed 's/ $//')
-          echo "hashes=$ALL_HASHES" >> $GITHUB_OUTPUT
-
-      - name: Upload binary artifact
+      - name: Upload JAR artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: binary-${{ matrix.platform }}-${{ matrix.arch }}
-          path: ${{ steps.binary.outputs.binary_name }}
-
-      - name: Prepare SBOM files for upload
-        shell: bash
-        run: |
-          # Copy SBOM files with platform-specific names using same fallback detection logic
-          if [ "${{ matrix.platform }}" = "win32" ]; then
-            # Check for SBOM files in the default location first
-            if [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/bom.json" ]; then
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
-            # Fall back to cyclonedx subdirectory if not found
-            elif [ -f "/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json" ]; then
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/cyclonedx/bom.xml"
-            else
-              echo "Warning: SBOM files not found in expected locations"
-              SBOM_JSON_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="/c/build-workspace/scopes/apps/scopes/build/reports/bom.xml"
-            fi
-          else
-            # Check for SBOM files in the default location first
-            if [ -f "apps/scopes/build/reports/bom.json" ]; then
-              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
-            # Fall back to cyclonedx subdirectory if not found
-            elif [ -f "apps/scopes/build/reports/cyclonedx/bom.json" ]; then
-              SBOM_JSON_PATH="apps/scopes/build/reports/cyclonedx/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/cyclonedx/bom.xml"
-            else
-              echo "Warning: SBOM files not found in expected locations"
-              SBOM_JSON_PATH="apps/scopes/build/reports/bom.json"
-              SBOM_XML_PATH="apps/scopes/build/reports/bom.xml"
-            fi
-          fi
-
-          if [ -f "$SBOM_JSON_PATH" ]; then
-            cp "$SBOM_JSON_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.json"
-          fi
-
-          if [ -f "$SBOM_XML_PATH" ]; then
-            cp "$SBOM_XML_PATH" "sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml"
-          fi
-
-      - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: sbom-${{ matrix.platform }}-${{ matrix.arch }}
+          name: scopes-jar
           path: |
-            sbom-${{ matrix.platform }}-${{ matrix.arch }}.json
-            sbom-${{ matrix.platform }}-${{ matrix.arch }}.xml
+            scopes.jar
+            scopes.jar.sha256
+          retention-days: 7
+          if-no-files-found: error
 
-
-      - name: Upload hash artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: hashes-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            hashes.txt
-            hashes-b64-${{ matrix.platform }}-${{ matrix.arch }}.txt
-            binary-hash-${{ matrix.platform }}-${{ matrix.arch }}.txt
 
   collect-hashes:
     name: Collect Hashes for SLSA
     runs-on: ubuntu-latest
-    needs: [validate-tag, build-release]
+    needs: [validate-tag, build-jar]
     outputs:
       hashes: ${{ steps.collect.outputs.hashes }}
 
@@ -435,47 +207,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Download all hash artifacts
+      - name: Download JAR artifact for hash
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          pattern: hashes-*
-          path: all-hashes
+          name: scopes-jar
+          path: jar-artifact
 
-      - name: Collect all hashes
+      - name: Collect JAR hash
         id: collect
         run: |
           set -euo pipefail
-          echo "Collecting hashes from all platforms..."
+          echo "Collecting JAR hash..."
 
-          # List all downloaded files for debugging
-          echo "Downloaded artifacts structure:"
-          find all-hashes -name "*.txt" -type f | sort
-
-          # Combine all hash files from all platforms, decoding individual hashes
-          echo "Combining hashes from all platforms..."
+          # List downloaded files for debugging
+          echo "JAR artifact:"
+          ls -la jar-artifact/
 
           # Initialize the combined hashes file
           > combined-hashes.txt
 
-          # Process all hashes-b64-*.txt files dynamically
-          first=true
-          for hash_file in all-hashes/*/hashes-b64-*.txt; do
-            if [ -f "$hash_file" ]; then
-              echo "Processing: $hash_file"
-
-              # Add newline separator between files (except for first file)
-              if [ "$first" = false ]; then
-                echo "" >> combined-hashes.txt
-              fi
-              first=false
-
-              # Decode each hash and append to combined file
-              while IFS=' ' read -r encoded_hash filename; do
-                decoded_hash=$(echo -n "$encoded_hash" | base64 -d)
-                echo "$decoded_hash $filename" >> combined-hashes.txt
-              done < "$hash_file"
-            fi
-          done
+          # Add JAR hash
+          if [ -f "jar-artifact/scopes.jar" ]; then
+            echo "Adding JAR hash..."
+            JAR_HASH=$(sha256sum jar-artifact/scopes.jar | awk '{print $1}')
+            echo "$JAR_HASH scopes.jar" >> combined-hashes.txt
+          fi
 
           # Create base64 encoded string for SLSA (sha256sum format)
           HASHES_B64=$(cat combined-hashes.txt | base64 -w0)
@@ -484,15 +240,12 @@ jobs:
           echo "Collected hashes (pre-base64):"
           cat combined-hashes.txt
 
-          echo "Collected hashes (readable):"
-          cat all-hashes/*/hashes.txt
-
           echo "Base64 encoded for SLSA:"
           echo "$HASHES_B64"
 
   provenance:
     name: Generate SLSA Provenance
-    needs: [validate-tag, build-release, collect-hashes]
+    needs: [validate-tag, build-jar, collect-hashes]
     permissions:
       actions: read
       id-token: write
@@ -502,502 +255,225 @@ jobs:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
 
-  create-unified-package:
-    name: Create Unified Distribution Package
+  create-jar-distribution:
+    name: Create JAR Distribution Bundle
+    needs: [resolve-version, build-jar, provenance]
     runs-on: ubuntu-latest
-    needs: [resolve-version, validate-tag, build-release, provenance]
-    if: always() && needs.build-release.result == 'success'
-
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-        with:
-          egress-policy: audit
-
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: ${{ needs.resolve-version.outputs.tag_version }}
 
-      - name: Download all artifacts
+      - name: Download JAR artifact
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          path: artifacts
-
-      - name: Download all SBOM artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          pattern: sbom-*
-          path: sbom-artifacts
-          merge-multiple: true
+          name: scopes-jar
+          path: dist
 
       - name: Download SLSA provenance
-        if: needs.provenance.result == 'success'
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          name: "${{ needs.provenance.outputs.provenance-name }}"
+          name: ${{ needs.provenance.outputs.provenance-name }}
           path: provenance
 
-      # Note: slsa-verifier is not included in the package
-      # Users should install it separately if SLSA verification is needed
-      # This keeps the package size reasonable and respects the independence of the slsa-verifier project
+      - name: Download source SBOM
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: source-sbom
+          path: sbom
+        continue-on-error: true
 
-      - name: Create unified package structure
+      - name: Download binary SBOM
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: binary-sbom
+          path: sbom
+        continue-on-error: true
+
+      - name: Create distribution structure
         run: |
-          PACKAGE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-dist"
-          mkdir -p "${PACKAGE_NAME}"
-          cd "${PACKAGE_NAME}"
-          
-          # Create directory structure
-          mkdir -p binaries verification sbom docs
-          
-          # Copy binaries
-          find ../artifacts -name "scopes-*" -type f -not -name "*.txt" -exec cp {} binaries/ \;
-          
-          # Copy hash files
-          find ../artifacts -name "binary-hash-*.txt" -type f -exec cp {} verification/ \;
-          
+          VERSION="${{ needs.resolve-version.outputs.version }}"
+
+          # Create distribution directory
+          mkdir -p "scopes-${VERSION}-jar-bundle"
+          cd "scopes-${VERSION}-jar-bundle"
+
+          # Copy JAR
+          cp ../dist/scopes.jar .
+
+          # Copy wrapper scripts
+          mkdir -p bin
+          cp ../bin/scopes bin/
+          cp ../bin/scopes.bat bin/
+          cp ../bin/scopes.ps1 bin/
+
+          # Copy installation scripts
+          cp ../install/install.sh .
+          cp ../install/install.ps1 .
+
+          # Create verification directory with hash and SLSA provenance
+          mkdir -p verification
+          cp ../dist/scopes.jar.sha256 verification/
+
           # Copy SLSA provenance if available
-          if [ -d "../provenance" ]; then
-            find ../provenance -name "*.intoto.jsonl" -type f -exec cp {} verification/multiple.intoto.jsonl \;
+          if [ -f ../provenance/multiple.intoto.jsonl ]; then
+            cp ../provenance/multiple.intoto.jsonl verification/
+            echo "SLSA provenance included in verification/"
+          else
+            echo "Warning: SLSA provenance not found, skipping"
           fi
-          
-          # Copy SBOM files
-          find ../sbom-artifacts -name "sbom-*.json" -type f -exec cp {} sbom/ \;
-          find ../sbom-artifacts -name "sbom-*.xml" -type f -exec cp {} sbom/ \;
-          
-          # Copy installation scripts and documentation
-          cp ../install/offline/README.md .
-          cp ../install/offline/install.sh .
-          
-          # Create additional documentation
-          cat > docs/INSTALL.md << 'EOF'
-          # Scopes Offline Installation Guide
-          
-          This guide provides detailed instructions for installing Scopes from the offline distribution package.
-          
-          ## Prerequisites
-          
-          ### Linux/macOS
-          - `bash` shell
-          - `sha256sum` or `shasum` (for hash verification)
-          - `tar` and `gzip` (for package extraction)
-          
-          ### Windows
-          - PowerShell 5.1 or later
-          - `certutil` (built into Windows)
-          - Archive extraction utility (built into Windows 10/11)
-          
-          ## Installation Process
-          
-          1. Extract the offline package
-          2. Run the installation script
-          3. Verify the installation
-          
-          For detailed steps, see the main README.md file.
-          EOF
-          
-          cat > docs/SECURITY.md << 'EOF'
-          # Security Verification Guide
-          
-          The Scopes offline package includes multiple layers of security verification:
-          
-          ## Hash Verification
-          
-          SHA256 hashes for all binaries are included and automatically verified during installation.
-          
-          ## SLSA Provenance
-          
-          SLSA Level 3 provenance provides cryptographic proof of the build process integrity.
-          
-          ## Manual Verification
-          
-          You can manually verify any binary using the included tools and verification files.
-          
-          For complete security procedures, refer to the main project documentation.
-          EOF
-          
-          cat > docs/ENTERPRISE.md << 'EOF'
-          # Enterprise Deployment Guide
-          
-          This guide covers enterprise-specific deployment scenarios for Scopes.
-          
-          ## Air-Gapped Environments
-          
-          The offline package is designed to work in completely disconnected environments.
-          
-          ## Compliance Requirements
-          
-          SBOM files are included in CycloneDX format for dependency tracking and compliance.
-          
-          ## Security Scanning
-          
-          All binaries can be scanned with standard enterprise security tools.
-          EOF
-          
-          # Create PowerShell installation script
-          cat > install.ps1 << 'EOF'
-          # Scopes Offline Installation Script for Windows PowerShell
-          # This script installs Scopes from a pre-downloaded offline package
-          
-          param(
-              [string]$InstallDir = "$env:ProgramFiles\Scopes\bin",
-              [switch]$Force,
-              [switch]$SkipVerification,
-              [switch]$Verbose,
-              [switch]$Help
-          )
-          
-          if ($Help) {
-              Write-Host "Scopes Offline Installation Script for Windows"
-              Write-Host ""
-              Write-Host "Parameters:"
-              Write-Host "  -InstallDir      Installation directory (default: $env:ProgramFiles\Scopes\bin)"
-              Write-Host "  -Force           Skip confirmation prompts"
-              Write-Host "  -SkipVerification Skip security verification (not recommended)"
-              Write-Host "  -Verbose         Enable verbose output"
-              Write-Host "  -Help            Show this help message"
-              Write-Host ""
-              Write-Host "Examples:"
-              Write-Host "  .\install.ps1"
-              Write-Host "  .\install.ps1 -InstallDir 'C:\Tools\Scopes' -Verbose"
-              Write-Host "  .\install.ps1 -Force -InstallDir 'C:\Tools\Scopes'"
-              exit 0
-          }
-          
-          Write-Host "Scopes Offline Installation for Windows" -ForegroundColor Blue
-          Write-Host "This feature will be implemented in a future update." -ForegroundColor Yellow
-          Write-Host "For now, please use the manual installation process:" -ForegroundColor Yellow
-          Write-Host "1. Copy the appropriate binary from binaries\ to your desired location" -ForegroundColor Yellow
-          Write-Host "2. Add the directory to your PATH" -ForegroundColor Yellow
-          Write-Host "3. Run 'scopes --version' to verify installation" -ForegroundColor Yellow
-          EOF
-          
-          # List package contents
-          echo "Package contents:"
-          find . -type f | sort
 
-      - name: Create distribution package archives
-        run: |
-          PACKAGE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-dist"
-          
-          # Create tar.gz archive
-          tar -czf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
-          
-          # Create zip archive for Windows users
-          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
-          
-          # Generate checksums
-          sha256sum "${PACKAGE_NAME}.tar.gz" > "${PACKAGE_NAME}.tar.gz.sha256"
-          sha256sum "${PACKAGE_NAME}.zip" > "${PACKAGE_NAME}.zip.sha256"
-          
-          echo "Created offline packages:"
-          ls -la *.tar.gz *.zip *.sha256
+          # Copy SBOMs if available
+          mkdir -p sbom
+          if [ -f ../sbom/scopes-sbom.json ]; then
+            cp ../sbom/scopes-sbom.json sbom/
+            echo "Source SBOM (JSON) included in sbom/"
+          fi
+          if [ -f ../sbom/scopes-sbom.xml ]; then
+            cp ../sbom/scopes-sbom.xml sbom/
+            echo "Source SBOM (XML) included in sbom/"
+          fi
+          if [ -f ../sbom/scopes.jar.cdx.json ]; then
+            cp ../sbom/scopes.jar.cdx.json sbom/scopes-binary-sbom.json
+            echo "Binary SBOM (JSON) included in sbom/"
+          fi
 
-      - name: Create platform-specific bundle packages
-        run: |
-          PLATFORMS=("linux-x64" "linux-arm64" "darwin-x64" "darwin-arm64" "win32-x64" "win32-arm64")
+          # Copy documentation
+          mkdir -p docs
+          cp ../README.md docs/
+          cp ../LICENSE docs/
 
-          for platform_arch in "${PLATFORMS[@]}"; do
-            IFS='-' read -r platform arch <<< "$platform_arch"
+          # Create README for distribution
+          cat > README.md << 'EOF'
+          # Scopes JAR Distribution
 
-            echo "Creating bundle package for $platform-$arch..."
-            BUNDLE_NAME="scopes-${{ needs.resolve-version.outputs.version }}-$platform-$arch-bundle"
-            mkdir -p "$BUNDLE_NAME"
-            cd "$BUNDLE_NAME"
+          This package contains the Scopes JAR distribution.
 
-            # Create directory structure
-            mkdir -p verification sbom docs
+          ## Requirements
 
-            # Copy platform-specific binary
-            binary_pattern="scopes-${{ needs.resolve-version.outputs.version }}-$platform-$arch"
-            if [ "$platform" = "win32" ]; then
-              binary_pattern="$binary_pattern.exe"
-              archive_ext="zip"
-            else
-              archive_ext="tar.gz"
-            fi
+          - Java 21 or later
 
-            # Find and copy the specific binary safely
-            binary_found=false
-            while IFS= read -r -d '' file; do
-              if cp "$file" .; then
-                binary_found=true
-                echo "Copied binary: $file"
-                break
-              else
-                echo "Warning: Failed to copy binary: $file"
-              fi
-            done < <(find ../artifacts -name "$binary_pattern" -type f -print0)
+          For Java installation instructions, see:
+          https://github.com/kamiazya/scopes/blob/main/docs/explanation/setup/java-setup.md
 
-            if [ "$binary_found" = false ] || [ ! -f "$binary_pattern" ]; then
-              echo "Warning: Binary not found for $platform-$arch"
-              cd ..
-              if ! rm -rf "$BUNDLE_NAME" 2>/dev/null; then
-                echo "Warning: Failed to clean up $BUNDLE_NAME"
-              fi
-              continue
-            fi
+          ## Quick Start
 
-            # Copy platform-specific hash file safely
-            hash_copied=false
-            while IFS= read -r -d '' file; do
-              if cp "$file" verification/; then
-                hash_copied=true
-                echo "Copied hash file: $file"
-                break
-              else
-                echo "Warning: Failed to copy hash file: $file"
-              fi
-            done < <(find ../artifacts -name "binary-hash-$platform-$arch.txt" -type f -print0)
+          ### Unix/Linux/macOS
 
-            if [ "$hash_copied" = false ]; then
-              echo "Warning: Hash file not found for $platform-$arch"
-            fi
-
-            # Copy SLSA provenance if available (shared across all platforms)
-            if [ -d "../provenance" ]; then
-              find ../provenance -name "*.intoto.jsonl" -type f -exec cp {} verification/multiple.intoto.jsonl \;
-            fi
-
-            # Copy platform-specific SBOM files
-            find ../sbom-artifacts -name "sbom-$platform-$arch.json" -type f -exec cp {} sbom/ \;
-            find ../sbom-artifacts -name "sbom-$platform-$arch.xml" -type f -exec cp {} sbom/ \;
-
-            # Create platform-specific README
-            cat > README.md <<'EOF'
-          # Scopes ${{ needs.resolve-version.outputs.version }} - ${platform}-${arch} Bundle
-
-          This is a platform-specific bundle package for **Scopes ${{ needs.resolve-version.outputs.version }}** designed for **${platform}-${arch}**.
-
-          ## 📦 Package Contents
-
-          - \`${binary_pattern}\` - Scopes binary for ${platform}-${arch}
-          - \`verification/\` - Security verification files (SHA256 hash + SLSA provenance)
-          - \`sbom/\` - Software Bill of Materials (CycloneDX format)
-          - \`docs/\` - Installation and security documentation
-
-          ## 🚀 Quick Installation
-
-          ### For ${platform}
-EOF
-
-            # Add platform-specific installation instructions
-            if [ "$platform" = "linux" ] || [ "$platform" = "darwin" ]; then
-              cat >> README.md <<'EOF'
           ```bash
-          # Extract the bundle
-          tar -xzf scopes-*-bundle.tar.gz
-          cd scopes-*-bundle
+          # Install (requires Java 21+)
+          sudo ./install.sh
 
-          # Run installation script
-          ./install.sh
+          # Or install to custom directory
+          ./install.sh --install-dir ~/.local
 
-          # Or manual installation:
-          chmod +x scopes-*
-          sudo mv scopes-* /usr/local/bin/scopes
+          # Verify installation
+          scopes --help
           ```
-EOF
-            else
-              cat >> README.md <<'EOF'
-          ```powershell
-          # Extract the bundle
-          Expand-Archive scopes-*-bundle.zip -DestinationPath .
-          cd scopes-*-bundle
 
-          # Run installation script
+          ### Windows
+
+          ```powershell
+          # Install (requires Java 21+)
           .\install.ps1
 
-          # Or manual installation:
-          # Move scopes-*.exe to a directory in your PATH
+          # Or install to custom directory
+          .\install.ps1 -InstallDir "$env:LOCALAPPDATA\scopes"
+
+          # Verify installation
+          scopes --help
           ```
-EOF
-            fi
 
-            cat >> README.md <<'EOF'
+          ## Manual Installation
 
-          ## 🔒 Security Verification
+          1. Ensure Java 21+ is installed: `java -version`
+          2. Copy `scopes.jar` to `$INSTALL_DIR/lib/`
+          3. Copy wrapper scripts from `bin/` to `$INSTALL_DIR/bin/`
+          4. Add `$INSTALL_DIR/bin` to your PATH
 
-          This bundle includes cryptographic verification:
-          - **SHA256 Hash**: Automatically verified during installation
-          - **SLSA Level 3 Provenance**: Supply chain security verification
-          - **SBOM**: Complete dependency information for compliance
+          ## Verification
 
-          ## 📚 Documentation
+          ### SHA256 Hash Verification
 
-          - `docs/INSTALL.md` - Detailed installation guide
-          - `docs/SECURITY.md` - Security verification procedures
-          - `docs/ENTERPRISE.md` - Enterprise deployment guide
-
-          ## 🌍 Other Platforms
-
-          Need a different platform? Download the appropriate bundle:
-          - Linux x64: `scopes-*-linux-x64-bundle.tar.gz`
-          - Linux ARM64: `scopes-*-linux-arm64-bundle.tar.gz`
-          - macOS x64: `scopes-*-darwin-x64-bundle.tar.gz`
-          - macOS ARM64: `scopes-*-darwin-arm64-bundle.tar.gz`
-          - Windows x64: `scopes-*-win32-x64-bundle.zip`
-          - Windows ARM64: `scopes-*-win32-arm64-bundle.zip`
-
-          Or use the unified package: `scopes-*-dist.tar.gz` (all platforms, ~260MB)
-
-          ---
-
-          **Quick Start**: `scopes --help` after installation
-EOF
-
-            # Copy installation script with existence check
-            if [ "$platform" = "win32" ]; then
-              if [ -f "../install/offline/install.ps1" ]; then
-                cp ../install/offline/install.ps1 .
-                echo "Copied PowerShell installer script"
-              elif [ -f "../install/install.ps1" ]; then
-                cp ../install/install.ps1 .
-                echo "Copied PowerShell installer script"
-              else
-                echo "Warning: install.ps1 not found, creating placeholder"
-                cat > install.ps1 <<'EOF'
-# Scopes Installation Script for Windows (Placeholder)
-# This feature will be implemented in a future release
-param([string]$InstallDir = "$env:ProgramFiles\Scopes\bin")
-Write-Host "PowerShell installer will be available in future release" -ForegroundColor Yellow
-Write-Host "For now, please extract the .exe file to your desired location and add to PATH" -ForegroundColor Yellow
-EOF
-              fi
-            else
-              if [ -f "../install/offline/install.sh" ]; then
-                cp ../install/offline/install.sh .
-                echo "Copied Unix installer script"
-              else
-                echo "Warning: install.sh not found, creating placeholder"
-                cat > install.sh <<'EOF'
-#!/bin/bash
-# Scopes Installation Script for Unix (Placeholder)
-echo "Unix installer will be available in future release"
-echo "For now, please:"
-echo "  chmod +x scopes-*"
-echo "  sudo mv scopes-* /usr/local/bin/scopes"
-EOF
-                chmod +x install.sh
-              fi
-            fi
-
-            # Create shared documentation
-            cat > docs/INSTALL.md << 'EOF'
-          # Scopes Installation Guide
-
-          ## Prerequisites
-
-          ### Linux/macOS
-          - `bash` shell
-          - `sha256sum` or `shasum` (for hash verification)
-
-          ### Windows
-          - PowerShell 5.1 or later
-          - `certutil` (built into Windows)
-
-          ## Installation
-
-          Run the included installation script which will:
-          1. Verify the binary cryptographically (SHA256 + SLSA)
-          2. Install to an appropriate system location
-          3. Verify the installation works
-
-          For detailed installation options, run the script with `--help`.
-          EOF
-
-            cat > docs/SECURITY.md << 'EOF'
-          # Security Verification
-
-          This package includes multiple security layers:
-
-          ## Automatic Verification (Recommended)
-
-          The installation script automatically verifies:
-          - SHA256 hash matches the expected value
-          - SLSA Level 3 provenance (if slsa-verifier is available)
-
-          ## Manual Verification
+          The distribution includes SHA256 hash for integrity verification:
 
           ```bash
-          # Verify SHA256 hash
-          sha256sum -c verification/binary-hash-*.txt
+          # Unix/Linux/macOS
+          sha256sum -c verification/scopes.jar.sha256
 
-          # Verify SLSA provenance (requires slsa-verifier)
-          slsa-verifier verify-artifact scopes-* \
+          # Windows PowerShell
+          $expectedHash = Get-Content verification\scopes.jar.sha256
+          $actualHash = (Get-FileHash scopes.jar -Algorithm SHA256).Hash
+          if ($actualHash -eq $expectedHash) { Write-Host "✓ Hash verified" }
+          ```
+
+          ### SLSA Provenance Verification (Optional)
+
+          For supply chain security, this distribution includes SLSA Level 3 provenance:
+
+          ```bash
+          # Install slsa-verifier (if not already installed)
+          go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
+
+          # Verify provenance
+          slsa-verifier verify-artifact scopes.jar \
             --provenance-path verification/multiple.intoto.jsonl \
             --source-uri github.com/kamiazya/scopes
           ```
 
-          ## SBOM Analysis
+          ### Software Bill of Materials (SBOM)
 
-          Software Bill of Materials files are provided in industry-standard formats:
-          - `sbom/*.json` - CycloneDX JSON format
-          - `sbom/*.xml` - CycloneDX XML format
+          The distribution includes both source-level and binary-level SBOMs in the `sbom/` directory:
 
-          Use these for security scanning and compliance reporting.
+          - `scopes-sbom.json` - Source dependencies (CycloneDX JSON)
+          - `scopes-sbom.xml` - Source dependencies (CycloneDX XML)
+          - `scopes-binary-sbom.json` - Binary analysis (CycloneDX JSON)
+
+          These can be used for vulnerability scanning, license compliance, and supply chain analysis.
+
+          ## Documentation
+
+          - Installation Guide: https://github.com/kamiazya/scopes/blob/main/docs/tutorials/getting-started.md
+          - Java Setup: https://github.com/kamiazya/scopes/blob/main/docs/explanation/setup/java-setup.md
+
+          ## Support
+
+          - GitHub: https://github.com/kamiazya/scopes
+          - Issues: https://github.com/kamiazya/scopes/issues
           EOF
 
-            cat > docs/ENTERPRISE.md << 'EOF'
-          # Enterprise Deployment
+          cd ..
 
-          ## Air-Gapped Installation
+          # Create tar.gz for Unix
+          tar -czf "scopes-${VERSION}-jar-bundle.tar.gz" "scopes-${VERSION}-jar-bundle"
 
-          This bundle is designed for offline/air-gapped environments:
-          - No network access required after download
-          - All verification can be performed offline
-          - SBOM included for compliance scanning
+          # Create zip for Windows
+          zip -r "scopes-${VERSION}-jar-bundle.zip" "scopes-${VERSION}-jar-bundle"
 
-          ## CI/CD Integration
+          # Calculate checksums
+          sha256sum "scopes-${VERSION}-jar-bundle.tar.gz" > "scopes-${VERSION}-jar-bundle.tar.gz.sha256"
+          sha256sum "scopes-${VERSION}-jar-bundle.zip" > "scopes-${VERSION}-jar-bundle.zip.sha256"
 
-          ```yaml
-          # Example GitHub Actions usage
-          - name: Install Scopes
-            run: |
-              wget https://github.com/kamiazya/scopes/releases/download/v${{ needs.resolve-version.outputs.version }}/scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz
-              tar -xzf scopes-*-bundle.tar.gz
-              cd scopes-*-bundle
-              SCOPES_FORCE_INSTALL=true ./install.sh
-          ```
+          echo "Distribution bundles created:"
+          ls -lh scopes-${VERSION}-jar-bundle.*
 
-          ## Compliance
-
-          - SBOM files provided in CycloneDX format
-          - SLSA Level 3 provenance for supply chain verification
-          - SHA256 hashes for integrity verification
-          EOF
-
-            cd ..
-
-            # Create archive
-            if [ "$platform" = "win32" ]; then
-              zip -r "${BUNDLE_NAME}.zip" "${BUNDLE_NAME}"
-              sha256sum "${BUNDLE_NAME}.zip" > "${BUNDLE_NAME}.zip.sha256"
-            else
-              tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
-              sha256sum "${BUNDLE_NAME}.tar.gz" > "${BUNDLE_NAME}.tar.gz.sha256"
-            fi
-
-            echo "Created bundle: ${BUNDLE_NAME}.${archive_ext}"
-          done
-
-          echo "All platform-specific bundles created:"
-          ls -la scopes-*-bundle.*
-
-      - name: Upload distribution package artifacts
+      - name: Upload distribution bundles
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: distribution-packages
+          name: jar-distribution-bundles
           path: |
             scopes-*.tar.gz
+            scopes-*.tar.gz.sha256
             scopes-*.zip
-            scopes-*.sha256
+            scopes-*.zip.sha256
+          retention-days: 7
+          if-no-files-found: error
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [resolve-version, validate-tag, build-release, provenance, create-unified-package]
-    if: always() && needs.build-release.result == 'success'
+    needs: [resolve-version, validate-tag, build-jar, provenance, create-jar-distribution]
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -1011,23 +487,11 @@ EOF
           ref: ${{ needs.resolve-version.outputs.tag_version }}
           fetch-depth: 0
 
-      - name: Download all artifacts
+      - name: Download JAR distribution bundles
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          path: artifacts
-
-      - name: Download all SBOM artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          pattern: sbom-*
-          path: sbom-artifacts
-          merge-multiple: true
-
-      - name: Download distribution packages
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          name: distribution-packages
-          path: distribution-packages
+          name: jar-distribution-bundles
+          path: jar-distribution-bundles
 
       - name: Download SLSA provenance
         if: needs.provenance.result == 'success'
@@ -1035,9 +499,6 @@ EOF
         with:
           name: "${{ needs.provenance.outputs.provenance-name }}"
           path: provenance
-
-      - name: Display downloaded artifacts
-        run: find artifacts -type f -name "*" | head -20
 
       - name: Generate enhanced release notes
         id: release_notes
@@ -1059,7 +520,7 @@ EOF
           - SBOM files available in CycloneDX format
 
           ## 📚 Documentation
-          - [Installation Guide](https://github.com/kamiazya/scopes/blob/main/install/README.md)
+          - [Getting Started Guide](https://github.com/kamiazya/scopes/blob/main/docs/tutorials/getting-started.md)
           - [Security Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/security-verification.md)
           - [SBOM Verification](https://github.com/kamiazya/scopes/blob/main/docs/explanation/security/sbom-verification.md)
           EOF
@@ -1095,18 +556,10 @@ EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Note: Individual files (28 total) have been eliminated for better user experience
-          # Users can now choose from clear, bundled options instead of navigating many files
-
-          # Upload unified distribution package (all platforms, ~260MB)
-          find distribution-packages -name "scopes-*-dist.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-dist.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-
-          # Upload platform-specific bundle packages (~20MB each)
-          find distribution-packages -name "scopes-*-bundle.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-bundle.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
-          find distribution-packages -name "scopes-*-bundle.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          # Upload JAR distribution bundles (~10MB each)
+          find jar-distribution-bundles -name "scopes-*-jar-bundle.tar.gz" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find jar-distribution-bundles -name "scopes-*-jar-bundle.zip" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
+          find jar-distribution-bundles -name "scopes-*-jar-bundle.*.sha256" -type f -exec gh release upload "${{ needs.resolve-version.outputs.tag_version }}" --clobber {} \;
 
           # Upload SLSA provenance if available
           if [ -d "provenance" ] && [ -n "$(find provenance -name "*.intoto.jsonl" -type f)" ]; then
@@ -1120,6 +573,7 @@ EOF
           # Get the auto-generated release notes
           AUTO_NOTES=$(gh release view "${{ needs.resolve-version.outputs.tag_version }}" --json body --jq '.body')
 
+
           # Create the combined release notes
           cat > combined_notes.md << 'EOF'
           ${{ steps.release_notes.outputs.custom_content }}
@@ -1128,94 +582,66 @@ EOF
 
           ### 🚀 Quick Install (Recommended)
 
-          Download the platform-specific bundle package for your system and run the included installation script.
+          Download the JAR bundle for your platform and run the included installation script.
 
-          ### 📦 Platform-Specific Bundles (Recommended)
+          **Requirements**: Java 21 or later ([Java Setup Guide](https://github.com/kamiazya/scopes/blob/main/docs/explanation/setup/java-setup.md))
 
-          For most users, download the platform-specific bundle for your system:
+          ### ☕ JAR Distribution
 
-          - **Linux x64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz` (~20MB)
-          - **Linux ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-linux-arm64-bundle.tar.gz` (~20MB)
-          - **macOS x64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-x64-bundle.tar.gz` (~20MB)
-          - **macOS ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-darwin-arm64-bundle.tar.gz` (~20MB)
-          - **Windows x64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-x64-bundle.zip` (~20MB)
-          - **Windows ARM64**: `scopes-${{ needs.resolve-version.outputs.version }}-win32-arm64-bundle.zip` (~20MB)
+          - **Universal JAR Bundle (tar.gz)**: `scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.tar.gz` (~10MB)
+          - **Universal JAR Bundle (zip)**: `scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.zip` (~10MB)
 
-          Each bundle includes:
-          - Platform-specific binary
-          - Installation script
+          The JAR bundle includes:
+          - Universal JAR file (platform-independent)
+          - Wrapper scripts for all platforms (bash, bat, PowerShell)
+          - Installation scripts
           - SHA256 hash verification
-          - SLSA provenance
-          - SBOM files
           - Documentation
 
-          #### Install from Bundle
+          #### Install from JAR Bundle
           ```bash
           # Linux/macOS
-          tar -xzf scopes-*-bundle.tar.gz
-          cd scopes-*-bundle
-          ./install.sh
+          tar -xzf scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.tar.gz
+          cd scopes-*-jar-bundle
+          sudo ./install.sh
+
+          # Or install to custom directory
+          ./install.sh --install-dir ~/.local
 
           # Windows PowerShell
-          Expand-Archive scopes-*-bundle.zip
-          cd scopes-*-bundle
+          Expand-Archive scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.zip
+          cd scopes-*-jar-bundle
           .\install.ps1
+
+          # Or install to custom directory
+          .\install.ps1 -InstallDir "$env:LOCALAPPDATA\scopes"
           ```
-
-          ### 🏢 Enterprise/Offline Installation
-
-          For air-gapped environments or enterprise deployments with multiple platforms:
-
-          1. Download `scopes-${{ needs.resolve-version.outputs.version }}-dist.tar.gz` or `.zip` (~260MB)
-          2. Extract the package
-          3. Run `./install.sh` (Unix) or `.\install.ps1` (Windows)
-
-          The unified package includes all platforms and complete documentation.
 
           ## Security & Verification
 
-          This release includes SLSA Level 3 provenance and Software Bill of Materials (SBOM) for comprehensive supply chain security.
+          This release includes SLSA Level 3 provenance for supply chain security.
 
           ### SLSA Provenance Verification
           ```bash
           # Install slsa-verifier
           go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
 
-          # Extract and verify from platform bundle
-          tar -xzf scopes-${{ needs.resolve-version.outputs.version }}-linux-x64-bundle.tar.gz
-          cd scopes-*-bundle
+          # Download the JAR and provenance
+          wget https://github.com/${{ github.repository }}/releases/download/${{ needs.resolve-version.outputs.tag_version }}/scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.tar.gz
+          wget https://github.com/${{ github.repository }}/releases/download/${{ needs.resolve-version.outputs.tag_version }}/multiple.intoto.jsonl
 
-          slsa-verifier verify-artifact scopes-${{ needs.resolve-version.outputs.version }}-linux-x64 \
-            --provenance-path verification/multiple.intoto.jsonl \
+          # Verify
+          slsa-verifier verify-artifact scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.tar.gz \
+            --provenance-path multiple.intoto.jsonl \
             --source-uri github.com/${{ github.repository }}
           ```
 
-          ### SBOM (Software Bill of Materials)
-
-          Each platform bundle includes SBOM files in CycloneDX format for compliance and security scanning:
-          - **Location**: `sbom/` directory in each bundle
-          - **Formats**: JSON and XML formats included
-
-          #### SBOM Usage Examples
+          ### Manual Hash Verification
           ```bash
-          # Extract platform bundle
-          tar -xzf scopes-*-linux-x64-bundle.tar.gz
-          cd scopes-*-bundle
-
-          # Analyze dependencies with CycloneDX tools
-          cyclonedx-cli analyze sbom/sbom-linux-x64.json
-
-          # Import into OWASP Dependency-Track
-          curl -X POST "http://dtrack-server/api/v1/bom" \
-            -H "X-API-Key: your-api-key" \
-            -H "Content-Type: application/json" \
-            -d @sbom/sbom-linux-x64.json
+          # Verify JAR bundle hash
+          sha256sum -c scopes-${{ needs.resolve-version.outputs.version }}-jar-bundle.tar.gz.sha256
           ```
-
-          ### Manual Verification
-          SHA256 hashes are included in each platform bundle at `verification/binary-hash-{platform}-{arch}.txt`.
           EOF
-
           # Add the auto-generated notes after our custom content
           echo "" >> combined_notes.md
           echo "$AUTO_NOTES" >> combined_notes.md

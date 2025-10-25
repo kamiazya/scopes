@@ -1,10 +1,14 @@
 ---
-name: GraalVM Native Build Configuration Cache Incompatibility
-about: Track the GraalVM plugin configuration cache compatibility issue
-title: "GraalVM native build fails with configuration cache enabled"
-labels: bug, build, blocked, upstream
+name: "[DEPRECATED] GraalVM Native Build Configuration Cache Incompatibility"
+about: "[DEPRECATED - No longer applicable] This issue template was for GraalVM Native Image builds, which have been replaced by JAR distribution"
+title: "[DEPRECATED] GraalVM native build fails with configuration cache enabled"
+labels: deprecated, wontfix
 assignees: ''
 ---
+
+> **⚠️ DEPRECATED**: This issue template is no longer applicable. Scopes has migrated from GraalVM Native Image compilation to JAR distribution. Native Image builds are no longer part of the release process.
+>
+> For current build issues, please use the standard bug report template.
 
 ## Problem Description
 

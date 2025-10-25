@@ -28,6 +28,7 @@ replay_pid*
 
 # Gradle
 .gradle/
+.gradle-local/
 build/
 
 tmp/

@@ -249,6 +249,7 @@ graph TD
 | [0014](./0014-pluggable-ai-strategy-pattern.md) | Accepted | Pluggable AI Strategy Pattern | Entity-agnostic AI integration with type-specific strategies |
 | [0015](./0015-unified-event-sourcing-approach.md) | Accepted | Unified Event Sourcing Approach | Complete audit trail and event-driven architecture for all changes |
 | [0016](./0016-a2a-collaboration-architecture.md) | Accepted | A2A Collaboration Architecture | AI-to-AI collaboration with conversation branching and conflict resolution |
+| [0017](./0017-jvm-jar-distribution-strategy.md) | Accepted | JVM JAR Distribution Strategy | Transition from GraalVM Native Image to Fat JAR distribution with wrapper scripts |
 
 #### Legend
 

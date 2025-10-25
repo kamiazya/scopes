@@ -13,53 +13,76 @@ This tutorial will guide you through your first steps with Scopes, from installa
 
 ## Prerequisites
 
-- A Unix-like operating system (Linux, macOS, or WSL on Windows)
+- A Unix-like operating system (Linux, macOS, or Windows with PowerShell)
+- **Java 21 or later** - See [Java Setup Guide](../explanation/setup/java-setup.md) for installation instructions
 - Basic command-line familiarity
 - (Optional) An AI assistant that supports MCP for enhanced features
 
 ## Step 1: Installation
 
+> **Note**: Scopes is distributed as a JAR file and requires Java 21+ to run. If you don't have Java installed, please follow the [Java Setup Guide](../explanation/setup/java-setup.md) before proceeding.
+
 ### Quick Install (Recommended)
 
-Download the platform-specific bundle, verify it with the included manifest, and then run the installer:
+Download the JAR distribution bundle and run the installer:
 
 ```bash
 # Set version and platform (replace with actual values)
-VERSION="v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
-PLATFORM="linux-x64"  # Options: linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64, win32-arm64
+VERSION="vX.X.X"  # Check latest release at https://github.com/kamiazya/scopes/releases
 
-# Download and verify bundle
-wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
-tar -xzf scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
-cd scopes-${VERSION}-${PLATFORM}-bundle
-sha256sum -c verification/binary-hash-${PLATFORM}.txt
+# Download and extract bundle
+wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-jar-bundle.tar.gz
+tar -xzf scopes-${VERSION}-jar-bundle.tar.gz
+cd scopes-${VERSION}-jar-bundle
+
+# Optional: verify JAR integrity
+sha256sum -c verification/scopes.jar.sha256
+
+# Review and run installer
 less install.sh  # optional review
-./install.sh
+sudo ./install.sh  # installs to /usr/local by default
 ```
 
-For Windows platforms, use `.zip` instead of `.tar.gz` and `Expand-Archive` instead of `tar`.
+For Windows platforms, use PowerShell:
+
+```powershell
+# Set version (replace with actual value)
+$VERSION = "vX.X.X"  # Check latest release at https://github.com/kamiazya/scopes/releases
+
+# Download and extract bundle
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/$VERSION/scopes-$VERSION-jar-bundle.zip" -OutFile "scopes-bundle.zip"
+Expand-Archive scopes-bundle.zip -DestinationPath .
+cd "scopes-$VERSION-jar-bundle"
+
+# Review and run installer
+.\install.ps1  # installs to C:\Program Files\scopes by default
+```
 
 ### Manual Installation
 
 If you prefer manual installation:
 
-1. Download and extract the platform bundle:
+1. Download and extract the JAR bundle:
 ```bash
-# Set version and platform variables
+# Set version variable
 VERSION="v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
-PLATFORM="linux-x64"  # Choose your platform identifier
 
-# Download bundle
-wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
-tar -xzf scopes-${VERSION}-${PLATFORM}-bundle.tar.gz
+# Download JAR bundle
+wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-jar-bundle.tar.gz
+tar -xzf scopes-${VERSION}-jar-bundle.tar.gz
+cd scopes-${VERSION}-jar-bundle
 ```
 
-2. Copy the binary to your preferred location:
+2. Install to your preferred location:
 ```bash
-cd scopes-${VERSION}-${PLATFORM}-bundle
-cp scopes* ~/.local/bin/
-# Or use the install script with custom path
-./install.sh --install-dir ~/.local/bin
+# Install with custom directory
+./install.sh --install-dir ~/.local
+
+# Or manually copy files
+mkdir -p ~/.local/bin ~/.local/lib
+cp scopes.jar ~/.local/lib/
+cp bin/scopes ~/.local/bin/
+chmod +x ~/.local/bin/scopes
 ```
 
 3. Add to your PATH if needed:
@@ -67,22 +90,25 @@ cp scopes* ~/.local/bin/
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-#### Windows Example
+#### Windows Manual Installation
 
 For Windows users:
 ```powershell
-# Set version and platform variables
+# Download JAR bundle
 $VERSION = "v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
-$PLATFORM = "win32-x64"  # or win32-arm64
-
-# Download and extract bundle
-Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/$VERSION/scopes-$VERSION-$PLATFORM-bundle.zip" -OutFile "scopes-bundle.zip"
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/$VERSION/scopes-$VERSION-jar-bundle.zip" -OutFile "scopes-bundle.zip"
 Expand-Archive scopes-bundle.zip -DestinationPath .
-cd "scopes-$VERSION-$PLATFORM-bundle"
+cd "scopes-$VERSION-jar-bundle"
 
-# Run installer or copy manually
-.\install.ps1
-# Or copy scopes.exe to a directory in your PATH
+# Install with custom directory
+.\install.ps1 -InstallDir "$env:LOCALAPPDATA\scopes"
+
+# Or manually copy files
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\scopes\bin"
+New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\scopes\lib"
+Copy-Item scopes.jar "$env:LOCALAPPDATA\scopes\lib\"
+Copy-Item bin\scopes.bat "$env:LOCALAPPDATA\scopes\bin\"
+Copy-Item bin\scopes.ps1 "$env:LOCALAPPDATA\scopes\bin\"
 ```
 
 ### Verify Installation

@@ -13,10 +13,10 @@ Scopes releases include comprehensive SBOM files that provide:
 ## SBOM Formats
 
 ### CycloneDX (Recommended for Security)
-- **Format**: JSON and XML
+- **Format**: JSON
 - **Focus**: Security-oriented with vulnerability tracking
 - **Features**: VEX (Vulnerability Exploitability eXchange) support
-- **Files**: `sbom-{platform}-{arch}.json`, `sbom-{platform}-{arch}.xml`
+- **Files**: `sbom/scopes-sbom.json` (source SBOM), `sbom/scopes-binary-sbom.json` (binary SBOM)
 
 #### CycloneDX Advantages
 - Native vulnerability database integration
@@ -28,27 +28,27 @@ Scopes releases include comprehensive SBOM files that provide:
 
 ### 1. Automated Verification (Recommended)
 
-Use the platform-specific bundle packages that include SBOM validation:
+Use the JAR bundle package that includes SBOM validation:
 
 ```bash
-# Linux/macOS - Extract platform bundle
-tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-cd scopes-v1.0.0-linux-x64-bundle
+# Linux/macOS - Extract JAR bundle
+tar -xzf scopes-v1.0.0-jar-bundle.tar.gz
+cd scopes-v1.0.0-jar-bundle
 
 # SBOM files are included in the bundle
-ls sbom-linux-x64.json sbom-linux-x64.xml
+ls sbom/scopes-sbom.json sbom/scopes-binary-sbom.json
 
 # Run installation with automatic verification
 ./install.sh  # Includes SBOM verification
 ```
 
 ```powershell
-# Windows PowerShell - Extract platform bundle
-Expand-Archive scopes-v1.0.0-win32-x64-bundle.zip -DestinationPath .
-cd scopes-v1.0.0-win32-x64-bundle
+# Windows PowerShell - Extract JAR bundle
+Expand-Archive scopes-v1.0.0-jar-bundle.zip -DestinationPath .
+cd scopes-v1.0.0-jar-bundle
 
 # SBOM files are included in the bundle
-Get-ChildItem sbom-win32-x64.json, sbom-win32-x64.xml
+Get-ChildItem sbom\scopes-sbom.json, sbom\scopes-binary-sbom.json
 
 # Run installation with automatic verification
 .\install.ps1  # Includes SBOM verification
@@ -57,33 +57,34 @@ Get-ChildItem sbom-win32-x64.json, sbom-win32-x64.xml
 ### 2. Manual Download and Verify Checksums
 
 ```bash
-# Download and extract the platform bundle
-wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-linux-x64-bundle.tar.gz
-tar -xzf scopes-linux-x64-bundle.tar.gz
-cd scopes-*-bundle
+# Download and extract the JAR bundle
+wget https://github.com/kamiazya/scopes/releases/download/v1.0.0/scopes-v1.0.0-jar-bundle.tar.gz
+tar -xzf scopes-v1.0.0-jar-bundle.tar.gz
+cd scopes-v1.0.0-jar-bundle
 
 # Verify SBOM integrity using the included verification files
-sha256sum -c verification/sbom-linux-x64.json.sha256
+sha256sum -c verification/scopes.jar.sha256
 ```
 
-### 2. Validate SBOM Format
+### 3. Validate SBOM Format
 
 ```bash
 # Install CycloneDX CLI tools
 npm install -g @cyclonedx/cli
 
 # Validate SBOM format compliance (from within the extracted bundle)
-cyclonedx validate verification/sbom-linux-x64.json
+cyclonedx validate sbom/scopes-sbom.json
+cyclonedx validate sbom/scopes-binary-sbom.json
 ```
 
-### 3. SLSA Provenance Integration
+### 4. SLSA Provenance Integration
 
 SBOM files are included in the SLSA provenance generation process:
 
 ```bash
-# Verify SBOM is covered by SLSA provenance
-slsa-verifier verify-artifact sbom-linux-x64.json \
-  --provenance-path multiple.intoto.jsonl \
+# Verify JAR file is covered by SLSA provenance
+slsa-verifier verify-artifact scopes.jar \
+  --provenance-path verification/multiple.intoto.jsonl \
   --source-uri github.com/kamiazya/scopes
 ```
 
@@ -92,21 +93,24 @@ slsa-verifier verify-artifact sbom-linux-x64.json \
 ### Vulnerability Scanning
 
 ```bash
-# Scan for known vulnerabilities
-cyclonedx analyze sbom-linux-x64.json
+# Scan for known vulnerabilities (source SBOM)
+cyclonedx analyze sbom/scopes-sbom.json
+
+# Scan binary SBOM
+cyclonedx analyze sbom/scopes-binary-sbom.json
 
 # Generate vulnerability report
-cyclonedx analyze sbom-linux-x64.json --output-format json > vulnerabilities.json
+cyclonedx analyze sbom/scopes-binary-sbom.json --output-format json > vulnerabilities.json
 ```
 
 ### License Compliance
 
 ```bash
-# Extract license information
-cyclonedx licenses sbom-linux-x64.json
+# Extract license information (source SBOM)
+cyclonedx licenses sbom/scopes-sbom.json
 
 # Generate license report
-cyclonedx licenses sbom-linux-x64.json --output-format csv > licenses.csv
+cyclonedx licenses sbom/scopes-sbom.json --output-format csv > licenses.csv
 ```
 
 ## Integration with Security Tools
@@ -114,31 +118,31 @@ cyclonedx licenses sbom-linux-x64.json --output-format csv > licenses.csv
 ### OWASP Dependency-Track
 
 ```bash
-# Upload to Dependency-Track server
+# Upload source SBOM to Dependency-Track server
 curl -X POST "http://dtrack-server/api/v1/bom" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
-  -d @sbom-linux-x64.json
+  -d @sbom/scopes-sbom.json
 ```
 
 ### Grype Vulnerability Scanner
 
 ```bash
-# Scan SBOM with Grype
-grype sbom:sbom-linux-x64.json
+# Scan binary SBOM with Grype
+grype sbom:sbom/scopes-binary-sbom.json
 
 # Generate detailed report
-grype sbom:sbom-linux-x64.json -o json > grype-report.json
+grype sbom:sbom/scopes-binary-sbom.json -o json > grype-report.json
 ```
 
 ### Syft Analysis
 
 ```bash
-# Analyze SBOM with Syft
-syft scan sbom-linux-x64.json
+# Analyze binary SBOM with Syft
+syft scan sbom/scopes-binary-sbom.json
 
 # Convert between formats
-syft convert sbom-linux-x64.json -o spdx-json > sbom.spdx.json
+syft convert sbom/scopes-binary-sbom.json -o spdx-json > sbom.spdx.json
 ```
 
 ## Continuous Monitoring
@@ -156,13 +160,16 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
-    - name: Download latest SBOM
+    - name: Download and extract latest JAR bundle
       run: |
-        wget https://github.com/kamiazya/scopes/releases/latest/download/sbom-linux-x64.json
-    
+        wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-jar-bundle.tar.gz
+        tar -xzf scopes-jar-bundle.tar.gz
+        cd scopes-*-jar-bundle
+
     - name: Scan for vulnerabilities
       run: |
-        grype sbom:sbom-linux-x64.json --fail-on critical
+        cd scopes-*-jar-bundle
+        grype sbom:sbom/scopes-binary-sbom.json --fail-on critical
 ```
 
 ### Policy Enforcement

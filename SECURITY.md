@@ -55,9 +55,10 @@ Scopes includes several security measures:
   - Coverage of both dependency and binary-level vulnerabilities
 
 For detailed usage instructions, see our security guides:
-- [Security Verification Guide](./docs/guides/security-verification.md)
-- [Dependency Security Guide](./docs/guides/dependency-security.md)
-- [SBOM Verification Guide](./docs/guides/sbom-verification.md)
+- [Security Verification Guide](./docs/explanation/security/security-verification.md)
+- [Build Security Verification Guide](./docs/explanation/security/build-security-verification.md)
+- [Dependency Security Guide](./docs/explanation/security/dependency-security.md)
+- [SBOM Verification Guide](./docs/explanation/security/sbom-verification.md)
 
 ### AI Integration Security
 - **Local-First**: AI interactions don't expose your private data by default
@@ -65,13 +66,14 @@ For detailed usage instructions, see our security guides:
 - **Transparent Processing**: Clear indication when AI features are active
 
 ### Binary Security
-- **Native Compilation**: GraalVM native images for reduced attack surface
-- **Multi-Layer Vulnerability Scanning**: 
+- **JAR Distribution**: Self-contained JAR files with platform-specific wrapper scripts
+- **Multi-Layer Vulnerability Scanning**:
   - Source dependencies scanned during build
-  - Compiled binaries scanned with Grype
+  - Compiled JAR artifacts scanned with Grype
   - SARIF results integrated with GitHub Security
 - **Cross-Platform Consistency**: Same security measures across all platforms
 - **Automated Security Reporting**: Vulnerabilities visible in GitHub's Security tab
+- **Verifiable Builds**: SHA256 checksums and SLSA provenance included in distribution bundles
 
 ## Privacy and Data Protection
 
@@ -84,7 +86,8 @@ Since Scopes is local-first:
 
 - Keep Scopes updated to the latest version
 - Review AI integration settings for your privacy needs
-- Verify downloaded binaries using our SLSA provenance (see security guides)
+- Verify downloaded JAR distributions using SHA256 checksums and SLSA provenance (see security guides)
+- Use the automated verification in installer scripts when available
 - Report any suspicious behavior immediately
 
 ## Contact

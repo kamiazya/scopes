@@ -13,102 +13,98 @@ Scopes uses GitHub's native release notes generation combined with custom verifi
 ```mermaid
 graph LR
     %% Triggers
-    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch<br/>with --verify-tag]) 
-    
+    Start([🏷️ Tag Push<br/>v*.*.* or<br/>Manual Dispatch<br/>with --verify-tag])
+
     %% Main workflow stages
-    Start --> Build[🏗️ Build<br/>Multi-Platform<br/>Artifacts]
+    Start --> Build[🏗️ Build<br/>JAR<br/>Artifacts]
     Build --> Security[🔐 Security<br/>Verification<br/>& SLSA]
     Security --> Release[🚀 GitHub<br/>Release<br/>Creation]
-    
+
     %% Final outputs
     Release --> Output{📦 Release Assets}
-    
+
     %% Output types
-    Output --> Binaries[📱 Native Binaries<br/>Linux/macOS/Windows<br/>x64 & ARM64]
+    Output --> JAR[☕ Universal JAR<br/>Platform-Independent<br/>Java 21+]
     Output --> Verification[🛡️ Security Files<br/>SLSA + Dual SBOMs + Vulnerability Scans]
     Output --> Documentation[📄 Release Notes<br/>+ Installation Guide]
-    
+
     %% Styling
     classDef triggerBox fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px  
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef outputBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef artifactBox fill:#f3e5f5,stroke:#4a148c,stroke-width:1px
-    
+
     class Start triggerBox
     class Build,Security,Release processBox
     class Output outputBox
-    class Binaries,Verification,Documentation artifactBox
+    class JAR,Verification,Documentation artifactBox
 ```
 
 ### Detailed Job Flow
 
-#### 1. Build Release Artifacts Job
+#### 1. Build JAR Artifacts Job
 
 ```mermaid
 graph TB
-    subgraph Matrix ["🔄 Build Matrix (Parallel Execution)"]
+    subgraph Steps ["📋 Build Steps"]
         direction TB
-        Linux[🐧 Ubuntu Latest<br/>Linux x64]
-        LinuxARM[🐧 Ubuntu Latest<br/>Linux ARM64]
-        MacOS[🍎 macOS Latest<br/>Darwin x64]
-        MacOSARM[🍎 macOS Latest<br/>Darwin ARM64]
-        Windows[🪟 Windows Latest<br/>Win32 x64]
-        WindowsARM[🪟 Windows Latest<br/>Win32 ARM64]
+        A[📥 Checkout Code]
+        B[⚙️ Setup Environment<br/>Java 21 + Gradle]
+        C[🏷️ Extract Version<br/>from Tag/Input]
+        D[📋 Generate Source SBOM<br/>CycloneDX from Dependencies]
+        E[☕ Build JAR<br/>Shadow Fat JAR]
+        F[🔍 Generate Binary SBOM<br/>Syft Scanner]
+        G[🛡️ Vulnerability Scan<br/>Grype SARIF + JSON]
+        H[#️⃣ Generate SHA-256<br/>JAR Hash]
+        I[📤 Upload Artifacts<br/>JAR + SBOMs + Scan Results]
+
+        A --> B
+        B --> C
+        C --> D
+        D --> E
+        E --> F
+        F --> G
+        G --> H
+        H --> I
     end
-    
-    subgraph Steps ["📋 Build Steps (Each Platform)"]
-        direction TB
-        A[📥 Checkout Code] --> B[⚙️ Setup Environment<br/>GraalVM + Gradle]
-        B --> C[🏷️ Extract Version<br/>from Tag/Input]
-        C --> D[📋 Generate Source SBOM<br/>CycloneDX from Dependencies]
-        D --> E[🔨 Native Compile<br/>Platform Binary]
-        E --> F[🔍 Generate Binary SBOM<br/>Syft Scanner]
-        F --> G[🛡️ Vulnerability Scan<br/>Grype (SARIF + JSON)]
-        G --> H[#️⃣ Generate SHA-256<br/>All Artifact Hashes]
-        H --> I[📤 Upload Artifacts<br/>Binary + SBOMs + Scan Results]
-    end
-    
-    Matrix --> Steps
-    
+
     %% Styling
-    classDef matrixBox fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
     classDef stepBox fill:#f1f8e9,stroke:#388e3c,stroke-width:1px
-    
-    class Matrix matrixBox
+
     class A,B,C,D,E,F,G,H,I stepBox
 ```
 
-#### 2. Binary Security Scanning
+#### 2. JAR Security Scanning
 
 ```mermaid
 graph TB
     subgraph Download ["📦 Artifact Collection"]
         direction TB
-        GetBin[📥 Download Binaries<br/>All Platforms]
+        GetJAR[📥 Download JAR<br/>Universal Binary]
         GetSrcSBOM[📥 Download Source SBOMs<br/>CycloneDX Format]
     end
-    
+
     subgraph Scanning ["🔍 Security Analysis"]
         direction TB
         GrypeVuln[🛡️ Grype Vulnerability Scan<br/>JSON + SARIF Export]
         SyftSBOM[📋 Syft Binary SBOM<br/>CycloneDX Generation]
         VerifyIntegrity[🔐 Binary Integrity Check<br/>SHA-256 Verification]
     end
-    
+
     subgraph Upload ["📤 Results & Integration"]
         direction TB
         UploadArtifacts[📦 Upload Scan Results<br/>JSON + SARIF + SBOMs]
         GitHubSecurity[🛡️ Upload SARIF to<br/>GitHub Security Tab]
     end
-    
+
     Download --> Scanning
     Scanning --> Upload
-    
+
     %% Styling
     classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef scanBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef uploadBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    
+
     class Download downloadBox
     class Scanning scanBox
     class Upload uploadBox
@@ -120,28 +116,24 @@ graph TB
 graph TB
     subgraph Collect ["📦 Collect Hashes"]
         direction TB
-        DL1[📥 Download Linux Hashes] 
-        DL2[📥 Download macOS Hashes]
-        DL3[📥 Download Windows Hashes]
-        DL1 --> Combine[🔗 Combine & Encode<br/>Base64 for SLSA]
-        DL2 --> Combine
-        DL3 --> Combine
-        Combine --> Output1[📤 Output Combined<br/>Hash String]
+        GetJARHash[📥 Download JAR Hash]
+        GetJARHash --> Encode[🔗 Encode to Base64<br/>for SLSA]
+        Encode --> Output1[📤 Output Hash String]
     end
-    
+
     subgraph Provenance ["🛡️ SLSA Provenance"]
         direction TB
-        Input[📥 Combined Hashes<br/>Input]
+        Input[📥 JAR Hash<br/>Input]
         Input --> Generator[🔐 SLSA Framework<br/>Generic Generator]
         Generator --> Attest[📤 Generate Attestation<br/>multiple.intoto.jsonl]
     end
-    
+
     Output1 --> Input
-    
-    %% Styling  
+
+    %% Styling
     classDef collectBox fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef provenanceBox fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    
+
     class Collect collectBox
     class Provenance provenanceBox
 ```
@@ -152,37 +144,37 @@ graph TB
 graph TB
     subgraph Downloads ["📦 Artifact Collection"]
         direction TB
-        GetBinaries[📥 Download Binaries<br/>All Platforms]
+        GetJAR[📥 Download JAR<br/>Universal Binary]
         GetSourceSBOM[📥 Download Source SBOMs<br/>CycloneDX from Dependencies]
-        GetBinarySBOM[📥 Download Binary SBOMs<br/>Syft Generated]
-        GetScanResults[📥 Download Vulnerability<br/>Scan Results (JSON + SARIF)]
+        GetBinarySBOM[📥 Download Binary SBOM<br/>Syft Generated]
+        GetScanResults[📥 Download Vulnerability<br/>Scan Results JSON + SARIF]
         GetProvenance[📥 Download SLSA<br/>Provenance Files]
     end
-    
+
     subgraph Processing ["⚙️ Release Processing"]
         direction TB
         GenNotes[📝 Generate Enhanced<br/>Release Notes]
         PrepAssets[📦 Prepare Assets<br/>Organize Files]
         GenNotes --> PrepAssets
     end
-    
+
     subgraph Release ["🚀 GitHub Release"]
         direction TB
         CreateRelease[✨ Create Release<br/>Tag + Description]
-        AttachAssets[📎 Attach All Assets<br/>Binaries + Security Files]
+        AttachAssets[📎 Attach All Assets<br/>JAR + Security Files]
         Publish[🌐 Publish Release<br/>Public Availability]
         CreateRelease --> AttachAssets
         AttachAssets --> Publish
     end
-    
+
     Downloads --> Processing
     Processing --> Release
-    
+
     %% Styling
     classDef downloadBox fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef processBox fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef releaseBox fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    
+
     class Downloads downloadBox
     class Processing processBox
     class Release releaseBox
@@ -312,11 +304,10 @@ Bot accounts (dependabot, github-actions) are automatically excluded.
 
 - `.github/release.yml` - Release notes configuration
 - `.github/workflows/release.yml` - Release automation workflow
-- `.github/workflows/build.yml` - Enhanced build workflow with SBOM and vulnerability scanning
 - `build.gradle.kts` - CycloneDX plugin configuration for source-level SBOM
 - `apps/scopes/build.gradle.kts` - Application-specific SBOM configuration
 - `../guides/security-verification.md` - Security verification guide
 - `../guides/sbom-verification.md` - SBOM verification guide
 - `../guides/dependency-security.md` - Dependency security guide
-- `../../install/README.md` - Installation guide
+- `../tutorials/getting-started.md` - Installation guide
 - `../../SECURITY.md` - Security policy and reporting
