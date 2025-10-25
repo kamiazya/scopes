@@ -114,7 +114,7 @@ tasks.register("konsistTest") {
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     kotlin {
         target("**/*.kt")
-        targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt")
+        targetExclude("**/build/**/*.kt", "**/.tmp/**/*.kt", "**/.gradle-local/**/*.kt")
         ktlint(
             libs.versions.ktlint.tool
                 .get(),
@@ -134,6 +134,7 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     }
     kotlinGradle {
         target("**/*.gradle.kts")
+        targetExclude("**/.gradle-local/**/*.gradle.kts")
         ktlint(
             libs.versions.ktlint.tool
                 .get(),
@@ -143,21 +144,21 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     }
     json {
         target("**/*.json")
-        targetExclude("**/build/**/*.json", "**/node_modules/**/*.json")
+        targetExclude("**/build/**/*.json", "**/node_modules/**/*.json", "**/.gradle-local/**/*.json", "**/package.json")
         jackson()
         trimTrailingWhitespace()
         endWithNewline()
     }
     yaml {
         target("**/*.{yml,yaml}")
-        targetExclude("**/build/**/*.{yml,yaml}")
+        targetExclude("**/build/**/*.{yml,yaml}", "**/.gradle-local/**/*.{yml,yaml}")
         jackson()
         trimTrailingWhitespace()
         endWithNewline()
     }
     format("markdown") {
         target("**/*.md")
-        targetExclude("**/build/**/*.md")
+        targetExclude("**/build/**/*.md", "**/.gradle-local/**/*.md")
         endWithNewline()
         // Trailing whitespace has semantic meaning in Markdown, so follow .editorconfig
     }
