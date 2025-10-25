@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.detekt)
-    alias(libs.plugins.graalvm.native)
+    alias(libs.plugins.shadow)
     alias(libs.plugins.cyclonedx.bom)
     alias(libs.plugins.spdx.sbom)
     application
@@ -67,9 +67,6 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
 
-    // GraalVM native image
-    compileOnly(libs.graalvm.sdk)
-
     // Logging
     runtimeOnly(libs.logback.classic)
 
@@ -87,131 +84,31 @@ tasks.test {
     useJUnitPlatform()
 }
 
-graalvmNative {
-    binaries {
-        named("main") {
-            imageName.set("scopes")
-            mainClass.set("io.github.kamiazya.scopes.apps.cli.MainKt")
-            useFatJar.set(true)
+// Shadow JAR configuration for fat JAR distribution
+tasks.shadowJar {
+    archiveBaseName.set("scopes")
+    archiveClassifier.set("")
+    archiveVersion.set(project.version.toString())
 
-            buildArgs.addAll(
-                listOf(
-                    "-O2",
-                    "--no-fallback",
-                    "--gc=serial",
-                    "--report-unsupported-elements-at-runtime",
-                    "-H:+UnlockExperimentalVMOptions",
-                    "-H:+ReportExceptionStackTraces",
-                    "-H:+InstallExitHandlers",
-                    "--initialize-at-build-time=kotlin",
-                    "--initialize-at-build-time=kotlinx.coroutines",
-                    "--initialize-at-run-time=kotlin.uuid.SecureRandomHolder",
-                    "--initialize-at-run-time=org.sqlite",
-                    "-Dorg.sqlite.lib.exportPath=${layout.buildDirectory.get()}/native/nativeCompile",
-                    "--exclude-config",
-                    ".*sqlite-jdbc.*\\.jar",
-                    ".*native-image.*",
-                    "-H:ResourceConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/resource-config.json",
-                    "-H:ReflectionConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/reflect-config.json",
-                    "-H:JNIConfigurationFiles=${layout.buildDirectory.get()}/resources/main/META-INF/native-image/jni-config.json",
-                ),
-            )
-        }
+    manifest {
+        attributes["Main-Class"] = "io.github.kamiazya.scopes.apps.cli.MainKt"
+        attributes["Multi-Release"] = "true"
+        attributes["Implementation-Title"] = "Scopes"
+        attributes["Implementation-Version"] = project.version.toString()
     }
 
-    toolchainDetection.set(false)
+    // Merge service files properly (important for DI frameworks like Koin)
+    mergeServiceFiles()
+
+    // Minimize JAR size by excluding unnecessary files
+    exclude("META-INF/*.SF")
+    exclude("META-INF/*.DSA")
+    exclude("META-INF/*.RSA")
+    exclude("META-INF/LICENSE*")
+    exclude("META-INF/NOTICE*")
 }
 
-// Make nativeCompile depend on checkGraalVM
-tasks.named("nativeCompile") {
-    dependsOn(":checkGraalVM")
+// Make build depend on shadowJar for easy testing
+tasks.named("build") {
+    dependsOn(tasks.shadowJar)
 }
-
-// E2E Test Tasks for Native Binary
-
-// Common function to get native binary path
-fun getNativeBinaryPath(): File {
-    val os =
-        org.gradle.internal.os.OperatingSystem
-            .current()
-    val binaryName = if (os.isWindows) "scopes.exe" else "scopes"
-    return layout.buildDirectory
-        .file("native/nativeCompile/$binaryName")
-        .get()
-        .asFile
-}
-
-// Smoke test - quick verification that binary can run
-// NOTE: Does not depend on nativeCompile to avoid rebuilding with different flags
-// tasks.register<Exec>("nativeSmokeTest") {
-//     group = "verification"
-//     description = "Run basic smoke test on native binary"
-
-//     val binaryPath = getNativeBinaryPath()
-
-//     doFirst {
-//         if (!binaryPath.exists()) {
-//             throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
-//         }
-//         val os =
-//             org.gradle.internal.os.OperatingSystem
-//                 .current()
-//         if (!os.isWindows && !binaryPath.canExecute()) {
-//             binaryPath.setExecutable(true)
-//         }
-//         logger.lifecycle("Running smoke test on: ${binaryPath.absolutePath}")
-//     }
-
-//     // Test --help flag
-//     commandLine(binaryPath.absolutePath, "--help")
-
-//     doLast {
-//         logger.lifecycle("✅ Smoke test passed: binary is executable")
-//     }
-// }
-
-// Full E2E test suite
-tasks.register("nativeE2eTest") {
-    group = "verification"
-    description = "Run full E2E test suite on native binary"
-    // dependsOn("nativeSmokeTest")
-
-    doLast {
-        val binaryPath = getNativeBinaryPath()
-
-        if (!binaryPath.exists()) {
-            throw GradleException("Native binary not found at: ${binaryPath.absolutePath}")
-        }
-
-        logger.lifecycle("Running E2E tests on native binary...")
-
-        // Test basic commands
-        val testCases =
-            listOf(
-                listOf("--help"),
-                listOf("scope", "--help"),
-                listOf("context", "--help"),
-                listOf("workspace", "--help"),
-            )
-
-        testCases.forEach { args ->
-            try {
-                project.exec {
-                    commandLine(listOf(binaryPath.absolutePath) + args)
-                    standardOutput = System.out
-                    errorOutput = System.err
-                }
-                logger.lifecycle("✅ Test passed: ${args.joinToString(" ")}")
-            } catch (e: Exception) {
-                throw GradleException("❌ Test failed for: ${args.joinToString(" ")}\n${e.message}")
-            }
-        }
-
-        logger.lifecycle("✅ All E2E tests passed successfully")
-    }
-}
-
-// Add smoke test to check task
-// tasks.named("check") {
-//     dependsOn("nativeSmokeTest")
-// }

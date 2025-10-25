@@ -5,7 +5,7 @@ This directory contains technical setup guides and configuration documentation f
 ## Available Guides
 
 ### Development Environment Setup
-- **[GraalVM Setup](./graalvm-setup.md)** - Complete guide for setting up GraalVM for native compilation
+- **[Java Setup](./java-setup.md)** - Setting up Java runtime for JAR distribution
 - **[Shell Completion](./shell-completion.md)** - Setting up command-line completion for various shells
 
 ### Build and Packaging
@@ -15,8 +15,8 @@ This directory contains technical setup guides and configuration documentation f
 
 These guides are **technical references** for specific setup scenarios:
 
-- **GraalVM Setup**: Only needed if you plan to compile native binaries locally
-- **Shell Completion**: Optional enhancement for better CLI experience  
+- **Java Setup**: Required for running Scopes (Java 21+ needed)
+- **Shell Completion**: Optional enhancement for better CLI experience
 - **Packaging Conventions**: For contributors working on build/packaging improvements
 
 ## For Regular Development

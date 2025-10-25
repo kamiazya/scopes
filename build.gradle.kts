@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.graalvm.native) apply false
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint)
@@ -75,42 +74,6 @@ subprojects {
             allRules = false
             parallel = true
             baseline = file("detekt-baseline.xml")
-        }
-    }
-}
-
-// Custom task to check if GraalVM is available
-tasks.register("checkGraalVM") {
-    doLast {
-        try {
-            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-            val nativeImageExecutable = if (isWindows) "native-image.cmd" else "native-image"
-            val javaHome = System.getProperty("java.home")
-            val nativeImagePath = File("$javaHome/bin/$nativeImageExecutable")
-
-            if (!nativeImagePath.exists()) {
-                // Try alternative paths for different GraalVM installations
-                val altPaths =
-                    listOf(
-                        "$javaHome/../bin/$nativeImageExecutable",
-                        "$javaHome/bin/$nativeImageExecutable",
-                    )
-
-                val foundPath = altPaths.find { File(it).exists() }
-                if (foundPath == null) {
-                    println("⚠️ GraalVM native-image not found in expected locations")
-                    println("This is expected in CI environments where GraalVM is set up dynamically")
-                    println("Skipping native-image availability check")
-                    return@doLast
-                } else {
-                    println("✅ GraalVM native-image found at: $foundPath")
-                }
-            } else {
-                println("✅ GraalVM native-image found at: $nativeImagePath")
-            }
-        } catch (e: Exception) {
-            println("⚠️ Cannot verify GraalVM native-image availability: ${e.message}")
-            println("This may be normal in CI environments - continuing with build")
         }
     }
 }

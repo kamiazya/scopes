@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Scopes CLI wrapper script for Unix-like systems
+# This script provides a convenient way to run the Scopes JAR file
+
+set -euo pipefail
+
+# Determine the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Determine the JAR file location
+# Try multiple locations to support different installation methods
+JAR_LOCATIONS=(
+    "${SCRIPT_DIR}/scopes.jar"                    # Same directory as script
+    "${SCRIPT_DIR}/../lib/scopes.jar"             # Standard Unix layout
+    "${SCRIPT_DIR}/../share/scopes/scopes.jar"    # Alternative Unix layout
+)
+
+JAR_FILE=""
+for location in "${JAR_LOCATIONS[@]}"; do
+    if [ -f "$location" ]; then
+        JAR_FILE="$location"
+        break
+    fi
+done
+
+if [ -z "$JAR_FILE" ]; then
+    echo "Error: scopes.jar not found in any of the expected locations:" >&2
+    for location in "${JAR_LOCATIONS[@]}"; do
+        echo "  - $location" >&2
+    done
+    echo "" >&2
+    echo "Please ensure Scopes is installed correctly." >&2
+    exit 1
+fi
+
+# Check if Java is available
+if ! command -v java &> /dev/null; then
+    echo "Error: Java is not installed or not in PATH" >&2
+    echo "" >&2
+    echo "Scopes requires Java 21 or later to run." >&2
+    echo "" >&2
+    echo "Installation instructions:" >&2
+    echo "  Linux (Debian/Ubuntu): sudo apt install openjdk-21-jre" >&2
+    echo "  Linux (Fedora/RHEL):   sudo dnf install java-21-openjdk" >&2
+    echo "  macOS:                 brew install openjdk@21" >&2
+    echo "  Or download from:      https://adoptium.net/" >&2
+    exit 1
+fi
+
+# Check Java version (robust extraction for EA builds and vendor variations)
+JAVA_VERSION=$(java -version 2>&1 | sed -E -n 's/.*version "([0-9]+).*/\1/p' | head -n 1)
+
+# Handle case where version extraction fails
+if [ -z "$JAVA_VERSION" ] || ! [[ "$JAVA_VERSION" =~ ^[0-9]+$ ]]; then
+    echo "Warning: Could not determine Java version, proceeding anyway..." >&2
+else
+    if [ "$JAVA_VERSION" -lt 21 ]; then
+        echo "Error: Java $JAVA_VERSION is installed, but Scopes requires Java 21 or later" >&2
+        echo "" >&2
+        echo "Please upgrade your Java installation:" >&2
+        echo "  Current version: Java $JAVA_VERSION" >&2
+        echo "  Required version: Java 21+" >&2
+        exit 1
+    fi
+fi
+
+# Load Java options from environment or config file
+# Priority: SCOPES_JAVA_OPTS > JAVA_OPTS > config file
+JAVA_OPTIONS=""
+
+# Check for config file in standard locations
+CONFIG_LOCATIONS=(
+    "${XDG_CONFIG_HOME:-$HOME/.config}/scopes/scopes.conf"
+    "$HOME/.scopes/scopes.conf"
+)
+
+for config_file in "${CONFIG_LOCATIONS[@]}"; do
+    if [ -f "$config_file" ]; then
+        # Source the config file safely (only JAVA_OPTS)
+        while IFS='=' read -r key value; do
+            if [[ "$key" == "JAVA_OPTS" ]]; then
+                # Remove quotes if present
+                value="${value%\"}"
+                value="${value#\"}"
+                JAVA_OPTIONS="$value"
+                break
+            fi
+        done < "$config_file"
+        break
+    fi
+done
+
+# Override with environment variables
+if [ -n "${JAVA_OPTS:-}" ]; then
+    JAVA_OPTIONS="$JAVA_OPTS"
+fi
+
+if [ -n "${SCOPES_JAVA_OPTS:-}" ]; then
+    JAVA_OPTIONS="$SCOPES_JAVA_OPTS"
+fi
+
+# Execute the JAR file with all arguments passed through
+if [ -n "$JAVA_OPTIONS" ]; then
+    # shellcheck disable=SC2086
+    exec java $JAVA_OPTIONS -jar "$JAR_FILE" "$@"
+else
+    exec java -jar "$JAR_FILE" "$@"
+fi

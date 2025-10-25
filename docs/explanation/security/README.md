@@ -32,8 +32,8 @@ Scopes implements a comprehensive security framework:
 
 If you're installing Scopes:
 
-1. **[Security Verification Guide](./security-verification.md)** - How to verify downloaded binaries
-2. **One-liner installation** - Includes automatic verification (recommended)
+1. **[Security Verification Guide](./security-verification.md)** - How to verify downloaded JAR distributions
+2. **Installer scripts** - Include automatic SHA256 and SLSA verification (recommended)
 
 ## For Developers
 

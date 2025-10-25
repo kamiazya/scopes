@@ -1,8 +1,12 @@
 # JNI Configuration Reference
 
+> **⚠️ DEPRECATED**: This document is no longer applicable. Scopes has migrated from GraalVM Native Image compilation to JAR distribution. JNI configuration is no longer required as the SQLite JDBC driver works directly with JVM bytecode without special configuration.
+>
+> This document is preserved for historical reference only.
+
 ## Overview
 
-The `jni-config.json` file in `/apps/scopes/src/main/resources/META-INF/native-image/` is required for GraalVM native image compilation when using SQLite JDBC driver.
+The `jni-config.json` file in `/apps/scopes/src/main/resources/META-INF/native-image/` was required for GraalVM native image compilation when using SQLite JDBC driver.
 
 ## Why It's Necessary
 

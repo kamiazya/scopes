@@ -1,52 +1,72 @@
 # Security Verification Guide
 
-This guide explains how to verify the authenticity and integrity of Scopes releases using SLSA (Supply-chain Levels for Software Artifacts) provenance.
+This guide explains how to verify the authenticity and integrity of Scopes JAR distribution releases using SLSA (Supply-chain Levels for Software Artifacts) provenance and SHA256 checksums.
 
 ## Overview
 
-All Scopes releases include SLSA Level 3 provenance attestations that provide:
+All Scopes releases include comprehensive security verification mechanisms:
 
-- **Build integrity**: Proof that binaries were built from the expected source code
-- **Source authenticity**: Verification of the source repository and commit  
-- **Build environment**: Details about the build environment and process
+- **SHA256 Checksums**: Quick integrity verification for JAR files
+- **SLSA Level 3 Provenance**: Cryptographic proof of build authenticity
+- **Source Authenticity**: Verification of the source repository and commit
+- **Build Environment**: Details about the build environment and process
 - **Non-repudiation**: Cryptographic signatures that cannot be forged
+- **SBOM Files**: Complete dependency inventory for vulnerability tracking
 
 ## Quick Verification
 
-### Using SLSA Verifier (Recommended)
+### Automated Installation with Verification (Recommended)
+
+The installer scripts automatically verify SHA256 checksums and optionally verify SLSA provenance if `slsa-verifier` is available.
+
+#### Linux/macOS/WSL
+```bash
+# Download JAR bundle
+wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-vX.X.X-jar-bundle.tar.gz
+tar -xzf scopes-vX.X.X-jar-bundle.tar.gz
+cd scopes-vX.X.X-jar-bundle
+
+# Run installer with automatic verification
+./install.sh
+```
+
+#### Windows
+```powershell
+# Download JAR bundle
+Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/latest/download/scopes-vX.X.X-jar-bundle.zip" -OutFile "scopes-bundle.zip"
+Expand-Archive scopes-bundle.zip -DestinationPath .
+cd scopes-vX.X.X-jar-bundle
+
+# Run installer with automatic verification
+.\install.ps1
+```
+
+The installer will:
+1. ✅ Verify SHA256 checksum of scopes.jar
+2. ✅ Optionally verify SLSA provenance (if slsa-verifier is installed)
+3. ✅ Install verified JAR and wrapper scripts
+4. ✅ Configure PATH automatically (with user consent)
+
+### Manual SLSA Verification
 
 1. **Install slsa-verifier:**
    ```bash
    go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest
    ```
 
-2. **Download the bundle and provenance:**
-   - Download your platform's bundle package:
-     - Linux x64: `scopes-v1.0.0-linux-x64-bundle.tar.gz`
-     - Linux ARM64: `scopes-v1.0.0-linux-arm64-bundle.tar.gz`
-     - macOS x64: `scopes-v1.0.0-darwin-x64-bundle.tar.gz`
-     - macOS ARM64 (Apple Silicon): `scopes-v1.0.0-darwin-arm64-bundle.tar.gz`
-     - Windows x64: `scopes-v1.0.0-win32-x64-bundle.zip`
-     - Windows ARM64: `scopes-v1.0.0-win32-arm64-bundle.zip`
-   - Or download the unified package: `scopes-v1.0.0-dist.tar.gz`
-   - Download the provenance file (`multiple.intoto.jsonl`)
-
-3. **Extract and verify the binary:**
+2. **Download and extract the JAR bundle:**
    ```bash
-   # Extract the bundle (example for Linux x64)
-   tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-   cd scopes-v1.0.0-linux-x64-bundle
+   # Download bundle
+   wget https://github.com/kamiazya/scopes/releases/download/vX.X.X/scopes-vX.X.X-jar-bundle.tar.gz
+   tar -xzf scopes-vX.X.X-jar-bundle.tar.gz
+   cd scopes-vX.X.X-jar-bundle
+   ```
 
-   # Verify the binary using SLSA verifier
-   slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
-     --provenance-path ../multiple.intoto.jsonl \
-     --source-uri github.com/kamiazya/scopes
-
-   # For macOS ARM64 (Apple Silicon)
-   tar -xzf scopes-v1.0.0-darwin-arm64-bundle.tar.gz
-   cd scopes-v1.0.0-darwin-arm64-bundle
-   slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
-     --provenance-path ../multiple.intoto.jsonl \
+3. **Verify the JAR file:**
+   ```bash
+   # Verify SLSA provenance
+   slsa-verifier verify-artifact scopes.jar \
+     --provenance-path verification/multiple.intoto.jsonl \
      --source-uri github.com/kamiazya/scopes
    ```
 
@@ -59,125 +79,63 @@ All Scopes releases include SLSA Level 3 provenance attestations that provide:
    PASSED: Verified SLSA provenance
    ```
 
-### Platform Bundle Installation (Recommended)
+### Manual SHA256 Verification
 
-The most secure and efficient way to install Scopes is using platform-specific bundle packages that include automatic verification:
-
-#### Linux/macOS/WSL
-```bash
-# Download platform-specific bundle (example for Linux x64)
-wget https://github.com/kamiazya/scopes/releases/latest/download/scopes-v1.0.0-linux-x64-bundle.tar.gz
-tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-cd scopes-v1.0.0-linux-x64-bundle
-
-# Run installation with automatic verification
-./install.sh
-```
-
-#### Windows
-```powershell
-# Download Windows bundle
-Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/latest/download/scopes-v1.0.0-win32-x64-bundle.zip" -OutFile "scopes-bundle.zip"
-Expand-Archive scopes-bundle.zip -DestinationPath .
-cd scopes-v1.0.0-win32-x64-bundle
-
-# Run installation with automatic verification
-.\install.ps1
-```
-
-#### Available Platform Bundles
-- Linux x64: `scopes-vX.X.X-linux-x64-bundle.tar.gz`
-- Linux ARM64: `scopes-vX.X.X-linux-arm64-bundle.tar.gz`
-- macOS x64: `scopes-vX.X.X-darwin-x64-bundle.tar.gz`
-- macOS ARM64: `scopes-vX.X.X-darwin-arm64-bundle.tar.gz`
-- Windows x64: `scopes-vX.X.X-win32-x64-bundle.zip`
-- Windows ARM64: `scopes-vX.X.X-win32-arm64-bundle.zip`
-
-### Manual Bundle Verification
-
-For manual verification of downloaded bundle packages:
+For manual verification of the JAR file:
 
 #### Linux/macOS/WSL (Bash)
 ```bash
-# Extract and verify platform bundle
-tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-cd scopes-v1.0.0-linux-x64-bundle
+# Extract JAR bundle
+tar -xzf scopes-vX.X.X-jar-bundle.tar.gz
+cd scopes-vX.X.X-jar-bundle
 
-# Verify binary hash using included verification files
-sha256sum -c verification/binary-hash-linux-x64.txt
+# Verify JAR file hash using included verification file
+sha256sum -c verification/scopes.jar.sha256
 
-# Verify SLSA provenance (requires slsa-verifier)
-slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
-  --provenance-path verification/multiple.intoto.jsonl \
-  --source-uri github.com/kamiazya/scopes
+# Alternative: manually compare
+sha256sum scopes.jar
+cat verification/scopes.jar.sha256
+```
 
-# For ARM64 systems (e.g., Apple Silicon Mac)
-tar -xzf scopes-v1.0.0-darwin-arm64-bundle.tar.gz
-cd scopes-v1.0.0-darwin-arm64-bundle
-sha256sum -c verification/binary-hash-darwin-arm64.txt
-slsa-verifier verify-artifact scopes-v1.0.0-darwin-arm64 \
-  --provenance-path verification/multiple.intoto.jsonl \
-  --source-uri github.com/kamiazya/scopes
+#### macOS (using shasum)
+```bash
+# Extract JAR bundle
+tar -xzf scopes-vX.X.X-jar-bundle.tar.gz
+cd scopes-vX.X.X-jar-bundle
+
+# Verify JAR file hash
+shasum -a 256 -c verification/scopes.jar.sha256
 ```
 
 #### Windows (PowerShell)
 ```powershell
-# Extract and verify Windows bundle
-Expand-Archive scopes-v1.0.0-win32-x64-bundle.zip -DestinationPath .
-cd scopes-v1.0.0-win32-x64-bundle
+# Extract JAR bundle
+Expand-Archive scopes-vX.X.X-jar-bundle.zip -DestinationPath .
+cd scopes-vX.X.X-jar-bundle
 
-# Verify binary hash using included verification files
-certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
-Get-Content verification\binary-hash-win32-x64.txt
+# Calculate and compare hash
+$actualHash = (Get-FileHash scopes.jar -Algorithm SHA256).Hash
+$expectedHash = (Get-Content verification\scopes.jar.sha256).Split(' ')[0]
 
-# Verify SLSA provenance (requires slsa-verifier)
-# Install slsa-verifier first if not available
-slsa-verifier verify-artifact scopes-v1.0.0-win32-x64.exe `
-  --provenance-path verification\multiple.intoto.jsonl `
-  --source-uri github.com/kamiazya/scopes
+if ($actualHash -eq $expectedHash) {
+    Write-Host "✓ SHA256 verification passed" -ForegroundColor Green
+} else {
+    Write-Host "✗ SHA256 verification failed" -ForegroundColor Red
+    Write-Host "Expected: $expectedHash"
+    Write-Host "Actual:   $actualHash"
+}
 ```
-
-
-### Manual Hash Verification
-
-If you prefer manual verification:
-
-1. **Extract the bundle** and find the checksums file (`binary-hash-<platform>-<arch>.txt`) inside
-2. **Calculate the hash** of the binary from the bundle:
-   ```bash
-   # Extract bundle first (example for Linux x64)
-   tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-   cd scopes-v1.0.0-linux-x64-bundle
-
-   # Linux x64
-   sha256sum scopes-v1.0.0-linux-x64
-
-   # Linux ARM64
-   sha256sum scopes-v1.0.0-linux-arm64
-
-   # macOS x64
-   shasum -a 256 scopes-v1.0.0-darwin-x64
-
-   # macOS ARM64 (Apple Silicon)
-   shasum -a 256 scopes-v1.0.0-darwin-arm64
-
-   # Windows x64
-   certutil -hashfile scopes-v1.0.0-win32-x64.exe SHA256
-
-   # Windows ARM64
-   certutil -hashfile scopes-v1.0.0-win32-arm64.exe SHA256
-   ```
-3. **Compare** the calculated hash with the value in the included checksum file
 
 ## What SLSA Verification Confirms
 
 ### ✅ Verified Information
-- **Source Repository**: Confirms the binary was built from `github.com/kamiazya/scopes`
+- **Source Repository**: Confirms the JAR was built from `github.com/kamiazya/scopes`
 - **Commit Hash**: Shows the exact commit used for the build
 - **Build Environment**: Verifies GitHub Actions runner details
-- **Build Process**: Confirms the build followed the expected workflow
+- **Build Process**: Confirms the build followed the expected Gradle workflow
 - **Timestamp**: When the build occurred
 - **Builder Identity**: Confirms the build was performed by the official SLSA builder
+- **Artifact Integrity**: Verifies the JAR file hasn't been tampered with
 
 ### ⚠️ What It Doesn't Verify
 - **Source Code Content**: SLSA verifies the build process, not the source code itself
@@ -204,22 +162,24 @@ Key fields to examine:
 
 ### Verify Specific Commit
 
-To verify that a binary was built from a specific commit:
+To verify that the JAR was built from a specific commit:
 
 ```bash
-slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
-  --provenance-path multiple.intoto.jsonl \
+slsa-verifier verify-artifact scopes.jar \
+  --provenance-path verification/multiple.intoto.jsonl \
   --source-uri github.com/kamiazya/scopes \
-  --source-tag v1.0.0
+  --source-tag vX.X.X
 ```
 
 ## Security Best Practices
 
 ### For Users
-1. **Always verify** binaries before installation
-2. **Check the source URI** matches the official repository
-3. **Verify the builder** is the official SLSA GitHub generator
-4. **Store provenance files** for audit trails
+1. **Always verify** JAR files before installation using SHA256 checksums
+2. **Use installer scripts** for automatic verification when available
+3. **Optionally verify SLSA provenance** for cryptographic proof of authenticity
+4. **Check the source URI** matches the official repository (`github.com/kamiazya/scopes`)
+5. **Verify the builder** is the official SLSA GitHub generator
+6. **Store provenance files** for audit trails
 
 ### For Developers
 1. **Never bypass** the SLSA build process
@@ -230,11 +190,12 @@ slsa-verifier verify-artifact scopes-v1.0.0-linux-x64 \
 ## Troubleshooting
 
 ### Verification Fails
-If verification fails, **DO NOT use the binary**. Possible causes:
-- Binary was tampered with
+If verification fails, **DO NOT use the JAR file**. Possible causes:
+- JAR file was tampered with or corrupted
 - Provenance file is corrupted
-- Binary and provenance don't match
-- Network issues during verification
+- JAR and provenance don't match
+- Network issues during download
+- Incomplete download
 
 ### Missing Provenance
 All official releases should include provenance. If missing:
@@ -250,29 +211,32 @@ If you can't install `slsa-verifier`:
 
 ## Software Bill of Materials (SBOM)
 
-This release includes comprehensive SBOM files for complete dependency transparency:
+JAR distribution bundles include comprehensive SBOM files for complete dependency transparency:
 
 ### SBOM Files
-- **CycloneDX Format**: `sbom-{platform}-{arch}.json` and `sbom-{platform}-{arch}.xml`
-- **Location**: Included in each platform-specific bundle and unified distribution package
+- **Source SBOM**: `sbom/scopes-sbom.json` and `sbom/scopes-sbom.xml` (Gradle dependencies)
+- **Binary SBOM**: `sbom/scopes-binary-sbom.json` (Compiled JAR analysis with Syft)
+- **Format**: CycloneDX - industry-standard SBOM format
 - **Purpose**: Complete inventory of all dependencies with vulnerability tracking
 - **Integration**: Compatible with OWASP Dependency-Track, Grype, and other security tools
 
 ### SBOM Verification
 ```bash
-# Extract bundle and verify SBOM integrity
-tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-cd scopes-v1.0.0-linux-x64-bundle
+# Extract JAR bundle
+tar -xzf scopes-vX.X.X-jar-bundle.tar.gz
+cd scopes-vX.X.X-jar-bundle
 
-# Verify SBOM integrity
-sha256sum sbom-linux-x64.json
-grep "sbom-linux-x64.json" binary-hash-linux-x64.txt
+# Validate source SBOM format
+cyclonedx validate sbom/scopes-sbom.json
 
-# Validate SBOM format
-cyclonedx validate sbom-linux-x64.json
+# Validate binary SBOM format
+cyclonedx validate sbom/scopes-binary-sbom.json
 
-# Scan for vulnerabilities
-grype sbom:sbom-linux-x64.json
+# Scan for vulnerabilities in source dependencies
+grype sbom:sbom/scopes-sbom.json
+
+# Scan for vulnerabilities in compiled JAR
+grype sbom:sbom/scopes-binary-sbom.json
 ```
 
 For complete SBOM usage instructions, see the [SBOM Verification Guide](sbom-verification.md).

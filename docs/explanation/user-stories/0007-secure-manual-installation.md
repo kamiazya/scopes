@@ -1,9 +1,9 @@
-# US-007: Secure Platform Bundle Installation and Verification
+# US-007: Secure JAR Bundle Installation and Verification
 
 ## User Story
 
 - **As a** security-conscious developer who needs to install Scopes
-- **I want** to use platform-specific bundle packages with automatic cryptographic verification
+- **I want** to use JAR bundle packages with automatic cryptographic verification
 - **So that** I can quickly and safely install Scopes with clear verification steps while ensuring supply chain security
 
 ## Persona Context
@@ -16,10 +16,10 @@
 
 A developer wants to install Scopes but requires strong security guarantees due to organizational policies or personal security practices. They expect:
 
-- **Modern installation experience**: Platform-specific bundles with included verification, similar to Docker Desktop or VS Code bundle downloads
+- **Modern installation experience**: Universal JAR bundle with included verification and platform-specific wrapper scripts
 - **Included verification**: Verification tools and scripts included in the bundle package
 - **Transparency**: Clear indication of what security checks are being performed
-- **Cross-platform consistency**: Same level of security across Linux, macOS, and Windows
+- **Cross-platform consistency**: Same JAR works across Linux, macOS, and Windows (requires Java 21+)
 - **Supply chain security**: SLSA Level 3 provenance verification integrated seamlessly
 
 Current pain points with manual installation approaches:
@@ -31,24 +31,24 @@ Current pain points with manual installation approaches:
 ## Acceptance Criteria
 
 ```gherkin
-Feature: Secure platform bundle installation
+Feature: Secure JAR bundle installation
 
-Scenario: Platform bundle installation with automatic verification
-    Given I have downloaded the platform-specific bundle for my system
+Scenario: JAR bundle installation with automatic verification
+    Given I have downloaded the universal JAR bundle for my system
     When I extract the bundle package
-    And I run the included './install.sh' script
-    Then the binary hash is automatically verified using included verification files
+    And I run the included './install.sh' script (Linux/macOS) or '.\install.ps1' (Windows)
+    Then the JAR file hash is automatically verified using included verification files
     And the SLSA provenance is automatically verified
-    And Scopes is installed to the appropriate system location
+    And Scopes wrapper scripts are installed to the appropriate system location
     And I can immediately use the 'scopes' command
     And I see confirmation that all security checks passed
 
-Scenario: Windows bundle installation
-    Given I have downloaded the Windows bundle package
+Scenario: Windows JAR bundle installation
+    Given I have downloaded the JAR bundle package
     When I extract the bundle package
     And I run the included '.\install.ps1' script
-    Then the binary is verified automatically using included verification files
-    And it's installed to Program Files with appropriate permissions
+    Then the JAR file is verified automatically using included verification files
+    And wrapper scripts are installed with appropriate permissions
     And the PATH is updated to include Scopes
     And I see confirmation of successful security verification
 
@@ -61,12 +61,12 @@ Scenario: Installation with environment variables
     And the installation respects my preferences
 
 Scenario: Verification failure handling
-    Given the bundle binary fails hash verification
+    Given the bundle JAR file fails hash verification
     When the installation script runs verification
     Then the installation is immediately aborted
     And I see a clear error message about the verification failure
-    And no binary is installed on my system
-    And I am warned not to use the compromised binary
+    And no JAR file is installed on my system
+    And I am warned not to use the compromised JAR
 
 Scenario: Bundle extraction issues
     Given I have a corrupted bundle package
@@ -94,7 +94,7 @@ Scenario: Offline verification support
     When I run the verification script directly from the bundle
     Then I can verify files without additional downloads
     And I get the same security guarantees
-    And I can then install the verified binary
+    And I can then install the verified JAR file
 
 Scenario: Enterprise environment
     Given I'm in a restricted corporate environment
@@ -107,39 +107,39 @@ Scenario: Bundle inspection before installation
     Given I want to inspect the bundle before installing
     When I extract the bundle package
     Then I can review the installation script and verification files
-    And I can manually verify the binary using included tools
+    And I can manually verify the JAR file using included tools
     And I can run the installation after inspection
 ```
 
 ## User Journey
 
 1. **Discovery**: User learns about Scopes and decides to install securely
-2. **Bundle Download**: User downloads platform-specific bundle package
+2. **Bundle Download**: User downloads universal JAR bundle package
 3. **Bundle Extraction**: User extracts bundle to inspect contents
 4. **Script Execution**: User runs included installation script
-5. **Security Verification**: Hash and SLSA provenance verified automatically using included files
-6. **Installation**: Binary installed to appropriate system location
+5. **Security Verification**: JAR hash and SLSA provenance verified automatically using included files
+6. **Installation**: JAR and wrapper scripts installed to appropriate system location
 7. **Verification**: Installation verified and PATH updated if needed
-8. **Ready to Use**: User can immediately start using Scopes
+8. **Ready to Use**: User can immediately start using Scopes (requires Java 21+)
 
 ```mermaid
 ---
 title: Secure Installation User Journey
 ---
 journey
-        title Secure Platform Bundle Installation and Verification
+        title Secure JAR Bundle Installation and Verification
         section Discovery
           Need secure installation  : 2: User
           Find bundle download      : 3: User
         section Bundle Preparation
-          Download platform bundle   : 4: User
+          Download JAR bundle        : 4: User
           Extract bundle package     : 4: User
           Inspect bundle contents    : 5: User
         section Verification & Installation
           Run installation script    : 4: User, System
-          Auto-verify hash          : 5: System
+          Auto-verify JAR hash      : 5: System
           Auto-verify SLSA          : 5: System
-          Install to system location : 5: System
+          Install JAR and wrappers  : 5: System
           Update PATH if needed      : 4: System
         section Success
           See security confirmation  : 5: User, System
@@ -159,8 +159,9 @@ journey
 
 ### Requires
 - GitHub Releases with SLSA provenance
-- Cross-platform binary distribution
+- Universal JAR distribution (platform-independent)
 - Hash files for each release
+- Java 21 or later runtime
 - Network connectivity for downloads
 - Modern shell environment (bash/PowerShell/cmd)
 
@@ -173,7 +174,7 @@ journey
 ## Security Features
 
 ### Cryptographic Verification
-- **SHA256 Hash Verification**: Every binary verified against published hashes
+- **SHA256 Hash Verification**: JAR file verified against published hashes
 - **SLSA Level 3 Provenance**: Supply chain integrity verified cryptographically
 - **HTTPS-Only Downloads**: All network communication over encrypted channels
 - **Signature Verification**: Integration with GitHub's signing infrastructure
@@ -186,27 +187,28 @@ journey
 
 ### Threat Protection
 - **Man-in-the-Middle Protection**: HTTPS and signature verification
-- **Binary Tampering Detection**: Hash verification catches any modifications
+- **JAR Tampering Detection**: Hash verification catches any modifications
 - **Compromised Repository Protection**: SLSA provenance detects unauthorized changes
 - **Supply Chain Attacks**: Multi-layer verification catches sophisticated attacks
 
 ## Implementation Notes
 
 ### Platform Support
-- **Linux**: bash script included in platform bundle
+- **Linux**: bash script included in JAR bundle
 - **macOS**: Same bash script with macOS-specific optimizations
-- **Windows**: PowerShell script included in platform bundle
+- **Windows**: PowerShell script included in JAR bundle
+- **Requirement**: Java 21 or later must be installed
 
 ### Installation Methods
 ```bash
-# Linux/macOS platform bundle
-tar -xzf scopes-v1.0.0-linux-x64-bundle.tar.gz
-cd scopes-v1.0.0-linux-x64-bundle
+# Linux/macOS JAR bundle
+tar -xzf scopes-v1.0.0-jar-bundle.tar.gz
+cd scopes-v1.0.0-jar-bundle
 ./install.sh
 
-# Windows platform bundle
-Expand-Archive scopes-v1.0.0-win32-x64-bundle.zip -DestinationPath .
-cd scopes-v1.0.0-win32-x64-bundle
+# Windows JAR bundle
+Expand-Archive scopes-v1.0.0-jar-bundle.zip -DestinationPath .
+cd scopes-v1.0.0-jar-bundle
 .\install.ps1
 ```
 
@@ -230,8 +232,8 @@ cd scopes-v1.0.0-win32-x64-bundle
 - Scripts can be reviewed before running installation
 - All operations are transparent and logged
 
-### Verification Integrity  
-- Hash verification prevents binary tampering
+### Verification Integrity
+- Hash verification prevents JAR file tampering
 - SLSA provenance prevents supply chain attacks
 - Multiple verification layers provide defense in depth
 - Verification failures immediately abort installation

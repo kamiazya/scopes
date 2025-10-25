@@ -21,8 +21,6 @@ slf4j = "2.0.17"
 logback = "1.5.18"
 commons-lang3 = "3.18.0"
 
-graalvm-buildtools = "0.11.1"
-graalvm-sdk = "25.0.0"
 ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
 gradle-develocity = "4.2"
@@ -36,6 +34,7 @@ kotlinx-io = "0.8.0"
 cyclonedx-bom = "2.4.0"
 spdx-sbom = "0.9.0"
 ktlint-tool = "1.5.0"
+shadow = "8.3.6"
 
 # Security patches
 netty-codec-http2 = "4.2.6.Final"
@@ -51,7 +50,6 @@ kulid = { module = "com.github.guepardoapps:kulid", version.ref = "kulid" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-test = { module = "io.insert-koin:koin-test" }
-graalvm-sdk = { module = "org.graalvm.sdk:graal-sdk", version.ref = "graalvm-sdk" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -86,7 +84,6 @@ netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "nett
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-buildtools" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 gradle-develocity = { id = "com.gradle.develocity", version.ref = "gradle-develocity" }
@@ -94,6 +91,7 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
 spdx-sbom = { id = "org.spdx.sbom", version.ref = "spdx-sbom" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 
 [bundles]
 kotest = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-assertions-arrow", "kotest-property"]
