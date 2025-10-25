@@ -1,5 +1,74 @@
 # scopes
 
+## 0.0.5
+
+### Patch Changes
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: resolve GitHub Actions release failure by adding redundant trigger mechanisms
+
+  - Add push trigger to release.yml for automatic releases on tag push
+  - Update tag resolution logic to handle both workflow_dispatch and push triggers
+  - Remove failing manual release trigger job that was causing HTTP 422 errors
+  - Ensures reliable releases by providing multiple trigger mechanisms
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: Resolved a release workflow failure by correcting heredoc syntax in `release.yml` to prevent improper variable expansion.
+
+- [#309](https://github.com/kamiazya/scopes/pull/309) [`5cff8d5`](https://github.com/kamiazya/scopes/commit/5cff8d5101f3a67c4cd8cf9f2305feb98a60a62c) Thanks [@kamiazya](https://github.com/kamiazya)! - Migrate from GraalVM Native Image to JAR distribution
+
+  **Breaking Change**: Distribution format changed from platform-specific native binaries to universal JAR bundle.
+
+  ### Migration Details
+
+  - **Distribution Format**: Changed from 6 platform-specific native binaries (~260MB total) to single universal JAR bundle (~20MB)
+  - **Runtime Requirement**: Now requires Java 21+ to be installed on the target system
+  - **Installation Method**: JAR bundle includes wrapper scripts (bash, batch, PowerShell) for platform-agnostic execution
+  - **SBOM Structure**: Dual SBOM approach - source-level (`sbom/scopes-sbom.json`) and binary-level (`sbom/scopes-binary-sbom.json`)
+
+  ### Technical Changes
+
+  - Removed GraalVM Native Image build configuration and related plugins
+  - Implemented Shadow JAR plugin for creating fat JARs with all dependencies
+  - Updated CI/CD workflows to build universal JAR instead of platform-specific binaries
+  - Removed platform-specific build jobs (linux-x64, darwin-x64, darwin-arm64, win32-x64, etc.)
+  - Cleaned up GraalVM-specific configuration files (`native-image.properties`, `reflect-config.json`, etc.)
+
+  ### Documentation Updates
+
+  - Renamed `install-jar.ps1` to `install.ps1` for consistency with `install.sh`
+  - Removed obsolete native binary documentation (`install/README.md`, `install/verify-README.md`, `install/offline/`)
+  - Updated all security verification guides to reflect JAR bundle structure
+  - Updated getting started guide with Java 21 requirement
+  - Created ADR-0017 documenting the migration decision and rationale
+
+  ### User Impact
+
+  **Benefits**:
+
+  - Smaller download size (~20MB vs ~260MB for all platforms)
+  - Faster startup time and lower memory footprint
+  - No platform-specific build issues
+  - Easier to debug and profile with standard JVM tools
+
+  **Migration Required**:
+
+  - Users must have Java 21+ installed (see docs/explanation/setup/java-setup.md)
+  - Update installation scripts to use new JAR bundle format
+  - Replace platform-specific binaries with universal JAR + wrapper scripts
+
+- [#292](https://github.com/kamiazya/scopes/pull/292) [`6c03179`](https://github.com/kamiazya/scopes/commit/6c031790a100440828b31c8d5f704de52bd0f120) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: replace individual assets with bundled packages for easier downloads
+
+  Replace the previous 28 individual release assets with organized bundle packages to eliminate download confusion. Users now choose from:
+
+  - 6 platform-specific bundles (~20MB each) containing binary, installer, SBOM, and verification files
+  - 1 unified offline package (~260MB) for enterprise/multi-platform deployments
+  - SLSA provenance for supply chain security
+
+  This provides 92% reduction in download size for most users while maintaining all existing security features (SLSA Level 3, SHA256 verification) and preparing for future daemon binary distribution.
+
+- [#289](https://github.com/kamiazya/scopes/pull/289) [`33f06cf`](https://github.com/kamiazya/scopes/commit/33f06cf9c54b934046435e24fc62715d83678709) Thanks [@dependabot](https://github.com/apps/dependabot)! - deps(deps): bump org.graalvm.buildtools.native from 0.11.0 to 0.11.1
+
+- [#301](https://github.com/kamiazya/scopes/pull/301) [`2da8ec3`](https://github.com/kamiazya/scopes/commit/2da8ec31f665e319ec1a1384ca131ab5f4504d89) Thanks [@joonseolee](https://github.com/joonseolee)! - feat: add pre-commit hooks for shellcheck, yamlint and shfmt
+
 ## 0.0.4
 
 ### Patch Changes
