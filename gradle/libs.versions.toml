@@ -23,7 +23,7 @@ commons-lang3 = "3.18.0"
 
 ktlint-gradle = "13.1.0"
 detekt = "1.23.8"
-gradle-develocity = "4.2"
+gradle-develocity = "4.2.2"
 spotless = "7.2.1"
 mcp-kotlin-sdk = "0.7.2"
 ktor = "2.3.12"
