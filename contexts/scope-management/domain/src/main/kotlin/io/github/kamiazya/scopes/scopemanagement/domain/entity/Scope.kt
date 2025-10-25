@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAggregate
 import io.github.kamiazya.scopes.scopemanagement.domain.error.ScopesError
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectKey
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AspectValue
@@ -13,6 +14,7 @@ import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeStatus
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeTitle
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.Entity
 
 /**
  * Core domain entity representing a unified "Scope" that can be a project, epic, or task.
@@ -20,9 +22,25 @@ import kotlinx.datetime.Instant
  * Follows functional DDD principles with immutability and pure functions.
  *
  * Note: Aspects are temporarily included here but should be managed in aspect-management context.
+ *
+ * ## Why parentId uses ScopeId? instead of Association<ScopeAggregate, ScopeId>?
+ *
+ * The `Association<T, ID>` pattern is designed for **cross-aggregate references** where T must be
+ * an AggregateRoot. However, Scope entities have **within-aggregate references** (parent-child
+ * relationships within the same ScopeAggregate boundary).
+ *
+ * Key architectural reasons:
+ * 1. **Aggregate Boundary**: Parent and child Scopes belong to the same aggregate (ScopeAggregate)
+ * 2. **Type Constraint**: Association requires T extends AggregateRoot, but Scope is an Entity
+ * 3. **Consistency**: Within-aggregate references should use direct IDs for simplicity
+ * 4. **DDD Pattern**: Associations are for references that cross aggregate boundaries, not internal structure
+ *
+ * If Scopes were separate aggregates (which would violate the hierarchy invariants we need to maintain),
+ * then Association would be appropriate. The current design correctly uses direct ID references for
+ * entities within the same aggregate boundary.
  */
 data class Scope(
-    val id: ScopeId,
+    private val _id: ScopeId,
     val title: ScopeTitle,
     val description: ScopeDescription? = null,
     val parentId: ScopeId? = null,
@@ -30,7 +48,20 @@ data class Scope(
     val createdAt: Instant,
     val updatedAt: Instant,
     val aspects: Aspects = Aspects.empty(),
-) {
+) : Entity<ScopeAggregate, ScopeId> {
+
+    /**
+     */
+    override fun getId(): ScopeId = _id
+
+    /**
+     * Convenience property to access id directly.
+     * Note: Uses @JvmName to avoid platform declaration clash with getId()
+     * since ScopeId is an inline value class.
+     */
+    @get:JvmName("id")
+    val id: ScopeId get() = getId()
+
     companion object {
         /**
          * Create a new scope with generated timestamps.
@@ -46,7 +77,7 @@ data class Scope(
             val validatedTitle = ScopeTitle.create(title).bind()
             val validatedDescription = ScopeDescription.create(description).bind()
             Scope(
-                id = ScopeId.generate(),
+                _id = ScopeId.generate(),
                 title = validatedTitle,
                 description = validatedDescription,
                 parentId = parentId,
@@ -70,13 +101,36 @@ data class Scope(
             aspects: Aspects = Aspects.empty(),
             now: Instant,
         ): Scope = Scope(
-            id = id,
+            _id = id,
             title = title,
             description = description,
             parentId = parentId,
             createdAt = now,
             status = ScopeStatus.default(),
             updatedAt = now,
+            aspects = aspects,
+        )
+
+        /**
+         * Create a scope for testing with validated value objects.
+         * Generates a new ID automatically.
+         * This method is designed for test code where you already have validated value objects.
+         */
+        fun createForTest(
+            title: ScopeTitle,
+            description: ScopeDescription? = null,
+            parentId: ScopeId? = null,
+            aspects: Aspects = Aspects.empty(),
+            createdAt: Instant,
+            updatedAt: Instant,
+        ): Scope = Scope(
+            _id = ScopeId.generate(),
+            title = title,
+            description = description,
+            parentId = parentId,
+            createdAt = createdAt,
+            status = ScopeStatus.default(),
+            updatedAt = updatedAt,
             aspects = aspects,
         )
     }

@@ -1,15 +1,17 @@
 package io.github.kamiazya.scopes.devicesync.domain.valueobject
 
 import io.github.kamiazya.scopes.platform.commons.id.ULID
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Represents a unique identifier for a device in the multi-device synchronization system.
  *
  * Each device participating in synchronization has a unique ID that is used to track
  * which events originated from which device and to maintain vector clocks.
+ *
  */
 @JvmInline
-value class DeviceId(val value: String) {
+value class DeviceId(val value: String) : Identifier {
     init {
         require(value.isNotBlank()) { "Device ID cannot be blank" }
         require(value.length <= 64) { "Device ID cannot exceed 64 characters" }

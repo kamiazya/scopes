@@ -8,6 +8,9 @@ dependencies {
     implementation(project(":platform-application-commons"))
     implementation(project(":contracts-event-store"))
 
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     // Functional programming
     implementation(libs.arrow.core)
 

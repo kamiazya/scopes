@@ -5,6 +5,7 @@ import arrow.core.left
 import arrow.core.right
 import io.github.kamiazya.scopes.platform.commons.id.ULID
 import io.github.kamiazya.scopes.platform.domain.error.DomainError
+import org.jmolecules.ddd.types.Identifier
 
 /**
  * Aggregate identifier for domain entities.
@@ -12,8 +13,9 @@ import io.github.kamiazya.scopes.platform.domain.error.DomainError
  * This supports two styles:
  * 1. Simple ULID-based IDs (default)
  * 2. URI-based Global IDs (for advanced scenarios)
+ *
  */
-sealed interface AggregateId {
+sealed interface AggregateId : Identifier {
     val value: String
 
     /**
@@ -124,4 +126,18 @@ sealed interface AggregateId {
             else -> Simple.from(value)
         }
     }
+}
+
+/**
+ * Extract the ULID portion from an AggregateId, regardless of format.
+ *
+ * For Simple IDs, returns the value directly.
+ * For URI IDs, extracts the ID component from the URI structure.
+ *
+ * This provides a type-safe way to obtain the underlying ULID without
+ * manual string manipulation like `substringAfterLast("/")`.
+ */
+fun AggregateId.extractId(): String = when (this) {
+    is AggregateId.Simple -> value
+    is AggregateId.Uri -> id
 }

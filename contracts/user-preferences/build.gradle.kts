@@ -16,6 +16,9 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.arrow.core)
 
+    // jMolecules architecture annotations
+    api(libs.jmolecules.hexagonal.architecture)
+
     // Test dependencies
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.kotest.assertions.arrow)

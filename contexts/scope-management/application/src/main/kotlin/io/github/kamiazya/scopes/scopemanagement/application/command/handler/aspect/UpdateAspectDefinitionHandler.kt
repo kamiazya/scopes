@@ -53,7 +53,7 @@ class UpdateAspectDefinitionHandler(
                     return@either existing
                 }
 
-                val updated = existing.copy(description = command.description)
+                val updated = existing.updateDescription(command.description)
 
                 // Save updated definition
                 aspectDefinitionRepository.save(updated).fold(

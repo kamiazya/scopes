@@ -1,13 +1,14 @@
-package io.github.kamiazya.scopes.scopemanagement.domain.entity
+package io.github.kamiazya.scopes.scopemanagement.domain.aggregate
 
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasId
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasType
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 import kotlinx.datetime.Instant
+import org.jmolecules.ddd.types.AggregateRoot
 
 /**
- * Entity representing a scope alias.
+ * Aggregate root representing a scope alias.
  *
  * Each alias is an alternative identifier for a scope, allowing users to reference
  * scopes using memorable names instead of ULIDs.
@@ -15,21 +16,29 @@ import kotlinx.datetime.Instant
  * The alias has its own unique ID (ULID) for tracking purposes, allowing the alias
  * name to be changed while maintaining identity and audit trail.
  *
+ * ScopeAlias is an aggregate root because:
+ * - It has independent lifecycle and is not part of the Scope aggregate
+ * - It maintains its own consistency boundary for alias operations
+ * - It is the root of its own consistency boundary
+ *
  * Business Rules:
  * - Each alias has a unique ID that never changes
  * - Each scope can have exactly one canonical alias
  * - Each scope can have multiple custom aliases
  * - Alias names must be unique across all scopes
  * - Canonical aliases cannot be removed, only replaced
+ *
  */
 data class ScopeAlias(
-    val id: AliasId, // Unique identifier for this alias
+    private val _id: AliasId, // Unique identifier for this alias
     val scopeId: ScopeId,
     val aliasName: AliasName,
     val aliasType: AliasType,
     val createdAt: Instant,
     val updatedAt: Instant,
-) {
+) : AggregateRoot<ScopeAlias, AliasId> {
+
+    override fun getId(): AliasId = _id
 
     companion object {
         /**
@@ -37,7 +46,7 @@ data class ScopeAlias(
          * Generates a new unique ID for the alias.
          */
         fun createCanonical(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
-            id = AliasId.generate(),
+            _id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CANONICAL,
@@ -50,7 +59,7 @@ data class ScopeAlias(
          * Generates a new unique ID for the alias.
          */
         fun createCustom(scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
-            id = AliasId.generate(),
+            _id = AliasId.generate(),
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CUSTOM,
@@ -63,7 +72,7 @@ data class ScopeAlias(
          * Used when generating deterministic aliases.
          */
         fun createCanonicalWithId(id: AliasId, scopeId: ScopeId, aliasName: AliasName, timestamp: Instant): ScopeAlias = ScopeAlias(
-            id = id,
+            _id = id,
             scopeId = scopeId,
             aliasName = aliasName,
             aliasType = AliasType.CANONICAL,

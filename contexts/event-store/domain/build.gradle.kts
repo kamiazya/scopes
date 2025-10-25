@@ -5,6 +5,9 @@ plugins {
 dependencies {
     implementation(project(":platform-domain-commons"))
 
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     // Functional programming
     implementation(libs.arrow.core)
 

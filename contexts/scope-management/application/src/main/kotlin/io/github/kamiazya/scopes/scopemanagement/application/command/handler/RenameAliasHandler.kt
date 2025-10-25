@@ -9,7 +9,7 @@ import io.github.kamiazya.scopes.platform.observability.logging.Logger
 import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.RenameAliasCommand
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 
 /**

@@ -121,7 +121,7 @@ class SqlDelightContextViewRepository(private val database: ScopeManagementDatab
         )
 
         return ContextView(
-            id = id,
+            _id = id,
             key = key,
             name = name,
             description = description,

@@ -10,7 +10,7 @@ import io.github.kamiazya.scopes.scopemanagement.application.command.dto.scope.S
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ApplicationErrorMapper
 import io.github.kamiazya.scopes.scopemanagement.application.mapper.ErrorMappingContext
 import io.github.kamiazya.scopes.scopemanagement.application.service.ScopeAliasApplicationService
-import io.github.kamiazya.scopes.scopemanagement.domain.entity.ScopeAlias
+import io.github.kamiazya.scopes.scopemanagement.domain.aggregate.ScopeAlias
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.AliasName
 import io.github.kamiazya.scopes.scopemanagement.domain.valueobject.ScopeId
 

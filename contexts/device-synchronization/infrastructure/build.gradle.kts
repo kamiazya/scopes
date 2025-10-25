@@ -15,6 +15,9 @@ dependencies {
     implementation(project(":platform-infrastructure"))
     implementation(project(":platform-observability"))
 
+    // DDD building blocks
+    implementation(libs.jmolecules.ddd)
+
     // Database
     implementation(libs.sqlite.jdbc)
 

@@ -16,11 +16,13 @@ class TestFrameworkConsistencyTest :
 
             it("test classes should not use JUnit annotations") {
                 // All test classes should use Kotest instead of JUnit for consistency
+                // Exception: ArchUnit tests use JUnit5 as that's the standard for ArchUnit
                 Konsist.scopeFromProject()
                     .files
                     .filter { file ->
                         file.path.contains("/test/") &&
-                            file.classes().any { it.name?.endsWith("Test") ?: false }
+                            file.classes().any { it.name?.endsWith("Test") ?: false } &&
+                            !file.path.contains("/archunit/") // Exclude ArchUnit tests
                     }
                     .assertFalse { file ->
                         file.imports.any { import ->
@@ -36,9 +38,13 @@ class TestFrameworkConsistencyTest :
 
             it("test classes should use Kotest specs") {
                 // All test classes should extend Kotest specs (DescribeSpec or StringSpec) for consistency
+                // Exception: ArchUnit tests use JUnit5 as that's the standard for ArchUnit
                 Konsist.scopeFromProject()
                     .classes()
                     .withNameEndingWith("Test")
+                    .filter { clazz ->
+                        !clazz.containingFile.path.contains("/archunit/") // Exclude ArchUnit tests
+                    }
                     .assertFalse { clazz ->
                         // Every test class must extend a Kotest spec
                         // Return true (fail assertion) if class does NOT extend DescribeSpec or StringSpec
