@@ -48,17 +48,20 @@ REM Check Java version
 for /f "tokens=3" %%v in ('java -version 2^>^&1 ^| findstr /i "version"') do (
     set "JAVA_VERSION=%%v"
     set "JAVA_VERSION=!JAVA_VERSION:"=!"
-    goto :version_found
 )
 
-:version_found
 REM Extract major version (handle both old format like 1.8 and new format like 21.0.1)
-for /f "tokens=1 delims=." %%m in ("!JAVA_VERSION!") do set "MAJOR_VERSION=%%m"
-if "!MAJOR_VERSION!"=="1" (
-    for /f "tokens=2 delims=." %%m in ("!JAVA_VERSION!") do set "MAJOR_VERSION=%%m"
+if defined JAVA_VERSION (
+    for /f "tokens=1 delims=." %%m in ("!JAVA_VERSION!") do set "MAJOR_VERSION=%%m"
+    if "!MAJOR_VERSION!"=="1" (
+        for /f "tokens=2 delims=." %%m in ("!JAVA_VERSION!") do set "MAJOR_VERSION=%%m"
+    )
+) else (
+    echo Warning: Could not determine Java version, proceeding anyway... 1>&2
+    goto :after_version_check
 )
 
-if !MAJOR_VERSION! LSS 21 (
+if defined MAJOR_VERSION if !MAJOR_VERSION! LSS 21 (
     echo Error: Java !MAJOR_VERSION! is installed, but Scopes requires Java 21 or later 1>&2
     echo. 1>&2
     echo Please upgrade your Java installation: 1>&2
@@ -67,9 +70,36 @@ if !MAJOR_VERSION! LSS 21 (
     exit /b 1
 )
 
-REM Load Java options from environment variables
-REM Priority: SCOPES_JAVA_OPTS > JAVA_OPTS
+:after_version_check
+
+REM Load Java options from config file, then environment variables
+REM Priority: SCOPES_JAVA_OPTS > JAVA_OPTS > config file
 set "JAVA_OPTIONS="
+
+REM Check for config file in standard locations
+set "CONFIG_FILE="
+if exist "%APPDATA%\scopes\scopes.conf" (
+    set "CONFIG_FILE=%APPDATA%\scopes\scopes.conf"
+) else if exist "%USERPROFILE%\.scopes\scopes.conf" (
+    set "CONFIG_FILE=%USERPROFILE%\.scopes\scopes.conf"
+)
+
+if defined CONFIG_FILE (
+    for /f "usebackq tokens=1,* delims==" %%a in ("%CONFIG_FILE%") do (
+        REM Strip whitespace and quotes from key and value
+        set "TEMP_KEY=%%a"
+        set "TEMP_KEY=!TEMP_KEY: =!"
+        if /i "!TEMP_KEY!"=="JAVA_OPTS" (
+            set "TEMP_OPTS=%%b"
+            REM Strip leading/trailing whitespace and quotes
+            for /f "tokens=* delims= " %%x in ("!TEMP_OPTS!") do set "TEMP_OPTS=%%x"
+            set "TEMP_OPTS=!TEMP_OPTS:"=!"
+            set "JAVA_OPTIONS=!TEMP_OPTS!"
+        )
+    )
+)
+
+REM Override with environment variables
 if defined JAVA_OPTS (
     set "JAVA_OPTIONS=%JAVA_OPTS%"
 )

@@ -3,7 +3,7 @@
 # This script installs Scopes JAR with wrapper scripts from local files
 #
 # Usage:
-#   .\install-jar.ps1 [OPTIONS]
+#   .\install.ps1 [OPTIONS]
 #
 # Options:
 #   -InstallDir DIR     Installation directory (default: C:\Program Files\scopes)
@@ -76,7 +76,7 @@ Scopes Installation Script for JAR Distribution
 This script installs Scopes JAR file with wrapper scripts.
 
 USAGE:
-    .\install-jar.ps1 [OPTIONS]
+    .\install.ps1 [OPTIONS]
 
 OPTIONS:
     -InstallDir DIR     Installation directory (default: C:\Program Files\scopes)
@@ -91,13 +91,13 @@ ENVIRONMENT VARIABLES:
 
 EXAMPLES:
     # Standard installation (requires admin)
-    .\install-jar.ps1
+    .\install.ps1
 
     # Custom installation directory
-    .\install-jar.ps1 -InstallDir "$env:LOCALAPPDATA\scopes"
+    .\install.ps1 -InstallDir "$env:LOCALAPPDATA\scopes"
 
     # Force installation without prompts
-    .\install-jar.ps1 -Force
+    .\install.ps1 -Force
 
 "@
     exit 0
@@ -234,10 +234,15 @@ function Test-InstallationFiles {
     Write-Status "Verifying SHA256 hash..."
 
     try {
-        $expectedHash = (Get-Content $hashFile).Trim()
+        # Parse hash file (format: "<hash>  <filename>")
+        # Extract only the first field (the hash)
+        $hashLine = (Get-Content $hashFile).Trim()
+        $expectedHash = ($hashLine -split '\s+')[0]
+
         $actualHash = (Get-FileHash -Path $JarFile -Algorithm SHA256).Hash
 
-        if ($actualHash -ne $expectedHash) {
+        # Case-insensitive comparison
+        if ($actualHash -ine $expectedHash) {
             Write-Err "Hash verification failed"
             Write-Host "Expected: $expectedHash"
             Write-Host "Actual: $actualHash"

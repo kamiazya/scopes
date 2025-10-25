@@ -27,10 +27,10 @@ This tutorial will guide you through your first steps with Scopes, from installa
 Download the JAR distribution bundle and run the installer:
 
 ```bash
-# Set version (replace with actual values)
-VERSION="v0.1.0"  # Check latest release at https://github.com/kamiazya/scopes/releases
+# Set version and platform (replace with actual values)
+VERSION="vX.X.X"  # Check latest release at https://github.com/kamiazya/scopes/releases
 
-# Download JAR bundle
+# Download and extract bundle
 wget https://github.com/kamiazya/scopes/releases/download/${VERSION}/scopes-${VERSION}-jar-bundle.tar.gz
 tar -xzf scopes-${VERSION}-jar-bundle.tar.gz
 cd scopes-${VERSION}-jar-bundle
@@ -46,8 +46,10 @@ sudo ./install.sh  # installs to /usr/local by default
 For Windows platforms, use PowerShell:
 
 ```powershell
-# Download JAR bundle
-$VERSION = "v0.1.0"  # Check latest release
+# Set version (replace with actual value)
+$VERSION = "vX.X.X"  # Check latest release at https://github.com/kamiazya/scopes/releases
+
+# Download and extract bundle
 Invoke-WebRequest -Uri "https://github.com/kamiazya/scopes/releases/download/$VERSION/scopes-$VERSION-jar-bundle.zip" -OutFile "scopes-bundle.zip"
 Expand-Archive scopes-bundle.zip -DestinationPath .
 cd "scopes-$VERSION-jar-bundle"

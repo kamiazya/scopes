@@ -198,19 +198,27 @@ verify_installation() {
     print_status "Verifying SHA256 hash..."
 
     # Verify hash
+    # Extract expected checksum (first token from hash file)
+    local expected_checksum
+    expected_checksum="$(awk '{print $1}' "$HASH_FILE")"
+
+    # Compute actual checksum
+    local actual_checksum
     if command -v sha256sum &> /dev/null; then
-        echo "$(cat "$HASH_FILE") $JAR_FILE" | sha256sum -c - || {
-            print_error "Hash verification failed"
-            exit 1
-        }
+        actual_checksum="$(sha256sum "$JAR_FILE" | awk '{print $1}')"
     elif command -v shasum &> /dev/null; then
-        echo "$(cat "$HASH_FILE") $JAR_FILE" | shasum -a 256 -c - || {
-            print_error "Hash verification failed"
-            exit 1
-        }
+        actual_checksum="$(shasum -a 256 "$JAR_FILE" | awk '{print $1}')"
     else
         print_warning "sha256sum/shasum not found, skipping hash verification"
         return
+    fi
+
+    # Compare checksums
+    if [[ "$expected_checksum" != "$actual_checksum" ]]; then
+        print_error "Hash verification failed"
+        print_error "Expected: $expected_checksum"
+        print_error "Actual:   $actual_checksum"
+        exit 1
     fi
 
     print_status "Hash verification passed"

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The `jni-config.json` file in `/apps/scopes/src/main/resources/META-INF/native-image/` was required for GraalVM native image compilation when using SQLite JDBC driver.
+The `jni-config.json` file in `apps/scopes/src/main/resources/META-INF/native-image/` was required for GraalVM native image compilation when using SQLite JDBC driver.
 
 ## Why It's Necessary
 

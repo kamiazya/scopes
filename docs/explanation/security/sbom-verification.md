@@ -84,7 +84,7 @@ SBOM files are included in the SLSA provenance generation process:
 ```bash
 # Verify JAR file is covered by SLSA provenance
 slsa-verifier verify-artifact scopes.jar \
-  --provenance-path multiple.intoto.jsonl \
+  --provenance-path verification/multiple.intoto.jsonl \
   --source-uri github.com/kamiazya/scopes
 ```
 

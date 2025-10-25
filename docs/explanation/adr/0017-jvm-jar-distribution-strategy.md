@@ -187,7 +187,7 @@ tasks.shadowJar {
 
 ### Distribution Package Structure
 
-```
+```text
 scopes-1.0.0-dist/
 ├── scopes.jar                    # Fat JAR (all platforms)
 ├── bin/
@@ -394,7 +394,7 @@ With both CLI (`scopes`) and Daemon (`scopesd`) applications:
 
 ### Proposed Modular Structure
 
-```
+```text
 scopes-1.0.0-dist/
 ├── lib/
 │   ├── scopes-common-1.0.0.jar     # Shared: platform, contexts, contracts

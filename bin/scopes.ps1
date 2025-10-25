@@ -70,6 +70,11 @@ try {
             Write-Error "Please upgrade your Java installation:"
             Write-Error "  Current version: Java $majorVersion"
             Write-Error "  Required version: Java 21+"
+            Write-Error ""
+            Write-Error "Installation instructions:"
+            Write-Error "  Download from: https://adoptium.net/"
+            Write-Error "  Or use Chocolatey: choco install openjdk21"
+            Write-Error "  Or use Scoop: scoop install openjdk21"
             exit 1
         }
     } else {
