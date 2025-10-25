@@ -92,7 +92,9 @@ val scopeManagementModule = module {
     single<DomainEventPublisher> {
         object : DomainEventPublisher {
             override suspend fun publish(event: DomainEvent) {
-                // TODO: Implement proper event publishing
+                // TODO: Implement proper event publishing by connecting to a
+                // central event bus or message queue (e.g., RabbitMQ, Kafka, or an in-memory bus).
+                // This will allow other bounded contexts to react to domain events.
             }
         }
     }
@@ -107,6 +109,7 @@ val scopeManagementModule = module {
             contextViewRepository = get(),
             activeContextRepository = get(),
             contextAuditService = get(),
+            logger = get(),
         )
     }
 
