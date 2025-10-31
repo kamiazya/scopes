@@ -1,0 +1,23 @@
+-- Migration from version 1 to version 2
+-- This is a placeholder migration file for the Device Synchronization context
+--
+-- Example migrations for device sync (uncomment when needed):
+--
+-- Add new column for sync status
+-- ALTER TABLE devices ADD COLUMN last_error TEXT;
+--
+-- Add table for sync conflicts
+-- CREATE TABLE IF NOT EXISTS sync_conflicts (
+--     id TEXT PRIMARY KEY NOT NULL,
+--     device_id TEXT NOT NULL,
+--     conflict_data TEXT NOT NULL,
+--     created_at INTEGER NOT NULL,
+--     resolved_at INTEGER,
+--     FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+-- );
+--
+-- Note: This file is currently a placeholder.
+-- When you need to make schema changes in the future:
+-- 1. Uncomment and modify the SQL statements above
+-- 2. Update ApplicationVersion.SchemaVersions.DEVICE_SYNCHRONIZATION to 2
+-- 3. Add a new VersionMapping in ApplicationVersion.versionHistory

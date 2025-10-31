@@ -1,0 +1,16 @@
+-- Migration from version 1 to version 2
+-- This is a placeholder migration file for the Event Store context
+--
+-- Example migrations for event store (uncomment when needed):
+--
+-- Add new column for event metadata
+-- ALTER TABLE events ADD COLUMN correlation_id TEXT;
+--
+-- Add index for correlation tracking
+-- CREATE INDEX IF NOT EXISTS idx_events_correlation ON events(correlation_id);
+--
+-- Note: This file is currently a placeholder.
+-- When you need to make schema changes in the future:
+-- 1. Uncomment and modify the SQL statements above
+-- 2. Update ApplicationVersion.SchemaVersions.EVENT_STORE to 2
+-- 3. Add a new VersionMapping in ApplicationVersion.versionHistory
